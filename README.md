@@ -1,5 +1,11 @@
 [![Build Status](https://aelassas.visualstudio.com/servy/_apis/build/status%2Faelassas.servy?branchName=main)](https://aelassas.visualstudio.com/servy/_build/latest?definitionId=4&branchName=main)
 
+<p align="center">
+  <a href="https://servy-win.github.io/">
+    <img src="https://servy-win.github.io/servy.png?d=1" height="300">
+  </a>
+</p>
+
 # Servy
 
 **Servy** is a Windows application that allows you to run any executable as a Windows service, using a simple graphical interface.
