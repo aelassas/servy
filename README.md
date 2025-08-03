@@ -63,7 +63,7 @@ Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
 
 ## Author
 
-**Akram El Assas** [GitHub](https://github.com/aelassas)
+Akram El Assas [GitHub](https://github.com/aelassas)
 
 ## Feedback
 
