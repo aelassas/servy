@@ -61,10 +61,6 @@ Servy requires:
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
 
-## Author
-
-Akram El Assas [GitHub](https://github.com/aelassas)
-
 ## Feedback
 
 If you have suggestions, issues, or want to contribute, feel free to open an issue or pull request.
