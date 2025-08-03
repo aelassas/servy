@@ -23,6 +23,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{0E71
 		.github\azure-pipelines.yml = .github\azure-pipelines.yml
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F547C573-380C-4BD2-B324-B9572297A027}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\loc.yml = .github\workflows\loc.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +54,7 @@ Global
 		{C41E0E90-CFF6-4DFA-A042-59E4B31198A2} = {C42DD4B4-CFB7-472A-BA76-77D57CC1CFDE}
 		{4D92FA0D-47BB-4658-91CD-774A25ADEB87} = {C42DD4B4-CFB7-472A-BA76-77D57CC1CFDE}
 		{62C15840-EA09-4150-84BC-E14F0E703A68} = {C42DD4B4-CFB7-472A-BA76-77D57CC1CFDE}
+		{F547C573-380C-4BD2-B324-B9572297A027} = {0E71A643-AAB0-4C79-8B8D-B1F531A46F93}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8901951D-D640-4964-A4ED-D957E840307C}
