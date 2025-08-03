@@ -223,6 +223,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service wrapper executable not found..
+        /// </summary>
+        public static string Msg_InvalidWrapperExePath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was created successfully..
         /// </summary>
         public static string Msg_ServiceCreated {

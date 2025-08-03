@@ -1,6 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Resources;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Policy;
 using System.ServiceProcess;
 using System.Threading;
 
@@ -311,6 +314,9 @@ namespace Servy.Core
             }
             finally
             {
+                // OpenSCManager returns a handle to the Service Control Manager.
+                // OpenService returns a handle to the individual service.
+                // These are two different resources that must each be closed separately to avoid leaking handles.
                 NativeMethods.CloseServiceHandle(scmHandle);
             }
         }

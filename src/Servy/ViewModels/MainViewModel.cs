@@ -7,7 +7,6 @@ using System.Globalization;
 using System.IO;
 using System.Resources;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Windows.Input;
 
 namespace Servy.ViewModels
@@ -28,7 +27,6 @@ namespace Servy.ViewModels
         private string _processParameters;
         private string _selectedStartupType;
         private ProcessPriority _selectedProcessPriority;
-        private string _language;
 
         public string ServiceName
         {
@@ -132,7 +130,6 @@ namespace Servy.ViewModels
             _processParameters = string.Empty;
             _selectedStartupType = StartupTypes[0]; // Default to Automatic startup type
             _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
-            _language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
             InstallCommand = new RelayCommand(InstallService);
             UninstallCommand = new RelayCommand(UninstallService);
@@ -162,7 +159,13 @@ namespace Servy.ViewModels
 
             if (!File.Exists(wrapperExePath))
             {
-                System.Windows.MessageBox.Show("Service wrapper executable not found.", "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(Strings.Msg_InvalidWrapperExePath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            if(!Directory.Exists(StartupDirectory))
+            {
+                System.Windows.MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
             }
 
