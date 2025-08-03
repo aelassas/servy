@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=1" height="300">
+    <img src="https://servy-win.github.io/servy.png?d=3" height="300">
   </a>
 </p>
 
@@ -30,6 +30,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 - Supports:
   - Service name & description
   - Startup type (Automatic, Manual, Disabled)
+  - Process Priority (Idle, Below Normal, Normal (default), Above Normal, High, Real Time (use with caution))
   - Custom working directory & parameters
 
 ## How It Works
@@ -43,6 +44,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
    - `Process Path` (path to the executable you want to run)
    - `Startup Directory` (optional - Working directory for the process. Defaults to the executable's directory if not specified.)
    - `Process Parameters` (optional)
+   - `Process Priority` (optional)
 4. Click **Install** to register the service.
 5. Start or stop the service directly from Windows Services or any management tool.
 
