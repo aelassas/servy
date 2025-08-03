@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Menu -->
+  <data name="Menu_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+
+  <!-- Labels -->
+  <data name="Label_ServiceName" xml:space="preserve">
+    <value>Service Name</value>
+  </data>
+  <data name="Label_ServiceDescription" xml:space="preserve">
+    <value>Service Description</value>
+  </data>
+  <data name="Label_ProcessPath" xml:space="preserve">
+    <value>Process Path</value>
+  </data>
+  <data name="Label_StartupDirectory" xml:space="preserve">
+    <value>Startup Directory</value>
+  </data>
+  <data name="Label_ProcessParameters" xml:space="preserve">
+    <value>Process Parameters</value>
+  </data>
+  <data name="Label_StartupType" xml:space="preserve">
+    <value>Startup Type</value>
+  </data>
+
+  <!-- Startup Type ComboBox Items -->
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+
+  <!-- Buttons -->
+  <data name="Button_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Button_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="Button_Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>Please fill in all required fields.</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>The specified process path is invalid.</value>
+  </data>
+  <data name="Msg_ServiceCreated" xml:space="preserve">
+    <value>Service was created successfully.</value>
+  </data>
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>Service was removed successfully.</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>An unexpected error occurred.</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>Administrator privileges are required.</value>
+  </data>
+
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>Service was started successfully.</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>Service was stopped successfully.</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>Service was restarted successfully.</value>
+  </data>
+
+  <data name="Message_Success" xml:space="preserve">
+    <value>Service installed successfully.</value>
+  </data>
+  <data name="Message_Error" xml:space="preserve">
+    <value>An error occurred.</value>
+  </data>
+</root>

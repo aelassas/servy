@@ -1,0 +1,79 @@
+﻿<Window x:Class="Servy.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Servy"
+        xmlns:resx="clr-namespace:Servy.Resources"
+        xmlns:viewmodels="clr-namespace:Servy.ViewModels"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        Title="Servy"
+        MinWidth="600"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="CanMinimize"
+        d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel, IsDesignTimeCreatable=True}">
+    <DockPanel>
+
+        <!-- Form -->
+        <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Service Name -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Label_ServiceName}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ServiceName}" Margin="0,5" Grid.ColumnSpan="2"/>
+
+            <!-- Service Description -->
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Label_ServiceDescription}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ServiceDescription}" Margin="0,5" Grid.ColumnSpan="2"/>
+
+            <!-- Process Path -->
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding Label_ProcessPath}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ProcessPath}" Margin="0,5"/>
+            <Button Grid.Row="2" Grid.Column="2" Content="{Binding Button_Browse}" Click="BrowseProcessPath_Click" Margin="5,5,0,5"/>
+
+            <!-- Startup Directory -->
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding Label_StartupDirectory}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding StartupDirectory}" Margin="0,5"/>
+            <Button Grid.Row="3" Grid.Column="2" Content="{Binding Button_Browse}" Click="BrowseStartupDirectory_Click" Margin="5,5,0,5"/>
+
+            <!-- Process Parameters -->
+            <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding Label_ProcessParameters}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ProcessParameters}" Margin="0,5" Grid.ColumnSpan="2"/>
+
+            <!-- Startup Type -->
+            <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding Label_StartupType}" Margin="0,5,10,5"/>
+            <ComboBox Grid.Row="5" Grid.Column="1"
+                      SelectedValue="{Binding SelectedStartupType, Mode=TwoWay}"
+                      SelectedValuePath="Content"
+                      Margin="0,5"
+                      Grid.ColumnSpan="2">
+                <ComboBoxItem Content="{Binding StartupType_Automatic}"/>
+                <ComboBoxItem Content="{Binding StartupType_Manual}"/>
+                <ComboBoxItem Content="{Binding StartupType_Disabled}"/>
+            </ComboBox>
+
+            <!-- Buttons -->
+            <StackPanel Grid.Row="6" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+                <Button Content="{Binding Button_Install}" Width="80" Margin="5" Command="{Binding InstallCommand}" />
+                <Button Content="{Binding Button_Uninstall}" Width="80" Margin="5" Command="{Binding UninstallCommand}"/>
+                <Button Content="{Binding Button_Start}" Width="80" Margin="5" Command="{Binding StartCommand}"/>
+                <Button Content="{Binding Button_Stop}" Width="80" Margin="5" Command="{Binding StopCommand}"/>
+                <Button Content="{Binding Button_Restart}" Width="80" Margin="5" Command="{Binding RestartCommand}"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>
