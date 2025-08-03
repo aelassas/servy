@@ -10,11 +10,11 @@
 
 **Servy** is a Windows application that allows you to run any executable as a Windows service, using a simple graphical interface.
 
-It provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions — from Windows 7 SP1 to Windows 11.
+It provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions — from Windows 7 SP1 to Windows 11 and Windows Server.
 
 ## Requirements
 
-- Windows 7 SP1 / 8 / 10 / 11 (x64)
+- Windows 7 SP1 / 8 / 10 / 11 (x64) / Windows Server
 - [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 - Administrator privileges (required for service installation)
 
