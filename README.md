@@ -33,7 +33,7 @@ Built with **WPF (.NET Framework 4.8)**, it provides a reliable and compatible s
    - `Service Description`
    - `Startup Type`
    - `Process Path` (path to the executable you want to run)
-   - `Startup Directory` (optional)
+   - `Startup Directory` (optional - Working directory for the process. Defaults to the executable's directory if not specified.)
    - `Process Parameters` (optional)
 4. Click **Install** to register the service.
 5. Start or stop the service directly from Windows Services or any management tool.
