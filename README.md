@@ -4,15 +4,6 @@
 
 Built with **WPF (.NET Framework 4.8)**, it provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions — from Windows 7 SP1 to Windows 11.
 
-## Features
-
-- Run any executable as a Windows service
-- Easy-to-use WPF interface
-- Supports:
-  - Service name & description
-  - Startup type (Automatic, Manual, Disabled)
-  - Custom working directory & parameters
-
 ## Requirements
 
 - Windows 7 SP1 / 8 / 10 / 11 (x64)
@@ -21,6 +12,15 @@ Built with **WPF (.NET Framework 4.8)**, it provides a reliable and compatible s
 
 ## Download
 * [Download Latest Release](https://github.com/aelassas/servy/releases/latest)
+
+## Features
+
+- Run any executable as a Windows service
+- Easy-to-use WPF interface
+- Supports:
+  - Service name & description
+  - Startup type (Automatic, Manual, Disabled)
+  - Custom working directory & parameters
 
 ## How It Works
 
