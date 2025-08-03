@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.ServiceProcess;
 
 namespace Servy.Service
@@ -30,6 +31,10 @@ namespace Servy.Service
             string realExePath = (fullArgs.Length > 0 ? fullArgs[1] : string.Empty).Trim('"');
             string realArgs = (fullArgs.Length > 1 ? fullArgs[2] : string.Empty).Trim('"');
             string workingDir = (fullArgs.Length > 2 ? fullArgs[3] : string.Empty).Trim('"');
+            if (string.IsNullOrEmpty(workingDir))
+            {
+                workingDir = Path.GetDirectoryName(realExePath);
+            }
 
             _eventLog?.WriteEntry($"[realExePath] {realExePath}");
             _eventLog?.WriteEntry($"[realArgs] {realArgs}");
