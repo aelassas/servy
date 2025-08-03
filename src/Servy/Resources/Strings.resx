@@ -34,11 +34,11 @@
   <data name="Label_ProcessParameters" xml:space="preserve">
     <value>Process Parameters</value>
   </data>
+
+  <!-- Startup Type ComboBox Items -->
   <data name="Label_StartupType" xml:space="preserve">
     <value>Startup Type</value>
   </data>
-
-  <!-- Startup Type ComboBox Items -->
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
   </data>
@@ -47,6 +47,29 @@
   </data>
   <data name="StartupType_Disabled" xml:space="preserve">
     <value>Disabled</value>
+  </data>
+
+  <!-- Process Priority ComboBox Items -->
+  <data name="Label_ProcessPriority" xml:space="preserve">
+    <value>Process Priority</value>
+  </data>
+  <data name="ProcessPriority_Idle" xml:space="preserve">
+    <value>Idle</value>
+  </data>
+  <data name="ProcessPriority_BelowNormal" xml:space="preserve">
+    <value>Below Normal</value>
+  </data>
+  <data name="ProcessPriority_Normal" xml:space="preserve">
+    <value>Normal (default)</value>
+  </data>
+  <data name="ProcessPriority_AboveNormal" xml:space="preserve">
+    <value>Above Normal</value>
+  </data>
+  <data name="ProcessPriority_High" xml:space="preserve">
+    <value>High</value>
+  </data>
+  <data name="ProcessPriority_RealTime" xml:space="preserve">
+    <value>Real Time (use with caution)</value>
   </data>
 
   <!-- Buttons -->

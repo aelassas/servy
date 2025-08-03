@@ -24,6 +24,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -66,8 +67,18 @@
                 <ComboBoxItem Content="{Binding StartupType_Disabled}"/>
             </ComboBox>
 
+            <!-- Process Priority -->
+            <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding Label_ProcessPriority}" Margin="0,5,10,5"/>
+            <ComboBox Grid.Row="6" Grid.Column="1"
+                      ItemsSource="{Binding ProcessPriorities}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedValue="{Binding SelectedProcessPriority, Mode=TwoWay}"
+                      SelectedValuePath="Priority"
+                      Margin="0,5"
+                      Grid.ColumnSpan="2" />
+
             <!-- Buttons -->
-            <StackPanel Grid.Row="6" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+            <StackPanel Grid.Row="7" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
                 <Button Content="{Binding Button_Install}" Width="80" Margin="5" Command="{Binding InstallCommand}" />
                 <Button Content="{Binding Button_Uninstall}" Width="80" Margin="5" Command="{Binding UninstallCommand}"/>
                 <Button Content="{Binding Button_Start}" Width="80" Margin="5" Command="{Binding StartCommand}"/>

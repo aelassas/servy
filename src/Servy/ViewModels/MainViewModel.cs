@@ -1,6 +1,7 @@
 ﻿using Servy.Core;
 using Servy.Resources;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -26,6 +27,7 @@ namespace Servy.ViewModels
         private string _startupDirectory;
         private string _processParameters;
         private string _selectedStartupType;
+        private ProcessPriority _selectedProcessPriority;
         private string _language;
 
         public string ServiceName
@@ -64,22 +66,24 @@ namespace Servy.ViewModels
             set { _selectedStartupType = value; OnPropertyChanged(); }
         }
 
-        public string Language
+
+        public ProcessPriority SelectedProcessPriority
         {
-            get => _language;
-            set
-            {
-                if (_language != value)
-                {
-                    _language = value;
-                    OnPropertyChanged();
-                    SwitchLanguage(value);
-                }
-            }
+            get => _selectedProcessPriority;
+            set { _selectedProcessPriority = value; OnPropertyChanged(); }
         }
 
         public string[] StartupTypes { get; } = new[] { "Automatic", "Manual", "Disabled" };
-        public string[] Languages { get; } = new[] { "en", "fr" };
+
+        public List<ProcessPriorityItem> ProcessPriorities { get; } = new List<ProcessPriorityItem>
+        {
+            new ProcessPriorityItem { Priority = ProcessPriority.Idle, DisplayName = Strings.ProcessPriority_Idle },
+            new ProcessPriorityItem { Priority = ProcessPriority.BelowNormal, DisplayName = Strings.ProcessPriority_BelowNormal },
+            new ProcessPriorityItem { Priority = ProcessPriority.Normal, DisplayName = Strings.ProcessPriority_Normal },
+            new ProcessPriorityItem { Priority = ProcessPriority.AboveNormal, DisplayName = Strings.ProcessPriority_AboveNormal },
+            new ProcessPriorityItem { Priority = ProcessPriority.High, DisplayName = Strings.ProcessPriority_High },
+            new ProcessPriorityItem { Priority = ProcessPriority.RealTime, DisplayName = Strings.ProcessPriority_RealTime },
+        };
 
         public ICommand InstallCommand { get; }
         public ICommand UninstallCommand { get; }
@@ -97,10 +101,20 @@ namespace Servy.ViewModels
         public string Label_ProcessPath => _resourceManager.GetString(nameof(Label_ProcessPath), _culture) ?? string.Empty;
         public string Label_StartupDirectory => _resourceManager.GetString(nameof(Label_StartupDirectory), _culture) ?? string.Empty;
         public string Label_ProcessParameters => _resourceManager.GetString(nameof(Label_ProcessParameters), _culture) ?? string.Empty;
+
         public string Label_StartupType => _resourceManager.GetString(nameof(Label_StartupType), _culture) ?? string.Empty;
         public string StartupType_Automatic => _resourceManager.GetString(nameof(StartupType_Automatic), _culture) ?? string.Empty;
         public string StartupType_Manual => _resourceManager.GetString(nameof(StartupType_Manual), _culture) ?? string.Empty;
         public string StartupType_Disabled => _resourceManager.GetString(nameof(StartupType_Disabled), _culture) ?? string.Empty;
+
+        public string Label_ProcessPriority => _resourceManager.GetString(nameof(Label_ProcessPriority), _culture) ?? string.Empty;
+        public string ProcessPriority_Idle => _resourceManager.GetString(nameof(ProcessPriority_Idle), _culture) ?? string.Empty;
+        public string ProcessPriority_BelowNormal => _resourceManager.GetString(nameof(ProcessPriority_BelowNormal), _culture) ?? string.Empty;
+        public string ProcessPriority_Normal => _resourceManager.GetString(nameof(ProcessPriority_Normal), _culture) ?? string.Empty;
+        public string ProcessPriority_AboveNormal => _resourceManager.GetString(nameof(ProcessPriority_AboveNormal), _culture) ?? string.Empty;
+        public string ProcessPriority_High => _resourceManager.GetString(nameof(ProcessPriority_High), _culture) ?? string.Empty;
+        public string ProcessPriority_RealTime => _resourceManager.GetString(nameof(ProcessPriority_RealTime), _culture) ?? string.Empty;
+
         public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
         public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
         public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
@@ -116,7 +130,8 @@ namespace Servy.ViewModels
             _processPath = string.Empty;
             _startupDirectory = string.Empty;
             _processParameters = string.Empty;
-            _selectedStartupType = StartupTypes[0];
+            _selectedStartupType = StartupTypes[0]; // Default to Automatic startup type
+            _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
             _language = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
 
             InstallCommand = new RelayCommand(InstallService);
@@ -125,7 +140,6 @@ namespace Servy.ViewModels
             StopCommand = new RelayCommand(StopService);
             RestartCommand = new RelayCommand(RestartService);
             ClearCommand = new RelayCommand(ClearForm);
-            Language = _language;
         }
 
         private void InstallService()
@@ -179,7 +193,8 @@ namespace Servy.ViewModels
                     ProcessPath,    // real exe path
                     StartupDirectory,
                     ProcessParameters,
-                    type
+                    type,
+                    SelectedProcessPriority
                 );
 
                 if (success)
@@ -303,29 +318,8 @@ namespace Servy.ViewModels
             StartupDirectory = string.Empty;
             ProcessParameters = string.Empty;
             SelectedStartupType = StartupTypes[0];
+            SelectedProcessPriority = ProcessPriority.Normal;
         }
 
-        private void SwitchLanguage(string lang)
-        {
-            try
-            {
-                Thread.CurrentThread.CurrentUICulture = new CultureInfo(lang);
-                Thread.CurrentThread.CurrentCulture = new CultureInfo(lang);
-                System.Windows.MessageBox.Show("Language changed. Please restart the app.", "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-            }
-            catch
-            {
-                System.Windows.MessageBox.Show("Failed to switch language.", "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
-            }
-        }
-
-        public void ApplyLanguage(CultureInfo culture)
-        {
-            _culture = culture;
-            Thread.CurrentThread.CurrentUICulture = culture;
-            Thread.CurrentThread.CurrentCulture = culture;
-
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
-        }
     }
 }

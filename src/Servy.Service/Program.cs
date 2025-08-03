@@ -5,7 +5,7 @@ namespace Servy.Service
     internal static class Program
     {
         /// <summary>
-        /// Point d'entrée principal de l'application.
+        /// Main entry point of the application.
         /// </summary>
         static void Main()
         {

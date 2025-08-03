@@ -96,6 +96,7 @@ namespace Servy.Core
         /// <param name="workingDirectory">The working directory to use when launching the real executable.</param>
         /// <param name="realArgs">The command line arguments to pass to the real executable.</param>
         /// <param name="startType">The service startup type (Automatic, Manual, Disabled).</param>
+        /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -106,7 +107,8 @@ namespace Servy.Core
             string realExePath,
             string workingDirectory,
             string realArgs,
-            ServiceStartType startType)
+            ServiceStartType startType,
+            ProcessPriority processPriority = ProcessPriority.Normal)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -119,6 +121,7 @@ namespace Servy.Core
             string binPath = string.Join(" ",
                 Quote(wrapperExePath),
                 Quote(realExePath),
+                Quote(processPriority.ToString()),
                 Quote(realArgs),
                 Quote(workingDirectory)
                 );

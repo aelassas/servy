@@ -133,6 +133,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Priority.
+        /// </summary>
+        public static string Label_ProcessPriority {
+            get {
+                return ResourceManager.GetString("Label_ProcessPriority", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service Description.
         /// </summary>
         public static string Label_ServiceDescription {
@@ -273,6 +282,60 @@ namespace Servy.Resources {
         public static string Msg_ValidationError {
             get {
                 return ResourceManager.GetString("Msg_ValidationError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Above Normal.
+        /// </summary>
+        public static string ProcessPriority_AboveNormal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_AboveNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Below Normal.
+        /// </summary>
+        public static string ProcessPriority_BelowNormal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_BelowNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à High.
+        /// </summary>
+        public static string ProcessPriority_High {
+            get {
+                return ResourceManager.GetString("ProcessPriority_High", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Idle.
+        /// </summary>
+        public static string ProcessPriority_Idle {
+            get {
+                return ResourceManager.GetString("ProcessPriority_Idle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Normal (default).
+        /// </summary>
+        public static string ProcessPriority_Normal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_Normal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Real Time (use with caution).
+        /// </summary>
+        public static string ProcessPriority_RealTime {
+            get {
+                return ResourceManager.GetString("ProcessPriority_RealTime", resourceCulture);
             }
         }
         
