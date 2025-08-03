@@ -1,8 +1,10 @@
+[![Build Status](https://aelassas.visualstudio.com/servy/_apis/build/status%2Faelassas.servy?branchName=main)](https://aelassas.visualstudio.com/servy/_build/latest?definitionId=4&branchName=main)
+
 # Servy
 
 **Servy** is a Windows application that allows you to run any executable as a Windows service, using a simple graphical interface.
 
-Built with **WPF (.NET Framework 4.8)**, it provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions — from Windows 7 SP1 to Windows 11.
+Built with **WPF (.NET Framework 4.8)**, it provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions â€” from Windows 7 SP1 to Windows 11.
 
 ## Requirements
 
