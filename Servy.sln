@@ -18,6 +18,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Core", "src\Servy.Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy", "src\Servy\Servy.csproj", "{62C15840-EA09-4150-84BC-E14F0E703A68}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{0E71A643-AAB0-4C79-8B8D-B1F531A46F93}"
+	ProjectSection(SolutionItems) = preProject
+		.github\azure-pipelines.yml = .github\azure-pipelines.yml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
