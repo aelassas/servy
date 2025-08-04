@@ -33,7 +33,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
   - Process Priority (Idle, Below Normal, Normal (default), Above Normal, High, Real Time (use with caution))
   - Custom working directory & parameters
   - stdout/stderr redirection to files with size-based rotation
-  - improved process management by handling orphaned/zombie processes and ensuring resource cleanup
+  - Improved process management by handling orphaned/zombie processes and ensuring resource cleanup
 
 ## How It Works
 
