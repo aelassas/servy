@@ -25,6 +25,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -58,14 +59,12 @@
             <!-- Startup Type -->
             <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding Label_StartupType}" Margin="0,5,10,5"/>
             <ComboBox Grid.Row="5" Grid.Column="1"
+                      ItemsSource="{Binding StartupTypes}"
+                      DisplayMemberPath="DisplayName"
                       SelectedValue="{Binding SelectedStartupType, Mode=TwoWay}"
-                      SelectedValuePath="Content"
+                      SelectedValuePath="StartupType"
                       Margin="0,5"
-                      Grid.ColumnSpan="2">
-                <ComboBoxItem Content="{Binding StartupType_Automatic}"/>
-                <ComboBoxItem Content="{Binding StartupType_Manual}"/>
-                <ComboBoxItem Content="{Binding StartupType_Disabled}"/>
-            </ComboBox>
+                      Grid.ColumnSpan="2" />
 
             <!-- Process Priority -->
             <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding Label_ProcessPriority}" Margin="0,5,10,5"/>
@@ -85,6 +84,8 @@
                 <Button Content="{Binding Button_Stop}" Width="80" Margin="5" Command="{Binding StopCommand}"/>
                 <Button Content="{Binding Button_Restart}" Width="80" Margin="5" Command="{Binding RestartCommand}"/>
             </StackPanel>
+
+            <TextBlock Grid.Row="8" Grid.ColumnSpan="3" Text="* Required fields" FontStyle="Italic" Foreground="Gray"/>
         </Grid>
     </DockPanel>
 </Window>

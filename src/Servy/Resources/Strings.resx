@@ -20,13 +20,13 @@
 
   <!-- Labels -->
   <data name="Label_ServiceName" xml:space="preserve">
-    <value>Service Name</value>
+    <value>Service Name *</value>
   </data>
   <data name="Label_ServiceDescription" xml:space="preserve">
     <value>Service Description</value>
   </data>
   <data name="Label_ProcessPath" xml:space="preserve">
-    <value>Process Path</value>
+    <value>Process Path *</value>
   </data>
   <data name="Label_StartupDirectory" xml:space="preserve">
     <value>Startup Directory</value>
@@ -40,7 +40,7 @@
     <value>Startup Type</value>
   </data>
   <data name="StartupType_Automatic" xml:space="preserve">
-    <value>Automatic</value>
+    <value>Automatic (default)</value>
   </data>
   <data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>

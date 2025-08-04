@@ -44,9 +44,9 @@ namespace Servy.Service
                 }
 
                 var realExePath = fullArgs[1];
-                var priority = fullArgs.Length > 2 && Enum.TryParse<ProcessPriorityClass>(fullArgs[2], ignoreCase: true, out var p) ? p : ProcessPriorityClass.Normal;
-                var realArgs = fullArgs.Length > 3 ? fullArgs[3] : string.Empty;
-                var workingDir = fullArgs.Length > 4 ? fullArgs[4] : string.Empty;
+                var realArgs = fullArgs.Length > 2 ? fullArgs[2] : string.Empty;
+                var workingDir = fullArgs.Length > 3 ? fullArgs[3] : string.Empty;
+                var priority = fullArgs.Length > 4 && Enum.TryParse<ProcessPriorityClass>(fullArgs[4], ignoreCase: true, out var p) ? p : ProcessPriorityClass.Normal;
 
                 if (!File.Exists(realExePath))
                 {
@@ -62,10 +62,10 @@ namespace Servy.Service
                     _eventLog?.WriteEntry($"Working directory fallback applied: {workingDir}", EventLogEntryType.Warning);
                 }
 
-                _eventLog?.WriteEntry($"[priority] {priority}");
                 _eventLog?.WriteEntry($"[realExePath] {realExePath}");
                 _eventLog?.WriteEntry($"[realArgs] {realArgs}");
                 _eventLog?.WriteEntry($"[workingDir] {workingDir}");
+                _eventLog?.WriteEntry($"[priority] {priority}");
 
                 var psi = new ProcessStartInfo
                 {

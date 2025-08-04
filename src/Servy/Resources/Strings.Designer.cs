@@ -124,7 +124,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Process Path.
+        ///   Recherche une chaîne localisée semblable à Process Path *.
         /// </summary>
         public static string Label_ProcessPath {
             get {
@@ -151,7 +151,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service Name.
+        ///   Recherche une chaîne localisée semblable à Service Name *.
         /// </summary>
         public static string Label_ServiceName {
             get {
@@ -358,7 +358,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Automatic.
+        ///   Recherche une chaîne localisée semblable à Automatic (default).
         /// </summary>
         public static string StartupType_Automatic {
             get {

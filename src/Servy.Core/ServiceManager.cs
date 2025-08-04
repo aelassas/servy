@@ -26,15 +26,12 @@ namespace Servy.Core
     {
         private const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
         private const uint SERVICE_ERROR_NORMAL = 0x00000001;
-
         private const uint SC_MANAGER_ALL_ACCESS = 0xF003F;
-
         private const uint SERVICE_QUERY_CONFIG = 0x0001;
         private const uint SERVICE_CHANGE_CONFIG = 0x0002;
         private const uint SERVICE_START = 0x0010;
         private const uint SERVICE_STOP = 0x0020;
         private const uint SERVICE_DELETE = 0x00010000;
-
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -124,9 +121,9 @@ namespace Servy.Core
             string binPath = string.Join(" ",
                 Quote(wrapperExePath),
                 Quote(realExePath),
-                Quote(processPriority.ToString()),
                 Quote(realArgs),
-                Quote(workingDirectory)
+                Quote(workingDirectory),
+                Quote(processPriority.ToString())
                 );
 
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -184,7 +181,7 @@ namespace Servy.Core
         /// <returns></returns>
         static string Quote(string input)
         {
-            return $"\"{input.Replace("\"", "\\\"")}\"";
+            return $"\"{input.Trim('"', '\\')}\"";
         }
 
         /// <summary>

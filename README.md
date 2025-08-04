@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=3" height="300">
+    <img src="https://servy-win.github.io/servy.png?d=4" height="300">
   </a>
 </p>
 

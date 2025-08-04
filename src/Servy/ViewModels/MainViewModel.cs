@@ -25,7 +25,7 @@ namespace Servy.ViewModels
         private string _processPath;
         private string _startupDirectory;
         private string _processParameters;
-        private string _selectedStartupType;
+        private ServiceStartType _selectedStartupType;
         private ProcessPriority _selectedProcessPriority;
 
         public string ServiceName
@@ -58,7 +58,7 @@ namespace Servy.ViewModels
             set { _processParameters = value; OnPropertyChanged(); }
         }
 
-        public string SelectedStartupType
+        public ServiceStartType SelectedStartupType
         {
             get => _selectedStartupType;
             set { _selectedStartupType = value; OnPropertyChanged(); }
@@ -71,7 +71,12 @@ namespace Servy.ViewModels
             set { _selectedProcessPriority = value; OnPropertyChanged(); }
         }
 
-        public string[] StartupTypes { get; } = new[] { "Automatic", "Manual", "Disabled" };
+        public List<StartupTypeItem> StartupTypes { get; } = new List<StartupTypeItem>
+        {
+            new StartupTypeItem { StartupType = ServiceStartType.Automatic, DisplayName = Strings.StartupType_Automatic },
+            new StartupTypeItem { StartupType = ServiceStartType.Manual, DisplayName = Strings.StartupType_Manual },
+            new StartupTypeItem { StartupType = ServiceStartType.Disabled, DisplayName = Strings.StartupType_Disabled },
+        };
 
         public List<ProcessPriorityItem> ProcessPriorities { get; } = new List<ProcessPriorityItem>
         {
@@ -128,7 +133,7 @@ namespace Servy.ViewModels
             _processPath = string.Empty;
             _startupDirectory = string.Empty;
             _processParameters = string.Empty;
-            _selectedStartupType = StartupTypes[0]; // Default to Automatic startup type
+            _selectedStartupType = ServiceStartType.Automatic; // Default to Automatic startup type
             _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
 
             InstallCommand = new RelayCommand(InstallService);
@@ -141,9 +146,7 @@ namespace Servy.ViewModels
 
         private void InstallService()
         {
-            if (string.IsNullOrWhiteSpace(ServiceName)
-                || string.IsNullOrWhiteSpace(ProcessPath)
-                || string.IsNullOrWhiteSpace(SelectedStartupType))
+            if (string.IsNullOrWhiteSpace(ServiceName) || string.IsNullOrWhiteSpace(ProcessPath))
             {
                 System.Windows.MessageBox.Show(Strings.Msg_ValidationError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 return;
@@ -163,28 +166,10 @@ namespace Servy.ViewModels
                 return;
             }
 
-            if(!Directory.Exists(StartupDirectory))
+            if (!string.IsNullOrWhiteSpace(StartupDirectory) && !Directory.Exists(StartupDirectory))
             {
                 System.Windows.MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 return;
-            }
-
-            ServiceStartType type;
-
-            switch (SelectedStartupType)
-            {
-                case "Automatic":
-                    type = ServiceStartType.Automatic;
-                    break;
-                case "Manual":
-                    type = ServiceStartType.Manual;
-                    break;
-                case "Disabled":
-                    type = ServiceStartType.Disabled;
-                    break;
-                default:
-                    type = ServiceStartType.Manual;
-                    break;
             }
 
             try
@@ -196,7 +181,7 @@ namespace Servy.ViewModels
                     ProcessPath,    // real exe path
                     StartupDirectory,
                     ProcessParameters,
-                    type,
+                    SelectedStartupType,
                     SelectedProcessPriority
                 );
 
@@ -320,7 +305,7 @@ namespace Servy.ViewModels
             ProcessPath = string.Empty;
             StartupDirectory = string.Empty;
             ProcessParameters = string.Empty;
-            SelectedStartupType = StartupTypes[0];
+            SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
         }
 
