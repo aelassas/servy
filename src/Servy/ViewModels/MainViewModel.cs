@@ -192,7 +192,7 @@ namespace Servy.ViewModels
                 return;
             }
 
-            if (!File.Exists(ProcessPath))
+            if (!Helper.IsValidPath(ProcessPath) || !File.Exists(ProcessPath))
             {
                 MessageBox.Show(Strings.Msg_InvalidPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -206,7 +206,7 @@ namespace Servy.ViewModels
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(StartupDirectory) && !Directory.Exists(StartupDirectory))
+            if (!string.IsNullOrWhiteSpace(StartupDirectory) && (!Helper.IsValidPath(StartupDirectory) || !Directory.Exists(StartupDirectory)))
             {
                 MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;

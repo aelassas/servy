@@ -16,6 +16,11 @@ namespace Servy.Core
                 return false;
             }
 
+            if (path.Contains("..")) // no directory traversal
+            {
+                return false;
+            }
+
             try
             {
                 // Check for invalid characters
