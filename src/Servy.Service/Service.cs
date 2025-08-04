@@ -75,7 +75,7 @@ namespace Servy.Service
                 var stderrRotationEnabled = !string.IsNullOrEmpty(stderrFilePath);
 
                 // Validate executable path existence
-                if (!File.Exists(realExePath))
+                if (!Helper.IsValidPath(realExePath) || !File.Exists(realExePath))
                 {
                     _eventLog?.WriteEntry($"Executable not found: {realExePath}", EventLogEntryType.Error);
                     Stop();
@@ -83,7 +83,11 @@ namespace Servy.Service
                 }
 
                 // Validate or fallback working directory
-                if (string.IsNullOrWhiteSpace(workingDir) || !Directory.Exists(workingDir))
+                var invalidWorkingDir = string.IsNullOrWhiteSpace(workingDir)
+                    || !Helper.IsValidPath(workingDir)
+                    || !Directory.Exists(workingDir);
+
+                if (invalidWorkingDir)
                 {
                     var system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
                     workingDir = Path.GetDirectoryName(realExePath) ?? system32;

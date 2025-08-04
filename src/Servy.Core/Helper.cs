@@ -46,5 +46,38 @@ namespace Servy.Core
             }
         }
 
+        /// <summary>
+        /// Ensures the parent directory of the given file path exists, creating it if necessary.
+        /// </summary>
+        /// <param name="path">The full file path.</param>
+        /// <returns>True if the directory exists or was created successfully; false otherwise.</returns>
+        public static bool CreateParentDirectory(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            try
+            {
+                var directory = Path.GetDirectoryName(path);
+                if (string.IsNullOrWhiteSpace(directory))
+                {
+                    return false;
+                }
+
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
     }
 }

@@ -212,13 +212,13 @@ namespace Servy.ViewModels
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(StdoutPath) && !Helper.IsValidPath(StdoutPath))
+            if (!string.IsNullOrWhiteSpace(StdoutPath) && (!Helper.IsValidPath(StdoutPath) || !Helper.CreateParentDirectory(StdoutPath)))
             {
                 MessageBox.Show(Strings.Msg_InvalidStdoutPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(StderrPath) && !Helper.IsValidPath(StderrPath))
+            if (!string.IsNullOrWhiteSpace(StderrPath) && (!Helper.IsValidPath(StderrPath) || !Helper.CreateParentDirectory(StderrPath)))
             {
                 MessageBox.Show(Strings.Msg_InvalidStderrPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
