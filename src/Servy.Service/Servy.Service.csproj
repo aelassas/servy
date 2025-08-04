@@ -56,5 +56,11 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
+      <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
+      <Name>Servy.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

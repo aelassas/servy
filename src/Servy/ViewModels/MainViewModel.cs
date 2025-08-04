@@ -20,6 +20,8 @@ namespace Servy.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
+
         private string _serviceName;
         private string _serviceDescription;
         private string _processPath;
@@ -27,6 +29,10 @@ namespace Servy.ViewModels
         private string _processParameters;
         private ServiceStartType _selectedStartupType;
         private ProcessPriority _selectedProcessPriority;
+        private string _stdoutPath;
+        private string _stderrPath;
+        private bool _enableRotation;
+        private int _rotationSize;
 
         public string ServiceName
         {
@@ -88,6 +94,30 @@ namespace Servy.ViewModels
             new ProcessPriorityItem { Priority = ProcessPriority.RealTime, DisplayName = Strings.ProcessPriority_RealTime },
         };
 
+        public string StdoutPath
+        {
+            get => _stdoutPath;
+            set { _stdoutPath = value; OnPropertyChanged(); }
+        }
+
+        public string StderrPath
+        {
+            get => _stderrPath;
+            set { _stderrPath = value; OnPropertyChanged(); }
+        }
+
+        public bool EnableRotation
+        {
+            get => _enableRotation;
+            set { _enableRotation = value; OnPropertyChanged(); }
+        }
+
+        public int RotationSize
+        {
+            get => _rotationSize;
+            set { _rotationSize = value; OnPropertyChanged(); }
+        }
+
         public ICommand InstallCommand { get; }
         public ICommand UninstallCommand { get; }
         public ICommand StartCommand { get; }
@@ -118,6 +148,12 @@ namespace Servy.ViewModels
         public string ProcessPriority_High => _resourceManager.GetString(nameof(ProcessPriority_High), _culture) ?? string.Empty;
         public string ProcessPriority_RealTime => _resourceManager.GetString(nameof(ProcessPriority_RealTime), _culture) ?? string.Empty;
 
+        public string Label_StdoutPath => _resourceManager.GetString(nameof(Label_StdoutPath), _culture) ?? string.Empty;
+        public string Label_StderrPath => _resourceManager.GetString(nameof(Label_StderrPath), _culture) ?? string.Empty;
+        public string Label_EnableRotation => _resourceManager.GetString(nameof(Label_EnableRotation), _culture) ?? string.Empty;
+        public string Label_RotationSize => _resourceManager.GetString(nameof(Label_RotationSize), _culture) ?? string.Empty;
+        public string Label_RotationSizeUnity => _resourceManager.GetString(nameof(Label_RotationSizeUnity), _culture) ?? string.Empty;
+
         public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
         public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
         public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
@@ -135,6 +171,8 @@ namespace Servy.ViewModels
             _processParameters = string.Empty;
             _selectedStartupType = ServiceStartType.Automatic; // Default to Automatic startup type
             _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
+            _enableRotation = false; // Default to no rotation
+            _rotationSize = DefaultRotationSize; // Default to 10 MB rotation size
 
             InstallCommand = new RelayCommand(InstallService);
             UninstallCommand = new RelayCommand(UninstallService);
@@ -158,7 +196,7 @@ namespace Servy.ViewModels
                 return;
             }
 
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
 
             if (!File.Exists(wrapperExePath))
             {
@@ -172,17 +210,32 @@ namespace Servy.ViewModels
                 return;
             }
 
+            if (!string.IsNullOrWhiteSpace(StdoutPath) && !Helper.IsValidPath(StdoutPath))
+            {
+                System.Windows.MessageBox.Show(Strings.Msg_InvalidStdoutPath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(StderrPath) && !Helper.IsValidPath(StderrPath))
+            {
+                System.Windows.MessageBox.Show(Strings.Msg_InvalidStderrPath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
             try
             {
                 var success = ServiceManager.InstallService(
-                    ServiceName,
-                    ServiceDescription,
-                    wrapperExePath, // wrapper exe
-                    ProcessPath,    // real exe path
-                    StartupDirectory,
-                    ProcessParameters,
-                    SelectedStartupType,
-                    SelectedProcessPriority
+                    ServiceName,                      // service name
+                    ServiceDescription,               // service description
+                    wrapperExePath,                   // wrapper exe
+                    ProcessPath,                      // real exe path
+                    StartupDirectory,                 // startup directory
+                    ProcessParameters,                // process parameters
+                    SelectedStartupType,              // startup type
+                    SelectedProcessPriority,          // process priority
+                    StdoutPath,                       // standard output path 
+                    StderrPath,                       // standard error path
+                    EnableRotation ? RotationSize : 0 // rotation size in bytes, O if rotation is disabled
                 );
 
                 if (success)
@@ -307,6 +360,10 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
+            EnableRotation = false;
+            RotationSize = DefaultRotationSize; 
+            StdoutPath = string.Empty;
+            StderrPath = string.Empty;
         }
 
     }

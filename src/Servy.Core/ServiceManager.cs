@@ -94,6 +94,9 @@ namespace Servy.Core
         /// <param name="realArgs">The command line arguments to pass to the real executable.</param>
         /// <param name="startType">The service startup type (Automatic, Manual, Disabled).</param>
         /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
+        /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
+        /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
+        /// <param name="rotationSizeInBytes">Optional size in bytes for log rotation. If 0, no rotation is performed.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -105,7 +108,11 @@ namespace Servy.Core
             string workingDirectory,
             string realArgs,
             ServiceStartType startType,
-            ProcessPriority processPriority = ProcessPriority.Normal)
+            ProcessPriority processPriority,
+            string stdoutPath,
+            string stderrPath,
+            int rotationSizeInBytes
+            )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -120,7 +127,10 @@ namespace Servy.Core
                 Quote(realExePath),
                 Quote(realArgs),
                 Quote(workingDirectory),
-                Quote(processPriority.ToString())
+                Quote(processPriority.ToString()),
+                Quote(stdoutPath),
+                Quote(stderrPath),
+                Quote(rotationSizeInBytes.ToString())
                 );
 
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -178,7 +188,11 @@ namespace Servy.Core
         /// <returns></returns>
         static string Quote(string input)
         {
-            return $"\"{input.Trim('"', '\\')}\"";
+            if (string.IsNullOrEmpty(input))
+                return "\"\"";
+
+            input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');
+            return $"\"{input}\"";
         }
 
         /// <summary>

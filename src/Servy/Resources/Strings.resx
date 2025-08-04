@@ -72,6 +72,23 @@
     <value>Real Time (use with caution)</value>
   </data>
 
+  <!-- I/O redirection -->
+  <data name="Label_StdoutPath" xml:space="preserve">
+    <value>Stdout File Path</value>
+  </data>
+  <data name="Label_StderrPath" xml:space="preserve">
+    <value>Stderr File Path</value>
+  </data>
+  <data name="Label_EnableRotation" xml:space="preserve">
+    <value>Enable File Rotation</value>
+  </data>
+  <data name="Label_RotationSize" xml:space="preserve">
+    <value>Rotation Size</value>
+  </data>
+  <data name="Label_RotationSizeUnity" xml:space="preserve">
+    <value>bytes</value>
+  </data>
+
   <!-- Buttons -->
   <data name="Button_Install" xml:space="preserve">
     <value>Install</value>
@@ -105,6 +122,14 @@
   <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
     <value>The specified startup directory is invalid.</value>
   </data>
+
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>The specified stdout file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>The specified stderr file path is invalid.</value>
+  </data>
+  
   <data name="Msg_ServiceCreated" xml:space="preserve">
     <value>Service was created successfully.</value>
   </data>

@@ -115,6 +115,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable File Rotation.
+        /// </summary>
+        public static string Label_EnableRotation {
+            get {
+                return ResourceManager.GetString("Label_EnableRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Process Parameters.
         /// </summary>
         public static string Label_ProcessParameters {
@@ -138,6 +147,24 @@ namespace Servy.Resources {
         public static string Label_ProcessPriority {
             get {
                 return ResourceManager.GetString("Label_ProcessPriority", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Rotation Size.
+        /// </summary>
+        public static string Label_RotationSize {
+            get {
+                return ResourceManager.GetString("Label_RotationSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à bytes.
+        /// </summary>
+        public static string Label_RotationSizeUnity {
+            get {
+                return ResourceManager.GetString("Label_RotationSizeUnity", resourceCulture);
             }
         }
         
@@ -174,6 +201,24 @@ namespace Servy.Resources {
         public static string Label_StartupType {
             get {
                 return ResourceManager.GetString("Label_StartupType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stderr File Path.
+        /// </summary>
+        public static string Label_StderrPath {
+            get {
+                return ResourceManager.GetString("Label_StderrPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stdout File Path.
+        /// </summary>
+        public static string Label_StdoutPath {
+            get {
+                return ResourceManager.GetString("Label_StdoutPath", resourceCulture);
             }
         }
         
@@ -228,6 +273,24 @@ namespace Servy.Resources {
         public static string Msg_InvalidStartupDirectory {
             get {
                 return ResourceManager.GetString("Msg_InvalidStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified stderr file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidStderrPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStderrPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified stdout file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidStdoutPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStdoutPath", resourceCulture);
             }
         }
         

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,8 @@ namespace Servy.Service
     {
         private Process _childProcess;
         private EventLog _eventLog;
+        private RotatingStreamWriter _stdoutWriter;
+        private RotatingStreamWriter _stderrWriter;
 
         public Service()
         {
@@ -48,6 +51,12 @@ namespace Servy.Service
                 var workingDir = fullArgs.Length > 3 ? fullArgs[3] : string.Empty;
                 var priority = fullArgs.Length > 4 && Enum.TryParse<ProcessPriorityClass>(fullArgs[4], ignoreCase: true, out var p) ? p : ProcessPriorityClass.Normal;
 
+                var stdoutFilePath = fullArgs.Length > 5 ? fullArgs[5] : string.Empty;
+                var stderrFilePath = fullArgs.Length > 6 ? fullArgs[6] : string.Empty;
+                var rotationSizeInBytes = fullArgs.Length > 7 && int.TryParse(fullArgs[7], out var rsb) ? rsb : 0; // O means no rotation
+                var stdoutRotationEnabled = !string.IsNullOrEmpty(stdoutFilePath);
+                var stderrRotationEnabled = !string.IsNullOrEmpty(stderrFilePath);
+
                 if (!File.Exists(realExePath))
                 {
                     _eventLog?.WriteEntry($"Executable not found: {realExePath}", EventLogEntryType.Error);
@@ -62,10 +71,36 @@ namespace Servy.Service
                     _eventLog?.WriteEntry($"Working directory fallback applied: {workingDir}", EventLogEntryType.Warning);
                 }
 
+                if (!string.IsNullOrWhiteSpace(stdoutFilePath) && !Helper.IsValidPath(stdoutFilePath))
+                {
+                    _eventLog?.WriteEntry($"Invalid stdout file path: {stdoutFilePath}", EventLogEntryType.Error);
+                    stdoutRotationEnabled = false;
+                }
+
+                if (!string.IsNullOrWhiteSpace(stderrFilePath) && !Helper.IsValidPath(stdoutFilePath))
+                {
+                    _eventLog?.WriteEntry($"Invalid stderr file path: {stderrFilePath}", EventLogEntryType.Error);
+                    stderrRotationEnabled = false;
+                }
+
                 _eventLog?.WriteEntry($"[realExePath] {realExePath}");
                 _eventLog?.WriteEntry($"[realArgs] {realArgs}");
                 _eventLog?.WriteEntry($"[workingDir] {workingDir}");
                 _eventLog?.WriteEntry($"[priority] {priority}");
+                _eventLog?.WriteEntry($"[stdoutFilePath] {stdoutFilePath}");
+                _eventLog?.WriteEntry($"[stderrFilePath] {stderrFilePath}");
+                _eventLog?.WriteEntry($"[rotationSizeInBytes] {rotationSizeInBytes}");
+
+
+                if (stdoutRotationEnabled)
+                {
+                    _stdoutWriter = new RotatingStreamWriter(stdoutFilePath, rotationSizeInBytes);
+                }
+
+                if (stderrRotationEnabled)
+                {
+                    _stderrWriter = new RotatingStreamWriter(stderrFilePath, rotationSizeInBytes);
+                }
 
                 var psi = new ProcessStartInfo
                 {
@@ -80,18 +115,19 @@ namespace Servy.Service
 
                 _childProcess = new Process { StartInfo = psi };
 
-                //_childProcess.OutputDataReceived += (sender, e) =>
-                //{
-                //    if (!string.IsNullOrWhiteSpace(e.Data))
-                //    {
-                //        _eventLog?.WriteEntry($"[Output] {e.Data}", EventLogEntryType.Information);
-                //    }
-                //};
+                _childProcess.OutputDataReceived += (sender, e) =>
+                {
+                    if (!string.IsNullOrWhiteSpace(e.Data))
+                    {
+                        _stdoutWriter?.WriteLine(e.Data);
+                    }
+                };
 
                 _childProcess.ErrorDataReceived += (sender, e) =>
                 {
                     if (!string.IsNullOrWhiteSpace(e.Data))
                     {
+                        _stderrWriter?.WriteLine(e.Data);
                         _eventLog?.WriteEntry($"[Error] {e.Data}", EventLogEntryType.Error);
                     }
                 };
@@ -130,7 +166,7 @@ namespace Servy.Service
                 _childProcess.BeginOutputReadLine();
                 _childProcess.BeginErrorReadLine();
 
-                _eventLog?.WriteEntry("Started wrapped process.");
+                _eventLog?.WriteEntry("Started child process.");
             }
             catch (Exception ex)
             {
@@ -141,6 +177,18 @@ namespace Servy.Service
 
         protected override void OnStop()
         {
+            try
+            {
+                _stdoutWriter?.Dispose();
+                _stderrWriter?.Dispose();
+                _stdoutWriter = null;
+                _stderrWriter = null;
+            }
+            catch (Exception ex)
+            {
+                _eventLog?.WriteEntry($"Failed to dispose output writers: {ex.Message}", EventLogEntryType.Warning);
+            }
+
             if (_childProcess != null && !_childProcess.HasExited)
             {
                 try
@@ -159,7 +207,8 @@ namespace Servy.Service
                 }
             }
 
-            _eventLog?.WriteEntry("Stopped wrapped process.");
+            _eventLog?.WriteEntry("Stopped child process.");
         }
+
     }
 }
