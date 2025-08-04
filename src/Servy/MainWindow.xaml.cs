@@ -50,7 +50,7 @@ namespace Servy
         private void BrowseStdoutPath_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+            dlg.Filter = "All files (*.*)|*.*";
             dlg.Title = "Select standard output file";
             if (dlg.ShowDialog() == true)
             {
@@ -64,8 +64,8 @@ namespace Servy
         private void BrowseStderrPath_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-            dlg.Title = "Select standard output file";
+            dlg.Filter = "All files (*.*)|*.*";
+            dlg.Title = "Select standard error file";
             if (dlg.ShowDialog() == true)
             {
                 if (DataContext is MainViewModel vm)

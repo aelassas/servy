@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Resources;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Servy.ViewModels
@@ -21,6 +22,7 @@ namespace Servy.ViewModels
         }
 
         private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
+        private const int MinRotationSize = 1 * 1024 * 1024; // 1 MB
 
         private string _serviceName;
         private string _serviceDescription;
@@ -32,7 +34,7 @@ namespace Servy.ViewModels
         private string _stdoutPath;
         private string _stderrPath;
         private bool _enableRotation;
-        private int _rotationSize;
+        private string _rotationSize;
 
         public string ServiceName
         {
@@ -112,7 +114,7 @@ namespace Servy.ViewModels
             set { _enableRotation = value; OnPropertyChanged(); }
         }
 
-        public int RotationSize
+        public string RotationSize
         {
             get => _rotationSize;
             set { _rotationSize = value; OnPropertyChanged(); }
@@ -172,7 +174,7 @@ namespace Servy.ViewModels
             _selectedStartupType = ServiceStartType.Automatic; // Default to Automatic startup type
             _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
             _enableRotation = false; // Default to no rotation
-            _rotationSize = DefaultRotationSize; // Default to 10 MB rotation size
+            _rotationSize = DefaultRotationSize.ToString(); // Default to 10 MB rotation size
 
             InstallCommand = new RelayCommand(InstallService);
             UninstallCommand = new RelayCommand(UninstallService);
@@ -186,13 +188,13 @@ namespace Servy.ViewModels
         {
             if (string.IsNullOrWhiteSpace(ServiceName) || string.IsNullOrWhiteSpace(ProcessPath))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_ValidationError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                MessageBox.Show(Strings.Msg_ValidationError, "Servy", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!File.Exists(ProcessPath))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_InvalidPath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_InvalidPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
@@ -200,26 +202,36 @@ namespace Servy.ViewModels
 
             if (!File.Exists(wrapperExePath))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_InvalidWrapperExePath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_InvalidWrapperExePath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(StartupDirectory) && !Directory.Exists(StartupDirectory))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(StdoutPath) && !Helper.IsValidPath(StdoutPath))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_InvalidStdoutPath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_InvalidStdoutPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(StderrPath) && !Helper.IsValidPath(StderrPath))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_InvalidStderrPath, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_InvalidStderrPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
+            }
+
+            var rotationSize = 0;
+            if (EnableRotation)
+            {
+                if (!int.TryParse(RotationSize, out rotationSize) || rotationSize < MinRotationSize)
+                {
+                    MessageBox.Show(Strings.Msg_InvalidRotationSize, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
 
             try
@@ -235,25 +247,25 @@ namespace Servy.ViewModels
                     SelectedProcessPriority,          // process priority
                     StdoutPath,                       // standard output path 
                     StderrPath,                       // standard error path
-                    EnableRotation ? RotationSize : 0 // rotation size in bytes, O if rotation is disabled
+                    rotationSize                      // rotation size in bytes, O if rotation is disabled
                 );
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_ServiceCreated, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(Strings.Msg_ServiceCreated, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -261,7 +273,7 @@ namespace Servy.ViewModels
         {
             if (string.IsNullOrWhiteSpace(ServiceName))
             {
-                System.Windows.MessageBox.Show(Strings.Msg_ValidationError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                MessageBox.Show(Strings.Msg_ValidationError, "Servy", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -271,20 +283,20 @@ namespace Servy.ViewModels
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_ServiceRemoved, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(Strings.Msg_ServiceRemoved, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -296,16 +308,16 @@ namespace Servy.ViewModels
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_ServiceStarted, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(Strings.Msg_ServiceStarted, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -317,16 +329,16 @@ namespace Servy.ViewModels
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_ServiceStopped, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(Strings.Msg_ServiceStopped, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -338,16 +350,16 @@ namespace Servy.ViewModels
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_ServiceRestarted, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    MessageBox.Show(Strings.Msg_ServiceRestarted, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception)
             {
-                System.Windows.MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -361,7 +373,7 @@ namespace Servy.ViewModels
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
             EnableRotation = false;
-            RotationSize = DefaultRotationSize; 
+            RotationSize = DefaultRotationSize.ToString();
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
         }

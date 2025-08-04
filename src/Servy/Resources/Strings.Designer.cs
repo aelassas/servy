@@ -268,6 +268,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes)..
+        /// </summary>
+        public static string Msg_InvalidRotationSize {
+            get {
+                return ResourceManager.GetString("Msg_InvalidRotationSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified startup directory is invalid..
         /// </summary>
         public static string Msg_InvalidStartupDirectory {
