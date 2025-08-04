@@ -29,7 +29,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 - Easy-to-use WPF interface
 - Supports:
   - Service name & description
-  - Startup type (Automatic, Manual, Disabled)
+  - Startup type (Automatic (default), Manual, Disabled)
   - Process Priority (Idle, Below Normal, Normal (default), Above Normal, High, Real Time (use with caution))
   - Custom working directory & parameters
 
