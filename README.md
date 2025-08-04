@@ -38,10 +38,10 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 1. **Install** the application using the provided installer.
 2. **Launch Servy** as administrator.
 3. Fill in the service details:
-   - `Service Name`
-   - `Service Description`
-   - `Startup Type`
-   - `Process Path` (path to the executable you want to run)
+   - `Service Name` (required)
+   - `Service Description` (optional)
+   - `Startup Type` (optional)
+   - `Process Path` (required - path to the executable you want to run)
    - `Startup Directory` (optional - Working directory for the process. Defaults to the executable's directory if not specified.)
    - `Process Parameters` (optional)
    - `Process Priority` (optional)
