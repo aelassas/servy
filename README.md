@@ -48,7 +48,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
    - `Process Priority` (optional)
    - `Stdout File Path` (optional)
    - `Stderr File Path` (optional)
-   - `Rotation Size` (optional - in bytes)
+   - `Rotation Size` (optional - in bytes, minimum value is 1 MB (1,048,576 bytes), default value is 10MB)
 4. Click **Install** to register the service.
 5. Start or stop the service directly from Windows Services or any management tool.
 
