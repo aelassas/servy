@@ -1,9 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Resources;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Security.Policy;
 using System.ServiceProcess;
 using System.Threading;
 
