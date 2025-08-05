@@ -76,5 +76,22 @@ namespace Servy.Core.UnitTests
             bool result = Helper.CreateParentDirectory(invalidPath);
             Assert.False(result);
         }
+
+        [Theory]
+        [InlineData(null, "\"\"")]
+        [InlineData("", "\"\"")]
+        [InlineData("abc", "\"abc\"")]
+        [InlineData("\"abc\"", "\"abc\"")]
+        [InlineData("\"abc\\\"", "\"abc\"")]
+        [InlineData("abc\\", "\"abc\"")]
+        [InlineData("\"abc\\\\\"", "\"abc\"")]
+        public void Quote_Input_ReturnsExpected(string input, string expected)
+        {
+            // Act
+            var result = Helper.Quote(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
     }
 }

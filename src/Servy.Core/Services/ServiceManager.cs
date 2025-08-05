@@ -100,19 +100,19 @@ namespace Servy.Core
 
             // Compose the binary path with the wrapper exe and the parameters for the real exe and working directory
             string binPath = string.Join(" ",
-                Quote(wrapperExePath),
-                Quote(realExePath),
-                Quote(realArgs),
-                Quote(workingDirectory),
-                Quote(processPriority.ToString()),
-                Quote(stdoutPath),
-                Quote(stderrPath),
-                Quote(rotationSizeInBytes.ToString()),
-                Quote(heartbeatInterval.ToString()),
-                Quote(maxFailedChecks.ToString()),
-                Quote(recoveryAction.ToString()),
-                Quote(serviceName),
-                Quote(maxRestartAttempts.ToString())
+                Helper.Quote(wrapperExePath),
+                Helper.Quote(realExePath),
+                Helper.Quote(realArgs),
+                Helper.Quote(workingDirectory),
+                Helper.Quote(processPriority.ToString()),
+                Helper.Quote(stdoutPath),
+                Helper.Quote(stderrPath),
+                Helper.Quote(rotationSizeInBytes.ToString()),
+                Helper.Quote(heartbeatInterval.ToString()),
+                Helper.Quote(maxFailedChecks.ToString()),
+                Helper.Quote(recoveryAction.ToString()),
+                Helper.Quote(serviceName),
+                Helper.Quote(maxRestartAttempts.ToString())
                 );
 
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -161,20 +161,6 @@ namespace Servy.Core
                 if (scmHandle != IntPtr.Zero)
                     CloseServiceHandle(scmHandle);
             }
-        }
-
-        /// <summary>
-        /// Quotes a string.
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private string Quote(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return "\"\"";
-
-            input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');
-            return $"\"{input}\"";
         }
 
         /// <summary>

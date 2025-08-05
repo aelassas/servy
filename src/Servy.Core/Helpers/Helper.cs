@@ -79,5 +79,19 @@ namespace Servy.Core
             }
         }
 
+        /// <summary>
+        /// Quotes a string.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string Quote(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return "\"\"";
+
+            input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');
+            return $"\"{input}\"";
+        }
+
     }
 }
