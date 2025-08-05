@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore NuGet packages
+        run: nuget restore Servy.sln
+
+      - name: Build test project
+        run: msbuild tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj /p:Configuration=Release
+
+      - name: Run tests
+        run: |
+          vstest.console.exe tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll
