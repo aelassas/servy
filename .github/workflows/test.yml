@@ -25,14 +25,44 @@ jobs:
       - name: Build solution
         run: msbuild Servy.sln /p:Configuration=Release
 
-      - name: Run Servy.Core.UnitTests
-        run: |
-         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll"
+      - name: Install coverlet.console
+        run: dotnet tool install --global coverlet.console
 
-      - name: Run Servy.Restarter.UnitTests
+      - name: Run Servy.Core.UnitTests with coverage
         run: |
-         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll"
+          coverlet "tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll" `
+            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs:"tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll" `
+            --format cobertura `
+            --exclude "[Servy]*" `
+            --output "coverage/Servy.Core.UnitTests.xml"
 
-      - name: Run Servy.Service.UnitTests
+      - name: Run Servy.Restarter.UnitTests with coverage
         run: |
-         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Service.UnitTests/bin/Release/Servy.Service.UnitTests.dll"
+          coverlet "tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll" `
+            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs:"tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll" `
+            --format cobertura `
+            --exclude "[Servy]*" `
+            --output "coverage/Servy.Restarter.UnitTests.xml"
+
+      - name: Run Servy.Service.UnitTests with coverage
+        run: |
+          coverlet "tests/Servy.Service.UnitTests/bin/Release/Servy.Service.UnitTests.dll" `
+            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs:"tests/Servy.Service.UnitTests/bin/Release/Servy.Service.UnitTests.dll" `
+            --format cobertura `
+            --exclude "[Servy]*" `
+            --output "coverage/Servy.Service.UnitTests.xml"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # Only required for private repositories
+          files: |
+            coverage/Servy.Core.UnitTests.xml
+            coverage/Servy.Restarter.UnitTests.xml
+            coverage/Servy.Service.UnitTests.xml
+          flags: unittests
+          name: codecov-coverage-report
+          fail_ci_if_error: true
