@@ -59,10 +59,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: |
-            coverage/Servy.Core.UnitTests.xml
-            coverage/Servy.Restarter.UnitTests.xml
-            coverage/Servy.Service.UnitTests.xml
+          files: coverage/Servy.Core.UnitTests.xml,coverage/Servy.Restarter.UnitTests.xml,coverage/Servy.Service.UnitTests.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: true
