@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=5">
+    <img src="https://servy-win.github.io/servy.png?d=6">
   </a>
 </p>
 
@@ -34,6 +34,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
   - Custom working directory & parameters
   - stdout/stderr redirection to files with size-based rotation
   - Improved process management by handling orphaned/zombie processes and ensuring resource cleanup
+  - Health monitoring and automatic service recovery
 
 ## How It Works
 
@@ -50,15 +51,25 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
    - `Stdout File Path` (optional)
    - `Stderr File Path` (optional)
    - `Rotation Size` (optional - in bytes, minimum value is 1 MB (1,048,576 bytes), default value is 10MB)
+   - `Heartbeat Interval` (optional - Interval between health checks of the child process, default value is 30 seconds)
+   - `Max Failed Checks` (optional - Number of consecutive failed health checks before triggering the recovery action, default value is 3 attempts)
+   - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
+   - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
 5. Start or stop the service directly from Windows Services or any management tool.
 
 ## Architecture
 
-- `Servy.exe`: WPF frontend application (.NET Framework 4.8)
-- `Servy.Service.exe`: Companion Windows Service used to wrap and run the target process
+- **`Servy.exe`**: WPF frontend application built with .NET Framework 4.8  
+  Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
-The WPF app handles user input and creates/manages the Windows service. The background service launches the specified process with the given settings.
+- **`Servy.Service.exe`**: Windows Service that runs in the background  
+  Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
+
+- **`Servy.Restarter.exe`**: Lightweight utility used to restart a Windows service  
+  Invoked as part of the *Restart Service* recovery action when a failure is detected.
+
+Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
 
 ## Installation
 
