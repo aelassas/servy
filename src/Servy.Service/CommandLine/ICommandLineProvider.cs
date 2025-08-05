@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Servy.Service
+﻿namespace Servy.Service
 {
+    /// <summary>
+    /// Provides access to command-line arguments for the service.
+    /// </summary>
     public interface ICommandLineProvider
     {
+        /// <summary>
+        /// Retrieves the command-line arguments passed to the process.
+        /// </summary>
+        /// <returns>An array of command-line arguments.</returns>
         string[] GetArgs();
     }
 }

@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace Servy.Service
+﻿namespace Servy.Service
 {
     /// <summary>
     /// Defines methods to assist with service startup operations,

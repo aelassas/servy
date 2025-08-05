@@ -35,18 +35,23 @@ namespace Servy.Service
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
 
+        /// <summary>
+        /// Event invoked when the service stops, used for testing purposes.
+        /// </summary>
         public event Action OnStoppedForTest;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
-        /// using the default <see cref="ServiceHelper"/> implementation.
+        /// using the default <see cref="ServiceHelper"/> implementation,
+        /// and default factories for stream writer, timer, and process.
         /// </summary>
         public Service() : this(
-            new ServiceHelper(new CommandLineProvider()), new EventLogLogger("Servy"),
+            new ServiceHelper(new CommandLineProvider()),
+            new EventLogLogger("Servy"),
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory()
-            ) // or your default implementation
+        )
         {
         }
 
@@ -75,6 +80,11 @@ namespace Servy.Service
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
         }
 
+        /// <summary>
+        /// Sets the priority class of the child process.
+        /// Logs info on success or a warning if it fails.
+        /// </summary>
+        /// <param name="priority">The process priority to set.</param>
         private void SetProcessPriority(ProcessPriorityClass priority)
         {
             try
@@ -88,6 +98,12 @@ namespace Servy.Service
             }
         }
 
+        /// <summary>
+        /// Creates and assigns rotating stream writers for standard output and error
+        /// based on the given <see cref="StartOptions"/>.
+        /// Logs errors if paths are invalid.
+        /// </summary>
+        /// <param name="options">The start options containing stdout and stderr paths.</param>
         private void HandleLogWriters(StartOptions options)
         {
             if (!string.IsNullOrWhiteSpace(options.StdOutPath) && Helper.IsValidPath(options.StdOutPath))
@@ -109,12 +125,22 @@ namespace Servy.Service
             }
         }
 
+        /// <summary>
+        /// Starts the monitored child process using the executable path, arguments, and working directory from the options.
+        /// Also sets the process priority accordingly.
+        /// </summary>
+        /// <param name="options">The start options containing executable details and priority.</param>
         private void StartMonitoredProcess(StartOptions options)
         {
             StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
             SetProcessPriority(options.Priority);
         }
 
+        /// <summary>
+        /// Sets up health monitoring for the child process using a timer.
+        /// Starts the timer if heartbeat interval, max failed checks, and recovery action are valid.
+        /// </summary>
+        /// <param name="options">The start options containing health check configuration.</param>
         private void SetupHealthMonitoring(StartOptions options)
         {
             _heartbeatIntervalSeconds = options.HeartbeatInterval;
@@ -165,6 +191,11 @@ namespace Servy.Service
             }
         }
 
+        /// <summary>
+        /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
+        /// Starts the service with the specified command-line arguments.
+        /// </summary>
+        /// <param name="args">The command-line arguments to pass to the service on start.</param>
         public void StartForTest(string[] args)
         {
             OnStart(args);
@@ -379,7 +410,6 @@ namespace Servy.Service
                 }
             }
         }
-
 
         /// <summary>
         /// Terminates all child processes in the job object (if one is active) by closing the job handle.

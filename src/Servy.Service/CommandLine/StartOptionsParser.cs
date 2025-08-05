@@ -5,8 +5,19 @@ using System.Linq;
 
 namespace Servy.Service
 {
+    /// <summary>
+    /// Provides functionality to parse command-line arguments into a <see cref="StartOptions"/> object.
+    /// </summary>
     public static class StartOptionsParser
     {
+        /// <summary>
+        /// Parses the specified array of command-line arguments into a <see cref="StartOptions"/> instance.
+        /// </summary>
+        /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
+        /// <returns>
+        /// A <see cref="StartOptions"/> object populated with values parsed from the input arguments.
+        /// Missing or invalid values will be set to default values.
+        /// </returns>
         public static StartOptions Parse(string[] fullArgs)
         {
             fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
@@ -28,5 +39,4 @@ namespace Servy.Service
             };
         }
     }
-
 }
