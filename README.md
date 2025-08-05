@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=6">
+    <img src="https://servy-win.github.io/servy.png?d=7" width="480">
   </a>
 </p>
 
@@ -60,13 +60,13 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 ## Architecture
 
-- **`Servy.exe`**: WPF frontend application built with .NET Framework 4.8  
+- `Servy.exe`: WPF frontend application built with .NET Framework 4.8  
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
-- **`Servy.Service.exe`**: Windows Service that runs in the background  
+- `Servy.Service.exe`: Windows Service that runs in the background  
   Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
 
-- **`Servy.Restarter.exe`**: Lightweight utility used to restart a Windows service  
+- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service  
   Invoked as part of the *Restart Service* recovery action when a failure is detected.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
