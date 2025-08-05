@@ -8,6 +8,8 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+        private const string WindowsServiceName = "Servy";
+
         private readonly IServiceHelper _serviceHelper;
         private readonly ILogger _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
@@ -44,12 +46,12 @@ namespace Servy.Service
         /// </summary>
         public Service() : this(
             new ServiceHelper(new CommandLineProvider()),
-            new EventLogLogger("Servy"),
+            new EventLogLogger(WindowsServiceName),
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
             new PathValidator()
-        )
+          )
         {
         }
 
@@ -71,7 +73,7 @@ namespace Servy.Service
             IProcessFactory processFactory,
             IPathValidator pathValidator)
         {
-            ServiceName = "Servy";
+            ServiceName = WindowsServiceName;
 
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -79,84 +81,6 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator;
-        }
-
-        /// <summary>
-        /// Sets the priority class of the child process.
-        /// Logs info on success or a warning if it fails.
-        /// </summary>
-        /// <param name="priority">The process priority to set.</param>
-        public void SetProcessPriority(ProcessPriorityClass priority)
-        {
-            try
-            {
-                _childProcess.PriorityClass = priority;
-                _logger?.Info($"Set process priority to {_childProcess.PriorityClass}.");
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warning($"Failed to set priority: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Creates and assigns rotating stream writers for standard output and error
-        /// based on the given <see cref="StartOptions"/>.
-        /// Logs errors if paths are invalid.
-        /// </summary>
-        /// <param name="options">The start options containing stdout and stderr paths.</param>
-        private void HandleLogWriters(StartOptions options)
-        {
-            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && _pathValidator.IsValidPath(options.StdOutPath))
-            {
-                _stdoutWriter = _streamWriterFactory.Create(options.StdOutPath, options.RotationSizeInBytes);
-            }
-            else if (!string.IsNullOrWhiteSpace(options.StdOutPath))
-            {
-                _logger?.Error($"Invalid stdout file path: {options.StdOutPath}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && _pathValidator.IsValidPath(options.StdErrPath))
-            {
-                _stderrWriter = _streamWriterFactory.Create(options.StdErrPath, options.RotationSizeInBytes);
-            }
-            else if (!string.IsNullOrWhiteSpace(options.StdErrPath))
-            {
-                _logger?.Error($"Invalid stderr file path: {options.StdErrPath}");
-            }
-        }
-
-        /// <summary>
-        /// Starts the monitored child process using the executable path, arguments, and working directory from the options.
-        /// Also sets the process priority accordingly.
-        /// </summary>
-        /// <param name="options">The start options containing executable details and priority.</param>
-        private void StartMonitoredProcess(StartOptions options)
-        {
-            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
-            SetProcessPriority(options.Priority);
-        }
-
-        /// <summary>
-        /// Sets up health monitoring for the child process using a timer.
-        /// Starts the timer if heartbeat interval, max failed checks, and recovery action are valid.
-        /// </summary>
-        /// <param name="options">The start options containing health check configuration.</param>
-        private void SetupHealthMonitoring(StartOptions options)
-        {
-            _heartbeatIntervalSeconds = options.HeartbeatInterval;
-            _maxFailedChecks = options.MaxFailedChecks;
-            _recoveryAction = options.RecoveryAction;
-
-            if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
-            {
-                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
-                _healthCheckTimer.Elapsed += CheckHealth;
-                _healthCheckTimer.AutoReset = true;
-                _healthCheckTimer.Start();
-
-                _logger?.Info("Health monitoring started.");
-            }
         }
 
         /// <summary>
@@ -200,6 +124,44 @@ namespace Servy.Service
         public void StartForTest(string[] args)
         {
             OnStart(args);
+        }
+
+        /// <summary>
+        /// Creates and assigns rotating stream writers for standard output and error
+        /// based on the given <see cref="StartOptions"/>.
+        /// Logs errors if paths are invalid.
+        /// </summary>
+        /// <param name="options">The start options containing stdout and stderr paths.</param>
+        private void HandleLogWriters(StartOptions options)
+        {
+            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && _pathValidator.IsValidPath(options.StdOutPath))
+            {
+                _stdoutWriter = _streamWriterFactory.Create(options.StdOutPath, options.RotationSizeInBytes);
+            }
+            else if (!string.IsNullOrWhiteSpace(options.StdOutPath))
+            {
+                _logger?.Error($"Invalid stdout file path: {options.StdOutPath}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && _pathValidator.IsValidPath(options.StdErrPath))
+            {
+                _stderrWriter = _streamWriterFactory.Create(options.StdErrPath, options.RotationSizeInBytes);
+            }
+            else if (!string.IsNullOrWhiteSpace(options.StdErrPath))
+            {
+                _logger?.Error($"Invalid stderr file path: {options.StdErrPath}");
+            }
+        }
+
+        /// <summary>
+        /// Starts the monitored child process using the executable path, arguments, and working directory from the options.
+        /// Also sets the process priority accordingly.
+        /// </summary>
+        /// <param name="options">The start options containing executable details and priority.</param>
+        private void StartMonitoredProcess(StartOptions options)
+        {
+            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
+            SetProcessPriority(options.Priority);
         }
 
         /// <summary>
@@ -259,6 +221,94 @@ namespace Servy.Service
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
+        }
+
+        /// <summary>
+        /// Handles redirected standard output from the child process.
+        /// Writes output lines to the rotating stdout writer.
+        /// </summary>
+        private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.Data))
+            {
+                _stdoutWriter?.WriteLine(e.Data);
+            }
+        }
+
+        /// <summary>
+        /// Handles redirected standard error output from the child process.
+        /// Writes error lines to the rotating stderr writer and logs errors.
+        /// </summary>
+        private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.Data))
+            {
+                _stderrWriter?.WriteLine(e.Data);
+                _logger?.Error($"[Error] {e.Data}");
+            }
+        }
+
+        /// <summary>
+        /// Called when the child process exits.
+        /// Logs the exit code and whether the exit was successful.
+        /// </summary>
+        private void OnProcessExited(object sender, EventArgs e)
+        {
+            try
+            {
+                var code = _childProcess.ExitCode;
+                if (code == 0)
+                {
+                    _logger.Info("Child process exited successfully.");
+                }
+                else
+                {
+                    _logger.Warning($"Child process exited with code {code}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Sets the priority class of the child process.
+        /// Logs info on success or a warning if it fails.
+        /// </summary>
+        /// <param name="priority">The process priority to set.</param>
+        public void SetProcessPriority(ProcessPriorityClass priority)
+        {
+            try
+            {
+                _childProcess.PriorityClass = priority;
+                _logger?.Info($"Set process priority to {_childProcess.PriorityClass}.");
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"Failed to set priority: {ex.Message}");
+            }
+        }
+        /// <summary>
+        /// Sets up health monitoring for the child process using a timer.
+        /// Starts the timer if heartbeat interval, max failed checks, and recovery action are valid.
+        /// </summary>
+        /// <param name="options">The start options containing health check configuration.</param>
+        private void SetupHealthMonitoring(StartOptions options)
+        {
+            _heartbeatIntervalSeconds = options.HeartbeatInterval;
+            _maxFailedChecks = options.MaxFailedChecks;
+            _recoveryAction = options.RecoveryAction;
+
+            if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
+            {
+                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
+                _healthCheckTimer.Elapsed += CheckHealth;
+                _healthCheckTimer.AutoReset = true;
+                _healthCheckTimer.Start();
+
+                _logger?.Info("Health monitoring started.");
+            }
         }
 
         /// <summary>
@@ -354,88 +404,19 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Handles redirected standard output from the child process.
-        /// Writes output lines to the rotating stdout writer.
+        /// Called when the service stops.
+        /// Unhooks event handlers, disposes output writers,
+        /// kills the child process, and closes the job object handle.
         /// </summary>
-        private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+        protected override void OnStop()
         {
-            if (!string.IsNullOrWhiteSpace(e.Data))
-            {
-                _stdoutWriter?.WriteLine(e.Data);
-            }
-        }
+            OnStoppedForTest?.Invoke();
 
-        /// <summary>
-        /// Handles redirected standard error output from the child process.
-        /// Writes error lines to the rotating stderr writer and logs errors.
-        /// </summary>
-        private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(e.Data))
-            {
-                _stderrWriter?.WriteLine(e.Data);
-                _logger?.Error($"[Error] {e.Data}");
-            }
-        }
+            Cleanup();
 
-        /// <summary>
-        /// Called when the child process exits.
-        /// Logs the exit code and whether the exit was successful.
-        /// </summary>
-        private void OnProcessExited(object sender, EventArgs e)
-        {
-            try
-            {
-                var code = _childProcess.ExitCode;
-                if (code == 0)
-                {
-                    _logger.Info("Child process exited successfully.");
-                }
-                else
-                {
-                    _logger.Warning($"Child process exited with code {code}.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
-            }
-        }
+            base.OnStop();
 
-        /// <summary>
-        /// Attempts to gracefully stop the process by sending a close message to its main window.
-        /// If that fails or the process has no main window, forcibly kills the process.
-        /// Waits up to the specified timeout for the process to exit.
-        /// </summary>
-        /// <param name="process">Process to stop.</param>
-        /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 5000)
-        {
-            try
-            {
-                if (process == null || process.HasExited) return;
-
-                bool closedGracefully = false;
-
-                // Only GUI processes have a main window to close
-                if (process.MainWindowHandle != IntPtr.Zero)
-                {
-                    closedGracefully = process.CloseMainWindow();
-                }
-
-                if (!closedGracefully)
-                {
-                    // Either no GUI window or close failed — kill forcibly
-                    _logger?.Warning("Graceful shutdown not supported. Forcing kill.");
-                    process.Kill();
-                }
-
-                process.WaitForExit(timeoutMs);
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warning($"SafeKillProcess error: {ex.Message}");
-            }
+            _logger?.Info("Stopped child process.");
         }
 
         /// <summary>
@@ -445,9 +426,6 @@ namespace Servy.Service
         {
             if (_disposed)
                 return;
-
-            _healthCheckTimer?.Dispose();
-            _healthCheckTimer = null;
 
             if (_childProcess != null)
             {
@@ -499,19 +477,40 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the service stops.
-        /// Unhooks event handlers, disposes output writers,
-        /// kills the child process, and closes the job object handle.
+        /// Attempts to gracefully stop the process by sending a close message to its main window.
+        /// If that fails or the process has no main window, forcibly kills the process.
+        /// Waits up to the specified timeout for the process to exit.
         /// </summary>
-        protected override void OnStop()
+        /// <param name="process">Process to stop.</param>
+        /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 5000)
         {
-            OnStoppedForTest?.Invoke();
+            try
+            {
+                if (process == null || process.HasExited) return;
 
-            Cleanup();
+                bool closedGracefully = false;
 
-            base.OnStop();
+                // Only GUI processes have a main window to close
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    closedGracefully = process.CloseMainWindow();
+                }
 
-            _logger?.Info("Stopped child process.");
+                if (!closedGracefully)
+                {
+                    // Either no GUI window or close failed — kill forcibly
+                    _logger?.Warning("Graceful shutdown not supported. Forcing kill.");
+                    process.Kill();
+                }
+
+                process.WaitForExit(timeoutMs);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"SafeKillProcess error: {ex.Message}");
+            }
         }
+
     }
 }

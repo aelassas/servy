@@ -25,9 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{0E71
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{F547C573-380C-4BD2-B324-B9572297A027}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\build.yml = .github\workflows\build.yml
 		.github\workflows\loc.yml = .github\workflows\loc.yml
-		.github\workflows\test.yml = .github\workflows\test.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Restarter", "src\Servy.Restarter\Servy.Restarter.csproj", "{94474821-4D14-44DA-85B4-34BA0A77EF8F}"
