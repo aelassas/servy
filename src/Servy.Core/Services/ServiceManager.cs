@@ -72,7 +72,7 @@ namespace Servy.Core
             string lpPassword,
             string lpDisplayName);
 
-
+        /// <inheritdoc />
         public bool InstallService(
             string serviceName,
             string description,
@@ -240,6 +240,7 @@ namespace Servy.Core
             Marshal.FreeHGlobal(desc.lpDescription);
         }
 
+        /// <inheritdoc />
         public bool UninstallService(string serviceName)
         {
             IntPtr scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_ALL_ACCESS);
@@ -292,6 +293,7 @@ namespace Servy.Core
             }
         }
 
+        /// <inheritdoc />
         public bool StartService(string serviceName)
         {
             try
@@ -312,6 +314,7 @@ namespace Servy.Core
             }
         }
 
+        /// <inheritdoc />
         public bool StopService(string serviceName)
         {
             try
@@ -332,6 +335,7 @@ namespace Servy.Core
             }
         }
 
+        /// <inheritdoc />
         public bool RestartService(string serviceName)
         {
             try

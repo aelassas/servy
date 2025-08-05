@@ -9,22 +9,26 @@ using System.ServiceProcess;
 /// </remarks>
 namespace Servy.Restarter
 {
-    class Program
+    /// <summary>
+    /// Program entry point for the service restarter console app.
+    /// </summary>
+    public class Program
     {
-        static void Main(string[] args)
+        /// <summary>
+        /// Main method. Expects a single argument: the service name to restart.
+        /// </summary>
+        /// <param name="args">Command line arguments. args[0] must be the service name.</param>
+        public static void Main(string[] args)
         {
-            if (args.Length == 0) return;
+            if (args.Length == 0)
+                return;
 
             var serviceName = args[0];
+            IServiceRestarter restarter = new ServiceRestarter();
 
             try
             {
-                using (var controller = new ServiceController(serviceName))
-                {
-                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
-                    controller.Start();
-                    controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
-                }
+                restarter.RestartService(serviceName);
             }
             catch (Exception ex)
             {

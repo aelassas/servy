@@ -1,0 +1,44 @@
+﻿using System;
+using System.ServiceProcess;
+
+namespace Servy.Restarter
+{
+    /// <summary>
+    /// Implements service restart functionality using <see cref="IServiceController"/> abstraction.
+    /// </summary>
+    public class ServiceRestarter : IServiceRestarter
+    {
+        private readonly Func<string, IServiceController> _controllerFactory;
+
+        /// <summary>
+        /// Initializes a new instance of <see cref="ServiceRestarter"/>.
+        /// </summary>
+        /// <param name="controllerFactory">
+        /// Optional factory method to create <see cref="IServiceController"/> instances.
+        /// Defaults to <see cref="ServiceController"/>.
+        /// </param>
+        public ServiceRestarter(Func<string, IServiceController> controllerFactory = null)
+        {
+            _controllerFactory = controllerFactory ?? (name =>
+                new ServiceController(new SystemServiceControllerAdapter(name))
+            );
+        }
+
+        /// <inheritdoc />
+        public void RestartService(string serviceName)
+        {
+            using (var controller = _controllerFactory(serviceName))
+            {
+                // Wait until the service is stopped
+                controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
+
+                // Start the service
+                controller.Start();
+
+                // Wait until the service is running
+                controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
+            }
+        }
+    }
+
+}

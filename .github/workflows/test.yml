@@ -27,7 +27,10 @@ jobs:
       - name: Build solution
         run: msbuild Servy.sln /p:Configuration=Release
 
-      - name: Run Unit Tests
+      - name: Run Servy.Core.UnitTests
         run: |
          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll"
 
+      - name: Run Servy.Restarter.UnitTests
+        run: |
+         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll"
