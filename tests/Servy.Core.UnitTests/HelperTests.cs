@@ -1,0 +1,80 @@
+﻿using System;
+using System.IO;
+using Xunit;
+
+namespace Servy.Core.UnitTests
+{
+    public class HelperTests
+    {
+        // Tests for IsValidPath
+        [Theory]
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        [InlineData("..\\somepath", false)]         // directory traversal
+        [InlineData("C:\\valid\\path.txt", true)]   // valid absolute path (Windows style)
+        [InlineData("C:/valid/path.txt", true)]     // valid absolute path (slash)
+        [InlineData("relative\\path", false)]       // relative path (not rooted)
+        [InlineData("C:\\invalid|path", false)]     // invalid char '|'
+        [InlineData("C:\\valid\\..\\path", false)]  // contains ..
+        [InlineData("/usr/bin/bash", true)]          // absolute path (Unix style)
+        [InlineData("C:\\", true)]                   // root path
+        public void IsValidPath_VariousInputs_ReturnsExpected(string path, bool expected)
+        {
+            bool result = Helper.IsValidPath(path);
+            Assert.Equal(expected, result);
+        }
+
+        // Tests for CreateParentDirectory
+        [Fact]
+        public void CreateParentDirectory_NullOrWhitespace_ReturnsFalse()
+        {
+            Assert.False(Helper.CreateParentDirectory(null));
+            Assert.False(Helper.CreateParentDirectory(""));
+            Assert.False(Helper.CreateParentDirectory("    "));
+        }
+
+        [Theory]
+        [InlineData("file.txt")]                // no directory part, returns false
+        [InlineData("C:\\file.txt")]            // directory is "C:\"
+        [InlineData("C:\\folder\\file.txt")]   // directory is "C:\folder"
+        [InlineData("C:/folder/file.txt")]     // with forward slashes
+        public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
+        {
+            // Arrange
+            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            Directory.CreateDirectory(tempDir);
+
+            string testFilePath = Path.Combine(tempDir, filePath);
+
+            try
+            {
+                // Act
+                bool result = Helper.CreateParentDirectory(testFilePath);
+
+                // Assert
+                Assert.True(result);
+
+                var parentDir = Path.GetDirectoryName(testFilePath);
+                Assert.True(Directory.Exists(parentDir));
+            }
+            finally
+            {
+                // Cleanup
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, true);
+                }
+            }
+        }
+
+        [Fact]
+        public void CreateParentDirectory_InvalidPath_ReturnsFalse()
+        {
+            // Give an invalid path that will throw
+            string invalidPath = "?:\\invalid\\path\\file.txt";
+            bool result = Helper.CreateParentDirectory(invalidPath);
+            Assert.False(result);
+        }
+    }
+}

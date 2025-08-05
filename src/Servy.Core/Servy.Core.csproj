@@ -43,11 +43,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helper.cs" />
+    <Compile Include="IServiceManager.cs" />
     <Compile Include="ProcessPriority.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RecoveryAction.cs" />
     <Compile Include="RotatingStreamWriter.cs" />
     <Compile Include="ServiceManager.cs" />
+    <Compile Include="ServiceStartType.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

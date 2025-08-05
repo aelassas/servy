@@ -7,19 +7,9 @@ using System.Threading;
 namespace Servy.Core
 {
     /// <summary>
-    /// Defines service start types.
-    /// </summary>
-    public enum ServiceStartType : uint
-    {
-        Automatic = 0x00000002,
-        Manual = 0x00000003,
-        Disabled = 0x00000004
-    }
-
-    /// <summary>
     /// Provides methods to install, uninstall, start, stop, and restart Windows services.
     /// </summary>
-    public static class ServiceManager
+    public class ServiceManager: IServiceManager
     {
         private const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
         private const uint SERVICE_ERROR_NORMAL = 0x00000001;
@@ -82,29 +72,8 @@ namespace Servy.Core
             string lpPassword,
             string lpDisplayName);
 
-        /// <summary>
-        /// Installs a Windows service using a wrapper executable that launches the real target executable
-        /// with specified arguments and working directory.
-        /// </summary>
-        /// <param name="serviceName">The name of the Windows service to create.</param>
-        /// <param name="description">The service description displayed in the Services MMC snap-in.</param>
-        /// <param name="wrapperExePath">The full path to the wrapper executable that will be installed as the service binary.</param>
-        /// <param name="realExePath">The full path to the real executable to be launched by the wrapper.</param>
-        /// <param name="workingDirectory">The working directory to use when launching the real executable.</param>
-        /// <param name="realArgs">The command line arguments to pass to the real executable.</param>
-        /// <param name="startType">The service startup type (Automatic, Manual, Disabled).</param>
-        /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
-        /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
-        /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
-        /// <param name="rotationSizeInBytes">Size in bytes for log rotation. If 0, no rotation is performed.</param>
-        /// <param name="heartbeatInterval">Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
-        /// <param name="maxFailedChecks">Maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
-        /// <param name="recoveryAction">Recovery action to take if the service fails. If None, health monitoring is disabled.</param>
-        /// <param name="maxRestartAttempts">Maximum number of restart attempts if the service fails.</param>
-        /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
-        /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
-        public static bool InstallService(
+
+        public bool InstallService(
             string serviceName,
             string description,
             string wrapperExePath,
@@ -199,7 +168,7 @@ namespace Servy.Core
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        static string Quote(string input)
+        private string Quote(string input)
         {
             if (string.IsNullOrEmpty(input))
                 return "\"\"";
@@ -218,7 +187,7 @@ namespace Servy.Core
         /// <param name="startType">The service startup type.</param>
         /// <returns>True if the update succeeded; otherwise false.</returns>
         /// <exception cref="Win32Exception">Thrown on Win32 errors.</exception>
-        private static bool UpdateServiceConfig(
+        private bool UpdateServiceConfig(
             IntPtr scmHandle,
             string serviceName,
             string description,
@@ -266,7 +235,7 @@ namespace Servy.Core
         /// </summary>
         /// <param name="serviceHandle">Handle to the service.</param>
         /// <param name="description">The description text.</param>
-        private static void SetServiceDescription(IntPtr serviceHandle, string description)
+        private void SetServiceDescription(IntPtr serviceHandle, string description)
         {
             if (string.IsNullOrEmpty(description))
                 return;
@@ -285,12 +254,7 @@ namespace Servy.Core
             Marshal.FreeHGlobal(desc.lpDescription);
         }
 
-        /// <summary>
-        /// Uninstalls the specified service.
-        /// </summary>
-        /// <param name="serviceName">The service name.</param>
-        /// <returns>True if the service was uninstalled; otherwise false.</returns>
-        public static bool UninstallService(string serviceName)
+        public bool UninstallService(string serviceName)
         {
             IntPtr scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
@@ -342,13 +306,7 @@ namespace Servy.Core
             }
         }
 
-
-        /// <summary>
-        /// Starts the specified service.
-        /// </summary>
-        /// <param name="serviceName">The service name.</param>
-        /// <returns>True if the service was started; otherwise false.</returns>
-        public static bool StartService(string serviceName)
+        public bool StartService(string serviceName)
         {
             try
             {
@@ -368,12 +326,7 @@ namespace Servy.Core
             }
         }
 
-        /// <summary>
-        /// Stops the specified service.
-        /// </summary>
-        /// <param name="serviceName">The service name.</param>
-        /// <returns>True if the service was stopped; otherwise false.</returns>
-        public static bool StopService(string serviceName)
+        public bool StopService(string serviceName)
         {
             try
             {
@@ -393,12 +346,7 @@ namespace Servy.Core
             }
         }
 
-        /// <summary>
-        /// Restarts the specified service.
-        /// </summary>
-        /// <param name="serviceName">The service name.</param>
-        /// <returns>True if the service was restarted; otherwise false.</returns>
-        public static bool RestartService(string serviceName)
+        public bool RestartService(string serviceName)
         {
             try
             {

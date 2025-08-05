@@ -25,11 +25,12 @@ namespace Servy.ViewModels
         private const int MinRotationSize = 1 * 1024 * 1024;      // 1 MB
         private const int DefaultHeartbeatInterval = 30;          // 30 seconds
         private const int MinHeartbeatInterval = 5;               // 5 seconds
-        private const int DefaultMaxFailedChecks= 3;              // 3 attempts
-        private const int MinMaxFailedChecks= 1;                  // 1 attempt
-        private const int DefaultMaxRestartAttempts= 3;           // 3 attempts
+        private const int DefaultMaxFailedChecks = 3;              // 3 attempts
+        private const int MinMaxFailedChecks = 1;                  // 1 attempt
+        private const int DefaultMaxRestartAttempts = 3;           // 3 attempts
         private const int MinMaxRestartAttempts = 1;              // 1 attempt
 
+        private readonly IServiceManager _serviceManager;
         private string _serviceName;
         private string _serviceDescription;
         private string _processPath;
@@ -213,7 +214,7 @@ namespace Servy.ViewModels
         public string Label_Attempts => _resourceManager.GetString(nameof(Label_Attempts), _culture) ?? string.Empty;
         public string Label_RecoveryAction => _resourceManager.GetString(nameof(Label_RecoveryAction), _culture) ?? string.Empty;
         public string Label_MaxRestartAttempts => _resourceManager.GetString(nameof(Label_MaxRestartAttempts), _culture) ?? string.Empty;
-        
+
         public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
         public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
         public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
@@ -223,6 +224,7 @@ namespace Servy.ViewModels
 
         public MainViewModel()
         {
+            _serviceManager = new ServiceManager();
             _serviceName = string.Empty;
             _serviceDescription = string.Empty;
             _processPath = string.Empty;
@@ -321,7 +323,7 @@ namespace Servy.ViewModels
 
             try
             {
-                var success = ServiceManager.InstallService(
+                var success = _serviceManager.InstallService(
                     ServiceName,                      // service name
                     ServiceDescription,               // service description
                     wrapperExePath,                   // wrapper exe
@@ -368,7 +370,7 @@ namespace Servy.ViewModels
 
             try
             {
-                bool success = ServiceManager.UninstallService(ServiceName);
+                bool success = _serviceManager.UninstallService(ServiceName);
 
                 if (success)
                 {
@@ -393,7 +395,7 @@ namespace Servy.ViewModels
         {
             try
             {
-                bool success = ServiceManager.StartService(ServiceName);
+                bool success = _serviceManager.StartService(ServiceName);
 
                 if (success)
                 {
@@ -414,7 +416,7 @@ namespace Servy.ViewModels
         {
             try
             {
-                bool success = ServiceManager.StopService(ServiceName);
+                bool success = _serviceManager.StopService(ServiceName);
 
                 if (success)
                 {
@@ -435,7 +437,7 @@ namespace Servy.ViewModels
         {
             try
             {
-                bool success = ServiceManager.RestartService(ServiceName);
+                bool success = _serviceManager.RestartService(ServiceName);
 
                 if (success)
                 {
