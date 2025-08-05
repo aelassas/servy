@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-using System.Threading.Tasks;
 using System.Timers;
 
 namespace Servy.Service
@@ -432,7 +431,6 @@ namespace Servy.Service
             }
         }
 
-
         /// <summary>
         /// Attempts to restart the child process by:
         /// 1. Killing it if it's running.
@@ -610,7 +608,6 @@ namespace Servy.Service
         /// </summary>
         protected override void OnStop()
         {
-            // Do your cleanup
             Cleanup();
 
             base.OnStop();
