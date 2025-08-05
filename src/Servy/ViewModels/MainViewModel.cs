@@ -27,6 +27,8 @@ namespace Servy.ViewModels
         private const int MinHeartbeatInterval = 5;               // 5 seconds
         private const int DefaultMaxFailedChecks= 3;              // 3 attempts
         private const int MinMaxFailedChecks= 1;                  // 1 attempt
+        private const int DefaultMaxRestartAttempts= 3;           // 3 attempts
+        private const int MinMaxRestartAttempts = 1;              // 1 attempt
 
         private string _serviceName;
         private string _serviceDescription;
@@ -43,6 +45,7 @@ namespace Servy.ViewModels
         private string _heartbeatInterval;
         private string _maxFailedChecks;
         private RecoveryAction _selectedRecoveryAction;
+        private string _maxRestartAttempts;
 
         public string ServiceName
         {
@@ -160,6 +163,12 @@ namespace Servy.ViewModels
             new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer},
         };
 
+        public string MaxRestartAttempts
+        {
+            get => _maxRestartAttempts;
+            set { _maxRestartAttempts = value; OnPropertyChanged(); }
+        }
+
         public ICommand InstallCommand { get; }
         public ICommand UninstallCommand { get; }
         public ICommand StartCommand { get; }
@@ -203,7 +212,8 @@ namespace Servy.ViewModels
         public string Label_MaxFailedChecks => _resourceManager.GetString(nameof(Label_MaxFailedChecks), _culture) ?? string.Empty;
         public string Label_Attempts => _resourceManager.GetString(nameof(Label_Attempts), _culture) ?? string.Empty;
         public string Label_RecoveryAction => _resourceManager.GetString(nameof(Label_RecoveryAction), _culture) ?? string.Empty;
-
+        public string Label_MaxRestartAttempts => _resourceManager.GetString(nameof(Label_MaxRestartAttempts), _culture) ?? string.Empty;
+        
         public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
         public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
         public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
@@ -218,13 +228,14 @@ namespace Servy.ViewModels
             _processPath = string.Empty;
             _startupDirectory = string.Empty;
             _processParameters = string.Empty;
-            _selectedStartupType = ServiceStartType.Automatic;        // Default to Automatic startup type
-            _selectedProcessPriority = ProcessPriority.Normal;        // Default to Normal priority
-            _enableRotation = false;                                  // Default to no rotation
-            _rotationSize = DefaultRotationSize.ToString();           // Default to 10 MB rotation size
-            _selectedRecoveryAction = RecoveryAction.RestartService;  // Default to RestartService recovery action
-            _heartbeatInterval = DefaultHeartbeatInterval.ToString(); // Default to 30 seconds
-            _maxFailedChecks = DefaultMaxFailedChecks.ToString();     // Default to 3 attempts
+            _selectedStartupType = ServiceStartType.Automatic;         // Default to Automatic startup type
+            _selectedProcessPriority = ProcessPriority.Normal;         // Default to Normal priority
+            _enableRotation = false;                                   // Default to no rotation
+            _rotationSize = DefaultRotationSize.ToString();            // Default to 10 MB rotation size
+            _selectedRecoveryAction = RecoveryAction.RestartService;   // Default to RestartService recovery action
+            _heartbeatInterval = DefaultHeartbeatInterval.ToString();  // Default to 30 seconds
+            _maxFailedChecks = DefaultMaxFailedChecks.ToString();      // Default to 3 attempts
+            _maxRestartAttempts = DefaultMaxRestartAttempts.ToString(); // Default to 3 attempts
 
             InstallCommand = new RelayCommand(InstallService);
             UninstallCommand = new RelayCommand(UninstallService);
@@ -286,6 +297,7 @@ namespace Servy.ViewModels
 
             var heartbeatInterval = 0;
             var maxFailedChecks = 0;
+            var maxRestartAttempts = 0;
             if (EnableHealthMonitoring)
             {
                 if (!int.TryParse(HeartbeatInterval, out heartbeatInterval) || heartbeatInterval < MinHeartbeatInterval)
@@ -297,6 +309,12 @@ namespace Servy.ViewModels
                 if (!int.TryParse(MaxFailedChecks, out maxFailedChecks) || maxFailedChecks < MinMaxFailedChecks)
                 {
                     MessageBox.Show(Strings.Msg_InvalidMaxFailedChecks, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!int.TryParse(MaxRestartAttempts, out maxRestartAttempts) || maxRestartAttempts < MinMaxRestartAttempts)
+                {
+                    MessageBox.Show(Strings.Msg_InvalidMaxRestartAttempts, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
             }
@@ -317,7 +335,8 @@ namespace Servy.ViewModels
                     rotationSize,                     // rotation size in bytes, O if rotation is disabled
                     heartbeatInterval,                // heartbeat interval in seconds, O if health monitoring is disabled
                     maxFailedChecks,                  // heartbeat interval in seconds, 0 if health monitoring is disabled
-                    SelectedRecoveryAction            // recovery action
+                    SelectedRecoveryAction,           // recovery action
+                    maxRestartAttempts                // maximum restart attempts
                 );
 
                 if (success)
@@ -449,6 +468,7 @@ namespace Servy.ViewModels
             SelectedRecoveryAction = RecoveryAction.RestartService;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
+            MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
         }
 
     }

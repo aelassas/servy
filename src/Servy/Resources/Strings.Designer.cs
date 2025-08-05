@@ -169,6 +169,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Restart Attempts.
+        /// </summary>
+        public static string Label_MaxRestartAttempts {
+            get {
+                return ResourceManager.GetString("Label_MaxRestartAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Process Parameters.
         /// </summary>
         public static string Label_ProcessParameters {
@@ -345,6 +354,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidMaxFailedChecks {
             get {
                 return ResourceManager.GetString("Msg_InvalidMaxFailedChecks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Restart Attempts must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidMaxRestartAttempts {
+            get {
+                return ResourceManager.GetString("Msg_InvalidMaxRestartAttempts", resourceCulture);
             }
         }
         

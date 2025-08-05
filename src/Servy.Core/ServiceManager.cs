@@ -96,10 +96,11 @@ namespace Servy.Core
         /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
         /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
         /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
-        /// <param name="rotationSizeInBytes">Optional size in bytes for log rotation. If 0, no rotation is performed.</param>
-        /// <param name="heartbeatInterval">Optional heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
-        /// <param name="maxFailedChecks">Optional maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
-        /// <param name="recoveryAction">Optional recovery action to take if the service fails. If None, health monitoring is disabled.</param>
+        /// <param name="rotationSizeInBytes">Size in bytes for log rotation. If 0, no rotation is performed.</param>
+        /// <param name="heartbeatInterval">Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
+        /// <param name="maxFailedChecks">Maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
+        /// <param name="recoveryAction">Recovery action to take if the service fails. If None, health monitoring is disabled.</param>
+        /// <param name="maxRestartAttempts">Maximum number of restart attempts if the service fails.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -117,7 +118,8 @@ namespace Servy.Core
             int rotationSizeInBytes,
             int heartbeatInterval,
             int maxFailedChecks,
-            RecoveryAction recoveryAction
+            RecoveryAction recoveryAction,
+            int maxRestartAttempts
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -140,7 +142,8 @@ namespace Servy.Core
                 Quote(heartbeatInterval.ToString()),
                 Quote(maxFailedChecks.ToString()),
                 Quote(recoveryAction.ToString()),
-                Quote(serviceName)
+                Quote(serviceName),
+                Quote(maxRestartAttempts.ToString())
                 );
 
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);

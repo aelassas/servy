@@ -123,6 +123,9 @@
   <data name="RecoveryAction_RestartComputer" xml:space="preserve">
     <value>Restart Computer</value>
   </data>
+  <data name="Label_MaxRestartAttempts" xml:space="preserve">
+    <value>Max Restart Attempts</value>
+  </data>
 
   <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
@@ -181,7 +184,9 @@
   <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
     <value>Max Failed Checks must be a number greater than or equal to 1.</value>
   </data>
-
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
+  </data>
 
   <data name="Msg_ServiceCreated" xml:space="preserve">
     <value>Service was created successfully.</value>

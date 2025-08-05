@@ -34,6 +34,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -132,8 +133,13 @@
                       IsEnabled="{Binding EnableHealthMonitoring}"
                       Grid.ColumnSpan="2" />
 
+            <!-- Max Restart Attempts -->
+            <TextBlock Grid.Row="15" Grid.Column="0" Text="{Binding Label_MaxRestartAttempts}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="15" Grid.Column="1" Text="{Binding MaxRestartAttempts}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+            <TextBlock Grid.Row="15" Grid.Column="2" Text="{Binding Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+
             <!-- Buttons -->
-            <StackPanel Grid.Row="15" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+            <StackPanel Grid.Row="16" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
                 <Button Content="{Binding Button_Install}" Width="80" Margin="5" Command="{Binding InstallCommand}" />
                 <Button Content="{Binding Button_Uninstall}" Width="80" Margin="5" Command="{Binding UninstallCommand}"/>
                 <Button Content="{Binding Button_Start}" Width="80" Margin="5" Command="{Binding StartCommand}"/>
@@ -141,7 +147,7 @@
                 <Button Content="{Binding Button_Restart}" Width="80" Margin="5" Command="{Binding RestartCommand}"/>
             </StackPanel>
 
-            <TextBlock Grid.Row="16" Grid.ColumnSpan="3" Text="* Required fields" FontStyle="Italic" Foreground="Gray"/>
+            <TextBlock Grid.Row="17" Grid.ColumnSpan="3" Text="* Required fields" FontStyle="Italic" Foreground="Gray"/>
         </Grid>
     </DockPanel>
 </Window>

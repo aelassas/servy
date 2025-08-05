@@ -30,6 +30,8 @@ namespace Servy.Service
         private bool _disposed = false; // Tracks whether Dispose has been called
         private readonly object _healthCheckLock = new object();
         private bool _isRecovering = false;
+        private int _maxRestartAttempts = 3; // Maximum number of restart attempts
+        private int _restartAttempts = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class.
@@ -90,6 +92,7 @@ namespace Servy.Service
                 var maxFailedChecks = fullArgs.Length > 9 && int.TryParse(fullArgs[9], out var mfc) ? mfc : 0; // 0 disables health monitoring
                 var recoveryAction = fullArgs.Length > 10 && Enum.TryParse<RecoveryAction>(fullArgs[10], true, out var ra) ? ra : RecoveryAction.None; // None disables health monitoring
                 _serviceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty;
+                _maxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out var mra) ? mra : 3; // Default to 3 max restart attempts
 
                 var stdoutRotationEnabled = !string.IsNullOrEmpty(stdoutFilePath);
                 var stderrRotationEnabled = !string.IsNullOrEmpty(stderrFilePath);
@@ -148,6 +151,7 @@ namespace Servy.Service
                 _eventLog?.WriteEntry($"[heartbeatInterval] {heartbeatInterval}");
                 _eventLog?.WriteEntry($"[maxFailedChecks] {maxFailedChecks}");
                 _eventLog?.WriteEntry($"[recoveryAction] {recoveryAction}");
+                _eventLog?.WriteEntry($"[maxRestartAttempts] {_maxRestartAttempts}");
 
                 // Initialize rotating log writers if enabled
                 if (stdoutRotationEnabled)
@@ -317,8 +321,17 @@ namespace Servy.Service
 
                         if (_failedChecks >= _maxFailedChecks)
                         {
+                            if (_restartAttempts >= _maxRestartAttempts)
+                            {
+                                _eventLog?.WriteEntry(
+                                    $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken.",
+                                    EventLogEntryType.Error);
+                                return;
+                            }
+
+                            _restartAttempts++;
                             _isRecovering = true;
-                            _failedChecks = 0; // Reset counter before recovery to avoid repeated triggers
+                            _failedChecks = 0;
 
                             switch (_recoveryAction)
                             {
@@ -343,7 +356,6 @@ namespace Servy.Service
                                                 UseShellExecute = false
                                             });
 
-                                            // Stop the service (this will terminate the current process)
                                             using (var controller = new ServiceController(_serviceName))
                                             {
                                                 controller.Stop();
@@ -392,8 +404,9 @@ namespace Servy.Service
                     {
                         if (_failedChecks > 0)
                         {
-                            _eventLog?.WriteEntry("Child process is healthy again. Resetting failure count.");
+                            _eventLog?.WriteEntry("Child process is healthy again. Resetting failure count and restart attempts.");
                             _failedChecks = 0;
+                            _restartAttempts = 0;
                         }
                     }
                 }
@@ -403,7 +416,6 @@ namespace Servy.Service
                 }
             }
         }
-
 
 
         /// <summary>
