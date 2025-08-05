@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using Servy.Core;
 using Xunit;
 
 namespace Servy.Core.UnitTests
