@@ -2,19 +2,20 @@ name: test
 
 on:
   push:
-    branches:
-      - main
+    paths:
+      - 'tests/Servy.Core.UnitTests/**'
+      - '.github/workflows/test.yml'
   pull_request:
-    branches:
-      - main
+    paths:
+      - 'tests/Servy.Core.UnitTests/**'
+      - '.github/workflows/test.yml'
 
 jobs:
   test:
-    name: Run Unit Tests
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup MSBuild
@@ -23,9 +24,10 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore Servy.sln
 
-      - name: Build test project
-        run: msbuild tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj /p:Configuration=Release
+      - name: Build solution
+        run: msbuild Servy.sln /p:Configuration=Release
 
-      - name: Run tests
-        run: |
-          vstest.console.exe tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll
+      - name: Run Unit Tests
+        run: >
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+          tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll
