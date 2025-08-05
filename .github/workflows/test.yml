@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout repository
@@ -28,6 +28,6 @@ jobs:
         run: msbuild Servy.sln /p:Configuration=Release
 
       - name: Run Unit Tests
-        run: >
-          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
-          tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll
+        run: |
+         & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" "tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll"
+
