@@ -15,6 +15,7 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
         private readonly Mock<ITimerFactory> _mockTimerFactory;
         private readonly Mock<IProcessFactory> _mockProcessFactory;
+        private readonly Mock<IPathValidator> _mockPathValidator;
         private readonly Service _service;
 
         private Mock<IStreamWriter> _mockStdoutWriter;
@@ -29,6 +30,7 @@ namespace Servy.Service.UnitTests
             _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             _mockTimerFactory = new Mock<ITimerFactory>();
             _mockProcessFactory = new Mock<IProcessFactory>();
+            _mockPathValidator = new Mock<IPathValidator>();
 
             _mockStdoutWriter = new Mock<IStreamWriter>();
             _mockStderrWriter = new Mock<IStreamWriter>();
@@ -56,7 +58,8 @@ namespace Servy.Service.UnitTests
                 _mockLogger.Object,
                 _mockStreamWriterFactory.Object,
                 _mockTimerFactory.Object,
-                _mockProcessFactory.Object
+                _mockProcessFactory.Object,
+                _mockPathValidator.Object
             );
         }
 
@@ -84,6 +87,7 @@ namespace Servy.Service.UnitTests
                 .Returns(options);
 
             _mockServiceHelper.Setup(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object));
+            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
             _service.StartForTest(new string[0]);
@@ -117,7 +121,8 @@ namespace Servy.Service.UnitTests
             };
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns(options);
-
+            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
+            
             // Act
             _service.StartForTest(new string[0]);
 
@@ -161,5 +166,204 @@ namespace Servy.Service.UnitTests
                 It.IsAny<Exception>()
             ), Times.Once);
         }
+
+        [Fact]
+        public void SetProcessPriority_ValidPriority_SetsPriorityAndLogsInfo()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            var mockLogger = new Mock<ILogger>();
+            var mockHelper = new Mock<IServiceHelper>();
+            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            var mockTimerFactory = new Mock<ITimerFactory>();
+            var mockProcessFactory = new Mock<IProcessFactory>();
+            var mockPathValidator = new Mock<IPathValidator>();
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                mockStreamWriterFactory.Object,
+                mockTimerFactory.Object,
+                mockProcessFactory.Object,
+                mockPathValidator.Object
+            );
+            service.SetChildProcess(mockProcess.Object);
+
+            mockProcess.SetupProperty(p => p.PriorityClass);
+
+            // Act
+            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+
+            // Assert
+            mockProcess.VerifySet(p => p.PriorityClass = ProcessPriorityClass.High, Times.Once);
+            mockLogger.Verify(l => l.Info(It.Is<string>(msg => msg.Contains("Set process priority to High"))), Times.Once);
+        }
+
+        [Fact]
+        public void SetProcessPriority_ExceptionThrown_LogsWarning()
+        {
+            // Arrange
+            var mockProcess = new Mock<IProcessWrapper>();
+            var mockLogger = new Mock<ILogger>();
+            var mockHelper = new Mock<IServiceHelper>();
+            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            var mockTimerFactory = new Mock<ITimerFactory>();
+            var mockProcessFactory = new Mock<IProcessFactory>();
+            var mockPathValidator = new Mock<IPathValidator>();
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                mockStreamWriterFactory.Object,
+                mockTimerFactory.Object,
+                mockProcessFactory.Object,
+                mockPathValidator.Object
+            );
+            service.SetChildProcess(mockProcess.Object);
+
+            mockProcess.SetupSet(p => p.PriorityClass = It.IsAny<ProcessPriorityClass>())
+                       .Throws(new Exception("Priority error"));
+
+            // Act
+            service.InvokeSetProcessPriority(ProcessPriorityClass.High);
+
+            // Assert
+            mockLogger.Verify(l => l.Warning(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error"))), Times.Once);
+        }
+
+        [Fact]
+        public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger>();
+            var mockHelper = new Mock<IServiceHelper>();
+            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            var mockTimerFactory = new Mock<ITimerFactory>();
+            var mockProcessFactory = new Mock<IProcessFactory>();
+            var mockPathValidator = new Mock<IPathValidator>();
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                mockStreamWriterFactory.Object,
+                mockTimerFactory.Object,
+                mockProcessFactory.Object,
+                mockPathValidator.Object
+            );
+
+            var options = new StartOptions
+            {
+                StdOutPath = "valid_stdout.log",
+                StdErrPath = "valid_stderr.log",
+                RotationSizeInBytes = 12345
+            };
+
+            // Simulate Helper.IsValidPath always true for testing
+            HelperOverride.IsValidPathOverride = path => true;
+
+            var mockStdOutWriter = new Mock<IStreamWriter>();
+            var mockStdErrWriter = new Mock<IStreamWriter>();
+
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.RotationSizeInBytes))
+                .Returns(mockStdOutWriter.Object);
+
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.RotationSizeInBytes))
+                .Returns(mockStdErrWriter.Object);
+
+            mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
+
+            // Act
+            service.InvokeHandleLogWriters(options);
+
+            // Assert
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes), Times.Once);
+
+            // Check no errors logged
+            mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+
+            // Cleanup helper override
+            HelperOverride.IsValidPathOverride = null;
+        }
+
+        [Fact]
+        public void HandleLogWriters_InvalidPaths_LogsErrors()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger>();
+            var mockHelper = new Mock<IServiceHelper>();
+            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            var mockTimerFactory = new Mock<ITimerFactory>();
+            var mockProcessFactory = new Mock<IProcessFactory>();
+            var mockPathValidator = new Mock<IPathValidator>();
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                mockStreamWriterFactory.Object,
+                mockTimerFactory.Object,
+                mockProcessFactory.Object,
+                mockPathValidator.Object
+            );
+
+            var options = new StartOptions
+            {
+                StdOutPath = "invalid_stdout.log",
+                StdErrPath = "invalid_stderr.log",
+                RotationSizeInBytes = 12345
+            };
+
+            // Simulate Helper.IsValidPath always false for testing invalid paths
+            HelperOverride.IsValidPathOverride = path => false;
+
+            // Act
+            service.InvokeHandleLogWriters(options);
+
+            // Assert
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+
+            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid stdout file path")), null), Times.Once);
+            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid stderr file path")), null), Times.Once);
+
+            // Cleanup helper override
+            HelperOverride.IsValidPathOverride = null;
+        }
+
+        [Fact]
+        public void HandleLogWriters_EmptyPaths_DoesNotCreateWritersOrLog()
+        {
+            // Arrange
+            var mockLogger = new Mock<ILogger>();
+            var mockHelper = new Mock<IServiceHelper>();
+            var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            var mockTimerFactory = new Mock<ITimerFactory>();
+            var mockProcessFactory = new Mock<IProcessFactory>();
+            var mockPathValidator = new Mock<IPathValidator>();
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                mockStreamWriterFactory.Object,
+                mockTimerFactory.Object,
+                mockProcessFactory.Object,
+                mockPathValidator.Object
+            );
+
+            var options = new StartOptions
+            {
+                StdOutPath = "",
+                StdErrPath = null,
+                RotationSizeInBytes = 12345
+            };
+
+            // Act
+            service.InvokeHandleLogWriters(options);
+
+            // Assert
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+            mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+
     }
 }

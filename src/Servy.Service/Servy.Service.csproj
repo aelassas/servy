@@ -73,6 +73,8 @@
     <Compile Include="StreamWriters\StreamWriterFactory.cs" />
     <Compile Include="Timers\TimerAdapter.cs" />
     <Compile Include="Timers\TimerFactory.cs" />
+    <Compile Include="Validation\IPathValidator.cs" />
+    <Compile Include="Validation\PathValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

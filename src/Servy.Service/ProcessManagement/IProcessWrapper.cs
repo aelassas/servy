@@ -9,6 +9,11 @@ namespace Servy.Service
     public interface IProcessWrapper : IDisposable
     {
         /// <summary>
+        /// Process handle.
+        /// </summary>
+        IntPtr ProcessHandle { get; }
+
+        /// <summary>
         /// Occurs when the associated process writes a line to its standard output stream.
         /// </summary>
         event DataReceivedEventHandler OutputDataReceived;

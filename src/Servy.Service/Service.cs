@@ -1,9 +1,6 @@
 ﻿using Servy.Core;
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Timers;
 
@@ -16,11 +13,11 @@ namespace Servy.Service
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
+        private readonly IPathValidator _pathValidator;
         private string _serviceName;
         private string _realExePath;
         private string _realArgs;
         private string _workingDir;
-        private IntPtr _jobHandle = IntPtr.Zero;
         private IProcessWrapper _childProcess;
         private IStreamWriter _stdoutWriter;
         private IStreamWriter _stderrWriter;
@@ -43,14 +40,15 @@ namespace Servy.Service
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
         /// using the default <see cref="ServiceHelper"/> implementation,
-        /// and default factories for stream writer, timer, and process.
+        /// path validator and default factories for stream writer, timer, and process.
         /// </summary>
         public Service() : this(
             new ServiceHelper(new CommandLineProvider()),
             new EventLogLogger("Servy"),
             new StreamWriterFactory(),
             new TimerFactory(),
-            new ProcessFactory()
+            new ProcessFactory(),
+            new PathValidator()
         )
         {
         }
@@ -64,12 +62,14 @@ namespace Servy.Service
         /// <param name="streamWriterFactory">Factory to create rotating stream writers for stdout and stderr.</param>
         /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
         /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
+        /// <param name="pathValidator">Path Validator.</param>
         public Service(
             IServiceHelper serviceHelper,
             ILogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
-            IProcessFactory processFactory)
+            IProcessFactory processFactory,
+            IPathValidator pathValidator)
         {
             ServiceName = "Servy";
 
@@ -78,6 +78,7 @@ namespace Servy.Service
             _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
+            _pathValidator = pathValidator;
         }
 
         /// <summary>
@@ -85,7 +86,7 @@ namespace Servy.Service
         /// Logs info on success or a warning if it fails.
         /// </summary>
         /// <param name="priority">The process priority to set.</param>
-        private void SetProcessPriority(ProcessPriorityClass priority)
+        public void SetProcessPriority(ProcessPriorityClass priority)
         {
             try
             {
@@ -106,7 +107,7 @@ namespace Servy.Service
         /// <param name="options">The start options containing stdout and stderr paths.</param>
         private void HandleLogWriters(StartOptions options)
         {
-            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && Helper.IsValidPath(options.StdOutPath))
+            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && _pathValidator.IsValidPath(options.StdOutPath))
             {
                 _stdoutWriter = _streamWriterFactory.Create(options.StdOutPath, options.RotationSizeInBytes);
             }
@@ -115,7 +116,7 @@ namespace Servy.Service
                 _logger?.Error($"Invalid stdout file path: {options.StdOutPath}");
             }
 
-            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && Helper.IsValidPath(options.StdErrPath))
+            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && _pathValidator.IsValidPath(options.StdErrPath))
             {
                 _stderrWriter = _streamWriterFactory.Create(options.StdErrPath, options.RotationSizeInBytes);
             }
@@ -234,54 +235,28 @@ namespace Servy.Service
             _childProcess.ErrorDataReceived += OnErrorDataReceived;
             _childProcess.Exited += OnProcessExited;
 
-            // Create a Windows Job Object to manage the process and ensure it's terminated if the parent dies
-            _jobHandle = NativeMethods.CreateJobObject(IntPtr.Zero, null);
-            if (_jobHandle == IntPtr.Zero || _jobHandle == new IntPtr(-1))
+            // Create a Job Object through the service helper
+            var jobCreated = _serviceHelper.CreateJobObject(_logger);
+
+            if (!jobCreated)
             {
                 _logger?.Error("Failed to create Job Object.");
-            }
-            else
-            {
-                // Configure the Job Object to automatically kill all processes associated with it on handle close
-                var info = new NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION
-                {
-                    BasicLimitInformation = { LimitFlags = NativeMethods.LimitFlags.KillOnJobClose }
-                };
-
-                int length = Marshal.SizeOf(typeof(NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-                IntPtr extendedInfoPtr = Marshal.AllocHGlobal(length);
-                try
-                {
-                    Marshal.StructureToPtr(info, extendedInfoPtr, false);
-                    if (!NativeMethods.SetInformationJobObject(
-                        _jobHandle,
-                        NativeMethods.JOBOBJECTINFOCLASS.JobObjectExtendedLimitInformation,
-                        extendedInfoPtr,
-                        (uint)length))
-                    {
-                        _logger?.Error("Failed to set information on Job Object.");
-                    }
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(extendedInfoPtr);
-                }
             }
 
             // Start the process
             _childProcess.Start();
             _logger?.Info($"Started child process with PID: {_childProcess.Id}");
 
-            // Assign the process to the Job Object
-            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
+            // Assign process to Job Object
+            if (jobCreated)
             {
-                if (!NativeMethods.AssignProcessToJobObject(_jobHandle, _childProcess.Handle))
+                if (!_serviceHelper.AssignProcessToJobObject(_childProcess, _logger))
                 {
                     _logger?.Error("Failed to assign process to Job Object.");
                 }
             }
 
-            // Begin asynchronous reading of the output and error streams
+            // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
         }
@@ -320,6 +295,7 @@ namespace Servy.Service
                                 _logger?.Error(
                                     $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken."
                                 );
+                                _isRecovering = false;
                                 return;
                             }
 
@@ -330,68 +306,34 @@ namespace Servy.Service
                             switch (_recoveryAction)
                             {
                                 case RecoveryAction.None:
-                                    _isRecovering = false;
                                     break;
 
                                 case RecoveryAction.RestartService:
-                                    try
-                                    {
-                                        var exePath = Assembly.GetExecutingAssembly().Location;
-                                        var dir = Path.GetDirectoryName(exePath);
-                                        var restarter = Path.Combine(dir, "Servy.Restarter.exe");
-
-                                        if (File.Exists(restarter))
-                                        {
-                                            Process.Start(new ProcessStartInfo
-                                            {
-                                                FileName = restarter,
-                                                Arguments = _serviceName,
-                                                CreateNoWindow = true,
-                                                UseShellExecute = false
-                                            });
-
-                                            using (var controller = new ServiceController(_serviceName))
-                                            {
-                                                controller.Stop();
-                                            }
-                                        }
-                                        else
-                                        {
-                                            _logger?.Error("Servy.Restarter.exe not found.");
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _logger?.Error($"Failed to launch restarter: {ex}");
-                                    }
+                                    _serviceHelper.RestartService(
+                                        _logger,
+                                        _serviceName
+                                        );
                                     break;
 
                                 case RecoveryAction.RestartProcess:
-                                    TryRestartChildProcess();
-                                    _isRecovering = false;
+                                    _serviceHelper.RestartProcess(
+                                         _childProcess,
+                                         _serviceHelper.TerminateChildProcesses,
+                                         StartProcess,
+                                         _realExePath,
+                                         _realArgs,
+                                         _workingDir,
+                                         _logger
+                                     );
                                     break;
 
                                 case RecoveryAction.RestartComputer:
-                                    try
-                                    {
-                                        Process.Start(new ProcessStartInfo
-                                        {
-                                            FileName = "shutdown",
-                                            Arguments = "/r /t 0 /f",
-                                            CreateNoWindow = true,
-                                            UseShellExecute = false
-                                        });
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _logger?.Error($"Failed to restart computer: {ex.Message}");
-                                    }
-                                    finally
-                                    {
-                                        _isRecovering = false;
-                                    }
+                                    _serviceHelper.RestartComputer(_logger);
                                     break;
                             }
+
+                            // Only now reset the flag
+                            _isRecovering = false;
                         }
                     }
                     else
@@ -408,53 +350,6 @@ namespace Servy.Service
                 {
                     _logger?.Error($"Error in health check: {ex}");
                 }
-            }
-        }
-
-        /// <summary>
-        /// Terminates all child processes in the job object (if one is active) by closing the job handle.
-        /// This ensures no orphaned or zombie processes remain.
-        /// </summary>
-        private void TerminateChildProcesses()
-        {
-            // Closing the job handle will terminate all associated child processes automatically
-            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
-            {
-                NativeMethods.CloseHandle(_jobHandle);
-                _jobHandle = IntPtr.Zero;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to restart the child process by:
-        /// 1. Killing it if it's running.
-        /// 2. Terminating the associated job object (which ensures all child processes are also killed).
-        /// 3. Restarting the process with the original parameters.
-        /// </summary>
-        private void TryRestartChildProcess()
-        {
-            try
-            {
-                _logger?.Info("Restarting child process...");
-
-                // Kill the process if it's still running
-                if (_childProcess != null && !_childProcess.HasExited)
-                {
-                    _childProcess.Kill();
-                    _childProcess.WaitForExit();
-                }
-
-                // Clean up the job object and any associated processes
-                TerminateChildProcesses();
-
-                // Start the process again
-                StartProcess(_realExePath, _realArgs, _workingDir);
-
-                _logger?.Info("Process restarted.");
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"Failed to restart process: {ex.Message}");
             }
         }
 
@@ -595,7 +490,7 @@ namespace Servy.Service
                     _childProcess = null;
                 }
 
-                TerminateChildProcesses();
+                _serviceHelper.TerminateChildProcesses();
 
                 GC.SuppressFinalize(this);
             }

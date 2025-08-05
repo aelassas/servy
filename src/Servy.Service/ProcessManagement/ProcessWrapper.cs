@@ -10,6 +10,9 @@ namespace Servy.Service
     {
         private readonly Process _process;
 
+        /// <inheritdoc/>
+        public IntPtr ProcessHandle => _process.Handle;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
         /// </summary>

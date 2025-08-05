@@ -3,12 +3,17 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.ServiceProcess;
 
 namespace Servy.Service
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
     {
+        private IntPtr _jobHandle = IntPtr.Zero;
+
         private readonly ICommandLineProvider _commandLineProvider;
 
         public ServiceHelper(ICommandLineProvider commandLineProvider)
@@ -104,5 +109,171 @@ namespace Servy.Service
 
             return options;
         }
+
+        /// <inheritdoc />
+        public void RestartProcess(
+            IProcessWrapper process,
+            Action terminateJobObject,
+            Action<string, string, string> startProcess,
+            string realExePath,
+            string realArgs,
+            string workingDir,
+            ILogger logger)
+        {
+            try
+            {
+                logger?.Info("Restarting child process...");
+
+                if (process != null && !process.HasExited)
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                }
+
+                terminateJobObject?.Invoke();
+                startProcess?.Invoke(realExePath, realArgs, workingDir);
+
+                logger?.Info("Process restarted.");
+            }
+            catch (Exception ex)
+            {
+                logger?.Error($"Failed to restart process: {ex.Message}", ex);
+            }
+        }
+
+        /// <inheritdoc />
+        public void RestartService(ILogger logger, string serviceName)
+        {
+            try
+            {
+                var exePath = Assembly.GetExecutingAssembly().Location;
+                var dir = Path.GetDirectoryName(exePath);
+                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+
+                if (File.Exists(restarter))
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = restarter,
+                        Arguments = serviceName,
+                        CreateNoWindow = true,
+                        UseShellExecute = false
+                    });
+
+                    using (var controller = new ServiceController(serviceName))
+                    {
+                        controller.Stop();
+                    }
+                }
+                else
+                {
+                    logger?.Error("Servy.Restarter.exe not found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                logger?.Error($"Failed to launch restarter: {ex}");
+            }
+        }
+
+        /// <inheritdoc />
+        public void RestartComputer(ILogger logger)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "shutdown",
+                    Arguments = "/r /t 0 /f",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
+            }
+            catch (Exception ex)
+            {
+                logger?.Error($"Failed to restart computer: {ex.Message}");
+            }
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Creates a Windows Job Object to manage child processes lifetime and resource limits.
+        /// </summary>
+        /// <param name="logger">Logger to record errors and information.</param>
+        /// <returns>True if the job object was created successfully, false otherwise.</returns>
+        public bool CreateJobObject(ILogger logger)
+        {
+            try
+            {
+                _jobHandle = CreateJobObject(IntPtr.Zero, null);
+                if (_jobHandle == IntPtr.Zero)
+                {
+                    logger?.Error("Failed to create Job Object.");
+                    return false;
+                }
+
+                // Setup job object limits here if needed (optional)
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger?.Error($"Exception while creating Job Object: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// Assigns a process to the created Job Object.
+        /// </summary>
+        /// <param name="process">Process wrapper for the process to assign.</param>
+        /// <param name="logger">Logger to record errors and information.</param>
+        /// <returns>True if assignment succeeded, false otherwise.</returns>
+        public bool AssignProcessToJobObject(IProcessWrapper process, ILogger logger)
+        {
+            if (_jobHandle == IntPtr.Zero)
+            {
+                logger?.Error("Job Object not created yet.");
+                return false;
+            }
+
+            try
+            {
+                bool success = AssignProcessToJobObject(_jobHandle, process.ProcessHandle);
+                if (!success)
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    logger?.Error($"Failed to assign process to Job Object. Win32 Error: {error}");
+                }
+                return success;
+            }
+            catch (Exception ex)
+            {
+                logger?.Error($"Exception while assigning process to Job Object: {ex.Message}", ex);
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        public void TerminateChildProcesses()
+        {
+            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
+            {
+                NativeMethods.CloseHandle(_jobHandle);
+                _jobHandle = IntPtr.Zero;
+            }
+        }
+
+        #region Native Methods
+
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
+
+        #endregion
+
+
     }
 }
