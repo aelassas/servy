@@ -12,13 +12,14 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+        private readonly IServiceHelper _serviceHelper;
+        private readonly ILogger _logger;
         private string _serviceName;
         private string _realExePath;
         private string _realArgs;
         private string _workingDir;
         private IntPtr _jobHandle = IntPtr.Zero;
         private Process _childProcess;
-        private EventLog _eventLog;
         private RotatingStreamWriter _stdoutWriter;
         private RotatingStreamWriter _stderrWriter;
         private Timer _healthCheckTimer;
@@ -33,21 +34,82 @@ namespace Servy.Service
         private int _restartAttempts = 0;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Service"/> class.
-        /// Sets up the service name and event log source.
+        /// Initializes a new instance of the <see cref="Service"/> class
+        /// using the default <see cref="ServiceHelper"/> implementation.
         /// </summary>
-        public Service()
+        public Service() : this(new ServiceHelper(new CommandLineProvider()), new EventLogLogger("Servy")) // or your default implementation
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Service"/> class.
+        /// Sets the service name, initializes the event log source, and assigns the service helper.
+        /// </summary>
+        /// <param name="serviceHelper">The service helper instance to use.</param>
+        /// <param name="logger">Logger.</param>
+        public Service(IServiceHelper serviceHelper, ILogger logger)
         {
             ServiceName = "Servy";
 
-            // Initialize event log for diagnostic messages.
-            _eventLog = new EventLog();
-            if (!EventLog.SourceExists(ServiceName))
+            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        private void SetProcessPriority(ProcessPriorityClass priority)
+        {
+            try
             {
-                EventLog.CreateEventSource(ServiceName, "Application");
+                _childProcess.PriorityClass = priority;
+                _logger?.Info($"Set process priority to {_childProcess.PriorityClass}.");
             }
-            _eventLog.Source = ServiceName;
-            _eventLog.Log = "Application";
+            catch (Exception ex)
+            {
+                _logger?.Warning($"Failed to set priority: {ex.Message}");
+            }
+        }
+
+        private void HandleLogWriters(StartOptions options)
+        {
+            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && Helper.IsValidPath(options.StdOutPath))
+            {
+                _stdoutWriter = new RotatingStreamWriter(options.StdOutPath, options.RotationSizeInBytes);
+            }
+            else if (!string.IsNullOrWhiteSpace(options.StdOutPath))
+            {
+                _logger?.Error($"Invalid stdout file path: {options.StdOutPath}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && Helper.IsValidPath(options.StdErrPath))
+            {
+                _stderrWriter = new RotatingStreamWriter(options.StdErrPath, options.RotationSizeInBytes);
+            }
+            else if (!string.IsNullOrWhiteSpace(options.StdErrPath))
+            {
+                _logger?.Error($"Invalid stderr file path: {options.StdErrPath}");
+            }
+        }
+
+        private void StartMonitoredProcess(StartOptions options)
+        {
+            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
+            SetProcessPriority(options.Priority);
+        }
+
+        private void SetupHealthMonitoring(StartOptions options)
+        {
+            _heartbeatIntervalSeconds = options.HeartbeatInterval;
+            _maxFailedChecks = options.MaxFailedChecks;
+            _recoveryAction = options.RecoveryAction;
+
+            if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
+            {
+                _healthCheckTimer = new Timer(_heartbeatIntervalSeconds * 1000);
+                _healthCheckTimer.Elapsed += CheckHealth;
+                _healthCheckTimer.AutoReset = true;
+                _healthCheckTimer.Start();
+
+                _logger?.Info("Health monitoring started.");
+            }
         }
 
         /// <summary>
@@ -61,147 +123,24 @@ namespace Servy.Service
         {
             try
             {
-                var fullArgs = Environment.GetCommandLineArgs();
-
-                _eventLog?.WriteEntry($"[Args] {string.Join(" ", fullArgs)}");
-                _eventLog?.WriteEntry($"[Args] fullArgs Length: {fullArgs.Length}");
-
-                fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
-
-                if (fullArgs.Length < 2 || string.IsNullOrWhiteSpace(fullArgs[1]))
+                var options = _serviceHelper.InitializeStartup(_logger);
+                if (options == null)
                 {
-                    _eventLog?.WriteEntry("Executable path not provided.", EventLogEntryType.Error);
                     Stop();
                     return;
                 }
 
-                // Extract parameters from args
-                var realExePath = fullArgs[1];
-                var realArgs = fullArgs.Length > 2 ? fullArgs[2] : string.Empty;
-                var workingDir = fullArgs.Length > 3 ? fullArgs[3] : string.Empty;
-                var priority = fullArgs.Length > 4 && Enum.TryParse<ProcessPriorityClass>(fullArgs[4], ignoreCase: true, out var p)
-                    ? p
-                    : ProcessPriorityClass.Normal;
+                _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
+                _serviceName = options.ServiceName;
+                _maxRestartAttempts = options.MaxRestartAttempts;
 
-                var stdoutFilePath = fullArgs.Length > 5 ? fullArgs[5] : string.Empty;
-                var stderrFilePath = fullArgs.Length > 6 ? fullArgs[6] : string.Empty;
-                var rotationSizeInBytes = fullArgs.Length > 7 && int.TryParse(fullArgs[7], out var rsb) ? rsb : 0; // 0 disables rotation
-
-                var heartbeatInterval = fullArgs.Length > 8 && int.TryParse(fullArgs[8], out var hbi) ? hbi : 0; // 0 disables health monitoring
-                var maxFailedChecks = fullArgs.Length > 9 && int.TryParse(fullArgs[9], out var mfc) ? mfc : 0; // 0 disables health monitoring
-                var recoveryAction = fullArgs.Length > 10 && Enum.TryParse<RecoveryAction>(fullArgs[10], true, out var ra) ? ra : RecoveryAction.None; // None disables health monitoring
-                _serviceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty;
-                _maxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out var mra) ? mra : 3; // Default to 3 max restart attempts
-
-                var stdoutRotationEnabled = !string.IsNullOrEmpty(stdoutFilePath);
-                var stderrRotationEnabled = !string.IsNullOrEmpty(stderrFilePath);
-
-                // Validate service name
-                if (string.IsNullOrEmpty(_serviceName))
-                {
-                    _eventLog?.WriteEntry("Service name empty", EventLogEntryType.Error);
-                    Stop();
-                    return;
-                }
-
-                // Validate executable path existence
-                if (!Helper.IsValidPath(realExePath) || !File.Exists(realExePath))
-                {
-                    _eventLog?.WriteEntry($"Executable not found: {realExePath}", EventLogEntryType.Error);
-                    Stop();
-                    return;
-                }
-
-                // Validate or fallback working directory
-                var invalidWorkingDir = string.IsNullOrWhiteSpace(workingDir)
-                    || !Helper.IsValidPath(workingDir)
-                    || !Directory.Exists(workingDir);
-
-                if (invalidWorkingDir)
-                {
-                    var system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
-                    workingDir = Path.GetDirectoryName(realExePath) ?? system32;
-                    _eventLog?.WriteEntry($"Working directory fallback applied: {workingDir}", EventLogEntryType.Warning);
-                }
-
-                // Validate stdout file path, disable rotation if invalid
-                if (!string.IsNullOrWhiteSpace(stdoutFilePath) && !Helper.IsValidPath(stdoutFilePath))
-                {
-                    _eventLog?.WriteEntry($"Invalid stdout file path: {stdoutFilePath}", EventLogEntryType.Error);
-                    stdoutRotationEnabled = false;
-                }
-
-                // Validate stderr file path, disable rotation if invalid
-                if (!string.IsNullOrWhiteSpace(stderrFilePath) && !Helper.IsValidPath(stderrFilePath))
-                {
-                    _eventLog?.WriteEntry($"Invalid stderr file path: {stderrFilePath}", EventLogEntryType.Error);
-                    stderrRotationEnabled = false;
-                }
-
-                // Log startup parameters
-                _eventLog?.WriteEntry($"[serviceName] {_serviceName}");
-                _eventLog?.WriteEntry($"[realExePath] {realExePath}");
-                _eventLog?.WriteEntry($"[realArgs] {realArgs}");
-                _eventLog?.WriteEntry($"[workingDir] {workingDir}");
-                _eventLog?.WriteEntry($"[priority] {priority}");
-                _eventLog?.WriteEntry($"[stdoutFilePath] {stdoutFilePath}");
-                _eventLog?.WriteEntry($"[stderrFilePath] {stderrFilePath}");
-                _eventLog?.WriteEntry($"[rotationSizeInBytes] {rotationSizeInBytes}");
-                _eventLog?.WriteEntry($"[heartbeatInterval] {heartbeatInterval}");
-                _eventLog?.WriteEntry($"[maxFailedChecks] {maxFailedChecks}");
-                _eventLog?.WriteEntry($"[recoveryAction] {recoveryAction}");
-                _eventLog?.WriteEntry($"[maxRestartAttempts] {_maxRestartAttempts}");
-
-                // Initialize rotating log writers if enabled
-                if (stdoutRotationEnabled)
-                {
-                    _stdoutWriter = new RotatingStreamWriter(stdoutFilePath, rotationSizeInBytes);
-                }
-
-                if (stderrRotationEnabled)
-                {
-                    _stderrWriter = new RotatingStreamWriter(stderrFilePath, rotationSizeInBytes);
-                }
-
-                StartProcess(realExePath, realArgs, workingDir);
-
-                // Set process priority AFTER starting process
-                try
-                {
-                    _childProcess.PriorityClass = priority;
-                    _eventLog?.WriteEntry($"Set process priority to {_childProcess.PriorityClass}.");
-                }
-                catch (Exception ex)
-                {
-                    _eventLog?.WriteEntry($"Failed to set priority: {ex.Message}", EventLogEntryType.Warning);
-                }
-
-                _heartbeatIntervalSeconds = heartbeatInterval;
-                _maxFailedChecks = maxFailedChecks;
-                _recoveryAction = recoveryAction;
-
-                // health check setup
-                if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
-                {
-                    // Create timer instance
-                    _healthCheckTimer = new Timer(_heartbeatIntervalSeconds * 1000); // interval in milliseconds
-
-                    // Hook event handler
-                    _healthCheckTimer.Elapsed += CheckHealth;
-
-                    // Optional: Auto reset means it keeps firing repeatedly
-                    _healthCheckTimer.AutoReset = true;
-
-                    // Start the timer
-                    _healthCheckTimer.Start();
-
-                    _eventLog?.WriteEntry("Health monitoring started.");
-                }
-
+                HandleLogWriters(options);
+                StartMonitoredProcess(options);
+                SetupHealthMonitoring(options);
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"Exception in OnStart: {ex.Message}", EventLogEntryType.Error);
+                _logger?.Error($"Exception in OnStart: {ex.Message}", ex);
                 Stop();
             }
         }
@@ -243,7 +182,7 @@ namespace Servy.Service
             _jobHandle = NativeMethods.CreateJobObject(IntPtr.Zero, null);
             if (_jobHandle == IntPtr.Zero || _jobHandle == new IntPtr(-1))
             {
-                _eventLog?.WriteEntry("Failed to create Job Object.", EventLogEntryType.Error);
+                _logger?.Error("Failed to create Job Object.");
             }
             else
             {
@@ -264,7 +203,7 @@ namespace Servy.Service
                         extendedInfoPtr,
                         (uint)length))
                     {
-                        _eventLog?.WriteEntry("Failed to set information on Job Object.", EventLogEntryType.Error);
+                        _logger?.Error("Failed to set information on Job Object.");
                     }
                 }
                 finally
@@ -275,14 +214,14 @@ namespace Servy.Service
 
             // Start the process
             _childProcess.Start();
-            _eventLog?.WriteEntry($"Started child process with PID: {_childProcess.Id}");
+            _logger?.Info($"Started child process with PID: {_childProcess.Id}");
 
             // Assign the process to the Job Object
             if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
             {
                 if (!NativeMethods.AssignProcessToJobObject(_jobHandle, _childProcess.Handle))
                 {
-                    _eventLog?.WriteEntry("Failed to assign process to Job Object.", EventLogEntryType.Error);
+                    _logger?.Error("Failed to assign process to Job Object.");
                 }
             }
 
@@ -314,17 +253,17 @@ namespace Servy.Service
                     {
                         _failedChecks++;
 
-                        _eventLog?.WriteEntry(
-                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process has exited unexpectedly.",
-                            EventLogEntryType.Warning);
+                        _logger?.Warning(
+                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process has exited unexpectedly."
+                         );
 
                         if (_failedChecks >= _maxFailedChecks)
                         {
                             if (_restartAttempts >= _maxRestartAttempts)
                             {
-                                _eventLog?.WriteEntry(
-                                    $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken.",
-                                    EventLogEntryType.Error);
+                                _logger?.Error(
+                                    $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken."
+                                );
                                 return;
                             }
 
@@ -362,12 +301,12 @@ namespace Servy.Service
                                         }
                                         else
                                         {
-                                            _eventLog?.WriteEntry("Servy.Restarter.exe not found.", EventLogEntryType.Error);
+                                            _logger?.Error("Servy.Restarter.exe not found.");
                                         }
                                     }
                                     catch (Exception ex)
                                     {
-                                        _eventLog?.WriteEntry($"Failed to launch restarter: {ex}", EventLogEntryType.Error);
+                                        _logger?.Error($"Failed to launch restarter: {ex}");
                                     }
                                     break;
 
@@ -389,7 +328,7 @@ namespace Servy.Service
                                     }
                                     catch (Exception ex)
                                     {
-                                        _eventLog?.WriteEntry($"Failed to restart computer: {ex.Message}", EventLogEntryType.Error);
+                                        _logger?.Error($"Failed to restart computer: {ex.Message}");
                                     }
                                     finally
                                     {
@@ -403,7 +342,7 @@ namespace Servy.Service
                     {
                         if (_failedChecks > 0)
                         {
-                            _eventLog?.WriteEntry("Child process is healthy again. Resetting failure count and restart attempts.");
+                            _logger?.Info("Child process is healthy again. Resetting failure count and restart attempts.");
                             _failedChecks = 0;
                             _restartAttempts = 0;
                         }
@@ -411,7 +350,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _eventLog?.WriteEntry($"Error in health check: {ex}", EventLogEntryType.Error);
+                    _logger?.Error($"Error in health check: {ex}");
                 }
             }
         }
@@ -441,7 +380,7 @@ namespace Servy.Service
         {
             try
             {
-                _eventLog?.WriteEntry("Restarting child process...");
+                _logger?.Info("Restarting child process...");
 
                 // Kill the process if it's still running
                 if (_childProcess != null && !_childProcess.HasExited)
@@ -456,11 +395,11 @@ namespace Servy.Service
                 // Start the process again
                 StartProcess(_realExePath, _realArgs, _workingDir);
 
-                _eventLog?.WriteEntry("Process restarted.");
+                _logger?.Info("Process restarted.");
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"Failed to restart process: {ex.Message}", EventLogEntryType.Error);
+                _logger?.Error($"Failed to restart process: {ex.Message}");
             }
         }
 
@@ -485,7 +424,7 @@ namespace Servy.Service
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
                 _stderrWriter?.WriteLine(e.Data);
-                _eventLog?.WriteEntry($"[Error] {e.Data}", EventLogEntryType.Error);
+                _logger?.Error($"[Error] {e.Data}");
             }
         }
 
@@ -498,13 +437,18 @@ namespace Servy.Service
             try
             {
                 var code = _childProcess.ExitCode;
-                _eventLog?.WriteEntry(
-                    code == 0 ? "Child process exited successfully." : $"Child process exited with code {code}.",
-                    code == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning);
+                if (code == 0)
+                {
+                    _logger.Info("Child process exited successfully.");
+                }
+                else
+                {
+                    _logger.Warning($"Child process exited with code {code}.");
+                }
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"[Exited] Failed to get exit code: {ex.Message}", EventLogEntryType.Warning);
+                _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
             }
         }
 
@@ -532,7 +476,7 @@ namespace Servy.Service
                 if (!closedGracefully)
                 {
                     // Either no GUI window or close failed — kill forcibly
-                    _eventLog?.WriteEntry("Graceful shutdown not supported. Forcing kill.", EventLogEntryType.Warning);
+                    _logger?.Warning("Graceful shutdown not supported. Forcing kill.");
                     process.Kill();
                 }
 
@@ -540,7 +484,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"SafeKillProcess error: {ex.Message}", EventLogEntryType.Warning);
+                _logger?.Warning($"SafeKillProcess error: {ex.Message}");
             }
         }
 
@@ -573,7 +517,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"Failed to dispose output writers: {ex.Message}", EventLogEntryType.Warning);
+                _logger?.Warning($"Failed to dispose output writers: {ex.Message}");
             }
 
             try
@@ -583,7 +527,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _eventLog?.WriteEntry($"Failed to kill child process: {ex.Message}", EventLogEntryType.Error);
+                _logger?.Error($"Failed to kill child process: {ex.Message}");
             }
             finally
             {
@@ -612,7 +556,7 @@ namespace Servy.Service
 
             base.OnStop();
 
-            _eventLog?.WriteEntry("Stopped child process.");
+            _logger?.Info("Stopped child process.");
         }
     }
 }

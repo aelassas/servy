@@ -44,6 +44,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandLineProvider.cs" />
+    <Compile Include="EventLogLogger.cs" />
+    <Compile Include="ICommandLineProvider.cs" />
+    <Compile Include="ILogger.cs" />
+    <Compile Include="IServiceHelper.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Service.cs">
       <SubType>Component</SubType>
@@ -53,6 +58,9 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServiceHelper.cs" />
+    <Compile Include="ServyStartOptionsParser.cs" />
+    <Compile Include="StartOptions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
