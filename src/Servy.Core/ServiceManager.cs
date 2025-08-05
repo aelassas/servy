@@ -97,6 +97,9 @@ namespace Servy.Core
         /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
         /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
         /// <param name="rotationSizeInBytes">Optional size in bytes for log rotation. If 0, no rotation is performed.</param>
+        /// <param name="heartbeatInterval">Optional heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
+        /// <param name="maxFailedChecks">Optional maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
+        /// <param name="recoveryAction">Optional recovery action to take if the service fails. If None, health monitoring is disabled.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -111,7 +114,10 @@ namespace Servy.Core
             ProcessPriority processPriority,
             string stdoutPath,
             string stderrPath,
-            int rotationSizeInBytes
+            int rotationSizeInBytes,
+            int heartbeatInterval,
+            int maxFailedChecks,
+            RecoveryAction recoveryAction
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -130,7 +136,11 @@ namespace Servy.Core
                 Quote(processPriority.ToString()),
                 Quote(stdoutPath),
                 Quote(stderrPath),
-                Quote(rotationSizeInBytes.ToString())
+                Quote(rotationSizeInBytes.ToString()),
+                Quote(heartbeatInterval.ToString()),
+                Quote(maxFailedChecks.ToString()),
+                Quote(recoveryAction.ToString()),
+                Quote(serviceName)
                 );
 
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);

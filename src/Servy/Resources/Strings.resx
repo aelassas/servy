@@ -89,6 +89,49 @@
     <value>bytes</value>
   </data>
 
+  <!-- Health monitoring -->
+  <data name="Label_EnableHealthMonitoring" xml:space="preserve">
+    <value>Enable Health Monitoring</value>
+  </data>
+  <data name="Chk_EnableHeartbeat" xml:space="preserve">
+    <value>Enable Heartbeat Check</value>
+  </data>
+  <data name="Label_HeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat Interval</value>
+  </data>
+  <data name="Label_Seconds" xml:space="preserve">
+    <value>seconds</value>
+  </data>
+  <data name="Label_MaxFailedChecks" xml:space="preserve">
+    <value>Max Failed Checks</value>
+  </data>
+  <data name="Label_Attempts" xml:space="preserve">
+    <value>attempts</value>
+  </data>
+  <data name="Label_RecoveryAction" xml:space="preserve">
+    <value>Recovery Action</value>
+  </data>
+  <data name="RecoveryAction_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="RecoveryAction_RestartService" xml:space="preserve">
+    <value>Restart Service (default)</value>
+  </data>
+  <data name="RecoveryAction_RestartProcess" xml:space="preserve">
+    <value>Restart Process</value>
+  </data>
+  <data name="RecoveryAction_RestartComputer" xml:space="preserve">
+    <value>Restart Computer</value>
+  </data>
+
+  <!-- General -->
+  <data name="Msg_InvalidValue" xml:space="preserve">
+    <value>Invalid value.</value>
+  </data>
+  <data name="Msg_FieldRequired" xml:space="preserve">
+    <value>This field is required.</value>
+  </data>
+
   <!-- Buttons -->
   <data name="Button_Install" xml:space="preserve">
     <value>Install</value>
@@ -122,7 +165,7 @@
   <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
     <value>The specified startup directory is invalid.</value>
   </data>
-  
+
   <data name="Msg_InvalidStdoutPath" xml:space="preserve">
     <value>The specified stdout file path is invalid.</value>
   </data>
@@ -132,6 +175,13 @@
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
     <value>Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes).</value>
   </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>Max Failed Checks must be a number greater than or equal to 1.</value>
+  </data>
+
 
   <data name="Msg_ServiceCreated" xml:space="preserve">
     <value>Service was created successfully.</value>

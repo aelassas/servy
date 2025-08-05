@@ -115,11 +115,56 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Heartbeat Check.
+        /// </summary>
+        public static string Chk_EnableHeartbeat {
+            get {
+                return ResourceManager.GetString("Chk_EnableHeartbeat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à attempts.
+        /// </summary>
+        public static string Label_Attempts {
+            get {
+                return ResourceManager.GetString("Label_Attempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Health Monitoring.
+        /// </summary>
+        public static string Label_EnableHealthMonitoring {
+            get {
+                return ResourceManager.GetString("Label_EnableHealthMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enable File Rotation.
         /// </summary>
         public static string Label_EnableRotation {
             get {
                 return ResourceManager.GetString("Label_EnableRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat Interval.
+        /// </summary>
+        public static string Label_HeartbeatInterval {
+            get {
+                return ResourceManager.GetString("Label_HeartbeatInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Failed Checks.
+        /// </summary>
+        public static string Label_MaxFailedChecks {
+            get {
+                return ResourceManager.GetString("Label_MaxFailedChecks", resourceCulture);
             }
         }
         
@@ -151,6 +196,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery Action.
+        /// </summary>
+        public static string Label_RecoveryAction {
+            get {
+                return ResourceManager.GetString("Label_RecoveryAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Rotation Size.
         /// </summary>
         public static string Label_RotationSize {
@@ -165,6 +219,15 @@ namespace Servy.Resources {
         public static string Label_RotationSizeUnity {
             get {
                 return ResourceManager.GetString("Label_RotationSizeUnity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à seconds.
+        /// </summary>
+        public static string Label_Seconds {
+            get {
+                return ResourceManager.GetString("Label_Seconds", resourceCulture);
             }
         }
         
@@ -259,6 +322,33 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à This field is required..
+        /// </summary>
+        public static string Msg_FieldRequired {
+            get {
+                return ResourceManager.GetString("Msg_FieldRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number of seconds greater than or equal to 5 seconds..
+        /// </summary>
+        public static string Msg_InvalidHeartbeatInterval {
+            get {
+                return ResourceManager.GetString("Msg_InvalidHeartbeatInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Failed Checks must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidMaxFailedChecks {
+            get {
+                return ResourceManager.GetString("Msg_InvalidMaxFailedChecks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified process path is invalid..
         /// </summary>
         public static string Msg_InvalidPath {
@@ -300,6 +390,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidStdoutPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidStdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid value..
+        /// </summary>
+        public static string Msg_InvalidValue {
+            get {
+                return ResourceManager.GetString("Msg_InvalidValue", resourceCulture);
             }
         }
         
@@ -426,6 +525,42 @@ namespace Servy.Resources {
         public static string ProcessPriority_RealTime {
             get {
                 return ResourceManager.GetString("ProcessPriority_RealTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à None.
+        /// </summary>
+        public static string RecoveryAction_None {
+            get {
+                return ResourceManager.GetString("RecoveryAction_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Computer.
+        /// </summary>
+        public static string RecoveryAction_RestartComputer {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartComputer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Process.
+        /// </summary>
+        public static string RecoveryAction_RestartProcess {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Service (default).
+        /// </summary>
+        public static string RecoveryAction_RestartService {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartService", resourceCulture);
             }
         }
         

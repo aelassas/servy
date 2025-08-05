@@ -3,18 +3,33 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
+using System.Threading.Tasks;
+using System.Timers;
 
 namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+        private string _serviceName;
+        private string _realExePath;
+        private string _realArgs;
+        private string _workingDir;
         private IntPtr _jobHandle = IntPtr.Zero;
         private Process _childProcess;
         private EventLog _eventLog;
         private RotatingStreamWriter _stdoutWriter;
         private RotatingStreamWriter _stderrWriter;
+        private Timer _healthCheckTimer;
+        private int _heartbeatIntervalSeconds;
+        private int _maxFailedChecks;
+        private int _failedChecks = 0;
+        private RecoveryAction _recoveryAction;
+        private bool _disposed = false; // Tracks whether Dispose has been called
+        private readonly object _healthCheckLock = new object();
+        private bool _isRecovering = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class.
@@ -71,8 +86,21 @@ namespace Servy.Service
                 var stderrFilePath = fullArgs.Length > 6 ? fullArgs[6] : string.Empty;
                 var rotationSizeInBytes = fullArgs.Length > 7 && int.TryParse(fullArgs[7], out var rsb) ? rsb : 0; // 0 disables rotation
 
+                var heartbeatInterval = fullArgs.Length > 8 && int.TryParse(fullArgs[8], out var hbi) ? hbi : 0; // 0 disables health monitoring
+                var maxFailedChecks = fullArgs.Length > 9 && int.TryParse(fullArgs[9], out var mfc) ? mfc : 0; // 0 disables health monitoring
+                var recoveryAction = fullArgs.Length > 10 && Enum.TryParse<RecoveryAction>(fullArgs[10], true, out var ra) ? ra : RecoveryAction.None; // None disables health monitoring
+                _serviceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty;
+
                 var stdoutRotationEnabled = !string.IsNullOrEmpty(stdoutFilePath);
                 var stderrRotationEnabled = !string.IsNullOrEmpty(stderrFilePath);
+
+                // Validate service name
+                if (string.IsNullOrEmpty(_serviceName))
+                {
+                    _eventLog?.WriteEntry("Service name empty", EventLogEntryType.Error);
+                    Stop();
+                    return;
+                }
 
                 // Validate executable path existence
                 if (!Helper.IsValidPath(realExePath) || !File.Exists(realExePath))
@@ -109,6 +137,7 @@ namespace Servy.Service
                 }
 
                 // Log startup parameters
+                _eventLog?.WriteEntry($"[serviceName] {_serviceName}");
                 _eventLog?.WriteEntry($"[realExePath] {realExePath}");
                 _eventLog?.WriteEntry($"[realArgs] {realArgs}");
                 _eventLog?.WriteEntry($"[workingDir] {workingDir}");
@@ -116,6 +145,9 @@ namespace Servy.Service
                 _eventLog?.WriteEntry($"[stdoutFilePath] {stdoutFilePath}");
                 _eventLog?.WriteEntry($"[stderrFilePath] {stderrFilePath}");
                 _eventLog?.WriteEntry($"[rotationSizeInBytes] {rotationSizeInBytes}");
+                _eventLog?.WriteEntry($"[heartbeatInterval] {heartbeatInterval}");
+                _eventLog?.WriteEntry($"[maxFailedChecks] {maxFailedChecks}");
+                _eventLog?.WriteEntry($"[recoveryAction] {recoveryAction}");
 
                 // Initialize rotating log writers if enabled
                 if (stdoutRotationEnabled)
@@ -128,66 +160,7 @@ namespace Servy.Service
                     _stderrWriter = new RotatingStreamWriter(stderrFilePath, rotationSizeInBytes);
                 }
 
-                var psi = new ProcessStartInfo
-                {
-                    FileName = realExePath,
-                    Arguments = realArgs,
-                    WorkingDirectory = workingDir,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                _childProcess = new Process { StartInfo = psi };
-
-                _childProcess.EnableRaisingEvents = true;
-                _childProcess.OutputDataReceived += OnOutputDataReceived;
-                _childProcess.ErrorDataReceived += OnErrorDataReceived;
-                _childProcess.Exited += OnProcessExited;
-
-                // Create a Windows Job Object to manage child process lifetime
-                _jobHandle = NativeMethods.CreateJobObject(IntPtr.Zero, null);
-                if (_jobHandle == IntPtr.Zero || _jobHandle == new IntPtr(-1))
-                {
-                    _eventLog?.WriteEntry("Failed to create Job Object.", EventLogEntryType.Error);
-                }
-                else
-                {
-                    // Configure Job Object to terminate all child processes when this handle is closed
-                    var info = new NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION
-                    {
-                        BasicLimitInformation = { LimitFlags = NativeMethods.LimitFlags.KillOnJobClose }
-                    };
-
-                    int length = Marshal.SizeOf(typeof(NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-                    IntPtr extendedInfoPtr = Marshal.AllocHGlobal(length);
-                    try
-                    {
-                        Marshal.StructureToPtr(info, extendedInfoPtr, false);
-                        if (!NativeMethods.SetInformationJobObject(_jobHandle,
-                            NativeMethods.JOBOBJECTINFOCLASS.JobObjectExtendedLimitInformation,
-                            extendedInfoPtr, (uint)length))
-                        {
-                            _eventLog?.WriteEntry("Failed to set information on Job Object.", EventLogEntryType.Error);
-                        }
-                    }
-                    finally
-                    {
-                        Marshal.FreeHGlobal(extendedInfoPtr);
-                    }
-                }
-
-                _childProcess.Start();
-
-                // Assign child process to the job object for group management
-                if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
-                {
-                    if (!NativeMethods.AssignProcessToJobObject(_jobHandle, _childProcess.Handle))
-                    {
-                        _eventLog?.WriteEntry("Failed to assign process to Job Object.", EventLogEntryType.Error);
-                    }
-                }
+                StartProcess(realExePath, realArgs, workingDir);
 
                 // Set process priority AFTER starting process
                 try
@@ -200,15 +173,284 @@ namespace Servy.Service
                     _eventLog?.WriteEntry($"Failed to set priority: {ex.Message}", EventLogEntryType.Warning);
                 }
 
-                _childProcess.BeginOutputReadLine();
-                _childProcess.BeginErrorReadLine();
+                _heartbeatIntervalSeconds = heartbeatInterval;
+                _maxFailedChecks = maxFailedChecks;
+                _recoveryAction = recoveryAction;
 
-                _eventLog?.WriteEntry("Started child process.");
+                // health check setup
+                if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
+                {
+                    // Create timer instance
+                    _healthCheckTimer = new Timer(_heartbeatIntervalSeconds * 1000); // interval in milliseconds
+
+                    // Hook event handler
+                    _healthCheckTimer.Elapsed += CheckHealth;
+
+                    // Optional: Auto reset means it keeps firing repeatedly
+                    _healthCheckTimer.AutoReset = true;
+
+                    // Start the timer
+                    _healthCheckTimer.Start();
+
+                    _eventLog?.WriteEntry("Health monitoring started.");
+                }
+
             }
             catch (Exception ex)
             {
                 _eventLog?.WriteEntry($"Exception in OnStart: {ex.Message}", EventLogEntryType.Error);
                 Stop();
+            }
+        }
+
+        /// <summary>
+        /// Starts the child process and assigns it to a Windows Job Object to ensure proper cleanup.
+        /// Redirects standard output and error streams, and sets up event handlers for output, error, and exit events.
+        /// </summary>
+        /// <param name="realExePath">The full path to the executable to run.</param>
+        /// <param name="realArgs">The arguments to pass to the executable.</param>
+        /// <param name="workingDir">The working directory for the process.</param>
+        private void StartProcess(string realExePath, string realArgs, string workingDir)
+        {
+            _realExePath = realExePath;
+            _realArgs = realArgs;
+            _workingDir = workingDir;
+
+            // Configure the process start info
+            var psi = new ProcessStartInfo
+            {
+                FileName = realExePath,
+                Arguments = realArgs,
+                WorkingDirectory = workingDir,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            _childProcess = new Process { StartInfo = psi };
+
+            // Enable events and attach output/error handlers
+            _childProcess.EnableRaisingEvents = true;
+            _childProcess.OutputDataReceived += OnOutputDataReceived;
+            _childProcess.ErrorDataReceived += OnErrorDataReceived;
+            _childProcess.Exited += OnProcessExited;
+
+            // Create a Windows Job Object to manage the process and ensure it's terminated if the parent dies
+            _jobHandle = NativeMethods.CreateJobObject(IntPtr.Zero, null);
+            if (_jobHandle == IntPtr.Zero || _jobHandle == new IntPtr(-1))
+            {
+                _eventLog?.WriteEntry("Failed to create Job Object.", EventLogEntryType.Error);
+            }
+            else
+            {
+                // Configure the Job Object to automatically kill all processes associated with it on handle close
+                var info = new NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                {
+                    BasicLimitInformation = { LimitFlags = NativeMethods.LimitFlags.KillOnJobClose }
+                };
+
+                int length = Marshal.SizeOf(typeof(NativeMethods.JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+                IntPtr extendedInfoPtr = Marshal.AllocHGlobal(length);
+                try
+                {
+                    Marshal.StructureToPtr(info, extendedInfoPtr, false);
+                    if (!NativeMethods.SetInformationJobObject(
+                        _jobHandle,
+                        NativeMethods.JOBOBJECTINFOCLASS.JobObjectExtendedLimitInformation,
+                        extendedInfoPtr,
+                        (uint)length))
+                    {
+                        _eventLog?.WriteEntry("Failed to set information on Job Object.", EventLogEntryType.Error);
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(extendedInfoPtr);
+                }
+            }
+
+            // Start the process
+            _childProcess.Start();
+            _eventLog?.WriteEntry($"Started child process with PID: {_childProcess.Id}");
+
+            // Assign the process to the Job Object
+            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
+            {
+                if (!NativeMethods.AssignProcessToJobObject(_jobHandle, _childProcess.Handle))
+                {
+                    _eventLog?.WriteEntry("Failed to assign process to Job Object.", EventLogEntryType.Error);
+                }
+            }
+
+            // Begin asynchronous reading of the output and error streams
+            _childProcess.BeginOutputReadLine();
+            _childProcess.BeginErrorReadLine();
+        }
+
+        /// <summary>
+        /// Handles the periodic health check triggered by the timer.
+        /// Compares the last received heartbeat timestamp with the current time,
+        /// and performs the configured recovery action if the heartbeat is missed.
+        /// </summary>
+        /// <param name="sender">The timer object that raised the event.</param>
+        /// <param name="e">Elapsed event data.</param>
+        private void CheckHealth(object sender, ElapsedEventArgs e)
+        {
+            if (_disposed)
+                return;
+
+            lock (_healthCheckLock)
+            {
+                if (_isRecovering)
+                    return;
+
+                try
+                {
+                    if (_childProcess == null || _childProcess.HasExited)
+                    {
+                        _failedChecks++;
+
+                        _eventLog?.WriteEntry(
+                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process has exited unexpectedly.",
+                            EventLogEntryType.Warning);
+
+                        if (_failedChecks >= _maxFailedChecks)
+                        {
+                            _isRecovering = true;
+                            _failedChecks = 0; // Reset counter before recovery to avoid repeated triggers
+
+                            switch (_recoveryAction)
+                            {
+                                case RecoveryAction.None:
+                                    _isRecovering = false;
+                                    break;
+
+                                case RecoveryAction.RestartService:
+                                    try
+                                    {
+                                        var exePath = Assembly.GetExecutingAssembly().Location;
+                                        var dir = Path.GetDirectoryName(exePath);
+                                        var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+
+                                        if (File.Exists(restarter))
+                                        {
+                                            Process.Start(new ProcessStartInfo
+                                            {
+                                                FileName = restarter,
+                                                Arguments = _serviceName,
+                                                CreateNoWindow = true,
+                                                UseShellExecute = false
+                                            });
+
+                                            // Stop the service (this will terminate the current process)
+                                            using (var controller = new ServiceController(_serviceName))
+                                            {
+                                                controller.Stop();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            _eventLog?.WriteEntry("Servy.Restarter.exe not found.", EventLogEntryType.Error);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _eventLog?.WriteEntry($"Failed to launch restarter: {ex}", EventLogEntryType.Error);
+                                    }
+                                    break;
+
+                                case RecoveryAction.RestartProcess:
+                                    TryRestartChildProcess();
+                                    _isRecovering = false;
+                                    break;
+
+                                case RecoveryAction.RestartComputer:
+                                    try
+                                    {
+                                        Process.Start(new ProcessStartInfo
+                                        {
+                                            FileName = "shutdown",
+                                            Arguments = "/r /t 0 /f",
+                                            CreateNoWindow = true,
+                                            UseShellExecute = false
+                                        });
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _eventLog?.WriteEntry($"Failed to restart computer: {ex.Message}", EventLogEntryType.Error);
+                                    }
+                                    finally
+                                    {
+                                        _isRecovering = false;
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (_failedChecks > 0)
+                        {
+                            _eventLog?.WriteEntry("Child process is healthy again. Resetting failure count.");
+                            _failedChecks = 0;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _eventLog?.WriteEntry($"Error in health check: {ex}", EventLogEntryType.Error);
+                }
+            }
+        }
+
+
+
+        /// <summary>
+        /// Terminates all child processes in the job object (if one is active) by closing the job handle.
+        /// This ensures no orphaned or zombie processes remain.
+        /// </summary>
+        private void TerminateChildProcesses()
+        {
+            // Closing the job handle will terminate all associated child processes automatically
+            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
+            {
+                NativeMethods.CloseHandle(_jobHandle);
+                _jobHandle = IntPtr.Zero;
+            }
+        }
+
+
+        /// <summary>
+        /// Attempts to restart the child process by:
+        /// 1. Killing it if it's running.
+        /// 2. Terminating the associated job object (which ensures all child processes are also killed).
+        /// 3. Restarting the process with the original parameters.
+        /// </summary>
+        private void TryRestartChildProcess()
+        {
+            try
+            {
+                _eventLog?.WriteEntry("Restarting child process...");
+
+                // Kill the process if it's still running
+                if (_childProcess != null && !_childProcess.HasExited)
+                {
+                    _childProcess.Kill();
+                    _childProcess.WaitForExit();
+                }
+
+                // Clean up the job object and any associated processes
+                TerminateChildProcesses();
+
+                // Start the process again
+                StartProcess(_realExePath, _realArgs, _workingDir);
+
+                _eventLog?.WriteEntry("Process restarted.");
+            }
+            catch (Exception ex)
+            {
+                _eventLog?.WriteEntry($"Failed to restart process: {ex.Message}", EventLogEntryType.Error);
             }
         }
 
@@ -247,7 +489,7 @@ namespace Servy.Service
             {
                 var code = _childProcess.ExitCode;
                 _eventLog?.WriteEntry(
-                    code == 0 ? "Wrapped process exited successfully." : $"Wrapped process exited with code {code}.",
+                    code == 0 ? "Child process exited successfully." : $"Child process exited with code {code}.",
                     code == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning);
             }
             catch (Exception ex)
@@ -293,12 +535,16 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the service stops.
-        /// Unhooks event handlers, disposes output writers,
-        /// kills the child process, and closes the job object handle.
+        /// Disposes the service, cleaning up resources.
         /// </summary>
-        protected override void OnStop()
+        private void Cleanup()
         {
+            if (_disposed)
+                return;
+
+            _healthCheckTimer?.Dispose();
+            _healthCheckTimer = null;
+
             if (_childProcess != null)
             {
                 // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
@@ -331,18 +577,31 @@ namespace Servy.Service
             }
             finally
             {
+                _healthCheckTimer?.Dispose();
+                _healthCheckTimer = null;
+
                 _childProcess.Dispose();
                 _childProcess = null;
 
-                // Closing the job handle will terminate all associated child processes automatically
-                if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
-                {
-                    NativeMethods.CloseHandle(_jobHandle);
-                    _jobHandle = IntPtr.Zero;
-                }
+                TerminateChildProcesses();
 
                 GC.SuppressFinalize(this);
             }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Called when the service stops.
+        /// Unhooks event handlers, disposes output writers,
+        /// kills the child process, and closes the job object handle.
+        /// </summary>
+        protected override void OnStop()
+        {
+            // Do your cleanup
+            Cleanup();
+
+            base.OnStop();
 
             _eventLog?.WriteEntry("Stopped child process.");
         }

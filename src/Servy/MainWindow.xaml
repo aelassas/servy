@@ -30,6 +30,10 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
@@ -101,8 +105,35 @@
             <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding RotationSize}" Margin="0,5" IsEnabled="{Binding EnableRotation}" />
             <TextBlock Grid.Row="10" Grid.Column="2" Text="{Binding Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
+            <!-- Enable Health Monitoring -->
+            <CheckBox Grid.Row="11" Grid.Column="1"
+                      Content="{Binding Label_EnableHealthMonitoring}"
+                      IsChecked="{Binding EnableHealthMonitoring}"
+                      Margin="0,5" />
+
+            <!-- Heartbeat Interval -->
+            <TextBlock Grid.Row="12" Grid.Column="0" Text="{Binding Label_HeartbeatInterval}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding HeartbeatInterval}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+            <TextBlock Grid.Row="12" Grid.Column="2" Text="{Binding Label_Seconds}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+
+            <!-- Max Failed Checks -->
+            <TextBlock Grid.Row="13" Grid.Column="0" Text="{Binding Label_MaxFailedChecks}" Margin="0,5,10,5"/>
+            <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding MaxFailedChecks}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+            <TextBlock Grid.Row="13" Grid.Column="2" Text="{Binding Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+
+            <!-- Recovery Action -->
+            <TextBlock Grid.Row="14" Grid.Column="0" Text="{Binding Label_RecoveryAction}" Margin="0,5,10,5"/>
+            <ComboBox Grid.Row="14" Grid.Column="1"
+                      ItemsSource="{Binding RecoveryActions}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedValue="{Binding SelectedRecoveryAction, Mode=TwoWay}"
+                      SelectedValuePath="RecoveryAction"
+                      Margin="0,5"
+                      IsEnabled="{Binding EnableHealthMonitoring}"
+                      Grid.ColumnSpan="2" />
+
             <!-- Buttons -->
-            <StackPanel Grid.Row="11" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+            <StackPanel Grid.Row="15" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
                 <Button Content="{Binding Button_Install}" Width="80" Margin="5" Command="{Binding InstallCommand}" />
                 <Button Content="{Binding Button_Uninstall}" Width="80" Margin="5" Command="{Binding UninstallCommand}"/>
                 <Button Content="{Binding Button_Start}" Width="80" Margin="5" Command="{Binding StartCommand}"/>
@@ -110,7 +141,7 @@
                 <Button Content="{Binding Button_Restart}" Width="80" Margin="5" Command="{Binding RestartCommand}"/>
             </StackPanel>
 
-            <TextBlock Grid.Row="12" Grid.ColumnSpan="3" Text="* Required fields" FontStyle="Italic" Foreground="Gray"/>
+            <TextBlock Grid.Row="16" Grid.ColumnSpan="3" Text="* Required fields" FontStyle="Italic" Foreground="Gray"/>
         </Grid>
     </DockPanel>
 </Window>

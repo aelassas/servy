@@ -68,6 +68,7 @@
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\RecoveryActionItem.cs" />
     <Compile Include="ViewModels\StartupTypeItem.cs" />
     <Compile Include="ViewModels\ProcessPriorityItem.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
@@ -129,6 +130,11 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="servy.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Servy.Restarter.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

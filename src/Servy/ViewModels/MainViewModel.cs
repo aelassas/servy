@@ -22,7 +22,11 @@ namespace Servy.ViewModels
         }
 
         private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
-        private const int MinRotationSize = 1 * 1024 * 1024; // 1 MB
+        private const int MinRotationSize = 1 * 1024 * 1024;      // 1 MB
+        private const int DefaultHeartbeatInterval = 30;          // 30 seconds
+        private const int MinHeartbeatInterval = 5;               // 5 seconds
+        private const int DefaultMaxFailedChecks= 3;              // 3 attempts
+        private const int MinMaxFailedChecks= 1;                  // 1 attempt
 
         private string _serviceName;
         private string _serviceDescription;
@@ -35,6 +39,10 @@ namespace Servy.ViewModels
         private string _stderrPath;
         private bool _enableRotation;
         private string _rotationSize;
+        private bool _enableHealthMonitoring;
+        private string _heartbeatInterval;
+        private string _maxFailedChecks;
+        private RecoveryAction _selectedRecoveryAction;
 
         public string ServiceName
         {
@@ -120,6 +128,38 @@ namespace Servy.ViewModels
             set { _rotationSize = value; OnPropertyChanged(); }
         }
 
+        public bool EnableHealthMonitoring
+        {
+            get => _enableHealthMonitoring;
+            set { _enableHealthMonitoring = value; OnPropertyChanged(); }
+        }
+
+        public string HeartbeatInterval
+        {
+            get => _heartbeatInterval;
+            set { _heartbeatInterval = value; OnPropertyChanged(); }
+        }
+
+        public string MaxFailedChecks
+        {
+            get => _maxFailedChecks;
+            set { _maxFailedChecks = value; OnPropertyChanged(); }
+        }
+
+        public RecoveryAction SelectedRecoveryAction
+        {
+            get => _selectedRecoveryAction;
+            set { _selectedRecoveryAction = value; OnPropertyChanged(); }
+        }
+
+        public List<RecoveryActionItem> RecoveryActions { get; } = new List<RecoveryActionItem>
+        {
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None},
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService},
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess},
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer},
+        };
+
         public ICommand InstallCommand { get; }
         public ICommand UninstallCommand { get; }
         public ICommand StartCommand { get; }
@@ -156,13 +196,20 @@ namespace Servy.ViewModels
         public string Label_RotationSize => _resourceManager.GetString(nameof(Label_RotationSize), _culture) ?? string.Empty;
         public string Label_RotationSizeUnity => _resourceManager.GetString(nameof(Label_RotationSizeUnity), _culture) ?? string.Empty;
 
+        public string Label_EnableHealthMonitoring => _resourceManager.GetString(nameof(Label_EnableHealthMonitoring), _culture) ?? string.Empty;
+        public string Chk_EnableHeartbeat => _resourceManager.GetString(nameof(Chk_EnableHeartbeat), _culture) ?? string.Empty;
+        public string Label_HeartbeatInterval => _resourceManager.GetString(nameof(Label_HeartbeatInterval), _culture) ?? string.Empty;
+        public string Label_Seconds => _resourceManager.GetString(nameof(Label_Seconds), _culture) ?? string.Empty;
+        public string Label_MaxFailedChecks => _resourceManager.GetString(nameof(Label_MaxFailedChecks), _culture) ?? string.Empty;
+        public string Label_Attempts => _resourceManager.GetString(nameof(Label_Attempts), _culture) ?? string.Empty;
+        public string Label_RecoveryAction => _resourceManager.GetString(nameof(Label_RecoveryAction), _culture) ?? string.Empty;
+
         public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
         public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
         public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
         public string Button_Stop => _resourceManager.GetString(nameof(Button_Stop), _culture) ?? string.Empty;
         public string Button_Restart => _resourceManager.GetString(nameof(Button_Restart), _culture) ?? string.Empty;
         public string Button_Browse => _resourceManager.GetString(nameof(Button_Browse), _culture) ?? string.Empty;
-
 
         public MainViewModel()
         {
@@ -171,10 +218,13 @@ namespace Servy.ViewModels
             _processPath = string.Empty;
             _startupDirectory = string.Empty;
             _processParameters = string.Empty;
-            _selectedStartupType = ServiceStartType.Automatic; // Default to Automatic startup type
-            _selectedProcessPriority = ProcessPriority.Normal; // Default to Normal priority
-            _enableRotation = false; // Default to no rotation
-            _rotationSize = DefaultRotationSize.ToString(); // Default to 10 MB rotation size
+            _selectedStartupType = ServiceStartType.Automatic;        // Default to Automatic startup type
+            _selectedProcessPriority = ProcessPriority.Normal;        // Default to Normal priority
+            _enableRotation = false;                                  // Default to no rotation
+            _rotationSize = DefaultRotationSize.ToString();           // Default to 10 MB rotation size
+            _selectedRecoveryAction = RecoveryAction.RestartService;  // Default to RestartService recovery action
+            _heartbeatInterval = DefaultHeartbeatInterval.ToString(); // Default to 30 seconds
+            _maxFailedChecks = DefaultMaxFailedChecks.ToString();     // Default to 3 attempts
 
             InstallCommand = new RelayCommand(InstallService);
             UninstallCommand = new RelayCommand(UninstallService);
@@ -234,6 +284,23 @@ namespace Servy.ViewModels
                 }
             }
 
+            var heartbeatInterval = 0;
+            var maxFailedChecks = 0;
+            if (EnableHealthMonitoring)
+            {
+                if (!int.TryParse(HeartbeatInterval, out heartbeatInterval) || heartbeatInterval < MinHeartbeatInterval)
+                {
+                    MessageBox.Show(Strings.Msg_InvalidHeartbeatInterval, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!int.TryParse(MaxFailedChecks, out maxFailedChecks) || maxFailedChecks < MinMaxFailedChecks)
+                {
+                    MessageBox.Show(Strings.Msg_InvalidMaxFailedChecks, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
+
             try
             {
                 var success = ServiceManager.InstallService(
@@ -247,7 +314,10 @@ namespace Servy.ViewModels
                     SelectedProcessPriority,          // process priority
                     StdoutPath,                       // standard output path 
                     StderrPath,                       // standard error path
-                    rotationSize                      // rotation size in bytes, O if rotation is disabled
+                    rotationSize,                     // rotation size in bytes, O if rotation is disabled
+                    heartbeatInterval,                // heartbeat interval in seconds, O if health monitoring is disabled
+                    maxFailedChecks,                  // heartbeat interval in seconds, 0 if health monitoring is disabled
+                    SelectedRecoveryAction            // recovery action
                 );
 
                 if (success)
@@ -376,6 +446,9 @@ namespace Servy.ViewModels
             RotationSize = DefaultRotationSize.ToString();
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
+            SelectedRecoveryAction = RecoveryAction.RestartService;
+            HeartbeatInterval = DefaultHeartbeatInterval.ToString();
+            MaxFailedChecks = DefaultMaxFailedChecks.ToString();
         }
 
     }
