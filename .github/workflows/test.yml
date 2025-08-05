@@ -56,9 +56,9 @@ jobs:
             --output "coverage/Servy.Service.UnitTests.xml"
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # Only required for private repositories
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: |
             coverage/Servy.Core.UnitTests.xml
             coverage/Servy.Restarter.UnitTests.xml
