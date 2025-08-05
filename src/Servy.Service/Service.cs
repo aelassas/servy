@@ -2,7 +2,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -14,15 +13,18 @@ namespace Servy.Service
     {
         private readonly IServiceHelper _serviceHelper;
         private readonly ILogger _logger;
+        private readonly IStreamWriterFactory _streamWriterFactory;
+        private readonly ITimerFactory _timerFactory;
+        private readonly IProcessFactory _processFactory;
         private string _serviceName;
         private string _realExePath;
         private string _realArgs;
         private string _workingDir;
         private IntPtr _jobHandle = IntPtr.Zero;
-        private Process _childProcess;
-        private RotatingStreamWriter _stdoutWriter;
-        private RotatingStreamWriter _stderrWriter;
-        private Timer _healthCheckTimer;
+        private IProcessWrapper _childProcess;
+        private IStreamWriter _stdoutWriter;
+        private IStreamWriter _stderrWriter;
+        private ITimer _healthCheckTimer;
         private int _heartbeatIntervalSeconds;
         private int _maxFailedChecks;
         private int _failedChecks = 0;
@@ -33,26 +35,44 @@ namespace Servy.Service
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
 
+        public event Action OnStoppedForTest;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
         /// using the default <see cref="ServiceHelper"/> implementation.
         /// </summary>
-        public Service() : this(new ServiceHelper(new CommandLineProvider()), new EventLogLogger("Servy")) // or your default implementation
+        public Service() : this(
+            new ServiceHelper(new CommandLineProvider()), new EventLogLogger("Servy"),
+            new StreamWriterFactory(),
+            new TimerFactory(),
+            new ProcessFactory()
+            ) // or your default implementation
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class.
-        /// Sets the service name, initializes the event log source, and assigns the service helper.
+        /// Sets the service name, initializes the event log source, and assigns the required dependencies.
         /// </summary>
         /// <param name="serviceHelper">The service helper instance to use.</param>
-        /// <param name="logger">Logger.</param>
-        public Service(IServiceHelper serviceHelper, ILogger logger)
+        /// <param name="logger">The logger instance to use for logging.</param>
+        /// <param name="streamWriterFactory">Factory to create rotating stream writers for stdout and stderr.</param>
+        /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
+        /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
+        public Service(
+            IServiceHelper serviceHelper,
+            ILogger logger,
+            IStreamWriterFactory streamWriterFactory,
+            ITimerFactory timerFactory,
+            IProcessFactory processFactory)
         {
             ServiceName = "Servy";
 
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
+            _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
+            _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
         }
 
         private void SetProcessPriority(ProcessPriorityClass priority)
@@ -72,7 +92,7 @@ namespace Servy.Service
         {
             if (!string.IsNullOrWhiteSpace(options.StdOutPath) && Helper.IsValidPath(options.StdOutPath))
             {
-                _stdoutWriter = new RotatingStreamWriter(options.StdOutPath, options.RotationSizeInBytes);
+                _stdoutWriter = _streamWriterFactory.Create(options.StdOutPath, options.RotationSizeInBytes);
             }
             else if (!string.IsNullOrWhiteSpace(options.StdOutPath))
             {
@@ -81,7 +101,7 @@ namespace Servy.Service
 
             if (!string.IsNullOrWhiteSpace(options.StdErrPath) && Helper.IsValidPath(options.StdErrPath))
             {
-                _stderrWriter = new RotatingStreamWriter(options.StdErrPath, options.RotationSizeInBytes);
+                _stderrWriter = _streamWriterFactory.Create(options.StdErrPath, options.RotationSizeInBytes);
             }
             else if (!string.IsNullOrWhiteSpace(options.StdErrPath))
             {
@@ -103,7 +123,7 @@ namespace Servy.Service
 
             if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
             {
-                _healthCheckTimer = new Timer(_heartbeatIntervalSeconds * 1000);
+                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
                 _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
@@ -145,6 +165,11 @@ namespace Servy.Service
             }
         }
 
+        public void StartForTest(string[] args)
+        {
+            OnStart(args);
+        }
+
         /// <summary>
         /// Starts the child process and assigns it to a Windows Job Object to ensure proper cleanup.
         /// Redirects standard output and error streams, and sets up event handlers for output, error, and exit events.
@@ -170,7 +195,7 @@ namespace Servy.Service
                 CreateNoWindow = true
             };
 
-            _childProcess = new Process { StartInfo = psi };
+            _childProcess = _processFactory.Create(psi);
 
             // Enable events and attach output/error handlers
             _childProcess.EnableRaisingEvents = true;
@@ -459,7 +484,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="process">Process to stop.</param>
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(Process process, int timeoutMs = 5000)
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 5000)
         {
             try
             {
@@ -534,8 +559,11 @@ namespace Servy.Service
                 _healthCheckTimer?.Dispose();
                 _healthCheckTimer = null;
 
-                _childProcess.Dispose();
-                _childProcess = null;
+                if (_childProcess != null)
+                {
+                    _childProcess.Dispose();
+                    _childProcess = null;
+                }
 
                 TerminateChildProcesses();
 
@@ -552,6 +580,8 @@ namespace Servy.Service
         /// </summary>
         protected override void OnStop()
         {
+            OnStoppedForTest?.Invoke();
+
             Cleanup();
 
             base.OnStop();

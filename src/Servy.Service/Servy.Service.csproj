@@ -44,12 +44,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CommandLineProvider.cs" />
-    <Compile Include="EventLogLogger.cs" />
-    <Compile Include="ICommandLineProvider.cs" />
-    <Compile Include="ILogger.cs" />
-    <Compile Include="IServiceHelper.cs" />
-    <Compile Include="NativeMethods.cs" />
+    <Compile Include="CommandLine\CommandLineProvider.cs" />
+    <Compile Include="Logging\EventLogLogger.cs" />
+    <Compile Include="CommandLine\ICommandLineProvider.cs" />
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="ProcessManagement\IProcessFactory.cs" />
+    <Compile Include="ProcessManagement\IProcessWrapper.cs" />
+    <Compile Include="ServiceHelpers\IServiceHelper.cs" />
+    <Compile Include="StreamWriters\IStreamWriter.cs" />
+    <Compile Include="StreamWriters\IStreamWriterFactory.cs" />
+    <Compile Include="Timers\ITimer.cs" />
+    <Compile Include="Timers\ITimerFactory.cs" />
+    <Compile Include="Native\NativeMethods.cs" />
+    <Compile Include="ProcessManagement\ProcessFactory.cs" />
+    <Compile Include="ProcessManagement\ProcessWrapper.cs" />
+    <Compile Include="StreamWriters\RotatingStreamWriterAdapter.cs" />
     <Compile Include="Service.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -58,9 +67,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceHelper.cs" />
-    <Compile Include="ServyStartOptionsParser.cs" />
-    <Compile Include="StartOptions.cs" />
+    <Compile Include="ServiceHelpers\ServiceHelper.cs" />
+    <Compile Include="CommandLine\StartOptionsParser.cs" />
+    <Compile Include="ServiceHelpers\StartOptions.cs" />
+    <Compile Include="StreamWriters\StreamWriterFactory.cs" />
+    <Compile Include="Timers\TimerAdapter.cs" />
+    <Compile Include="Timers\TimerFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -71,5 +83,6 @@
       <Name>Servy.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

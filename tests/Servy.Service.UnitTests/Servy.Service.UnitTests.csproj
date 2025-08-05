@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ServiceHelperTests.cs" />
+    <Compile Include="ServiceTests.cs" />
     <Compile Include="TestableService.cs">
       <SubType>Component</SubType>
     </Compile>

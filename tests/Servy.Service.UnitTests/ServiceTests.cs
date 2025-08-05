@@ -1,0 +1,165 @@
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using Moq;
+using Servy.Core;
+using Servy.Service;
+using Xunit;
+
+namespace Servy.Service.UnitTests
+{
+    public class ServiceTests
+    {
+        private readonly Mock<IServiceHelper> _mockServiceHelper;
+        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
+        private readonly Mock<ITimerFactory> _mockTimerFactory;
+        private readonly Mock<IProcessFactory> _mockProcessFactory;
+        private readonly Service _service;
+
+        private Mock<IStreamWriter> _mockStdoutWriter;
+        private Mock<IStreamWriter> _mockStderrWriter;
+        private Mock<ITimer> _mockTimer;
+        private Mock<IProcessWrapper> _mockProcess;
+
+        public ServiceTests()
+        {
+            _mockServiceHelper = new Mock<IServiceHelper>();
+            _mockLogger = new Mock<ILogger>();
+            _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
+            _mockTimerFactory = new Mock<ITimerFactory>();
+            _mockProcessFactory = new Mock<IProcessFactory>();
+
+            _mockStdoutWriter = new Mock<IStreamWriter>();
+            _mockStderrWriter = new Mock<IStreamWriter>();
+            _mockTimer = new Mock<ITimer>();
+            _mockProcess = new Mock<IProcessWrapper>();
+
+            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>()))
+                .Returns((string path, long size) =>
+                {
+                    if (path.Contains("stdout"))
+                        return _mockStdoutWriter.Object;
+                    else if (path.Contains("stderr"))
+                        return _mockStderrWriter.Object;
+                    return null;
+                });
+
+            _mockTimerFactory.Setup(f => f.Create(It.IsAny<double>()))
+                .Returns(_mockTimer.Object);
+
+            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>()))
+                .Returns(_mockProcess.Object);
+
+            _service = new Service(
+                _mockServiceHelper.Object,
+                _mockLogger.Object,
+                _mockStreamWriterFactory.Object,
+                _mockTimerFactory.Object,
+                _mockProcessFactory.Object
+            );
+        }
+
+        [Fact]
+        public void OnStart_ValidOptions_InitializesCorrectly()
+        {
+            // Arrange
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\Windows\\notepad.exe",
+                ExecutableArgs = "",
+                WorkingDirectory = "C:\\Windows",
+                Priority = ProcessPriorityClass.Normal,
+                StdOutPath = "C:\\Logs\\stdout.log",
+                StdErrPath = "C:\\Logs\\stderr.log",
+                RotationSizeInBytes = 1024,
+                HeartbeatInterval = 10,
+                MaxFailedChecks = 3,
+                RecoveryAction = RecoveryAction.RestartProcess,
+                MaxRestartAttempts = 2
+            };
+
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object))
+                .Returns(options);
+
+            _mockServiceHelper.Setup(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object));
+
+            // Act
+            _service.StartForTest(new string[0]);
+
+            // Assert
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes), Times.Once);
+
+            _mockServiceHelper.Verify(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object), Times.Once);
+
+            _mockTimerFactory.Verify(f => f.Create(10 * 1000), Times.Once);
+            _mockTimer.Verify(t => t.Start(), Times.Once);
+
+            _mockLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started."))), Times.Once);
+        }
+
+        [Fact]
+        public void OnStart_InvalidStdOutPath_LogsError()
+        {
+            var options = new StartOptions
+            {
+                ServiceName = "TestService",
+                ExecutablePath = "C:\\Windows\\notepad.exe",
+                StdOutPath = "InvalidPath???",
+                StdErrPath = null,
+                RotationSizeInBytes = 1024,
+                HeartbeatInterval = 0,
+                MaxFailedChecks = 0,
+                RecoveryAction = RecoveryAction.None,
+                MaxRestartAttempts = 1
+            };
+
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns(options);
+
+            // Act
+            _service.StartForTest(new string[0]);
+
+            // Assert
+            _mockLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Invalid stdout file path")),
+                It.IsAny<Exception>()
+                ), Times.Once);
+            _mockLogger.Verify(l => l.Error(
+               It.Is<string>(s => s.Contains("Invalid stderr file path")),
+               It.IsAny<Exception>()
+             ), Times.Never);
+        }
+
+        [Fact]
+        public void OnStart_NullOptions_StopsService()
+        {
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns((StartOptions)null);
+
+            _service.StartForTest(new string[0]);
+
+            Assert.True(stopped);
+        }
+
+        [Fact]
+        public void OnStart_ExceptionInInitialize_StopsServiceAndLogsError()
+        {
+            bool stopped = false;
+            _service.OnStoppedForTest += () => stopped = true;
+
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Throws(new Exception("Boom"));
+
+            _service.StartForTest(new string[0]);
+
+            Assert.True(stopped);
+            _mockLogger.Verify(l => l.Error(
+                It.Is<string>(s => s.Contains("Exception in OnStart")),
+                It.IsAny<Exception>()
+            ), Times.Once);
+        }
+    }
+}
