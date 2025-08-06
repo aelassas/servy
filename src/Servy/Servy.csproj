@@ -19,6 +19,17 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyTitle>Servy</AssemblyTitle>
+    <AssemblyDescription>A tool to run any app as a Windows Service</AssemblyDescription>
+    <Company>Akram El Assas</Company>
+    <Product>Servy</Product>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="Resources\Servy.Service.exe" />
   </ItemGroup>
