@@ -1,4 +1,7 @@
-﻿using System.ServiceProcess;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using System.ServiceProcess;
 
 namespace Servy.Service
 {
@@ -13,8 +16,26 @@ namespace Servy.Service
         /// </summary>
         static void Main()
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
+            var restarterPath = Path.Combine(AppContext.BaseDirectory, "Servy.Restarter.exe");
+            var resourceName = "Servy.Service.Resources.Servy.Restarter.exe";
+
+            if (!File.Exists(restarterPath))
+            {
+                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+                {
+                    if (stream == null)
+                    {
+                        throw new FileNotFoundException($"Embedded resource '{resourceName}' not found.");
+                    }
+
+                    using (var file = File.Create(restarterPath))
+                    {
+                        stream.CopyTo(file);
+                    }
+                }
+            }
+
+            ServiceBase[] ServicesToRun = new ServiceBase[]
             {
                 new Service()
             };

@@ -24,7 +24,6 @@ namespace Servy
             try
             {
                 CopyEmbeddedResource("Servy.Service");
-                CopyEmbeddedResource("Servy.Restarter");
             }
             catch (Exception ex)
             {
