@@ -82,7 +82,7 @@ namespace Servy
             {
                 Process parentProcess = Process.GetProcessById(parentPid);
                 parentProcess.Kill();
-                parentProcess.WaitForExit(5000); // Wait up to 5 seconds for the process to exit
+                parentProcess.WaitForExit();
             }
             catch (ArgumentException)
             {
