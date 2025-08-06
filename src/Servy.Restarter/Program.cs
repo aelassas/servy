@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ServiceProcess;
 
 /// <summary>
 /// A simple console application to restart a Windows service.
