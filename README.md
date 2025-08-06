@@ -1,5 +1,11 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg?branch=net48)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg?branch=net48)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 
+<p align="center">
+  <a href="https://servy-win.github.io/">
+    <img src="https://servy-win.github.io/servy.png?d=7" width="480">
+  </a>
+</p>
+
 # Servy
 
 ## .NET Framework 4.8 Version
