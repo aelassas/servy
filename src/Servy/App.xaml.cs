@@ -23,6 +23,11 @@ namespace Servy
 
             try
             {
+                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                {
+                    MessageBox.Show("Unhandled: " + e.ExceptionObject.ToString());
+                };
+
                 CopyEmbeddedResource("Servy.Service");
             }
             catch (Exception ex)
