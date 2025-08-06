@@ -23,7 +23,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 ## Requirements
 
-Servy is available in two versions to support different environments.
+Servy is available in two versions to support different environments for maximum compatibility with Windows versions.
 
 #### .NET 8.0 Version
 This version is recommended for modern systems and includes the latest features and performance enhancements.
