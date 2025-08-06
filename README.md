@@ -27,7 +27,7 @@ Servy is available in two versions:
 
 ### .NET 8.0 Version
 - Windows 10, Windows 11, or Windows Server (x64)
-- [.NET 8.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime)
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) (desktop apps)
 
 ### .NET Framework 4.8 Version
 - Windows 7, 8, 10, 11, or Windows Server (x64)
