@@ -26,30 +26,15 @@ jobs:
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj \
-            --configuration Release \
-            --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/Core \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Restarter.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj \
-            --configuration Release \
-            --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/Restarter \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Service.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj \
-            --configuration Release \
-            --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/Service \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -59,4 +44,3 @@ jobs:
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: true
-
