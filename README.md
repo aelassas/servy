@@ -62,17 +62,17 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
    - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
    - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
-5. Start or stop the service directly from Windows Services or any management tool.
+5. Start or stop the service directly from Windows Services (services.msc) or any management tool.
 
 ## Architecture
 
-- `Servy.exe`: WPF frontend application built with .NET Framework 4.8  
+- `Servy.exe`: WPF frontend application
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
 - `Servy.Service.exe`: Windows Service that runs in the background  
   Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
 
-- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service  
+- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service
   Invoked as part of the *Restart Service* recovery action when a failure is detected.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
