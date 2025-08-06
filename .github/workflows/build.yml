@@ -3,10 +3,10 @@ name: build
 on:
   push:
     branches:
-      - main
+      - net48
   pull_request:
     branches:
-      - main
+      - net48
 
 jobs:
   build:
