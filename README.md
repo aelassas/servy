@@ -23,7 +23,7 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 ## Requirements
 
-- Windows 7 SP1 / 8 / 10 / 11 (x64) / Windows Server
+- Windows 7 / 8 / 10 / 11 / Windows Server (x64)
 - [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 - Administrator privileges (required for service installation)
 
@@ -32,16 +32,15 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 ## Features
 
-- Run any executable as a Windows service
-- Easy-to-use WPF interface
-- Supports:
-  - Service name & description
-  - Startup type (Automatic (default), Manual, Disabled)
-  - Process Priority (Idle, Below Normal, Normal (default), Above Normal, High, Real Time (use with caution))
-  - Custom working directory & parameters
-  - stdout/stderr redirection to files with size-based rotation
-  - Improved process management by handling orphaned/zombie processes and ensuring resource cleanup
-  - Health monitoring and automatic service recovery
+* Clean, simple UI
+* Run any executable as a Windows service
+* Set service name, description, startup type, priority, working directory, and parameters
+* Redirect stdout/stderr to log files with automatic size-based rotation
+* Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
+* Health checks and automatic service recovery
+* Monitor and manage services in real-time
+* Compatible with Windows 7–11 x64 and Windows Server editions
+
 
 ## How It Works
 
@@ -63,17 +62,17 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
    - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
    - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
-5. Start or stop the service directly from Windows Services or any management tool.
+5. Start or stop the service directly from Windows Services (services.msc) or any management tool.
 
 ## Architecture
 
-- `Servy.exe`: WPF frontend application built with .NET Framework 4.8  
+- `Servy.exe`: WPF frontend application
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
 - `Servy.Service.exe`: Windows Service that runs in the background  
   Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
 
-- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service  
+- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service
   Invoked as part of the *Restart Service* recovery action when a failure is detected.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
