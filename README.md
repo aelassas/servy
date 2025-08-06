@@ -23,9 +23,17 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 ## Requirements
 
-- Windows 7 / 8 / 10 / 11 / Windows Server (x64)
+Servy is available in two versions:
+
+### .NET 8.0 Version
+- Windows 10, Windows 11, or Windows Server (x64)
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime)
+
+### .NET Framework 4.8 Version
+- Windows 7, 8, 10, 11, or Windows Server (x64)
 - [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
-- Administrator privileges (required for service installation)
+
+**Administrator privileges are required** to install and manage Windows services.
 
 ## Download
 * [Download Latest Release](https://github.com/aelassas/servy/releases/latest)
