@@ -4,62 +4,44 @@ on:
   push:
     branches:
       - main
-  # pull_request:
-  #   branches:
-  #     - main
 
 jobs:
   test:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-      - name: Restore NuGet packages
-        run: nuget restore Servy.sln
+      - name: Restore dependencies
+        run: dotnet restore Servy.sln
 
       - name: Build solution
-        run: msbuild Servy.sln /p:Configuration=Release
-
-      - name: Install coverlet.console
-        run: dotnet tool install --global coverlet.console
+        run: dotnet build Servy.sln --configuration Release --no-restore
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          coverlet "tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll" `
-            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs:"tests/Servy.Core.UnitTests/bin/Release/Servy.Core.UnitTests.dll" `
-            --format cobertura `
-            --exclude "[Servy]*" `
-            --output "coverage/Servy.Core.UnitTests.xml"
+          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Restarter.UnitTests with coverage
         run: |
-          coverlet "tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll" `
-            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs:"tests/Servy.Restarter.UnitTests/bin/Release/Servy.Restarter.UnitTests.dll" `
-            --format cobertura `
-            --exclude "[Servy]*" `
-            --output "coverage/Servy.Restarter.UnitTests.xml"
+          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Service.UnitTests with coverage
         run: |
-          coverlet "tests/Servy.Service.UnitTests/bin/Release/Servy.Service.UnitTests.dll" `
-            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs:"tests/Servy.Service.UnitTests/bin/Release/Servy.Service.UnitTests.dll" `
-            --format cobertura `
-            --exclude "[Servy]*" `
-            --output "coverage/Servy.Service.UnitTests.xml"
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/Servy.Core.UnitTests.xml,coverage/Servy.Restarter.UnitTests.xml,coverage/Servy.Service.UnitTests.xml
+          files: |
+            TestResults/*/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: true
