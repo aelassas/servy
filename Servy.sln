@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		LICENSE.txt = LICENSE.txt
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ui", "ui", "{525B29D4-743C-4A5B-BFB6-82A3F981495E}"
@@ -31,6 +33,15 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Service.UnitTests", "tests\Servy.Service.UnitTests\Servy.Service.UnitTests.csproj", "{6B26F14D-4CF9-4A7E-A94E-1B2741CC627C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Restarter.UnitTests", "tests\Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj", "{05CEF054-B8AC-4088-9117-B8F6A508E85C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{8E91D1D2-8183-4A34-922F-5F702720EBD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\loc.yml = .github\workflows\loc.yml
+		.github\workflows\test.yml = .github\workflows\test.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -81,6 +92,7 @@ Global
 		{93B5E5FE-F371-44BB-B01E-8577CBFCC4BA} = {66EEF7A1-9E3D-4957-896A-394C6422F01F}
 		{6B26F14D-4CF9-4A7E-A94E-1B2741CC627C} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{05CEF054-B8AC-4088-9117-B8F6A508E85C} = {50795869-2933-430F-98BD-956C414ABBE4}
+		{9FEDDCAA-5911-471B-94CC-9913899B5AD7} = {8E91D1D2-8183-4A34-922F-5F702720EBD6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
