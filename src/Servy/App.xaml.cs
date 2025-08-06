@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Management;
 using System.Reflection;
 using System.Windows;
 
@@ -10,11 +12,10 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-
         /// <summary>
         /// Called when the WPF application starts.
-        /// Extracts the embedded Servy.Service.exe to the application's base directory if it doesn't exist
-        /// or if the embedded resource is newer than the existing file.
+        /// Subscribes to unhandled exceptions, stops the background service if it's running,
+        /// and extracts the embedded Servy.Service.exe to the application's base directory if needed.
         /// </summary>
         /// <param name="e">Startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
@@ -28,18 +29,76 @@ namespace Servy
                     MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
                 };
 
+                KillServyServiceIfRunning();
                 CopyEmbeddedResource("Servy.Service");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Failed to extract service exe: " + ex.Message);
+                MessageBox.Show("Startup error: " + ex.Message);
             }
         }
 
         /// <summary>
-        /// Copies resource file to current folder.
+        /// Kills all running processes with the name Servy.Service.exe.
+        /// This is necessary when replacing the embedded service executable.
         /// </summary>
-        /// <param name="fileName">Resource filename.</param>
+        private void KillServyServiceIfRunning()
+        {
+            const string processName = "Servy.Service";
+
+            try
+            {
+                foreach (var process in Process.GetProcessesByName(processName))
+                {
+                    KillProcessAndChildren(process.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to terminate running service: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Kills process and the entire process tree.
+        /// </summary>
+        /// <param name="pid">Process PID to kill.</param>
+        private static void KillProcessAndChildren(int parentPid)
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(
+                "SELECT * FROM Win32_Process WHERE ParentProcessId=" + parentPid);
+
+            ManagementObjectCollection collection = searcher.Get();
+
+            // Kill all child processes recursively first
+            foreach (var mo in collection)
+            {
+                int childPid = Convert.ToInt32(mo["ProcessId"]);
+                KillProcessAndChildren(childPid);
+            }
+
+            // Now kill the parent process
+            try
+            {
+                Process parentProcess = Process.GetProcessById(parentPid);
+                parentProcess.Kill();
+                parentProcess.WaitForExit(5000); // Wait up to 5 seconds for the process to exit
+            }
+            catch (ArgumentException)
+            {
+                // Process has already exited, no action needed
+            }
+            catch (Exception)
+            {
+                // Handle other exceptions if necessary
+            }
+        }
+
+        /// <summary>
+        /// Copies the embedded executable resource to the application's base directory
+        /// if the file does not exist or if the embedded version is newer.
+        /// </summary>
+        /// <param name="fileName">The name of the embedded resource without extension.</param>
         private void CopyEmbeddedResource(string fileName)
         {
             string targetFileName = $"{fileName}.exe";
@@ -51,13 +110,8 @@ namespace Servy
 
             if (File.Exists(targetPath))
             {
-                // Get last write time of existing file
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-
-                // Get last write time of embedded resource from assembly metadata
                 DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm, resourceName);
-
-                // Only copy if embedded resource is newer
                 shouldCopy = embeddedResourceTime > existingFileTime;
             }
 
@@ -80,15 +134,13 @@ namespace Servy
         }
 
         /// <summary>
-        /// Retrieves the last write time of the embedded resource based on assembly's last write time.
-        /// Since embedded resources do not have independent timestamps, this method uses the assembly's timestamp.
+        /// Gets the last write time of the embedded resource using the assembly's timestamp.
         /// </summary>
-        /// <param name="assembly">Assembly containing the resource.</param>
-        /// <param name="resourceName">Name of the embedded resource.</param>
-        /// <returns>DateTime of the assembly's last write time in UTC.</returns>
+        /// <param name="assembly">The assembly containing the resource.</param>
+        /// <param name="resourceName">The name of the embedded resource.</param>
+        /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
         private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly, string resourceName)
         {
-            // Embedded resources don't have timestamps, so fallback to assembly last write time
             string assemblyPath = assembly.Location;
 
             if (File.Exists(assemblyPath))
@@ -96,11 +148,7 @@ namespace Servy
                 return File.GetLastWriteTimeUtc(assemblyPath);
             }
 
-            // If assembly file not found, fallback to current UTC time to force copy
             return DateTime.UtcNow;
         }
     }
-
-
-
 }
