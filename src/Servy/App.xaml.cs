@@ -23,9 +23,9 @@ namespace Servy
 
             try
             {
-                AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                AppDomain.CurrentDomain.UnhandledException += (s, args) =>
                 {
-                    MessageBox.Show("Unhandled: " + e.ExceptionObject.ToString());
+                    MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
                 };
 
                 CopyEmbeddedResource("Servy.Service");
