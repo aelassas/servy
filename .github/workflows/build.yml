@@ -17,11 +17,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-      - name: Restore NuGet packages
-        run: nuget restore Servy.sln
+      - name: Restore dependencies
+        run: dotnet restore Servy.sln
 
       - name: Build solution (Release)
-        run: msbuild Servy.sln /p:Configuration=Release
+        run: dotnet build Servy.sln --configuration Release --no-restore

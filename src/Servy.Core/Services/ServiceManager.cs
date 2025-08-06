@@ -1,8 +1,6 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-using System.Threading;
 
 namespace Servy.Core
 {
