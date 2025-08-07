@@ -1,78 +1,24 @@
-﻿using Servy.ViewModels;
+﻿using Servy.Core;
+using Servy.Services;
+using Servy.ViewModels;
 using System.Windows;
-using System.Windows.Forms;
 
 namespace Servy
 {
+    /// <summary>
+    /// Interaction logic for <see cref="MainWindow"/>.
+    /// Represents the main window of the Servy application.
+    /// </summary>
     public partial class MainWindow : Window
     {
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindow"/> class,
+        /// sets up the UI components and initializes the DataContext with the main ViewModel.
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
-        }
-
-        private void BrowseProcessPath_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*";
-            dlg.Title = "Select process executable";
-
-            if (dlg.ShowDialog() == true)
-            {
-                // Assuming your DataContext is MainViewModel and it has a ProcessPath property
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.ProcessPath = dlg.FileName;
-                }
-            }
-        }
-
-        private void BrowseStartupDirectory_Click(object sender, RoutedEventArgs e)
-        {
-            using (var dlg = new FolderBrowserDialog
-            {
-                Description = "Select startup directory",
-                ShowNewFolderButton = true
-            })
-            {
-                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    if (DataContext is MainViewModel vm)
-                    {
-                        vm.StartupDirectory = dlg.SelectedPath;
-                    }
-                }
-            }
-        }
-
-        private void BrowseStdoutPath_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.Filter = "All files (*.*)|*.*";
-            dlg.Title = "Select standard output file";
-            if (dlg.ShowDialog() == true)
-            {
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.StdoutPath = dlg.FileName;
-                }
-            }
-        }
-
-        private void BrowseStderrPath_Click(object sender, RoutedEventArgs e)
-        {
-            var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.Filter = "All files (*.*)|*.*";
-            dlg.Title = "Select standard error file";
-            if (dlg.ShowDialog() == true)
-            {
-                if (DataContext is MainViewModel vm)
-                {
-                    vm.StderrPath = dlg.FileName;
-                }
-            }
+            DataContext = new MainViewModel(new FileDialogService(), new ServiceCommands(new ServiceManager(), new MessageBoxService()));
         }
     }
 }
