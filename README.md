@@ -54,7 +54,7 @@ This version is for older systems that require .NET Framework support.
 
 ## How It Works
 
-1. **Install** the application using the provided installer.
+1. **Install** Servy using the provided installer.
 2. **Launch Servy** as administrator.
 3. Fill in the service details:
    - `Service Name` (required)
@@ -72,7 +72,7 @@ This version is for older systems that require .NET Framework support.
    - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
    - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
-5. Start or stop the service directly from Windows Services (services.msc) or any management tool.
+5. Start or stop the service directly from Servy, Windows Services (services.msc) or any management tool.
 
 ## Architecture
 
