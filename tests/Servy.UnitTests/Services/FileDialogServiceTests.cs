@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Xunit;
 
-namespace Servy.Services.UnitTests
+namespace Servy.UnitTests.Services
 {
     public class FileDialogServiceTests
     {
