@@ -76,7 +76,7 @@ This version is for older systems that require .NET Framework support.
 
 ## Architecture
 
-- `Servy.exe`: WPF frontend application
+- `Servy.exe`: WPF frontend application <br>
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
 - `Servy.Service.exe`: Windows Service that runs in the background  
