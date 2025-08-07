@@ -3,7 +3,7 @@
     /// <summary>
     /// Override Helper.IsValidPath for testing
     /// </summary>
-    public static class HelperOverride
+    internal static class HelperOverride
     {
         public static Func<string, bool>? IsValidPathOverride;
 

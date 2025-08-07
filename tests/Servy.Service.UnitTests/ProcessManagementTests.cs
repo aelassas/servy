@@ -11,7 +11,7 @@ namespace Servy.Service.UnitTests
 {
     public class ProcessManagementTests
     {
-        private TestableService CreateService(
+        private static TestableService CreateService(
             out Mock<ILogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,

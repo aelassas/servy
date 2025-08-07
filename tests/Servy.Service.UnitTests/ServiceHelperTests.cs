@@ -128,7 +128,7 @@ namespace Servy.Service.UnitTests
         public void InitializeStartup_ReturnsNull_IfOptionsAreInvalid()
         {
             // Arrange
-            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new[] { "ignored.exe" }); // no valid args
+            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns([ "ignored.exe" ]); // no valid args
             var mockLog = new Mock<ILogger>();
 
             // Act

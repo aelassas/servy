@@ -10,21 +10,16 @@ using System.Timers;
 
 namespace Servy.Service.UnitTests
 {
-    public class TestableService : Service
+    public class TestableService(
+        IServiceHelper serviceHelper,
+        ILogger logger,
+        IStreamWriterFactory streamWriterFactory,
+        ITimerFactory timerFactory,
+        IProcessFactory processFactory,
+        IPathValidator pathValidator) : Service(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator)
     {
         private Action<string, string, string>? _startProcessOverride;
         private Action? _terminateChildProcessesOverride;
-
-        public TestableService(
-            IServiceHelper serviceHelper,
-            ILogger logger,
-            IStreamWriterFactory streamWriterFactory,
-            ITimerFactory timerFactory,
-            IProcessFactory processFactory,
-            IPathValidator pathValidator)
-            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator)
-        {
-        }
 
         // Instead of overriding OnStart, expose a public method to call the base protected OnStart:
         public void TestOnStart(string[] args)
@@ -40,12 +35,12 @@ namespace Servy.Service.UnitTests
 
         public void InvokeHandleLogWriters(StartOptions options) =>
             typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(this, new object[] { options });
+                .Invoke(this, [options]);
 
         public void InvokeSetupHealthMonitoring(StartOptions options)
         {
             var method = typeof(Service).GetMethod("SetupHealthMonitoring", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method?.Invoke(this, new object[] { options });
+            method?.Invoke(this, [options]);
         }
 
         public void SetMaxFailedChecks(int value)
@@ -93,25 +88,25 @@ namespace Servy.Service.UnitTests
         public void InvokeCheckHealth(object? sender, ElapsedEventArgs? e)
         {
             var method = typeof(Service).GetMethod("CheckHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, new object?[] { sender, e });
+            method!.Invoke(this, [sender, e]);
         }
 
         public void InvokeOnOutputDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnOutputDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, new object?[] { sender, e });
+            method!.Invoke(this, [sender, e]);
         }
 
         public void InvokeOnErrorDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnErrorDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, new object?[] { sender, e });
+            method!.Invoke(this, [sender, e]);
         }
 
         public void InvokeOnProcessExited(object? sender, EventArgs e)
         {
             var method = typeof(Service).GetMethod("OnProcessExited", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, new object?[] { sender, e });
+            method!.Invoke(this, [sender, e]);
         }
 
         public void OverrideStartProcess(Action<string, string, string> startProcess)
@@ -141,7 +136,7 @@ namespace Servy.Service.UnitTests
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method!.Invoke(this, new object[] { exePath, args, workingDir });
+                method!.Invoke(this, [exePath, args, workingDir]);
             }
         }
 
@@ -149,7 +144,7 @@ namespace Servy.Service.UnitTests
         public void InvokeSafeKillProcess(IProcessWrapper process)
         {
             var method = typeof(Service).GetMethod("SafeKillProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, new object[] { process, 5000 });
+            method!.Invoke(this, [process, 5000]);
         }
 
     }

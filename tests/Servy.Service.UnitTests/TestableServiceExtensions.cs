@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Servy.Service.UnitTests
+﻿namespace Servy.Service.UnitTests
 {
     /// <summary>
     /// Exposes protected OnStart for testing
@@ -15,7 +9,7 @@ namespace Servy.Service.UnitTests
         {
             typeof(TestableService)
                 .GetMethod("OnStart", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-                ?.Invoke(service, new object[] { args });
+                ?.Invoke(service, [ args ]);
         }
     }
 }

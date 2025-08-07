@@ -12,7 +12,7 @@ namespace Servy.Service.UnitTests
     public class HealthCheckTests
     {
         // Helper to create service with injected mocks
-        private TestableService CreateService(
+        private static TestableService CreateService(
             out Mock<ILogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
