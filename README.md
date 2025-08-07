@@ -21,6 +21,8 @@ It provides a reliable and compatible solution for automating app startup, monit
 
 Servy solves a common limitation of Windows services by allowing you to set a custom working directory. When you create a service with `sc`, the default working directory is always `C:\Windows\System32`, and there's no built-in way to change that. This breaks many applications that rely on relative paths, configuration files, or assets located in their own folders. Servy lets you explicitly set the startup directory so that your application runs in the right environment, just like it would if launched from a shortcut or command prompt. This ensures your application runs exactly as expected. It is a fully managed, open-source alternative to NSSM, built entirely in C# for simplicity, transparency, and ease of integration.
 
+Servy is ideal for scenarios where you need to keep non-service applications running reliably in the background. It's especially useful for developers, sysadmins, and IT professionals who want to deploy background processes without rewriting them as Windows services. Typical use cases include running Node.js, Python, or .NET console apps as services; keeping web servers, database sync tools, or custom daemons alive after reboots; and automating task runners or batch scripts in production environments. With built-in health checks, restart policies, and a modern UI, Servy is a powerful alternative to tools like NSSM—without the need for manual configuration or registry edits.
+
 ## Requirements
 
 Servy is available in two versions to support different environments for maximum compatibility with Windows versions.
