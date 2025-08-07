@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.Interfaces;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;
@@ -22,7 +23,7 @@ namespace Servy.ViewModels
         #region Services
 
         private readonly IFileDialogService _dialogService;
-        private readonly IServiceCommands _serviceCommands;
+        private IServiceCommands _serviceCommands;
 
         #endregion
 
@@ -47,28 +48,47 @@ namespace Servy.ViewModels
 
         #region Constants 
 
+        public const string DefaultServiceName = "Servy";         // Used for unit tests
         private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
         private const int DefaultHeartbeatInterval = 30;          // 30 seconds
-        private const int DefaultMaxFailedChecks = 3;              // 3 attempts
-        private const int DefaultMaxRestartAttempts = 3;           // 3 attempts
+        private const int DefaultMaxFailedChecks = 3;             // 3 attempts
+        private const int DefaultMaxRestartAttempts = 3;          // 3 attempts
 
         #endregion
 
         #region Private Fields
 
         private readonly ServiceConfiguration _config = new ServiceConfiguration();
+        private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
+        private IServiceControllerWrapper _serviceController;
+
+        #endregion
+
+        #region Flags
+
+        internal bool IsTestMode { get; set; } = false;
 
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// Gets or sets the service name.
+        /// Gets or sets the name of the Windows service. 
+        /// Updating this property also updates the associated ServiceControllerWrapper instance.
         /// </summary>
         public string ServiceName
         {
             get => _config.Name;
-            set { _config.Name = value; OnPropertyChanged(); }
+            set
+            {
+                if (_config.Name != value)
+                {
+                    _config.Name = value;
+                    OnPropertyChanged();
+
+                    UpdateServiceCommands();
+                }
+            }
         }
 
         /// <summary>
@@ -224,12 +244,12 @@ namespace Servy.ViewModels
         /// Gets the list of available recovery actions.
         /// </summary>
         public List<RecoveryActionItem> RecoveryActions { get; } = new List<RecoveryActionItem>
-{
-    new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
-    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
-    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
-    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
-};
+        {
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
+            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
+        };
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts as a string.
@@ -303,10 +323,13 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="dialogService">Service to open file and folder dialogs.</param>
         /// <param name="serviceCommands">Service commands to manage Windows services.</param>
-        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands)
+        /// <param name="isTestMode">Falg used for unit tests.</param>
+        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands, bool isTestMode = false)
         {
+            _controllerFactory = name => new ServiceControllerWrapper(string.IsNullOrWhiteSpace(name) ? DefaultServiceName : name);
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            IsTestMode = isTestMode;
 
             // Initialize defaults
             ServiceName = string.Empty;
@@ -341,9 +364,18 @@ namespace Servy.ViewModels
         /// </summary>
         public MainViewModel() : this(
             new DesignTimeFileDialogService(),
-            new ServiceCommands(new ServiceManager(), new MessageBoxService())
+            null
             )
-        { }
+        {
+            _controllerFactory = name => new ServiceControllerWrapper(string.IsNullOrWhiteSpace(name) ? DefaultServiceName : name);
+
+            _serviceController = _controllerFactory(ServiceName);
+
+            _serviceCommands = new ServiceCommands(
+                new ServiceManager(_ => _serviceController, new WindowsServiceApi(), new Win32ErrorProvider()),
+                new MessageBoxService()
+            );
+        }
 
         #endregion
 
@@ -412,6 +444,8 @@ namespace Servy.ViewModels
                 _config.RecoveryAction,
                 _config.MaxRestartAttempts);
 
+            UpdateServiceCommands();
+
         }
 
         /// <summary>
@@ -420,6 +454,8 @@ namespace Servy.ViewModels
         private void OnUninstallService()
         {
             _serviceCommands.UninstallService(ServiceName);
+
+            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -428,6 +464,8 @@ namespace Servy.ViewModels
         private void OnStartService()
         {
             _serviceCommands.StartService(ServiceName);
+
+            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -436,6 +474,8 @@ namespace Servy.ViewModels
         private void OnStopService()
         {
             _serviceCommands.StopService(ServiceName);
+
+            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -444,6 +484,8 @@ namespace Servy.ViewModels
         private void OnRestartService()
         {
             _serviceCommands.RestartService(ServiceName);
+
+            UpdateServiceCommands();
         }
 
         #endregion
@@ -470,6 +512,26 @@ namespace Servy.ViewModels
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Updates ServiceCommands.
+        /// </summary>
+        private void UpdateServiceCommands()
+        {
+            if (!IsTestMode)
+            {
+                _serviceController = _controllerFactory(_config.Name);
+
+                _serviceCommands = new ServiceCommands(
+                     new ServiceManager(_ => _serviceController, new WindowsServiceApi(), new Win32ErrorProvider()),
+                     new MessageBoxService()
+                 );
+            }
         }
 
         #endregion

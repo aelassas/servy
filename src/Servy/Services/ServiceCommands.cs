@@ -10,15 +10,14 @@ namespace Servy.Services
     /// <summary>
     ///  Concrete implementation of <see cref="IServiceCommands"/> that provides service management commands such as install, uninstall, start, stop, and restart.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
         private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
-
-        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
-        private const int MinHeartbeatInterval = 5;                // 5 seconds
-        private const int MinMaxFailedChecks = 1;                  // 1 attempt
-        private const int MinMaxRestartAttempts = 1;               // 1 attempt
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
@@ -31,6 +30,11 @@ namespace Servy.Services
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
         }
+
+        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
+        private const int MinHeartbeatInterval = 5;                // 5 seconds
+        private const int MinMaxFailedChecks = 1;                  // 1 attempt
+        private const int MinMaxRestartAttempts = 1;               // 1 attempt
 
         /// <inheritdoc />
         public void InstallService(
