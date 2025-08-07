@@ -30,4 +30,5 @@ jobs:
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
             "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
             "tests\Servy.Restarter.UnitTests\bin\Release\Servy.Restarter.UnitTests.dll" `
-            "tests\Servy.Service.UnitTests\bin\Release\Servy.Service.UnitTests.dll"
+            "tests\Servy.Service.UnitTests\bin\Release\Servy.Service.UnitTests.dll" `
+            "tests\Servy.UnitTests\bin\Release\Servy.UnitTests.dll" `
