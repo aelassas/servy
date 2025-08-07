@@ -75,12 +75,7 @@
             if (!File.Exists(basePath))
                 return basePath;
 
-            string? directory = Path.GetDirectoryName(basePath);
-            if (string.IsNullOrEmpty(directory))
-            {
-                // If directory is null or empty, just return basePath
-                return basePath;
-            }
+            string directory = Path.GetDirectoryName(basePath)!;
 
             string filenameWithoutExt = Path.GetFileNameWithoutExtension(basePath);
             string extension = Path.GetExtension(basePath);
@@ -104,8 +99,11 @@
         /// </summary>
         private void Rotate()
         {
-            _writer?.Flush();
-            _writer?.Dispose();
+            if (_writer != null)
+            {
+                _writer.Flush();
+                _writer.Dispose();
+            }
 
             string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
             string rotatedPath = $"{_file.FullName}.{timestamp}{_file.Extension}";
