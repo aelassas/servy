@@ -42,11 +42,11 @@ namespace Servy.Service
         private int _maxFailedChecks;
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
-        private bool _disposed = false; // Tracks whether Dispose has been called
-        private readonly object _healthCheckLock = new object();
+        private readonly object _healthCheckLock = new();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
+        private bool _disposed = false; // Tracks whether Dispose has been called
 
         #endregion
 

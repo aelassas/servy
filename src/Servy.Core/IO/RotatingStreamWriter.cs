@@ -8,9 +8,9 @@
     public class RotatingStreamWriter : IDisposable
     {
         private readonly FileInfo _file;
-        private StreamWriter _writer;
+        private StreamWriter? _writer;
         private readonly long _rotationSize;
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
@@ -53,7 +53,7 @@
         {
             lock (_lock)
             {
-                _writer.WriteLine(line);
+                _writer!.WriteLine(line);
                 _writer.Flush();
 
                 _file.Refresh();
@@ -70,7 +70,7 @@
         /// </summary>
         /// <param name="basePath">The initial file path to check.</param>
         /// <returns>A unique file path that does not exist yet.</returns>
-        private string GenerateUniqueFileName(string basePath)
+        private static string GenerateUniqueFileName(string basePath)
         {
             if (!File.Exists(basePath))
                 return basePath;
@@ -130,10 +130,17 @@
         {
             lock (_lock)
             {
-                _writer?.Flush();
-                _writer?.Close();
-                _writer?.Dispose();
+                if (_writer != null)
+                {
+                    _writer.Flush();
+                    _writer.Close();
+                    _writer.Dispose();
+                    _writer = null;
+                }
+
+                GC.SuppressFinalize(this);
             }
         }
+
     }
 }

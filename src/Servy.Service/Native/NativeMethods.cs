@@ -1,5 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 
+#pragma warning disable IDE0079
+#pragma warning disable SYSLIB1054
+
 internal static class NativeMethods
 {
     /// <summary>
@@ -193,3 +196,6 @@ internal static class NativeMethods
         public UInt64 OtherTransferCount;
     }
 }
+
+#pragma warning restore SYSLIB1054
+#pragma warning restore IDE0079

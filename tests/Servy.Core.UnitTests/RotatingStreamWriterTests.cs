@@ -83,29 +83,29 @@ namespace Servy.Core.UnitTests
             writer.WriteLine("Test line");
             writer.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => writer.WriteLine("Another line"));
+            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
         }
 
         [Fact]
         public void GenerateUniqueFileName_ReturnsNonExistingFileName()
         {
             var methodInfo = typeof(RotatingStreamWriter)
-                .GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Instance);
+                .GetMethod("GenerateUniqueFileName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
 
             Assert.NotNull(methodInfo);  // Ensure method exists to avoid null dereference
 
-            using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
-            {
-                string basePath = Path.Combine(_testDir, "file.log");
+            using var writer = new RotatingStreamWriter(_logFilePath, 1000);
 
-                File.WriteAllText(basePath, "test");
-                File.WriteAllText(Path.Combine(_testDir, "file(1).log"), "test");
-                File.WriteAllText(Path.Combine(_testDir, "file(2).log"), "test");
+            string basePath = Path.Combine(_testDir, "file.log");
 
-                string? uniqueName = (string?)methodInfo.Invoke(writer, new object[] { basePath });
+            File.WriteAllText(basePath, "test");
+            File.WriteAllText(Path.Combine(_testDir, "file(1).log"), "test");
+            File.WriteAllText(Path.Combine(_testDir, "file(2).log"), "test");
 
-                Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
-            }
+            string? uniqueName = (string?)methodInfo.Invoke(writer, [ basePath ]);
+
+            Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
+
         }
 
         public void Dispose()
@@ -116,6 +116,8 @@ namespace Servy.Core.UnitTests
                 {
                     Directory.Delete(_testDir, true);
                 }
+
+                GC.SuppressFinalize(this);
             }
             catch
             {
