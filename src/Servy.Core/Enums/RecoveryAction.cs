@@ -1,4 +1,4 @@
-﻿namespace Servy.Core
+﻿namespace Servy.Core.Enums
 {
     /// <summary>
     /// Defines the recovery actions for the service in case of failure.

@@ -63,15 +63,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\ServiceConfiguration.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
+    <Compile Include="Services\DesignTimeFileDialogService.cs" />
+    <Compile Include="Services\FileDialogService.cs" />
+    <Compile Include="Services\IFileDialogService.cs" />
+    <Compile Include="Services\IMessageBoxService.cs" />
+    <Compile Include="Services\IServiceCommands.cs" />
+    <Compile Include="Services\MessageBoxService.cs" />
+    <Compile Include="Services\ServiceCommands.cs" />
+    <Compile Include="ViewModels\Items\ProcessPriorityItem.cs" />
+    <Compile Include="ViewModels\Items\RecoveryActionItem.cs" />
+    <Compile Include="ViewModels\Items\StartupTypeItem.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="ViewModels\RecoveryActionItem.cs" />
-    <Compile Include="ViewModels\StartupTypeItem.cs" />
-    <Compile Include="ViewModels\ProcessPriorityItem.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

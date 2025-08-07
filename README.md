@@ -19,9 +19,8 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 ## Requirements
 
 This version is for older systems that require .NET Framework support.
-
-* **Supported OS:** Windows 7, 8, 10, 11, or Windows Server (x64)
-* **Requirements:** [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
+* Windows 7, 8, 10, 11, or Windows Server (x64)
+* [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 
 **Administrator privileges are required** to install and manage Windows services.
 
@@ -42,7 +41,7 @@ This version is for older systems that require .NET Framework support.
 
 ## How It Works
 
-1. **Install** Servy using the provided installer.
+1. **Install** the application using the provided installer.
 2. **Launch Servy** as administrator.
 3. Fill in the service details:
    - `Service Name` (required)
@@ -60,17 +59,17 @@ This version is for older systems that require .NET Framework support.
    - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
    - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
-5. Start or stop the service directly from Servy, Windows Services (services.msc) or any management tool.
+5. Start or stop the service directly from Windows Services (services.msc) or any management tool.
 
 ## Architecture
 
-- `Servy.exe`: WPF frontend application <br>
+- `Servy.exe`: WPF frontend application
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
-- `Servy.Service.exe`: Windows Service that runs in the background <br>
+- `Servy.Service.exe`: Windows Service that runs in the background  
   Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
 
-- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service <br>
+- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service
   Invoked as part of the *Restart Service* recovery action when a failure is detected.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.

@@ -1,4 +1,6 @@
 ﻿using Moq;
+using Servy.Core.Enums;
+using Servy.Core.Interfaces;
 using System;
 using Xunit;
 
@@ -214,7 +216,7 @@ namespace Servy.Core.UnitTests
                 .Setup(sm => sm.StopService(It.Is<string>(s => string.IsNullOrEmpty(s))))
                 .Returns(false);
 
-            bool result = _mockServiceManager.Object.StopService("");
+            bool result = _mockServiceManager.Object.StopService(null);
 
             Assert.False(result);
         }

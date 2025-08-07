@@ -111,7 +111,7 @@ namespace Servy
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm, resourceName);
+                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
                 shouldCopy = embeddedResourceTime > existingFileTime;
             }
 
@@ -137,9 +137,8 @@ namespace Servy
         /// Gets the last write time of the embedded resource using the assembly's timestamp.
         /// </summary>
         /// <param name="assembly">The assembly containing the resource.</param>
-        /// <param name="resourceName">The name of the embedded resource.</param>
         /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
-        private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly, string resourceName)
+        private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
             string assemblyPath = assembly.Location;
 

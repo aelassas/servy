@@ -1,4 +1,4 @@
-﻿namespace Servy.Service
+﻿namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Factory interface for creating instances of <see cref="IStreamWriter"/>.

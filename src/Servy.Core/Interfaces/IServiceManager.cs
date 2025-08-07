@@ -1,4 +1,6 @@
-﻿namespace Servy.Core
+﻿using Servy.Core.Enums;
+
+namespace Servy.Core.Interfaces
 {
     public interface IServiceManager
     {

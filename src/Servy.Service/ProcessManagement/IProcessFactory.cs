@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.ProcessManagement
 {
     /// <summary>
     /// Factory interface to create instances of <see cref="IProcessWrapper"/>.

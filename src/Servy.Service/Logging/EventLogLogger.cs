@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.Logging
 {
     /// <summary>
     /// Logs messages to the Windows Event Log.

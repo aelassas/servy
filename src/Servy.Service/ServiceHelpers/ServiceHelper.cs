@@ -1,4 +1,8 @@
 ﻿using Servy.Core;
+using Servy.Core.Helpers;
+using Servy.Service.CommandLine;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -7,7 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
-namespace Servy.Service
+namespace Servy.Service.ServiceHelpers
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
@@ -273,7 +277,6 @@ namespace Servy.Service
         private static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
 
         #endregion
-
 
     }
 }

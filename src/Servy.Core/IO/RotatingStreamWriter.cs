@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Servy.Core
+namespace Servy.Core.IO
 {
     /// <summary>
     /// Writes text to a file with automatic log rotation based on file size.
@@ -27,7 +27,7 @@ namespace Servy.Core
                 throw new ArgumentException("Path cannot be null or empty.", nameof(path));
             }
             var directory = Path.GetDirectoryName(path);
-            if (!Directory.Exists(directory))
+            if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -79,6 +79,12 @@ namespace Servy.Core
                 return basePath;
 
             string directory = Path.GetDirectoryName(basePath);
+            if (string.IsNullOrEmpty(directory))
+            {
+                // If directory is null or empty, just return basePath
+                return basePath;
+            }
+
             string filenameWithoutExt = Path.GetFileNameWithoutExtension(basePath);
             string extension = Path.GetExtension(basePath);
 
@@ -127,9 +133,15 @@ namespace Servy.Core
         {
             lock (_lock)
             {
-                _writer?.Flush();
-                _writer?.Close();
-                _writer?.Dispose();
+                if (_writer != null)
+                {
+                    _writer.Flush();
+                    _writer.Close();
+                    _writer.Dispose();
+                    _writer = null;
+                }
+
+                GC.SuppressFinalize(this);
             }
         }
     }

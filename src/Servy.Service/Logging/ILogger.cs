@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Servy.Service
+namespace Servy.Service.Logging
 {
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.

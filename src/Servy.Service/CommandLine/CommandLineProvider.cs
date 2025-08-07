@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Servy.Service
+namespace Servy.Service.CommandLine
 {
     /// <inheritdoc cref="ICommandLineProvider"/>
     public class CommandLineProvider : ICommandLineProvider

@@ -1,4 +1,4 @@
-﻿namespace Servy.Service
+﻿namespace Servy.Service.Validation
 {
     /// <summary>
     /// Defines a contract for validating file system paths.

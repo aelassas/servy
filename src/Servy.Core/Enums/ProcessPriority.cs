@@ -1,4 +1,4 @@
-﻿namespace Servy.Core
+﻿namespace Servy.Core.Enums
 {
     /// <summary>
     /// Defines the different levels of process priority that can be assigned to a process.

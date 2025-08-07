@@ -1,4 +1,10 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System;
 using System.Diagnostics;
 using System.Timers;
@@ -145,18 +151,6 @@ namespace Servy.Service.UnitTests
         {
             var method = typeof(Service).GetMethod("SafeKillProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             method.Invoke(this, new object[] { process, 5000 });
-        }
-
-        // Override TerminateChildProcesses method call inside TryRestartChildProcess
-        private void TerminateChildProcesses()
-        {
-            if (_terminateChildProcessesOverride != null)
-                _terminateChildProcessesOverride();
-            else
-            {
-                var method = typeof(Service).GetMethod("TerminateChildProcesses", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method.Invoke(this, null);
-            }
         }
 
     }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.ProcessManagement
 {
     /// <summary>
     /// Wraps a <see cref="System.Diagnostics.Process"/> to allow abstraction and easier testing.

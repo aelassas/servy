@@ -1,10 +1,15 @@
-﻿using System;
+﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
+using Servy.Core.Interfaces;
+using Servy.Core.Native;
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading;
+using static Servy.Core.Native.NativeMethods;
 
-namespace Servy.Core
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides methods to install, uninstall, start, stop, and restart Windows services.
@@ -20,57 +25,6 @@ namespace Servy.Core
         private const uint SERVICE_STOP = 0x0020;
         private const uint SERVICE_DELETE = 0x00010000;
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct SERVICE_DESCRIPTION
-        {
-            public IntPtr lpDescription;
-        }
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr OpenSCManager(string machineName, string databaseName, uint dwAccess);
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr CreateService(
-            IntPtr hSCManager,
-            string lpServiceName,
-            string lpDisplayName,
-            uint dwDesiredAccess,
-            uint dwServiceType,
-            uint dwStartType,
-            uint dwErrorControl,
-            string lpBinaryPathName,
-            string lpLoadOrderGroup,
-            IntPtr lpdwTagId,
-            string lpDependencies,
-            string lpServiceStartName,
-            string lpPassword);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool CloseServiceHandle(IntPtr hSCObject);
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool ChangeServiceConfig2(
-            IntPtr hService,
-            int dwInfoLevel,
-            ref SERVICE_DESCRIPTION lpInfo);
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr OpenService(IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess);
-
-        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool ChangeServiceConfig(
-            IntPtr hService,
-            uint dwServiceType,
-            uint dwStartType,
-            uint dwErrorControl,
-            string lpBinaryPathName,
-            string lpLoadOrderGroup,
-            IntPtr lpdwTagId,
-            string lpDependencies,
-            string lpServiceStartName,
-            string lpPassword,
-            string lpDisplayName);
 
         /// <inheritdoc />
         public bool InstallService(
@@ -243,24 +197,24 @@ namespace Servy.Core
         /// <inheritdoc />
         public bool UninstallService(string serviceName)
         {
-            IntPtr scmHandle = NativeMethods.OpenSCManager(null, null, NativeMethods.SC_MANAGER_ALL_ACCESS);
+            IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
                 return false;
 
             try
             {
-                IntPtr serviceHandle = NativeMethods.OpenService(scmHandle, serviceName, NativeMethods.SERVICE_ALL_ACCESS);
+                IntPtr serviceHandle = OpenService(scmHandle, serviceName, SERVICE_ALL_ACCESS);
                 if (serviceHandle == IntPtr.Zero)
                     return false;
 
                 try
                 {
                     // Change start type to demand start (if it's disabled)
-                    NativeMethods.ChangeServiceConfig(
+                    ChangeServiceConfig(
                         serviceHandle,
-                        NativeMethods.SERVICE_NO_CHANGE,
-                        NativeMethods.SERVICE_DEMAND_START,
-                        NativeMethods.SERVICE_NO_CHANGE,
+                        SERVICE_NO_CHANGE,
+                        SERVICE_DEMAND_START,
+                        SERVICE_NO_CHANGE,
                         null,
                         null,
                         IntPtr.Zero,
@@ -270,18 +224,18 @@ namespace Servy.Core
                         null);
 
                     // Try to stop service
-                    var status = new NativeMethods.SERVICE_STATUS();
-                    NativeMethods.ControlService(serviceHandle, NativeMethods.SERVICE_CONTROL_STOP, ref status);
+                    var status = new SERVICE_STATUS();
+                    ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
                     // Give it some time to stop
                     Thread.Sleep(2000);
 
                     // Delete the service
-                    return NativeMethods.DeleteService(serviceHandle);
+                    return DeleteService(serviceHandle);
                 }
                 finally
                 {
-                    NativeMethods.CloseServiceHandle(serviceHandle);
+                    CloseServiceHandle(serviceHandle);
                 }
             }
             finally
@@ -289,7 +243,7 @@ namespace Servy.Core
                 // OpenSCManager returns a handle to the Service Control Manager.
                 // OpenService returns a handle to the individual service.
                 // These are two different resources that must each be closed separately to avoid leaking handles.
-                NativeMethods.CloseServiceHandle(scmHandle);
+                CloseServiceHandle(scmHandle);
             }
         }
 
@@ -351,64 +305,5 @@ namespace Servy.Core
             }
         }
 
-        /// <summary>
-        /// Contains native methods for low-level Windows service operations.
-        /// </summary>
-        internal static class NativeMethods
-        {
-            [DllImport("advapi32.dll", SetLastError = true)]
-            private static extern IntPtr OpenSCManager(string machineName, string databaseName, uint dwAccess);
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            private static extern IntPtr OpenService(IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess);
-
-            public const int SC_MANAGER_ALL_ACCESS = 0xF003F;
-            public const int SERVICE_ALL_ACCESS = 0xF01FF;
-            public const int SERVICE_QUERY_STATUS = 0x0004;
-            public const int SERVICE_DEMAND_START = 0x00000003;
-            public const int SERVICE_NO_CHANGE = -1;
-            public const int SERVICE_CONTROL_STOP = 0x00000001;
-
-            [StructLayout(LayoutKind.Sequential)]
-            public struct SERVICE_STATUS
-            {
-                public int dwServiceType;
-                public int dwCurrentState;
-                public int dwControlsAccepted;
-                public int dwWin32ExitCode;
-                public int dwServiceSpecificExitCode;
-                public int dwCheckPoint;
-                public int dwWaitHint;
-            }
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            public static extern IntPtr OpenSCManager(string machineName, string databaseName, int dwAccess);
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            public static extern IntPtr OpenService(IntPtr hSCManager, string lpServiceName, int dwDesiredAccess);
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            public static extern bool DeleteService(IntPtr hService);
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            public static extern bool CloseServiceHandle(IntPtr hSCObject);
-
-            [DllImport("advapi32.dll", SetLastError = true)]
-            public static extern bool ControlService(IntPtr hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
-
-            [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            public static extern bool ChangeServiceConfig(
-                IntPtr hService,
-                int nServiceType,
-                int nStartType,
-                int nErrorControl,
-                string lpBinaryPathName,
-                string lpLoadOrderGroup,
-                IntPtr lpdwTagId,
-                string lpDependencies,
-                string lpServiceStartName,
-                string lpPassword,
-                string lpDisplayName);
-        }
     }
 }

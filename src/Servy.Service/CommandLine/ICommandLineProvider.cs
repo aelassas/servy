@@ -1,4 +1,4 @@
-﻿namespace Servy.Service
+﻿namespace Servy.Service.CommandLine
 {
     /// <summary>
     /// Provides access to command-line arguments for the service.

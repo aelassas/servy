@@ -1,6 +1,6 @@
 ﻿using System.Timers;
 
-namespace Servy.Service
+namespace Servy.Service.Timers
 {
     /// <summary>
     /// Adapter for <see cref="Timer"/>, implementing the <see cref="ITimer"/> interface.

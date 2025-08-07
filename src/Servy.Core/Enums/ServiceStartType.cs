@@ -1,4 +1,4 @@
-﻿namespace Servy.Core
+﻿namespace Servy.Core.Enums
 {
     /// <summary>
     /// Defines service start types for Windows services.
