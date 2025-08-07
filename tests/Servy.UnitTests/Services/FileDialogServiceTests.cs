@@ -58,13 +58,13 @@ namespace Servy.Services.UnitTests
         public void SaveFile_Canceled_ReturnsNull()
         {
             // Arrange
-            _mockFileDialogService.Setup(f => f.SaveFile(It.IsAny<string>())).Returns((string)null);
+            _mockFileDialogService.Setup(f => f.SaveFile(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
             var actualPath = _mockFileDialogService.Object.SaveFile("Export Data");
 
             // Assert
-            Assert.Null(actualPath);
+            Assert.Empty(actualPath);
         }
     }
 }
