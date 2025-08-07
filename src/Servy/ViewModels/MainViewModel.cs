@@ -1,36 +1,58 @@
 ﻿using Servy.Core;
 using Servy.Resources;
+using Servy.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
-using System.IO;
-using System.Resources;
 using System.Runtime.CompilerServices;
-using System.Windows;
 using System.Windows.Input;
 
 namespace Servy.ViewModels
 {
+    /// <summary>
+    /// ViewModel for the main service management UI.
+    /// Implements properties, commands, and logic for configuring and managing Windows services
+    /// such as install, uninstall, start, stop, and restart.
+    /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
+        #region Services
+
+        private readonly IFileDialogService _dialogService;
+        private readonly IServiceCommands _serviceCommands;
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// Used for data binding updates.
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
+        /// </summary>
+        /// <param name="propertyName">Name of the property that changed.</param>
         private void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
-        private const int MinRotationSize = 1 * 1024 * 1024;      // 1 MB
-        private const int DefaultHeartbeatInterval = 30;          // 30 seconds
-        private const int MinHeartbeatInterval = 5;               // 5 seconds
-        private const int DefaultMaxFailedChecks = 3;              // 3 attempts
-        private const int MinMaxFailedChecks = 1;                  // 1 attempt
-        private const int DefaultMaxRestartAttempts = 3;           // 3 attempts
-        private const int MinMaxRestartAttempts = 1;              // 1 attempt
+        #endregion
 
-        private readonly IServiceManager _serviceManager;
+        #region Constants 
+
+        private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
+        private const int DefaultHeartbeatInterval = 30;          // 30 seconds
+        private const int DefaultMaxFailedChecks = 3;              // 3 attempts
+        private const int DefaultMaxRestartAttempts = 3;           // 3 attempts
+        
+        #endregion
+
+        #region Private Fields
+
         private string _serviceName;
         private string _serviceDescription;
         private string _processPath;
@@ -48,49 +70,76 @@ namespace Servy.ViewModels
         private RecoveryAction _selectedRecoveryAction;
         private string _maxRestartAttempts;
 
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets the service name.
+        /// </summary>
         public string ServiceName
         {
             get => _serviceName;
             set { _serviceName = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the description of the service.
+        /// </summary>
         public string ServiceDescription
         {
             get => _serviceDescription;
             set { _serviceDescription = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the path to the executable process to be run by the service.
+        /// </summary>
         public string ProcessPath
         {
             get => _processPath;
             set { _processPath = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the startup directory for the process.
+        /// </summary>
         public string StartupDirectory
         {
             get => _startupDirectory;
             set { _startupDirectory = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets additional command line parameters for the process.
+        /// </summary>
         public string ProcessParameters
         {
             get => _processParameters;
             set { _processParameters = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the startup type selected for the service.
+        /// </summary>
         public ServiceStartType SelectedStartupType
         {
             get => _selectedStartupType;
             set { _selectedStartupType = value; OnPropertyChanged(); }
         }
 
-
+        /// <summary>
+        /// Gets or sets the process priority selected for the service process.
+        /// </summary>
         public ProcessPriority SelectedProcessPriority
         {
             get => _selectedProcessPriority;
             set { _selectedProcessPriority = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets the list of available startup types for services.
+        /// </summary>
         public List<StartupTypeItem> StartupTypes { get; } = new List<StartupTypeItem>
         {
             new StartupTypeItem { StartupType = ServiceStartType.Automatic, DisplayName = Strings.StartupType_Automatic },
@@ -98,6 +147,9 @@ namespace Servy.ViewModels
             new StartupTypeItem { StartupType = ServiceStartType.Disabled, DisplayName = Strings.StartupType_Disabled },
         };
 
+        /// <summary>
+        /// Gets the list of available process priority options.
+        /// </summary>
         public List<ProcessPriorityItem> ProcessPriorities { get; } = new List<ProcessPriorityItem>
         {
             new ProcessPriorityItem { Priority = ProcessPriority.Idle, DisplayName = Strings.ProcessPriority_Idle },
@@ -108,54 +160,81 @@ namespace Servy.ViewModels
             new ProcessPriorityItem { Priority = ProcessPriority.RealTime, DisplayName = Strings.ProcessPriority_RealTime },
         };
 
+        /// <summary>
+        /// Gets or sets the path for standard output redirection.
+        /// </summary>
         public string StdoutPath
         {
             get => _stdoutPath;
             set { _stdoutPath = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the path for standard error redirection.
+        /// </summary>
         public string StderrPath
         {
             get => _stderrPath;
             set { _stderrPath = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether log rotation is enabled.
+        /// </summary>
         public bool EnableRotation
         {
             get => _enableRotation;
             set { _enableRotation = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the log rotation size as a string (in bytes).
+        /// </summary>
         public string RotationSize
         {
             get => _rotationSize;
             set { _rotationSize = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether health monitoring is enabled.
+        /// </summary>
         public bool EnableHealthMonitoring
         {
             get => _enableHealthMonitoring;
             set { _enableHealthMonitoring = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the heartbeat interval (seconds) as a string.
+        /// </summary>
         public string HeartbeatInterval
         {
             get => _heartbeatInterval;
             set { _heartbeatInterval = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum allowed failed health checks as a string.
+        /// </summary>
         public string MaxFailedChecks
         {
             get => _maxFailedChecks;
             set { _maxFailedChecks = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the recovery action selected for the service.
+        /// </summary>
         public RecoveryAction SelectedRecoveryAction
         {
             get => _selectedRecoveryAction;
             set { _selectedRecoveryAction = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets the list of available recovery actions.
+        /// </summary>
         public List<RecoveryActionItem> RecoveryActions { get; } = new List<RecoveryActionItem>
         {
             new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None},
@@ -164,296 +243,227 @@ namespace Servy.ViewModels
             new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer},
         };
 
+        /// <summary>
+        /// Gets or sets the maximum number of restart attempts as a string.
+        /// </summary>
         public string MaxRestartAttempts
         {
             get => _maxRestartAttempts;
             set { _maxRestartAttempts = value; OnPropertyChanged(); }
         }
 
+        #endregion
+
+        #region Commands
+
+        /// <summary>
+        /// Command to browse and select the executable process path.
+        /// </summary>
+        public ICommand BrowseProcessPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the startup directory.
+        /// </summary>
+        public ICommand BrowseStartupDirectoryCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the standard output file path.
+        /// </summary>
+        public ICommand BrowseStdoutPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the standard error file path.
+        /// </summary>
+        public ICommand BrowseStderrPathCommand { get; }
+
+        /// <summary>
+        /// Command to install the configured service.
+        /// </summary>
         public ICommand InstallCommand { get; }
+
+        /// <summary>
+        /// Command to uninstall the service.
+        /// </summary>
         public ICommand UninstallCommand { get; }
+
+        /// <summary>
+        /// Command to start the service.
+        /// </summary>
         public ICommand StartCommand { get; }
+
+        /// <summary>
+        /// Command to stop the service.
+        /// </summary>
         public ICommand StopCommand { get; }
+
+        /// <summary>
+        /// Command to restart the service.
+        /// </summary>
         public ICommand RestartCommand { get; }
+
+        /// <summary>
+        /// Command to clear the form fields.
+        /// </summary>
         public ICommand ClearCommand { get; }
 
-        private ResourceManager _resourceManager = Strings.ResourceManager;
-        private CultureInfo _culture = CultureInfo.CurrentUICulture;
+        #endregion
 
-        public string Menu_Language => _resourceManager.GetString(nameof(Menu_Language), _culture) ?? string.Empty;
-        public string Label_ServiceName => _resourceManager.GetString(nameof(Label_ServiceName), _culture) ?? string.Empty;
-        public string Label_ServiceDescription => _resourceManager.GetString(nameof(Label_ServiceDescription), _culture) ?? string.Empty;
-        public string Label_ProcessPath => _resourceManager.GetString(nameof(Label_ProcessPath), _culture) ?? string.Empty;
-        public string Label_StartupDirectory => _resourceManager.GetString(nameof(Label_StartupDirectory), _culture) ?? string.Empty;
-        public string Label_ProcessParameters => _resourceManager.GetString(nameof(Label_ProcessParameters), _culture) ?? string.Empty;
+        #region Constructors
 
-        public string Label_StartupType => _resourceManager.GetString(nameof(Label_StartupType), _culture) ?? string.Empty;
-        public string StartupType_Automatic => _resourceManager.GetString(nameof(StartupType_Automatic), _culture) ?? string.Empty;
-        public string StartupType_Manual => _resourceManager.GetString(nameof(StartupType_Manual), _culture) ?? string.Empty;
-        public string StartupType_Disabled => _resourceManager.GetString(nameof(StartupType_Disabled), _culture) ?? string.Empty;
-
-        public string Label_ProcessPriority => _resourceManager.GetString(nameof(Label_ProcessPriority), _culture) ?? string.Empty;
-        public string ProcessPriority_Idle => _resourceManager.GetString(nameof(ProcessPriority_Idle), _culture) ?? string.Empty;
-        public string ProcessPriority_BelowNormal => _resourceManager.GetString(nameof(ProcessPriority_BelowNormal), _culture) ?? string.Empty;
-        public string ProcessPriority_Normal => _resourceManager.GetString(nameof(ProcessPriority_Normal), _culture) ?? string.Empty;
-        public string ProcessPriority_AboveNormal => _resourceManager.GetString(nameof(ProcessPriority_AboveNormal), _culture) ?? string.Empty;
-        public string ProcessPriority_High => _resourceManager.GetString(nameof(ProcessPriority_High), _culture) ?? string.Empty;
-        public string ProcessPriority_RealTime => _resourceManager.GetString(nameof(ProcessPriority_RealTime), _culture) ?? string.Empty;
-
-        public string Label_StdoutPath => _resourceManager.GetString(nameof(Label_StdoutPath), _culture) ?? string.Empty;
-        public string Label_StderrPath => _resourceManager.GetString(nameof(Label_StderrPath), _culture) ?? string.Empty;
-        public string Label_EnableRotation => _resourceManager.GetString(nameof(Label_EnableRotation), _culture) ?? string.Empty;
-        public string Label_RotationSize => _resourceManager.GetString(nameof(Label_RotationSize), _culture) ?? string.Empty;
-        public string Label_RotationSizeUnity => _resourceManager.GetString(nameof(Label_RotationSizeUnity), _culture) ?? string.Empty;
-
-        public string Label_EnableHealthMonitoring => _resourceManager.GetString(nameof(Label_EnableHealthMonitoring), _culture) ?? string.Empty;
-        public string Chk_EnableHeartbeat => _resourceManager.GetString(nameof(Chk_EnableHeartbeat), _culture) ?? string.Empty;
-        public string Label_HeartbeatInterval => _resourceManager.GetString(nameof(Label_HeartbeatInterval), _culture) ?? string.Empty;
-        public string Label_Seconds => _resourceManager.GetString(nameof(Label_Seconds), _culture) ?? string.Empty;
-        public string Label_MaxFailedChecks => _resourceManager.GetString(nameof(Label_MaxFailedChecks), _culture) ?? string.Empty;
-        public string Label_Attempts => _resourceManager.GetString(nameof(Label_Attempts), _culture) ?? string.Empty;
-        public string Label_RecoveryAction => _resourceManager.GetString(nameof(Label_RecoveryAction), _culture) ?? string.Empty;
-        public string Label_MaxRestartAttempts => _resourceManager.GetString(nameof(Label_MaxRestartAttempts), _culture) ?? string.Empty;
-
-        public string Button_Install => _resourceManager.GetString(nameof(Button_Install), _culture) ?? string.Empty;
-        public string Button_Uninstall => _resourceManager.GetString(nameof(Button_Uninstall), _culture) ?? string.Empty;
-        public string Button_Start => _resourceManager.GetString(nameof(Button_Start), _culture) ?? string.Empty;
-        public string Button_Stop => _resourceManager.GetString(nameof(Button_Stop), _culture) ?? string.Empty;
-        public string Button_Restart => _resourceManager.GetString(nameof(Button_Restart), _culture) ?? string.Empty;
-        public string Button_Browse => _resourceManager.GetString(nameof(Button_Browse), _culture) ?? string.Empty;
-
-        public MainViewModel()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainViewModel"/> class with the specified services.
+        /// </summary>
+        /// <param name="dialogService">Service to open file and folder dialogs.</param>
+        /// <param name="serviceCommands">Service commands to manage Windows services.</param>
+        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands)
         {
-            _serviceManager = new ServiceManager();
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+
+            // Initialize defaults
             _serviceName = string.Empty;
             _serviceDescription = string.Empty;
             _processPath = string.Empty;
             _startupDirectory = string.Empty;
             _processParameters = string.Empty;
-            _selectedStartupType = ServiceStartType.Automatic;         // Default to Automatic startup type
-            _selectedProcessPriority = ProcessPriority.Normal;         // Default to Normal priority
-            _enableRotation = false;                                   // Default to no rotation
-            _rotationSize = DefaultRotationSize.ToString();            // Default to 10 MB rotation size
-            _selectedRecoveryAction = RecoveryAction.RestartService;   // Default to RestartService recovery action
-            _heartbeatInterval = DefaultHeartbeatInterval.ToString();  // Default to 30 seconds
-            _maxFailedChecks = DefaultMaxFailedChecks.ToString();      // Default to 3 attempts
-            _maxRestartAttempts = DefaultMaxRestartAttempts.ToString(); // Default to 3 attempts
+            _selectedStartupType = ServiceStartType.Automatic;
+            _selectedProcessPriority = ProcessPriority.Normal;
+            _enableRotation = false;
+            _rotationSize = DefaultRotationSize.ToString();
+            _selectedRecoveryAction = RecoveryAction.RestartService;
+            _heartbeatInterval = DefaultHeartbeatInterval.ToString();
+            _maxFailedChecks = DefaultMaxFailedChecks.ToString();
+            _maxRestartAttempts = DefaultMaxRestartAttempts.ToString();
 
-            InstallCommand = new RelayCommand(InstallService);
-            UninstallCommand = new RelayCommand(UninstallService);
-            StartCommand = new RelayCommand(StartService);
-            StopCommand = new RelayCommand(StopService);
-            RestartCommand = new RelayCommand(RestartService);
+            // Commands
+            BrowseProcessPathCommand = new RelayCommand(OnBrowseProcessPath);
+            BrowseStartupDirectoryCommand = new RelayCommand(OnBrowseStartupDirectory);
+            BrowseStdoutPathCommand = new RelayCommand(OnBrowseStdoutPath);
+            BrowseStderrPathCommand = new RelayCommand(OnBrowseStderrPath);
+            InstallCommand = new RelayCommand(OnInstallService);
+            UninstallCommand = new RelayCommand(OnUninstallService);
+            StartCommand = new RelayCommand(OnStartService);
+            StopCommand = new RelayCommand(OnStopService);
+            RestartCommand = new RelayCommand(OnRestartService);
             ClearCommand = new RelayCommand(ClearForm);
         }
 
-        private void InstallService()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainViewModel"/> class for design-time data.
+        /// </summary>
+        public MainViewModel() : this(
+            new DesignTimeFileDialogService(),
+            new ServiceCommands(new ServiceManager(), new MessageBoxService())
+            )
+        { }
+
+        #endregion
+
+        #region Dialog Command Handlers
+
+        /// <summary>
+        /// Opens a dialog to browse for an executable file and sets <see cref="ProcessPath"/>.
+        /// </summary>
+        private void OnBrowseProcessPath()
         {
-            if (string.IsNullOrWhiteSpace(ServiceName) || string.IsNullOrWhiteSpace(ProcessPath))
-            {
-                MessageBox.Show(Strings.Msg_ValidationError, "Servy", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (!Helper.IsValidPath(ProcessPath) || !File.Exists(ProcessPath))
-            {
-                MessageBox.Show(Strings.Msg_InvalidPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
-
-            if (!File.Exists(wrapperExePath))
-            {
-                MessageBox.Show(Strings.Msg_InvalidWrapperExePath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(StartupDirectory) && (!Helper.IsValidPath(StartupDirectory) || !Directory.Exists(StartupDirectory)))
-            {
-                MessageBox.Show(Strings.Msg_InvalidStartupDirectory, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(StdoutPath) && (!Helper.IsValidPath(StdoutPath) || !Helper.CreateParentDirectory(StdoutPath)))
-            {
-                MessageBox.Show(Strings.Msg_InvalidStdoutPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(StderrPath) && (!Helper.IsValidPath(StderrPath) || !Helper.CreateParentDirectory(StderrPath)))
-            {
-                MessageBox.Show(Strings.Msg_InvalidStderrPath, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            var rotationSize = 0;
-            if (EnableRotation)
-            {
-                if (!int.TryParse(RotationSize, out rotationSize) || rotationSize < MinRotationSize)
-                {
-                    MessageBox.Show(Strings.Msg_InvalidRotationSize, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-            }
-
-            var heartbeatInterval = 0;
-            var maxFailedChecks = 0;
-            var maxRestartAttempts = 0;
-            if (EnableHealthMonitoring)
-            {
-                if (!int.TryParse(HeartbeatInterval, out heartbeatInterval) || heartbeatInterval < MinHeartbeatInterval)
-                {
-                    MessageBox.Show(Strings.Msg_InvalidHeartbeatInterval, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (!int.TryParse(MaxFailedChecks, out maxFailedChecks) || maxFailedChecks < MinMaxFailedChecks)
-                {
-                    MessageBox.Show(Strings.Msg_InvalidMaxFailedChecks, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (!int.TryParse(MaxRestartAttempts, out maxRestartAttempts) || maxRestartAttempts < MinMaxRestartAttempts)
-                {
-                    MessageBox.Show(Strings.Msg_InvalidMaxRestartAttempts, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-            }
-
-            try
-            {
-                var success = _serviceManager.InstallService(
-                    ServiceName,                      // service name
-                    ServiceDescription,               // service description
-                    wrapperExePath,                   // wrapper exe
-                    ProcessPath,                      // real exe path
-                    StartupDirectory,                 // startup directory
-                    ProcessParameters,                // process parameters
-                    SelectedStartupType,              // startup type
-                    SelectedProcessPriority,          // process priority
-                    StdoutPath,                       // standard output path 
-                    StderrPath,                       // standard error path
-                    rotationSize,                     // rotation size in bytes, O if rotation is disabled
-                    heartbeatInterval,                // heartbeat interval in seconds, O if health monitoring is disabled
-                    maxFailedChecks,                  // heartbeat interval in seconds, 0 if health monitoring is disabled
-                    SelectedRecoveryAction,           // recovery action
-                    maxRestartAttempts                // maximum restart attempts
-                );
-
-                if (success)
-                {
-                    MessageBox.Show(Strings.Msg_ServiceCreated, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) ProcessPath = path;
         }
 
-        private void UninstallService()
+        /// <summary>
+        /// Opens a dialog to browse for a folder and sets <see cref="StartupDirectory"/>.
+        /// </summary>
+        private void OnBrowseStartupDirectory()
         {
-            if (string.IsNullOrWhiteSpace(ServiceName))
-            {
-                MessageBox.Show(Strings.Msg_ValidationError, "Servy", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            try
-            {
-                bool success = _serviceManager.UninstallService(ServiceName);
-
-                if (success)
-                {
-                    MessageBox.Show(Strings.Msg_ServiceRemoved, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-                MessageBox.Show(Strings.Msg_AdminRightsRequired, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) StartupDirectory = folder;
         }
 
-        private void StartService()
+        /// <summary>
+        /// Opens a dialog to select a file path for standard output redirection.
+        /// </summary>
+        private void OnBrowseStdoutPath()
         {
-            try
-            {
-                bool success = _serviceManager.StartService(ServiceName);
-
-                if (success)
-                {
-                    MessageBox.Show(Strings.Msg_ServiceStarted, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var path = _dialogService.SaveFile("Select standard output file");
+            if (!string.IsNullOrEmpty(path)) StdoutPath = path;
         }
 
-        private void StopService()
+        /// <summary>
+        /// Opens a dialog to select a file path for standard error redirection.
+        /// </summary>
+        private void OnBrowseStderrPath()
         {
-            try
-            {
-                bool success = _serviceManager.StopService(ServiceName);
-
-                if (success)
-                {
-                    MessageBox.Show(Strings.Msg_ServiceStopped, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var path = _dialogService.SaveFile("Select standard error file");
+            if (!string.IsNullOrEmpty(path)) StderrPath = path;
         }
 
-        private void RestartService()
-        {
-            try
-            {
-                bool success = _serviceManager.RestartService(ServiceName);
+        #endregion
 
-                if (success)
-                {
-                    MessageBox.Show(Strings.Msg_ServiceRestarted, "Servy", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                else
-                {
-                    MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            catch (Exception)
-            {
-                MessageBox.Show(Strings.Msg_UnexpectedError, "Servy", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+        #region Service Command Handlers
+
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
+        /// </summary>
+        private void OnInstallService()
+        {
+            _serviceCommands.InstallService(
+                ServiceName,
+                ServiceDescription,
+                ProcessPath,
+                StartupDirectory,
+                ProcessParameters,
+                SelectedStartupType,
+                SelectedProcessPriority,
+                StdoutPath,
+                StderrPath,
+                EnableRotation,
+                RotationSize,
+                EnableHealthMonitoring,
+                HeartbeatInterval,
+                MaxFailedChecks,
+                SelectedRecoveryAction,
+                MaxRestartAttempts);
         }
 
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.UninstallService"/> for the current <see cref="ServiceName"/>.
+        /// </summary>
+        private void OnUninstallService()
+        {
+            _serviceCommands.UninstallService(ServiceName);
+        }
+
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
+        /// </summary>
+        private void OnStartService()
+        {
+            _serviceCommands.StartService(ServiceName);
+        }
+
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
+        /// </summary>
+        private void OnStopService()
+        {
+            _serviceCommands.StopService(ServiceName);
+        }
+
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
+        /// </summary>
+        private void OnRestartService()
+        {
+            _serviceCommands.RestartService(ServiceName);
+        }
+
+        #endregion
+
+        #region Form Command Handlers
+
+        /// <summary>
+        /// Clears all form fields and resets to default values.
+        /// </summary>
         private void ClearForm()
         {
             ServiceName = string.Empty;
@@ -473,5 +483,6 @@ namespace Servy.ViewModels
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
         }
 
+        #endregion
     }
 }
