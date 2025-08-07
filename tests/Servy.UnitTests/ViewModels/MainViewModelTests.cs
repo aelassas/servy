@@ -4,7 +4,7 @@ using Servy.Services;
 using Servy.ViewModels;
 using Xunit;
 
-namespace Servy.Tests.ViewModels
+namespace Servy.UnitTests.ViewModels
 {
     public class MainViewModelTests
     {
