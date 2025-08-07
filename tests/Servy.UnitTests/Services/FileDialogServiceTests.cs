@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.Services;
 
-namespace Servy.UnitServices.Services
+namespace Servy.UnitTests.Services
 {
     public class FileDialogServiceTests
     {
