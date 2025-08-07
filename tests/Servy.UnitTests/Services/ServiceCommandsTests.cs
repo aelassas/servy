@@ -2,7 +2,7 @@
 using Servy.Core.Enums;
 using Xunit;
 
-namespace Servy.Services.UnitTests
+namespace Servy.UnitTests.Services
 {
     public class ServiceCommandsTests
     {
