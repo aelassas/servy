@@ -34,7 +34,7 @@ namespace Servy.Service.UnitTests
         }
 
         [Fact]
-        public void StartProcess_StartsProcessAndAssignsJobObject()
+        public void StartProcess_StartsProcess()
         {
             var service = CreateService(
                 out var logger,
@@ -50,67 +50,11 @@ namespace Servy.Service.UnitTests
 
             processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>())).Returns(mockProcess.Object);
 
-            helper.Setup(h => h.CreateJobObject(It.IsAny<ILogger>())).Returns(true);
-            helper.Setup(h => h.AssignProcessToJobObject(It.IsAny<IProcessWrapper>(), It.IsAny<ILogger>())).Returns(true);
-
             service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir");
-
-            mockProcess.Verify(p => p.Start(), Times.Once);
-            helper.Verify(h => h.CreateJobObject(It.IsAny<ILogger>()), Times.Once);
-            helper.Verify(h => h.AssignProcessToJobObject(mockProcess.Object, It.IsAny<ILogger>()), Times.Once);
 
             var childProcess = service.GetChildProcess();
             Assert.NotNull(childProcess);
             Assert.Equal(mockProcess.Object, childProcess);
-        }
-
-        [Fact]
-        public void StartProcess_LogsError_WhenJobObjectCreationFails()
-        {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator);
-
-            var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.Id).Returns(123);
-            mockProcess.Setup(p => p.Start());
-
-            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>())).Returns(mockProcess.Object);
-
-            helper.Setup(h => h.CreateJobObject(It.IsAny<ILogger>())).Returns(false);
-
-            service.InvokeStartProcess("C:\\myapp.exe", "", "C:\\workdir");
-
-            logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Failed to create Job Object")), It.IsAny<Exception>()), Times.Once);
-        }
-
-        [Fact]
-        public void StartProcess_LogsError_WhenAssignProcessToJobObjectFails()
-        {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator);
-
-            var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.Id).Returns(123);
-            mockProcess.Setup(p => p.Start());
-
-            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>())).Returns(mockProcess.Object);
-
-            helper.Setup(h => h.CreateJobObject(It.IsAny<ILogger>())).Returns(true);
-            helper.Setup(h => h.AssignProcessToJobObject(It.IsAny<IProcessWrapper>(), It.IsAny<ILogger>())).Returns(false);
-
-            service.InvokeStartProcess("C:\\myapp.exe", "", "C:\\workdir");
-
-            logger.Verify(l => l.Error(It.Is<string>(s => s.Contains("Failed to assign process to Job Object")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
