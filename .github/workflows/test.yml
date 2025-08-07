@@ -36,15 +36,14 @@ jobs:
         run: |
           dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/Service -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
-      - name: Run Servy.UnitTests with coverage
-        run: |
-          dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/Servy -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+      - name: Run Servy.UnitTests without coverage
+        run: dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: TestResults/Core/**/coverage.cobertura.xml,TestResults/Restarter/**/coverage.cobertura.xml,TestResults/Service/**/coverage.cobertura.xml,TestResults/Servy/**/coverage.cobertura.xml
+          files: TestResults/Core/**/coverage.cobertura.xml,TestResults/Restarter/**/coverage.cobertura.xml,TestResults/Service/**/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: true
