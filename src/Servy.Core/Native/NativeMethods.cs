@@ -9,7 +9,7 @@ namespace Servy.Core.Native
     /// <summary>
     /// Contains native methods for low-level Windows service operations.
     /// </summary>
-    internal static partial class NativeMethods
+    public static partial class NativeMethods
     {
         /// <summary>
         /// Describes a Windows service description string used in service configuration.

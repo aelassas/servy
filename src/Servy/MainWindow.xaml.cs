@@ -18,7 +18,15 @@ namespace Servy
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel(new FileDialogService(), new ServiceCommands(new ServiceManager(), new MessageBoxService()));
+            DataContext = new MainViewModel(
+                new FileDialogService(),
+                new ServiceCommands(
+                    new ServiceManager(
+                        _ => new ServiceControllerWrapper(MainViewModel.DefaultServiceName),
+                        new WindowsServiceApi(),
+                        new Win32ErrorProvider()
+                        ),
+                    new MessageBoxService()));
         }
     }
 }
