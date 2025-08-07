@@ -27,13 +27,13 @@ Servy is available in two versions to support different environments for maximum
 
 #### .NET 8.0 Version
 This version is recommended for modern systems and includes the latest features and performance enhancements.
-* Windows 10, Windows 11, or Windows Server (x64)
-* [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime)
+* **Supported OS:** Windows 10, Windows 11, or Windows Server (x64)
+* **Requirements:** [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime)
 
 #### .NET Framework 4.8 Version
 This version is for older systems that require .NET Framework support.
-* Windows 7, 8, 10, 11, or Windows Server (x64)
-* [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
+* **Supported OS:** Windows 7, 8, 10, 11, or Windows Server (x64)
+* **Requirements:** [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 
 **Administrator privileges are required** to install and manage Windows services.
 
