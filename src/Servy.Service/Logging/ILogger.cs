@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Servy.Service
+namespace Servy.Service.Logging
 {
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.
@@ -24,6 +24,6 @@ namespace Servy.Service
         /// </summary>
         /// <param name="message">The error message to log.</param>
         /// <param name="ex">The exception associated with the error, or <c>null</c> if none.</param>
-        void Error(string message, Exception ex = null);
+        void Error(string message, Exception? ex = null);
     }
 }

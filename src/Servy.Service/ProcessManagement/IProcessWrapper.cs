@@ -1,7 +1,6 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.ProcessManagement
 {
     /// <summary>
     /// Defines a wrapper interface for managing and interacting with a system process.

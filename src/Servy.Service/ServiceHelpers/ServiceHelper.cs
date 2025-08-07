@@ -1,15 +1,16 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Helpers;
+using Servy.Service.CommandLine;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.Reflection;
 using System.ServiceProcess;
 
-namespace Servy.Service
+namespace Servy.Service.ServiceHelpers
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
     {
-        private IntPtr _jobHandle = IntPtr.Zero;
-
         private readonly ICommandLineProvider _commandLineProvider;
 
         public ServiceHelper(ICommandLineProvider commandLineProvider)
@@ -91,7 +92,7 @@ namespace Servy.Service
         }
 
         /// <inheritdoc />
-        public StartOptions InitializeStartup(ILogger logger)
+        public StartOptions? InitializeStartup(ILogger logger)
         {
             var fullArgs = GetSanitizedArgs();
             var options = StartOptionsParser.Parse(fullArgs);
@@ -142,7 +143,7 @@ namespace Servy.Service
             {
                 var exePath = Assembly.GetExecutingAssembly().Location;
                 var dir = Path.GetDirectoryName(exePath);
-                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+                var restarter = Path.Combine(dir!, "Servy.Restarter.exe");
 
                 if (File.Exists(restarter))
                 {

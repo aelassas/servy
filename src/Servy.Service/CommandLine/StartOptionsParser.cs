@@ -1,9 +1,8 @@
-﻿using Servy.Core;
-using System;
+﻿using Servy.Core.Enums;
+using Servy.Service.ServiceHelpers;
 using System.Diagnostics;
-using System.Linq;
 
-namespace Servy.Service
+namespace Servy.Service.CommandLine
 {
     /// <summary>
     /// Provides functionality to parse command-line arguments into a <see cref="StartOptions"/> object.

@@ -1,4 +1,6 @@
 ﻿using Moq;
+using Servy.Core.Enums;
+using Servy.Core.Interfaces;
 using System;
 using Xunit;
 
@@ -132,15 +134,15 @@ namespace Servy.Core.UnitTests
                 .Throws<ArgumentNullException>();
 
             Assert.Throws<ArgumentNullException>(() => _mockServiceManager.Object.InstallService(
-                null, "desc", @"C:\wrapper.exe", @"C:\real.exe", @"C:\workingdir", "-arg1",
+                string.Empty, "desc", @"C:\wrapper.exe", @"C:\real.exe", @"C:\workingdir", "-arg1",
                 ServiceStartType.Automatic, ProcessPriority.Normal));
 
             Assert.Throws<ArgumentNullException>(() => _mockServiceManager.Object.InstallService(
-                "Service", "desc", null, @"C:\real.exe", @"C:\workingdir", "-arg1",
+                "Service", "desc", string.Empty, @"C:\real.exe", @"C:\workingdir", "-arg1",
                 ServiceStartType.Automatic, ProcessPriority.Normal));
 
             Assert.Throws<ArgumentNullException>(() => _mockServiceManager.Object.InstallService(
-                "Service", "desc", @"C:\wrapper.exe", null, @"C:\workingdir", "-arg1",
+                "Service", "desc", @"C:\wrapper.exe", string.Empty, @"C:\workingdir", "-arg1",
                 ServiceStartType.Automatic, ProcessPriority.Normal));
         }
 
@@ -164,7 +166,7 @@ namespace Servy.Core.UnitTests
                 .Setup(sm => sm.UninstallService(It.Is<string>(s => string.IsNullOrEmpty(s))))
                 .Returns(false);
 
-            bool result = _mockServiceManager.Object.UninstallService(null);
+            bool result = _mockServiceManager.Object.UninstallService(string.Empty);
 
             Assert.False(result);
         }
@@ -189,7 +191,7 @@ namespace Servy.Core.UnitTests
                 .Setup(sm => sm.StartService(It.Is<string>(s => string.IsNullOrEmpty(s))))
                 .Returns(false);
 
-            bool result = _mockServiceManager.Object.StartService(null);
+            bool result = _mockServiceManager.Object.StartService(string.Empty);
 
             Assert.False(result);
         }
@@ -214,7 +216,7 @@ namespace Servy.Core.UnitTests
                 .Setup(sm => sm.StopService(It.Is<string>(s => string.IsNullOrEmpty(s))))
                 .Returns(false);
 
-            bool result = _mockServiceManager.Object.StopService("");
+            bool result = _mockServiceManager.Object.StopService(string.Empty);
 
             Assert.False(result);
         }
@@ -239,7 +241,7 @@ namespace Servy.Core.UnitTests
                 .Setup(sm => sm.RestartService(It.Is<string>(s => string.IsNullOrEmpty(s))))
                 .Returns(false);
 
-            bool result = _mockServiceManager.Object.RestartService(null);
+            bool result = _mockServiceManager.Object.RestartService(string.Empty);
 
             Assert.False(result);
         }

@@ -1,8 +1,12 @@
 ﻿using Moq;
-using System;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System.Diagnostics;
 using System.Reflection;
-using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -34,14 +38,14 @@ namespace Servy.Service.UnitTests
                 mockPathValidator.Object);
         }
 
-        DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
+        DataReceivedEventArgs CreateDataReceivedEventArgs(string? data)
         {
             var ctor = typeof(DataReceivedEventArgs).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
                 new[] { typeof(string) },
                 null);
-            return (DataReceivedEventArgs)ctor.Invoke(new object[] { data });
+            return (DataReceivedEventArgs)ctor!.Invoke(new object?[] { data });
         }
 
         [Fact]
@@ -75,7 +79,7 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(startOptions);
 
             var stdoutWriterField = typeof(Service).GetField("_stdoutWriter", BindingFlags.NonPublic | BindingFlags.Instance);
-            var stdoutWriterValue = stdoutWriterField.GetValue(service);
+            var stdoutWriterValue = stdoutWriterField!.GetValue(service);
             Assert.NotNull(stdoutWriterValue);
 
             // Act with non-empty data

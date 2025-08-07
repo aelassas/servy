@@ -77,7 +77,7 @@ namespace Servy
             if (File.Exists(targetPath))
             {
                 DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm, resourceName);
+                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
                 shouldCopy = embeddedResourceTime > existingFileTime;
             }
 
@@ -103,15 +103,31 @@ namespace Servy
         /// Gets the last write time of the embedded resource using the assembly's timestamp.
         /// </summary>
         /// <param name="assembly">The assembly containing the resource.</param>
-        /// <param name="resourceName">The name of the embedded resource.</param>
         /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
-        private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly, string resourceName)
+        private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
+            #pragma warning disable IL3000
             string assemblyPath = assembly.Location;
+            #pragma warning restore IL3000
 
-            if (File.Exists(assemblyPath))
+            if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
             {
                 return File.GetLastWriteTimeUtc(assemblyPath);
+            }
+
+            // Fallback: try to get the executable's last write time using AppContext.BaseDirectory + executable name
+            try
+            {
+                var exeName = AppDomain.CurrentDomain.FriendlyName;
+                var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
+                if (File.Exists(exePath))
+                {
+                    return File.GetLastWriteTimeUtc(exePath);
+                }
+            }
+            catch
+            {
+                // Ignore exceptions, fallback to UtcNow below
             }
 
             return DateTime.UtcNow;

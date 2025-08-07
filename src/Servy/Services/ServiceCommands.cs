@@ -1,4 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
+using Servy.Core.Interfaces;
 using Servy.Resources;
 using System;
 using System.IO;

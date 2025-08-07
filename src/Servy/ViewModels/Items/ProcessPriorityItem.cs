@@ -1,6 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
 
-namespace Servy.ViewModels
+namespace Servy.ViewModels.Items
 {
     /// <summary>
     /// Represents a process priority with its associated display name for UI.

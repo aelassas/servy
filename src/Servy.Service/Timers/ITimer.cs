@@ -1,7 +1,6 @@
-﻿using System;
-using System.Timers;
+﻿using System.Timers;
 
-namespace Servy.Service
+namespace Servy.Service.Timers
 {
     /// <summary>
     /// Represents a timer that raises an event at specified intervals.

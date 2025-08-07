@@ -1,8 +1,16 @@
 ﻿using Moq;
 using Servy.Core;
+using Servy.Core.Enums;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System;
 using System.Timers;
 using Xunit;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
@@ -47,7 +55,7 @@ namespace Servy.Service.UnitTests
 
             mockHelper
                 .Setup(h => h.InitializeStartup(mockLogger.Object))
-                .Returns((StartOptions)null);
+                .Returns((StartOptions?)null);
 
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
 
