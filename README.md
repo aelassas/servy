@@ -79,10 +79,10 @@ This version is for older systems that require .NET Framework support.
 - `Servy.exe`: WPF frontend application <br>
   Handles user input, service configuration, and manages the lifecycle of the Windows service.
 
-- `Servy.Service.exe`: Windows Service that runs in the background  
+- `Servy.Service.exe`: Windows Service that runs in the background <br>
   Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
 
-- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service
+- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service <br>
   Invoked as part of the *Restart Service* recovery action when a failure is detected.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
