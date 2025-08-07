@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.Services;
+using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
 using Servy.ViewModels.Items;
@@ -16,7 +17,7 @@ namespace Servy.ViewModels
     /// Implements properties, commands, and logic for configuring and managing Windows services
     /// such as install, uninstall, start, stop, and restart.
     /// </summary>
-    public class MainViewModel : INotifyPropertyChanged
+    public partial class MainViewModel : INotifyPropertyChanged
     {
         #region Services
 
@@ -50,27 +51,12 @@ namespace Servy.ViewModels
         private const int DefaultHeartbeatInterval = 30;          // 30 seconds
         private const int DefaultMaxFailedChecks = 3;              // 3 attempts
         private const int DefaultMaxRestartAttempts = 3;           // 3 attempts
-        
+
         #endregion
 
         #region Private Fields
 
-        private string _serviceName;
-        private string _serviceDescription;
-        private string _processPath;
-        private string _startupDirectory;
-        private string _processParameters;
-        private ServiceStartType _selectedStartupType;
-        private ProcessPriority _selectedProcessPriority;
-        private string _stdoutPath;
-        private string _stderrPath;
-        private bool _enableRotation;
-        private string _rotationSize;
-        private bool _enableHealthMonitoring;
-        private string _heartbeatInterval;
-        private string _maxFailedChecks;
-        private RecoveryAction _selectedRecoveryAction;
-        private string _maxRestartAttempts;
+        private readonly ServiceConfiguration _config = new ServiceConfiguration();
 
         #endregion
 
@@ -81,8 +67,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string ServiceName
         {
-            get => _serviceName;
-            set { _serviceName = value; OnPropertyChanged(); }
+            get => _config.Name;
+            set { _config.Name = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -90,8 +76,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string ServiceDescription
         {
-            get => _serviceDescription;
-            set { _serviceDescription = value; OnPropertyChanged(); }
+            get => _config.Description;
+            set { _config.Description = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -99,8 +85,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string ProcessPath
         {
-            get => _processPath;
-            set { _processPath = value; OnPropertyChanged(); }
+            get => _config.ExecutablePath;
+            set { _config.ExecutablePath = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -108,8 +94,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string StartupDirectory
         {
-            get => _startupDirectory;
-            set { _startupDirectory = value; OnPropertyChanged(); }
+            get => _config.StartupDirectory;
+            set { _config.StartupDirectory = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -117,8 +103,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string ProcessParameters
         {
-            get => _processParameters;
-            set { _processParameters = value; OnPropertyChanged(); }
+            get => _config.Parameters;
+            set { _config.Parameters = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -126,8 +112,8 @@ namespace Servy.ViewModels
         /// </summary>
         public ServiceStartType SelectedStartupType
         {
-            get => _selectedStartupType;
-            set { _selectedStartupType = value; OnPropertyChanged(); }
+            get => _config.StartupType;
+            set { _config.StartupType = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -135,8 +121,8 @@ namespace Servy.ViewModels
         /// </summary>
         public ProcessPriority SelectedProcessPriority
         {
-            get => _selectedProcessPriority;
-            set { _selectedProcessPriority = value; OnPropertyChanged(); }
+            get => _config.Priority;
+            set { _config.Priority = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -167,8 +153,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string StdoutPath
         {
-            get => _stdoutPath;
-            set { _stdoutPath = value; OnPropertyChanged(); }
+            get => _config.StdoutPath;
+            set { _config.StdoutPath = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -176,8 +162,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string StderrPath
         {
-            get => _stderrPath;
-            set { _stderrPath = value; OnPropertyChanged(); }
+            get => _config.StderrPath;
+            set { _config.StderrPath = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -185,8 +171,8 @@ namespace Servy.ViewModels
         /// </summary>
         public bool EnableRotation
         {
-            get => _enableRotation;
-            set { _enableRotation = value; OnPropertyChanged(); }
+            get => _config.EnableRotation;
+            set { _config.EnableRotation = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -194,8 +180,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string RotationSize
         {
-            get => _rotationSize;
-            set { _rotationSize = value; OnPropertyChanged(); }
+            get => _config.RotationSize;
+            set { _config.RotationSize = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -203,8 +189,8 @@ namespace Servy.ViewModels
         /// </summary>
         public bool EnableHealthMonitoring
         {
-            get => _enableHealthMonitoring;
-            set { _enableHealthMonitoring = value; OnPropertyChanged(); }
+            get => _config.EnableHealthMonitoring;
+            set { _config.EnableHealthMonitoring = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -212,8 +198,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string HeartbeatInterval
         {
-            get => _heartbeatInterval;
-            set { _heartbeatInterval = value; OnPropertyChanged(); }
+            get => _config.HeartbeatInterval;
+            set { _config.HeartbeatInterval = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -221,8 +207,8 @@ namespace Servy.ViewModels
         /// </summary>
         public string MaxFailedChecks
         {
-            get => _maxFailedChecks;
-            set { _maxFailedChecks = value; OnPropertyChanged(); }
+            get => _config.MaxFailedChecks;
+            set { _config.MaxFailedChecks = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -230,28 +216,28 @@ namespace Servy.ViewModels
         /// </summary>
         public RecoveryAction SelectedRecoveryAction
         {
-            get => _selectedRecoveryAction;
-            set { _selectedRecoveryAction = value; OnPropertyChanged(); }
+            get => _config.RecoveryAction;
+            set { _config.RecoveryAction = value; OnPropertyChanged(); }
         }
 
         /// <summary>
         /// Gets the list of available recovery actions.
         /// </summary>
         public List<RecoveryActionItem> RecoveryActions { get; } = new List<RecoveryActionItem>
-        {
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None},
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService},
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess},
-            new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer},
-        };
+{
+    new RecoveryActionItem { RecoveryAction= RecoveryAction.None, DisplayName = Strings.RecoveryAction_None },
+    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartService, DisplayName = Strings.RecoveryAction_RestartService },
+    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartProcess, DisplayName = Strings.RecoveryAction_RestartProcess },
+    new RecoveryActionItem { RecoveryAction= RecoveryAction.RestartComputer, DisplayName = Strings.RecoveryAction_RestartComputer },
+};
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts as a string.
         /// </summary>
         public string MaxRestartAttempts
         {
-            get => _maxRestartAttempts;
-            set { _maxRestartAttempts = value; OnPropertyChanged(); }
+            get => _config.MaxRestartAttempts;
+            set { _config.MaxRestartAttempts = value; OnPropertyChanged(); }
         }
 
         #endregion
@@ -323,19 +309,19 @@ namespace Servy.ViewModels
             _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
 
             // Initialize defaults
-            _serviceName = string.Empty;
-            _serviceDescription = string.Empty;
-            _processPath = string.Empty;
-            _startupDirectory = string.Empty;
-            _processParameters = string.Empty;
-            _selectedStartupType = ServiceStartType.Automatic;
-            _selectedProcessPriority = ProcessPriority.Normal;
-            _enableRotation = false;
-            _rotationSize = DefaultRotationSize.ToString();
-            _selectedRecoveryAction = RecoveryAction.RestartService;
-            _heartbeatInterval = DefaultHeartbeatInterval.ToString();
-            _maxFailedChecks = DefaultMaxFailedChecks.ToString();
-            _maxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+            ServiceName = string.Empty;
+            ServiceDescription = string.Empty;
+            ProcessPath = string.Empty;
+            StartupDirectory = string.Empty;
+            ProcessParameters = string.Empty;
+            SelectedStartupType = ServiceStartType.Automatic;
+            SelectedProcessPriority = ProcessPriority.Normal;
+            EnableRotation = false;
+            RotationSize = DefaultRotationSize.ToString();
+            SelectedRecoveryAction = RecoveryAction.RestartService;
+            HeartbeatInterval = DefaultHeartbeatInterval.ToString();
+            MaxFailedChecks = DefaultMaxFailedChecks.ToString();
+            MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
 
             // Commands
             BrowseProcessPathCommand = new RelayCommand(OnBrowseProcessPath);
@@ -409,22 +395,23 @@ namespace Servy.ViewModels
         private void OnInstallService()
         {
             _serviceCommands.InstallService(
-                ServiceName,
-                ServiceDescription,
-                ProcessPath,
-                StartupDirectory,
-                ProcessParameters,
-                SelectedStartupType,
-                SelectedProcessPriority,
-                StdoutPath,
-                StderrPath,
-                EnableRotation,
-                RotationSize,
-                EnableHealthMonitoring,
-                HeartbeatInterval,
-                MaxFailedChecks,
-                SelectedRecoveryAction,
-                MaxRestartAttempts);
+                _config.Name,
+                _config.Description,
+                _config.ExecutablePath,
+                _config.StartupDirectory,
+                _config.Parameters,
+                _config.StartupType,
+                _config.Priority,
+                _config.StdoutPath,
+                _config.StderrPath,
+                _config.EnableRotation,
+                _config.RotationSize,
+                _config.EnableHealthMonitoring,
+                _config.HeartbeatInterval,
+                _config.MaxFailedChecks,
+                _config.RecoveryAction,
+                _config.MaxRestartAttempts);
+
         }
 
         /// <summary>
