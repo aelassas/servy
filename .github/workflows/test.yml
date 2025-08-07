@@ -1,5 +1,12 @@
 name: test
 
+# Coverage Strategy:
+# - Include: Servy.Core (core logic, high testability)
+# - Exclude:
+#     • Servy (WPF UI - low testability)
+#     • Servy.Service (Windows Service - mocked extensively, limited practical coverage)
+#     • Servy.Restarter (wrapper utility with minimal logic)
+
 on:
   push:
     branches:
