@@ -6,6 +6,8 @@ using System.ComponentModel;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
+#pragma warning disable CS8625
+
 namespace Servy.Core.UnitTests
 {
     public class ServiceManagerTests
@@ -30,6 +32,7 @@ namespace Servy.Core.UnitTests
             var serviceHandle = new IntPtr(456);
             var serviceName = "TestService";
             var description = "Test Description";
+
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -393,3 +396,5 @@ namespace Servy.Core.UnitTests
         }
     }
 }
+
+#pragma warning restore CS8625
