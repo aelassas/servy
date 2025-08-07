@@ -3,7 +3,7 @@ using Servy.Core.Enums;
 using Servy.Services;
 using Servy.ViewModels;
 
-namespace Servy.Tests.ViewModels
+namespace Servy.UnitTests.ViewModels
 {
     public class MainViewModelTests
     {
