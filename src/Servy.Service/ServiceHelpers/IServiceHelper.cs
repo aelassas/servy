@@ -55,7 +55,6 @@ namespace Servy.Service
         /// 3. Starting the process again with the original path, arguments, and working directory.
         /// </summary>
         /// <param name="process">The process wrapper to restart.</param>
-        /// <param name="terminateJobObject">Callback to terminate child job object/processes.</param>
         /// <param name="startProcess">Callback to restart the process.</param>
         /// <param name="realExePath">Path to the executable.</param>
         /// <param name="realArgs">Command-line arguments.</param>
@@ -63,7 +62,6 @@ namespace Servy.Service
         /// <param name="logger">Logger instance.</param>
         void RestartProcess(
             IProcessWrapper process,
-            Action terminateJobObject,
             Action<string, string, string> startProcess,
             string realExePath,
             string realArgs,
@@ -89,25 +87,5 @@ namespace Servy.Service
         /// </remarks>
         void RestartComputer(ILogger logger);
 
-        /// <summary>
-        /// Creates a Windows job object to control process lifetimes and resource management.
-        /// </summary>
-        /// <param name="logger">The logger instance used to log messages and errors.</param>
-        /// <returns>True if the job object was created successfully; otherwise, false.</returns>
-        bool CreateJobObject(ILogger logger);
-
-        /// <summary>
-        /// Assigns a given process to the previously created job object.
-        /// This ensures that the process is controlled under the job object's lifetime and limits.
-        /// </summary>
-        /// <param name="process">The process wrapper representing the process to assign.</param>
-        /// <param name="logger">The logger instance used to log messages and errors.</param>
-        /// <returns>True if the process was assigned successfully; otherwise, false.</returns>
-        bool AssignProcessToJobObject(IProcessWrapper process, ILogger logger);
-
-        /// <summary>
-        /// Terminates all child processes by closing the job object handle.
-        /// </summary>
-        void TerminateChildProcesses();
     }
 }

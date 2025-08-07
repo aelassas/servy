@@ -76,7 +76,7 @@ namespace Servy.Service
         public void Start() => _process.Start();
 
         /// <inheritdoc/>
-        public void Kill() => _process.Kill();
+        public void Kill() => _process.Kill(true);
 
         /// <inheritdoc/>
         public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);

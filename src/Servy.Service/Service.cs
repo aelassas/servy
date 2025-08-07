@@ -197,26 +197,9 @@ namespace Servy.Service
             _childProcess.ErrorDataReceived += OnErrorDataReceived;
             _childProcess.Exited += OnProcessExited;
 
-            // Create a Job Object through the service helper
-            var jobCreated = _serviceHelper.CreateJobObject(_logger);
-
-            if (!jobCreated)
-            {
-                _logger?.Error("Failed to create Job Object.");
-            }
-
             // Start the process
             _childProcess.Start();
             _logger?.Info($"Started child process with PID: {_childProcess.Id}");
-
-            // Assign process to Job Object
-            if (jobCreated)
-            {
-                if (!_serviceHelper.AssignProcessToJobObject(_childProcess, _logger))
-                {
-                    _logger?.Error("Failed to assign process to Job Object.");
-                }
-            }
 
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
@@ -368,7 +351,6 @@ namespace Servy.Service
                                 case RecoveryAction.RestartProcess:
                                     _serviceHelper.RestartProcess(
                                          _childProcess,
-                                         _serviceHelper.TerminateChildProcesses,
                                          StartProcess,
                                          _realExePath,
                                          _realArgs,
@@ -467,8 +449,6 @@ namespace Servy.Service
                     _childProcess.Dispose();
                     _childProcess = null;
                 }
-
-                _serviceHelper.TerminateChildProcesses();
 
                 GC.SuppressFinalize(this);
             }
