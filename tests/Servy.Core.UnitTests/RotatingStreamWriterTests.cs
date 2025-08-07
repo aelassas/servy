@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.IO;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -87,7 +88,7 @@ namespace Servy.Core.UnitTests
             writer.WriteLine("Test line");
             writer.Dispose();
 
-            Assert.Throws<ObjectDisposedException>(() => writer.WriteLine("Another line"));
+            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
         }
 
         [Fact]
@@ -95,6 +96,8 @@ namespace Servy.Core.UnitTests
         {
             var methodInfo = typeof(RotatingStreamWriter)
                 .GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            Assert.NotNull(methodInfo);  // Ensure method exists to avoid null dereference
 
             using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
             {

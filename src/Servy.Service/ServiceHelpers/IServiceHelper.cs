@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using System;
 
-namespace Servy.Service
+namespace Servy.Service.ServiceHelpers
 {
     /// <summary>
     /// Defines methods to assist with service startup operations,

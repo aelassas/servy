@@ -1,4 +1,4 @@
-﻿namespace Servy.Service
+﻿namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Default implementation of <see cref="IStreamWriterFactory"/> that creates

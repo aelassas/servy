@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Servy.Core
+namespace Servy.Core.Helpers
 {
     public class Helper
     {
@@ -86,7 +86,7 @@ namespace Servy.Core
         /// <returns></returns>
         public static string Quote(string input)
         {
-            if (string.IsNullOrEmpty(input))
+            if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
             input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');

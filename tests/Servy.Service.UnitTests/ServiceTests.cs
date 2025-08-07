@@ -1,9 +1,13 @@
-﻿using System;
+﻿using Moq;
+using Servy.Core.Enums;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
+using System;
 using System.Diagnostics;
-using System.IO;
-using Moq;
-using Servy.Core;
-using Servy.Service;
 using Xunit;
 
 namespace Servy.Service.UnitTests
@@ -18,10 +22,10 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IPathValidator> _mockPathValidator;
         private readonly Service _service;
 
-        private Mock<IStreamWriter> _mockStdoutWriter;
-        private Mock<IStreamWriter> _mockStderrWriter;
-        private Mock<ITimer> _mockTimer;
-        private Mock<IProcessWrapper> _mockProcess;
+        private readonly Mock<IStreamWriter> _mockStdoutWriter;
+        private readonly Mock<IStreamWriter> _mockStderrWriter;
+        private readonly Mock<ITimer> _mockTimer;
+        private readonly Mock<IProcessWrapper> _mockProcess;
 
         public ServiceTests()
         {
