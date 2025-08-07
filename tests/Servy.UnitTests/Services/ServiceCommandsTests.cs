@@ -1,7 +1,8 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Services;
 
-namespace Servy.Services.UnitTests
+namespace Servy.UnitTests.Services
 {
     public class ServiceCommandsTests
     {
