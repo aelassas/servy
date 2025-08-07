@@ -19,8 +19,8 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 ## Requirements
 
 This version is for older systems that require .NET Framework support.
-* Windows 7, 8, 10, 11, or Windows Server (x64)
-* [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
+* **Supported OS**: Windows 7, 8, 10, 11, or Windows Server (x64)
+* **Requirements**: [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 
 **Administrator privileges are required** to install and manage Windows services.
 
