@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Moq;
+using Servy.Core.Enums;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System.Diagnostics;
-using System.IO;
-using Moq;
-using Servy.Core;
-using Servy.Service;
-using Xunit;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
@@ -18,10 +21,10 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IPathValidator> _mockPathValidator;
         private readonly Service _service;
 
-        private Mock<IStreamWriter> _mockStdoutWriter;
-        private Mock<IStreamWriter> _mockStderrWriter;
-        private Mock<ITimer> _mockTimer;
-        private Mock<IProcessWrapper> _mockProcess;
+        private readonly Mock<IStreamWriter> _mockStdoutWriter;
+        private readonly Mock<IStreamWriter> _mockStderrWriter;
+        private readonly Mock<ITimer> _mockTimer;
+        private readonly Mock<IProcessWrapper> _mockProcess;
 
         public ServiceTests()
         {
@@ -112,7 +115,7 @@ namespace Servy.Service.UnitTests
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
                 StdOutPath = "InvalidPath???",
-                StdErrPath = null,
+                StdErrPath = string.Empty,
                 RotationSizeInBytes = 1024,
                 HeartbeatInterval = 0,
                 MaxFailedChecks = 0,
@@ -143,7 +146,7 @@ namespace Servy.Service.UnitTests
             bool stopped = false;
             _service.OnStoppedForTest += () => stopped = true;
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns((StartOptions)null);
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns((StartOptions?)null);
 
             _service.StartForTest(new string[0]);
 
@@ -352,7 +355,7 @@ namespace Servy.Service.UnitTests
             var options = new StartOptions
             {
                 StdOutPath = "",
-                StdErrPath = null,
+                StdErrPath = string.Empty,
                 RotationSizeInBytes = 12345
             };
 

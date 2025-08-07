@@ -1,6 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Helpers;
 
-namespace Servy.Service
+namespace Servy.Service.Validation
 {
     /// <summary>
     /// Provides an implementation of <see cref="IPathValidator"/> that uses <see cref="Helper"/> for path validation.

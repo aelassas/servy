@@ -1,9 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using Servy.Core.IO;
 using System.Reflection;
-using System.Threading;
-using Xunit;
 
 namespace Servy.Core.UnitTests
 {
@@ -96,6 +92,8 @@ namespace Servy.Core.UnitTests
             var methodInfo = typeof(RotatingStreamWriter)
                 .GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Instance);
 
+            Assert.NotNull(methodInfo);  // Ensure method exists to avoid null dereference
+
             using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
             {
                 string basePath = Path.Combine(_testDir, "file.log");
@@ -104,7 +102,7 @@ namespace Servy.Core.UnitTests
                 File.WriteAllText(Path.Combine(_testDir, "file(1).log"), "test");
                 File.WriteAllText(Path.Combine(_testDir, "file(2).log"), "test");
 
-                string uniqueName = (string)methodInfo.Invoke(writer, new object[] { basePath });
+                string? uniqueName = (string?)methodInfo.Invoke(writer, new object[] { basePath });
 
                 Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
             }

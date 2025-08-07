@@ -1,7 +1,7 @@
 ﻿using System.Timers;
 using Timer = System.Timers.Timer;
 
-namespace Servy.Service
+namespace Servy.Service.Timers
 {
     /// <summary>
     /// Adapter for <see cref="Timer"/>, implementing the <see cref="ITimer"/> interface.

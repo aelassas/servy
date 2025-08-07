@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Servy.Service
+﻿namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Represents a writable stream interface that supports writing lines and disposal.

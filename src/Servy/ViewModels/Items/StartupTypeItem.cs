@@ -1,6 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
 
-namespace Servy.ViewModels
+namespace Servy.ViewModels.Items
 {
     /// <summary>
     /// Represents an item used to display and bind a service startup type in the UI.

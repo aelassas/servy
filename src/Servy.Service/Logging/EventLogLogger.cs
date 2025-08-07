@@ -1,7 +1,6 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.Logging
 {
     /// <summary>
     /// Logs messages to the Windows Event Log.
@@ -40,7 +39,7 @@ namespace Servy.Service
         }
 
         /// <inheritdoc/>
-        public void Error(string message, Exception ex = null)
+        public void Error(string message, Exception? ex = null)
         {
             var fullMessage = ex != null ? $"{message}\n{ex}" : message;
             _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error);

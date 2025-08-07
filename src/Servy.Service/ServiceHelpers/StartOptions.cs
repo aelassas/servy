@@ -1,7 +1,7 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
 using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.ServiceHelpers
 {
     /// <summary>
     /// Represents the configuration options used to start and monitor the service process.
@@ -11,17 +11,17 @@ namespace Servy.Service
         /// <summary>
         /// Gets or sets the full path to the executable to run.
         /// </summary>
-        public string ExecutablePath { get; set; }
+        public string? ExecutablePath { get; set; }
 
         /// <summary>
         /// Gets or sets the command-line arguments to pass to the executable.
         /// </summary>
-        public string ExecutableArgs { get; set; }
+        public string? ExecutableArgs { get; set; }
 
         /// <summary>
         /// Gets or sets the working directory for the process.
         /// </summary>
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
 
         /// <summary>
         /// Gets or sets the process priority class.
@@ -32,12 +32,12 @@ namespace Servy.Service
         /// <summary>
         /// Gets or sets the path to the standard output log file.
         /// </summary>
-        public string StdOutPath { get; set; }
+        public string? StdOutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the standard error log file.
         /// </summary>
-        public string StdErrPath { get; set; }
+        public string? StdErrPath { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum size in bytes for log rotation.
@@ -63,7 +63,7 @@ namespace Servy.Service
         /// <summary>
         /// Gets or sets the name of the Windows service.
         /// </summary>
-        public string ServiceName { get; set; }
+        public string? ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts allowed for the child process.

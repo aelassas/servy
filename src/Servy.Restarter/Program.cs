@@ -1,6 +1,4 @@
-﻿using System;
-
-/// <summary>
+﻿/// <summary>
 /// A simple console application to restart a Windows service.
 /// </summary>
 /// <remarks>

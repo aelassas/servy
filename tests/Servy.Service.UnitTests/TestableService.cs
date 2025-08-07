@@ -1,5 +1,10 @@
-﻿using Servy.Core;
-using System;
+﻿using Servy.Core.Enums;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System.Diagnostics;
 using System.Timers;
 
@@ -7,8 +12,8 @@ namespace Servy.Service.UnitTests
 {
     public class TestableService : Service
     {
-        private Action<string, string, string> _startProcessOverride;
-        private Action _terminateChildProcessesOverride;
+        private Action<string, string, string>? _startProcessOverride;
+        private Action? _terminateChildProcessesOverride;
 
         public TestableService(
             IServiceHelper serviceHelper,
@@ -30,83 +35,83 @@ namespace Servy.Service.UnitTests
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
 
         public void SetChildProcess(IProcessWrapper process) =>
-            typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .SetValue(this, process);
 
         public void InvokeHandleLogWriters(StartOptions options) =>
-            (typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+            typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(this, new object[] { options });
 
         public void InvokeSetupHealthMonitoring(StartOptions options)
         {
             var method = typeof(Service).GetMethod("SetupHealthMonitoring", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { options });
+            method?.Invoke(this, new object[] { options });
         }
 
         public void SetMaxFailedChecks(int value)
         {
-            typeof(Service).GetField("_maxFailedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_maxFailedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, value);
         }
 
         public void SetRecoveryAction(RecoveryAction action)
         {
-            typeof(Service).GetField("_recoveryAction", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_recoveryAction", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, action);
         }
 
         public void SetFailedChecks(int value)
         {
-            typeof(Service).GetField("_failedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_failedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, value);
         }
 
         public void SetMaxRestartAttempts(int value)
         {
-            typeof(Service).GetField("_maxRestartAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_maxRestartAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, value);
         }
 
         public void SetRestartAttempts(int value)
         {
-            typeof(Service).GetField("_restartAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_restartAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, value);
         }
 
         public void SetServiceName(string serviceName)
         {
-            typeof(Service).GetField("_serviceName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_serviceName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
                 .SetValue(this, serviceName);
         }
 
         public int GetFailedChecks()
         {
-            return (int)typeof(Service).GetField("_failedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .GetValue(this);
+            return (int)typeof(Service).GetField("_failedChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .GetValue(this)!;
         }
 
-        public void InvokeCheckHealth(object sender, ElapsedEventArgs e)
+        public void InvokeCheckHealth(object? sender, ElapsedEventArgs? e)
         {
             var method = typeof(Service).GetMethod("CheckHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { sender, e });
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
-        public void InvokeOnOutputDataReceived(object sender, DataReceivedEventArgs e)
+        public void InvokeOnOutputDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnOutputDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { sender, e });
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
-        public void InvokeOnErrorDataReceived(object sender, DataReceivedEventArgs e)
+        public void InvokeOnErrorDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnErrorDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { sender, e });
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
-        public void InvokeOnProcessExited(object sender, EventArgs e)
+        public void InvokeOnProcessExited(object? sender, EventArgs e)
         {
             var method = typeof(Service).GetMethod("OnProcessExited", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { sender, e });
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
         public void OverrideStartProcess(Action<string, string, string> startProcess)
@@ -122,8 +127,8 @@ namespace Servy.Service.UnitTests
         // Expose child process for asserts
         public IProcessWrapper GetChildProcess()
         {
-            return (IProcessWrapper)typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .GetValue(this);
+            return (IProcessWrapper)typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                .GetValue(this)!;
         }
 
         // Expose StartProcess protected method and allow override logic
@@ -136,7 +141,7 @@ namespace Servy.Service.UnitTests
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method.Invoke(this, new object[] { exePath, args, workingDir });
+                method!.Invoke(this, new object[] { exePath, args, workingDir });
             }
         }
 
@@ -144,19 +149,7 @@ namespace Servy.Service.UnitTests
         public void InvokeSafeKillProcess(IProcessWrapper process)
         {
             var method = typeof(Service).GetMethod("SafeKillProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { process, 5000 });
-        }
-
-        // Override TerminateChildProcesses method call inside TryRestartChildProcess
-        private void TerminateChildProcesses()
-        {
-            if (_terminateChildProcessesOverride != null)
-                _terminateChildProcessesOverride();
-            else
-            {
-                var method = typeof(Service).GetMethod("TerminateChildProcesses", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method.Invoke(this, null);
-            }
+            method!.Invoke(this, new object[] { process, 5000 });
         }
 
     }

@@ -1,6 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Enums;
 
-namespace Servy.ViewModels
+namespace Servy.ViewModels.Items
 {
     /// <summary>
     /// Represents a recovery action with its associated display name for UI.

@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Servy.Core
+﻿namespace Servy.Core.Helpers
 {
     public class Helper
     {
@@ -51,7 +49,7 @@ namespace Servy.Core
         /// </summary>
         /// <param name="path">The full file path.</param>
         /// <returns>True if the directory exists or was created successfully; false otherwise.</returns>
-        public static bool CreateParentDirectory(string path)
+        public static bool CreateParentDirectory(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -84,9 +82,9 @@ namespace Servy.Core
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static string Quote(string input)
+        public static string Quote(string? input)
         {
-            if (string.IsNullOrEmpty(input))
+            if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
             input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');

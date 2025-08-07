@@ -1,8 +1,9 @@
 ﻿using Moq;
-using Servy.Core;
+using Servy.Core.Enums;
+using Servy.Service.CommandLine;
+using Servy.Service.Logging;
+using Servy.Service.ServiceHelpers;
 using System.Diagnostics;
-using System.IO;
-using Xunit;
 
 namespace Servy.Service.UnitTests
 {

@@ -1,8 +1,5 @@
-﻿using System;
+﻿using Moq;
 using System.ServiceProcess;
-using Moq;
-using Xunit;
-using Servy.Restarter;
 
 namespace Servy.Restarter.UnitTests
 {

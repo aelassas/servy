@@ -6,18 +6,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <!-- Required for single exe -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <!-- Or win-arm64 / win-x86 -->
+    <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <!-- Optional: reduces size, but test thoroughly -->
     <PublishTrimmed>false</PublishTrimmed>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <!-- Optional: reduces size -->
     <InvariantGlobalization>true</InvariantGlobalization>
-    <!-- Optional: removes PDB symbols -->
     <StripSymbols>true</StripSymbols>
   </PropertyGroup>
 

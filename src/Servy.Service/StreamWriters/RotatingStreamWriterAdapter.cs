@@ -1,6 +1,6 @@
-﻿using Servy.Core;
+﻿using Servy.Core.IO;
 
-namespace Servy.Service
+namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Adapter class that wraps a <see cref="RotatingStreamWriter"/> to implement <see cref="IStreamWriter"/>.

@@ -1,8 +1,12 @@
-﻿using System.ComponentModel;
+﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
+using Servy.Core.Interfaces;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
-namespace Servy.Core
+#pragma warning disable CS8625
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides methods to install, uninstall, start, stop, and restart Windows services.
@@ -80,8 +84,8 @@ namespace Servy.Core
             string realArgs,
             ServiceStartType startType,
             ProcessPriority processPriority,
-            string stdoutPath,
-            string stderrPath,
+            string? stdoutPath,
+            string? stderrPath,
             int rotationSizeInBytes,
             int heartbeatInterval,
             int maxFailedChecks,
@@ -113,7 +117,9 @@ namespace Servy.Core
                 Helper.Quote(maxRestartAttempts.ToString())
                 );
 
+
             IntPtr scmHandle = OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
+
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
@@ -410,3 +416,4 @@ namespace Servy.Core
         }
     }
 }
+#pragma warning restore CS8625

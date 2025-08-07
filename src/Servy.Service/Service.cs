@@ -1,14 +1,28 @@
 ﻿using Servy.Core;
-using System;
+using Servy.Core.Enums;
+using Servy.Service.CommandLine;
+using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
+using Servy.Service.ServiceHelpers;
+using Servy.Service.StreamWriters;
+using Servy.Service.Timers;
+using Servy.Service.Validation;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Timers;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+        #region Constants
+
         private const string WindowsServiceName = "Servy";
+
+        #endregion
+
+        #region Private Fields
 
         private readonly IServiceHelper _serviceHelper;
         private readonly ILogger _logger;
@@ -16,14 +30,14 @@ namespace Servy.Service
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
         private readonly IPathValidator _pathValidator;
-        private string _serviceName;
-        private string _realExePath;
-        private string _realArgs;
-        private string _workingDir;
-        private IProcessWrapper _childProcess;
-        private IStreamWriter _stdoutWriter;
-        private IStreamWriter _stderrWriter;
-        private ITimer _healthCheckTimer;
+        private string? _serviceName;
+        private string? _realExePath;
+        private string? _realArgs;
+        private string? _workingDir;
+        private IProcessWrapper? _childProcess;
+        private IStreamWriter? _stdoutWriter;
+        private IStreamWriter? _stderrWriter;
+        private ITimer? _healthCheckTimer;
         private int _heartbeatIntervalSeconds;
         private int _maxFailedChecks;
         private int _failedChecks = 0;
@@ -34,10 +48,12 @@ namespace Servy.Service
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
 
+        #endregion
+
         /// <summary>
         /// Event invoked when the service stops, used for testing purposes.
         /// </summary>
-        public event Action OnStoppedForTest;
+        public event Action? OnStoppedForTest;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
@@ -160,7 +176,7 @@ namespace Servy.Service
         /// <param name="options">The start options containing executable details and priority.</param>
         private void StartMonitoredProcess(StartOptions options)
         {
-            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
+            StartProcess(options.ExecutablePath!, options.ExecutableArgs!, options.WorkingDirectory!);
             SetProcessPriority(options.Priority);
         }
 
@@ -195,7 +211,7 @@ namespace Servy.Service
             _childProcess.EnableRaisingEvents = true;
             _childProcess.OutputDataReceived += OnOutputDataReceived;
             _childProcess.ErrorDataReceived += OnErrorDataReceived;
-            _childProcess.Exited += OnProcessExited;
+            _childProcess.Exited += OnProcessExited!;
 
             // Start the process
             _childProcess.Start();
@@ -210,7 +226,7 @@ namespace Servy.Service
         /// Handles redirected standard output from the child process.
         /// Writes output lines to the rotating stdout writer.
         /// </summary>
-        private void OnOutputDataReceived(object sender, DataReceivedEventArgs e)
+        private void OnOutputDataReceived(object? sender, DataReceivedEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
@@ -222,7 +238,7 @@ namespace Servy.Service
         /// Handles redirected standard error output from the child process.
         /// Writes error lines to the rotating stderr writer and logs errors.
         /// </summary>
-        private void OnErrorDataReceived(object sender, DataReceivedEventArgs e)
+        private void OnErrorDataReceived(object? sender, DataReceivedEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
@@ -235,11 +251,11 @@ namespace Servy.Service
         /// Called when the child process exits.
         /// Logs the exit code and whether the exit was successful.
         /// </summary>
-        private void OnProcessExited(object sender, EventArgs e)
+        private void OnProcessExited(object? sender, EventArgs e)
         {
             try
             {
-                var code = _childProcess.ExitCode;
+                var code = _childProcess!.ExitCode;
                 if (code == 0)
                 {
                     _logger.Info("Child process exited successfully.");
@@ -264,7 +280,7 @@ namespace Servy.Service
         {
             try
             {
-                _childProcess.PriorityClass = priority;
+                _childProcess!.PriorityClass = priority;
                 _logger?.Info($"Set process priority to {_childProcess.PriorityClass}.");
             }
             catch (Exception ex)
@@ -301,7 +317,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="sender">The timer object that raised the event.</param>
         /// <param name="e">Elapsed event data.</param>
-        private void CheckHealth(object sender, ElapsedEventArgs e)
+        private void CheckHealth(object? sender, ElapsedEventArgs? e)
         {
             if (_disposed)
                 return;
@@ -343,24 +359,24 @@ namespace Servy.Service
 
                                 case RecoveryAction.RestartService:
                                     _serviceHelper.RestartService(
-                                        _logger,
-                                        _serviceName
+                                        _logger!,
+                                        _serviceName!
                                         );
                                     break;
 
                                 case RecoveryAction.RestartProcess:
                                     _serviceHelper.RestartProcess(
-                                         _childProcess,
+                                         _childProcess!,
                                          StartProcess,
-                                         _realExePath,
-                                         _realArgs,
-                                         _workingDir,
-                                         _logger
+                                         _realExePath!,
+                                         _realArgs!,
+                                         _workingDir!,
+                                         _logger!
                                      );
                                     break;
 
                                 case RecoveryAction.RestartComputer:
-                                    _serviceHelper.RestartComputer(_logger);
+                                    _serviceHelper.RestartComputer(_logger!);
                                     break;
                             }
 
@@ -414,7 +430,7 @@ namespace Servy.Service
                 // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
                 _childProcess.OutputDataReceived -= OnOutputDataReceived;
                 _childProcess.ErrorDataReceived -= OnErrorDataReceived;
-                _childProcess.Exited -= OnProcessExited;
+                _childProcess.Exited -= OnProcessExited!;
             }
 
             try
@@ -433,7 +449,7 @@ namespace Servy.Service
             try
             {
                 // Attempt to stop child process gracefully or kill forcibly
-                SafeKillProcess(_childProcess);
+                SafeKillProcess(_childProcess!);
             }
             catch (Exception ex)
             {

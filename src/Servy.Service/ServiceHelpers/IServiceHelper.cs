@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Servy.Service.Logging;
+using Servy.Service.ProcessManagement;
 
-namespace Servy.Service
+namespace Servy.Service.ServiceHelpers
 {
     /// <summary>
     /// Defines methods to assist with service startup operations,
@@ -46,7 +47,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="eventLog">The event log to write logs and errors to.</param>
         /// <returns>The initialized and validated <see cref="StartOptions"/>, or null if invalid.</returns>
-        StartOptions InitializeStartup(ILogger logger);
+        StartOptions? InitializeStartup(ILogger logger);
 
         /// <summary>
         /// Attempts to restart the given process by:

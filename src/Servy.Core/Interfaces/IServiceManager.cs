@@ -1,4 +1,6 @@
-﻿namespace Servy.Core
+﻿using Servy.Core.Enums;
+
+namespace Servy.Core.Interfaces
 {
     public interface IServiceManager
     {
@@ -33,8 +35,8 @@
             string realArgs,
             ServiceStartType startType,
             ProcessPriority processPriority,
-            string stdoutPath = null,
-            string stderrPath = null,
+            string? stdoutPath = null,
+            string? stderrPath = null,
             int rotationSizeInBytes = 0,
             int heartbeatInterval = 0,
             int maxFailedChecks = 0,

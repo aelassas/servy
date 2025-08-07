@@ -1,5 +1,4 @@
-﻿using System;
-using System.ServiceProcess;
+﻿using System.ServiceProcess;
 
 namespace Servy.Restarter
 {
@@ -17,7 +16,7 @@ namespace Servy.Restarter
         /// Optional factory method to create <see cref="IServiceController"/> instances.
         /// Defaults to <see cref="ServiceController"/>.
         /// </param>
-        public ServiceRestarter(Func<string, IServiceController> controllerFactory = null)
+        public ServiceRestarter(Func<string, IServiceController>? controllerFactory = null)
         {
             _controllerFactory = controllerFactory ?? (name =>
                 new ServiceController(new SystemServiceControllerAdapter(name))
