@@ -1,7 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Enums;
-using Servy.Services;
-using Xunit;
 
 namespace Servy.Services.UnitTests
 {

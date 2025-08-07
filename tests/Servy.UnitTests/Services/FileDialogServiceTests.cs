@@ -1,6 +1,4 @@
 ﻿using Moq;
-using Servy.Services;
-using Xunit;
 
 namespace Servy.Services.UnitTests
 {
