@@ -66,7 +66,10 @@ namespace Servy.ViewModels
 
         #region Flags
 
-        internal bool IsTestMode { get; set; } = false;
+        /// <summary>
+        /// Indicates whether we are in test mode or not.
+        /// </summary>
+        internal bool IsTestMode { get; private set; } = false;
 
         #endregion
 
@@ -323,12 +326,12 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="dialogService">Service to open file and folder dialogs.</param>
         /// <param name="serviceCommands">Service commands to manage Windows services.</param>
-        /// <param name="isTestMode">Falg used for unit tests.</param>
+        /// <param name="isTestMode">Falg used for tests.</param>
         public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands, bool isTestMode = false)
         {
             _controllerFactory = name => new ServiceControllerWrapper(string.IsNullOrWhiteSpace(name) ? DefaultServiceName : name);
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
-            _serviceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            _serviceCommands = serviceCommands;
             IsTestMode = isTestMode;
 
             // Initialize defaults
@@ -508,6 +511,7 @@ namespace Servy.ViewModels
             RotationSize = DefaultRotationSize.ToString();
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
+            EnableHealthMonitoring = false;
             SelectedRecoveryAction = RecoveryAction.RestartService;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();

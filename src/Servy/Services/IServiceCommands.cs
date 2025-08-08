@@ -25,7 +25,7 @@ namespace Servy.Services
         /// <param name="heartbeatInterval">Interval in seconds for health check heartbeat.</param>
         /// <param name="maxFailedChecks">Maximum number of failed health checks before recovery action.</param>
         /// <param name="recoveryAction">The recovery action to take on failure.</param>
-        /// <param name="maxRestartAttempts">Maximum number of service restart attempts.</param>
+        /// <param name="maxRestartAttempts">Maximum number of restart attempts.</param>
         void InstallService(
             string serviceName,
             string serviceDescription,
