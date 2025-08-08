@@ -18,9 +18,7 @@ namespace Servy.Restarter
         /// </param>
         public ServiceRestarter(Func<string, IServiceController>? controllerFactory = null)
         {
-            _controllerFactory = controllerFactory ?? (name =>
-                new ServiceController(new SystemServiceControllerAdapter(name))
-            );
+            _controllerFactory = controllerFactory ?? (name => new ServiceController(name));
         }
 
         /// <inheritdoc />
