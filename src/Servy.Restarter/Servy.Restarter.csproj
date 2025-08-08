@@ -46,12 +46,10 @@
   <ItemGroup>
     <Compile Include="IServiceController.cs" />
     <Compile Include="IServiceRestarter.cs" />
-    <Compile Include="ISystemServiceController .cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceController.cs" />
     <Compile Include="ServiceRestarter.cs" />
-    <Compile Include="SystemServiceControllerAdapter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
