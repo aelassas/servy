@@ -77,6 +77,8 @@ This version is for older systems that require .NET Framework support.
 
 Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
 
+You can find detailed architecture overview in the [wiki](https://github.com/aelassas/servy/wiki/Architecture).
+
 ## Installation
 
 Servy ships with an installer created using [Inno Setup](https://jrsoftware.org/isinfo.php).
