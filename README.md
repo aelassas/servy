@@ -23,6 +23,10 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 Servy is ideal for scenarios where you need to keep non-service applications running reliably in the background. It's especially useful for developers, sysadmins, and IT professionals who want to deploy background processes without rewriting them as Windows services. Typical use cases include running Node.js, Python, or .NET console apps as services; keeping web servers, database sync tools, or custom daemons alive after reboots; and automating task runners or batch scripts in production environments. With built-in health checks, restart policies, and a modern UI, Servy is a powerful alternative to tools like NSSM—without the need for manual configuration or registry edits.
 
+## Why Servy?
+
+Windows services are great but have limitations like fixed working directories and no built-in health checks. Servy fills this gap by providing an easy way to run any app as a service with full control over its environment and recovery options — no coding required.
+
 ## Requirements
 
 Servy is available in two versions to support different environments for maximum compatibility with Windows versions.
