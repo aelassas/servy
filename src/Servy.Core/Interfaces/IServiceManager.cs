@@ -2,6 +2,12 @@
 
 namespace Servy.Core.Interfaces
 {
+    /// <summary>
+    /// Defines the contract for managing Windows services within Servy, 
+    /// including installation, uninstallation, starting, stopping, and restarting.
+    /// Implementations handle low-level service control operations and configuration,
+    /// including process monitoring, logging, and recovery options.
+    /// </summary>
     public interface IServiceManager
     {
         /// <summary>

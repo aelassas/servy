@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Interfaces;
-using System;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
@@ -28,7 +27,13 @@ namespace Servy.Core.Services
         public void Stop() => _controller.Stop();
 
         /// <inheritdoc/>
+        public void Refresh() => _controller.Refresh();
+
+        /// <inheritdoc/>
         public void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout) =>
             _controller.WaitForStatus(desiredStatus, timeout);
+
+        /// <inheritdoc/>
+        public void Dispose() => _controller.Dispose();
     }
 }

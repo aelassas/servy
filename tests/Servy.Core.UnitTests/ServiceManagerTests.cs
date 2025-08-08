@@ -2,8 +2,11 @@
 using Servy.Core.Enums;
 using Servy.Core.Interfaces;
 using Servy.Core.Services;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ServiceProcess;
+using Xunit;
 using static Servy.Core.Native.NativeMethods;
 
 #pragma warning disable CS8625
@@ -15,7 +18,7 @@ namespace Servy.Core.UnitTests
         private readonly Mock<IServiceControllerWrapper> _mockController;
         private readonly Mock<IWindowsServiceApi> _mockWindowsServiceApi;
         private readonly Mock<IWin32ErrorProvider> _mockWin32ErrorProvider;
-        private readonly ServiceManager _serviceManager;
+        private ServiceManager _serviceManager;
 
         public ServiceManagerTests()
         {
@@ -268,13 +271,14 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void UninstallService_StopsAndDeletesServiceSuccessfully()
         {
+            var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
 
-            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "ServiceName", It.IsAny<uint>()))
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
@@ -303,10 +307,117 @@ namespace Servy.Core.UnitTests
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle))
                 .Returns(true);
 
-            var result = _serviceManager.UninstallService("ServiceName");
+            // Mock IServiceControllerWrapper to simulate service stopping quickly
+            var mockController = new Mock<IServiceControllerWrapper>();
+
+            var statusSequence = new Queue<ServiceControllerStatus>(new[]
+            {
+                ServiceControllerStatus.Running,
+                ServiceControllerStatus.Stopped
+            });
+
+            mockController.Setup(c => c.Refresh())
+                .Callback(() =>
+                {
+                    if (statusSequence.Count > 1) // keep Stopped as last state
+                        statusSequence.Dequeue();
+                });
+
+            mockController.Setup(c => c.Status)
+                .Returns(() => statusSequence.Peek());
+
+            // Setup the factory to return this mock controller
+            _serviceManager = new ServiceManager(
+                svcName => mockController.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object);
+
+            var result = _serviceManager.UninstallService(serviceName);
 
             Assert.True(result);
+
+            mockController.Verify(c => c.Refresh(), Times.AtLeastOnce);
+            mockController.VerifyGet(c => c.Status, Times.AtLeastOnce);
         }
+
+
+        [Fact]
+        public void UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
+        {
+            var serviceName = "ServiceName";
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                null,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                null))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle))
+                .Returns(true);
+
+            // Mock the IServiceControllerWrapper to simulate service stopping over time
+            var mockController = new Mock<IServiceControllerWrapper>();
+
+            // Initial status is Running (or any other non-Stopped)
+            var statusSequence = new Queue<ServiceControllerStatus>(new[]
+            {
+                ServiceControllerStatus.Running,
+                ServiceControllerStatus.Paused,
+                ServiceControllerStatus.Stopped
+            });
+
+            // On Refresh(), dequeue one status if available
+            mockController.Setup(c => c.Refresh()).Callback(() =>
+            {
+                if (statusSequence.Count > 0)
+                    statusSequence.Dequeue();
+            });
+
+            // Status returns current status or Stopped if none left
+            mockController.Setup(c => c.Status)
+                .Returns(() => statusSequence.Count > 0 ? statusSequence.Peek() : ServiceControllerStatus.Stopped);
+
+            // Setup the factory to return the mock controller
+            _serviceManager = new ServiceManager(
+                name => mockController.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object
+            );
+
+            var result = _serviceManager.UninstallService(serviceName);
+
+            Assert.True(result);
+
+            // Verify the methods were called at least once
+            mockController.Verify(sc => sc.Refresh(), Times.AtLeastOnce);
+            mockController.Verify(sc => sc.Status, Times.AtLeastOnce);
+        }
+
 
         [Fact]
         public void StartService_ShouldReturnTrue_WhenAlreadyRunning()
