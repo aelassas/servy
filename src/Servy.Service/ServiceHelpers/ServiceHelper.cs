@@ -154,25 +154,19 @@ namespace Servy.Service.ServiceHelpers
                 var dir = Path.GetDirectoryName(exePath);
                 var restarter = Path.Combine(dir, "Servy.Restarter.exe");
 
-                if (File.Exists(restarter))
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = restarter,
-                        Arguments = serviceName,
-                        CreateNoWindow = true,
-                        UseShellExecute = false
-                    });
-
-                    using (var controller = new ServiceController(serviceName))
-                    {
-                        controller.Stop();
-                    }
-                }
-                else
+                if (!File.Exists(restarter))
                 {
                     logger?.Error("Servy.Restarter.exe not found.");
+                    return;
                 }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = restarter,
+                    Arguments = serviceName,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                });
             }
             catch (Exception ex)
             {

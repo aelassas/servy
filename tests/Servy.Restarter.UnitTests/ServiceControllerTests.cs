@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Moq;
+using System;
 using System.ServiceProcess;
-using Moq;
 using Xunit;
 
 namespace Servy.Restarter.UnitTests
@@ -22,6 +22,14 @@ namespace Servy.Restarter.UnitTests
             _serviceController.Start();
 
             _mockSystemController.Verify(m => m.Start(), Times.Once);
+        }
+
+        [Fact]
+        public void Stop_CallsStopOnSystemController()
+        {
+            _serviceController.Stop();
+
+            _mockSystemController.Verify(m => m.Stop(), Times.Once);
         }
 
         [Fact]
