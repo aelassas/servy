@@ -54,7 +54,6 @@ This version is for older systems that require .NET Framework support.
 * Monitor and manage services in real-time
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
-
 ## How It Works
 
 1. **Install** Servy using the provided installer.
@@ -92,23 +91,13 @@ Together, these components provide a complete solution for wrapping any executab
 
 You can find detailed architecture overview in the [wiki](https://github.com/aelassas/servy/wiki/Architecture).
 
-## Installation
+## Support & Contributing
 
-Servy ships with an installer created using [Inno Setup](https://jrsoftware.org/isinfo.php).
+If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by starring the repository (it helps increase visibility and shows your appreciation), sharing the project (recommend it to colleagues, communities, or on social media), or making a donation (if you'd like to financially support the development) via [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas). Open-source software requires time, effort, and resources to maintain—your support helps keep this project alive, up-to-date, and accessible to everyone. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
 
-The app will request elevation (UAC prompt) to install and manage services.
-
-## Permissions
-
-Servy requires:
-- Administrator privileges to create, start, or stop services
-- Access to write in the installation folder and service registry entries
+If you have suggestions, issues, or want to contribute, feel free to open an issue or pull request.
 
 ## License
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
-
-## Feedback
-
-If you have suggestions, issues, or want to contribute, feel free to open an issue or pull request.
 
