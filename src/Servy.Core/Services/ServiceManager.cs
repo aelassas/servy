@@ -12,10 +12,14 @@ using static Servy.Core.Native.NativeMethods;
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Provides methods to install, uninstall, start, stop, and restart Windows services.
+    /// Provides methods to install, uninstall, start, stop, restart, and update Windows services.
+    /// Handles low-level Service Control Manager operations, configuration updates,
+    /// process monitoring, logging, and recovery options.
     /// </summary>
     public class ServiceManager : IServiceManager
     {
+        #region Constants
+
         private const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
         private const uint SERVICE_ERROR_NORMAL = 0x00000001;
         private const uint SC_MANAGER_ALL_ACCESS = 0xF003F;
@@ -25,17 +29,129 @@ namespace Servy.Core.Services
         private const uint SERVICE_STOP = 0x0020;
         private const uint SERVICE_DELETE = 0x00010000;
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
+        private const int ServiceStopTimeoutSeconds = 60;
+
+        #endregion
+
+        #region Private Fields
 
         private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
 
-        public ServiceManager(Func<string, IServiceControllerWrapper> controllerFactory, IWindowsServiceApi windowsServiceApi, IWin32ErrorProvider win32ErrorProvider)
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceManager"/> class.
+        /// </summary>
+        /// <param name="controllerFactory">
+        /// Factory function that creates a wrapper for controlling a Windows service.
+        /// </param>
+        /// <param name="windowsServiceApi">
+        /// Abstraction for low-level Win32 service API calls.
+        /// </param>
+        /// <param name="win32ErrorProvider">
+        /// Provider for retrieving the last Win32 error codes.
+        /// </param>
+        public ServiceManager(
+            Func<string, IServiceControllerWrapper> controllerFactory,
+            IWindowsServiceApi windowsServiceApi,
+            IWin32ErrorProvider win32ErrorProvider)
         {
             _controllerFactory = controllerFactory;
             _windowsServiceApi = windowsServiceApi;
             _win32ErrorProvider = win32ErrorProvider;
         }
+
+        #endregion
+
+        #region Helpers
+
+        /// <summary>
+        /// Updates the configuration of an existing Windows service.
+        /// </summary>
+        /// <param name="scmHandle">Handle to the Service Control Manager.</param>
+        /// <param name="serviceName">The service name.</param>
+        /// <param name="description">The service description.</param>
+        /// <param name="binPath">The path to the service executable.</param>
+        /// <param name="startType">The service startup type.</param>
+        /// <returns>
+        /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="Win32Exception">Thrown if updating the service configuration fails.</exception>
+        public bool UpdateServiceConfig(
+            IntPtr scmHandle,
+            string serviceName,
+            string description,
+            string binPath,
+            ServiceStartType startType)
+        {
+            IntPtr serviceHandle = _windowsServiceApi.OpenService(
+                scmHandle,
+                serviceName,
+                SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG);
+
+            if (serviceHandle == IntPtr.Zero)
+                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
+
+            try
+            {
+                bool result = _windowsServiceApi.ChangeServiceConfig(
+                    serviceHandle,
+                    SERVICE_WIN32_OWN_PROCESS,
+                    (uint)startType,
+                    SERVICE_ERROR_NORMAL,
+                    binPath,
+                    null,
+                    IntPtr.Zero,
+                    null,
+                    null,
+                    null,
+                    null);
+
+                if (!result)
+                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to update service config.");
+
+                SetServiceDescription(serviceHandle, description);
+
+                return true;
+            }
+            finally
+            {
+                _windowsServiceApi.CloseServiceHandle(serviceHandle);
+            }
+        }
+
+        /// <summary>
+        /// Sets the description for a Windows service.
+        /// </summary>
+        /// <param name="serviceHandle">Handle to the service.</param>
+        /// <param name="description">The description text.</param>
+        /// <exception cref="Win32Exception">Thrown if setting the description fails.</exception>
+        public void SetServiceDescription(IntPtr serviceHandle, string description)
+        {
+            if (string.IsNullOrEmpty(description))
+                return;
+
+            var desc = new SERVICE_DESCRIPTION
+            {
+                lpDescription = Marshal.StringToHGlobalUni(description)
+            };
+
+            if (!_windowsServiceApi.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref desc))
+            {
+                int err = _win32ErrorProvider.GetLastWin32Error();
+                throw new Win32Exception(err, "Failed to set service description.");
+            }
+
+            Marshal.FreeHGlobal(desc.lpDescription);
+        }
+
+        #endregion
+
+        #region IServiceManager Implementation
 
         /// <inheritdoc />
         public bool InstallService(
@@ -53,8 +169,7 @@ namespace Servy.Core.Services
             int heartbeatInterval,
             int maxFailedChecks,
             RecoveryAction recoveryAction,
-            int maxRestartAttempts
-            )
+            int maxRestartAttempts)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -78,8 +193,7 @@ namespace Servy.Core.Services
                 Helper.Quote(recoveryAction.ToString()),
                 Helper.Quote(serviceName),
                 Helper.Quote(maxRestartAttempts.ToString())
-                );
-
+            );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
 
@@ -130,83 +244,6 @@ namespace Servy.Core.Services
             }
         }
 
-        /// <summary>
-        /// Updates the configuration of an existing service.
-        /// </summary>
-        /// <param name="scmHandle">Handle to the Service Control Manager.</param>
-        /// <param name="serviceName">The service name.</param>
-        /// <param name="description">The service description.</param>
-        /// <param name="binPath">The path to the service executable.</param>
-        /// <param name="startType">The service startup type.</param>
-        /// <returns>True if the update succeeded; otherwise false.</returns>
-        /// <exception cref="Win32Exception">Thrown on Win32 errors.</exception>
-        public bool UpdateServiceConfig(
-            IntPtr scmHandle,
-            string serviceName,
-            string description,
-            string binPath,
-            ServiceStartType startType)
-        {
-            IntPtr serviceHandle = _windowsServiceApi.OpenService(
-                scmHandle,
-                serviceName,
-                SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG);
-
-            if (serviceHandle == IntPtr.Zero)
-                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
-
-            try
-            {
-                bool result = _windowsServiceApi.ChangeServiceConfig(
-                    serviceHandle,
-                    SERVICE_WIN32_OWN_PROCESS,
-                    (uint)startType,
-                    SERVICE_ERROR_NORMAL,
-                    binPath,
-                    null,
-                    IntPtr.Zero,
-                    null,
-                    null,
-                    null,
-                    null);
-
-                if (!result)
-                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to update service config.");
-
-                SetServiceDescription(serviceHandle, description);
-
-                return true;
-            }
-            finally
-            {
-                _windowsServiceApi.CloseServiceHandle(serviceHandle);
-            }
-        }
-
-        /// <summary>
-        /// Sets the description for a Windows service.
-        /// </summary>
-        /// <param name="serviceHandle">Handle to the service.</param>
-        /// <param name="description">The description text.</param>
-        public void SetServiceDescription(IntPtr serviceHandle, string description)
-        {
-            if (string.IsNullOrEmpty(description))
-                return;
-
-            var desc = new SERVICE_DESCRIPTION
-            {
-                lpDescription = Marshal.StringToHGlobalUni(description)
-            };
-
-            if (!_windowsServiceApi.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref desc))
-            {
-                int err = _win32ErrorProvider.GetLastWin32Error();
-                throw new Win32Exception(err, "Failed to set service description.");
-            }
-
-            Marshal.FreeHGlobal(desc.lpDescription);
-        }
-
         /// <inheritdoc />
         public bool UninstallService(string serviceName)
         {
@@ -240,8 +277,18 @@ namespace Servy.Core.Services
                     var status = new SERVICE_STATUS();
                     _windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
-                    // Give it some time to stop
-                    Thread.Sleep(2000);
+                    // Wait for service to actually stop (up to 60 seconds)
+                    using (var sc = _controllerFactory(serviceName))
+                    {
+                        sc.Refresh();
+                        DateTime waitUntil = DateTime.Now.AddSeconds(ServiceStopTimeoutSeconds);
+
+                        while (sc.Status != ServiceControllerStatus.Stopped && DateTime.Now < waitUntil)
+                        {
+                            Thread.Sleep(500); // Poll every half-second
+                            sc.Refresh();
+                        }
+                    }
 
                     // Delete the service
                     return _windowsServiceApi.DeleteService(serviceHandle);
@@ -253,9 +300,6 @@ namespace Servy.Core.Services
             }
             finally
             {
-                // OpenSCManager returns a handle to the Service Control Manager.
-                // OpenService returns a handle to the individual service.
-                // These are two different resources that must each be closed separately to avoid leaking handles.
                 _windowsServiceApi.CloseServiceHandle(scmHandle);
             }
         }
@@ -265,15 +309,16 @@ namespace Servy.Core.Services
         {
             try
             {
-                var sc = _controllerFactory(serviceName);
+                using (var sc = _controllerFactory(serviceName))
+                {
+                    if (sc.Status == ServiceControllerStatus.Running)
+                        return true;
 
-                if (sc.Status == ServiceControllerStatus.Running)
+                    sc.Start();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+
                     return true;
-
-                sc.Start();
-                sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
-
-                return true;
+                }
             }
             catch
             {
@@ -286,15 +331,16 @@ namespace Servy.Core.Services
         {
             try
             {
-                var sc = _controllerFactory(serviceName);
+                using (var sc = _controllerFactory(serviceName))
+                {
+                    if (sc.Status == ServiceControllerStatus.Stopped)
+                        return true;
 
-                if (sc.Status == ServiceControllerStatus.Stopped)
+                    sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(ServiceStopTimeoutSeconds));
+
                     return true;
-
-                sc.Stop();
-                sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10));
-
-                return true;
+                }
             }
             catch
             {
@@ -318,6 +364,7 @@ namespace Servy.Core.Services
             }
         }
 
+        #endregion
     }
 }
 #pragma warning restore CS8625

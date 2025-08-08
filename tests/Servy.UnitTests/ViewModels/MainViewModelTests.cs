@@ -16,7 +16,7 @@ namespace Servy.UnitTests.ViewModels
         {
             _dialogServiceMock = new Mock<IFileDialogService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
-            _viewModel = new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object, true);
+            _viewModel = new MainViewModel(_dialogServiceMock.Object, _serviceCommandsMock.Object);
         }
 
         [Fact]

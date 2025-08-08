@@ -48,7 +48,6 @@ namespace Servy.ViewModels
 
         #region Constants 
 
-        public const string DefaultServiceName = "Servy";         // Used for unit tests
         private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
         private const int DefaultHeartbeatInterval = 30;          // 30 seconds
         private const int DefaultMaxFailedChecks = 3;             // 3 attempts
@@ -59,17 +58,6 @@ namespace Servy.ViewModels
         #region Private Fields
 
         private readonly ServiceConfiguration _config = new ServiceConfiguration();
-        private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
-        private IServiceControllerWrapper _serviceController;
-
-        #endregion
-
-        #region Flags
-
-        /// <summary>
-        /// Indicates whether we are in test mode or not.
-        /// </summary>
-        internal bool IsTestMode { get; private set; } = false;
 
         #endregion
 
@@ -88,8 +76,6 @@ namespace Servy.ViewModels
                 {
                     _config.Name = value;
                     OnPropertyChanged();
-
-                    UpdateServiceCommands();
                 }
             }
         }
@@ -326,13 +312,10 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="dialogService">Service to open file and folder dialogs.</param>
         /// <param name="serviceCommands">Service commands to manage Windows services.</param>
-        /// <param name="isTestMode">Falg used for tests.</param>
-        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands, bool isTestMode = false)
+        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands)
         {
-            _controllerFactory = name => new ServiceControllerWrapper(string.IsNullOrWhiteSpace(name) ? DefaultServiceName : name);
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceCommands = serviceCommands;
-            IsTestMode = isTestMode;
 
             // Initialize defaults
             ServiceName = string.Empty;
@@ -370,12 +353,8 @@ namespace Servy.ViewModels
             null
             )
         {
-            _controllerFactory = name => new ServiceControllerWrapper(string.IsNullOrWhiteSpace(name) ? DefaultServiceName : name);
-
-            _serviceController = _controllerFactory(ServiceName);
-
             _serviceCommands = new ServiceCommands(
-                new ServiceManager(_ => _serviceController, new WindowsServiceApi(), new Win32ErrorProvider()),
+                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider()),
                 new MessageBoxService()
             );
         }
@@ -446,9 +425,6 @@ namespace Servy.ViewModels
                 _config.MaxFailedChecks,
                 _config.RecoveryAction,
                 _config.MaxRestartAttempts);
-
-            UpdateServiceCommands();
-
         }
 
         /// <summary>
@@ -457,8 +433,6 @@ namespace Servy.ViewModels
         private void OnUninstallService()
         {
             _serviceCommands.UninstallService(ServiceName);
-
-            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -467,8 +441,6 @@ namespace Servy.ViewModels
         private void OnStartService()
         {
             _serviceCommands.StartService(ServiceName);
-
-            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -477,8 +449,6 @@ namespace Servy.ViewModels
         private void OnStopService()
         {
             _serviceCommands.StopService(ServiceName);
-
-            UpdateServiceCommands();
         }
 
         /// <summary>
@@ -487,8 +457,6 @@ namespace Servy.ViewModels
         private void OnRestartService()
         {
             _serviceCommands.RestartService(ServiceName);
-
-            UpdateServiceCommands();
         }
 
         #endregion
@@ -520,24 +488,5 @@ namespace Servy.ViewModels
 
         #endregion
 
-        #region Private Helpers
-
-        /// <summary>
-        /// Updates ServiceCommands.
-        /// </summary>
-        private void UpdateServiceCommands()
-        {
-            if (!IsTestMode)
-            {
-                _serviceController = _controllerFactory(_config.Name);
-
-                _serviceCommands = new ServiceCommands(
-                     new ServiceManager(_ => _serviceController, new WindowsServiceApi(), new Win32ErrorProvider()),
-                     new MessageBoxService()
-                 );
-            }
-        }
-
-        #endregion
     }
 }
