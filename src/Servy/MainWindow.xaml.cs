@@ -22,7 +22,7 @@ namespace Servy
                 new FileDialogService(),
                 new ServiceCommands(
                     new ServiceManager(
-                        _ => new ServiceControllerWrapper(MainViewModel.DefaultServiceName),
+                        name => new ServiceControllerWrapper(name),
                         new WindowsServiceApi(),
                         new Win32ErrorProvider()
                         ),

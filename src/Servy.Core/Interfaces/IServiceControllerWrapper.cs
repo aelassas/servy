@@ -6,7 +6,7 @@ namespace Servy.Core.Interfaces
     /// <summary>
     /// Defines an abstraction for controlling and monitoring the status of a Windows service.
     /// </summary>
-    public interface IServiceControllerWrapper
+    public interface IServiceControllerWrapper : IDisposable
     {
         /// <summary>
         /// Gets the current status of the Windows service.
@@ -22,6 +22,12 @@ namespace Servy.Core.Interfaces
         /// Stops the Windows service.
         /// </summary>
         void Stop();
+
+        /// <summary>
+        /// Updates the service's property values by refreshing its status and configuration
+        /// from the Service Control Manager.
+        /// </summary>
+        void Refresh();
 
         /// <summary>
         /// Waits for the Windows service to reach the specified status within the given timeout period.
