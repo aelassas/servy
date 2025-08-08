@@ -74,7 +74,7 @@ This version is for older systems that require .NET Framework support.
    - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
    - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
 4. Click **Install** to register the service.
-5. Start or stop the service directly from Servy, Windows Services (services.msc) or any management tool.
+5. Start or stop the service directly from Servy, Service Control Manager `services.msc` or any management tool.
 
 ## Architecture
 
