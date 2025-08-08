@@ -29,13 +29,13 @@ namespace Servy.Restarter
         {
             using (var controller = _controllerFactory(serviceName))
             {
-                // Wait until the service is stopped
-                controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
+                if (controller.Status != ServiceControllerStatus.Stopped)
+                {
+                    controller.Stop();
+                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
+                }
 
-                // Start the service
                 controller.Start();
-
-                // Wait until the service is running
                 controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
             }
         }

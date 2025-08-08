@@ -24,6 +24,9 @@ namespace Servy.Restarter
         public void Start() => _controller.Start();
 
         /// <inheritdoc />
+        public void Stop() => _controller.Stop();
+
+        /// <inheritdoc />
         public void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout) => _controller.WaitForStatus(desiredStatus, timeout);
 
         /// <inheritdoc />

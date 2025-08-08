@@ -19,6 +19,11 @@ namespace Servy.Restarter
         void Start();
 
         /// <summary>
+        /// Stop the Windows service.
+        /// </summary>
+        void Stop();
+
+        /// <summary>
         /// Waits for the service to reach the specified status within the given timeout.
         /// </summary>
         /// <param name="desiredStatus">The desired final status to wait for.</param>
