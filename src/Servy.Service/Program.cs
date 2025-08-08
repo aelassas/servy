@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System;
+using System.IO;
+using System.Reflection;
 using System.ServiceProcess;
 
 namespace Servy.Service
@@ -17,23 +19,42 @@ namespace Servy.Service
             var restarterPath = Path.Combine(AppContext.BaseDirectory, "Servy.Restarter.exe");
             var resourceName = "Servy.Service.Resources.Servy.Restarter.exe";
 
-            if (!File.Exists(restarterPath))
-            {
-                using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
-                {
-                    if (stream == null)
-                    {
-                        throw new FileNotFoundException($"Embedded resource '{resourceName}' not found.");
-                    }
+            var assembly = Assembly.GetExecutingAssembly();
 
-                    using (var file = File.Create(restarterPath))
+            // Check if the embedded resource exists
+            using (var embeddedStream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (embeddedStream == null)
+                    throw new FileNotFoundException($"Embedded resource '{resourceName}' not found.");
+
+                bool copyFile = true;
+
+                if (File.Exists(restarterPath))
+                {
+                    // Compare last write times
+                    var fileLastWrite = File.GetLastWriteTimeUtc(restarterPath);
+
+                    // For embedded resource last write, use assembly last write time as proxy
+                    var assemblyLocation = assembly.Location;
+                    var assemblyLastWrite = File.GetLastWriteTimeUtc(assemblyLocation);
+
+                    if (fileLastWrite >= assemblyLastWrite)
                     {
-                        stream.CopyTo(file);
+                        // Existing file is up-to-date or newer, skip overwrite
+                        copyFile = false;
+                    }
+                }
+
+                if (copyFile)
+                {
+                    using (var fileStream = File.Create(restarterPath))
+                    {
+                        embeddedStream.CopyTo(fileStream);
                     }
                 }
             }
 
-            ServiceBase[] ServicesToRun = new ServiceBase[]
+            ServiceBase[] ServicesToRun =
             {
                 new Service()
             };

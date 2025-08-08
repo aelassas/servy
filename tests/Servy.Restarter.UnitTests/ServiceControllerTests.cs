@@ -23,6 +23,14 @@ namespace Servy.Restarter.UnitTests
         }
 
         [Fact]
+        public void Stop_CallsStopOnSystemController()
+        {
+            _serviceController.Stop();
+
+            _mockSystemController.Verify(m => m.Stop(), Times.Once);
+        }
+
+        [Fact]
         public void WaitForStatus_CallsWaitForStatusOnSystemController()
         {
             var status = ServiceControllerStatus.Running;

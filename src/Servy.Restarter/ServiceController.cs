@@ -25,6 +25,9 @@ namespace Servy.Restarter
         public void Start() => _controller.Start();
 
         /// <inheritdoc />
+        public void Stop() => _controller.Stop();
+
+        /// <inheritdoc />
         public void Dispose() => _controller.Dispose();
     }
 }
