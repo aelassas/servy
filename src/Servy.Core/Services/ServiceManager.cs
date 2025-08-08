@@ -313,7 +313,7 @@ namespace Servy.Core.Services
                         return true;
 
                     sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
 
                     return true;
                 }
