@@ -163,8 +163,8 @@ namespace Servy.Core.Services
             string realArgs,
             ServiceStartType startType,
             ProcessPriority processPriority,
-            string stdoutPath,
-            string stderrPath,
+            string? stdoutPath,
+            string? stderrPath,
             int rotationSizeInBytes,
             int heartbeatInterval,
             int maxFailedChecks,
@@ -315,7 +315,7 @@ namespace Servy.Core.Services
                         return true;
 
                     sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
 
                     return true;
                 }
