@@ -27,7 +27,7 @@ namespace Servy
                     MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
                 };
 
-                KillServyServiceIfRunning();
+                //KillServyServiceIfRunning();
                 CopyEmbeddedResource("Servy.Service");
             }
             catch (Exception ex)
@@ -66,35 +66,42 @@ namespace Servy
         /// <param name="fileName">The name of the embedded resource without extension.</param>
         private void CopyEmbeddedResource(string fileName)
         {
-            string targetFileName = $"{fileName}.exe";
-            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-            Assembly asm = Assembly.GetExecutingAssembly();
-            string resourceName = $"Servy.Resources.{fileName}.exe";
-
-            bool shouldCopy = true;
-
-            if (File.Exists(targetPath))
+            try
             {
-                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
-                shouldCopy = embeddedResourceTime > existingFileTime;
-            }
+                string targetFileName = $"{fileName}.exe";
+                string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
+                Assembly asm = Assembly.GetExecutingAssembly();
+                string resourceName = $"Servy.Resources.{fileName}.exe";
 
-            if (shouldCopy)
-            {
-                using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
+                bool shouldCopy = true;
+
+                if (File.Exists(targetPath))
                 {
-                    if (resourceStream == null)
-                    {
-                        MessageBox.Show("Embedded resource not found: " + resourceName);
-                        return;
-                    }
+                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
+                    shouldCopy = embeddedResourceTime > existingFileTime;
+                }
 
-                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                if (shouldCopy)
+                {
+                    using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
                     {
-                        resourceStream.CopyTo(fileStream);
+                        if (resourceStream == null)
+                        {
+                            MessageBox.Show("Embedded resource not found: " + resourceName);
+                            return;
+                        }
+
+                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                        {
+                            resourceStream.CopyTo(fileStream);
+                        }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                // Ignore error and continue if Servy.Service.exe is used by other services.
             }
         }
 

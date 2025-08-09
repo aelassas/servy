@@ -22,37 +22,45 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         static int Main(string[] args)
         {
-            var serviceManager = new ServiceManager(
-                        name => new ServiceControllerWrapper(name),
-                        new WindowsServiceApi(),
-                        new Win32ErrorProvider()
-                        );
-            var installValidator = new ServiceInstallValidator();
+            try
+            {
+                var serviceManager = new ServiceManager(
+                            name => new ServiceControllerWrapper(name),
+                            new WindowsServiceApi(),
+                            new Win32ErrorProvider()
+                            );
+                var installValidator = new ServiceInstallValidator();
 
-            var installCommand = new InstallServiceCommand(serviceManager, installValidator);
-            var startCommand = new StartServiceCommand(serviceManager);
-            var stopCommand = new StopServiceCommand(serviceManager);
-            var restartCommand = new RestartServiceCommand(serviceManager);
-            var uninstallCommand = new UninstallServiceCommand(serviceManager);
+                var installCommand = new InstallServiceCommand(serviceManager, installValidator);
+                var startCommand = new StartServiceCommand(serviceManager);
+                var stopCommand = new StopServiceCommand(serviceManager);
+                var restartCommand = new RestartServiceCommand(serviceManager);
+                var uninstallCommand = new UninstallServiceCommand(serviceManager);
 
-            KillServyServiceIfRunning();
-            CopyEmbeddedResource("Servy.Service");
+                //KillServyServiceIfRunning();
+                CopyEmbeddedResource("Servy.Service");
 
-            var exiCode = Parser.Default.ParseArguments<
-                InstallServiceOptions,
-                UninstallServiceOptions,
-                StartServiceOptions,
-                StopServiceOptions,
-                RestartServiceOptions>(args)
-                   .MapResult(
-                    (InstallServiceOptions opts) => PrintAndReturn(installCommand.Execute(opts)),
-                    (UninstallServiceOptions opts) => PrintAndReturn(uninstallCommand.Execute(opts)),
-                    (StartServiceOptions opts) => PrintAndReturn(startCommand.Execute(opts)),
-                    (StopServiceOptions opts) => PrintAndReturn(stopCommand.Execute(opts)),
-                    (RestartServiceOptions opts) => PrintAndReturn(restartCommand.Execute(opts)),
-                    errs => 1);
+                var exiCode = Parser.Default.ParseArguments<
+                    InstallServiceOptions,
+                    UninstallServiceOptions,
+                    StartServiceOptions,
+                    StopServiceOptions,
+                    RestartServiceOptions>(args)
+                       .MapResult(
+                        (InstallServiceOptions opts) => PrintAndReturn(installCommand.Execute(opts)),
+                        (UninstallServiceOptions opts) => PrintAndReturn(uninstallCommand.Execute(opts)),
+                        (StartServiceOptions opts) => PrintAndReturn(startCommand.Execute(opts)),
+                        (StopServiceOptions opts) => PrintAndReturn(stopCommand.Execute(opts)),
+                        (RestartServiceOptions opts) => PrintAndReturn(restartCommand.Execute(opts)),
+                        errs => 1);
 
-            return exiCode;
+                return exiCode;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An unexpected error occured:", e.Message);
+                return 1;
+            }
         }
     }
 }
