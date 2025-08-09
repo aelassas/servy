@@ -25,7 +25,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 
 This version is for older systems that require .NET Framework support.
 * Supported OS: Windows 7, 8, 10, 11, or Windows Server (x64)
-* Requirements: [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
+* Requires [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
 
 **Administrator privileges are required** to install and manage Windows services.
 
