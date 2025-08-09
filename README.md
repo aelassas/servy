@@ -8,9 +8,7 @@
 [![codecov](https://codecov.io/gh/aelassas/servy/graph/badge.svg?token=26WZX2V4BG)](https://codecov.io/gh/aelassas/servy)
 -->
 <p align="center">
-  <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=7" width="480">
-  </a>
+  <img src="https://servy-win.github.io/servy.png?d=7" width="480" alt="Servy" />
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
