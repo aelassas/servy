@@ -1,9 +1,7 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg?branch=net48)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg?branch=net48)](https://github.com/aelassas/servy/actions/workflows/test.yml) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <p align="center">
-  <a href="https://servy-win.github.io/">
-    <img src="https://servy-win.github.io/servy.png?d=7" width="480">
-  </a>
+  <img src="https://servy-win.github.io/servy.png?d=7" width="480" alt="Servy" />
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
