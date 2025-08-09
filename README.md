@@ -5,6 +5,11 @@
     <img src="https://servy-win.github.io/servy.png?d=7" width="480">
   </a>
 </p>
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
+    <img src="https://img.shields.io/badge/Watch%20Demo-FF0033?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
+  </a>
+</p>
 
 # Servy
 
