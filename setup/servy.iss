@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Servy"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.0.0"
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
 #define MyAppExeName "Servy.exe"
@@ -25,7 +25,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=.
-OutputBaseFilename=servy-{#MyAppVersion}-net48-x64
+OutputBaseFilename=servy-{#MyAppVersion}-net48-x64-installer
 SetupIconFile=..\src\Servy\servy.ico
 Compression=lzma
 SolidCompression=yes
