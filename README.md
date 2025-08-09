@@ -15,6 +15,8 @@
 
 Servy lets you run any app as a Windows service with full control over working directory, startup type, logging, health checks, and parameters. A fully managed alternative to NSSM.
 
+Servy offers both a GUI and a Command-Line Interface (CLI), enabling you to create, configure, and manage Windows services interactively or automate these tasks in scripts and CI/CD pipelines.
+
 This .NET Framework 4.8 version is designed for compatibility with older Windows operating systems, from Windows 7 SP1 to Windows 11 and Windows Server.
 
 Servy solves a common limitation of Windows services by allowing you to set a custom working directory. The built-in `sc` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` with no way to change it. This can break apps that depend on relative paths, configuration files, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
@@ -25,6 +27,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
+* [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
 * [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
@@ -32,6 +35,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 ## Features
 
 * Clean, simple UI
+* CLI for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, and parameters
 * Redirect stdout/stderr to log files with automatic size-based rotation
