@@ -419,3 +419,4 @@ FodyWeavers.xsd
 
 # setup
 setup/*.exe
+setup/*.zip
