@@ -41,7 +41,7 @@ This version is for older systems that require .NET Framework support.
 **Administrator privileges are required** to install and manage Windows services.
 
 ## Quick Links
-* [Download Latest Release](https://github.com/aelassas/servy/releases/latest)
+* [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
