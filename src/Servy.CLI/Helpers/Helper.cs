@@ -72,35 +72,42 @@ namespace Servy.CLI.Helpers
         /// <param name="fileName">The name of the embedded resource without extension.</param>
         public static void CopyEmbeddedResource(string fileName)
         {
-            string targetFileName = $"{fileName}.exe";
-            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-            Assembly asm = Assembly.GetExecutingAssembly();
-            string resourceName = $"Servy.CLI.Resources.{fileName}.exe";
-
-            bool shouldCopy = true;
-
-            if (File.Exists(targetPath))
+            try
             {
-                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
-                shouldCopy = embeddedResourceTime > existingFileTime;
-            }
+                string targetFileName = $"{fileName}.exe";
+                string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
+                Assembly asm = Assembly.GetExecutingAssembly();
+                string resourceName = $"Servy.CLI.Resources.{fileName}.exe";
 
-            if (shouldCopy)
-            {
-                using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
+                bool shouldCopy = true;
+
+                if (File.Exists(targetPath))
                 {
-                    if (resourceStream == null)
-                    {
-                        Console.WriteLine("Embedded resource not found: " + resourceName);
-                        return;
-                    }
+                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
+                    shouldCopy = embeddedResourceTime > existingFileTime;
+                }
 
-                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                if (shouldCopy)
+                {
+                    using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
                     {
-                        resourceStream.CopyTo(fileStream);
+                        if (resourceStream == null)
+                        {
+                            Console.WriteLine("Embedded resource not found: " + resourceName);
+                            return;
+                        }
+
+                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                        {
+                            resourceStream.CopyTo(fileStream);
+                        }
                     }
                 }
+            }
+            catch (Exception)
+            {
+                // Ignore error and continue if Servy.Service.exe is used by other services.
             }
         }
 
@@ -111,9 +118,9 @@ namespace Servy.CLI.Helpers
         /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
         public static DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
-            #pragma warning disable IL3000
+#pragma warning disable IL3000
             string assemblyPath = assembly.Location;
-            #pragma warning restore IL3000
+#pragma warning restore IL3000
 
             if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
             {
