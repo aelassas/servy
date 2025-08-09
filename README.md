@@ -18,17 +18,13 @@
 
 # Servy
 
-**Servy** is a Windows application that allows you to run any executable as a Windows service, using a simple graphical interface.
+**Servy** lets you run any app as a Windows service with full control over working directory, startup type, logging, health checks, and parameters. A fully managed alternative to NSSM.
 
-It provides a reliable and compatible solution for automating app startup, monitoring, and background execution across a wide range of Windows versions — from Windows 7 SP1 to Windows 11 and Windows Server.
+It works across Windows 7 SP1 to Windows 11 and Windows Server, providing a reliable way to automate app startup, monitoring, and background execution.
 
-Servy solves a common limitation of Windows services by allowing you to set a custom working directory. When you create a service with `sc`, the default working directory is always `C:\Windows\System32`, and there's no built-in way to change that. This breaks many applications that rely on relative paths, configuration files, or assets located in their own folders. Servy lets you explicitly set the startup directory so that your application runs in the right environment, just like it would if launched from a shortcut or command prompt. This ensures your application runs exactly as expected.
+A key advantage is the ability to set a **custom working directory**. The built-in `sc` tool always uses `C:\Windows\System32`, which breaks apps that rely on relative paths, configs, or local assets. Servy lets you set the startup directory explicitly, so your app runs exactly as if launched from a shortcut or command prompt.
 
-Servy is ideal for scenarios where you need to keep non-service applications running reliably in the background. It's especially useful for developers, sysadmins, and IT professionals who want to deploy background processes without rewriting them as Windows services. Typical use cases include running Node.js, Python, or .NET console apps as services; keeping web servers, database sync tools, or custom daemons alive after reboots; and automating task runners or batch scripts in production environments. With built-in health checks, restart policies, and a modern UI, Servy is a powerful alternative to tools like NSSM—without the need for manual configuration or registry edits.
-
-## Why Servy?
-
-Windows services are great but have limitations like fixed working directories and no built-in health checks. Servy fills this gap by providing an easy way to run any app as a service with full control over its environment and recovery options — no coding required.
+Servy is perfect for keeping non-service apps running in the background without rewriting them as services. Use it to run Node.js, Python, or .NET apps; keep web servers, sync tools, or daemons alive after reboots; and automate task runners or scripts in production with built-in health checks, restart policies, and a modern UI.
 
 ## Requirements
 
@@ -100,7 +96,9 @@ You can find detailed architecture overview in the [wiki](https://github.com/ael
 
 ## Support & Contributing
 
-If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by starring the repository (it helps increase visibility and shows your appreciation), sharing the project (recommend it to colleagues, communities, or on social media), or making a donation (if you'd like to financially support the development) via [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas). Open-source software requires time, effort, and resources to maintain—your support helps keep this project alive, up-to-date, and accessible to everyone. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
+If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by starring the repository (it helps increase visibility and shows your appreciation), sharing the project (recommend it to colleagues, communities, or on social media), or making a donation (if you'd like to financially support the development) via [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas). 
+
+Open-source software requires time, effort, and resources to maintain—your support helps keep this project alive, up-to-date, and accessible to everyone. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
 
 If you have suggestions, issues, or want to contribute, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit pull request](https://github.com/aelassas/servy/pulls).
 
