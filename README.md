@@ -43,6 +43,15 @@ Servy is perfect for keeping non-service apps running in the background without 
 * Monitor and manage services in real-time
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
+## Roadmap
+
+- [x] Windows Service creation via GUI
+- [x] Logging stdout/stderr with size-based rotation
+- [x] Service monitoring and heartbeat checks
+- [x] Automatic restart on failure
+- [ ] CLI for full scripting and automated deployments *(coming soon)*
+
+
 ## Support & Contributing
 
 If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by starring the repository (it helps increase visibility and shows your appreciation), sharing the project (recommend it to colleagues, communities, or on social media), or making a donation (if you'd like to financially support the development) via [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas). 
