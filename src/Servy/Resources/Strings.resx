@@ -12,12 +12,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-
-  <!-- Menu -->
-  <data name="Menu_Language" xml:space="preserve">
-    <value>Language</value>
-  </data>
-
+  
   <!-- Labels -->
   <data name="Label_ServiceName" xml:space="preserve">
     <value>Service Name *</value>

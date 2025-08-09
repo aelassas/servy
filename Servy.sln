@@ -36,7 +36,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A53A690C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Core.UnitTests", "tests\Servy.Core.UnitTests\Servy.Core.UnitTests.csproj", "{BDD8404F-0795-4539-9546-7A7653B1A8F7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ui", "ui", "{CD2EE3D9-7E99-4B90-9AF2-21C0DA949C4D}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{CD2EE3D9-7E99-4B90-9AF2-21C0DA949C4D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{4F427B08-1EF0-492E-9BB9-91DD41B37739}"
 EndProject
@@ -47,6 +47,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Service.UnitTests", "tests\Servy.Service.UnitTests\Servy.Service.UnitTests.csproj", "{BBF655E5-653D-4684-A529-0C362812FF37}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UnitTests", "tests\Servy.UnitTests\Servy.UnitTests.csproj", "{9B2B1090-A2F8-4718-B51E-4F69B244DB9C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI", "src\Servy.CLI\Servy.CLI.csproj", "{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -86,6 +88,10 @@ Global
 		{9B2B1090-A2F8-4718-B51E-4F69B244DB9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9B2B1090-A2F8-4718-B51E-4F69B244DB9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9B2B1090-A2F8-4718-B51E-4F69B244DB9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +109,7 @@ Global
 		{E529CD09-C8E7-437B-9FC5-F59DAD2AAE45} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{BBF655E5-653D-4684-A529-0C362812FF37} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{9B2B1090-A2F8-4718-B51E-4F69B244DB9C} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
+		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980} = {CD2EE3D9-7E99-4B90-9AF2-21C0DA949C4D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8901951D-D640-4964-A4ED-D957E840307C}
