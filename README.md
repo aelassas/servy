@@ -42,7 +42,11 @@ This version is for older systems that require .NET Framework support.
 
 ## Quick Links
 * [Download Latest Release](https://github.com/aelassas/servy/releases/latest)
-* [Documentation](https://github.com/aelassas/servy/wiki)
+* [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
+* [Usage](https://github.com/aelassas/servy/wiki/Usage)
+* [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
+* [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
+* [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 
 ## Features
 
