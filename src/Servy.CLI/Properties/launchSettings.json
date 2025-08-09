@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Servy.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "install --name \"WexflowServer2\" --description \"Wexflow Engine\" --path \"C:\\Program Files\\dotnet\\dotnet.exe\" --startupDir \"C:\\Program Files\\Wexflow Server\\Wexflow.Server\" --params \"Wexflow.Server.dll\" --startupType \"\" --priority \"belowNormal\" --stdout \"C:\\Program Files\\Wexflow Server\\stdout.log\" --stderr \"C:\\Program Files\\Wexflow Server\\stderr.log\" --enableRotation true --rotationSize 1048576 --enableHealth true --heartbeatInterval 5 --maxFailedChecks 1 --recoveryAction restartService --maxRestartAttempts 2"
+    }
+  }
+}

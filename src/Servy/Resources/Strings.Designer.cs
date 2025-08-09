@@ -295,15 +295,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Language.
-        /// </summary>
-        public static string Menu_Language {
-            get {
-                return ResourceManager.GetString("Menu_Language", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à An error occurred..
         /// </summary>
         public static string Message_Error {
