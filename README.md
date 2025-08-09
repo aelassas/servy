@@ -22,7 +22,7 @@
 
 It works across Windows 7 SP1 to Windows 11 and Windows Server, providing a reliable way to automate app startup, monitoring, and background execution.
 
-A key advantage is the ability to set a **custom working directory**. The built-in `sc` tool always uses `C:\Windows\System32`, which breaks apps that rely on relative paths, configs, or local assets. Servy lets you set the startup directory explicitly, so your app runs exactly as if launched from a shortcut or command prompt.
+A key advantage is the ability to set a **custom working directory**. The built-in `sc` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` with no way to change it. This can break apps that depend on relative paths, configuration files, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
 
 Servy is perfect for keeping non-service apps running in the background without rewriting them as services. Use it to run Node.js, Python, or .NET apps; keep web servers, sync tools, or daemons alive after reboots; and automate task runners or scripts in production with built-in health checks, restart policies, and a modern UI.
 
