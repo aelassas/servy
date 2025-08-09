@@ -24,25 +24,13 @@ Servy solves a common limitation of Windows services by allowing you to set a cu
 
 Servy is perfect for keeping non-service apps running in the background without rewriting them as services. Use it to run Node.js, Python, or .NET apps; keep web servers, sync tools, or daemons alive after reboots; and automate task runners or scripts in production with built-in health checks, restart policies, and a modern UI.
 
-## Requirements
-
-Servy is available in two versions to support different environments for maximum compatibility with Windows versions.
-
-#### .NET 8.0 Version
-This version is recommended for modern systems and includes the latest features and performance enhancements.
-* Supported OS: Windows 10, Windows 11, or Windows Server (x64)
-* Requires [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime)
-
-#### .NET Framework 4.8 Version
-This version is for older systems that require .NET Framework support.
-* Supported OS: Windows 7, 8, 10, 11, or Windows Server (x64)
-* Requires [.NET Framework 4.8 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
-
-**Administrator privileges are required** to install and manage Windows services.
-
 ## Quick Links
-* [Download Latest Release](https://github.com/aelassas/servy/releases/latest)
-* [Documentation](https://github.com/aelassas/servy/wiki)
+* [Download](https://github.com/aelassas/servy/releases/latest)
+* [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
+* [Usage](https://github.com/aelassas/servy/wiki/Usage)
+* [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
+* [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
+* [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 
 ## Features
 
@@ -54,43 +42,6 @@ This version is for older systems that require .NET Framework support.
 * Health checks and automatic service recovery
 * Monitor and manage services in real-time
 * Compatible with Windows 7–11 x64 and Windows Server editions
-
-## How It Works
-
-1. **Install** Servy using the provided installer.
-2. **Launch Servy** as administrator.
-3. Fill in the service details:
-   - `Service Name` (required)
-   - `Service Description` (optional)
-   - `Startup Type` (optional)
-   - `Process Path` (required - path to the executable you want to run)
-   - `Startup Directory` (optional - Working directory for the process. Defaults to the executable's directory if not specified.)
-   - `Process Parameters` (optional)
-   - `Process Priority` (optional)
-   - `Stdout File Path` (optional)
-   - `Stderr File Path` (optional)
-   - `Rotation Size` (optional - in bytes, minimum value is 1 MB (1,048,576 bytes), default value is 10MB)
-   - `Heartbeat Interval` (optional - Interval between health checks of the child process, default value is 30 seconds)
-   - `Max Failed Checks` (optional - Number of consecutive failed health checks before triggering the recovery action, default value is 3 attempts)
-   - `Recovery Action` (optional - Action to take when the max failed checks is reached. Options: Restart Service, Restart Process, Restart Computer, None)
-   - `Max Restart Attempts` (optional - Maximum number of recovery attempts (whether restarting the service or process) before stopping further recovery, default value is 3 attempts)
-4. Click **Install** to register the service.
-5. Start or stop the service directly from Servy, Service Control Manager `services.msc` or any management tool.
-
-## Architecture
-
-- `Servy.exe`: WPF frontend application using the MVVM design pattern <br>
-  Handles user input, service configuration, and manages the lifecycle of the Windows service.
-
-- `Servy.Service.exe`: Windows Service that runs in the background <br>
-  Responsible for launching and monitoring the target process based on the configured settings (e.g., heartbeat, recovery actions).
-
-- `Servy.Restarter.exe`: Lightweight utility used to restart a Windows service <br>
-  Invoked as part of the *Restart Service* recovery action when a failure is detected.
-
-Together, these components provide a complete solution for wrapping any executable as a monitored Windows service with optional health checks and automatic recovery behavior.
-
-You can find detailed architecture overview in the [wiki](https://github.com/aelassas/servy/wiki/Architecture).
 
 ## Support & Contributing
 
