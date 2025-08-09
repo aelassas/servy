@@ -64,6 +64,10 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
 
+[UninstallDelete]
+Type: dirifempty; Name: "{app}\cli"
+Type: filesandordirs; Name: "{app}\cli"
+
 [Code]
 function GetUninstallString(): String;
 var
