@@ -1,4 +1,4 @@
-[![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main) [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
+[![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main&v=1)](https://coveralls.io/github/aelassas/servy?branch=main) [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <!--
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) 
@@ -9,7 +9,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 -->
 <p align="center">
-  <img src="https://servy-win.github.io/servy.png?d=7" width="480" alt="Servy" />
+  <img src="https://servy-win.github.io/servy.png?d=7" alt="Servy" />
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
@@ -55,7 +55,9 @@ Servy is perfect for keeping non-service apps running in the background without 
 - [x] Service monitoring and heartbeat checks
 - [x] Automatic restart on failure
 - [x] CLI for full scripting and automated deployments
-
+- [ ] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
+- [ ] Add "Log on as" configuration for Windows service
+- [ ] Support service dependencies
 
 ## Support & Contributing
 
