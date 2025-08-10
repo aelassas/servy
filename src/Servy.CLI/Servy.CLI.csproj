@@ -85,7 +85,7 @@
     <Resource Include="servy.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Service.exe">
+    <EmbeddedResource Include="Resources\Servy.Service.CLI.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\Strings.resx">

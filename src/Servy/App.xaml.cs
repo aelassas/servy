@@ -13,6 +13,11 @@ namespace Servy
     public partial class App : Application
     {
         /// <summary>
+        /// Servy Service executable filename.
+        /// </summary>
+        public const string ServyServiceExeFileName = "Servy.Service";
+
+        /// <summary>
         /// Called when the WPF application starts.
         /// Subscribes to unhandled exceptions, stops the background service if it's running,
         /// and extracts the embedded Servy.Service.exe to the application's base directory if needed.
@@ -29,8 +34,7 @@ namespace Servy
                     MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
                 };
 
-                //KillServyServiceIfRunning();
-                CopyEmbeddedResource("Servy.Service");
+                CopyEmbeddedResource(ServyServiceExeFileName);
             }
             catch (Exception ex)
             {
@@ -39,16 +43,15 @@ namespace Servy
         }
 
         /// <summary>
-        /// Kills all running processes with the name Servy.Service.exe.
+        /// Kills all running processes with the name.
         /// This is necessary when replacing the embedded service executable.
         /// </summary>
-        private void KillServyServiceIfRunning()
+        /// <param name="servyProcessName">Servy Process Name to kill.</param>
+        public static void KillServyServiceIfRunning(string servyProcessName)
         {
-            const string processName = "Servy.Service";
-
             try
             {
-                foreach (var process in Process.GetProcessesByName(processName))
+                foreach (var process in Process.GetProcessesByName(servyProcessName))
                 {
                     KillProcessAndChildren(process.Id);
                 }
@@ -101,42 +104,37 @@ namespace Servy
         /// <param name="fileName">The name of the embedded resource without extension.</param>
         private void CopyEmbeddedResource(string fileName)
         {
-            try
+            string targetFileName = $"{fileName}.exe";
+            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
+            Assembly asm = Assembly.GetExecutingAssembly();
+            string resourceName = $"Servy.Resources.{fileName}.exe";
+
+            bool shouldCopy = true;
+
+            if (File.Exists(targetPath))
             {
-                string targetFileName = $"{fileName}.exe";
-                string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-                Assembly asm = Assembly.GetExecutingAssembly();
-                string resourceName = $"Servy.Resources.{fileName}.exe";
+                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
+                shouldCopy = embeddedResourceTime > existingFileTime;
+            }
 
-                bool shouldCopy = true;
+            if (shouldCopy)
+            {
+                KillServyServiceIfRunning(fileName);
 
-                if (File.Exists(targetPath))
+                using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
                 {
-                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
-                    shouldCopy = embeddedResourceTime > existingFileTime;
-                }
-
-                if (shouldCopy)
-                {
-                    using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
+                    if (resourceStream == null)
                     {
-                        if (resourceStream == null)
-                        {
-                            MessageBox.Show("Embedded resource not found: " + resourceName);
-                            return;
-                        }
+                        MessageBox.Show("Embedded resource not found: " + resourceName);
+                        return;
+                    }
 
-                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                        {
-                            resourceStream.CopyTo(fileStream);
-                        }
+                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                    {
+                        resourceStream.CopyTo(fileStream);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Ignore error and continue if Servy.Service.exe is used by other services.
             }
         }
 

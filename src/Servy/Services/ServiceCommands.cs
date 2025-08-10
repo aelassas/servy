@@ -70,7 +70,7 @@ namespace Servy.Services
                 return;
             }
 
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{App.ServyServiceExeFileName}.exe");
 
             if (!File.Exists(wrapperExePath))
             {

@@ -16,6 +16,11 @@ namespace Servy.CLI
     internal class Program
     {
         /// <summary>
+        /// Servy Service executable filename.
+        /// </summary>
+        public const string ServyServiceExeFileName = "Servy.Service.CLI";
+
+        /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
         /// and returns an exit code indicating the success or failure of the operation.
         /// </summary>
@@ -38,8 +43,7 @@ namespace Servy.CLI
                 var restartCommand = new RestartServiceCommand(serviceManager);
                 var uninstallCommand = new UninstallServiceCommand(serviceManager);
 
-                //KillServyServiceIfRunning();
-                CopyEmbeddedResource("Servy.Service");
+                CopyEmbeddedResource(ServyServiceExeFileName);
 
                 var exiCode = Parser.Default.ParseArguments<
                     InstallServiceOptions,
