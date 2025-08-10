@@ -55,9 +55,15 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true
 
+      - name: Copy coverage file to fixed location
+        run: |
+          mkdir -p TestResults/fixed
+          cp TestResults/Core/*/coverage.cobertura.xml TestResults/fixed/coverage.cobertura.xml
+
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
           coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          file: TestResults/Core/fixed/coverage.cobertura.xml
           format: cobertura
           fail-on-error: true
