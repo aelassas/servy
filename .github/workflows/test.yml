@@ -46,6 +46,9 @@ jobs:
       - name: Run Servy.UnitTests without coverage
         run: dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
 
+      - name: Run Servy.CLI.UnitTests without coverage
+        run: dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Release --no-build
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
