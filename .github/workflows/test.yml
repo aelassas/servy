@@ -69,23 +69,27 @@ jobs:
           # Replace duplicated src\src with src
           $content = $content -replace 'src\\src', 'src'
 
-          # Remove all text before first 'src' in <source> tag(s)
-          $content = [regex]::Replace($content, '<source>.*?(src.*?)<\/source>', '<source>$1</source>')
-
-          # Replace all backslashes with forward slashes
+          # Replace all backslashes with forward slashes (including inside <source> and filename attributes)
           $content = $content -replace '\\', '/'
 
-          # Remove leading slash in filename attributes if any
-          $content = $content -replace 'filename="/', 'filename="'
+          # Remove all text before first 'src/' in <source> tag(s)
+          $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)<\/source>', '<source>$1</source>')
+
+          # Fix mixed slashes in filename attributes and remove leading slash if any
+          $content = $content -replace 'filename="[^"]*"', { param($m) $m.Value -replace '\\', '/' -replace 'filename="/', 'filename="' }
 
           $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $fixedPath
+
+      - name: Show normalized coverage report content
+        run: |
+            echo "----- coverage.cobertura.xml -----"
+            cat TestResults/fixed/coverage.cobertura.xml
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
           base-path: src/Servy.Core
