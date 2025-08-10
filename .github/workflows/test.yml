@@ -72,8 +72,8 @@ jobs:
           # Replace all backslashes with forward slashes (including inside <source> and filename attributes)
           $content = $content -replace '\\', '/'
 
-          # Remove all text before first 'src/' in <source> tag(s)
-          $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)<\/source>', '<source>$1</source>')
+          # Remove all text before first 'src/' in <source> tag(s) and remove trailing slash
+          $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)\/?<\/source>', '<source>$1</source>')
 
           # Fix filename attributes: only replace backslashes with forward slashes inside attribute values
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
@@ -95,5 +95,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          # base-path: Servy.Core
+          base-path: src/Servy.Core
           fail-on-error: true
