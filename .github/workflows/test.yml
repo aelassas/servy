@@ -57,7 +57,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true
 
-      - name: Normalize coverage paths and copy coverage file (PowerShell)
+      - name: Normalize coverage paths and fix filename attributes (PowerShell)
         shell: pwsh
         run: |
           $fixedDir = "TestResults\fixed"
@@ -75,16 +75,19 @@ jobs:
           # Remove all text before first 'src/' in <source> tag(s)
           $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)<\/source>', '<source>$1</source>')
 
-          # Fix mixed slashes in filename attributes and remove leading slash if any
-          $content = $content -replace 'filename="[^"]*"', { param($m) $m.Value -replace '\\', '/' -replace 'filename="/', 'filename="' }
+          # Fix filename attributes: only replace backslashes with forward slashes inside attribute values
+          $content = [regex]::Replace($content, 'filename="([^"]*)"', {
+            param($match)
+            $fixedPath = $match.Groups[1].Value -replace '\\', '/'
+            return "filename=`"$fixedPath`""
+          })
 
           $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $fixedPath
 
-      - name: Show normalized coverage report content
-        run: |
-            echo "----- coverage.cobertura.xml -----"
-            cat TestResults/fixed/coverage.cobertura.xml
+      - name: Show normalized coverage report content (PowerShell)
+        shell: pwsh
+        run: Get-Content TestResults/fixed/coverage.cobertura.xml
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
@@ -92,5 +95,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          base-path: src/Servy.Core
+          # base-path: Servy.Core
           fail-on-error: true
