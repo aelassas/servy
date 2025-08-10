@@ -15,7 +15,7 @@ namespace Servy
         /// <summary>
         /// Servy Service executable filename.
         /// </summary>
-        public const string ServyServiceExeFileName = "Servy.Service";
+        public const string ServyServiceExeFileName = "Servy.Service.Net48";
 
         /// <summary>
         /// Called when the WPF application starts.

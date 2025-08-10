@@ -18,7 +18,7 @@ namespace Servy.CLI
         /// <summary>
         /// Servy Service executable filename.
         /// </summary>
-        public const string ServyServiceExeFileName = "Servy.Service.CLI";
+        public const string ServyServiceExeFileName = "Servy.Service.Net48.CLI";
 
         /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
