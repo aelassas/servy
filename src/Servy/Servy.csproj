@@ -127,9 +127,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
