@@ -1,9 +1,11 @@
 ﻿using Servy.Core.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
 {
     /// <inheritdoc cref="IServiceControllerWrapper"/>
+    [ExcludeFromCodeCoverage]
     public class ServiceControllerWrapper : IServiceControllerWrapper
     {
         private readonly ServiceController _controller;

@@ -1,10 +1,12 @@
 ﻿using Servy.Core.Interfaces;
 using Servy.Core.Native;
+using System.Diagnostics.CodeAnalysis;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
 {
     /// <inheritdoc />
+    [ExcludeFromCodeCoverage]
     public class WindowsServiceApi : IWindowsServiceApi
     {
         /// <inheritdoc />
