@@ -60,30 +60,43 @@ jobs:
       - name: Normalize coverage paths and fix filename attributes (PowerShell)
         shell: pwsh
         run: |
-          $fixedDir = "TestResults\fixed"
-          if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
-          $coverageFiles = Get-ChildItem -Path TestResults\Core\*\coverage.cobertura.xml
-          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
-          $content = Get-Content $coverageFiles[0].FullName -Raw
+            $fixedDir = "TestResults\fixed"
+            if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
+            $coverageFiles = Get-ChildItem -Path TestResults\Core\*\coverage.cobertura.xml
+            if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
+            $content = Get-Content $coverageFiles[0].FullName -Raw
 
-          # Replace duplicated src\src with src
-          $content = $content -replace 'src\\src', 'src'
+            # Replace duplicated src\src with src
+            # $content = $content -replace 'src\\src', 'src'
 
-          # Replace all backslashes with forward slashes (including inside <source> and filename attributes)
-          $content = $content -replace '\\', '/'
+            # Replace all backslashes with forward slashes (including inside <source> and filename attributes)
+            # $content = $content -replace '\\', '/'
 
-          # Remove all text before first 'src/' in <source> tag(s) and remove trailing slash
-          $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)\/?<\/source>', '<source>$1</source>')
+            # Remove all text before first 'src/' in <source> tag(s)
+            # $content = [regex]::Replace($content, '<source>.*?(src/Servy\.Core/.*?)<\/source>', '<source>$1</source>')
 
-          # Fix filename attributes: only replace backslashes with forward slashes inside attribute values
-          $content = [regex]::Replace($content, 'filename="([^"]*)"', {
-            param($match)
-            $fixedPath = $match.Groups[1].Value -replace '\\', '/'
-            return "filename=`"$fixedPath`""
-          })
+            # Remove trailing slash at end of <source> content
+            # $content = [regex]::Replace($content, '<source>(.*?)\/<\/source>', '<source>$1</source>')
 
-          $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
-          $content | Set-Content $fixedPath
+            # Fix filename attributes: replace with 'src/Servy.Core/' + original relative path after 'src/Servy.Core/'
+            $content = [regex]::Replace($content, 'filename="([^"]*)"', {
+                param($match)
+
+                $origPath = $match.Groups[1].Value -replace '\\', '/'  # normalize slashes
+                # Extract relative path after 'src/Servy.Core/', if present
+                if ($origPath -match 'src/Servy\.Core/(.*)') {
+                  $relPath = $matches[1]
+                } else {
+                  $relPath = $origPath
+                }
+
+                $newPath = "src/Servy.Core/$relPath"
+
+                return "filename=`"$newPath`""
+            })
+
+            $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
+            $content | Set-Content $fixedPath
 
       - name: Show normalized coverage report content (PowerShell)
         shell: pwsh
@@ -95,5 +108,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          base-path: src/Servy.Core
+          # base-path: src/Servy.Core
           fail-on-error: true
+          debug: true
