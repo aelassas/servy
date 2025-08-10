@@ -53,7 +53,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(true);
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -112,7 +112,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(false);
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -156,7 +156,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -200,7 +200,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
