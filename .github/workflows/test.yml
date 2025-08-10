@@ -3,7 +3,8 @@ name: test
 # Coverage Strategy:
 # - Include: Servy.Core (core logic, high testability)
 # - Exclude:
-#     • Servy (WPF UI - low testability)
+#     • Servy (GUI - low testability)
+#     • Servy.CLI (CLI - low testability)
 #     • Servy.Service (Windows Service - mocked extensively, limited practical coverage)
 #     • Servy.Restarter (wrapper utility with minimal logic)
 
@@ -36,12 +37,10 @@ jobs:
           dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/Core -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Restarter.UnitTests without coverage
-        run: |
-          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build
+        run: dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build
 
       - name: Run Servy.Service.UnitTests without coverage
-        run: |
-          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build
+        run: dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build
 
       - name: Run Servy.UnitTests without coverage
         run: dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
@@ -58,16 +57,26 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true
 
-      - name: Copy coverage file to fixed location
+      - name: Normalize paths and copy coverage file (PowerShell)
+        shell: pwsh
         run: |
-          mkdir -p TestResults/fixed
-          cp TestResults/Core/*/coverage.cobertura.xml TestResults/fixed/coverage.cobertura.xml
+          $fixedDir = "TestResults\fixed"
+          if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
+          $coverageFiles = Get-ChildItem -Path TestResults\Core\*\coverage.cobertura.xml
+          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
+          $content = Get-Content $coverageFiles[0].FullName -Raw
+          # Replace backslashes with forward slashes in paths (common in Windows paths)
+          $content = $content -replace '\\', '/'
+          # Optionally adjust relative paths if needed (e.g. remove leading slash)
+          $content = $content -replace 'filename="/', 'filename="'
+          $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
+          $content | Set-Content $fixedPath
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
-          coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          base-path: src/Servy.Core
+          base-path: Servy.Core
           fail-on-error: true
