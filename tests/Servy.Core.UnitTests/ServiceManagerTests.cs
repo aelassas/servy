@@ -2,11 +2,8 @@
 using Servy.Core.Enums;
 using Servy.Core.Interfaces;
 using Servy.Core.Services;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.ServiceProcess;
-using Xunit;
 using static Servy.Core.Native.NativeMethods;
 
 #pragma warning disable CS8625

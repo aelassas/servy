@@ -1,7 +1,4 @@
 ﻿using Servy.Core.Helpers;
-using System;
-using System.IO;
-using Xunit;
 
 namespace Servy.Core.UnitTests
 {
