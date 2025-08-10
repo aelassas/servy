@@ -48,15 +48,6 @@ jobs:
       - name: Run Servy.CLI.UnitTests without coverage
         run: dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Release --no-build
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: TestResults/Core/**/coverage.cobertura.xml
-          flags: unittests
-          name: codecov-coverage-report
-          fail_ci_if_error: true
-
       - name: Normalize coverage paths and fix filename attributes (PowerShell)
         shell: pwsh
         run: |
@@ -89,6 +80,16 @@ jobs:
       # - name: Show normalized coverage report content (PowerShell)
       #   shell: pwsh
       #   run: Get-Content TestResults/fixed/coverage.cobertura.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # files: TestResults/Core/**/coverage.cobertura.xml
+          files: TestResults/fixed/coverage.cobertura.xml
+          flags: unittests
+          name: codecov-coverage-report
+          fail_ci_if_error: true
 
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
