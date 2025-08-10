@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Servy.CLI.Commands;
+using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Services;
@@ -29,6 +30,12 @@ namespace Servy.CLI
         {
             try
             {
+                var verbs = GetVerbs();
+                if (args.Length == 0 || !verbs.Contains(args[0].ToLower()))
+                {
+                    args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
+                }
+
                 var serviceManager = new ServiceManager(
                             name => new ServiceControllerWrapper(name),
                             new WindowsServiceApi(),
