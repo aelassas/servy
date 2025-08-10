@@ -59,6 +59,5 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          files: TestResults/Core/**/coverage.cobertura.xml
           format: cobertura
           fail-on-error: true
