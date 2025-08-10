@@ -1,12 +1,12 @@
-name: test
+ï»¿name: test
 
 # Coverage Strategy:
 # - Include: Servy.Core (core logic, high testability)
 # - Exclude:
-#     • Servy (GUI - low testability)
-#     • Servy.CLI (CLI - low testability)
-#     • Servy.Service (Windows Service - mocked extensively, limited practical coverage)
-#     • Servy.Restarter (wrapper utility with minimal logic)
+#     â€¢ Servy (GUI - low testability)
+#     â€¢ Servy.CLI (CLI - low testability)
+#     â€¢ Servy.Service (Windows Service - mocked extensively, limited practical coverage)
+#     â€¢ Servy.Restarter (wrapper utility with minimal logic)
 
 on:
   push:
@@ -82,21 +82,65 @@ jobs:
       #   run: Get-Content TestResults/fixed/coverage.cobertura.xml
 
       - name: Upload coverage to Codecov
+        id: codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          # files: TestResults/Core/**/coverage.cobertura.xml
-          files: TestResults/fixed/coverage.cobertura.xml
+          files: TestResults/Core/**/coverage.cobertura.xml
+          # files: TestResults/fixed/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
-          fail_ci_if_error: true
-          verbose: true
+          fail_ci_if_error: false
+          verbose: false
+
+      - name: Notify Codecov Status in case of failure
+        if: steps.codecov.outcome != 'success'
+        uses: actions/github-script@v7
+        with:
+             script: |
+               const issues = await github.rest.issues.listForRepo({
+                 owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: 'codecov-tracking',
+                  state: 'closed'
+                });
+            
+                for (const issue of issues.data) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: 'Codecov upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                  });
+                }
 
       - name: Upload coverage to Coveralls
+        id: coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          fail-on-error: true
+          fail-on-error: false
           debug: false
+
+      - name: Notify Coveralls Status in case of failure
+        if: steps.coveralls.outcome != 'success'
+        uses: actions/github-script@v7
+        with:
+            script: |
+                const issues = await github.rest.issues.listForRepo({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  labels: 'coveralls-tracking',
+                  state: 'closed'
+                });
+            
+                for (const issue of issues.data) {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: 'Coveralls upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+                  });
+                }
