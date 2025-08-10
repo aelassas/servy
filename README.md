@@ -33,6 +33,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
+* [Building from Source](https://github.com/aelassas/servy/wiki/Building-from-Source)
 * [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 
@@ -50,14 +51,14 @@ Servy is perfect for keeping non-service apps running in the background without 
 
 ## Roadmap
 
-- [x] Windows Service creation via GUI
-- [x] Logging stdout/stderr with size-based rotation
-- [x] Service monitoring and heartbeat checks
-- [x] Automatic restart on failure
-- [x] CLI for full scripting and automated deployments
-- [ ] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
-- [ ] Add "Log on as" configuration for Windows service
-- [ ] Support service dependencies
+* [x] Windows Service creation via GUI
+* [x] Logging stdout/stderr with size-based rotation
+* [x] Service monitoring and heartbeat checks
+* [x] Automatic restart on failure
+* [x] CLI for full scripting and automated deployments
+* [ ] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
+* [ ] Add "Log on as" configuration for Windows service
+* [ ] Support service dependencies
 
 ## Support & Contributing
 
