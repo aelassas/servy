@@ -31,6 +31,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Servy.Service.CLI.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="servy.ico" />
   </ItemGroup>
 
