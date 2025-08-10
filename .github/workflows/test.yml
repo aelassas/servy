@@ -57,7 +57,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: true
 
-      - name: Normalize paths and copy coverage file (PowerShell)
+      - name: Normalize coverage paths and copy coverage file (PowerShell)
         shell: pwsh
         run: |
           $fixedDir = "TestResults\fixed"
@@ -65,12 +65,19 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults\Core\*\coverage.cobertura.xml
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
           $content = Get-Content $coverageFiles[0].FullName -Raw
-          # Fix duplicated src/src in <source> element
-          $content = $content -replace 'src/src', 'src'
-          # Replace backslashes with forward slashes in paths (Windows paths to Unix style)
+
+          # Replace duplicated src\src with src
+          $content = $content -replace 'src\\src', 'src'
+
+          # Remove all text before first 'src' in <source> tag(s)
+          $content = [regex]::Replace($content, '<source>.*?(src.*?)<\/source>', '<source>$1</source>')
+
+          # Replace all backslashes with forward slashes
           $content = $content -replace '\\', '/'
-          # Optionally adjust relative paths if needed (e.g. remove leading slash in filename attributes)
+
+          # Remove leading slash in filename attributes if any
           $content = $content -replace 'filename="/', 'filename="'
+
           $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $fixedPath
 
@@ -81,5 +88,5 @@ jobs:
           coveralls-token: ${{ secrets.COVERALLS_REPO_TOKEN }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
-          base-path: Servy.Core
+          base-path: src/Servy.Core
           fail-on-error: true

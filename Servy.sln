@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA68
 		.gitignore = .gitignore
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
+		test.ps1 = test.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{525B29D4-743C-4A5B-BFB6-82A3F981495E}"
@@ -21,9 +22,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "service", "service", "{66EEF7A1-9E3D-4957-896A-394C6422F01F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{50795869-2933-430F-98BD-956C414ABBE4}"
-	ProjectSection(SolutionItems) = preProject
-		test.ps1 = test.ps1
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Core", "src\Servy.Core\Servy.Core.csproj", "{12557834-2324-4DC8-8D79-A6CCAB71AB59}"
 EndProject
