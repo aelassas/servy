@@ -33,7 +33,7 @@ namespace Servy.CLI.Helpers
                  .Where(t => t.GetCustomAttribute<VerbAttribute>() != null)
                  .Select(t => t.GetCustomAttribute<VerbAttribute>()!.Name)
                  .ToArray();
-            return verbs ?? new string[] { };
+            return verbs ?? Array.Empty<string>();
         }
 
         /// <summary>
