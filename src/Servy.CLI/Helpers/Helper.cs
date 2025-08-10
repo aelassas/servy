@@ -1,7 +1,9 @@
-﻿using Servy.CLI.Models;
+﻿using CommandLine;
+using Servy.CLI.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Management;
 using System.Reflection;
 
@@ -9,6 +11,35 @@ namespace Servy.CLI.Helpers
 {
     internal static class Helper
     {
+        /// <summary>
+        /// Gets the verb name defined by the <see cref="VerbAttribute"/> on the specified options class.
+        /// </summary>
+        /// <typeparam name="T">The options class decorated with <see cref="VerbAttribute"/>.</typeparam>
+        /// <returns>The verb name defined in the <see cref="VerbAttribute"/>.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the class does not have a <see cref="VerbAttribute"/>.</exception>
+        public static string GetVerbName<T>()
+        {
+            var verbAttr = typeof(T).GetCustomAttribute<VerbAttribute>();
+            if (verbAttr == null)
+                throw new InvalidOperationException($"Class {typeof(T).Name} does not have a VerbAttribute.");
+
+            return verbAttr.Name;
+        }
+
+        /// <summary>
+        /// Gets all verb names defined by <see cref="VerbAttribute"/> on all types in the current assembly.
+        /// </summary>
+        /// <returns>An array of verb names.</returns>
+        public static string[] GetVerbs()
+        {
+            var verbs = Assembly.GetExecutingAssembly()
+                 .GetTypes()
+                 .Where(t => t.GetCustomAttribute<VerbAttribute>() != null)
+                 .Select(t => t.GetCustomAttribute<VerbAttribute>().Name)
+                 .ToArray();
+            return verbs;
+        }
+
         /// <summary>
         /// Kills all running processes with the name.
         /// This is necessary when replacing the embedded service executable.

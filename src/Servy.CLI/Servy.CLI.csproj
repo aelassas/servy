@@ -61,6 +61,7 @@
     <Compile Include="Commands\UninstallServiceCommand.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\CommandResult.cs" />
+    <Compile Include="Options\HelpOptions.cs" />
     <Compile Include="Options\InstallServiceOptions.cs" />
     <Compile Include="Options\RestartServiceOptions.cs" />
     <Compile Include="Options\StartServiceOptions.cs" />
