@@ -12,18 +12,32 @@ namespace Servy.Core.UnitTests
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("   ", false)]
-        [InlineData("..\\somepath", false)]         // directory traversal
-        [InlineData("C:\\valid\\path.txt", true)]   // valid absolute path (Windows style)
-        [InlineData("C:/valid/path.txt", true)]     // valid absolute path (slash)
-        [InlineData("relative\\path", false)]       // relative path (not rooted)
-        [InlineData("C:\\invalid|path", false)]     // invalid char '|'
-        [InlineData("C:\\valid\\..\\path", false)]  // contains ..
-        [InlineData("/usr/bin/bash", true)]          // absolute path (Unix style)
-        [InlineData("C:\\", true)]                   // root path
+        [InlineData("..\\somepath", false)]           // directory traversal
+        [InlineData("C:\\valid\\path.txt", true)]     // valid absolute path (Windows style)
+        [InlineData("C:/valid/path.txt", true)]       // valid absolute path (slash)
+        [InlineData("relative\\path", false)]         // relative path (not rooted)
+        [InlineData("C:\\invalid|path", false)]       // invalid char '|'
+        [InlineData("C:\\valid\\..\\path", false)]    // contains ..
+        [InlineData("/usr/bin/bash", true)]           // absolute path (Unix style)
+        [InlineData("C:\\", true)]                    // root path
         public void IsValidPath_VariousInputs_ReturnsExpected(string path, bool expected)
         {
             bool result = Helper.IsValidPath(path);
             Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public void IsValidPath_TooLongPath_ThrowsAndReturnsFalse()
+        {
+            // Arrange
+            string longFolder = new string('a', short.MaxValue);
+            string path = "C:\\" + longFolder;
+
+            // Act
+            bool result = Helper.IsValidPath(path);
+
+            // Assert
+            Assert.False(result);
         }
 
         // Tests for CreateParentDirectory
@@ -33,11 +47,18 @@ namespace Servy.Core.UnitTests
             Assert.False(Helper.CreateParentDirectory(null));
             Assert.False(Helper.CreateParentDirectory(""));
             Assert.False(Helper.CreateParentDirectory("    "));
+            Assert.False(Helper.CreateParentDirectory("C:\\"));
+        }
+
+        [Fact]
+        public void CreateParentDirectory_PathHasNoParentDirectory_ReturnsFalse()
+        {
+            Assert.False(Helper.CreateParentDirectory("C:\\"));
         }
 
         [Theory]
-        [InlineData("file.txt")]                // no directory part, returns false
-        [InlineData("C:\\file.txt")]            // directory is "C:\"
+        [InlineData("file.txt")]               // no directory part, returns false
+        [InlineData("C:\\file.txt")]           // directory is "C:\"
         [InlineData("C:\\folder\\file.txt")]   // directory is "C:\folder"
         [InlineData("C:/folder/file.txt")]     // with forward slashes
         public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
