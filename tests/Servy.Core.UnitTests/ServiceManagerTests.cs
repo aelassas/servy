@@ -28,6 +28,137 @@ namespace Servy.Core.UnitTests
             _serviceManager = new ServiceManager(_ => _mockController.Object, _mockWindowsServiceApi.Object, _mockWin32ErrorProvider.Object);
         }
 
+        [Theory]
+        [InlineData("", "", "")]
+        [InlineData("TestService", "", "")]
+        [InlineData("TestService", "C:\\Apps\\App.exe", "")]
+        public void InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
+        {
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
+            var description = "Test Description";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<int>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
+
+            Assert.Throws<ArgumentNullException>(() => _serviceManager.InstallService(
+                serviceName,
+                description,
+                wrapperExePath,
+                realExePath,
+                "workingDir",
+                "args",
+                ServiceStartType.Automatic,
+                ProcessPriority.Normal,
+                null,
+                null,
+                0,
+                0,
+                0,
+                RecoveryAction.None,
+                0));
+        }
+
+        [Fact]
+        public void InstallService_Throws_Win32Exception()
+        {
+            var scmHandle = IntPtr.Zero;
+            var serviceHandle = new IntPtr(456);
+            var serviceName = "TestService";
+            var description = "Test Description";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<int>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
+
+            Assert.Throws<Win32Exception>(() => _serviceManager.InstallService(
+                serviceName,
+                description,
+                "wrapper.exe",
+                "real.exe",
+                "workingDir",
+                "args",
+                ServiceStartType.Automatic,
+                ProcessPriority.Normal,
+                null,
+                null,
+                0,
+                0,
+                0,
+                RecoveryAction.None,
+                0));
+
+            scmHandle = new IntPtr(123);
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+             .Returns(scmHandle);
+            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
+
+            Assert.Throws<Win32Exception>(() => _serviceManager.InstallService(
+                serviceName,
+                description,
+                "wrapper.exe",
+                "real.exe",
+                "workingDir",
+                "args",
+                ServiceStartType.Automatic,
+                ProcessPriority.Normal,
+                null,
+                null,
+                0,
+                0,
+                0,
+                RecoveryAction.None,
+                0));
+
+        }
+
         [Fact]
         public void InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
         {
@@ -35,7 +166,6 @@ namespace Servy.Core.UnitTests
             var serviceHandle = new IntPtr(456);
             var serviceName = "TestService";
             var description = "Test Description";
-
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -212,6 +342,66 @@ namespace Servy.Core.UnitTests
                 ServiceStartType.Automatic);
 
             Assert.True(result);
+        }
+
+        [Fact]
+        public void UpdateServiceConfig_Throws_Win32Exception()
+        {
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = IntPtr.Zero;
+            var serviceName = "TestService";
+            var description = "Updated Description";
+            var binPath = "binaryPath";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                binPath,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                null))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<int>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
+
+            Assert.Throws<Win32Exception>(() =>
+                _serviceManager.UpdateServiceConfig(
+                    scmHandle,
+                    serviceName,
+                    description,
+                    binPath,
+                    ServiceStartType.Automatic)
+            );
+
+            serviceHandle = new IntPtr(123);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+               .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(false);
+
+            Assert.Throws<Win32Exception>(() =>
+                _serviceManager.UpdateServiceConfig(
+                    scmHandle,
+                    serviceName,
+                    description,
+                    binPath,
+                    ServiceStartType.Automatic)
+            );
         }
 
         [Fact]
@@ -505,6 +695,39 @@ namespace Servy.Core.UnitTests
             _mockController.Verify(c => c.Stop(), Times.Once);
             _mockController.Verify(c => c.Start(), Times.Once);
         }
+
+        [Fact]
+        public void RestartService_ShouldReturnFalse_WhenStartServiceFails()
+        {
+            // Arrange
+            // Simulate the service is already stopped so StopService returns true
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+
+            // Simulate StartService throwing an exception, which should trigger catch and return false
+            _mockController.Setup(c => c.Start()).Throws(new Exception("Boom!"));
+
+            // Act
+            var result = _serviceManager.RestartService("TestService");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void RestartService_ShouldReturnFalse_WhenStopServiceThrows()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Throws(new InvalidOperationException());
+
+            // Act
+            var result = _serviceManager.RestartService("TestService");
+
+            // Assert
+            Assert.False(result);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+            _mockController.Verify(c => c.Start(), Times.Never);
+        }
+
     }
 }
 
