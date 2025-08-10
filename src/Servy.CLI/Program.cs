@@ -12,7 +12,7 @@ namespace Servy.CLI
     /// Responsible for parsing command-line arguments and executing
     /// corresponding service management commands.
     /// </summary>
-    internal class Program
+    public class Program
     {
         /// <summary>
         /// Servy Service executable filename.
