@@ -42,7 +42,7 @@ namespace Servy.CLI.Commands
                     return validation;
 
                 // Ensure wrapper executable exists
-                var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Servy.Service.exe");
+                var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
                 if (!File.Exists(wrapperExePath))
                     return CommandResult.Fail("Wrapper executable not found.");
 

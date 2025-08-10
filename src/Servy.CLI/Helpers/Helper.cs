@@ -7,16 +7,15 @@ namespace Servy.CLI.Helpers
     internal static class Helper
     {
         /// <summary>
-        /// Kills all running processes with the name Servy.Service.exe and the entire process tree
+        /// Kills all running processes with the name.
         /// This is necessary when replacing the embedded service executable.
         /// </summary>
-        public static void KillServyServiceIfRunning()
+        /// <param name="servyProcessName">Servy Process Name to kill.</param>
+        public static void KillServyServiceIfRunning(string servyProcessName)
         {
-            const string processName = "Servy.Service";
-
             try
             {
-                foreach (var process in Process.GetProcessesByName(processName))
+                foreach (var process in Process.GetProcessesByName(servyProcessName))
                 {
                     process.Kill(true);
                     process.WaitForExit();
@@ -36,42 +35,37 @@ namespace Servy.CLI.Helpers
         /// <param name="fileName">The name of the embedded resource without extension.</param>
         public static void CopyEmbeddedResource(string fileName)
         {
-            try
+            string targetFileName = $"{fileName}.exe";
+            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
+            Assembly asm = Assembly.GetExecutingAssembly();
+            string resourceName = $"Servy.CLI.Resources.{fileName}.exe";
+
+            bool shouldCopy = true;
+
+            if (File.Exists(targetPath))
             {
-                string targetFileName = $"{fileName}.exe";
-                string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-                Assembly asm = Assembly.GetExecutingAssembly();
-                string resourceName = $"Servy.CLI.Resources.{fileName}.exe";
+                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
+                shouldCopy = embeddedResourceTime > existingFileTime;
+            }
 
-                bool shouldCopy = true;
+            if (shouldCopy)
+            {
+                KillServyServiceIfRunning(fileName);
 
-                if (File.Exists(targetPath))
+                using (Stream? resourceStream = asm.GetManifestResourceStream(resourceName))
                 {
-                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
-                    shouldCopy = embeddedResourceTime > existingFileTime;
-                }
-
-                if (shouldCopy)
-                {
-                    using (Stream? resourceStream = asm.GetManifestResourceStream(resourceName))
+                    if (resourceStream == null)
                     {
-                        if (resourceStream == null)
-                        {
-                            Console.WriteLine("Embedded resource not found: " + resourceName);
-                            return;
-                        }
+                        Console.WriteLine("Embedded resource not found: " + resourceName);
+                        return;
+                    }
 
-                        using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                        {
-                            resourceStream.CopyTo(fileStream);
-                        }
+                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                    {
+                        resourceStream.CopyTo(fileStream);
                     }
                 }
-            }
-            catch (Exception)
-            {
-                // Ignore error and continue if Servy.Service.exe is used by other services.
             }
         }
 
@@ -82,9 +76,9 @@ namespace Servy.CLI.Helpers
         /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
         public static DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
-            #pragma warning disable IL3000
+#pragma warning disable IL3000
             string assemblyPath = assembly.Location;
-            #pragma warning restore IL3000
+#pragma warning restore IL3000
 
             if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
             {

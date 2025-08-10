@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Service.exe" />
+    <EmbeddedResource Include="Resources\Servy.Service.CLI.exe" />
   </ItemGroup>
 
   <ItemGroup>
