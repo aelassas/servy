@@ -11,7 +11,7 @@ namespace Servy.CLI.Validators
     /// <summary>
     /// Validates the options for installing a service.
     /// </summary>
-    public class ServiceInstallValidator
+    public class ServiceInstallValidator : IServiceInstallValidator
     {
         private const int MinRotationSize = 1 * 1024 * 1024;
         private const int MinHeartbeatInterval = 5;

@@ -14,14 +14,14 @@ namespace Servy.CLI.Commands
     public class InstallServiceCommand : BaseCommand
     {
         private readonly IServiceManager _serviceManager;
-        private readonly ServiceInstallValidator _validator;
+        private readonly IServiceInstallValidator _validator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceManager">Service manager to perform service operations.</param>
         /// <param name="validator">Validator for installation options.</param>
-        public InstallServiceCommand(IServiceManager serviceManager, ServiceInstallValidator validator)
+        public InstallServiceCommand(IServiceManager serviceManager, IServiceInstallValidator validator)
         {
             _serviceManager = serviceManager;
             _validator = validator;

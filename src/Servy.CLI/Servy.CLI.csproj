@@ -73,6 +73,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
+    <Compile Include="Validators\IServiceInstallValidator.cs" />
     <Compile Include="Validators\ServiceInstallValidator.cs" />
   </ItemGroup>
   <ItemGroup>

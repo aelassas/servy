@@ -32,3 +32,4 @@ jobs:
             "tests\Servy.Restarter.UnitTests\bin\Release\Servy.Restarter.UnitTests.dll" `
             "tests\Servy.Service.UnitTests\bin\Release\Servy.Service.UnitTests.dll" `
             "tests\Servy.UnitTests\bin\Release\Servy.UnitTests.dll" `
+            "tests\Servy.CLI.UnitTests\bin\Release\Servy.CLI.UnitTests.dll" `

@@ -50,6 +50,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UnitTests", "tests\Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI", "src\Servy.CLI\Servy.CLI.csproj", "{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.UnitTests", "tests\Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj", "{EB502D58-14B0-476C-845F-E230B695BAF6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +94,10 @@ Global
 		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB502D58-14B0-476C-845F-E230B695BAF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB502D58-14B0-476C-845F-E230B695BAF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB502D58-14B0-476C-845F-E230B695BAF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB502D58-14B0-476C-845F-E230B695BAF6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -110,6 +116,7 @@ Global
 		{BBF655E5-653D-4684-A529-0C362812FF37} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{9B2B1090-A2F8-4718-B51E-4F69B244DB9C} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 		{D462FDA5-A8B4-4A34-AAA5-244AC9EE8980} = {CD2EE3D9-7E99-4B90-9AF2-21C0DA949C4D}
+		{EB502D58-14B0-476C-845F-E230B695BAF6} = {A53A690C-C3AB-4823-9AD7-522B8BD824E2}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8901951D-D640-4964-A4ED-D957E840307C}
