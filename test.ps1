@@ -1,1 +1,0 @@
-dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --collect:"XPlat Code Coverage" --results-directory ./TestResults/Core -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
