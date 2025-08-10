@@ -349,17 +349,10 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public bool RestartService(string serviceName)
         {
-            try
-            {
-                if (!StopService(serviceName))
-                    return false;
-
-                return StartService(serviceName);
-            }
-            catch
-            {
+            if (!StopService(serviceName))
                 return false;
-            }
+
+            return StartService(serviceName);
         }
 
         #endregion
