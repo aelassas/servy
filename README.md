@@ -9,7 +9,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 -->
 <p align="center">
-  <img src="https://servy-win.github.io/servy.png?d=7" width="480" alt="Servy" />
+  <img src="https://servy-win.github.io/servy.png?d=7" alt="Servy" />
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
