@@ -206,7 +206,7 @@ namespace Servy.Core.Native
         public static void ValidateCredentials(string username, string password)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("Username cannot be null or empty.", nameof(username));
+                throw new ArgumentException("Username cannot be null or empty.");
 
             // Regex pattern:
             // Matches:
@@ -215,7 +215,7 @@ namespace Servy.Core.Native
             const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
 
             if (!Regex.IsMatch(username, pattern))
-                throw new ArgumentException("Username format is invalid. Expected DOMAIN\\Username, .\\Username, or Username.", nameof(username));
+                throw new ArgumentException("Username format is invalid. Expected DOMAIN\\Username, .\\Username, or Username.");
 
             // Split DOMAIN\user or .\user into domain and username parts
             string? domain = null;
