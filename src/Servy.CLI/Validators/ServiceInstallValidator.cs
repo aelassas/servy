@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using System;
 using System.IO;
@@ -57,6 +58,10 @@ namespace Servy.CLI.Validators
                 if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < MinMaxRestartAttempts)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
+
+            string envVarsErrorMessage;
+            if (!EnvironmentVariablesValidator.Validate(opts.EnvironmentVariables, out envVarsErrorMessage))
+                return CommandResult.Fail(envVarsErrorMessage);
 
             return CommandResult.Ok("Validation passed.");
         }

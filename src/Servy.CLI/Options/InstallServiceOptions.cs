@@ -137,5 +137,12 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure.")]
         public string MaxRestartAttempts { get; set; }
+
+        /// <summary>
+        /// Gets or sets environment variables for the process.
+        /// Optional.
+        /// </summary>
+        [Option("env", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue, separated by semicolons. Use \\= to escape '=' and \\; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\\\).")]
+        public string EnvironmentVariables { get; set; }
     }
 }
