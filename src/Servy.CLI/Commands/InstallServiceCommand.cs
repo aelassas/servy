@@ -74,7 +74,8 @@ namespace Servy.CLI.Commands
                     maxFailedChecks,
                     recoveryAction,
                     maxRestartAttempts,
-                    opts.EnvironmentVariables
+                    opts.EnvironmentVariables,
+                    opts.ServiceDependencies
                 );
 
                 return success
