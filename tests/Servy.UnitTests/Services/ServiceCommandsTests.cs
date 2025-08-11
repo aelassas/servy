@@ -53,6 +53,7 @@ namespace Servy.UnitTests.Services
                 maxFailedChecks,
                 recoveryAction,
                 maxRestartAttempts,
+                string.Empty,
                 string.Empty);
 
             // Assert
@@ -73,6 +74,7 @@ namespace Servy.UnitTests.Services
                 maxFailedChecks,
                 recoveryAction,
                 maxRestartAttempts,
+                string.Empty,
                 string.Empty), Times.Once);
         }
 

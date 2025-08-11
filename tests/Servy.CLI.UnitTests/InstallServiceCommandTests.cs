@@ -50,6 +50,7 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<Servy.Core.Enums.RecoveryAction>(),
                 It.IsAny<int>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Returns(true);
 
@@ -110,6 +111,7 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<Servy.Core.Enums.RecoveryAction>(),
                 It.IsAny<int>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Returns(false);
 
@@ -155,6 +157,7 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<Servy.Core.Enums.RecoveryAction>(),
                 It.IsAny<int>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Throws<UnauthorizedAccessException>();
 
@@ -200,6 +203,7 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<Servy.Core.Enums.RecoveryAction>(),
                 It.IsAny<int>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Throws<Exception>();
 

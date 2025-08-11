@@ -55,6 +55,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Enums\RecoveryAction.cs" />
     <Compile Include="IO\RotatingStreamWriter.cs" />
+    <Compile Include="ServiceDependencies\ServiceDependenciesParser.cs" />
+    <Compile Include="ServiceDependencies\ServiceDependenciesValidator.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
     <Compile Include="Services\ServiceManager.cs" />
     <Compile Include="Enums\ServiceStartType.cs" />

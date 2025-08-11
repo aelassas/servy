@@ -2,8 +2,10 @@
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Interfaces;
+using Servy.Core.ServiceDependencies;
 using Servy.Resources;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Servy.Services
@@ -71,7 +73,9 @@ namespace Servy.Services
             string maxFailedChecks,
             RecoveryAction recoveryAction,
             string maxRestartAttempts,
-            string environmentVariables)
+            string environmentVariables,
+            string serviceDependencies
+            )
         {
             if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(processPath))
             {
@@ -152,6 +156,13 @@ namespace Servy.Services
                 return;
             }
 
+            List<string> serviceDependenciesErrors;
+            if (!ServiceDependenciesValidator.Validate(serviceDependencies, out serviceDependenciesErrors))
+            {
+                _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), Caption);
+                return;
+            }
+
             try
             {
                 bool success = _serviceManager.InstallService(
@@ -170,7 +181,9 @@ namespace Servy.Services
                     maxFailedChecksValue,
                     recoveryAction,
                     maxRestartAttemptsValue,
-                    normalizedEnvVars);
+                    normalizedEnvVars,
+                    serviceDependencies
+                    );
 
                 if (success)
                     _messageBoxService.ShowInfo(Strings.Msg_ServiceCreated, Caption);

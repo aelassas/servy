@@ -92,5 +92,10 @@ namespace Servy.Models
         /// Environment Variables.
         /// </summary>
         public string EnvironmentVariables { get; set; }
+
+        /// <summary>
+        /// Windows Service Dependencies.
+        /// </summary>
+        public string ServiceDependencies { get; set; }
     }
 }

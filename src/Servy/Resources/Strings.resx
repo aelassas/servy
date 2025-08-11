@@ -13,6 +13,14 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <!-- Tabs -->
+  <data name="Label_MainTab" xml:space="preserve">
+    <value>Main</value>
+  </data>
+  <data name="Label_AdvancedTab" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  
   <!-- Labels -->
   <data name="Label_ServiceName" xml:space="preserve">
     <value>Service Name *</value>
@@ -28,6 +36,9 @@
   </data>
   <data name="Label_ProcessParameters" xml:space="preserve">
     <value>Process Parameters</value>
+  </data>
+  <data name="Label_RequiredFields" xml:space="preserve">
+    <value>* Required fields</value>
   </data>
 
   <!-- Startup Type ComboBox Items -->
@@ -127,9 +138,17 @@
     <value>Environment Variables</value>
   </data>
   <data name="Info_EnvironmentVariables" xml:space="preserve">
-    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons. Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\).</value>
+    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\).</value>
   </data>
 
+  <!-- Service Dependencies -->
+  <data name="Label_ServiceDependencies" xml:space="preserve">
+    <value>Service Dependencies</value>
+  </data>
+  <data name="Info_ServiceDependencies" xml:space="preserve">
+    <value>Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency's start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start.</value>
+  </data>
+  
   <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>

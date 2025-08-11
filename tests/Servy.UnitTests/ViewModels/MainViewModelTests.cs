@@ -57,7 +57,8 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.SelectedStartupType = ServiceStartType.Manual;
             _viewModel.SelectedProcessPriority = ProcessPriority.High;
             _viewModel.SelectedRecoveryAction = RecoveryAction.RestartService;
-            _viewModel.EnvironmentVariables = string.Empty;
+            _viewModel.EnvironmentVariables = "var1=val1;var2=val2";
+            _viewModel.ServiceDependencies = "MongoDB";
 
             // Act
             _viewModel.InstallCommand.Execute(null);
@@ -80,7 +81,8 @@ namespace Servy.UnitTests.ViewModels
                 "5",
                 RecoveryAction.RestartService,
                 "3",
-                string.Empty
+                "var1=val1;var2=val2",
+                "MongoDB"
             ), Times.Once);
         }
 

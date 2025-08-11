@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Interfaces;
+using Servy.Core.ServiceDependencies;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -170,7 +171,8 @@ namespace Servy.Core.Services
             int maxFailedChecks,
             RecoveryAction recoveryAction,
             int maxRestartAttempts,
-            string environmentVariables)
+            string environmentVariables,
+            string serviceDependencies)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -205,6 +207,8 @@ namespace Servy.Core.Services
             IntPtr serviceHandle = IntPtr.Zero;
             try
             {
+                string lpDependencies = ServiceDependenciesParser.Parse(serviceDependencies);
+
                 serviceHandle = _windowsServiceApi.CreateService(
                     scmHandle,
                     serviceName,
@@ -216,7 +220,7 @@ namespace Servy.Core.Services
                     binPath,
                     null,
                     IntPtr.Zero,
-                    null,
+                    lpDependencies,
                     null,
                     null);
 

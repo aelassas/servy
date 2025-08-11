@@ -93,6 +93,8 @@
     <Compile Include="EnvironmentVariablesValidatorTests.cs" />
     <Compile Include="HelperTests.cs" />
     <Compile Include="RotatingStreamWriterTests.cs" />
+    <Compile Include="ServiceDependenciesParserTests.cs" />
+    <Compile Include="ServiceDependenciesValidatorTests.cs" />
     <Compile Include="ServiceManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
