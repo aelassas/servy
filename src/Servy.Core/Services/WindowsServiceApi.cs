@@ -25,7 +25,7 @@ namespace Servy.Core.Services
             string lpBinaryPathName,
             string lpLoadOrderGroup,
             IntPtr lpdwTagId,
-            string lpDependencies,
+            string? lpDependencies,
             string lpServiceStartName,
             string lpPassword)
             => NativeMethods.CreateService(

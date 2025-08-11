@@ -27,6 +27,7 @@ namespace Servy.Services
         /// <param name="recoveryAction">The recovery action to take on failure.</param>
         /// <param name="maxRestartAttempts">Maximum number of restart attempts.</param>
         /// <param name="environmentVariables">Environment variables.</param>
+        /// <param name="serviceDependencies">Service dependencies.</param>
         void InstallService(
             string serviceName,
             string serviceDescription,
@@ -44,7 +45,9 @@ namespace Servy.Services
             string maxFailedChecks,
             RecoveryAction recoveryAction,
             string maxRestartAttempts,
-            string environmentVariables);
+            string environmentVariables,
+            string serviceDependencies
+            );
 
         /// <summary>
         /// Uninstalls the specified Windows service.

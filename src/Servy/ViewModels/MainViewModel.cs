@@ -248,12 +248,21 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the maximum number of restart attempts as a string.
+        /// Gets or sets environment variables as a string.
         /// </summary>
         public string EnvironmentVariables
         {
             get => _config.EnvironmentVariables;
             set { _config.EnvironmentVariables = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets service dependencies as a string.
+        /// </summary>
+        public string ServiceDependencies
+        {
+            get => _config.ServiceDependencies;
+            set { _config.ServiceDependencies = value; OnPropertyChanged(); }
         }
 
         #endregion
@@ -432,7 +441,9 @@ namespace Servy.ViewModels
                 _config.MaxFailedChecks,
                 _config.RecoveryAction,
                 _config.MaxRestartAttempts,
-                _config.EnvironmentVariables);
+                _config.EnvironmentVariables,
+                _config.ServiceDependencies
+                );
         }
 
         /// <summary>
@@ -493,6 +504,7 @@ namespace Servy.ViewModels
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
             EnvironmentVariables = string.Empty;
+            ServiceDependencies = string.Empty;
         }
 
         #endregion

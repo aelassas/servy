@@ -124,11 +124,29 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons. Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
+        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
         /// </summary>
         public static string Info_EnvironmentVariables {
             get {
                 return ResourceManager.GetString("Info_EnvironmentVariables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency&apos;s start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start..
+        /// </summary>
+        public static string Info_ServiceDependencies {
+            get {
+                return ResourceManager.GetString("Info_ServiceDependencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Advanced.
+        /// </summary>
+        public static string Label_AdvancedTab {
+            get {
+                return ResourceManager.GetString("Label_AdvancedTab", resourceCulture);
             }
         }
         
@@ -174,6 +192,15 @@ namespace Servy.Resources {
         public static string Label_HeartbeatInterval {
             get {
                 return ResourceManager.GetString("Label_HeartbeatInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Main.
+        /// </summary>
+        public static string Label_MainTab {
+            get {
+                return ResourceManager.GetString("Label_MainTab", resourceCulture);
             }
         }
         
@@ -232,6 +259,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à * Required fields.
+        /// </summary>
+        public static string Label_RequiredFields {
+            get {
+                return ResourceManager.GetString("Label_RequiredFields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Rotation Size.
         /// </summary>
         public static string Label_RotationSize {
@@ -255,6 +291,15 @@ namespace Servy.Resources {
         public static string Label_Seconds {
             get {
                 return ResourceManager.GetString("Label_Seconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service Dependencies.
+        /// </summary>
+        public static string Label_ServiceDependencies {
+            get {
+                return ResourceManager.GetString("Label_ServiceDependencies", resourceCulture);
             }
         }
         

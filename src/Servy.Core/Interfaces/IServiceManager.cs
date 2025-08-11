@@ -30,6 +30,7 @@ namespace Servy.Core.Interfaces
         /// <param name="recoveryAction">Recovery action to take if the service fails. If None, health monitoring is disabled.</param>
         /// <param name="maxRestartAttempts">Maximum number of restart attempts if the service fails.</param>
         /// <param name="environmentVariables">Environment variables.</param>
+        /// <param name="serviceDependencies">Service dependencies.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -49,7 +50,8 @@ namespace Servy.Core.Interfaces
             int maxFailedChecks = 0,
             RecoveryAction recoveryAction = RecoveryAction.None,
             int maxRestartAttempts = 0,
-            string? environmentVariables = null
+            string? environmentVariables = null,
+            string? serviceDependencies = null
         );
 
         /// <summary>

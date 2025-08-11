@@ -80,7 +80,7 @@ namespace Servy.Core.Native
           string lpBinaryPathName,
           string lpLoadOrderGroup,
           IntPtr lpdwTagId,
-          string lpDependencies,
+          string? lpDependencies,
           string lpServiceStartName,
           string lpPassword);
 
