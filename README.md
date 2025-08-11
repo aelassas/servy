@@ -62,6 +62,8 @@ Servy is perfect for keeping non-service apps running in the background without 
 * [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
+* [ ] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
+* [ ] Service status query command in CLI
 
 ## Support & Contributing
 
