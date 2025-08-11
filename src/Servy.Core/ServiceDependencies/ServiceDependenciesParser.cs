@@ -35,6 +35,10 @@ namespace Servy.Core.ServiceDependencies
             if (parts.Length == 0)
                 return null;
 
+            // Windows API compatibility: When working with Windows service dependencies,
+            // the Service Control Manager expects dependency lists as a multi-string (MULTI_SZ),
+            // which is a sequence of null-terminated strings ending with an additional null 
+            // terminator (i.e., strings separated by \0 and double \0 at the end).
             return string.Join("\0", parts) + "\0\0";
         }
 
