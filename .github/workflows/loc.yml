@@ -18,7 +18,7 @@ jobs:
           badge_label: lines of code
           badge_color: green
           badge: ./output/badge.svg
-          ignore: '.gitignore|README.md|LICENSE.txt|.github|setup|*.exe|*.ico'
+          ignore: '.gitignore|README.md|LICENSE.txt|.github|setup|*.exe|*.ico|package-lock.json|node_modules'
 
       - name: Print the output
         run: |
