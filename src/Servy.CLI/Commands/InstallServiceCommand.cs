@@ -60,11 +60,11 @@ namespace Servy.CLI.Commands
                 // Call the service manager install method
                 var success = _serviceManager.InstallService(
                     opts.ServiceName,
-                    opts.ServiceDescription,
+                    opts.ServiceDescription ?? string.Empty,
                     wrapperExePath,
-                    opts.ProcessPath,
-                    opts.StartupDirectory,
-                    opts.ProcessParameters,
+                    opts.ProcessPath ?? string.Empty,
+                    opts.StartupDirectory ?? string.Empty,
+                    opts.ProcessParameters ?? string.Empty,
                     startupType,
                     processPriority,
                     opts.StdoutPath,
@@ -75,7 +75,9 @@ namespace Servy.CLI.Commands
                     recoveryAction,
                     maxRestartAttempts,
                     opts.EnvironmentVariables,
-                    opts.ServiceDependencies
+                    opts.ServiceDependencies,
+                    opts.User,
+                    opts.Password
                 );
 
                 return success

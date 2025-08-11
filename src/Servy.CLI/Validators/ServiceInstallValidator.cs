@@ -4,6 +4,7 @@ using Servy.CLI.Resources;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Native;
 using System;
 using System.IO;
 
@@ -57,6 +58,18 @@ namespace Servy.CLI.Validators
 
                 if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < MinMaxRestartAttempts)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
+            }
+
+            if (!string.IsNullOrWhiteSpace(opts.User))
+            {
+                try
+                {
+                    NativeMethods.ValidateCredentials(opts.User, opts.Password);
+                }
+                catch (Exception ex)
+                {
+                    return CommandResult.Fail(ex.Message);
+                }
             }
 
             string envVarsErrorMessage;

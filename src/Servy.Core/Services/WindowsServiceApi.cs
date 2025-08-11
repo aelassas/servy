@@ -92,11 +92,5 @@ namespace Servy.Core.Services
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
-        /// <inheritdoc />
-        public void ValidateCredentials(string username, string password)
-        {
-            NativeMethods.ValidateCredentials(username, password);
-        }
-
     }
 }

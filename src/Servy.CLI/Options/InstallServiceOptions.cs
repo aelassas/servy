@@ -151,5 +151,19 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("deps", HelpText = "Specify one or more Windows service names (not display names) that this service depends on separated with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency's start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start.")]
         public string ServiceDependencies { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Windows service account username.
+        /// Optional.
+        /// </summary>
+        [Option("user", HelpText = "The service account username (e.g., .\\username, DOMAIN\\username).")]
+        public string User { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Windows service account username.
+        /// Optional.
+        /// </summary>
+        [Option("password", HelpText = "The service account password.")]
+        public string Password { get; set; }
     }
 }

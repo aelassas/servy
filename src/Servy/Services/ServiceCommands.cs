@@ -2,6 +2,7 @@
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Interfaces;
+using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Resources;
 using System;
@@ -177,7 +178,7 @@ namespace Servy.Services
                         return;
                     }
 
-                    _serviceManager.ValidateCredentials(userAccount, password);
+                    NativeMethods.ValidateCredentials(userAccount, password);
                 }
                 catch (Exception ex)
                 {
