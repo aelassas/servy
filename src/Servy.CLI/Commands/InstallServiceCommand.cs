@@ -73,7 +73,8 @@ namespace Servy.CLI.Commands
                     heartbeatInterval,
                     maxFailedChecks,
                     recoveryAction,
-                    maxRestartAttempts
+                    maxRestartAttempts,
+                    opts.EnvironmentVariables
                 );
 
                 return success

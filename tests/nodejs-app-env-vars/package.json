@@ -1,0 +1,17 @@
+{
+  "name": "nodejs-app-env-vars",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "cross-env": "^10.0.0"
+  }
+}

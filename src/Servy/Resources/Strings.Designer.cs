@@ -124,7 +124,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enter each variable on a new line, or separate multiple variables with semicolons. Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
+        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons. Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
         /// </summary>
         public static string Info_EnvironmentVariables {
             get {

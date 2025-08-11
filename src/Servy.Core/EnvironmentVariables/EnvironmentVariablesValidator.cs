@@ -21,7 +21,7 @@ namespace Servy.Core.EnvironmentVariables
         /// <returns>
         /// <c>true</c> if the input is valid; otherwise, <c>false</c>.
         /// </returns>
-        public static bool Validate(string environmentVariables, out string errorMessage)
+        public static bool Validate(string? environmentVariables, out string errorMessage)
         {
             errorMessage = string.Empty;
             if (string.IsNullOrWhiteSpace(environmentVariables))
