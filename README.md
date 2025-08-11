@@ -21,7 +21,7 @@
 
 # Servy
 
-Servy lets you run any app as a Windows service with full control over working directory, startup type, logging, health checks, environment variables, dependencies, and parameters. A fully managed alternative to NSSM.
+Servy lets you run any app as a Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, service user, and parameters. A fully managed alternative to NSSM.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), enabling you to create, configure, and manage Windows services interactively or automate these tasks in scripts and CI/CD pipelines.
 
