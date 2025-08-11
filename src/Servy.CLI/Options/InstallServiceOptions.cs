@@ -144,5 +144,12 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("env", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue, separated by semicolons (;). Use \\= to escape '=' and \\; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\\\).")]
         public string EnvironmentVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets Windows service dependencies.
+        /// Optional.
+        /// </summary>
+        [Option("deps", HelpText = "Specify one or more Windows service names (not display names) that this service depends on separated with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency's start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start.")]
+        public string ServiceDependencies { get; set; }
     }
 }
