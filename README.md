@@ -42,7 +42,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * Clean, simple UI
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
-* Set service name, description, startup type, priority, working directory, and parameters
+* Set service name, description, startup type, priority, working directory, environment variables, and parameters
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
@@ -56,9 +56,9 @@ Servy is perfect for keeping non-service apps running in the background without 
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
 * [x] CLI for full scripting and automated deployments
-* [ ] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
-* [ ] Add "Log on as" configuration for Windows service
+* [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
 * [ ] Support service dependencies
+* [ ] Add "Log on as" configuration for Windows service
 
 ## Support & Contributing
 
