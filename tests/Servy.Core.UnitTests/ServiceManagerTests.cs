@@ -140,8 +140,8 @@ namespace Servy.Core.UnitTests
                 0,
                 string.Empty,
                 null,
-                null,
-                null));
+                @".\username",
+                "password"));
 
             scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
@@ -166,8 +166,8 @@ namespace Servy.Core.UnitTests
                 0,
                 string.Empty,
                 null,
-                null,
-                null
+                @".\username",
+                "password"
                 ));
 
         }
