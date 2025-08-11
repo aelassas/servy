@@ -43,6 +43,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
+* Run services as Local System, local user, or domain account
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
