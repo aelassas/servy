@@ -31,9 +31,14 @@ namespace Servy.CLI
             try
             {
                 var verbs = GetVerbs();
-                if (args.Length == 0 || !verbs.Contains(args[0].ToLower()))
+                if (args.Length == 0 || !verbs.Contains(args[0].ToLowerInvariant()))
                 {
                     args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
+                }
+
+                if (args.Length > 0)
+                {
+                    args[0] = args[0].ToLowerInvariant();
                 }
 
                 var serviceManager = new ServiceManager(

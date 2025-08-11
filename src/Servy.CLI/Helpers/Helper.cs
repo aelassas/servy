@@ -31,9 +31,9 @@ namespace Servy.CLI.Helpers
             var verbs = Assembly.GetExecutingAssembly()
                  .GetTypes()
                  .Where(t => t.GetCustomAttribute<VerbAttribute>() != null)
-                 .Select(t => t.GetCustomAttribute<VerbAttribute>()!.Name)
+                 .Select(t => t.GetCustomAttribute<VerbAttribute>()!.Name.ToLowerInvariant())
                  .ToArray();
-            return verbs ?? Array.Empty<string>();
+            return verbs;
         }
 
         /// <summary>
