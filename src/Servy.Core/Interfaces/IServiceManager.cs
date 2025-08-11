@@ -11,6 +11,29 @@ namespace Servy.Core.Interfaces
     public interface IServiceManager
     {
         /// <summary>
+        /// Validates a given Windows username and password by attempting a logon.
+        /// </summary>
+        /// <param name="username">
+        /// The username in the format <c>DOMAIN\Username</c>, <c>.\Username</c> for local accounts, 
+        /// or just <c>Username</c> for local accounts without a domain prefix.
+        /// </param>
+        /// <param name="password">
+        /// The password associated with the specified username. Can be <c>null</c> or empty if the account has no password.
+        /// </param>
+        /// <exception cref="ArgumentException">
+        /// Thrown when the username is null or empty.
+        /// </exception>
+        /// <exception cref="Win32Exception">
+        /// Thrown if the credentials are invalid or the account cannot log on interactively.
+        /// </exception>
+        /// <remarks>
+        /// This method uses the Windows API <c>LogonUser</c> function to verify that the provided credentials 
+        /// are valid for interactive logon. It does not check whether the account has the 
+        /// "Log on as a service" right, which may be required to run a service.
+        /// </remarks>
+        void ValidateCredentials(string username, string password);
+
+        /// <summary>
         /// Installs a Windows service using a wrapper executable that launches the real target executable
         /// with specified arguments and working directory.
         /// </summary>
@@ -31,6 +54,8 @@ namespace Servy.Core.Interfaces
         /// <param name="maxRestartAttempts">Maximum number of restart attempts if the service fails.</param>
         /// <param name="environmentVariables">Environment variables.</param>
         /// <param name="serviceDependencies">Service dependencies.</param>
+        /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
+        /// <param name="password">Service account password.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -51,7 +76,9 @@ namespace Servy.Core.Interfaces
             RecoveryAction recoveryAction = RecoveryAction.None,
             int maxRestartAttempts = 0,
             string? environmentVariables = null,
-            string? serviceDependencies = null
+            string? serviceDependencies = null,
+            string? username = null,
+            string? password = null
         );
 
         /// <summary>

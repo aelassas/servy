@@ -1,6 +1,8 @@
 ﻿using Servy.Core.Interfaces;
 using Servy.Core.Native;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -26,8 +28,8 @@ namespace Servy.Core.Services
             string lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
-            string lpServiceStartName,
-            string lpPassword)
+            string? lpServiceStartName,
+            string? lpPassword)
             => NativeMethods.CreateService(
                 hSCManager,
                 lpServiceName,
@@ -70,8 +72,8 @@ namespace Servy.Core.Services
             IntPtr lpdwTagId,
             string lpDependencies,
             string lpServiceStartName,
-            string lpPassword,
-            string lpDisplayName)
+            string? lpPassword,
+            string? lpDisplayName)
             => NativeMethods.ChangeServiceConfig(
                 hService,
                 dwServiceType,
@@ -88,5 +90,12 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
+
+        /// <inheritdoc />
+        public void ValidateCredentials(string username, string password)
+        {
+            NativeMethods.ValidateCredentials(username, password);
+        }
+    
     }
 }

@@ -97,5 +97,25 @@ namespace Servy.Models
         /// Windows Service Dependencies.
         /// </summary>
         public string ServiceDependencies { get; set; }
+
+        /// <summary>
+        /// Indicates whether to run the Windows Service as the Local System account.
+        /// </summary>
+        public bool RunAsLocalSystem { get; set; } = true;
+
+        /// <summary>
+        /// The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).
+        /// </summary>
+        public string UserAccount { get; set; }
+
+        /// <summary>
+        /// The password for the service account.
+        /// </summary>
+        public string Password { get; set; }
+
+        /// <summary>
+        /// The confirmation of the service account password.
+        /// </summary>
+        public string ConfirmPassword { get; set; }
     }
 }

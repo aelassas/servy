@@ -2,6 +2,7 @@
 using Servy.Services;
 using Servy.ViewModels;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace Servy
 {
@@ -28,5 +29,34 @@ namespace Servy
                         ), 
                     new MessageBoxService()));
         }
+
+        /// <summary>
+        /// Handles the PasswordChanged event of the PasswordBox for the main password.
+        /// Updates the ViewModel's Password property with the current password value.
+        /// </summary>
+        /// <param name="sender">The PasswordBox that raised the event.</param>
+        /// <param name="e">The routed event data.</param>
+        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && sender is PasswordBox pb)
+            {
+                vm.Password = pb.Password;
+            }
+        }
+
+        /// <summary>
+        /// Handles the PasswordChanged event of the PasswordBox for the confirm password.
+        /// Updates the ViewModel's ConfirmPassword property with the current password value.
+        /// </summary>
+        /// <param name="sender">The PasswordBox that raised the event.</param>
+        /// <param name="e">The routed event data.</param>
+        private void ConfirmPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && sender is PasswordBox pb)
+            {
+                vm.ConfirmPassword = pb.Password;
+            }
+        }
+
     }
 }

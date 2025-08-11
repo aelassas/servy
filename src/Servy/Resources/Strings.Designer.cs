@@ -142,6 +142,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username)..
+        /// </summary>
+        public static string Info_UserAccount {
+            get {
+                return ResourceManager.GetString("Info_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Advanced.
         /// </summary>
         public static string Label_AdvancedTab {
@@ -156,6 +165,15 @@ namespace Servy.Resources {
         public static string Label_Attempts {
             get {
                 return ResourceManager.GetString("Label_Attempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Confirm Password.
+        /// </summary>
+        public static string Label_ConfirmPassword {
+            get {
+                return ResourceManager.GetString("Label_ConfirmPassword", resourceCulture);
             }
         }
         
@@ -196,6 +214,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Log On.
+        /// </summary>
+        public static string Label_LogOnTab {
+            get {
+                return ResourceManager.GetString("Label_LogOnTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Main.
         /// </summary>
         public static string Label_MainTab {
@@ -219,6 +246,15 @@ namespace Servy.Resources {
         public static string Label_MaxRestartAttempts {
             get {
                 return ResourceManager.GetString("Label_MaxRestartAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Password.
+        /// </summary>
+        public static string Label_Password {
+            get {
+                return ResourceManager.GetString("Label_Password", resourceCulture);
             }
         }
         
@@ -282,6 +318,15 @@ namespace Servy.Resources {
         public static string Label_RotationSizeUnity {
             get {
                 return ResourceManager.GetString("Label_RotationSizeUnity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run As Local System.
+        /// </summary>
+        public static string Label_RunAsLocalSystem {
+            get {
+                return ResourceManager.GetString("Label_RunAsLocalSystem", resourceCulture);
             }
         }
         
@@ -354,6 +399,15 @@ namespace Servy.Resources {
         public static string Label_StdoutPath {
             get {
                 return ResourceManager.GetString("Label_StdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à User Account.
+        /// </summary>
+        public static string Label_UserAccount {
+            get {
+                return ResourceManager.GetString("Label_UserAccount", resourceCulture);
             }
         }
         
@@ -480,6 +534,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidWrapperExePath {
             get {
                 return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Passwords don&apos;t match..
+        /// </summary>
+        public static string Msg_PasswordsDontMatch {
+            get {
+                return ResourceManager.GetString("Msg_PasswordsDontMatch", resourceCulture);
             }
         }
         

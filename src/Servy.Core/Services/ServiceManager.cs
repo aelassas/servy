@@ -153,6 +153,12 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
+        public void ValidateCredentials(string username, string password)
+        {
+            _windowsServiceApi.ValidateCredentials(username, password);
+        }
+
+        /// <inheritdoc />
         public bool InstallService(
             string serviceName,
             string description,
@@ -170,7 +176,10 @@ namespace Servy.Core.Services
             RecoveryAction recoveryAction,
             int maxRestartAttempts,
             string? environmentVariables,
-            string? serviceDependencies)
+            string? serviceDependencies,
+            string? username,
+            string? password
+            )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -206,6 +215,8 @@ namespace Servy.Core.Services
             try
             {
                 string? lpDependencies = ServiceDependenciesParser.Parse(serviceDependencies);
+                string? lpServiceStartName = string.IsNullOrWhiteSpace(username) ? null : username;
+                string? lpPassword = string.IsNullOrEmpty(password) ? null : password;
 
                 serviceHandle = _windowsServiceApi.CreateService(
                     scmHandle,
@@ -219,8 +230,8 @@ namespace Servy.Core.Services
                     null,
                     IntPtr.Zero,
                     lpDependencies,
-                    null,
-                    null);
+                    lpServiceStartName,
+                    lpPassword);
 
                 if (serviceHandle == IntPtr.Zero)
                 {
