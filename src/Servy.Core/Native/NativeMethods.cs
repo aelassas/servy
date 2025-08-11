@@ -155,7 +155,7 @@ namespace Servy.Core.Native
         private static extern bool LogonUser(
             string lpszUsername,
             string? lpszDomain,
-            string lpszPassword,
+            string? lpszPassword,
             int dwLogonType,
             int dwLogonProvider,
             out IntPtr phToken

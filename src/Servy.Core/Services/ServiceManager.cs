@@ -153,12 +153,6 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public void ValidateCredentials(string username, string password)
-        {
-            _windowsServiceApi.ValidateCredentials(username, password);
-        }
-
-        /// <inheritdoc />
         public bool InstallService(
             string serviceName,
             string description,

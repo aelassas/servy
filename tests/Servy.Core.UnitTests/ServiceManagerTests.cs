@@ -25,27 +25,6 @@ namespace Servy.Core.UnitTests
             _serviceManager = new ServiceManager(_ => _mockController.Object, _mockWindowsServiceApi.Object, _mockWin32ErrorProvider.Object);
         }
 
-        [Fact]
-        public void ValidateCredentials_CallsApiWithSameArguments()
-        {
-            // Arrange
-            string expectedUsername = "TestUser";
-            string expectedPassword = "P@ss w0rd";
-
-            _mockWindowsServiceApi
-                .Setup(api => api.ValidateCredentials(expectedUsername, expectedPassword))
-                .Verifiable();
-
-            // Act
-            _serviceManager.ValidateCredentials(expectedUsername, expectedPassword);
-
-            // Assert
-            _mockWindowsServiceApi.Verify(
-                api => api.ValidateCredentials(expectedUsername, expectedPassword),
-                Times.Once
-            );
-        }
-
         [Theory]
         [InlineData("", "", "")]
         [InlineData("TestService", "", "")]

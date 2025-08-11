@@ -5,6 +5,7 @@ using Servy.Resources;
 using System.IO;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.ServiceDependencies;
+using Servy.Core.Native;
 
 namespace Servy.Services
 {
@@ -175,7 +176,7 @@ namespace Servy.Services
                         return;
                     }
 
-                    _serviceManager.ValidateCredentials(userAccount, password);
+                    NativeMethods.ValidateCredentials(userAccount, password);
                 }
                 catch (Exception ex)
                 {
