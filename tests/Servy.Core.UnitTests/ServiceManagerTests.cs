@@ -77,7 +77,8 @@ namespace Servy.Core.UnitTests
                 0,
                 0,
                 RecoveryAction.None,
-                0));
+                0,
+                string.Empty));
         }
 
         [Fact]
@@ -130,7 +131,8 @@ namespace Servy.Core.UnitTests
                 0,
                 0,
                 RecoveryAction.None,
-                0));
+                0,
+                string.Empty));
 
             scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
@@ -152,7 +154,8 @@ namespace Servy.Core.UnitTests
                 0,
                 0,
                 RecoveryAction.None,
-                0));
+                0,
+                string.Empty));
 
         }
 
@@ -206,7 +209,8 @@ namespace Servy.Core.UnitTests
                 0,
                 0,
                 RecoveryAction.None,
-                0);
+                0,
+                string.Empty);
 
             Assert.True(result);
 
@@ -289,7 +293,8 @@ namespace Servy.Core.UnitTests
                 0,
                 0,
                 RecoveryAction.None,
-                0);
+                0,
+                string.Empty);
 
             Assert.True(result);
 

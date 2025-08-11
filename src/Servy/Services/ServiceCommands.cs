@@ -3,6 +3,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Interfaces;
 using Servy.Resources;
 using System.IO;
+using Servy.Core.EnvironmentVariables;
 
 namespace Servy.Services
 {
@@ -15,10 +16,24 @@ namespace Servy.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
-        private const string Caption= "Servy";
+        #region Constants
+
+        private const string Caption = "Servy";
+        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
+        private const int MinHeartbeatInterval = 5;                // 5 seconds
+        private const int MinMaxFailedChecks = 1;                  // 1 attempt
+        private const int MinMaxRestartAttempts = 1;               // 1 attempt
+
+        #endregion
+
+        #region Private Fields
 
         private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
@@ -32,10 +47,10 @@ namespace Servy.Services
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
         }
 
-        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
-        private const int MinHeartbeatInterval = 5;                // 5 seconds
-        private const int MinMaxFailedChecks = 1;                  // 1 attempt
-        private const int MinMaxRestartAttempts = 1;               // 1 attempt
+        #endregion
+
+
+        #region IServiceCommands Implementation
 
         /// <inheritdoc />
         public void InstallService(
@@ -54,7 +69,8 @@ namespace Servy.Services
             string heartbeatInterval,
             string maxFailedChecks,
             RecoveryAction recoveryAction,
-            string maxRestartAttempts)
+            string maxRestartAttempts,
+            string environmentVariables)
         {
             if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(processPath))
             {
@@ -126,6 +142,15 @@ namespace Servy.Services
                 }
             }
 
+            string normalizedEnvVars = environmentVariables?.Replace("\r\n", ";").Replace("\n", ";").Replace("\r", ";") ?? string.Empty;
+
+            string envVarsErrorMessage;
+            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+            {
+                _messageBoxService.ShowError(envVarsErrorMessage, Caption);
+                return;
+            }
+
             try
             {
                 bool success = _serviceManager.InstallService(
@@ -143,7 +168,8 @@ namespace Servy.Services
                     heartbeatIntervalValue,
                     maxFailedChecksValue,
                     recoveryAction,
-                    maxRestartAttemptsValue);
+                    maxRestartAttemptsValue,
+                    normalizedEnvVars);
 
                 if (success)
                     _messageBoxService.ShowInfo(Strings.Msg_ServiceCreated, Caption);
@@ -237,5 +263,8 @@ namespace Servy.Services
                 _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
             }
         }
+
+        #endregion
+
     }
 }

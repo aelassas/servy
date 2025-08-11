@@ -247,6 +247,15 @@ namespace Servy.ViewModels
             set { _config.MaxRestartAttempts = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum number of restart attempts as a string.
+        /// </summary>
+        public string EnvironmentVariables
+        {
+            get => _config.EnvironmentVariables;
+            set { _config.EnvironmentVariables = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -422,7 +431,8 @@ namespace Servy.ViewModels
                 _config.HeartbeatInterval,
                 _config.MaxFailedChecks,
                 _config.RecoveryAction,
-                _config.MaxRestartAttempts);
+                _config.MaxRestartAttempts,
+                _config.EnvironmentVariables);
         }
 
         /// <summary>
@@ -482,6 +492,7 @@ namespace Servy.ViewModels
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+            EnvironmentVariables = string.Empty;
         }
 
         #endregion

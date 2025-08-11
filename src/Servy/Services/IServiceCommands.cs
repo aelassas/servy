@@ -26,6 +26,7 @@ namespace Servy.Services
         /// <param name="maxFailedChecks">Maximum number of failed health checks before recovery action.</param>
         /// <param name="recoveryAction">The recovery action to take on failure.</param>
         /// <param name="maxRestartAttempts">Maximum number of restart attempts.</param>
+        /// <param name="environmentVariables">Environment variables.</param>
         void InstallService(
             string serviceName,
             string serviceDescription,
@@ -42,7 +43,8 @@ namespace Servy.Services
             string heartbeatInterval,
             string maxFailedChecks,
             RecoveryAction recoveryAction,
-            string maxRestartAttempts);
+            string maxRestartAttempts,
+            string environmentVariables);
 
         /// <summary>
         /// Uninstalls the specified Windows service.

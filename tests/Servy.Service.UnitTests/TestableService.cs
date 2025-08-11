@@ -1,4 +1,6 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -10,16 +12,21 @@ using System.Timers;
 
 namespace Servy.Service.UnitTests
 {
-    public class TestableService(
-        IServiceHelper serviceHelper,
-        ILogger logger,
-        IStreamWriterFactory streamWriterFactory,
-        ITimerFactory timerFactory,
-        IProcessFactory processFactory,
-        IPathValidator pathValidator) : Service(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator)
+    public class TestableService : Service
     {
-        private Action<string, string, string>? _startProcessOverride;
+        private Action<string, string, string, List<EnvironmentVariable>>? _startProcessOverride;
         private Action? _terminateChildProcessesOverride;
+
+        public TestableService(
+            IServiceHelper serviceHelper,
+            ILogger logger,
+            IStreamWriterFactory streamWriterFactory,
+            ITimerFactory timerFactory,
+            IProcessFactory processFactory,
+            IPathValidator pathValidator)
+            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator)
+        {
+        }
 
         // Instead of overriding OnStart, expose a public method to call the base protected OnStart:
         public void TestOnStart(string[] args)
@@ -109,7 +116,7 @@ namespace Servy.Service.UnitTests
             method!.Invoke(this, [sender, e]);
         }
 
-        public void OverrideStartProcess(Action<string, string, string> startProcess)
+        public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>> startProcess)
         {
             _startProcessOverride = startProcess;
         }
@@ -127,16 +134,16 @@ namespace Servy.Service.UnitTests
         }
 
         // Expose StartProcess protected method and allow override logic
-        public void InvokeStartProcess(string exePath, string args, string workingDir)
+        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
             if (_startProcessOverride != null)
             {
-                _startProcessOverride(exePath, args, workingDir);
+                _startProcessOverride(exePath, args, workingDir, environmentVariables);
             }
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method!.Invoke(this, [exePath, args, workingDir]);
+                method!.Invoke(this, [exePath, args, workingDir, environmentVariables]);
             }
         }
 

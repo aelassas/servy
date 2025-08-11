@@ -87,7 +87,8 @@
             if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
-            input = input.TrimStart('"').TrimEnd('"').TrimEnd('\\');
+            input = input.Replace("\"", "\"\"").TrimStart('"').TrimEnd('"').TrimEnd('\\');
+
             return $"\"{input}\"";
         }
 

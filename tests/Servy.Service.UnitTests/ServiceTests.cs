@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;

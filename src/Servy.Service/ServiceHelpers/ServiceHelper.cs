@@ -1,10 +1,10 @@
-﻿using Servy.Core.Helpers;
+﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.Reflection;
-using System.ServiceProcess;
 
 namespace Servy.Service.ServiceHelpers
 {
@@ -37,6 +37,10 @@ namespace Servy.Service.ServiceHelpers
             logger?.Info($"[Args] {string.Join(" ", args)}");
             logger?.Info($"[Args] fullArgs Length: {args.Length}");
 
+            string envVarsFormatted = options.EnvironmentVariables != null
+                ? string.Join("; ", options.EnvironmentVariables.Select(ev => $"{ev.Name}={ev.Value}"))
+                : "(null)";
+
             logger?.Info(
               $"[Startup Parameters]\n" +
               $"- serviceName: {options.ServiceName}\n" +
@@ -50,7 +54,8 @@ namespace Servy.Service.ServiceHelpers
               $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
               $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
               $"- recoveryAction: {options.RecoveryAction}\n" +
-              $"- maxRestartAttempts: {options.MaxRestartAttempts}"
+              $"- maxRestartAttempts: {options.MaxRestartAttempts}\n"+
+              $"- environmentVariables: {envVarsFormatted}"
           );
         }
 
@@ -110,10 +115,11 @@ namespace Servy.Service.ServiceHelpers
         /// <inheritdoc />
         public void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
+            List<EnvironmentVariable> environmentVariables,
             ILogger logger)
         {
             try
@@ -126,7 +132,7 @@ namespace Servy.Service.ServiceHelpers
                     process.WaitForExit();
                 }
 
-                startProcess?.Invoke(realExePath, realArgs, workingDir);
+                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
 
                 logger?.Info("Process restarted.");
             }

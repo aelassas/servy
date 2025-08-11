@@ -1,4 +1,6 @@
 ﻿using Moq;
+using Servy.Core.EnvironmentVariables;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -54,7 +56,7 @@ namespace Servy.Service.UnitTests
 
             processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>())).Returns(mockProcess.Object);
 
-            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir");
+            service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>());
 
             var childProcess = service.GetChildProcess();
             Assert.NotNull(childProcess);

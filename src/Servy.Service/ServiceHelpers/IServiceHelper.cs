@@ -1,4 +1,6 @@
-﻿using Servy.Service.Logging;
+﻿using Servy.Core.EnvironmentVariables;
+using Servy.Service.CommandLine;
+using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 
 namespace Servy.Service.ServiceHelpers
@@ -60,13 +62,15 @@ namespace Servy.Service.ServiceHelpers
         /// <param name="realExePath">Path to the executable.</param>
         /// <param name="realArgs">Command-line arguments.</param>
         /// <param name="workingDir">Working directory for the process.</param>
+        /// <param name="environmentVariables">Environment variables.</param>
         /// <param name="logger">Logger instance.</param>
         void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
+            List<EnvironmentVariable> environmentVariables,
             ILogger logger);
 
         /// <summary>

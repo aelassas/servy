@@ -1,5 +1,5 @@
-﻿using Servy.Core;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
@@ -46,6 +46,7 @@ namespace Servy.Service
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
+        private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _disposed = false; // Tracks whether Dispose has been called
 
         #endregion
@@ -176,7 +177,7 @@ namespace Servy.Service
         /// <param name="options">The start options containing executable details and priority.</param>
         private void StartMonitoredProcess(StartOptions options)
         {
-            StartProcess(options.ExecutablePath!, options.ExecutableArgs!, options.WorkingDirectory!);
+            StartProcess(options.ExecutablePath!, options.ExecutableArgs!, options.WorkingDirectory!, options.EnvironmentVariables);
             SetProcessPriority(options.Priority);
         }
 
@@ -187,11 +188,13 @@ namespace Servy.Service
         /// <param name="realExePath">The full path to the executable to run.</param>
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
-        private void StartProcess(string realExePath, string realArgs, string workingDir)
+        /// <param name="environmentVariables">Environment variables.</param>
+        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
             _realExePath = realExePath;
             _realArgs = realArgs;
             _workingDir = workingDir;
+            _environmentVariables = environmentVariables;
 
             // Configure the process start info
             var psi = new ProcessStartInfo
@@ -204,6 +207,14 @@ namespace Servy.Service
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+
+            if (environmentVariables != null)
+            {
+                foreach (var envVar in environmentVariables)
+                {
+                    psi.EnvironmentVariables[envVar.Name] = envVar.Value;
+                }
+            }
 
             _childProcess = _processFactory.Create(psi);
 
@@ -371,6 +382,7 @@ namespace Servy.Service
                                          _realExePath!,
                                          _realArgs!,
                                          _workingDir!,
+                                         _environmentVariables,
                                          _logger!
                                      );
                                     break;

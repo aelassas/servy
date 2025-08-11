@@ -51,7 +51,8 @@ namespace Servy.UnitTests.Services
                 heartbeatInterval,
                 maxFailedChecks,
                 recoveryAction,
-                maxRestartAttempts);
+                maxRestartAttempts,
+                string.Empty);
 
             // Assert
             _mockServiceCommands.Verify(m => m.InstallService(
@@ -70,7 +71,8 @@ namespace Servy.UnitTests.Services
                 heartbeatInterval,
                 maxFailedChecks,
                 recoveryAction,
-                maxRestartAttempts), Times.Once);
+                maxRestartAttempts,
+                string.Empty), Times.Once);
         }
 
         [Fact]

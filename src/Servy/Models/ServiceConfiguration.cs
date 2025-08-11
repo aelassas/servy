@@ -87,5 +87,10 @@ namespace Servy.Models
         /// Gets or sets the maximum number of restart attempts.
         /// </summary>
         public string MaxRestartAttempts { get; set; }
+
+        /// <summary>
+        /// Environment Variables.
+        /// </summary>
+        public string EnvironmentVariables { get; set; }
     }
 }
