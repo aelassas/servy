@@ -28,6 +28,10 @@ namespace Servy.Services
         /// <param name="maxRestartAttempts">Maximum number of restart attempts.</param>
         /// <param name="environmentVariables">Environment variables.</param>
         /// <param name="serviceDependencies">Service dependencies.</param>
+        /// <param name="runAsLocalSystem">Run service as local user account.</param>
+        /// <param name="userAccount">The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).</param>
+        /// <param name="password">The password for the service account.</param>
+        /// <param name="confirmPassword">The confirmation of the service account password.</param>
         void InstallService(
             string serviceName,
             string serviceDescription,
@@ -46,7 +50,11 @@ namespace Servy.Services
             RecoveryAction recoveryAction,
             string maxRestartAttempts,
             string environmentVariables,
-            string serviceDependencies
+            string serviceDependencies,
+            bool runAsLocalSystem,
+            string userAccount,
+            string password,
+            string confirmPassword
             );
 
         /// <summary>

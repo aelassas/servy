@@ -34,6 +34,13 @@ namespace Servy.UnitTests.Services
             var maxFailedChecks = "3";
             var recoveryAction = RecoveryAction.RestartService;
             var maxRestartAttempts = "5";
+            var envVars = "var1=val1;var2=val2";
+            var dependencies = "DEP1; DEP2";
+            var runAsLocalSystem = false;
+            var username = @".\username";
+            var password = "password";
+            var confirmPassword = "password";
+
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -53,8 +60,13 @@ namespace Servy.UnitTests.Services
                 maxFailedChecks,
                 recoveryAction,
                 maxRestartAttempts,
-                string.Empty,
-                string.Empty);
+                envVars,
+                dependencies,
+                runAsLocalSystem,
+                username,
+                password,
+                confirmPassword
+                );
 
             // Assert
             _mockServiceCommands.Verify(m => m.InstallService(
@@ -74,8 +86,12 @@ namespace Servy.UnitTests.Services
                 maxFailedChecks,
                 recoveryAction,
                 maxRestartAttempts,
-                string.Empty,
-                string.Empty), Times.Once);
+                envVars,
+                dependencies,
+                runAsLocalSystem,
+                username,
+                password,
+                confirmPassword), Times.Once);
         }
 
         [Fact]

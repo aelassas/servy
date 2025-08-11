@@ -20,7 +20,10 @@
   <data name="Label_AdvancedTab" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  
+  <data name="Label_LogOnTab" xml:space="preserve">
+    <value>Log On</value>
+  </data>
+
   <!-- Labels -->
   <data name="Label_ServiceName" xml:space="preserve">
     <value>Service Name *</value>
@@ -148,7 +151,27 @@
   <data name="Info_ServiceDependencies" xml:space="preserve">
     <value>Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency's start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start.</value>
   </data>
-  
+
+  <!-- User Account -->
+  <data name="Label_RunAsLocalSystem" xml:space="preserve">
+    <value>Run As Local System</value>
+  </data>
+  <data name="Label_UserAccount" xml:space="preserve">
+    <value>User Account</value>
+  </data>
+  <data name="Info_UserAccount" xml:space="preserve">
+    <value>The service account username (e.g., .\username, DOMAIN\username).</value>
+  </data>
+  <data name="Label_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Label_ConfirmPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>Passwords don&apos;t match.</value>
+  </data>
+
   <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>

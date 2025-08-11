@@ -1,5 +1,4 @@
 ﻿using Servy.Core.Enums;
-using Servy.Core.Interfaces;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;
@@ -267,6 +266,42 @@ namespace Servy.ViewModels
             set { _config.ServiceDependencies = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets run as local system as a bool.
+        /// </summary>
+        public bool RunAsLocalSystem
+        {
+            get => _config.RunAsLocalSystem;
+            set { _config.RunAsLocalSystem = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets user account as a string.
+        /// </summary>
+        public string UserAccount
+        {
+            get => _config.UserAccount;
+            set { _config.UserAccount = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets user password as a string.
+        /// </summary>
+        public string Password
+        {
+            get => _config.Password;
+            set { _config.Password = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets user password confirmation as a string.
+        /// </summary>
+        public string ConfirmPassword
+        {
+            get => _config.ConfirmPassword;
+            set { _config.ConfirmPassword = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -444,7 +479,11 @@ namespace Servy.ViewModels
                 _config.RecoveryAction,
                 _config.MaxRestartAttempts,
                 _config.EnvironmentVariables,
-                _config.ServiceDependencies
+                _config.ServiceDependencies,
+                _config.RunAsLocalSystem,
+                _config.UserAccount,
+                _config.Password,
+                _config.ConfirmPassword
                 );
         }
 

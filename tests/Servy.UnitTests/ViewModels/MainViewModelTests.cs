@@ -59,6 +59,10 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.SelectedRecoveryAction = RecoveryAction.RestartService;
             _viewModel.EnvironmentVariables = "var1=val1;var2=val2";
             _viewModel.ServiceDependencies = "MongoDB";
+            _viewModel.RunAsLocalSystem = false;
+            _viewModel.UserAccount = @".\username";
+            _viewModel.Password = "password";
+            _viewModel.ConfirmPassword = "password";
 
             // Act
             _viewModel.InstallCommand.Execute(null);
@@ -82,7 +86,11 @@ namespace Servy.UnitTests.ViewModels
                 RecoveryAction.RestartService,
                 "3",
                 "var1=val1;var2=val2",
-                "MongoDB"
+                "MongoDB",
+                false,
+                 @".\username",
+                 "password",
+                 "password"
             ), Times.Once);
         }
 

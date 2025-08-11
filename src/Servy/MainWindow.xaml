@@ -4,6 +4,7 @@
         xmlns:local="clr-namespace:Servy"
         xmlns:resx="clr-namespace:Servy.Resources"
         xmlns:viewmodels="clr-namespace:Servy.ViewModels"
+        xmlns:converters="clr-namespace:Servy.Converters"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -12,6 +13,9 @@
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel, IsDesignTimeCreatable=True}">
+    <Window.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+    </Window.Resources>
     <DockPanel>
 
         <Grid>
@@ -24,9 +28,9 @@
 
 
             <TabControl Grid.Row="0">
-                <TabItem Header="{x:Static resx:Strings.Label_MainTab}">
+                <TabItem Header="{x:Static resx:Strings.Label_MainTab}" >
                     <!-- Main tab UI -->
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -156,7 +160,7 @@
                 <TabItem Header="{x:Static resx:Strings.Label_AdvancedTab}">
                     <!-- Advanced tab UI -->
 
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
                         <Grid.RowDefinitions>
                             <!-- Env Label -->
                             <RowDefinition Height="Auto"/>
@@ -195,6 +199,75 @@ AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="120" />
 
                     </Grid>
                 </TabItem>
+
+
+                <TabItem Header="{x:Static resx:Strings.Label_LogOnTab}">
+                    <!-- Log On tab UI -->
+
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                        <Grid.RowDefinitions>
+                            <!-- Run As Local System RadioButton -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- User Account RadioButton -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- User Account Info TextBlock -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Password Label + PasswordBox -->
+                            <RowDefinition Height="Auto"/>
+                            <!-- Confirm Password Label + PasswordBox -->
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="250"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Run As Local System (spans both columns) -->
+                        <RadioButton Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,10"
+                 Content="{x:Static resx:Strings.Label_RunAsLocalSystem}" 
+                 IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay}" />
+
+                        <!-- User Account RadioButton label in first column -->
+                        <RadioButton Grid.Row="1" Grid.Column="0"
+                 Content="{x:Static resx:Strings.Label_UserAccount}"
+                 IsChecked="{Binding RunAsLocalSystem, Mode=TwoWay, Converter={StaticResource InverseBooleanConverter}}" />
+
+                        <!-- User Account TextBox in second column -->
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+             Text="{Binding UserAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+             Margin="0,0,0,5"
+             IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}" />
+
+                        <!-- User Account Info TextBlock spanning both columns -->
+                        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+               Text="{x:Static resx:Strings.Info_UserAccount}" 
+               FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                        <!-- Password Label in first column -->
+                        <TextBlock Grid.Row="3" Grid.Column="0" 
+               Text="{x:Static resx:Strings.Label_Password}" Margin="0,5,10,5" VerticalAlignment="Center"/>
+
+                        <!-- PasswordBox in second column -->
+                        <PasswordBox Grid.Row="3" Grid.Column="1" 
+                 Margin="0,0,0,10"
+                 IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                 PasswordChanged="PasswordBox_PasswordChanged"/>
+
+                        <!-- Confirm Password Label in first column -->
+                        <TextBlock Grid.Row="4" Grid.Column="0" 
+               Text="{x:Static resx:Strings.Label_ConfirmPassword}" Margin="0,5,10,5" VerticalAlignment="Center"/>
+
+                        <!-- Confirm PasswordBox in second column -->
+                        <PasswordBox Grid.Row="4" Grid.Column="1" 
+                 Margin="0,0,0,10"
+                 IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                 PasswordChanged="ConfirmPasswordBox_PasswordChanged"/>
+                    </Grid>
+                </TabItem>
+
+
+
             </TabControl>
 
             <!-- Bottom Buttons Row -->

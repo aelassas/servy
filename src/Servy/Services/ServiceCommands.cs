@@ -74,7 +74,11 @@ namespace Servy.Services
             RecoveryAction recoveryAction,
             string maxRestartAttempts,
             string environmentVariables,
-            string serviceDependencies
+            string serviceDependencies,
+            bool runAsLocalSystem,
+            string userAccount,
+            string password,
+            string confirmPassword
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(processPath))
@@ -163,6 +167,30 @@ namespace Servy.Services
                 return;
             }
 
+            if (!runAsLocalSystem)
+            {
+                try
+                {
+                    if (password != null && !password.Equals(confirmPassword, StringComparison.Ordinal))
+                    {
+                        _messageBoxService.ShowError(Strings.Msg_PasswordsDontMatch, Caption);
+                        return;
+                    }
+
+                    _serviceManager.ValidateCredentials(userAccount, password);
+                }
+                catch (Exception ex)
+                {
+                    _messageBoxService.ShowError(ex.Message, Caption);
+                    return;
+                }
+            }
+            else
+            {
+                userAccount = null;
+                password = null;
+            }
+
             try
             {
                 bool success = _serviceManager.InstallService(
@@ -182,7 +210,9 @@ namespace Servy.Services
                     recoveryAction,
                     maxRestartAttemptsValue,
                     normalizedEnvVars,
-                    serviceDependencies
+                    serviceDependencies,
+                    userAccount,
+                    password
                     );
 
                 if (success)
