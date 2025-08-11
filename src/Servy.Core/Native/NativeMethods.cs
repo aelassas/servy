@@ -215,7 +215,7 @@ namespace Servy.Core.Native
             const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
 
             if (!Regex.IsMatch(username, pattern))
-                throw new ArgumentException("Username format is invalid. Expected DOMAIN\\Username, .\\Username, or Username.");
+                throw new ArgumentException("Username format is invalid. Expected .\\Username or DOMAIN\\Username.");
 
             // Split DOMAIN\user or .\user into domain and username parts
             string? domain = null;
