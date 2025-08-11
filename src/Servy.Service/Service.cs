@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
@@ -7,15 +8,23 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Timers;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+        #region Constants
+
         private const string WindowsServiceName = "Servy";
+
+        #endregion
+
+        #region Private Fields
 
         private readonly IServiceHelper _serviceHelper;
         private readonly ILogger _logger;
@@ -35,11 +44,14 @@ namespace Servy.Service
         private int _maxFailedChecks;
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
-        private bool _disposed = false; // Tracks whether Dispose has been called
         private readonly object _healthCheckLock = new object();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private int _restartAttempts = 0;
+        private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
+        private bool _disposed = false; // Tracks whether Dispose has been called
+
+        #endregion
 
         /// <summary>
         /// Event invoked when the service stops, used for testing purposes.
@@ -167,7 +179,7 @@ namespace Servy.Service
         /// <param name="options">The start options containing executable details and priority.</param>
         private void StartMonitoredProcess(StartOptions options)
         {
-            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory);
+            StartProcess(options.ExecutablePath, options.ExecutableArgs, options.WorkingDirectory, options.EnvironmentVariables);
             SetProcessPriority(options.Priority);
         }
 
@@ -178,11 +190,13 @@ namespace Servy.Service
         /// <param name="realExePath">The full path to the executable to run.</param>
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
-        private void StartProcess(string realExePath, string realArgs, string workingDir)
+        /// <param name="environmentVariables">Environment variables.</param>
+        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
             _realExePath = realExePath;
             _realArgs = realArgs;
             _workingDir = workingDir;
+            _environmentVariables = environmentVariables;
 
             // Configure the process start info
             var psi = new ProcessStartInfo
@@ -196,6 +210,14 @@ namespace Servy.Service
                 CreateNoWindow = true
             };
 
+            if (environmentVariables != null)
+            {
+                foreach (var envVar in environmentVariables)
+                {
+                    psi.EnvironmentVariables[envVar.Name] = envVar.Value;
+                }
+            }
+
             _childProcess = _processFactory.Create(psi);
 
             // Enable events and attach output/error handlers
@@ -204,26 +226,9 @@ namespace Servy.Service
             _childProcess.ErrorDataReceived += OnErrorDataReceived;
             _childProcess.Exited += OnProcessExited;
 
-            // Create a Job Object through the service helper
-            var jobCreated = _serviceHelper.CreateJobObject(_logger);
-
-            if (!jobCreated)
-            {
-                _logger?.Error("Failed to create Job Object.");
-            }
-
             // Start the process
             _childProcess.Start();
             _logger?.Info($"Started child process with PID: {_childProcess.Id}");
-
-            // Assign process to Job Object
-            if (jobCreated)
-            {
-                if (!_serviceHelper.AssignProcessToJobObject(_childProcess, _logger))
-                {
-                    _logger?.Error("Failed to assign process to Job Object.");
-                }
-            }
 
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
@@ -375,11 +380,11 @@ namespace Servy.Service
                                 case RecoveryAction.RestartProcess:
                                     _serviceHelper.RestartProcess(
                                          _childProcess,
-                                         _serviceHelper.TerminateChildProcesses,
                                          StartProcess,
                                          _realExePath,
                                          _realArgs,
                                          _workingDir,
+                                         _environmentVariables,
                                          _logger
                                      );
                                     break;
@@ -474,8 +479,6 @@ namespace Servy.Service
                     _childProcess.Dispose();
                     _childProcess = null;
                 }
-
-                _serviceHelper.TerminateChildProcesses();
 
                 GC.SuppressFinalize(this);
             }

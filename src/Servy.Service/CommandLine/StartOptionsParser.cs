@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -35,7 +36,8 @@ namespace Servy.Service.CommandLine
                 MaxFailedChecks = fullArgs.Length > 9 && int.TryParse(fullArgs[9], out int mfc) ? mfc : 0,
                 RecoveryAction = fullArgs.Length > 10 && Enum.TryParse(fullArgs[10], true, out RecoveryAction ra) ? ra : RecoveryAction.None,
                 ServiceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty,
-                MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3
+                MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3,
+                EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
             };
         }
     }

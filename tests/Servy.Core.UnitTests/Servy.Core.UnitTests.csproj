@@ -89,6 +89,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EnvironmentVariableParserTests.cs" />
+    <Compile Include="EnvironmentVariablesValidatorTests.cs" />
     <Compile Include="HelperTests.cs" />
     <Compile Include="RotatingStreamWriterTests.cs" />
     <Compile Include="ServiceManagerTests.cs" />

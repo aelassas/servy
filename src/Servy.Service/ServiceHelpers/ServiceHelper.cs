@@ -1,23 +1,20 @@
-﻿using Servy.Core;
+﻿using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.ServiceProcess;
 
 namespace Servy.Service.ServiceHelpers
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
     {
-        private IntPtr _jobHandle = IntPtr.Zero;
-
         private readonly ICommandLineProvider _commandLineProvider;
 
         public ServiceHelper(ICommandLineProvider commandLineProvider)
@@ -44,6 +41,10 @@ namespace Servy.Service.ServiceHelpers
             logger?.Info($"[Args] {string.Join(" ", args)}");
             logger?.Info($"[Args] fullArgs Length: {args.Length}");
 
+            string envVarsFormatted = options.EnvironmentVariables != null
+                ? string.Join("; ", options.EnvironmentVariables.Select(ev => $"{ev.Name}={ev.Value}"))
+                : "(null)";
+
             logger?.Info(
               $"[Startup Parameters]\n" +
               $"- serviceName: {options.ServiceName}\n" +
@@ -57,7 +58,8 @@ namespace Servy.Service.ServiceHelpers
               $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
               $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
               $"- recoveryAction: {options.RecoveryAction}\n" +
-              $"- maxRestartAttempts: {options.MaxRestartAttempts}"
+              $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
+              $"- environmentVariables: {envVarsFormatted}"
           );
         }
 
@@ -117,11 +119,11 @@ namespace Servy.Service.ServiceHelpers
         /// <inheritdoc />
         public void RestartProcess(
             IProcessWrapper process,
-            Action terminateJobObject,
-            Action<string, string, string> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
+            List<EnvironmentVariable> environmentVariables,
             ILogger logger)
         {
             try
@@ -134,8 +136,7 @@ namespace Servy.Service.ServiceHelpers
                     process.WaitForExit();
                 }
 
-                terminateJobObject?.Invoke();
-                startProcess?.Invoke(realExePath, realArgs, workingDir);
+                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
 
                 logger?.Info("Process restarted.");
             }
@@ -192,85 +193,6 @@ namespace Servy.Service.ServiceHelpers
                 logger?.Error($"Failed to restart computer: {ex.Message}");
             }
         }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Creates a Windows Job Object to manage child processes lifetime and resource limits.
-        /// </summary>
-        /// <param name="logger">Logger to record errors and information.</param>
-        /// <returns>True if the job object was created successfully, false otherwise.</returns>
-        public bool CreateJobObject(ILogger logger)
-        {
-            try
-            {
-                _jobHandle = CreateJobObject(IntPtr.Zero, null);
-                if (_jobHandle == IntPtr.Zero)
-                {
-                    logger?.Error("Failed to create Job Object.");
-                    return false;
-                }
-
-                // Setup job object limits here if needed (optional)
-                return true;
-            }
-            catch (Exception ex)
-            {
-                logger?.Error($"Exception while creating Job Object: {ex.Message}", ex);
-                return false;
-            }
-        }
-
-        /// <inheritdoc />
-        /// <summary>
-        /// Assigns a process to the created Job Object.
-        /// </summary>
-        /// <param name="process">Process wrapper for the process to assign.</param>
-        /// <param name="logger">Logger to record errors and information.</param>
-        /// <returns>True if assignment succeeded, false otherwise.</returns>
-        public bool AssignProcessToJobObject(IProcessWrapper process, ILogger logger)
-        {
-            if (_jobHandle == IntPtr.Zero)
-            {
-                logger?.Error("Job Object not created yet.");
-                return false;
-            }
-
-            try
-            {
-                bool success = AssignProcessToJobObject(_jobHandle, process.ProcessHandle);
-                if (!success)
-                {
-                    int error = Marshal.GetLastWin32Error();
-                    logger?.Error($"Failed to assign process to Job Object. Win32 Error: {error}");
-                }
-                return success;
-            }
-            catch (Exception ex)
-            {
-                logger?.Error($"Exception while assigning process to Job Object: {ex.Message}", ex);
-                return false;
-            }
-        }
-
-        /// <inheritdoc />
-        public void TerminateChildProcesses()
-        {
-            if (_jobHandle != IntPtr.Zero && _jobHandle != new IntPtr(-1))
-            {
-                NativeMethods.CloseHandle(_jobHandle);
-                _jobHandle = IntPtr.Zero;
-            }
-        }
-
-        #region Native Methods
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        private static extern IntPtr CreateJobObject(IntPtr lpJobAttributes, string lpName);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool AssignProcessToJobObject(IntPtr hJob, IntPtr hProcess);
-
-        #endregion
 
     }
 }

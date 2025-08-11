@@ -1,8 +1,9 @@
-﻿using Servy.Core;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
+using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Servy.Service
+namespace Servy.Service.CommandLine
 {
     /// <summary>
     /// Represents the configuration options used to start and monitor the service process.
@@ -71,5 +72,10 @@ namespace Servy.Service
         /// Defaults to 3.
         /// </summary>
         public int MaxRestartAttempts { get; set; } = 3;
+
+        /// <summary>
+        /// Gets or sets the environment variables of the child process.
+        /// </summary>
+        public List<EnvironmentVariable> EnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
     }
 }

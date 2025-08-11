@@ -1,5 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -7,6 +9,7 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -15,7 +18,7 @@ namespace Servy.Service.UnitTests
     public class HealthCheckTests
     {
         // Helper to create service with injected mocks
-        private TestableService CreateService(
+        private static TestableService CreateService(
             out Mock<ILogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
@@ -94,11 +97,11 @@ namespace Servy.Service.UnitTests
             logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains($"Health check failed ("))), Times.AtLeastOnce);
             helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
-                It.IsAny<Action>(),
-                It.IsAny<Action<string, string, string>>(),
+                It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<List<EnvironmentVariable>>(),
                 It.IsAny<ILogger>()),
                 Times.Once);
 
@@ -125,11 +128,11 @@ namespace Servy.Service.UnitTests
             helper.Setup(h =>
                 h.RestartProcess(
                     It.IsAny<IProcessWrapper>(),
-                    It.IsAny<Action>(),
-                    It.IsAny<Action<string, string, string>>(),
+                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
+                    It.IsAny<List<EnvironmentVariable>>(),
                     It.IsAny<ILogger>()))
                 .Verifiable();
 
@@ -163,11 +166,11 @@ namespace Servy.Service.UnitTests
                     case RecoveryAction.RestartProcess:
                         helper.Verify(h => h.RestartProcess(
                             It.IsAny<IProcessWrapper>(),
-                            It.IsAny<Action>(),
-                            It.IsAny<Action<string, string, string>>(),
+                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
+                            It.IsAny<List<EnvironmentVariable>>(),
                             It.IsAny<ILogger>()), Times.Once);
                         break;
                     case RecoveryAction.RestartService:

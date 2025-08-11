@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -9,6 +10,7 @@ using Servy.Service.Validation;
 using System;
 using System.Diagnostics;
 using Xunit;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
@@ -94,7 +96,7 @@ namespace Servy.Service.UnitTests
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
-            _service.StartForTest(new string[0]);
+            _service.StartForTest(Array.Empty<string>());
 
             // Assert
             _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes), Times.Once);
@@ -116,7 +118,7 @@ namespace Servy.Service.UnitTests
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
                 StdOutPath = "InvalidPath???",
-                StdErrPath = null,
+                StdErrPath = string.Empty,
                 RotationSizeInBytes = 1024,
                 HeartbeatInterval = 0,
                 MaxFailedChecks = 0,
@@ -126,9 +128,9 @@ namespace Servy.Service.UnitTests
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns(options);
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
-            
+
             // Act
-            _service.StartForTest(new string[0]);
+            _service.StartForTest(Array.Empty<string>());
 
             // Assert
             _mockLogger.Verify(l => l.Error(
@@ -149,7 +151,7 @@ namespace Servy.Service.UnitTests
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns((StartOptions)null);
 
-            _service.StartForTest(new string[0]);
+            _service.StartForTest(Array.Empty<string>());
 
             Assert.True(stopped);
         }
@@ -162,7 +164,7 @@ namespace Servy.Service.UnitTests
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Throws(new Exception("Boom"));
 
-            _service.StartForTest(new string[0]);
+            _service.StartForTest(Array.Empty<string>());
 
             Assert.True(stopped);
             _mockLogger.Verify(l => l.Error(
@@ -356,7 +358,7 @@ namespace Servy.Service.UnitTests
             var options = new StartOptions
             {
                 StdOutPath = "",
-                StdErrPath = null,
+                StdErrPath = string.Empty,
                 RotationSizeInBytes = 12345
             };
 

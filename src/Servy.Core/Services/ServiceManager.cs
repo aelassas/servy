@@ -169,7 +169,8 @@ namespace Servy.Core.Services
             int heartbeatInterval,
             int maxFailedChecks,
             RecoveryAction recoveryAction,
-            int maxRestartAttempts)
+            int maxRestartAttempts,
+            string environmentVariables)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -192,7 +193,8 @@ namespace Servy.Core.Services
                 Helper.Quote(maxFailedChecks.ToString()),
                 Helper.Quote(recoveryAction.ToString()),
                 Helper.Quote(serviceName),
-                Helper.Quote(maxRestartAttempts.ToString())
+                Helper.Quote(maxRestartAttempts.ToString()),
+                Helper.Quote(environmentVariables)
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);

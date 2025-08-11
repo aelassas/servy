@@ -57,6 +57,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.SelectedStartupType = ServiceStartType.Manual;
             _viewModel.SelectedProcessPriority = ProcessPriority.High;
             _viewModel.SelectedRecoveryAction = RecoveryAction.RestartService;
+            _viewModel.EnvironmentVariables = string.Empty;
 
             // Act
             _viewModel.InstallCommand.Execute(null);
@@ -78,7 +79,8 @@ namespace Servy.UnitTests.ViewModels
                 "60",
                 "5",
                 RecoveryAction.RestartService,
-                "3"
+                "3",
+                string.Empty
             ), Times.Once);
         }
 

@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -14,7 +15,7 @@ namespace Servy.Service.UnitTests
 {
     public class EventHandlerTests
     {
-        private TestableService CreateService(
+        private static TestableService CreateService(
             out Mock<ILogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
@@ -40,14 +41,14 @@ namespace Servy.Service.UnitTests
                 mockPathValidator.Object);
         }
 
-        DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
+        static DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
         {
             var ctor = typeof(DataReceivedEventArgs).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                new[] { typeof(string) },
+                new Type[] { typeof(string) },
                 null);
-            return (DataReceivedEventArgs)ctor.Invoke(new object[] { data });
+            return (DataReceivedEventArgs)ctor.Invoke(new string[] { data });
         }
 
         [Fact]
@@ -66,9 +67,9 @@ namespace Servy.Service.UnitTests
             swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>())).Returns(mockWriter.Object);
 
             // Prepare a sample non-empty data event
-            var nonEmptyArgs =  CreateDataReceivedEventArgs("output line");
-            var emptyArgs =  CreateDataReceivedEventArgs(null);
-            var emptyStringArgs =  CreateDataReceivedEventArgs(string.Empty);
+            var nonEmptyArgs = CreateDataReceivedEventArgs("output line");
+            var emptyArgs = CreateDataReceivedEventArgs(null);
+            var emptyStringArgs = CreateDataReceivedEventArgs(string.Empty);
 
             // Arrange
             var startOptions = new StartOptions

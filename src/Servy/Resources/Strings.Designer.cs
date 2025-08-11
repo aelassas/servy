@@ -124,6 +124,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enter each variable on a new line, or separate multiple variables with semicolons. Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
+        /// </summary>
+        public static string Info_EnvironmentVariables {
+            get {
+                return ResourceManager.GetString("Info_EnvironmentVariables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à attempts.
         /// </summary>
         public static string Label_Attempts {
@@ -147,6 +156,15 @@ namespace Servy.Resources {
         public static string Label_EnableRotation {
             get {
                 return ResourceManager.GetString("Label_EnableRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Environment Variables.
+        /// </summary>
+        public static string Label_EnvironmentVariables {
+            get {
+                return ResourceManager.GetString("Label_EnvironmentVariables", resourceCulture);
             }
         }
         

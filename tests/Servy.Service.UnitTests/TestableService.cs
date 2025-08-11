@@ -1,4 +1,6 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
+using Servy.Service.CommandLine;
 using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
@@ -6,6 +8,7 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Timers;
 
@@ -13,8 +16,9 @@ namespace Servy.Service.UnitTests
 {
     public class TestableService : Service
     {
-        private Action<string, string, string> _startProcessOverride;
+        private Action<string, string, string, List<EnvironmentVariable>> _startProcessOverride;
         private Action _terminateChildProcessesOverride;
+
 
         public TestableService(
             IServiceHelper serviceHelper,
@@ -36,17 +40,17 @@ namespace Servy.Service.UnitTests
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
 
         public void SetChildProcess(IProcessWrapper process) =>
-            typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            typeof(Service).GetField("_childProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .SetValue(this, process);
 
         public void InvokeHandleLogWriters(StartOptions options) =>
-            (typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance))
+            typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .Invoke(this, new object[] { options });
 
         public void InvokeSetupHealthMonitoring(StartOptions options)
         {
             var method = typeof(Service).GetMethod("SetupHealthMonitoring", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method.Invoke(this, new object[] { options });
+            method?.Invoke(this, new object[] { options });
         }
 
         public void SetMaxFailedChecks(int value)
@@ -115,7 +119,7 @@ namespace Servy.Service.UnitTests
             method.Invoke(this, new object[] { sender, e });
         }
 
-        public void OverrideStartProcess(Action<string, string, string> startProcess)
+        public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>> startProcess)
         {
             _startProcessOverride = startProcess;
         }
@@ -133,16 +137,16 @@ namespace Servy.Service.UnitTests
         }
 
         // Expose StartProcess protected method and allow override logic
-        public void InvokeStartProcess(string exePath, string args, string workingDir)
+        public void InvokeStartProcess(string exePath, string args, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
             if (_startProcessOverride != null)
             {
-                _startProcessOverride(exePath, args, workingDir);
+                _startProcessOverride(exePath, args, workingDir, environmentVariables);
             }
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method.Invoke(this, new object[] { exePath, args, workingDir });
+                method.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables });
             }
         }
 
