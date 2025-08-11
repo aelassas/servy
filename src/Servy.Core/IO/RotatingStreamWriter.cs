@@ -73,17 +73,12 @@ namespace Servy.Core.IO
         /// </summary>
         /// <param name="basePath">The initial file path to check.</param>
         /// <returns>A unique file path that does not exist yet.</returns>
-        private string GenerateUniqueFileName(string basePath)
+        private static string GenerateUniqueFileName(string basePath)
         {
             if (!File.Exists(basePath))
                 return basePath;
 
             string directory = Path.GetDirectoryName(basePath);
-            if (string.IsNullOrEmpty(directory))
-            {
-                // If directory is null or empty, just return basePath
-                return basePath;
-            }
 
             string filenameWithoutExt = Path.GetFileNameWithoutExtension(basePath);
             string extension = Path.GetExtension(basePath);
@@ -107,8 +102,11 @@ namespace Servy.Core.IO
         /// </summary>
         private void Rotate()
         {
-            _writer?.Flush();
-            _writer?.Dispose();
+            if (_writer != null)
+            {
+                _writer.Flush();
+                _writer.Dispose();
+            }
 
             string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
             string rotatedPath = $"{_file.FullName}.{timestamp}{_file.Extension}";
@@ -144,5 +142,6 @@ namespace Servy.Core.IO
                 GC.SuppressFinalize(this);
             }
         }
+
     }
 }

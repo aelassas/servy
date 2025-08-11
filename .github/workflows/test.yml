@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - net48
-  # pull_request:
-  #   branches:
-  #     - net48
 
 jobs:
   test:
@@ -25,11 +22,38 @@ jobs:
       - name: Build solution
         run: msbuild Servy.sln /p:Configuration=Release
 
-      - name: Run Unit Tests
+      - name: Install Coverlet global tool
+        run: dotnet tool install --global coverlet.console
+
+      - name: Add dotnet tools to PATH
+        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"  
+        shell: pwsh
+
+      - name: Run Servy.Core.UnitTests with coverage
+        run: |
+          coverlet.exe "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
+            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
+            --output "coverage.xml" `
+            --format "cobertura"
+        shell: pwsh
+
+      - name: Run other Unit Tests (no coverage)
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
             "tests\Servy.Restarter.UnitTests\bin\Release\Servy.Restarter.UnitTests.dll" `
             "tests\Servy.Service.UnitTests\bin\Release\Servy.Service.UnitTests.dll" `
             "tests\Servy.UnitTests\bin\Release\Servy.UnitTests.dll" `
-            "tests\Servy.CLI.UnitTests\bin\Release\Servy.CLI.UnitTests.dll" `
+            "tests\Servy.CLI.UnitTests\bin\Release\Servy.CLI.UnitTests.dll"
+        shell: pwsh
+
+      - name: Upload coverage to Codecov
+        id: codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          flags: unittests
+          name: codecov-coverage-report
+          fail_ci_if_error: true
+          verbose: false

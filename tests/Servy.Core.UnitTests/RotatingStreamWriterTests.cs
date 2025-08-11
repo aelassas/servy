@@ -95,12 +95,13 @@ namespace Servy.Core.UnitTests
         public void GenerateUniqueFileName_ReturnsNonExistingFileName()
         {
             var methodInfo = typeof(RotatingStreamWriter)
-                .GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Instance);
+                .GetMethod("GenerateUniqueFileName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
 
             Assert.NotNull(methodInfo);  // Ensure method exists to avoid null dereference
 
             using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
             {
+
                 string basePath = Path.Combine(_testDir, "file.log");
 
                 File.WriteAllText(basePath, "test");
@@ -111,6 +112,7 @@ namespace Servy.Core.UnitTests
 
                 Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
             }
+
         }
 
         public void Dispose()
@@ -121,6 +123,8 @@ namespace Servy.Core.UnitTests
                 {
                     Directory.Delete(_testDir, true);
                 }
+
+                GC.SuppressFinalize(this);
             }
             catch
             {
