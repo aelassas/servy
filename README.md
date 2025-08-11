@@ -1,4 +1,4 @@
-[![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml) [![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main&v=1)](https://coveralls.io/github/aelassas/servy?branch=main) [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
+[![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml) [![coverage](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage)](https://codecov.io/gh/aelassas/servy) [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <!--
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) 
@@ -6,8 +6,10 @@
 [![Build Status](https://aelassas.visualstudio.com/servy/_apis/build/status%2Faelassas.servy?branchName=main)](https://aelassas.visualstudio.com/servy/_build/latest?definitionId=4&branchName=main) 
 [![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) 
 [![codecov](https://codecov.io/gh/aelassas/servy/graph/badge.svg?token=26WZX2V4BG)](https://codecov.io/gh/aelassas/servy)
-[![Coverage Status](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
+[![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage)](https://codecov.io/gh/aelassas/servy)
+[![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 -->
+
 <p align="center">
   <img src="https://servy-win.github.io/servy.png?d=7" alt="Servy" />
 </p>
@@ -19,7 +21,7 @@
 
 # Servy
 
-Servy lets you run any app as a Windows service with full control over working directory, startup type, logging, health checks, and parameters. A fully managed alternative to NSSM.
+Servy lets you run any app as a Windows service with full control over working directory, startup type, logging, health checks, environment variables, dependencies, and parameters. A fully managed alternative to NSSM.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), enabling you to create, configure, and manage Windows services interactively or automate these tasks in scripts and CI/CD pipelines.
 
@@ -42,7 +44,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * Clean, simple UI
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
-* Set service name, description, startup type, priority, working directory, environment variables, and parameters
+* Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
@@ -57,7 +59,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * [x] Automatic restart on failure
 * [x] CLI for full scripting and automated deployments
 * [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
-* [ ] Support service dependencies
+* [x] Support service dependencies
 * [ ] Add "Log on as" configuration for Windows service
 
 ## Support & Contributing
