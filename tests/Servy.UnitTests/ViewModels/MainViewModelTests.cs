@@ -64,6 +64,16 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.Password = "password";
             _viewModel.ConfirmPassword = "password";
 
+            _viewModel.PreLaunchExecutablePath = @"C:\pre-launch.exe";
+            _viewModel.PreLaunchStartupDirectory = @"C:\";
+            _viewModel.PreLaunchParameters = "--param1 val1";
+            _viewModel.PreLaunchEnvironmentVariables = "var1=val1; var2=val2;";
+            _viewModel.PreLaunchStdoutPath = @"C:\pre-launch-stdout.log";
+            _viewModel.PreLaunchStderrPath = @"C:\pre-launch-stderr.log";
+            _viewModel.PreLaunchTimeoutSeconds = "40";
+            _viewModel.PreLaunchRetryAttempts = "3";
+            _viewModel.PreLaunchIgnoreFailure = true;
+
             // Act
             _viewModel.InstallCommand.Execute(null);
 
@@ -90,7 +100,18 @@ namespace Servy.UnitTests.ViewModels
                 false,
                  @".\username",
                  "password",
-                 "password"
+                 "password",
+
+                 @"C:\pre-launch.exe",
+                 @"C:\",
+                 "--param1 val1",
+                 "var1=val1; var2=val2;",
+                 @"C:\pre-launch-stdout.log",
+                 @"C:\pre-launch-stderr.log",
+                 "40",
+                 "3",
+                 true
+
             ), Times.Once);
         }
 

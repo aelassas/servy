@@ -23,6 +23,9 @@
   <data name="Label_LogOnTab" xml:space="preserve">
     <value>Log On</value>
   </data>
+  <data name="Label_PreLaunchTab" xml:space="preserve">
+    <value>Pre-Launch</value>
+  </data>
 
   <!-- Labels -->
   <data name="Label_ServiceName" xml:space="preserve">
@@ -170,6 +173,41 @@
   </data>
   <data name="Msg_PasswordsDontMatch" xml:space="preserve">
     <value>Passwords don&apos;t match.</value>
+  </data>
+
+  <!-- Pre-Launch -->
+  <data name="Info_PreLaunch" xml:space="preserve">
+    <value>Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable "Ignore Failure".</value>
+  </data>
+  <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">
+    <value>Optional. Defaults to the service working directory.</value>
+  </data>
+  <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
+    <value>Timeout</value>
+  </data>
+  <data name="Label_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>Retry Attempts</value>
+  </data>
+  <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>Ignore Failure</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>The pre-launch process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>The specified pre-launch startup directory is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>The specified pre-launch stdout file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>The specified pre-launch stderr file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
   </data>
 
   <!-- General -->

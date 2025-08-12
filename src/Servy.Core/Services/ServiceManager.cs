@@ -174,7 +174,16 @@ namespace Servy.Core.Services
             string environmentVariables,
             string serviceDependencies,
             string username,
-            string password
+            string password,
+            string preLaunchExePath,
+            string preLaunchWorkingDirectory,
+            string preLaunchArgs,
+            string preLaunchEnvironmentVariables,
+            string preLaunchStdoutPath,
+            string preLaunchStderrPath,
+            int preLaunchTimeout = 5,
+            int preLaunchRetryAttempts = 0,
+            bool preLaunchIgnoreFailure = false
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -199,7 +208,18 @@ namespace Servy.Core.Services
                 Helper.Quote(recoveryAction.ToString()),
                 Helper.Quote(serviceName),
                 Helper.Quote(maxRestartAttempts.ToString()),
-                Helper.Quote(environmentVariables)
+                Helper.Quote(environmentVariables),
+
+                // Pre-Launch
+                Helper.Quote(preLaunchExePath),
+                Helper.Quote(preLaunchWorkingDirectory),
+                Helper.Quote(preLaunchArgs),
+                Helper.Quote(preLaunchEnvironmentVariables),
+                Helper.Quote(preLaunchStdoutPath),
+                Helper.Quote(preLaunchStderrPath),
+                Helper.Quote(preLaunchTimeout.ToString()),
+                Helper.Quote(preLaunchRetryAttempts.ToString()),
+                Helper.Quote(preLaunchIgnoreFailure.ToString())
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);

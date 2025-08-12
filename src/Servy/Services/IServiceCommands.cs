@@ -32,6 +32,15 @@ namespace Servy.Services
         /// <param name="userAccount">The service account username (e.g., <c>.\username</c>, <c>DOMAIN\username</c>).</param>
         /// <param name="password">The password for the service account.</param>
         /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        /// <param name="preLaunchExePath">Pre-launch script exe path.</param>
+        /// <param name="preLaunchWorkingDirectory">Pre-launch working directory.</param>
+        /// <param name="preLaunchArgs">Command line arguments to pass to the pre-launch executable.</param>
+        /// <param name="preLaunchEnvironmentVariables">Pre-launch environment variables.</param>
+        /// <param name="preLaunchStdoutPath">Optional path for pre-launch standard output redirection. If null, no redirection is performed.</param>
+        /// <param name="preLaunchStderrPath">Optional path for pre-launch standard error redirection. If null, no redirection is performed.</param>
+        /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
+        /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
+        /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
         void InstallService(
             string serviceName,
             string serviceDescription,
@@ -54,7 +63,16 @@ namespace Servy.Services
             bool runAsLocalSystem,
             string userAccount,
             string password,
-            string confirmPassword
+            string confirmPassword,
+            string preLaunchExePath,
+            string preLaunchWorkingDirectory,
+            string preLaunchArgs,
+            string preLaunchEnvironmentVariables,
+            string preLaunchStdoutPath,
+            string preLaunchStderrPath,
+            string preLaunchTimeout,
+            string preLaunchRetryAttempts,
+            bool preLaunchIgnoreFailure
             );
 
         /// <summary>

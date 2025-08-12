@@ -19,6 +19,8 @@ namespace Servy.CLI.Validators
         private const int MinHeartbeatInterval = 5;
         private const int MinMaxFailedChecks = 1;
         private const int MinMaxRestartAttempts = 1;
+        private const int MinPreLaunchTimeoutSeconds = 5;
+        private const int MinPreLaunchRetryAttempts = 0;
 
         /// <summary>
         /// Validates the install service options.
@@ -32,6 +34,21 @@ namespace Servy.CLI.Validators
 
             if (!Helper.IsValidPath(opts.ProcessPath) || !File.Exists(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && (!Helper.IsValidPath(opts.StartupDirectory) || !Directory.Exists(opts.StartupDirectory)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidStartupDirectory);
+            }
+
+            if (!string.IsNullOrWhiteSpace(opts.StdoutPath) && (!Helper.IsValidPath(opts.StdoutPath) || !Helper.CreateParentDirectory(opts.StdoutPath)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidStdoutPath);
+            }
+
+            if (!string.IsNullOrWhiteSpace(opts.StderrPath) && (!Helper.IsValidPath(opts.StderrPath) || !Helper.CreateParentDirectory(opts.StderrPath)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidStderrPath);
+            }
 
             if (!ValidateEnumOption<ServiceStartType>(opts.ServiceStartType))
                 return CommandResult.Fail(Strings.Msg_InvalidStartupType);
@@ -75,6 +92,43 @@ namespace Servy.CLI.Validators
             string envVarsErrorMessage;
             if (!EnvironmentVariablesValidator.Validate(opts.EnvironmentVariables, out envVarsErrorMessage))
                 return CommandResult.Fail(envVarsErrorMessage);
+
+            // PreLaunch
+
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!Helper.IsValidPath(opts.PreLaunchPath) || !File.Exists(opts.PreLaunchPath)))
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStartupDir) && (!Helper.IsValidPath(opts.PreLaunchStartupDir) || !Directory.Exists(opts.PreLaunchStartupDir)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStartupDirectory);
+            }
+
+            string preLaunchEnvVarsErrorMessage;
+            if (!EnvironmentVariablesValidator.Validate(opts.PreLaunchEnvironmentVariables, out preLaunchEnvVarsErrorMessage))
+                return CommandResult.Fail(preLaunchEnvVarsErrorMessage);
+
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStdoutPath) && (!Helper.IsValidPath(opts.PreLaunchStdoutPath) || !Helper.CreateParentDirectory(opts.PreLaunchStdoutPath)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStdoutPath);
+            }
+
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStderrPath) && (!Helper.IsValidPath(opts.PreLaunchStderrPath) || !Helper.CreateParentDirectory(opts.PreLaunchStderrPath)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStderrPath);
+            }
+
+            int preLaunchTimeoutValue = 30;
+            if (!int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchTimeout);
+            }
+
+            int preLaunchRetryAttemptsValue = 0;
+            if (!int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
+            }
+
 
             return CommandResult.Ok("Validation passed.");
         }

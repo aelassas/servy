@@ -41,6 +41,16 @@ namespace Servy.UnitTests.Services
             var password = "password";
             var confirmPassword = "password";
 
+            var preLaunchExe = @"C:\pre-launch.exe";
+            var preLaunchDir = @"C:\preLaunchDir";
+            var preLaunchArgs = "preLaunchArgs";
+            var preLaunchVars = "var1=val1;var2=val2;";
+            var preLaunchStdoutPath = @"C:\pre-launch-stdout.log";
+            var preLaunchStderrPath = @"C:\pre-launch-stderr.log";
+            var preLaunchTimeout = "30";
+            var preLaunchRetryAttempts = "0";
+            var preLaunchIgnoreError = true;
+
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -65,7 +75,17 @@ namespace Servy.UnitTests.Services
                 runAsLocalSystem,
                 username,
                 password,
-                confirmPassword
+                confirmPassword,
+
+                preLaunchExe,
+                preLaunchDir,
+                preLaunchArgs,
+                preLaunchVars,
+                preLaunchStdoutPath,
+                preLaunchStderrPath,
+                preLaunchTimeout,
+                preLaunchRetryAttempts,
+                preLaunchIgnoreError
                 );
 
             // Assert
@@ -91,7 +111,18 @@ namespace Servy.UnitTests.Services
                 runAsLocalSystem,
                 username,
                 password,
-                confirmPassword), Times.Once);
+                confirmPassword,
+
+                preLaunchExe,
+                preLaunchDir,
+                preLaunchArgs,
+                preLaunchVars,
+                preLaunchStdoutPath,
+                preLaunchStderrPath,
+                preLaunchTimeout,
+                preLaunchRetryAttempts,
+                preLaunchIgnoreError
+                ), Times.Once);
         }
 
         [Fact]

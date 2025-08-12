@@ -133,6 +133,60 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The pre-launch process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch retry attempts must be a number greater than or equal to 0..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchRetryAttempts {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchRetryAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch stderr file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStderrPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStderrPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch stdout file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStdoutPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified process priority is invalid. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime..
         /// </summary>
         public static string Msg_InvalidProcessPriority {

@@ -57,6 +57,10 @@ namespace Servy.CLI.Commands
                 int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var failed) ? failed : 0;
                 int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var restart) ? restart : 0;
 
+                // pre-launch
+                int preLaunchTimeout = int.TryParse(opts.PreLaunchTimeout, out var plTimeout) ? plTimeout : 30;
+                int preLaunchRetryAttempts = int.TryParse(opts.PreLaunchRetryAttempts, out var plRetryAttempts) ? plRetryAttempts : 0;
+
                 // Call the service manager install method
                 var success = _serviceManager.InstallService(
                     opts.ServiceName,
@@ -77,7 +81,18 @@ namespace Servy.CLI.Commands
                     opts.EnvironmentVariables,
                     opts.ServiceDependencies,
                     opts.User,
-                    opts.Password
+                    opts.Password,
+
+                    // Pre-Launch
+                    opts.PreLaunchPath,
+                    opts.PreLaunchStartupDir,
+                    opts.PreLaunchParameters,
+                    opts.PreLaunchEnvironmentVariables,
+                    opts.PreLaunchStdoutPath,
+                    opts.PreLaunchStderrPath,
+                    preLaunchTimeout,
+                    preLaunchRetryAttempts,
+                    opts.PreLaunchIgnoreFailure
                 );
 
                 return success

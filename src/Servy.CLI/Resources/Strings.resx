@@ -92,4 +92,24 @@
   <data name="Message_Error" xml:space="preserve">
     <value>An error occurred.</value>
   </data>
+
+  <!-- PreLaunch -->
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>The pre-launch process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>The specified pre-launch startup directory is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>The specified pre-launch stdout file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>The specified pre-launch stderr file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
+  </data>
 </root>
