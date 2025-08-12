@@ -286,6 +286,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Path.
+        /// </summary>
+        public static string Label_PreLaunchProcessPath {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchProcessPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Retry Attempts.
         /// </summary>
         public static string Label_PreLaunchRetryAttempts {
