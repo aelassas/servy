@@ -49,6 +49,7 @@ namespace Servy.Service
         private int _restartAttempts = 0;
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _disposed = false; // Tracks whether Dispose has been called
+        private bool _recoveryActionEnabled = false;
 
         #endregion
 
@@ -124,6 +125,7 @@ namespace Servy.Service
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
 
                 _serviceName = options.ServiceName;
+                _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Set up service logging
@@ -412,31 +414,61 @@ namespace Servy.Service
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
                 _stderrWriter?.WriteLine(e.Data);
-                _logger?.Error($"[Error] {e.Data}");
+                //_logger?.Error($"[Error] {e.Data}");
             }
         }
 
         /// <summary>
-        /// Called when the child process exits.
-        /// Logs the exit code and whether the exit was successful.
+        /// Handles the event when the monitored child process exits.
+        /// Logs the exit code and whether the process ended successfully or with an error.
+        /// If recovery is disabled and the process exits with a non-zero code, stops the service.
+        /// If recovery is disabled and the process exits successfully, the service continues running
+        /// (unless configured otherwise).
+        /// If recovery is enabled, logs that recovery/restart logic will be applied.
         /// </summary>
         private void OnProcessExited(object? sender, EventArgs e)
         {
-            try
+            lock (_healthCheckLock)
             {
-                var code = _childProcess!.ExitCode;
-                if (code == 0)
+                try
                 {
-                    _logger.Info("Child process exited successfully.");
+                    var code = _childProcess!.ExitCode;
+                    if (code == 0)
+                    {
+                        _logger.Info("Child process exited successfully.");
+                    }
+                    else
+                    {
+                        _logger.Warning($"Child process exited with code {code}.");
+                    }
+
+                    if (!_recoveryActionEnabled)
+                    {
+                        if (code != 0)
+                        {
+                            _logger.Info("Recovery disabled and child process failed. Stopping service.");
+                            Stop();
+                        }
+                        else
+                        {
+                            _logger.Info("Recovery disabled but child process exited successfully. Service continues.");
+                        }
+                    }
+                    else
+                    {
+                        _logger.Info("Recovery enabled, child process exited. Restart logic expected.");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.Warning($"Child process exited with code {code}.");
+                    _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
+
+                    if (!_recoveryActionEnabled)
+                    {
+                        _logger?.Error("Recovery disabled and exit code unknown. Stopping service.");
+                        Stop();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
             }
         }
 
@@ -457,6 +489,7 @@ namespace Servy.Service
                 _logger?.Warning($"Failed to set priority: {ex.Message}");
             }
         }
+
         /// <summary>
         /// Sets up health monitoring for the child process using a timer.
         /// Starts the timer if heartbeat interval, max failed checks, and recovery action are valid.
@@ -514,6 +547,7 @@ namespace Servy.Service
                                     $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken."
                                 );
                                 _isRecovering = false;
+                                Stop();
                                 return;
                             }
 
