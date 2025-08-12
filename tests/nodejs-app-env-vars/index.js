@@ -31,9 +31,10 @@ for (const [key, val] of Object.entries(process.env)) {
     console.log(line.trim()) // optional: print to console
   }
 }
-process.exit(1)
+// process.exit(1)
+
 // simulate some work
 await new Promise((res) => setTimeout(res, 6 * 1000))
 process.stderr.write('boo!')
 
-process.exit(1)
+process.exit(0)
