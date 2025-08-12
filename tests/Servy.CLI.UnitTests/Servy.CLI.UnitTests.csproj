@@ -90,6 +90,7 @@
     <Compile Include="InstallServiceCommandTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestartServiceCommandTests.cs" />
+    <Compile Include="ServiceStatusCommandTests.cs" />
     <Compile Include="StartServiceCommandTests.cs" />
     <Compile Include="StopServiceCommandTests.cs" />
     <Compile Include="UninstallServiceCommandTests.cs" />

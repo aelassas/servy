@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using System.ServiceProcess;
 
 namespace Servy.Core.Interfaces
 {
@@ -85,5 +86,12 @@ namespace Servy.Core.Interfaces
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was restarted; otherwise false.</returns>
         bool RestartService(string serviceName);
+
+        /// <summary>
+        /// Gets the current status of the specified Windows service.
+        /// </summary>
+        /// <param name="serviceName">The name of the service.</param>
+        /// <returns>The current <see cref="ServiceControllerStatus"/> of the service.</returns>
+        ServiceControllerStatus GetServiceStatus(string serviceName);
     }
 }

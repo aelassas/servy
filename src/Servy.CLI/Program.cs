@@ -1,5 +1,6 @@
 ﻿using CommandLine;
 using Servy.CLI.Commands;
+using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Services;
@@ -54,6 +55,7 @@ namespace Servy.CLI
                 var stopCommand = new StopServiceCommand(serviceManager);
                 var restartCommand = new RestartServiceCommand(serviceManager);
                 var uninstallCommand = new UninstallServiceCommand(serviceManager);
+                var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
 
                 CopyEmbeddedResource(ServyServiceExeFileName);
 
@@ -62,6 +64,7 @@ namespace Servy.CLI
                     UninstallServiceOptions,
                     StartServiceOptions,
                     StopServiceOptions,
+                    ServiceStatusOptions,
                     RestartServiceOptions>(args)
                        .MapResult(
                         (InstallServiceOptions opts) => PrintAndReturn(installCommand.Execute(opts)),
@@ -69,6 +72,7 @@ namespace Servy.CLI
                         (StartServiceOptions opts) => PrintAndReturn(startCommand.Execute(opts)),
                         (StopServiceOptions opts) => PrintAndReturn(stopCommand.Execute(opts)),
                         (RestartServiceOptions opts) => PrintAndReturn(restartCommand.Execute(opts)),
+                        (ServiceStatusOptions opts) => PrintAndReturn(serviceStatusCommand.Execute(opts)),
                         errs => 1);
 
                 return exiCode;
