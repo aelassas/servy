@@ -18,7 +18,7 @@
 
 ## .NET Framework 4.8 Version
 
-Servy lets you run any app as a Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, the user who runs the service, and parameters. A fully managed alternative to NSSM.
+Servy lets you run any app as a Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. A fully managed alternative to NSSM.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), enabling you to create, configure, and manage Windows services interactively or automate these tasks in scripts and CI/CD pipelines.
 
