@@ -2,7 +2,9 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Interfaces;
+using System;
 using System.ServiceProcess;
+using Xunit;
 
 namespace Servy.CLI.UnitTests
 {
