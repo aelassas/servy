@@ -366,6 +366,18 @@ namespace Servy.Core.Services
             return StartService(serviceName);
         }
 
+        /// <inheritdoc />
+        public ServiceControllerStatus GetServiceStatus(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+            using (var sc = _controllerFactory(serviceName))
+            {
+                return sc.Status;
+            }
+        }
+
         #endregion
     }
 }

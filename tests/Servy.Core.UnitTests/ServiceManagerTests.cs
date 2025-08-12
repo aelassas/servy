@@ -717,6 +717,23 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
+        public void RestartService_ShouldReturnFalse_WhenStopServiceFails()
+        {
+            // Arrange
+            // Simulate the service is already stopped so StopService returns true
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            // Simulate StartService throwing an exception, which should trigger catch and return false
+            _mockController.Setup(c => c.Stop()).Throws(new Exception("Boom!"));
+
+            // Act
+            var result = _serviceManager.RestartService("TestService");
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
         public void RestartService_ShouldReturnFalse_WhenStartServiceFails()
         {
             // Arrange
@@ -734,18 +751,26 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void RestartService_ShouldReturnFalse_WhenStopServiceThrows()
+        public void GetServiceStatus_ShouldReturnRunning()
         {
             // Arrange
-            _mockController.Setup(c => c.Status).Throws(new InvalidOperationException());
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
             // Act
-            var result = _serviceManager.RestartService("TestService");
+            var result = _serviceManager.GetServiceStatus("TestService");
 
             // Assert
-            Assert.False(result);
-            _mockController.Verify(c => c.Stop(), Times.Never);
-            _mockController.Verify(c => c.Start(), Times.Never);
+            Assert.Equal(ServiceControllerStatus.Running, result);
+        }
+
+        [Fact]
+        public void GetServiceStatus_ShouldThrowArgumentException()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+
+            // Assert
+            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus(""));
         }
 
     }
