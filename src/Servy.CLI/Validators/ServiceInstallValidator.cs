@@ -118,17 +118,16 @@ namespace Servy.CLI.Validators
             }
 
             int preLaunchTimeoutValue = 30;
-            if (!int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && !int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchTimeout);
             }
 
             int preLaunchRetryAttemptsValue = 0;
-            if (!int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && !int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
             }
-
 
             return CommandResult.Ok("Validation passed.");
         }
