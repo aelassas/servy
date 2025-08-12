@@ -2,7 +2,7 @@
   "profiles": {
     "Servy.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "install --name \"WexflowServer2\" --description \"Wexflow Engine\" --path \"C:\\Program Files\\dotnet\\dotnet.exe\" --startupDir \"C:\\Program Files\\Wexflow Server\\Wexflow.Server\" --params \"Wexflow.Server.dll\" --startupType \"\" --priority \"belowNormal\" --stdout \"C:\\Program Files\\Wexflow Server\\stdout.log\" --stderr \"C:\\Program Files\\Wexflow Server\\stderr.log\" --enableRotation true --rotationSize 1048576 --enableHealth true --heartbeatInterval 5 --maxFailedChecks 1 --recoveryAction restartService --maxRestartAttempts 2"
+      "commandLineArgs": "install --name \"WexflowServer\" --path \"C:\\Program Files\\dotnet\\dotnet.exe\" --preLaunchPath \"C:\\Program Files\\nodejs\\node.exe\" --preLaunchStartupDir \"C:\\Program Files\\nodejs\\\" --preLaunchParams \"E:\\dev\\servy\\src\\tests\\nodejs-app-env-vars\\index.js\" --preLaunchEnv \"var1=val1; var2=val2\" --preLaunchStdout \"E:\\dev\\servy\\stdout.log\" --preLaunchStderr \"E:\\dev\\servy\\stderr.log\" --preLaunchTimeout 40 --preLaunchRetryAttempts 3 --preLaunchIgnoreFailure true"
     }
   }
 }

@@ -11,12 +11,23 @@ namespace Servy.Service.ServiceHelpers
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
     {
+
+        #region Private Fields
+
         private readonly ICommandLineProvider _commandLineProvider;
+
+        #endregion
+
+        #region Constructors
 
         public ServiceHelper(ICommandLineProvider commandLineProvider)
         {
             _commandLineProvider = commandLineProvider;
         }
+
+        #endregion
+
+        #region IServiceHelper implementation
 
         /// <inheritdoc />
         public string[] GetSanitizedArgs()
@@ -37,9 +48,8 @@ namespace Servy.Service.ServiceHelpers
             logger?.Info($"[Args] {string.Join(" ", args)}");
             logger?.Info($"[Args] fullArgs Length: {args.Length}");
 
-            string envVarsFormatted = options.EnvironmentVariables != null
-                ? string.Join("; ", options.EnvironmentVariables.Select(ev => $"{ev.Name}={ev.Value}"))
-                : "(null)";
+            string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
+            string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
             logger?.Info(
               $"[Startup Parameters]\n" +
@@ -55,7 +65,20 @@ namespace Servy.Service.ServiceHelpers
               $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
               $"- recoveryAction: {options.RecoveryAction}\n" +
               $"- maxRestartAttempts: {options.MaxRestartAttempts}\n"+
-              $"- environmentVariables: {envVarsFormatted}"
+              $"- environmentVariables: {envVarsFormatted}"+
+
+              // Pre-Launch
+              "\n--------Pre-Launch args--------\n" +
+              $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
+              $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
+              $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
+              $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n" +
+              $"- preLaunchStdOutPath: {options.PreLaunchStdOutPath}\n" +
+              $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
+              $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
+              $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
+              $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n" +
+              "---------------------------------\n" 
           );
         }
 
@@ -189,6 +212,21 @@ namespace Servy.Service.ServiceHelpers
                 logger?.Error($"Failed to restart computer: {ex.Message}");
             }
         }
+
+        #endregion
+
+        #region Private Helpers
+
+        private static string EnvironmentVariablesToString(List<EnvironmentVariable> vars)
+        {
+            string envVarsFormatted = vars  != null
+            ? string.Join("; ", vars.Select(ev => $"{ev.Name}={ev.Value}"))
+            : "(null)";
+
+            return envVarsFormatted;
+        }
+
+        #endregion
 
     }
 }

@@ -49,6 +49,8 @@ namespace Servy.ViewModels
         private const int DefaultHeartbeatInterval = 30;          // 30 seconds
         private const int DefaultMaxFailedChecks = 3;             // 3 attempts
         private const int DefaultMaxRestartAttempts = 3;          // 3 attempts
+        private const int DefaultPreLaunchTimeoutSeconds = 30;    // 30 seconds
+        private const int DefaultPreLaunchRetryAttempts = 0;      // 0 attempts
 
         #endregion
 
@@ -300,6 +302,87 @@ namespace Servy.ViewModels
             set { _config.ConfirmPassword = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets pre-launch executable path as a string.
+        /// </summary>
+        public string PreLaunchExecutablePath
+        {
+            get => _config.PreLaunchExecutablePath;
+            set { _config.PreLaunchExecutablePath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch startup directory as a string.
+        /// </summary>
+        public string PreLaunchStartupDirectory
+        {
+            get => _config.PreLaunchStartupDirectory;
+            set { _config.PreLaunchStartupDirectory = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch parameters as a string.
+        /// </summary>
+        public string PreLaunchParameters
+        {
+            get => _config.PreLaunchParameters;
+            set { _config.PreLaunchParameters = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch environment variables as a string.
+        /// </summary>
+        public string PreLaunchEnvironmentVariables
+        {
+            get => _config.PreLaunchEnvironmentVariables;
+            set { _config.PreLaunchEnvironmentVariables = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch stdout log file path as a string.
+        /// </summary>
+        public string PreLaunchStdoutPath
+        {
+            get => _config.PreLaunchStdoutPath;
+            set { _config.PreLaunchStdoutPath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch stderr log file path as a string.
+        /// </summary>
+        public string PreLaunchStderrPath
+        {
+            get => _config.PreLaunchStderrPath;
+            set { _config.PreLaunchStderrPath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch timeout as a string.
+        /// </summary>
+        public string PreLaunchTimeoutSeconds
+        {
+            get => _config.PreLaunchTimeoutSeconds;
+            set { _config.PreLaunchTimeoutSeconds = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch retry attempts as a string.
+        /// </summary>
+        public string PreLaunchRetryAttempts
+        {
+            get => _config.PreLaunchRetryAttempts;
+            set { _config.PreLaunchRetryAttempts = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-launch ignore failure as a bool.
+        /// </summary>
+        public bool PreLaunchIgnoreFailure
+        {
+            get => _config.PreLaunchIgnoreFailure;
+            set { _config.PreLaunchIgnoreFailure = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -354,6 +437,26 @@ namespace Servy.ViewModels
         /// </summary>
         public ICommand ClearCommand { get; }
 
+        /// <summary>
+        /// Command to browse and select the pre-launch executable process path.
+        /// </summary>
+        public ICommand BrowsePreLaunchProcessPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the pre-launch startup directory.
+        /// </summary>
+        public ICommand BrowsePreLaunchStartupDirectoryCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the pre-launch standard output file path.
+        /// </summary>
+        public ICommand BrowsePreLaunchStdoutPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the pre-launch error output file path.
+        /// </summary>
+        public ICommand BrowsePreLaunchStderrPathCommand { get; }
+
         #endregion
 
         #region Constructors
@@ -383,6 +486,16 @@ namespace Servy.ViewModels
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
 
+            PreLaunchExecutablePath = string.Empty;
+            PreLaunchStartupDirectory = string.Empty;
+            PreLaunchParameters = string.Empty;
+            PreLaunchEnvironmentVariables = string.Empty;
+            PreLaunchStdoutPath = string.Empty;
+            PreLaunchStderrPath = string.Empty;
+            PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
+            PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
+            PreLaunchIgnoreFailure = false;
+
             // Commands
             BrowseProcessPathCommand = new RelayCommand(OnBrowseProcessPath);
             BrowseStartupDirectoryCommand = new RelayCommand(OnBrowseStartupDirectory);
@@ -394,6 +507,11 @@ namespace Servy.ViewModels
             StopCommand = new RelayCommand(OnStopService);
             RestartCommand = new RelayCommand(OnRestartService);
             ClearCommand = new RelayCommand(ClearForm);
+
+            BrowsePreLaunchProcessPathCommand = new RelayCommand(OnBrowsePreLaunchProcessPath);
+            BrowsePreLaunchStartupDirectoryCommand = new RelayCommand(OnBrowsePreLaunchStartupDirectory);
+            BrowsePreLaunchStdoutPathCommand = new RelayCommand(OnBrowsePreLaunchStdoutPath);
+            BrowsePreLaunchStderrPathCommand = new RelayCommand(OnBrowsePreLaunchStderrPath);
         }
 
         /// <summary>
@@ -450,6 +568,42 @@ namespace Servy.ViewModels
             if (!string.IsNullOrEmpty(path)) StderrPath = path;
         }
 
+        /// <summary>
+        /// Opens a dialog to browse for a pre-launch executable file and sets <see cref="PreLaunchExecutablePath"/>.
+        /// </summary>
+        private void OnBrowsePreLaunchProcessPath()
+        {
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) PreLaunchExecutablePath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a folder and sets <see cref="PreLaunchStartupDirectory"/>.
+        /// </summary>
+        private void OnBrowsePreLaunchStartupDirectory()
+        {
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) PreLaunchStartupDirectory = folder;
+        }
+
+        /// <summary>
+        /// Opens a dialog to select a file path for pre-launch standard output redirection.
+        /// </summary>
+        private void OnBrowsePreLaunchStdoutPath()
+        {
+            var path = _dialogService.SaveFile("Select standard output file");
+            if (!string.IsNullOrEmpty(path)) PreLaunchStdoutPath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to select a file path for pre-launch standard error redirection.
+        /// </summary>
+        private void OnBrowsePreLaunchStderrPath()
+        {
+            var path = _dialogService.SaveFile("Select standard error file");
+            if (!string.IsNullOrEmpty(path)) PreLaunchStderrPath = path;
+        }
+
         #endregion
 
         #region Service Command Handlers
@@ -481,7 +635,16 @@ namespace Servy.ViewModels
                 _config.RunAsLocalSystem,
                 _config.UserAccount,
                 _config.Password,
-                _config.ConfirmPassword
+                _config.ConfirmPassword,
+                _config.PreLaunchExecutablePath,
+                _config.PreLaunchStartupDirectory,
+                _config.PreLaunchParameters,
+                _config.PreLaunchEnvironmentVariables,
+                _config.PreLaunchStdoutPath,
+                _config.PreLaunchStderrPath,
+                _config.PreLaunchTimeoutSeconds,
+                _config.PreLaunchRetryAttempts,
+                _config.PreLaunchIgnoreFailure
                 );
         }
 
@@ -544,6 +707,16 @@ namespace Servy.ViewModels
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
             EnvironmentVariables = string.Empty;
             ServiceDependencies = string.Empty;
+
+            PreLaunchExecutablePath = string.Empty;
+            PreLaunchStartupDirectory = string.Empty;
+            PreLaunchParameters = string.Empty;
+            PreLaunchEnvironmentVariables = string.Empty;
+            PreLaunchStdoutPath = string.Empty;
+            PreLaunchStderrPath = string.Empty;
+            PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
+            PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
+            PreLaunchIgnoreFailure = false;
         }
 
         #endregion

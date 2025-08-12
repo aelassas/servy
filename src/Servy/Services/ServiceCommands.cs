@@ -6,6 +6,7 @@ using System.IO;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Native;
+using Servy.ViewModels;
 
 namespace Servy.Services
 {
@@ -25,6 +26,8 @@ namespace Servy.Services
         private const int MinHeartbeatInterval = 5;                // 5 seconds
         private const int MinMaxFailedChecks = 1;                  // 1 attempt
         private const int MinMaxRestartAttempts = 1;               // 1 attempt
+        private const int MinPreLaunchTimeoutSeconds = 5;          // 5 seconds
+        private const int MinPreLaunchRetryAttempts = 0;           // 0 attempts
 
         #endregion
 
@@ -77,7 +80,16 @@ namespace Servy.Services
             bool runAsLocalSystem,
             string userAccount,
             string password,
-            string confirmPassword
+            string confirmPassword,
+            string preLaunchExePath,
+            string preLaunchWorkingDirectory,
+            string preLaunchArgs,
+            string preLaunchEnvironmentVariables,
+            string preLaunchStdoutPath,
+            string preLaunchStderrPath,
+            string preLaunchTimeout,
+            string preLaunchRetryAttempts,
+            bool preLaunchIgnoreFailure
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(processPath))
@@ -190,6 +202,54 @@ namespace Servy.Services
                 password = null;
             }
 
+            // PreLaunch
+            if (!string.IsNullOrWhiteSpace(preLaunchExePath) && (!Helper.IsValidPath(preLaunchExePath) || !File.Exists(preLaunchExePath)))
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchPath, Caption);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(preLaunchWorkingDirectory) && (!Helper.IsValidPath(preLaunchWorkingDirectory) || !Directory.Exists(preLaunchWorkingDirectory)))
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStartupDirectory, Caption);
+                return;
+            }
+
+            string normalizedPreLaunchEnvVars = preLaunchEnvironmentVariables?.Replace("\r\n", ";").Replace("\n", ";").Replace("\r", ";") ?? string.Empty;
+
+            string preLaunchEnvVarsErrorMessage;
+            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out preLaunchEnvVarsErrorMessage))
+            {
+                _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, Caption);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(preLaunchStdoutPath) && (!Helper.IsValidPath(preLaunchStdoutPath) || !Helper.CreateParentDirectory(preLaunchStdoutPath)))
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStdoutPath, Caption);
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(preLaunchStderrPath) && (!Helper.IsValidPath(preLaunchStderrPath) || !Helper.CreateParentDirectory(preLaunchStderrPath)))
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStderrPath, Caption);
+                return;
+            }
+
+            int preLaunchTimeoutValue = 30;
+            if (!int.TryParse(preLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchTimeout, Caption);
+                return;
+            }
+
+            int preLaunchRetryAttemptsValue = 30;
+            if (!int.TryParse(preLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
+            {
+                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchRetryAttempts, Caption);
+                return;
+            }
+
             try
             {
                 bool success = _serviceManager.InstallService(
@@ -211,7 +271,16 @@ namespace Servy.Services
                     normalizedEnvVars,
                     serviceDependencies,
                     userAccount,
-                    password
+                    password,
+                    preLaunchExePath,
+                    preLaunchWorkingDirectory,
+                    preLaunchArgs,
+                    normalizedPreLaunchEnvVars,
+                    preLaunchStdoutPath,
+                    preLaunchStderrPath,
+                    preLaunchTimeoutValue,
+                    preLaunchRetryAttemptsValue,
+                    preLaunchIgnoreFailure
                     );
 
                 if (success)

@@ -36,6 +36,17 @@ namespace Servy.Service.CommandLine
                 ServiceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty,
                 MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
+
+                // Pre-Launch args
+                PreLaunchExecutablePath = fullArgs.Length > 14 ? fullArgs[14] : string.Empty,
+                PreLaunchWorkingDirectory= fullArgs.Length > 15 ? fullArgs[15] : string.Empty,
+                PreLaunchExecutableArgs = fullArgs.Length > 16 ? fullArgs[16] : string.Empty,
+                PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 17 ? fullArgs[17] : string.Empty),
+                PreLaunchStdOutPath = fullArgs.Length > 18 ? fullArgs[18] : string.Empty,
+                PreLaunchStdErrPath = fullArgs.Length > 19 ? fullArgs[19] : string.Empty,
+                PreLaunchTimeout = fullArgs.Length > 20 && int.TryParse(fullArgs[20], out int preLaunchTimeout) ? preLaunchTimeout : 30,
+                PreLaunchRetryAttempts = fullArgs.Length > 21 && int.TryParse(fullArgs[21], out int preLaunchRetryAttempts) ? preLaunchRetryAttempts : 0,
+                PreLaunchIgnoreFailure = fullArgs.Length > 22 && bool.TryParse(fullArgs[22], out bool preLaunchIgnoreFailure) && preLaunchIgnoreFailure
             };
         }
     }

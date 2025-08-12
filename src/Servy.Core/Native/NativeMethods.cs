@@ -203,7 +203,7 @@ namespace Servy.Core.Native
         /// are valid for interactive logon. It does not check whether the account has the 
         /// "Log on as a service" right, which may be required to run a service.
         /// </remarks>
-        public static void ValidateCredentials(string username, string password)
+        public static void ValidateCredentials(string username, string? password)
         {
             if (string.IsNullOrWhiteSpace(username))
                 throw new ArgumentException("Username cannot be null or empty.");

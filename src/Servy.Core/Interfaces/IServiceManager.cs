@@ -34,6 +34,15 @@ namespace Servy.Core.Interfaces
         /// <param name="serviceDependencies">Service dependencies.</param>
         /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
         /// <param name="password">Service account password.</param>
+        /// <param name="preLaunchExePath">Pre-launch script exe path.</param>
+        /// <param name="preLaunchWorkingDirectory">Pre-launch working directory.</param>
+        /// <param name="preLaunchArgs">Command line arguments to pass to the pre-launch executable.</param>
+        /// <param name="preLaunchEnvironmentVariables">Pre-launch environment variables.</param>
+        /// <param name="preLaunchStdoutPath">Optional path for pre-launch standard output redirection. If null, no redirection is performed.</param>
+        /// <param name="preLaunchStderrPath">Optional path for pre-launch standard error redirection. If null, no redirection is performed.</param>
+        /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
+        /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
+        /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -56,7 +65,16 @@ namespace Servy.Core.Interfaces
             string? environmentVariables = null,
             string? serviceDependencies = null,
             string? username = null,
-            string? password = null
+            string? password = null,
+            string? preLaunchExePath = null,
+            string? preLaunchWorkingDirectory = null,
+            string? preLaunchArgs = null,
+            string? preLaunchEnvironmentVariables = null,
+            string? preLaunchStdoutPath = null,
+            string? preLaunchStderrPath = null,
+            int preLaunchTimeout = 30,
+            int preLaunchRetryAttempts = 0,
+            bool preLaunchIgnoreFailure = false
         );
 
         /// <summary>

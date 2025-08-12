@@ -165,5 +165,70 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("password", HelpText = "The service account password.")]
         public string? Password { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pre-launch executable path.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchPath", HelpText = "The pre-launch executable path.")]
+        public string? PreLaunchPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pre-launch executable path.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchStartupDir", HelpText = "The pre-launch startup directory.")]
+        public string? PreLaunchStartupDir{ get; set; }
+
+        /// <summary>
+        /// Gets or sets additional command-line parameters for the process.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchParams", HelpText = "Additional parameters for the pre-launch executable.")]
+        public string? PreLaunchParameters { get; set; }
+
+        /// <summary>
+        /// Gets or sets environment variables for the process.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchEnv", HelpText = "Environment variables for the pre-launch executable. Enter variables in the format varName=varValue, separated by semicolons (;). Use \\= to escape '=' and \\; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\\\).")]
+        public string? PreLaunchEnvironmentVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets the file path to capture standard output logs.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchStdout", HelpText = "Path to stdout log file of the pre-launch executable.")]
+        public string? PreLaunchStdoutPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the file path to capture standard error logs.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchStderr", HelpText = "Path to stderr log file of the pre-launch executable.")]
+        public string? PreLaunchStderrPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for the pre-launch executable.
+        /// Must be >= 5 seconds.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchTimeout", HelpText = "Timeout for the pre-launch executable.")]
+        public string? PreLaunchTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pre-launch retry attempts.
+        /// Must be >= 0.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchRetryAttempts", HelpText = "Timeout for the pre-launch executable.")]
+        public string? PreLaunchRetryAttempts { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pre-launch ignore failure flag.
+        /// Optional.
+        /// </summary>
+        [Option("preLaunchIgnoreFailure", HelpText = "Ignore failure and start service even if pre-launch executable fails.")]
+        public bool PreLaunchIgnoreFailure { get; set; }
     }
 }

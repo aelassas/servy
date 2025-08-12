@@ -133,6 +133,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable &quot;Ignore Failure&quot;..
+        /// </summary>
+        public static string Info_PreLaunch {
+            get {
+                return ResourceManager.GetString("Info_PreLaunch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the service working directory..
+        /// </summary>
+        public static string Info_PreLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_PreLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency&apos;s start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start..
         /// </summary>
         public static string Info_ServiceDependencies {
@@ -255,6 +273,42 @@ namespace Servy.Resources {
         public static string Label_Password {
             get {
                 return ResourceManager.GetString("Label_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ignore Failure.
+        /// </summary>
+        public static string Label_PreLaunchIgnoreFailure {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchIgnoreFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Retry Attempts.
+        /// </summary>
+        public static string Label_PreLaunchRetryAttempts {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchRetryAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch.
+        /// </summary>
+        public static string Label_PreLaunchTab {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Timeout.
+        /// </summary>
+        public static string Label_PreLaunchTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchTimeoutSeconds", resourceCulture);
             }
         }
         
@@ -480,6 +534,60 @@ namespace Servy.Resources {
         public static string Msg_InvalidPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The pre-launch process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch retry attempts must be a number greater than or equal to 0..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchRetryAttempts {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchRetryAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch stderr file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStderrPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStderrPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-launch stdout file path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchStdoutPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchStdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds..
+        /// </summary>
+        public static string Msg_InvalidPreLaunchTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreLaunchTimeout", resourceCulture);
             }
         }
         

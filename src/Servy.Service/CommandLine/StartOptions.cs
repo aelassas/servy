@@ -76,5 +76,53 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the environment variables of the child process.
         /// </summary>
         public List<EnvironmentVariable> EnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
+
+        /// <summary>
+        /// Gets or sets the full path to the pre-launch executable to run.
+        /// </summary>
+        public string? PreLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the pre-launch process.
+        /// </summary>
+        public string? PreLaunchWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line arguments to pass to the pre-launch executable.
+        /// </summary>
+        public string? PreLaunchExecutableArgs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the environment variables of the pre-launch process.
+        /// </summary>
+        public List<EnvironmentVariable> PreLaunchEnvironmentVariables { get; set; } = new List<EnvironmentVariable>();
+
+        /// <summary>
+        /// Gets or sets the path to the pre-launch standard output log file.
+        /// </summary>
+        public string? PreLaunchStdOutPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to the pre-launch standard error log file.
+        /// </summary>
+        public string? PreLaunchStdErrPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout of pre-launch script.
+        /// Defaults to 30 seconds.
+        /// </summary>
+        public int PreLaunchTimeout { get; set; } = 30;
+
+        /// <summary>
+        /// Gets or sets the pre-launch script retry attempts.
+        /// Defaults to 0.
+        /// </summary>
+        public int PreLaunchRetryAttempts{ get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the ignore failure option of pre-launch script.
+        /// Defaults to false.
+        /// </summary>
+        public bool PreLaunchIgnoreFailure { get; set; } = false;
     }
 }

@@ -81,7 +81,18 @@ namespace Servy.Core.UnitTests
                 string.Empty,
                 null,
                 null,
-                null));
+                null,
+
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                30,
+                0,
+                false
+                ));
         }
 
         [Fact]
@@ -138,7 +149,18 @@ namespace Servy.Core.UnitTests
                 string.Empty,
                 null,
                 @".\username",
-                "password"));
+                "password",
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true
+                ));
 
             scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
@@ -164,7 +186,17 @@ namespace Servy.Core.UnitTests
                 string.Empty,
                 null,
                 @".\username",
-                "password"
+                "password",
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true
                 ));
 
         }
@@ -223,7 +255,17 @@ namespace Servy.Core.UnitTests
                 string.Empty,
                 null,
                 null,
-                null
+                null,
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true
                 );
 
             Assert.True(result);
@@ -311,7 +353,17 @@ namespace Servy.Core.UnitTests
                 string.Empty,
                 null,
                 null,
-                null
+                null,
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true
                 );
 
             Assert.True(result);

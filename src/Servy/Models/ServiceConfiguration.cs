@@ -117,5 +117,55 @@ namespace Servy.Models
         /// The confirmation of the service account password.
         /// </summary>
         public string ConfirmPassword { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to the pre-launch executable process to run.
+        /// </summary>
+        public string PreLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the pre-launch executable.
+        /// </summary>
+        public string PreLaunchStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line parameters for the pre-launch executable.
+        /// </summary>
+        public string PreLaunchParameters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the environment variables for the pre-launch executable.
+        /// Format: key=value, one per line or separated by semicolons.
+        /// </summary>
+        public string PreLaunchEnvironmentVariables { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to the standard output log file for the pre-launch process.
+        /// </summary>
+        public string PreLaunchStdoutPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the path to the standard error log file for the pre-launch process.
+        /// </summary>
+        public string PreLaunchStderrPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds for each pre-launch execution attempt.
+        /// Default is 30 seconds.
+        /// </summary>
+        public string PreLaunchTimeoutSeconds { get; set; } = "30";
+
+        /// <summary>
+        /// Gets or sets the number of retry attempts if the pre-launch process fails.
+        /// Default is 0.
+        /// </summary>
+        public string PreLaunchRetryAttempts { get; set; } = "0";
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to start the main service even if the pre-launch process fails.
+        /// Default is false.
+        /// </summary>
+        public bool PreLaunchIgnoreFailure { get; set; } = false;
+
     }
 }
