@@ -10,7 +10,10 @@ using Servy.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.ServiceProcess;
+using System.Text;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -103,16 +106,17 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the service is started.
-        /// Parses command line arguments, sets up logging,
-        /// creates the job object, starts the child process,
-        /// assigns it to the job object, and hooks up event handlers.
+        /// Called when the Windows service is started.
+        /// Initializes startup options, configures logging, validates working directories,
+        /// runs the optional pre-launch process (if configured), and starts the monitored service process.
+        /// Also sets up health monitoring for the service.
         /// </summary>
-        /// <param name="args">Command-line arguments passed to the service.</param>
+        /// <param name="args">Command-line arguments passed to the service by the Service Control Manager.</param>
         protected override void OnStart(string[] args)
         {
             try
             {
+                // Load and validate service startup options
                 var options = _serviceHelper.InitializeStartup(_logger);
                 if (options == null)
                 {
@@ -120,12 +124,27 @@ namespace Servy.Service
                     return;
                 }
 
+                // Ensure working directory is valid
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
+
                 _serviceName = options.ServiceName;
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
+                // Set up service logging
                 HandleLogWriters(options);
+
+                // Run pre-launch process if configured
+                if (!StartPreLaunchProcess(options))
+                {
+                    // Abort if pre-launch fails and service is not allowed to start
+                    Stop();
+                    return;
+                }
+
+                // Start the monitored main process
                 StartMonitoredProcess(options);
+
+                // Enable service health monitoring
                 SetupHealthMonitoring(options);
             }
             catch (Exception ex)
@@ -134,6 +153,195 @@ namespace Servy.Service
                 Stop();
             }
         }
+
+        /// <summary>
+        /// Starts the pre-launch process, if configured, before the main service process.
+        /// </summary>
+        /// <param name="options">The service start options containing the pre-launch configuration.</param>
+        /// <returns>
+        /// <c>true</c> if the pre-launch process completed successfully or was skipped; 
+        /// <c>false</c> if it failed and <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method runs the configured pre-launch executable synchronously before the main service process.
+        /// It applies the specified working directory, command-line arguments, environment variables, and 
+        /// optionally logs standard output and error to the provided file paths.
+        /// </para>
+        /// <para>
+        /// The process is allowed to run for at least <see cref="MinPreLaunchTimeoutSeconds"/> seconds or 
+        /// <see cref="StartOptions.PreLaunchTimeout"/>, whichever is greater, per attempt.  
+        /// If the process exits with a non-zero code or times out, it is retried up to 
+        /// <see cref="StartOptions.PreLaunchRetryAttempts"/> times.
+        /// </para>
+        /// <para>
+        /// If <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>true</c>, the service will continue starting 
+        /// even if all attempts fail. Otherwise, the service startup will be aborted.
+        /// </para>
+        /// </remarks>
+        private bool StartPreLaunchProcess(StartOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath))
+            {
+                _logger?.Info("No pre-launch executable configured. Skipping.");
+                return true; // proceed with service start
+            }
+
+            const int MinPreLaunchTimeoutSeconds = 5;
+            int effectiveTimeout = Math.Max(options.PreLaunchTimeout, MinPreLaunchTimeoutSeconds) * 1000;
+
+            int attempt = 0;
+            do
+            {
+                attempt++;
+                _logger?.Info($"Starting pre-launch process (attempt {attempt}/{options.PreLaunchRetryAttempts + 1})...");
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = options.PreLaunchExecutablePath,
+                        Arguments = options.PreLaunchExecutableArgs ?? string.Empty,
+                        WorkingDirectory = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
+                            ? options.WorkingDirectory
+                            : options.PreLaunchWorkingDirectory,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
+                        RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
+                        CreateNoWindow = true
+                    };
+
+                    // Apply environment variables
+                    foreach (var envVar in options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>())
+                    {
+                        if (!string.IsNullOrWhiteSpace(envVar?.Name))
+                        {
+                            startInfo.Environment[envVar.Name] = envVar.Value ?? string.Empty;
+                        }
+                    }
+
+                    using (var process = new Process { StartInfo = startInfo })
+                    {
+                        var stdoutBuffer = new StringBuilder();
+                        var stderrBuffer = new StringBuilder();
+
+                        if (startInfo.RedirectStandardOutput)
+                        {
+                            process.OutputDataReceived += (_, e) =>
+                            {
+                                if (e.Data != null)
+                                    stdoutBuffer.AppendLine(e.Data);
+                            };
+                        }
+                        if (startInfo.RedirectStandardError)
+                        {
+                            process.ErrorDataReceived += (_, e) =>
+                            {
+                                if (e.Data != null)
+                                    stderrBuffer.AppendLine(e.Data);
+                            };
+                        }
+
+                        process.Start();
+
+                        if (startInfo.RedirectStandardOutput) process.BeginOutputReadLine();
+                        if (startInfo.RedirectStandardError) process.BeginErrorReadLine();
+
+                        if (!process.WaitForExit(effectiveTimeout))
+                        {
+                            try { KillProcessTree(process); } catch { /* ignore */ }
+                            throw new System.TimeoutException($"Pre-launch process timed out after {effectiveTimeout / 1000} seconds.");
+                        }
+
+                        // Ensure all async reads are finished
+                        process.WaitForExit();
+
+                        // Save logs if paths are set
+                        if (!string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath))
+                        {
+                            File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString());
+                        }
+                        if (!string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath))
+                        {
+                            File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString());
+                        }
+
+                        if (process.ExitCode == 0)
+                        {
+                            _logger?.Info("Pre-launch process completed successfully.");
+                            return true;
+                        }
+                        else
+                        {
+                            _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
+                }
+
+            } while (attempt <= options.PreLaunchRetryAttempts);
+
+            _logger?.Error("Pre-launch process failed after all retry attempts.");
+
+            if (options.PreLaunchIgnoreFailure)
+            {
+                _logger?.Warning("Ignoring pre-launch failure and continuing service start.");
+                return true;
+            }
+
+            return false; // stop service start
+        }
+
+        /// <summary>
+        /// Recursively kills the specified process and all of its child processes.
+        /// This method is intended for .NET Framework 4.8 where <c>Process.Kill(true)</c>
+        /// is not available.
+        /// </summary>
+        /// <param name="process">The root process to terminate.</param>
+        /// <remarks>
+        /// Uses WMI (<c>Win32_Process</c>) to enumerate child processes by <c>ParentProcessId</c>.
+        /// Children are killed first, followed by the parent process, to avoid leaving orphaned processes.
+        /// Any exceptions (e.g., process already exited) are caught and ignored.
+        /// </remarks>
+        private static void KillProcessTree(Process process)
+        {
+            try
+            {
+                if (process == null || process.HasExited)
+                    return;
+
+                // Query all child processes for the given process ID
+                var searcher = new System.Management.ManagementObjectSearcher(
+                    $"Select * From Win32_Process Where ParentProcessId={process.Id}");
+
+                foreach (var obj in searcher.Get())
+                {
+                    var childPid = Convert.ToInt32(obj["ProcessId"]);
+                    try
+                    {
+                        using (var childProc = Process.GetProcessById(childPid))
+                        {
+                            KillProcessTree(childProc); // Recursively kill children
+                        }
+                    }
+                    catch
+                    {
+                        // Child process might have already exited
+                    }
+                }
+
+                // Kill the main process last
+                process.Kill();
+            }
+            catch
+            {
+                // Ignore any errors during process termination
+            }
+        }
+
 
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
