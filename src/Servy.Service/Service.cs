@@ -24,6 +24,7 @@ namespace Servy.Service
         #region Constants
 
         private const string WindowsServiceName = "Servy";
+        private const string RestartAttemptsFile = "restartAttempts.dat";
 
         #endregion
 
@@ -54,6 +55,7 @@ namespace Servy.Service
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _disposed = false; // Tracks whether Dispose has been called
         private bool _recoveryActionEnabled = false;
+        private string _attemptsFilePath;
 
         #endregion
 
@@ -132,6 +134,9 @@ namespace Servy.Service
                 _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
+                // Set up attempts file
+                SetupAttemptsFile();
+
                 // Set up service logging
                 HandleLogWriters(options);
 
@@ -153,6 +158,48 @@ namespace Servy.Service
             {
                 _logger?.Error($"Exception in OnStart: {ex.Message}", ex);
                 Stop();
+            }
+        }
+
+        /// <summary>
+        /// Initializes the path to the restart attempts file located under
+        /// %ProgramData%\Servy directory. Ensures the directory exists before use.
+        /// </summary>
+        private void SetupAttemptsFile()
+        {
+            string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Servy");
+            Directory.CreateDirectory(dataFolder); // ensures folder exists
+            _attemptsFilePath = Path.Combine(dataFolder, RestartAttemptsFile);
+
+            _restartAttempts = LoadRestartAttempts();
+        }
+
+        /// <summary>
+        /// Loads the number of restart attempts from the persistent attempts file.
+        /// Returns 0 if the file does not exist or if the contents cannot be parsed as an integer.
+        /// </summary>
+        /// <returns>The last saved number of restart attempts, or 0 if not found or invalid.</returns>
+        private int LoadRestartAttempts()
+        {
+            if (File.Exists(_attemptsFilePath))
+            {
+                var text = File.ReadAllText(_attemptsFilePath);
+                if (int.TryParse(text, out var attempts))
+                    return attempts;
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// Saves the current number of restart attempts to the persistent attempts file.
+        /// Does nothing if the attempts file path is null or empty.
+        /// </summary>
+        /// <param name="attempts">The restart attempts count to save.</param>
+        private void SaveRestartAttempts(int attempts)
+        {
+            if (!string.IsNullOrEmpty(_attemptsFilePath))
+            {
+                File.WriteAllText(_attemptsFilePath, attempts.ToString());
             }
         }
 
@@ -552,7 +599,7 @@ namespace Servy.Service
             _maxFailedChecks = options.MaxFailedChecks;
             _recoveryAction = options.RecoveryAction;
 
-            if (_heartbeatIntervalSeconds > 0 && _maxFailedChecks > 0 && _recoveryAction != RecoveryAction.None)
+            if (_recoveryActionEnabled)
             {
                 _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
                 _healthCheckTimer.Elapsed += CheckHealth;
@@ -588,7 +635,7 @@ namespace Servy.Service
 
                         _logger?.Warning(
                             $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process has exited unexpectedly."
-                         );
+                        );
 
                         if (_failedChecks >= _maxFailedChecks)
                         {
@@ -597,46 +644,57 @@ namespace Servy.Service
                                 _logger?.Error(
                                     $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken."
                                 );
-                                _isRecovering = false;
+
+                                // Reset persisted restart attempts count since no more retries will happen
+                                SaveRestartAttempts(0);
+
                                 Stop();
                                 return;
                             }
 
                             _restartAttempts++;
-                            _isRecovering = true;
+                            SaveRestartAttempts(_restartAttempts);
                             _failedChecks = 0;
+                            _isRecovering = true;
 
-                            switch (_recoveryAction)
+                            try
                             {
-                                case RecoveryAction.None:
-                                    break;
+                                _logger?.Warning($"Recovery action attempt ({_restartAttempts}/{_maxRestartAttempts}).");
 
-                                case RecoveryAction.RestartService:
-                                    _serviceHelper.RestartService(
-                                        _logger,
-                                        _serviceName
+                                switch (_recoveryAction)
+                                {
+                                    case RecoveryAction.None:
+                                        break;
+
+                                    case RecoveryAction.RestartService:
+                                        _serviceHelper.RestartService(_logger, _serviceName);
+                                        break;
+
+                                    case RecoveryAction.RestartProcess:
+                                        _serviceHelper.RestartProcess(
+                                            _childProcess,
+                                            StartProcess,
+                                            _realExePath,
+                                            _realArgs,
+                                            _workingDir,
+                                            _environmentVariables,
+                                            _logger
                                         );
-                                    break;
+                                        break;
 
-                                case RecoveryAction.RestartProcess:
-                                    _serviceHelper.RestartProcess(
-                                         _childProcess,
-                                         StartProcess,
-                                         _realExePath,
-                                         _realArgs,
-                                         _workingDir,
-                                         _environmentVariables,
-                                         _logger
-                                     );
-                                    break;
-
-                                case RecoveryAction.RestartComputer:
-                                    _serviceHelper.RestartComputer(_logger);
-                                    break;
+                                    case RecoveryAction.RestartComputer:
+                                        _serviceHelper.RestartComputer(_logger);
+                                        break;
+                                }
                             }
-
-                            // Only now reset the flag
-                            _isRecovering = false;
+                            catch (Exception ex)
+                            {
+                                _logger?.Error($"Exception during recovery action: {ex}");
+                            }
+                            finally
+                            {
+                                _isRecovering = false;
+                            }
                         }
                     }
                     else
@@ -646,6 +704,7 @@ namespace Servy.Service
                             _logger?.Info("Child process is healthy again. Resetting failure count and restart attempts.");
                             _failedChecks = 0;
                             _restartAttempts = 0;
+                            SaveRestartAttempts(_restartAttempts);
                         }
                     }
                 }
