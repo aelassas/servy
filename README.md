@@ -26,6 +26,8 @@ This .NET Framework 4.8 version is designed for compatibility with older Windows
 
 Servy solves a common limitation of Windows services by allowing you to set a custom working directory. The built-in `sc` tool only works with applications specifically designed to run as Windows services and always uses `C:\Windows\System32` with no way to change it. This can break apps that depend on relative paths, configuration files, or local assets. Servy lets you run any app as a service and define the startup directory explicitly, ensuring it behaves exactly as if launched from a shortcut or command prompt.
 
+Servy lets you run an optional script or executable before the main service starts. This is useful for preparing configurations, fetching secrets, or performing other setup tasks. If the pre-launch script fails, the service will not start unless you enable Ignore Failure option.
+
 Servy is perfect for keeping non-service apps running in the background without having to rewrite them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 ## Quick Links
@@ -45,6 +47,7 @@ Servy is perfect for keeping non-service apps running in the background without 
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Run services as Local System, local user, or domain account
 * Redirect stdout/stderr to log files with automatic size-based rotation
+* Run pre-launch script execution before starting the service, with retries, timeout, logging and failure handling
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Monitor and manage services in real-time
