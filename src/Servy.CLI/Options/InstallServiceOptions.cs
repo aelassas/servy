@@ -170,7 +170,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the pre-launch executable path.
         /// Optional.
         /// </summary>
-        [Option("preLaunchPath", HelpText = "The pre-launch executable path.")]
+        [Option("preLaunchPath", HelpText = "The pre-launch executable path. Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable --preLaunchIgnoreFailure.")]
         public string PreLaunchPath { get; set; }
 
         /// <summary>
