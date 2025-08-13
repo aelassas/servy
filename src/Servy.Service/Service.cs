@@ -51,11 +51,11 @@ namespace Servy.Service
         private readonly object _healthCheckLock = new object();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
-        private int _restartAttempts = 0;
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _disposed = false; // Tracks whether Dispose has been called
         private bool _recoveryActionEnabled = false;
         private string _restartAttemptsFile;
+        private bool _preLaunchEnabled;
 
         #endregion
 
@@ -140,10 +140,13 @@ namespace Servy.Service
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Set up attempts file
-                SetupAttemptsFile();
+                SetupAttemptsFile(options);
 
                 // Reset restart attempts on service start to avoid blocking recovery
-                ConditionalResetRestartAttempts();
+                if (_recoveryActionEnabled)
+                {
+                    ConditionalResetRestartAttempts(options);
+                }
 
                 // Set up service logging
                 HandleLogWriters(options);
@@ -170,30 +173,56 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Initializes the path to the restart attempts file located under
-        /// %ProgramData%\Servy directory. Ensures the directory exists before use.
+        /// Initializes the path to the restart attempts file for the current service,
+        /// located under the %ProgramData%\Servy directory.  
+        /// The filename is unique per service based on its name to prevent conflicts  
+        /// when multiple services are managed by Servy on the same machine.
         /// </summary>
-        private void SetupAttemptsFile()
+        /// <param name="options">The service startup options containing the service name.</param>
+        private void SetupAttemptsFile(StartOptions options)
         {
             string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Servy");
             Directory.CreateDirectory(dataFolder); // ensures folder exists
-            _restartAttemptsFile = Path.Combine(dataFolder, RestartAttemptsFile);
 
-            LoadRestartAttempts();
+            string safeServiceName = MakeFilenameSafe(options.ServiceName);
+            _restartAttemptsFile = Path.Combine(dataFolder, $"{safeServiceName}_restartAttempts.dat");
         }
 
         /// <summary>
-        /// Loads the number of recorded restart attempts from <c>restartAttempts.dat</c>.
-        /// If the file exists and contains a valid non-negative integer, that value is used.
-        /// If the file is missing, empty, or contains invalid data, the counter is reset to zero
-        /// and the file is created or corrected accordingly.
-        /// <para>
-        /// This prevents a fresh install, a corrupted counter file, or a new service start
-        /// from blocking service recovery by incorrectly setting the counter to the maximum
-        /// allowed restart attempts.
-        /// </para>
+        /// Sanitizes a string to be safe for use as a filename by replacing
+        /// all invalid filename characters with underscores ('_').
         /// </summary>
-        private void LoadRestartAttempts()
+        /// <param name="name">The original string to sanitize.</param>
+        /// <returns>A sanitized string safe for use as a filename.</returns>
+        private string MakeFilenameSafe(string name)
+        {
+            var invalidChars = Path.GetInvalidFileNameChars();
+            foreach (var c in invalidChars)
+            {
+                name = name.Replace(c, '_');
+            }
+            return name;
+        }
+
+        /// <summary>
+        /// Reads the current restart attempts count from the persistent file storage.
+        /// </summary>
+        /// <remarks>
+        /// This method ensures that the restart attempts counter is always retrieved from disk,
+        /// allowing the value to persist across service restarts.  
+        /// <para>
+        /// If the file is missing, contains invalid data, or an error occurs during reading,
+        /// the counter is reset to <c>0</c> and the file is updated accordingly.
+        /// </para>
+        /// <para>
+        /// Use this method at service startup (e.g., in <see cref="OnStart"/>) to ensure
+        /// the restart attempts value reflects the most recent persisted state.
+        /// </para>
+        /// </remarks>
+        /// <returns>
+        /// The number of recorded restart attempts, or <c>0</c> if the counter was reset.
+        /// </returns>
+        private int GetRestartAttempts()
         {
             try
             {
@@ -201,27 +230,23 @@ namespace Servy.Service
                 {
                     var content = File.ReadAllText(_restartAttemptsFile).Trim();
                     if (int.TryParse(content, out var attempts) && attempts >= 0)
-                    {
-                        _restartAttempts = attempts;
-                    }
-                    else
-                    {
-                        // Corrupt or invalid content, reset
-                        _restartAttempts = 0;
-                        File.WriteAllText(_restartAttemptsFile, "0");
-                    }
+                        return attempts;
+
+                    File.WriteAllText(_restartAttemptsFile, "0");
+                    _logger.Warning("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+                    return 0;
                 }
                 else
                 {
-                    // Fresh install, reset counter
-                    _restartAttempts = 0;
                     File.WriteAllText(_restartAttemptsFile, "0");
+                    _logger.Warning("Restart attempts file not found. Initializing counter to 0.");
+                    return 0;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // In case of unexpected error, reset to 0 to avoid blocking restarts
-                _restartAttempts = 0;
+                _logger.Warning($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                return 0;
             }
         }
 
@@ -240,14 +265,17 @@ namespace Servy.Service
 
         /// <summary>
         /// Resets the restart attempts counter if the last recorded restart attempt
-        /// occurred more than 1 minute ago, treating the current start as a fresh session.
+        /// occurred more than a calculated threshold ago, treating the current start as a fresh session.
         /// </summary>
+        /// <param name="options">The service startup options containing heartbeat, recovery, and pre-launch settings.</param>
         /// <remarks>
         /// This method helps prevent the service from getting stuck in an infinite restart loop
         /// by only resetting the restart attempts counter when sufficient time has elapsed
-        /// since the last attempt.
+        /// since the last attempt. The threshold is calculated based on the configured
+        /// heartbeat interval, maximum allowed failed health checks, and an added buffer
+        /// to accommodate timing variations and any configured pre-launch script timeout.
         /// <para>
-        /// Rapid restarts within 1 minute will continue incrementing the restart attempts,
+        /// Rapid restarts occurring within this threshold will continue incrementing the restart attempts,
         /// allowing the service to eventually stop restarting after reaching the max allowed attempts.
         /// </para>
         /// <para>
@@ -255,17 +283,23 @@ namespace Servy.Service
         /// when the service truly restarts after a stable downtime.
         /// </para>
         /// </remarks>
-        private void ConditionalResetRestartAttempts()
+        private void ConditionalResetRestartAttempts(StartOptions options)
         {
-            const int resetThresholdMinutes = 1;
+            double resetThresholdMinutes = ((options.HeartbeatInterval * options.MaxFailedChecks) + 30) / 60.0; // adding 30 seconds buffer
+
+            if (_preLaunchEnabled)
+            {
+                resetThresholdMinutes += options.PreLaunchTimeout / 60.0; // Convert seconds to minutes
+            }
+
             var lastWrite = File.Exists(_restartAttemptsFile)
                 ? File.GetLastWriteTimeUtc(_restartAttemptsFile)
                 : DateTime.MinValue;
 
             if ((DateTime.UtcNow - lastWrite).TotalMinutes > resetThresholdMinutes)
             {
-                _restartAttempts = 0;
-                SaveRestartAttempts(_restartAttempts);
+                _logger.Info("Resetting restart attempts counter due to sufficient downtime since last attempt.");
+                SaveRestartAttempts(0);
             }
         }
 
@@ -301,6 +335,8 @@ namespace Servy.Service
                 _logger?.Info("No pre-launch executable configured. Skipping.");
                 return true; // proceed with service start
             }
+
+            _preLaunchEnabled = true;
 
             const int MinPreLaunchTimeoutSeconds = 5;
             int effectiveTimeout = Math.Max(options.PreLaunchTimeout, MinPreLaunchTimeoutSeconds) * 1000;
@@ -700,36 +736,40 @@ namespace Servy.Service
                         _failedChecks++;
 
                         _logger?.Warning(
-                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process has exited unexpectedly."
+                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process is not running."
                         );
 
                         if (_failedChecks >= _maxFailedChecks)
                         {
-                            if (_restartAttempts >= _maxRestartAttempts)
+                            var restartAttempts = GetRestartAttempts();
+
+                            if (restartAttempts >= _maxRestartAttempts)
                             {
                                 _logger?.Error(
-                                    $"Max restart attempts ({_maxRestartAttempts}) reached. No further recovery actions will be taken."
+                                    $"Maximum restart attempts reached ({_maxRestartAttempts}). Recovery actions stopped."
                                 );
 
-                                // Reset persisted restart attempts count since no more retries will happen
+                                // No more retries → reset counter so next session starts fresh
                                 SaveRestartAttempts(0);
-
                                 Stop();
                                 return;
                             }
 
-                            _restartAttempts++;
-                            SaveRestartAttempts(_restartAttempts);
+                            restartAttempts++;
+                            SaveRestartAttempts(restartAttempts);
                             _failedChecks = 0;
                             _isRecovering = true;
 
                             try
                             {
-                                _logger?.Warning($"Recovery action attempt ({_restartAttempts}/{_maxRestartAttempts}).");
+                                _logger?.Warning(
+                                    $"Performing recovery action ({restartAttempts}/{_maxRestartAttempts})."
+                                );
 
                                 switch (_recoveryAction)
                                 {
                                     case RecoveryAction.None:
+                                        _logger?.Info("Recovery action is set to 'None'. No action taken.");
                                         break;
 
                                     case RecoveryAction.RestartService:
@@ -755,7 +795,7 @@ namespace Servy.Service
                             }
                             catch (Exception ex)
                             {
-                                _logger?.Error($"Exception during recovery action: {ex}");
+                                _logger?.Error($"Error during recovery action: {ex}");
                             }
                             finally
                             {
@@ -769,14 +809,13 @@ namespace Servy.Service
                         {
                             _logger?.Info("Child process is healthy again. Resetting failure count and restart attempts.");
                             _failedChecks = 0;
-                            _restartAttempts = 0;
-                            SaveRestartAttempts(_restartAttempts);
+                            SaveRestartAttempts(0);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Error in health check: {ex}");
+                    _logger?.Error($"Unexpected error in health check: {ex}");
                 }
             }
         }
