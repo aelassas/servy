@@ -78,6 +78,11 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
   * [ ] Notifications for service events (failures, restarts)
   * [ ] Log viewer per service
   * [ ] Health monitoring dashboard
+  * [ ] Advanced scheduling and triggers (start service on event, time, or condition)
+  * [ ] Automatic recovery actions beyond simple restart (e.g., run scripts)
+  * [ ] System tray integration for quick access
+  * [ ] Service dependency management (start/stop order)
+  * [ ] Remote management of Servy services on other machines (optional)
 
 ## Support & Contributing
 
