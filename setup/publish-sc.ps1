@@ -1,5 +1,5 @@
 # publish-sc.ps1
-# Self-contained setup build script
+# Build script for Servy self-contained installer and ZIP package
 
 param(
     [string]$version = "1.0.0",
@@ -7,38 +7,29 @@ param(
     [switch]$pause
 )
 
-$innoCompiler      = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$issFile           = ".\servy.iss"
+# ========================
+# Configuration
+# ========================
 $buildConfiguration = "Release"
-$runtime           = "win-x64"
-$ScriptDir         = Split-Path -Parent $MyInvocation.MyCommand.Path
+$runtime            = "win-x64"
+$innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
-# Build Servy WPF App
-& "..\src\Servy\publish.ps1" -tfm $tfm
+# Directories
+$ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
+$ServyDir           = Join-Path $RootDir "src\Servy"
+$CliDir             = Join-Path $RootDir "src\Servy.CLI"
 
-# Build Servy CLI App
-& "..\src\Servy.CLI\publish.ps1" -tfm $tfm
+# Inno Setup file
+$issFile            = Join-Path $ScriptDir "servy.iss"
 
-# Run the compiler
-Write-Host "Building installer from $issFile..."
-& "$innoCompiler" "$issFile" /DMyAppVersion=$version
-
-# Build self-contained ZIP
-Write-Host "Building self-contained ZIP..."
-
-# Paths to executables
-$servyExe = Join-Path $ScriptDir "..\src\Servy\bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
-$cliExe   = Join-Path $ScriptDir "..\src\Servy.CLI\bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
-
-# Create package folder
-$packageFolder = Join-Path $ScriptDir "servy-$version-net8.0-x64-selfcontained"
-$outputZip     = "$packageFolder.zip"
-
+# ========================
+# Functions
+# ========================
 function Remove-FileOrFolder {
     param (
         [string]$path
     )
-
     if (Test-Path $path) {
         Write-Host "Removing: $path"
         Remove-Item -Recurse -Force $path
@@ -46,14 +37,42 @@ function Remove-FileOrFolder {
     }
 }
 
-# Remove old ZIP or package folder if exist
+# ========================
+# Step 1: Build Applications
+# ========================
+Write-Host "Building Servy WPF app..."
+& (Join-Path $ServyDir "publish.ps1") -tfm $tfm
+
+Write-Host "Building Servy CLI app..."
+& (Join-Path $CliDir "publish.ps1") -tfm $tfm
+
+# ========================
+# Step 2: Build Installer
+# ========================
+Write-Host "Building installer from $issFile..."
+& $innoCompiler $issFile /DMyAppVersion=$version  /DMyAppPlatform=$tfm
+
+# ========================
+# Step 3: Build Self-Contained ZIP
+# ========================
+Write-Host "Building self-contained ZIP..."
+
+# Paths to executables
+$servyExe = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
+$cliExe   = Join-Path $CliDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
+
+# Package folder
+$packageFolder = Join-Path $ScriptDir "servy-$version-$tfm-x64-selfcontained"
+$outputZip     = "$packageFolder.zip"
+
+# Clean old artifacts
 Remove-FileOrFolder -path $outputZip
 Remove-FileOrFolder -path $packageFolder
 New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
-# Copy executables into package folder with new names
-Copy-Item $servyExe (Join-Path $packageFolder "servy-$version-net8.0-x64.exe") -Force
-Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$version-net8.0-x64.exe") -Force
+# Copy executables with versioned names
+Copy-Item $servyExe (Join-Path $packageFolder "servy-$version-$tfm-x64.exe") -Force
+Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$version-$tfm-x64.exe") -Force
 
 # Compress with 7-Zip
 Write-Host "Creating ZIP: $outputZip"
@@ -64,14 +83,16 @@ Push-Location $parentDir
 & 7z a -tzip "$outputZip" "$folderName" | Out-Null
 Pop-Location
 
-# Cleanup
+# Remove temp folder
 Remove-FileOrFolder -path $packageFolder
 
 Write-Host "Self-contained ZIP build complete."
 Write-Host "Installer build finished."
 
-# Pause before closing
-if ($pause -and $Host.Name -eq "ConsoleHost") {
+# ========================
+# Step 4: Pause if requested
+# ========================
+if ($pause) {
     Write-Host "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

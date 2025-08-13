@@ -1,36 +1,60 @@
 # publish.ps1
-# Main setup bundle script
+# Main setup bundle script for building both self-contained and framework-dependent installers
+# Requirements:
+#  1. Add msbuild to PATH
+#  2. Inno Setup installed (ISCC.exe path updated if different)
+#  3. 7-Zip installed and 7z in PATH
 
-$tfm = "net8.0-windows"
-$version = "1.0.0"
+param(
+    [string]$tfm     = "net8.0-windows",
+    [string]$version = "1.0.0"
+)
 
-# Get the directory of this script
+$ErrorActionPreference = "Stop"
+
+# Record start time
+$startTime = Get-Date
+
+# Script directory (so we can run from anywhere)
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Function to safely call a script with parameters
 function Invoke-Script {
     param(
         [string]$ScriptPath,
         [hashtable]$Params
     )
 
-    if (-Not (Test-Path $ScriptPath)) {
-        Write-Error "Script not found: $ScriptPath"
-        return
+    $FullPath = Join-Path $ScriptDir $ScriptPath
+
+    if (-not (Test-Path $FullPath)) {
+        Write-Error "Script not found: $FullPath"
+        exit 1
     }
 
-    Write-Host "Calling $ScriptPath with parameters: $Params"
-    & $ScriptPath @Params
+    Write-Host "`n=== Running: $FullPath ==="
+    & $FullPath @Params
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Script failed: $FullPath"
+        exit $LASTEXITCODE
+    }
 }
 
-# Build self-contained bundle
-Invoke-Script -ScriptPath (Join-Path $ScriptDir "publish-sc.ps1") -Params @{ version = $version; tfm = $tfm }
-
-# Build framework-dependent bundle
-Invoke-Script -ScriptPath (Join-Path $ScriptDir "publish-fd.ps1") -Params @{ version = $version; tfm = $tfm }
-
-# Pause when double-clicked
-if ($Host.Name -eq "ConsoleHost") {
-    Write-Host "Press any key to exit..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+# Build self-contained installer
+Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
+    version = $version
+    tfm     = $tfm
 }
+
+# Build framework-dependent installer
+Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
+    version = $version
+    tfm     = $tfm
+}
+
+# Calculate and display elapsed time
+$elapsed = (Get-Date) - $startTime
+Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
+
+# Pause by default (for double-click usage)
+Write-Host "`nPress any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

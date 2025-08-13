@@ -5,6 +5,9 @@
 #ifndef MyAppVersion
   #define MyAppVersion "1.0.0"  ; default if not provided
 #endif
+#ifndef MyAppPlatform
+  #define MyAppPlatform "net8.0-windows"  ; default if not provided
+#endif
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
 #define MyAppExeName "Servy.exe"
@@ -27,7 +30,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=.
-OutputBaseFilename=servy-{#MyAppVersion}-net8.0-x64-selfcontained-installer
+OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-selfcontained-installer
 SetupIconFile=..\src\Servy\servy.ico
 Compression=lzma
 SolidCompression=yes
