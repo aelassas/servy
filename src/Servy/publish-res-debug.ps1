@@ -1,12 +1,17 @@
-# publish-release.ps1
-$serviceProject = "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder = "..\Servy\Resources"
-$buildConfiguration = "Debug"
-$buildOutput = "..\Servy.Service\bin\$buildConfiguration"
+# publish-res-debug.ps1
 
-# 1. Build the project in Release mode
+# Get the directory of the current script
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Absolute paths
+$serviceProject   = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
+$resourcesFolder  = Join-Path $ScriptDir "..\Servy\Resources"
+$buildConfiguration = "Debug"
+$buildOutput      = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
+
+# 1. Build the project in Debug mode
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
-msbuild $serviceProject /p:Configuration=$buildConfiguration
+msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
 
 # 2. Files to copy
 $filesToCopy = @(
@@ -18,7 +23,7 @@ $filesToCopy = @(
 # 3. Copy files to Resources folder
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
-    $destPath = Join-Path $resourcesFolder $file.Destination
+    $destPath   = Join-Path $resourcesFolder $file.Destination
     Copy-Item -Path $sourcePath -Destination $destPath -Force
     Write-Host "Copied $($file.Source) -> $($file.Destination)"
 }

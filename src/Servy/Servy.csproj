@@ -125,6 +125,7 @@
     </None>
     <None Include="publish-res-debug.ps1" />
     <None Include="publish-res-release.ps1" />
+    <None Include="publish.ps1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
