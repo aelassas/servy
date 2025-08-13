@@ -74,12 +74,6 @@ namespace Servy.Service.UnitTests
                 .SetValue(this, value);
         }
 
-        public void SetRestartAttempts(int value)
-        {
-            typeof(Service).GetField("_restartAttempts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                .SetValue(this, value);
-        }
-
         public void SetServiceName(string serviceName)
         {
             typeof(Service).GetField("_serviceName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!

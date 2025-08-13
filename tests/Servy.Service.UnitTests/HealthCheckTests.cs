@@ -64,7 +64,7 @@ namespace Servy.Service.UnitTests
 
             // Assert
             Assert.Equal(1, service.GetFailedChecks());
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Child process has exited unexpectedly"))), Times.Once);
+            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Child process is not running"))), Times.Once);
         }
 
         [Fact]
@@ -145,7 +145,6 @@ namespace Servy.Service.UnitTests
             service.SetRecoveryAction(action);
             service.SetFailedChecks(1);
             service.SetMaxRestartAttempts(3);
-            service.SetRestartAttempts(0);
             service.SetServiceName("Servy");
 
             // Act
