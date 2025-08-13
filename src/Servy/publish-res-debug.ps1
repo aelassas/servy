@@ -32,4 +32,4 @@ Copy-Item -Path (Join-Path $buildFolder "Servy.Service.pdb") `
 Copy-Item -Path (Join-Path $buildFolder "Servy.Core.pdb") `
           -Destination (Join-Path $resourcesFolder "Servy.Core.pdb") -Force
 
-Write-Host "Release build (.NET 8.0 Windows) published successfully to Resources."
+Write-Host "$buildConfiguration build (.NET 8.0 Windows) published successfully to Resources."
