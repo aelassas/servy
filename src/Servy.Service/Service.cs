@@ -51,7 +51,7 @@ namespace Servy.Service
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _disposed = false; // Tracks whether Dispose has been called
         private bool _recoveryActionEnabled = false;
-        private string? _attemptsFilePath;
+        private string? _restartAttemptsFile;
 
         #endregion
 
@@ -109,6 +109,11 @@ namespace Servy.Service
         /// Initializes startup options, configures logging, validates working directories,
         /// runs the optional pre-launch process (if configured), and starts the monitored service process.
         /// Also sets up health monitoring for the service.
+        /// <para>
+        /// This method now resets the restart attempt counter at startup to ensure that
+        /// previous restart limits do not persist across service restarts (including
+        /// restarts triggered by <c>Servy.Restarter.exe</c>).
+        /// </para>
         /// </summary>
         /// <param name="args">Command-line arguments passed to the service by the Service Control Manager.</param>
         protected override void OnStart(string[] args)
@@ -132,6 +137,9 @@ namespace Servy.Service
 
                 // Set up attempts file
                 SetupAttemptsFile();
+
+                // Reset restart attempts on service start to avoid blocking recovery
+                ConditionalResetRestartAttempts();
 
                 // Set up service logging
                 HandleLogWriters(options);
@@ -165,25 +173,52 @@ namespace Servy.Service
         {
             string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Servy");
             Directory.CreateDirectory(dataFolder); // ensures folder exists
-            _attemptsFilePath = Path.Combine(dataFolder, RestartAttemptsFile);
+            _restartAttemptsFile = Path.Combine(dataFolder, RestartAttemptsFile);
 
-            _restartAttempts = LoadRestartAttempts();
+            LoadRestartAttempts();
         }
 
         /// <summary>
-        /// Loads the number of restart attempts from the persistent attempts file.
-        /// Returns 0 if the file does not exist or if the contents cannot be parsed as an integer.
+        /// Loads the number of recorded restart attempts from <c>restartAttempts.dat</c>.
+        /// If the file exists and contains a valid non-negative integer, that value is used.
+        /// If the file is missing, empty, or contains invalid data, the counter is reset to zero
+        /// and the file is created or corrected accordingly.
+        /// <para>
+        /// This prevents a fresh install, a corrupted counter file, or a new service start
+        /// from blocking service recovery by incorrectly setting the counter to the maximum
+        /// allowed restart attempts.
+        /// </para>
         /// </summary>
-        /// <returns>The last saved number of restart attempts, or 0 if not found or invalid.</returns>
-        private int LoadRestartAttempts()
+        private void LoadRestartAttempts()
         {
-            if (File.Exists(_attemptsFilePath))
+            try
             {
-                var text = File.ReadAllText(_attemptsFilePath);
-                if (int.TryParse(text, out var attempts))
-                    return attempts;
+                if (File.Exists(_restartAttemptsFile))
+                {
+                    var content = File.ReadAllText(_restartAttemptsFile).Trim();
+                    if (int.TryParse(content, out var attempts) && attempts >= 0)
+                    {
+                        _restartAttempts = attempts;
+                    }
+                    else
+                    {
+                        // Corrupt or invalid content, reset
+                        _restartAttempts = 0;
+                        File.WriteAllText(_restartAttemptsFile, "0");
+                    }
+                }
+                else
+                {
+                    // Fresh install, reset counter
+                    _restartAttempts = 0;
+                    File.WriteAllText(_restartAttemptsFile!, "0");
+                }
             }
-            return 0;
+            catch
+            {
+                // In case of unexpected error, reset to 0 to avoid blocking restarts
+                _restartAttempts = 0;
+            }
         }
 
         /// <summary>
@@ -193,9 +228,40 @@ namespace Servy.Service
         /// <param name="attempts">The restart attempts count to save.</param>
         private void SaveRestartAttempts(int attempts)
         {
-            if (!string.IsNullOrEmpty(_attemptsFilePath))
+            if (!string.IsNullOrEmpty(_restartAttemptsFile))
             {
-                File.WriteAllText(_attemptsFilePath, attempts.ToString());
+                File.WriteAllText(_restartAttemptsFile, attempts.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Resets the restart attempts counter if the last recorded restart attempt
+        /// occurred more than 1 minute ago, treating the current start as a fresh session.
+        /// </summary>
+        /// <remarks>
+        /// This method helps prevent the service from getting stuck in an infinite restart loop
+        /// by only resetting the restart attempts counter when sufficient time has elapsed
+        /// since the last attempt.
+        /// <para>
+        /// Rapid restarts within 1 minute will continue incrementing the restart attempts,
+        /// allowing the service to eventually stop restarting after reaching the max allowed attempts.
+        /// </para>
+        /// <para>
+        /// Use this method in <see cref="OnStart"/> to ensure that restart attempts are only reset
+        /// when the service truly restarts after a stable downtime.
+        /// </para>
+        /// </remarks>
+        private void ConditionalResetRestartAttempts()
+        {
+            const int resetThresholdMinutes = 1;
+            var lastWrite = File.Exists(_restartAttemptsFile)
+                ? File.GetLastWriteTimeUtc(_restartAttemptsFile)
+                : DateTime.MinValue;
+
+            if ((DateTime.UtcNow - lastWrite).TotalMinutes > resetThresholdMinutes)
+            {
+                _restartAttempts = 0;
+                SaveRestartAttempts(_restartAttempts);
             }
         }
 
