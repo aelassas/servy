@@ -1,12 +1,28 @@
+param(
+    [string]$tfm =  "net8.0-windows"
+)
+
+# Get the directory of the current script
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
 # Step 0: Run publish-res-release.ps1 and wait until it finishes
+$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
 Write-Host "Running publish-res-release.ps1..."
-& ".\publish-res-release.ps1"
+& $PublishResScript -tfm $tfm
 Write-Host "Finished publish-res-release.ps1, continuing with main dotnet publish..."
 
-# Step 1: Build and publish main project in Release mode
-Write-Host "Publishing main project (.NET 8.0 Release, win-x64, self-contained)..."
-dotnet publish -c Release -r win-x64 --self-contained true `
+# Step 1: Build and publish Servy.csproj in Release mode
+$ProjectPath = Join-Path $ScriptDir "Servy.csproj"
+
+Write-Host "Publishing Servy.csproj (.NET 8.0 Release, win-x64, self-contained)..."
+& dotnet publish $ProjectPath -c Release -r win-x64 --self-contained true `
     /p:PublishSingleFile=true `
     /p:IncludeAllContentForSelfExtract=true `
     /p:PublishTrimmed=false
-Write-Host "Main project published successfully."
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Publish failed." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+Write-Host "Servy.csproj published successfully."

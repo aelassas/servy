@@ -49,6 +49,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI", "src\Servy.CLI\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.UnitTests", "tests\Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj", "{72845E12-0BFD-4C14-93BF-4E005DE27554}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F-D8B6-4AD7-BC82-A423FCC30779}"
+	ProjectSection(SolutionItems) = preProject
+		setup\publish-fd.ps1 = setup\publish-fd.ps1
+		setup\publish-sc.ps1 = setup\publish-sc.ps1
+		setup\publish.ps1 = setup\publish.ps1
+		setup\servy-fd.iss = setup\servy-fd.iss
+		setup\servy.iss = setup\servy.iss
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

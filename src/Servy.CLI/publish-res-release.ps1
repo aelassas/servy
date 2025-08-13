@@ -1,11 +1,19 @@
-# publish-release.ps1
-$serviceProject = "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder = "..\Servy.CLI\Resources"
+param(
+    [string]$tfm =  "net8.0-windows"
+)
+
+# Get folder of the current script
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Paths
+$serviceProject = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
+$resourcesFolder = Join-Path $ScriptDir "..\Servy.CLI\Resources"
 $buildConfiguration = "Release"
 $runtime = "win-x64"
 $selfContained = $true
 $tfm = "net8.0-windows"
 
+# Publish Servy.Service
 Write-Host "Publishing Servy.Service (.NET 8.0 Windows) in $buildConfiguration mode..."
 dotnet publish $serviceProject `
     -c $buildConfiguration `
@@ -17,15 +25,15 @@ dotnet publish $serviceProject `
     /p:PublishTrimmed=false
 
 # Publish folder contains the single-file EXE
-$basePath = "..\Servy.Service\bin\$buildConfiguration\$tfm\$runtime"
+$basePath = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration\$tfm\$runtime"
 $publishFolder = Join-Path $basePath "publish"
 $buildFolder = $basePath
 
-# 1. Copy single-file EXE
+# Copy single-file EXE
 Copy-Item -Path (Join-Path $publishFolder "Servy.Service.exe") `
           -Destination (Join-Path $resourcesFolder "Servy.Service.CLI.exe") -Force
 
-# 2. Copy PDBs from build folder
+# Copy PDBs from build folder
 Copy-Item -Path (Join-Path $buildFolder "Servy.Service.pdb") `
           -Destination (Join-Path $resourcesFolder "Servy.Service.CLI.pdb") -Force
 
