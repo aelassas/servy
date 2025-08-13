@@ -9,11 +9,11 @@ set RUNTIME=win-x64
 set CONFIGURATION=Release
 set PUBLISH_DIR=publish
 
-set PACKAGE_FOLDER=servy-%APP_VERSION%-net8.0-x64
+set PACKAGE_FOLDER=servy-%APP_VERSION%-net8.0-x64-selfcontained
 set OUTPUT_ZIP=%PACKAGE_FOLDER%.zip
 
-set OUTPUT_EXE=servy-%APP_VERSION%-net8.0-x64-sc.exe
-set OUTPUT_CLI_EXE=servy-cli-%APP_VERSION%-net8.0-x64-sc.exe
+set OUTPUT_EXE=servy-%APP_VERSION%-net8.0-x64.exe
+set OUTPUT_CLI_EXE=servy-cli-%APP_VERSION%-net8.0-x64.exe
 
 set SRC_PROJECT=..\src\Servy\Servy.csproj
 set CLI_SRC_PROJECT=..\src\Servy.CLI\Servy.CLI.csproj

@@ -11,7 +11,7 @@ set CONFIGURATION=Release
 set APP_PUBLISH_DIR=publish-fd
 set CLI_PUBLISH_DIR=publish-cli-fd
 
-set OUTPUT_DIR=servy-%APP_VERSION%-net8.0-x64-portable
+set OUTPUT_DIR=servy-%APP_VERSION%-net8.0-x64-frameworkdependent
 set OUTPUT_ZIP=%OUTPUT_DIR%.zip
 
 set APP_OUTPUT_DIR=servy-app
