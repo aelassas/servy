@@ -5,7 +5,7 @@ $buildConfiguration = "Release"
 $buildOutput = "..\Servy.Service\bin\$buildConfiguration"
 
 # 1. Build the project in Release mode
-Write-Host "Building Servy.Service in Release mode..."
+Write-Host "Building Servy.Service in $buildConfiguration mode..."
 msbuild $serviceProject /p:Configuration=$buildConfiguration
 
 # 2. Files to copy
@@ -23,4 +23,4 @@ foreach ($file in $filesToCopy) {
     Write-Host "Copied $($file.Source) -> $($file.Destination)"
 }
 
-Write-Host "Release build published successfully to Resources."
+Write-Host "$buildConfiguration build published successfully to Resources."
