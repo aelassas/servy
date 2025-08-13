@@ -63,12 +63,13 @@ namespace Servy.CLI.Helpers
         /// if the file does not exist or if the embedded version is newer.
         /// </summary>
         /// <param name="fileName">The name of the embedded resource without extension.</param>
-        public static void CopyEmbeddedResource(string fileName)
+        /// <param name="extension">The extension of the embedded resource.</param>
+        public static void CopyEmbeddedResource(string fileName, string extension)
         {
-            string targetFileName = $"{fileName}.exe";
+            string targetFileName = $"{fileName}.{extension}";
             string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
             Assembly asm = Assembly.GetExecutingAssembly();
-            string resourceName = $"Servy.CLI.Resources.{fileName}.exe";
+            string resourceName = $"Servy.CLI.Resources.{fileName}.{extension}";
 
             bool shouldCopy = true;
 

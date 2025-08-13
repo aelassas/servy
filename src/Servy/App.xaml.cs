@@ -33,6 +33,8 @@ namespace Servy
                 };
 
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+                CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                CopyEmbeddedResource("Servy.Core", "pdb");
             }
             catch (Exception ex)
             {

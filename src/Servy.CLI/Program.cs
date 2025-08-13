@@ -55,7 +55,9 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
 
-                CopyEmbeddedResource(ServyServiceExeFileName);
+                CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+                CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                CopyEmbeddedResource("Servy.Core", "pdb");
 
                 var exiCode = Parser.Default.ParseArguments<
                     InstallServiceOptions,
