@@ -1,42 +1,54 @@
-# publish.ps1 - Main setup bundle script for .NET Framework build
-# Requirements: add msbuild to PATH environment variable
+# publish.ps1
+# Main setup bundle script for .NET Framework build of Servy
+# Requirements:
+#  1. Add msbuild to PATH
+#  2. Inno Setup installed (ISCC.exe path updated if different)
+#  3. 7-Zip installed and 7z in PATH
 
 $ErrorActionPreference = "Stop"
 
-$version       = "1.1.0"
-$innoCompiler  = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$issFile       = "servy.iss"
+# Record start time
+$startTime = Get-Date
 
-$AppName = "servy"
-$BuildConfig = "Release"
-$Platform = "x64"
-$Framework = "net48"
+# === CONFIGURATION ===
+$version      = "1.1.0"
+$AppName      = "servy"
+$BuildConfig  = "Release"
+$Platform     = "x64"
+$Framework    = "net48"
 
-# Get the directory of this script
+# Tools
+$innoCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$issFile      = "servy.iss"   # Inno Setup script filename
+$SevenZipExe  = "7z"          # Assumes 7-Zip is in PATH
+
+# === PATH RESOLUTION ===
+# Get the directory of this script and move to it so relative paths work
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $ScriptDir
 
-# Build Servy WPF App
+# Build output directories
+$BuildOutputDir     = Join-Path $ScriptDir "..\src\Servy\bin\$BuildConfig"
+$CliBuildOutputDir  = Join-Path $ScriptDir "..\src\Servy.CLI\bin\$BuildConfig"
+
+# Package folder structure
+$PackageFolder      = "$AppName-$version-$Framework-$Platform-frameworkdependent"
+$AppPackageFolder   = "servy-app"
+$CliPackageFolder   = "servy-cli"
+$OutputZip          = "$PackageFolder.zip"
+
+# === BUILD PROJECTS ===
 Write-Host "Building Servy WPF..."
-& "$ScriptDir\..\src\Servy\publish.ps1" -Version $version
+& (Join-Path $ScriptDir "..\src\Servy\publish.ps1") -Version $version
 
-# Build Servy CLI App
 Write-Host "Building Servy CLI..."
-& "$ScriptDir\..\src\Servy.CLI\publish.ps1" -Version $version
+& (Join-Path $ScriptDir "..\src\Servy.CLI\publish.ps1") -Version $version
 
-# Compile installer
+# === BUILD INSTALLER ===
 Write-Host "Building installer from $issFile..."
-& "$innoCompiler" "$issFile" /DMyAppVersion=$version
+& "$innoCompiler" (Join-Path $ScriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$Framework
 
-# Build portable framework dependant ZIP bundle
-$PackageFolder = "$AppName-$version-$Framework-$Platform-frameworkdependent"
-$AppPackageFolder = "servy-app"
-$CliPackageFolder = "servy-cli"
-$OutputZip = "$PackageFolder.zip"
-
-$BuildOutputDir = "..\src\Servy\bin\$BuildConfig"
-$CliBuildOutputDir = "..\src\Servy.CLI\bin\$BuildConfig"
-
-# === COPY BUILD FILES TO PACKAGE DIRECTORY ===
+# === PREPARE PACKAGE FILES ===
 Write-Host "Preparing package files..."
 
 # Create directories
@@ -45,35 +57,35 @@ $CliPackagePath = Join-Path $PackageFolder $CliPackageFolder
 New-Item -ItemType Directory -Force -Path $AppPackagePath | Out-Null
 New-Item -ItemType Directory -Force -Path $CliPackagePath | Out-Null
 
-# Copy app files
+# Copy Servy WPF files
 Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe") -Destination $AppPackagePath -Force
 Copy-Item -Path (Join-Path $BuildOutputDir "*.dll") -Destination $AppPackagePath -Force
 
-# Copy CLI files
+# Copy Servy CLI files
 Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe") -Destination (Join-Path $CliPackagePath "servy-cli.exe") -Force
 Copy-Item -Path (Join-Path $CliBuildOutputDir "*.dll") -Destination $CliPackagePath -Force
 
-# Optionally remove .pdb files
+# Remove debug symbols (.pdb)
 Get-ChildItem -Path $AppPackagePath -Filter "*.pdb" | Remove-Item -Force
 Get-ChildItem -Path $CliPackagePath -Filter "*.pdb" | Remove-Item -Force
 
 # === CREATE ZIP PACKAGE ===
 Write-Host "Creating zip package $OutputZip..."
-$SevenZipExe = "7z"  # Assumes 7z is in PATH
-$ZipArgs = @("a", "-tzip", $OutputZip, (Join-Path $PackageFolder "*"))
+$ZipArgs = @("a", "-tzip", $OutputZip, "$PackageFolder\*")
 $Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
 if ($Process.ExitCode -ne 0) {
     Write-Error "ERROR: 7z compression failed."
     exit 1
 }
 
-# === CLEANUP PACKAGE DIRECTORY ===
+# === CLEANUP TEMP PACKAGE FOLDER ===
 Write-Host "Cleaning up temporary files..."
 Remove-Item -Path $PackageFolder -Recurse -Force
 
+# === DISPLAY ELAPSED TIME ===
+$elapsed = (Get-Date) - $startTime
+Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
 
-# Pause if launched by double-click
-if ($Host.Name -eq "ConsoleHost") {
-    Write-Host "Press any key to exit..."
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-}
+# === PAUSE IF RUN BY DOUBLE-CLICK ===
+Write-Host "`nPress any key to exit..."
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

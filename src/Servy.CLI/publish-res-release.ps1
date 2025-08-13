@@ -1,29 +1,57 @@
+# ======================================================================
 # publish-res-release.ps1
+# ----------------------------------------------------------------------
+# Purpose:
+#   Builds Servy.Service in Release mode (.NET Framework 4.8) and copies
+#   the required binaries into the Servy.CLI\Resources folder with the
+#   appropriate naming conventions.
+#
+# Requirements:
+#   - Ensure msbuild is available in PATH.
+#   - Script should be run from PowerShell (x64).
+#
+# Notes:
+#   - This script is intended for preparing the CLI resources for release.
+#   - Adjust file paths if the project structure changes.
+# ======================================================================
 
-# Get the directory of the current script
+$ErrorActionPreference = "Stop"
+
+# ----------------------------------------------------------------------
+# Resolve script directory (absolute path to this script's location)
+# ----------------------------------------------------------------------
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Absolute paths
-$serviceProject   = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder  = Join-Path $ScriptDir "..\Servy.CLI\Resources"
-$buildConfiguration = "Release"
-$buildOutput      = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
+# ----------------------------------------------------------------------
+# Absolute paths and configuration
+# ----------------------------------------------------------------------
+$serviceProject      = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
+$resourcesFolder     = Join-Path $ScriptDir "..\Servy.CLI\Resources"
+$buildConfiguration  = "Release"
+$buildOutput         = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
 
-# 1. Build the project in Release mode
+# ----------------------------------------------------------------------
+# Step 1 - Build Servy.Service in Release mode
+# ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
 msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
 
-# 2. Files to copy
+# ----------------------------------------------------------------------
+# Step 2 - Files to copy (with renamed outputs where applicable)
+# ----------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
     @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" },
-    @{ Source = "Servy.Core.pdb"; Destination = "Servy.Core.pdb" }
+    @{ Source = "Servy.Core.pdb";    Destination = "Servy.Core.pdb" }
 )
 
-# 3. Copy files to Resources folder
+# ----------------------------------------------------------------------
+# Step 3 - Copy the files into the Resources folder
+# ----------------------------------------------------------------------
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
     $destPath   = Join-Path $resourcesFolder $file.Destination
+
     Copy-Item -Path $sourcePath -Destination $destPath -Force
     Write-Host "Copied $($file.Source) -> $($file.Destination)"
 }

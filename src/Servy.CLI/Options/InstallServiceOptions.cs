@@ -174,10 +174,10 @@ namespace Servy.CLI.Options
         public string PreLaunchPath { get; set; }
 
         /// <summary>
-        /// Gets or sets the pre-launch executable path.
-        /// Optional.
+        /// Gets or sets the pre-launch startup directory.
+        /// Optional. Defaults to the service working directory.
         /// </summary>
-        [Option("preLaunchStartupDir", HelpText = "The pre-launch startup directory.")]
+        [Option("preLaunchStartupDir", HelpText = "Specifies the directory in which the pre-launch executable will start. Defaults to the service working directory.")]
         public string PreLaunchStartupDir { get; set; }
 
         /// <summary>
@@ -218,10 +218,10 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the pre-launch retry attempts.
-        /// Must be >= 0.
+        /// Must be greater or equal to 0.
         /// Optional.
         /// </summary>
-        [Option("preLaunchRetryAttempts", HelpText = "Timeout for the pre-launch executable.")]
+        [Option("preLaunchRetryAttempts", HelpText = "Number of retry attempts for the pre-launch executable if it fails. Must be greater or equal to 0.")]
         public string PreLaunchRetryAttempts { get; set; }
 
         /// <summary>
