@@ -84,6 +84,8 @@
     <None Include="App.config" />
     <None Include="app.manifest" />
     <None Include="packages.config" />
+    <None Include="publish-res-debug.ps1" />
+    <None Include="publish-res-release.ps1" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="servy.ico" />
@@ -102,6 +104,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Servy.Service.Net48.CLI.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Servy.Core.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.CLI.pdb" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

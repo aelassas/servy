@@ -123,6 +123,8 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <None Include="publish-res-debug.ps1" />
+    <None Include="publish-res-release.ps1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -135,6 +137,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="servy.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Servy.Core.pdb" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Servy.Service.Net48.exe" />
