@@ -1,4 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using System;
+using Xunit;
 
 namespace Servy.Core.UnitTests
 {
@@ -136,5 +138,15 @@ namespace Servy.Core.UnitTests
             Assert.Equal("KEY1", result[0].Name);
             Assert.Equal("KEY2", result[1].Name);
         }
+
+        [Fact]
+        public void Parse_ThrowsFormatException_WhenEqualsIsEscaped()
+        {
+            var input = @"KEY\\\=VALUE"; // 3 backslashes → escaped =
+
+            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
+            Assert.Contains("no unescaped '='", ex.Message);
+        }
+
     }
 }

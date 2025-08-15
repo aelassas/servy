@@ -10,7 +10,7 @@
   <StdoutPath>E:\dev\servy\stdout.log</StdoutPath>
   <StderrPath>E:\dev\servy\stderr.log</StderrPath>
   <EnableRotation>true</EnableRotation>
-  <RotationSize>10485761</RotationSize>
+  <RotationSize>10485760</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>5</HeartbeatInterval>
   <MaxFailedChecks>1</MaxFailedChecks>
