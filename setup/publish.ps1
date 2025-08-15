@@ -64,10 +64,24 @@ Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe") -Destination $AppPackage
 Copy-Item -Path (Join-Path $BuildOutputDir "*.dll") -Destination $AppPackagePath -Force
 Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe.config") -Destination $AppPackagePath -Force
 
+$destSQLiteWPFX64 = Join-Path $AppPackagePath "x64"
+$destSQLiteWPFX86 = Join-Path $AppPackagePath "x86"
+if (-not (Test-Path $destSQLiteWPFX64)) { New-Item -ItemType Directory -Path $destSQLiteWPFX64 | Out-Null }
+if (-not (Test-Path $destSQLiteWPFX86)) { New-Item -ItemType Directory -Path $destSQLiteWPFX86 | Out-Null }
+Copy-Item -Path (Join-Path $CliBuildOutputDir "x64\*") -Destination $destSQLiteWPFX64 -Recurse -Force
+Copy-Item -Path (Join-Path $CliBuildOutputDir "x86\*") -Destination $destSQLiteWPFX86 -Recurse -Force
+
 # Copy Servy CLI files
 Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe") -Destination (Join-Path $CliPackagePath "servy-cli.exe") -Force
 Copy-Item -Path (Join-Path $CliBuildOutputDir "*.dll") -Destination $CliPackagePath -Force
 Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe.config") -Destination (Join-Path $CliPackagePath "servy-cli.exe.config") -Force
+
+$destSQLiteCLIX64 = Join-Path $CliPackagePath "x64"
+$destSQLiteCLIX86 = Join-Path $CliPackagePath "x86"
+if (-not (Test-Path $destSQLiteCLIX64)) { New-Item -ItemType Directory -Path $destSQLiteCLIX64 | Out-Null }
+if (-not (Test-Path $destSQLiteCLIX86)) { New-Item -ItemType Directory -Path $destSQLiteCLIX86 | Out-Null }
+Copy-Item -Path (Join-Path $CliBuildOutputDir "x64\*") -Destination $destSQLiteCLIX64 -Recurse -Force
+Copy-Item -Path (Join-Path $CliBuildOutputDir "x86\*") -Destination $destSQLiteCLIX86 -Recurse -Force
 
 # Remove debug symbols (.pdb)
 Get-ChildItem -Path $AppPackagePath -Filter "*.pdb" | Remove-Item -Force
