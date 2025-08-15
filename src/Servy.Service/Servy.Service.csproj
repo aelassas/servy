@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="publish-res-release.ps1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
@@ -108,6 +109,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
