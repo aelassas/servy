@@ -38,6 +38,9 @@ jobs:
             --format "cobertura"
         shell: pwsh
 
+      - name: Dump Core\coverage.cobertura.xml
+        run: cat Core\coverage.cobertura.xml 
+
       - name: Run Servy.Infrastructure.UnitTests with coverage
         run: |
           coverlet.exe "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
@@ -46,6 +49,9 @@ jobs:
             --output "Infrastructure\coverage.cobertura.xml" `
             --format "cobertura"
         shell: pwsh
+
+      - name: Dump Infrastructure\coverage.cobertura.xml
+        run: cat Infrastructure\coverage.cobertura.xml 
 
       - name: Run other Unit Tests (no coverage)
         run: |
