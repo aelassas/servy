@@ -1,6 +1,6 @@
 ﻿using System.ServiceProcess;
 
-namespace Servy.Core.Interfaces
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Defines an abstraction for controlling and monitoring the status of a Windows service.

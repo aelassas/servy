@@ -213,6 +213,60 @@
     <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
   </data>
 
+  <!-- XML/JSON import -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>Import XML configuration</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>Import JSON configuration</value>
+  </data>
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>Failed to load XML service configuration.</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>Failed to load JSON service configuration.</value>
+  </data>
+  <data name="Msg_UnexpectedConfigLoadError" xml:space="preserve">
+    <value>An error occurred while loading the configuration</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="Menu_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>Export XML configuration</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>Export JSON configuration</value>
+  </data>
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>Export XML configuration</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>Export JSON configuration</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>XML Configuration exported successfully.</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>JSON Configuration exported successfully.</value>
+  </data>
+  <data name="Msg_UnexpectedConfigLoadError" xml:space="preserve">
+    <value>An error occurred while saving the configuration</value>
+  </data>
+  
+  <!-- Clear Action -->
+  <data name="Menu_ClearAll" xml:space="preserve">
+    <value>Clear All</value>
+  </data>
+  <data name="Confirm_ClearAll" xml:space="preserve">
+    <value>Are you sure you want to clear all configuration values?</value>
+  </data>
+  
   <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>

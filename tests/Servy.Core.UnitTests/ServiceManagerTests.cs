@@ -1,6 +1,6 @@
 ﻿using Moq;
+using Servy.Core.Data;
 using Servy.Core.Enums;
-using Servy.Core.Interfaces;
 using Servy.Core.Services;
 using System.ComponentModel;
 using System.ServiceProcess;
@@ -15,6 +15,7 @@ namespace Servy.Core.UnitTests
         private readonly Mock<IServiceControllerWrapper> _mockController;
         private readonly Mock<IWindowsServiceApi> _mockWindowsServiceApi;
         private readonly Mock<IWin32ErrorProvider> _mockWin32ErrorProvider;
+        private readonly Mock<IServiceRepository> _mockServiceRepository;
         private ServiceManager _serviceManager;
 
         public ServiceManagerTests()
@@ -22,7 +23,8 @@ namespace Servy.Core.UnitTests
             _mockController = new Mock<IServiceControllerWrapper>();
             _mockWindowsServiceApi = new Mock<IWindowsServiceApi>();
             _mockWin32ErrorProvider = new Mock<IWin32ErrorProvider>();
-            _serviceManager = new ServiceManager(_ => _mockController.Object, _mockWindowsServiceApi.Object, _mockWin32ErrorProvider.Object);
+            _mockServiceRepository = new Mock<IServiceRepository>();
+            _serviceManager = new ServiceManager(_ => _mockController.Object, _mockWindowsServiceApi.Object, _mockWin32ErrorProvider.Object, _mockServiceRepository.Object);
         }
 
         [Theory]
@@ -62,7 +64,7 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            Assert.Throws<ArgumentNullException>(() => _serviceManager.InstallService(
+            Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 wrapperExePath,
@@ -130,7 +132,7 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            Assert.Throws<Win32Exception>(() => _serviceManager.InstallService(
+            Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -167,7 +169,7 @@ namespace Servy.Core.UnitTests
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
 
-            Assert.Throws<Win32Exception>(() => _serviceManager.InstallService(
+            Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -202,7 +204,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
+        public async void InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -236,7 +238,7 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            var result = _serviceManager.InstallService(
+            var result =await _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -278,7 +280,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
+        public async void InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
         {
             var scmHandle = new IntPtr(123);
             var serviceName = "TestService";
@@ -334,7 +336,7 @@ namespace Servy.Core.UnitTests
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = _serviceManager.InstallService(
+            var result = await _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -504,17 +506,17 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
+        public async void UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
         {
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(IntPtr.Zero);
 
-            var result = _serviceManager.UninstallService("ServiceName");
+            var result = await _serviceManager.UninstallService("ServiceName");
             Assert.False(result);
         }
 
         [Fact]
-        public void UninstallService_ReturnsFalse_WhenOpenServiceFails()
+        public async void UninstallService_ReturnsFalse_WhenOpenServiceFails()
         {
             var scmHandle = new IntPtr(123);
 
@@ -526,12 +528,83 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = _serviceManager.UninstallService("ServiceName");
+            var result = await _serviceManager.UninstallService("ServiceName");
             Assert.False(result);
         }
 
         [Fact]
-        public void UninstallService_StopsAndDeletesServiceSuccessfully()
+        public async void UninstallService_ReturnsFalse_WhenDeleteServiceFails()
+        {
+            var serviceName = "ServiceName";
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
+                serviceHandle,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                null,
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null,
+                null))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
+                .Returns(false);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle))
+                .Returns(true);
+
+            // Mock IServiceControllerWrapper to simulate service stopping quickly
+            var mockController = new Mock<IServiceControllerWrapper>();
+
+            var statusSequence = new Queue<ServiceControllerStatus>(new[]
+            {
+                ServiceControllerStatus.Running,
+                ServiceControllerStatus.Stopped
+            });
+
+            mockController.Setup(c => c.Refresh())
+                .Callback(() =>
+                {
+                    if (statusSequence.Count > 1) // keep Stopped as last state
+                        statusSequence.Dequeue();
+                });
+
+            mockController.Setup(c => c.Status)
+                .Returns(() => statusSequence.Peek());
+
+            // Setup the factory to return this mock controller
+            _serviceManager = new ServiceManager(
+                svcName => mockController.Object,
+                _mockWindowsServiceApi.Object,
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+                );
+
+            var result = await _serviceManager.UninstallService(serviceName);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async void UninstallService_StopsAndDeletesServiceSuccessfully()
         {
             var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
@@ -592,9 +665,11 @@ namespace Servy.Core.UnitTests
             _serviceManager = new ServiceManager(
                 svcName => mockController.Object,
                 _mockWindowsServiceApi.Object,
-                _mockWin32ErrorProvider.Object);
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
+                );
 
-            var result = _serviceManager.UninstallService(serviceName);
+            var result = await _serviceManager.UninstallService(serviceName);
 
             Assert.True(result);
 
@@ -604,7 +679,7 @@ namespace Servy.Core.UnitTests
 
 
         [Fact]
-        public void UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
+        public async void UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
         {
             var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
@@ -668,10 +743,11 @@ namespace Servy.Core.UnitTests
             _serviceManager = new ServiceManager(
                 name => mockController.Object,
                 _mockWindowsServiceApi.Object,
-                _mockWin32ErrorProvider.Object
+                _mockWin32ErrorProvider.Object,
+                _mockServiceRepository.Object
             );
 
-            var result = _serviceManager.UninstallService(serviceName);
+            var result = await _serviceManager.UninstallService(serviceName);
 
             Assert.True(result);
 

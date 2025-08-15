@@ -1,9 +1,14 @@
 ﻿using CommandLine;
+using Microsoft.Extensions.Configuration;
 using Servy.CLI.Commands;
-using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
+using Servy.Core;
+using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using static Servy.CLI.Helpers.Helper;
 
 namespace Servy.CLI
@@ -26,7 +31,7 @@ namespace Servy.CLI
         /// </summary>
         /// <param name="args">An array of command-line arguments.</param>
         /// <returns>Returns 0 on success; non-zero on error.</returns>
-        static int Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
             try
             {
@@ -41,41 +46,75 @@ namespace Servy.CLI
                     args[0] = args[0].ToLowerInvariant();
                 }
 
+                var config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .Build();
+
+                var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConstants.DefaultConnectionString;
+                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConstants.DefaultAESKeyPath;
+                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConstants.DefaultAESIVPath;
+
+                // Initialize shared dependencies
+                var dbContext = new AppDbContext(connectionString);
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                var securePassword = new SecurePassword(protectedKeyProvider);
+                var xmlSerializer = new XmlServiceSerializer();
+                var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+                // Ensure db and security folders exist
+                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
+
+                // Initialize the database
+                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
                 var serviceManager = new ServiceManager(
-                            name => new ServiceControllerWrapper(name),
-                            new WindowsServiceApi(),
-                            new Win32ErrorProvider()
-                            );
+                    name => new ServiceControllerWrapper(name),
+                    new WindowsServiceApi(),
+                    new Win32ErrorProvider(),
+                    serviceRepository
+                    );
+
                 var installValidator = new ServiceInstallValidator();
 
-                var installCommand = new InstallServiceCommand(serviceManager, installValidator);
+                var installCommand = new InstallServiceCommand(serviceManager, installValidator, serviceRepository);
                 var startCommand = new StartServiceCommand(serviceManager);
                 var stopCommand = new StopServiceCommand(serviceManager);
                 var restartCommand = new RestartServiceCommand(serviceManager);
-                var uninstallCommand = new UninstallServiceCommand(serviceManager);
+                var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
+                var exportCommand = new ExportServiceCommand(serviceRepository);
+                var importCommand = new ImportServiceCommand(serviceRepository);
 
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
                 CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                #if !DEBUG
                 CopyEmbeddedResource("Servy.Core", "pdb");
+                #endif
 
-                var exiCode = Parser.Default.ParseArguments<
-                    InstallServiceOptions,
-                    UninstallServiceOptions,
-                    StartServiceOptions,
-                    StopServiceOptions,
-                    ServiceStatusOptions,
-                    RestartServiceOptions >(args)
-                       .MapResult(
-                        (InstallServiceOptions opts) => PrintAndReturn(installCommand.Execute(opts)),
-                        (UninstallServiceOptions opts) => PrintAndReturn(uninstallCommand.Execute(opts)),
-                        (StartServiceOptions opts) => PrintAndReturn(startCommand.Execute(opts)),
-                        (StopServiceOptions opts) => PrintAndReturn(stopCommand.Execute(opts)),
-                        (RestartServiceOptions opts) => PrintAndReturn(restartCommand.Execute(opts)),
-                        (ServiceStatusOptions opts) => PrintAndReturn(serviceStatusCommand.Execute(opts)),
-                        errs => 1);
+                var exitCode = await Parser.Default.ParseArguments<
+                        InstallServiceOptions,
+                        UninstallServiceOptions,
+                        StartServiceOptions,
+                        StopServiceOptions,
+                        ServiceStatusOptions,
+                        RestartServiceOptions,
+                        ExportServiceOptions,
+                        ImportServiceOptions
+                        >(args)
+                    .MapResult(
+                        async (InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
+                        async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.Execute(opts)),
+                        async (StartServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(startCommand.Execute(opts))),
+                        async (StopServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(stopCommand.Execute(opts))),
+                        async (RestartServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(restartCommand.Execute(opts))),
+                        async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts))),
+                        async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.Execute(opts)),
+                        async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.Execute(opts)),
+                        errs => Task.FromResult(1) // Wrap synchronous error result in Task
+                    );
 
-                return exiCode;
+                return exitCode;
             }
             catch (Exception e)
             {

@@ -102,7 +102,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<ILogger>()),
                 Times.Once);
 
-            // You might want to verify process restart logic (mock process kill/start etc.)
+            // We might want to verify process restart logic (mock process kill/start etc.)
         }
 
         [Theory]

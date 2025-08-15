@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>MyTestService23</Name>
+  <Description>Sample service for testing import</Description>
+  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <StartupDirectory>C:\Program Files\nodejs\</StartupDirectory>
+  <Parameters>-arg1 -arg2</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>1</Priority>
+  <StdoutPath>C:\Logs\TestService_out.log</StdoutPath>
+  <StderrPath>C:\Logs\TestService_err.log</StderrPath>
+  <EnableRotation>true</EnableRotation>
+  <RotationSize>1048576</RotationSize>
+  <EnableHealthMonitoring>true</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>5</MaxRestartAttempts>
+  <EnvironmentVariables>PATH=C:\Windows\System32;TEMP=C:\Temp</EnvironmentVariables>
+  <ServiceDependencies>ServiceA;ServiceB</ServiceDependencies>
+  <RunAsLocalSystem>false</RunAsLocalSystem>
+  <UserAccount>.\aelassas</UserAccount>
+  <Password>&amp;lA2s@5!</Password>
+  <PreLaunchExecutablePath>C:\Program Files\nodejs\node.exe</PreLaunchExecutablePath>
+  <PreLaunchStartupDirectory>C:\Program Files\nodejs\</PreLaunchStartupDirectory>
+  <PreLaunchParameters>-preArg1 -preArg2</PreLaunchParameters>
+  <PreLaunchEnvironmentVariables>CONFIG=C:\Config;LOGS=C:\Logs</PreLaunchEnvironmentVariables>
+  <PreLaunchStdoutPath>C:\Logs\PreLaunch_out.log</PreLaunchStdoutPath>
+  <PreLaunchStderrPath>C:\Logs\PreLaunch_err.log</PreLaunchStderrPath>
+  <PreLaunchTimeoutSeconds>60</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>2</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>true</PreLaunchIgnoreFailure>
+</ServiceDto>

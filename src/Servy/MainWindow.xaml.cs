@@ -1,8 +1,12 @@
-﻿using Servy.Core.Services;
+﻿using Servy.Core.Helpers;
+using Servy.Core.Security;
+using Servy.Core.Services;
+using Servy.Helpers;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Services;
 using Servy.ViewModels;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace Servy
 {
@@ -19,44 +23,47 @@ namespace Servy
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel(
-                new FileDialogService(), 
-                new ServiceCommands(
-                    new ServiceManager(
-                        name => new ServiceControllerWrapper(name),
-                        new WindowsServiceApi(),
-                        new Win32ErrorProvider()
-                        ), 
-                    new MessageBoxService()));
+            DataContext = CreateMainViewModel();
         }
 
         /// <summary>
-        /// Handles the PasswordChanged event of the PasswordBox for the main password.
-        /// Updates the ViewModel's Password property with the current password value.
+        /// Creates and configures the <see cref="MainViewModel"/> with all required dependencies.
         /// </summary>
-        /// <param name="sender">The PasswordBox that raised the event.</param>
-        /// <param name="e">The routed event data.</param>
-        private void PasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
+        /// <returns>A fully initialized <see cref="MainViewModel"/> instance.</returns>
+        private MainViewModel CreateMainViewModel()
         {
-            if (DataContext is MainViewModel vm && sender is PasswordBox pb)
-            {
-                vm.Password = pb.Password;
-            }
-        }
+            var app = (App)Application.Current;
 
-        /// <summary>
-        /// Handles the PasswordChanged event of the PasswordBox for the confirm password.
-        /// Updates the ViewModel's ConfirmPassword property with the current password value.
-        /// </summary>
-        /// <param name="sender">The PasswordBox that raised the event.</param>
-        /// <param name="e">The routed event data.</param>
-        private void ConfirmPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm && sender is PasswordBox pb)
-            {
-                vm.ConfirmPassword = pb.Password;
-            }
-        }
+            // Initialize database and helpers
+            var dbContext = new AppDbContext(app.ConnectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
 
+            var dapperExecutor = new DapperExecutor(dbContext);
+            var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
+            var securePassword = new SecurePassword(protectedKeyProvider);
+            var xmlSerializer = new XmlServiceSerializer();
+
+            var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+            // Initialize service manager
+            var serviceManager = new ServiceManager(
+                name => new ServiceControllerWrapper(name),
+                new WindowsServiceApi(),
+                new Win32ErrorProvider(),
+                serviceRepository
+            );
+
+            // Initialize service commands
+            var messageBoxService = new MessageBoxService();
+            var serviceCommands = new ServiceCommands(serviceManager, messageBoxService);
+
+            // Create main ViewModel
+            return new MainViewModel(
+                new FileDialogService(),
+                serviceCommands,
+                messageBoxService,
+                new ServiceConfigurationValidator(messageBoxService)
+            );
+        }
     }
 }

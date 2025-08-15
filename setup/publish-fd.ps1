@@ -16,8 +16,11 @@ $issFile            = ".\servy-fd.iss"
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 
-# Directory where this script resides
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+# Directories
+$ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
+$ServyDir           = Join-Path $RootDir "src\Servy"
+$CliDir             = Join-Path $RootDir "src\Servy.CLI"
 
 # Helper function: Remove file or folder if it exists
 function Remove-FileOrFolder {
@@ -58,8 +61,8 @@ Remove-FileOrFolder -path $outputZip
 # Create package folders
 New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
-$servyPublish = Join-Path $ScriptDir "..\src\Servy\bin\$buildConfiguration\$tfm\$runtime\publish"
-$cliPublish   = Join-Path $ScriptDir "..\src\Servy.CLI\bin\$buildConfiguration\$tfm\$runtime\publish"
+$servyPublish = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish"
+$cliPublish   = Join-Path $CliDir "bin\$buildConfiguration\$tfm\$runtime\publish"
 
 $servyAppFolder = Join-Path $packageFolder "servy-app"
 $servyCliFolder = Join-Path $packageFolder "servy-cli"
@@ -70,6 +73,14 @@ New-Item -ItemType Directory -Path $servyCliFolder -Force | Out-Null
 # Copy published files
 Copy-Item "$servyPublish\*" $servyAppFolder -Recurse -Force
 Copy-Item "$cliPublish\*" $servyCliFolder -Recurse -Force
+
+# Paths appsettings.json
+$servyAppsettings  = Join-Path $ServyDir "appsettings.json"
+$cliExeAppsettings = Join-Path $CliDir   "appsettings.json"
+
+# Copy appsettings.json
+Copy-Item $servyAppsettings (Join-Path $servyAppFolder "appsettings.json") -Force
+Copy-Item $cliExeAppsettings   (Join-Path $servyCliFolder "appsettings.json") -Force
 
 # Rename CLI EXE
 $cliExePath = Join-Path $servyCliFolder "Servy.CLI.exe"

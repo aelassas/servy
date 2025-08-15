@@ -1,4 +1,9 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core;
+using Servy.Core.Helpers;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -16,25 +21,62 @@ namespace Servy
         public const string ServyServiceExeFileName = "Servy.Service";
 
         /// <summary>
-        /// Called when the WPF application starts.
-        /// Subscribes to unhandled exceptions, stops the background service if it's running,
-        /// and extracts the embedded Servy.Service.exe to the application's base directory if needed.
+        /// Connection string.
         /// </summary>
-        /// <param name="e">Startup event arguments.</param>
+        public string ConnectionString { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES encryption key.
+        /// </summary>
+        public string AESKeyFilePath { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES initialization vector (IV).
+        /// </summary>
+        public string AESIVFilePath { get; private set; }
+
+        /// <summary>
+        /// Called when the WPF application starts.
+        /// Loads configuration settings, initializes the database if necessary,
+        /// subscribes to unhandled exception handlers, and extracts required embedded resources.
+        /// </summary>
+        /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             try
             {
+                // Load configuration from appsettings.json
+                var config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build();
+
+                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConstants.DefaultConnectionString;
+                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConstants.DefaultAESKeyPath;
+                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConstants.DefaultAESIVPath;
+
+                // Ensure db and security folders exist
+                AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+
+                // Subscribe to unhandled exceptions
                 AppDomain.CurrentDomain.UnhandledException += (s, args) =>
                 {
-                    MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
+                    MessageBox.Show("Unhandled exception: " + args.ExceptionObject);
                 };
 
+                DispatcherUnhandledException += (s, args) =>
+                {
+                    MessageBox.Show("UI thread exception: " + args.Exception);
+                    args.Handled = true;
+                };
+
+                // Extract required embedded resources
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
                 CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                #if !DEBUG
                 CopyEmbeddedResource("Servy.Core", "pdb");
+                #endif
             }
             catch (Exception ex)
             {

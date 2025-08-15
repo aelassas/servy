@@ -1,6 +1,6 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Data;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
-using Servy.Core.Interfaces;
 using Servy.Core.ServiceDependencies;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -37,6 +37,7 @@ namespace Servy.Core.Services
         private readonly Func<string, IServiceControllerWrapper> _controllerFactory;
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
+        private readonly IServiceRepository _serviceRepository;
 
         #endregion
 
@@ -54,14 +55,20 @@ namespace Servy.Core.Services
         /// <param name="win32ErrorProvider">
         /// Provider for retrieving the last Win32 error codes.
         /// </param>
+        /// <param name="_serviceRepository">
+        /// Service repository.
+        /// </param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IWindowsServiceApi windowsServiceApi,
-            IWin32ErrorProvider win32ErrorProvider)
+            IWin32ErrorProvider win32ErrorProvider,
+            IServiceRepository serviceRepository
+            )
         {
             _controllerFactory = controllerFactory;
             _windowsServiceApi = windowsServiceApi;
             _win32ErrorProvider = win32ErrorProvider;
+            _serviceRepository = serviceRepository;
         }
 
         #endregion
@@ -153,36 +160,36 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public bool InstallService(
-            string serviceName,
-            string description,
-            string wrapperExePath,
-            string realExePath,
-            string workingDirectory,
-            string realArgs,
-            ServiceStartType startType,
-            ProcessPriority processPriority,
-            string? stdoutPath,
-            string? stderrPath,
-            int rotationSizeInBytes,
-            int heartbeatInterval,
-            int maxFailedChecks,
-            RecoveryAction recoveryAction,
-            int maxRestartAttempts,
-            string? environmentVariables,
-            string? serviceDependencies,
-            string? username,
-            string? password,
-            string? preLaunchExePath,
-            string? preLaunchWorkingDirectory,
-            string? preLaunchArgs,
-            string? preLaunchEnvironmentVariables,
-            string? preLaunchStdoutPath,
-            string? preLaunchStderrPath,
-            int preLaunchTimeout = 5,
-            int preLaunchRetryAttempts = 0,
-            bool preLaunchIgnoreFailure = false
-            )
+        public async Task<bool> InstallService(
+    string serviceName,
+    string description,
+    string wrapperExePath,
+    string realExePath,
+    string workingDirectory,
+    string realArgs,
+    ServiceStartType startType,
+    ProcessPriority processPriority,
+    string? stdoutPath,
+    string? stderrPath,
+    int rotationSizeInBytes,
+    int heartbeatInterval,
+    int maxFailedChecks,
+    RecoveryAction recoveryAction,
+    int maxRestartAttempts,
+    string? environmentVariables,
+    string? serviceDependencies,
+    string? username,
+    string? password,
+    string? preLaunchExePath,
+    string? preLaunchWorkingDirectory,
+    string? preLaunchArgs,
+    string? preLaunchEnvironmentVariables,
+    string? preLaunchStdoutPath,
+    string? preLaunchStderrPath,
+    int preLaunchTimeout = 5,
+    int preLaunchRetryAttempts = 0,
+    bool preLaunchIgnoreFailure = false
+)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -191,37 +198,36 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(realExePath))
                 throw new ArgumentNullException(nameof(realExePath));
 
-            // Compose the binary path with the wrapper exe and the parameters for the real exe and working directory
+            // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
                 Helper.Quote(wrapperExePath),
                 Helper.Quote(realExePath),
-                Helper.Quote(realArgs),
-                Helper.Quote(workingDirectory),
+                Helper.Quote(realArgs ?? string.Empty),
+                Helper.Quote(workingDirectory ?? string.Empty),
                 Helper.Quote(processPriority.ToString()),
-                Helper.Quote(stdoutPath),
-                Helper.Quote(stderrPath),
+                Helper.Quote(stdoutPath ?? string.Empty),
+                Helper.Quote(stderrPath ?? string.Empty),
                 Helper.Quote(rotationSizeInBytes.ToString()),
                 Helper.Quote(heartbeatInterval.ToString()),
                 Helper.Quote(maxFailedChecks.ToString()),
                 Helper.Quote(recoveryAction.ToString()),
                 Helper.Quote(serviceName),
                 Helper.Quote(maxRestartAttempts.ToString()),
-                Helper.Quote(environmentVariables),
+                Helper.Quote(environmentVariables ?? string.Empty),
 
                 // Pre-Launch
-                Helper.Quote(preLaunchExePath),
-                Helper.Quote(preLaunchWorkingDirectory),
-                Helper.Quote(preLaunchArgs),
-                Helper.Quote(preLaunchEnvironmentVariables),
-                Helper.Quote(preLaunchStdoutPath),
-                Helper.Quote(preLaunchStderrPath),
+                Helper.Quote(preLaunchExePath ?? string.Empty),
+                Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
+                Helper.Quote(preLaunchArgs ?? string.Empty),
+                Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
+                Helper.Quote(preLaunchStdoutPath ?? string.Empty),
+                Helper.Quote(preLaunchStderrPath ?? string.Empty),
                 Helper.Quote(preLaunchTimeout.ToString()),
                 Helper.Quote(preLaunchRetryAttempts.ToString()),
                 Helper.Quote(preLaunchIgnoreFailure.ToString())
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
-
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
@@ -245,22 +251,57 @@ namespace Servy.Core.Services
                     IntPtr.Zero,
                     lpDependencies,
                     lpServiceStartName,
-                    lpPassword);
+                    lpPassword
+                );
 
                 if (serviceHandle == IntPtr.Zero)
                 {
                     int err = _win32ErrorProvider.GetLastWin32Error();
-
-                    // If service exists, update config instead
                     if (err == 1073) // ERROR_SERVICE_EXISTS
-                    {
                         return UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType);
-                    }
 
                     throw new Win32Exception(err, "Failed to create service.");
                 }
 
+                // Set description
                 SetServiceDescription(serviceHandle, description);
+
+                // Persist service in database
+                var dto = new DTOs.ServiceDto
+                {
+                    Name = serviceName,
+                    Description = description,
+                    ExecutablePath = realExePath,
+                    StartupDirectory = workingDirectory,
+                    Parameters = realArgs,
+                    StartupType = (int)startType,
+                    Priority = (int)processPriority,
+                    StdoutPath = stdoutPath,
+                    StderrPath = stderrPath,
+                    EnableRotation = rotationSizeInBytes > 0,
+                    RotationSize = rotationSizeInBytes,
+                    EnableHealthMonitoring = heartbeatInterval > 0,
+                    HeartbeatInterval = heartbeatInterval,
+                    MaxFailedChecks = maxFailedChecks,
+                    RecoveryAction = (int)recoveryAction,
+                    MaxRestartAttempts = maxRestartAttempts,
+                    EnvironmentVariables = environmentVariables,
+                    ServiceDependencies = serviceDependencies,
+                    RunAsLocalSystem = string.IsNullOrWhiteSpace(username),
+                    UserAccount = username,
+                    Password = password,
+                    PreLaunchExecutablePath = preLaunchExePath,
+                    PreLaunchStartupDirectory = preLaunchWorkingDirectory,
+                    PreLaunchParameters = preLaunchArgs,
+                    PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = preLaunchStdoutPath,
+                    PreLaunchStderrPath = preLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = preLaunchTimeout,
+                    PreLaunchRetryAttempts = preLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = preLaunchIgnoreFailure
+                };
+
+                await _serviceRepository.UpsertAsync(dto);
 
                 return true;
             }
@@ -274,7 +315,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool UninstallService(string serviceName)
+        public async Task<bool> UninstallService(string serviceName)
         {
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
@@ -320,7 +361,17 @@ namespace Servy.Core.Services
                     }
 
                     // Delete the service
-                    return _windowsServiceApi.DeleteService(serviceHandle);
+                    var res = _windowsServiceApi.DeleteService(serviceHandle);
+
+                    if (res)
+                    {
+                        await _serviceRepository.DeleteAsync(serviceName);
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 finally
                 {

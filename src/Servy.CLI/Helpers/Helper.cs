@@ -148,5 +148,23 @@ namespace Servy.CLI.Helpers
             return result.ExitCode;
         }
 
+        /// <summary>
+        /// Awaits the execution of a <see cref="CommandResult"/>-returning task,
+        /// prints its message to the console, and returns an appropriate exit code.
+        /// </summary>
+        /// <param name="task">The task that produces a <see cref="CommandResult"/>.</param>
+        /// <returns>
+        /// A <see cref="Task{Int32}"/> representing the asynchronous operation,
+        /// with 0 if <see cref="CommandResult.Success"/> is <c>true</c>, or 1 otherwise.
+        /// </returns>
+        public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)
+        {
+            var result = await task;
+            Console.WriteLine(result.Message);
+            return result.Success ? 0 : 1;
+        }
+
+
+
     }
 }

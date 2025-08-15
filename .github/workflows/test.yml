@@ -1,13 +1,5 @@
 ﻿name: test
 
-# Coverage Strategy:
-# - Include: Servy.Core (core logic, high testability)
-# - Exclude:
-#     • Servy (GUI - low testability)
-#     • Servy.CLI (CLI - low testability)
-#     • Servy.Service (Windows Service - mocked extensively, limited practical coverage)
-#     • Servy.Restarter (wrapper utility with minimal logic)
-
 on:
   push:
     branches:
@@ -34,88 +26,68 @@ jobs:
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults/Core -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/Core \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
-      - name: Run Servy.Restarter.UnitTests without coverage
-        run: dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build
+      - name: Run Servy.Infrastructure.UnitTests with coverage
+        run: |
+          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Release --no-build \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/Infrastructure \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
-      - name: Run Servy.Service.UnitTests without coverage
-        run: dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build
+      - name: Run remaining unit tests without coverage
+        run: |
+          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build
+          dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
+          dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Release --no-build
 
-      - name: Run Servy.UnitTests without coverage
-        run: dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
-
-      - name: Run Servy.CLI.UnitTests without coverage
-        run: dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Release --no-build
-
-      - name: Normalize coverage paths and fix filename attributes (PowerShell)
+      - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
         run: |
-            $fixedDir = "TestResults\fixed"
-            if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
-            $coverageFiles = Get-ChildItem -Path TestResults\Core\*\coverage.cobertura.xml
-            if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
-            $content = Get-Content $coverageFiles[0].FullName -Raw
+          $fixedDir = "TestResults\fixed"
+          if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
 
-            # Fix filename attributes: replace with 'src/Servy.Core/' + original relative path after 'src/Servy.Core/'
-            $content = [regex]::Replace($content, 'filename="([^"]*)"', {
-                param($match)
+          $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
+          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-                $origPath = $match.Groups[1].Value -replace '\\', '/'  # normalize slashes
-                # Extract relative path after 'src/Servy.Core/', if present
-                if ($origPath -match 'src/Servy\.Core/(.*)') {
-                  $relPath = $matches[1]
-                } else {
-                  $relPath = $origPath
-                }
+          # Merge coverage files using reportgenerator
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+          reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
 
-                $newPath = "src/Servy.Core/$relPath"
-
-                return "filename=`"$newPath`""
-            })
-
-            $fixedPath = Join-Path $fixedDir "coverage.cobertura.xml"
-            $content | Set-Content $fixedPath
-
-      # - name: Show normalized coverage report content (PowerShell)
-      #   shell: pwsh
-      #   run: Get-Content TestResults/fixed/coverage.cobertura.xml
+          # Normalize filename paths for both Core and Infrastructure
+          $mergedFile = Join-Path $fixedDir "Cobertura.xml"
+          $content = Get-Content $mergedFile -Raw
+          $content = [regex]::Replace($content, 'filename="([^"]*)"', {
+              param($match)
+              $origPath = $match.Groups[1].Value -replace '\\', '/'
+              if ($origPath -match 'src/Servy\.Core/(.*)') {
+                  return "filename=`"src/Servy.Core/$($matches[1])`""
+              }
+              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') {
+                  return "filename=`"src/Servy.Infrastructure/$($matches[1])`""
+              }
+              else {
+                  return "filename=`"$origPath`""
+              }
+          })
+          $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
+          $content | Set-Content $normalizedFile
 
       - name: Upload coverage to Codecov
-        id: codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: TestResults/Core/**/coverage.cobertura.xml
-          # files: TestResults/fixed/coverage.cobertura.xml
+          files: TestResults/fixed/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
 
-      - name: Notify Codecov Status in case of failure
-        if: steps.codecov.outcome != 'success'
-        uses: actions/github-script@v7
-        with:
-             script: |
-               const issues = await github.rest.issues.listForRepo({
-                 owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  labels: 'codecov-tracking',
-                  state: 'closed'
-                });
-            
-                for (const issue of issues.data) {
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    body: 'Codecov upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-                  });
-                }
-
       - name: Upload coverage to Coveralls
-        id: coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -123,24 +95,3 @@ jobs:
           format: cobertura
           fail-on-error: false
           debug: false
-
-      - name: Notify Coveralls Status in case of failure
-        if: steps.coveralls.outcome != 'success'
-        uses: actions/github-script@v7
-        with:
-            script: |
-                const issues = await github.rest.issues.listForRepo({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  labels: 'coveralls-tracking',
-                  state: 'closed'
-                });
-            
-                for (const issue of issues.data) {
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    body: 'Coveralls upload failed in workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-                  });
-                }
