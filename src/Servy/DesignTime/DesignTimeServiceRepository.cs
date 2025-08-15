@@ -75,7 +75,7 @@ namespace Servy.DesignTime
                 var serializer = new XmlSerializer(typeof(ServiceDto));
                 using (var stringReader = new StringReader(xml))
                 {
-                    var importedService = (ServiceDto)serializer.Deserialize(stringReader)!;
+                    var importedService = (ServiceDto)serializer.Deserialize(stringReader);
                     return Task.FromResult(true);
                 }
             }
