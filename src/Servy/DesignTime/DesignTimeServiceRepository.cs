@@ -15,7 +15,6 @@ namespace Servy.DesignTime
         /// <inheritdoc/>
         public Task<int> AddAsync(ServiceDto service) => Task.FromResult(1);
 
-
         /// <inheritdoc/>
         public Task<int> UpdateAsync(ServiceDto service) => Task.FromResult(1);
 
