@@ -34,7 +34,6 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
-    <None Remove="Resources\Servy.Core.pdb" />
     <None Remove="Resources\Servy.Service.exe" />
     <None Remove="Resources\Servy.Service.pdb" />
   </ItemGroup>
@@ -47,7 +46,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Core.pdb" />
     <EmbeddedResource Include="Resources\Servy.Service.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.pdb" />
   </ItemGroup>

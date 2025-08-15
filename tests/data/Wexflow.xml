@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>WexflowServer</Name>
+  <Description>Wexflow Workflow Automation Engine</Description>
+  <ExecutablePath>C:\Program Files\dotnet\dotnet.exe</ExecutablePath>
+  <StartupDirectory>C:\Program Files\Wexflow Server\Wexflow.Server\</StartupDirectory>
+  <Parameters>Wexflow.Server.dll</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\stdout.log</StdoutPath>
+  <StderrPath>E:\dev\servy\stderr.log</StderrPath>
+  <EnableRotation>true</EnableRotation>
+  <RotationSize>10485761</RotationSize>
+  <EnableHealthMonitoring>true</EnableHealthMonitoring>
+  <HeartbeatInterval>5</HeartbeatInterval>
+  <MaxFailedChecks>1</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <EnvironmentVariables>var1=val1;var2=val2</EnvironmentVariables>
+  <ServiceDependencies>MongoDB;MySQL80</ServiceDependencies>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+</ServiceDto>
