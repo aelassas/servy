@@ -88,9 +88,8 @@ namespace Servy.CLI
                 var importCommand = new ImportServiceCommand(serviceRepository);
 
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+#if DEBUG
                 CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
-#if !DEBUG
-                CopyEmbeddedResource("Servy.Core", "pdb");
 #endif
 
                 var exitCode = await Parser.Default.ParseArguments<

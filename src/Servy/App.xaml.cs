@@ -74,9 +74,8 @@ namespace Servy
 
                 // Extract required embedded resources
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+#if DEBUG
                 CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
-#if !DEBUG
-                CopyEmbeddedResource("Servy.Core", "pdb");
 #endif
             }
             catch (Exception ex)
@@ -164,7 +163,8 @@ namespace Servy
 
             if (shouldCopy)
             {
-                KillServyServiceIfRunning(fileName);
+                if (extension.ToLower().Equals("exe"))
+                    KillServyServiceIfRunning(targetFileName);
 
                 using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
                 {

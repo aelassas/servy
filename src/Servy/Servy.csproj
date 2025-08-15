@@ -183,9 +183,6 @@
     <Resource Include="servy.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Core.pdb" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />
   </ItemGroup>
   <ItemGroup>

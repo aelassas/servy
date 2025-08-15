@@ -120,7 +120,8 @@ namespace Servy.CLI.Helpers
 
             if (shouldCopy)
             {
-                KillServyServiceIfRunning(fileName);
+                if (extension.ToLower().Equals("exe"))
+                    KillServyServiceIfRunning(targetFileName);
 
                 using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
                 {

@@ -51,11 +51,15 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\src\Servy\bin\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src\Servy\bin\Release\{#MyAppExeName}.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 Source: "..\src\Servy\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+Source: "..\src\Servy\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
 ; cli
 Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName:"servy-cli.exe"; Flags: ignoreversion
 Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe.config"; DestDir: "{app}\cli"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 Source: "..\src\Servy.CLI\bin\Release\*.dll"; DestDir: "{app}\cli"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\x64\*"; DestDir: "{app}\cli\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+Source: "..\src\Servy.CLI\bin\Release\x86\*"; DestDir: "{app}\cli\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

@@ -145,7 +145,6 @@
     <EmbeddedResource Include="Resources\Servy.Service.Net48.CLI.exe" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Core.pdb" />
     <EmbeddedResource Include="Resources\Servy.Service.Net48.CLI.pdb" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

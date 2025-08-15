@@ -41,8 +41,8 @@ msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
 # ----------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
-    @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" },
-    @{ Source = "Servy.Core.pdb";    Destination = "Servy.Core.pdb" }
+    @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" }
+    #@{ Source = "Servy.Core.pdb";    Destination = "Servy.Core.pdb" }
 )
 
 # ----------------------------------------------------------------------
@@ -55,5 +55,20 @@ foreach ($file in $filesToCopy) {
     Copy-Item -Path $sourcePath -Destination $destPath -Force
     Write-Host "Copied $($file.Source) -> $($file.Destination)"
 }
+
+# ----------------------------------------------------------------------
+# Step 4 - CopyServy.Infrastructure.pdb
+# ----------------------------------------------------------------------
+<#
+$infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
+$infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
+
+msbuild $infraServiceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+
+Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
+Write-Host "Copied Servy.Infrastructure.pdb"
+#>
+
 
 Write-Host "$buildConfiguration build published successfully to Resources."
