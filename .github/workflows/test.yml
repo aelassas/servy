@@ -34,7 +34,7 @@ jobs:
           coverlet.exe "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
             --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
             --targetargs "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
-            --output "Core" `
+            --output "Core\coverage.cobertura.xml" `
             --format "cobertura"
         shell: pwsh
 
@@ -43,7 +43,7 @@ jobs:
           coverlet.exe "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
             --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
             --targetargs "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
-            --output "Infrastructure" `
+            --output "Infrastructure\coverage.cobertura.xml" `
             --format "cobertura"
         shell: pwsh
 
