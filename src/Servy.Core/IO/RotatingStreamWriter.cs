@@ -10,14 +10,14 @@
         private readonly FileInfo _file;
         private StreamWriter? _writer;
         private readonly long _rotationSize;
-        private readonly object _lock = new();
+        private readonly object _lock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
         /// </summary>
         /// <param name="path">The path to the log file.</param>
         /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
-        public RotatingStreamWriter(string? path, long rotationSizeInBytes)
+        public RotatingStreamWriter(string path, long rotationSizeInBytes)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -61,6 +61,7 @@
                 {
                     Rotate();
                 }
+
             }
         }
 
@@ -106,7 +107,7 @@
             }
 
             string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            string rotatedPath = $"{_file.FullName}.{timestamp}{_file.Extension}";
+            string rotatedPath = $"{_file.FullName}.{timestamp}";
 
             // Generate unique rotated filename if it already exists
             rotatedPath = GenerateUniqueFileName(rotatedPath);
@@ -114,12 +115,30 @@
             File.Move(_file.FullName, rotatedPath);
 
             // Recreate writer for new log file
-            _writer = new StreamWriter(new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.Read))
+            _writer = new StreamWriter(new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
             {
                 AutoFlush = true
             };
         }
 
+        /// <summary>
+        /// Flushes the underlying <see cref="StreamWriter"/>, ensuring that all buffered
+        /// data is written to the log file.
+        /// </summary>
+        /// <remarks>
+        /// This method is thread-safe and can be called while the <see cref="RotatingStreamWriter"/>
+        /// is in use. If the writer has been disposed, this method does nothing.
+        /// </remarks>
+        public void Flush()
+        {
+            lock (_lock)
+            {
+                if (_writer != null)
+                {
+                    _writer.Flush();
+                }
+            }
+        }
 
         /// <summary>
         /// Disposes the current stream writer and releases resources.
