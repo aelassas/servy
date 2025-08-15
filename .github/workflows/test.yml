@@ -26,16 +26,16 @@ jobs:
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/Core \
+          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build `
+            --collect:"XPlat Code Coverage" `
+            --results-directory ./TestResults/Core `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Infrastructure.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Release --no-build \
-            --collect:"XPlat Code Coverage" \
-            --results-directory ./TestResults/Infrastructure \
+          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Release --no-build `
+            --collect:"XPlat Code Coverage" `
+            --results-directory ./TestResults/Infrastructure `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run remaining unit tests without coverage
