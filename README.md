@@ -54,7 +54,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Monitor and manage services in real-time
-* Export/import service configurations
+* Export/Import service configurations
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
 ## Roadmap
