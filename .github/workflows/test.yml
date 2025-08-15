@@ -57,7 +57,11 @@ jobs:
 
       - name: Merge coverage reports
         run: |
-          coverlet merge --output merged.cobertura.xml --format cobertura Core/coverage.cobertura.xml Infrastructure/coverage.cobertura.xml
+          dotnet tool run coverlet merge `
+            --output merged.cobertura.xml `
+            --format cobertura `
+            Core/coverage.cobertura.xml `
+            Infrastructure/coverage.cobertura.xml
 
       - name: Run other Unit Tests (no coverage)
         run: |
