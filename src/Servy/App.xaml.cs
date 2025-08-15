@@ -21,6 +21,12 @@ namespace Servy
         public const string ServyServiceExeFileName = "Servy.Service";
 
         /// <summary>
+        /// The base namespace where embedded resource files are located.
+        /// Used for locating and extracting files such as the service executable.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.Resources";
+
+        /// <summary>
         /// Connection string.
         /// </summary>
         public string ConnectionString { get; private set; }
@@ -71,11 +77,22 @@ namespace Servy
                     args.Handled = true;
                 };
 
-                // Extract required embedded resources
-                CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+                var asm = Assembly.GetExecutingAssembly();
+
+                // Copy service executable from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {ServyServiceExeFileName}.exe");
+                }
+
 #if DEBUG
-                CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "pdb"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
+                }
 #endif
+
             }
             catch (Exception ex)
             {
@@ -83,103 +100,5 @@ namespace Servy
             }
         }
 
-        /// <summary>
-        /// Kills all running processes with the name.
-        /// This is necessary when replacing the embedded service executable.
-        /// </summary>
-        /// <param name="servyProcessName">Servy Process Name to kill.</param>
-        public static void KillServyServiceIfRunning(string servyProcessName)
-        {
-            try
-            {
-                foreach (var process in Process.GetProcessesByName(servyProcessName))
-                {
-                    process.Kill(true);
-                    process.WaitForExit();
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle cases where the process may have already exited or other exceptions
-                MessageBox.Show("Failed to terminate running service: " + ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Copies the embedded resource to the application's base directory
-        /// if the file does not exist or if the embedded version is newer.
-        /// </summary>
-        /// <param name="fileName">The name of the embedded resource without extension.</param>
-        /// <param name="extension">The extension of the embedded resource.</param>
-        private void CopyEmbeddedResource(string fileName, string extension)
-        {
-            string targetFileName = $"{fileName}.{extension}";
-            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-            Assembly asm = Assembly.GetExecutingAssembly();
-            string resourceName = $"Servy.Resources.{fileName}.{extension}";
-
-            bool shouldCopy = true;
-
-            if (File.Exists(targetPath))
-            {
-                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(asm);
-                shouldCopy = embeddedResourceTime > existingFileTime;
-            }
-
-            if (shouldCopy)
-            {
-                if (extension.ToLower().Equals("exe"))
-                    KillServyServiceIfRunning(targetFileName);
-
-                using (Stream resourceStream = asm.GetManifestResourceStream(resourceName))
-                {
-                    if (resourceStream == null)
-                    {
-                        MessageBox.Show("Embedded resource not found: " + resourceName);
-                        return;
-                    }
-
-                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
-                    {
-                        resourceStream.CopyTo(fileStream);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the last write time of the embedded resource using the assembly's timestamp.
-        /// </summary>
-        /// <param name="assembly">The assembly containing the resource.</param>
-        /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
-        private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
-        {
-#pragma warning disable IL3000
-            string assemblyPath = assembly.Location;
-#pragma warning restore IL3000
-
-            if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
-            {
-                return File.GetLastWriteTimeUtc(assemblyPath);
-            }
-
-            // Fallback: try to get the executable's last write time using AppContext.BaseDirectory + executable name
-            try
-            {
-                var exeName = AppDomain.CurrentDomain.FriendlyName;
-                var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
-                if (File.Exists(exePath))
-                {
-                    return File.GetLastWriteTimeUtc(exePath);
-                }
-            }
-            catch
-            {
-                // Ignore exceptions, fallback to UtcNow below
-            }
-
-            return DateTime.UtcNow;
-        }
     }
 }
