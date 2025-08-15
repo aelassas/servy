@@ -1,5 +1,4 @@
-﻿using Servy.Core.Interfaces;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services

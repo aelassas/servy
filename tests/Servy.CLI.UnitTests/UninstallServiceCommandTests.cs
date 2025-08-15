@@ -1,30 +1,33 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
-using Servy.Core.Interfaces;
+using Servy.Core.Data;
+using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests
 {
     public class UninstallServiceCommandTests
     {
         private readonly Mock<IServiceManager> _mockServiceManager;
+        private readonly Mock<IServiceRepository> _mockRepository;
         private readonly UninstallServiceCommand _command;
 
         public UninstallServiceCommandTests()
         {
             _mockServiceManager = new Mock<IServiceManager>();
-            _command = new UninstallServiceCommand(_mockServiceManager.Object);
+            _mockRepository = new Mock<IServiceRepository>();
+            _command = new UninstallServiceCommand(_mockServiceManager.Object, _mockRepository.Object);
         }
 
         [Fact]
-        public void Execute_ValidOptions_ReturnsSuccess()
+        public async void Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(true));
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.True(result.Success);
@@ -32,13 +35,13 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_EmptyServiceName_ReturnsFailure()
+        public async void Execute_EmptyServiceName_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "" };
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -46,14 +49,14 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_ServiceManagerFails_ReturnsFailure()
+        public async void Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(false);
+            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(false));
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -61,14 +64,14 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_UnauthorizedAccessException_ReturnsFailure()
+        public async void Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<UnauthorizedAccessException>();
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -76,14 +79,14 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_GenericException_ReturnsFailure()
+        public async void Execute_GenericException_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<Exception>();
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);

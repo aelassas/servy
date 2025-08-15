@@ -33,12 +33,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="appsettings.json" />
     <None Remove="Resources\Servy.Core.pdb" />
     <None Remove="Resources\Servy.Service.exe" />
     <None Remove="Resources\Servy.Service.pdb" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="servy.ico" />
   </ItemGroup>
 
@@ -53,11 +57,14 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
   </ItemGroup>
   
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
   </ItemGroup>
   
   <ItemGroup>

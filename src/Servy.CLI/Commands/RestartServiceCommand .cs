@@ -1,6 +1,6 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
-using Servy.Core.Interfaces;
+using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
 {

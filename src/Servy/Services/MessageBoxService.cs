@@ -18,5 +18,9 @@ namespace Servy.Services
         /// <inheritdoc />
         public void ShowError(string message, string caption)
             => MessageBox.Show(message, caption, MessageBoxButton.OK, MessageBoxImage.Error);
+
+        /// <inheritdoc />
+        public bool ShowConfirm(string message, string caption)
+            => MessageBox.Show(message, caption, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
     }
 }

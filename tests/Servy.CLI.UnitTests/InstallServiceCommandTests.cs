@@ -3,7 +3,8 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
-using Servy.Core.Interfaces;
+using Servy.Core.Data;
+using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests
 {
@@ -11,17 +12,19 @@ namespace Servy.CLI.UnitTests
     {
         private readonly Mock<IServiceManager> _mockServiceManager;
         private readonly Mock<IServiceInstallValidator> _mockValidator;
+        private readonly Mock<IServiceRepository> _mockRepository;
         private readonly InstallServiceCommand _command;
 
         public InstallServiceCommandTests()
         {
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
-            _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
+            _mockRepository = new Mock<IServiceRepository>();
+            _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object, _mockRepository.Object);
         }
 
         [Fact]
-        public void Execute_ValidOptions_ReturnsSuccess()
+        public async void Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -61,14 +64,14 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>()
-            )).Returns(true);
+            )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
             var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.True(result.Success);
@@ -79,14 +82,14 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_ValidationFails_ReturnsFailure()
+        public async void Execute_ValidationFails_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions();
             _mockValidator.Setup(v => v.Validate(options)).Returns(CommandResult.Fail("Validation error."));
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -94,7 +97,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_ServiceManagerFails_ReturnsFailure()
+        public async void Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -134,14 +137,14 @@ namespace Servy.CLI.UnitTests
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>()
-            )).Returns(false);
+            )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
             var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
-            var result = _command.Execute(options);
+            var result =await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -152,7 +155,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_UnauthorizedAccessException_ReturnsFailure()
+        public async void Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -199,7 +202,7 @@ namespace Servy.CLI.UnitTests
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -210,7 +213,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public void Execute_GenericException_ReturnsFailure()
+        public async void Execute_GenericException_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -257,7 +260,7 @@ namespace Servy.CLI.UnitTests
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);

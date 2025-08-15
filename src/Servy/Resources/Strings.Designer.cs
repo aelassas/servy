@@ -124,6 +124,33 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Are you sure you want to clear all configuration values?.
+        /// </summary>
+        public static string Confirm_ClearAll {
+            get {
+                return ResourceManager.GetString("Confirm_ClearAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à JSON Configuration exported successfully..
+        /// </summary>
+        public static string ExportJson_Success {
+            get {
+                return ResourceManager.GetString("ExportJson_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à XML Configuration exported successfully..
+        /// </summary>
+        public static string ExportXml_Success {
+            get {
+                return ResourceManager.GetString("ExportXml_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
         /// </summary>
         public static string Info_EnvironmentVariables {
@@ -475,6 +502,69 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear All.
+        /// </summary>
+        public static string Menu_ClearAll {
+            get {
+                return ResourceManager.GetString("Menu_ClearAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export.
+        /// </summary>
+        public static string Menu_Export {
+            get {
+                return ResourceManager.GetString("Menu_Export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export JSON configuration.
+        /// </summary>
+        public static string Menu_ExportJson {
+            get {
+                return ResourceManager.GetString("Menu_ExportJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export XML configuration.
+        /// </summary>
+        public static string Menu_ExportXml {
+            get {
+                return ResourceManager.GetString("Menu_ExportXml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Import.
+        /// </summary>
+        public static string Menu_Import {
+            get {
+                return ResourceManager.GetString("Menu_Import", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Import JSON configuration.
+        /// </summary>
+        public static string Menu_ImportJson {
+            get {
+                return ResourceManager.GetString("Menu_ImportJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Import XML configuration.
+        /// </summary>
+        public static string Menu_ImportXml {
+            get {
+                return ResourceManager.GetString("Menu_ImportXml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à An error occurred..
         /// </summary>
         public static string Message_Error {
@@ -498,6 +588,24 @@ namespace Servy.Resources {
         public static string Msg_AdminRightsRequired {
             get {
                 return ResourceManager.GetString("Msg_AdminRightsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to load JSON service configuration..
+        /// </summary>
+        public static string Msg_FailedToLoadJson {
+            get {
+                return ResourceManager.GetString("Msg_FailedToLoadJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to load XML service configuration..
+        /// </summary>
+        public static string Msg_FailedToLoadXml {
+            get {
+                return ResourceManager.GetString("Msg_FailedToLoadXml", resourceCulture);
             }
         }
         
@@ -709,6 +817,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à An error occurred while saving the configuration.
+        /// </summary>
+        public static string Msg_UnexpectedConfigLoadError {
+            get {
+                return ResourceManager.GetString("Msg_UnexpectedConfigLoadError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à An unexpected error occurred..
         /// </summary>
         public static string Msg_UnexpectedError {
@@ -813,6 +930,24 @@ namespace Servy.Resources {
         public static string RecoveryAction_RestartService {
             get {
                 return ResourceManager.GetString("RecoveryAction_RestartService", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export JSON configuration.
+        /// </summary>
+        public static string SaveFileDialog_JsonTitle {
+            get {
+                return ResourceManager.GetString("SaveFileDialog_JsonTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export XML configuration.
+        /// </summary>
+        public static string SaveFileDialog_XmlTitle {
+            get {
+                return ResourceManager.GetString("SaveFileDialog_XmlTitle", resourceCulture);
             }
         }
         

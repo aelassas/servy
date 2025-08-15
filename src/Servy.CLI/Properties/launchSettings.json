@@ -2,7 +2,7 @@
   "profiles": {
     "Servy.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "install --name \"WexflowServer\" --path \"C:\\Program Files\\dotnet\\dotnet.exe\" --preLaunchPath \"C:\\Program Files\\nodejs\\node.exe\" --preLaunchStartupDir \"C:\\Program Files\\nodejs\\\" --preLaunchParams \"E:\\dev\\servy\\src\\tests\\nodejs-app-env-vars\\index.js\" --preLaunchEnv \"var1=val1; var2=val2\" --preLaunchStdout \"E:\\dev\\servy\\stdout.log\" --preLaunchStderr \"E:\\dev\\servy\\stderr.log\" --preLaunchTimeout 40 --preLaunchRetryAttempts 3 --preLaunchIgnoreFailure true"
+      "commandLineArgs": "help"
     }
   }
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>MyTestService</Name>
+  <Description>Sample service for testing import</Description>
+  <ExecutablePath>C:\Program Files\TestService\TestService.exe</ExecutablePath>
+  <StartupDirectory>C:\Program Files\TestService</StartupDirectory>
+  <Parameters>-arg1 -arg2</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>1</Priority>
+  <StdoutPath>C:\Logs\TestService_out.log</StdoutPath>
+  <StderrPath>C:\Logs\TestService_err.log</StderrPath>
+  <EnableRotation>true</EnableRotation>
+  <RotationSize>1048576</RotationSize>
+  <EnableHealthMonitoring>true</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>5</MaxRestartAttempts>
+  <EnvironmentVariables>PATH=C:\Windows\System32;TEMP=C:\Temp</EnvironmentVariables>
+  <ServiceDependencies>ServiceA;ServiceB</ServiceDependencies>
+  <RunAsLocalSystem>false</RunAsLocalSystem>
+  <UserAccount>.\TestUser</UserAccount>
+  <Password>secret123</Password>
+  <PreLaunchExecutablePath>C:\Program Files\TestService\PreLaunch.exe</PreLaunchExecutablePath>
+  <PreLaunchStartupDirectory>C:\Program Files\TestService</PreLaunchStartupDirectory>
+  <PreLaunchParameters>-preArg1 -preArg2</PreLaunchParameters>
+  <PreLaunchEnvironmentVariables>CONFIG=C:\Config;LOGS=C:\Logs</PreLaunchEnvironmentVariables>
+  <PreLaunchStdoutPath>C:\Logs\PreLaunch_out.log</PreLaunchStdoutPath>
+  <PreLaunchStderrPath>C:\Logs\PreLaunch_err.log</PreLaunchStderrPath>
+  <PreLaunchTimeoutSeconds>60</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>2</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>true</PreLaunchIgnoreFailure>
+</ServiceDto>

@@ -1,7 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using static Servy.Core.Native.NativeMethods;
+﻿using static Servy.Core.Native.NativeMethods;
 
-namespace Servy.Core.Interfaces
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides an abstraction for invoking native Windows Service API functions.

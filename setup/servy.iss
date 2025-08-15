@@ -48,8 +48,17 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
+; Main app EXE
 Source: "..\src\Servy\bin\Release\net8.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+
+; Appsettings.json (only copy if not present, and never uninstall)
+Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+
+; CLI exe
 Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName: "servy-cli.exe"; Flags: ignoreversion
+
+; CLI appsettings.json (only copy if not present, and never uninstall)
+Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

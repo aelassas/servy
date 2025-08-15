@@ -1,10 +1,13 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
+using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Interfaces;
+using Servy.Core.Services;
 using System;
 using System.IO;
+using System.ServiceProcess;
 
 namespace Servy.CLI.Commands
 {
@@ -15,16 +18,22 @@ namespace Servy.CLI.Commands
     {
         private readonly IServiceManager _serviceManager;
         private readonly IServiceInstallValidator _validator;
+        private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceManager">Service manager to perform service operations.</param>
         /// <param name="validator">Validator for installation options.</param>
-        public InstallServiceCommand(IServiceManager serviceManager, IServiceInstallValidator validator)
+        /// <param name="serviceRepository">The repository for managing service data persistence.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="serviceManager"/>, <paramref name="validator"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
+        /// </exception>
+        public InstallServiceCommand(IServiceManager serviceManager, IServiceInstallValidator validator, IServiceRepository serviceRepository)
         {
-            _serviceManager = serviceManager;
-            _validator = validator;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         /// <summary>
@@ -32,9 +41,14 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Installation options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public CommandResult Execute(InstallServiceOptions opts)
+        /// <summary>
+        /// Executes the installation of a Windows service using the specified options.
+        /// </summary>
+        /// <param name="opts">Options for service installation.</param>
+        /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
+        public async Task<CommandResult> Execute(InstallServiceOptions opts)
         {
-            return ExecuteWithHandling(() =>
+            return await ExecuteWithHandlingAsync(async () =>
             {
                 // Validate options
                 var validation = _validator.Validate(opts);
@@ -46,23 +60,21 @@ namespace Servy.CLI.Commands
                 if (!File.Exists(wrapperExePath))
                     return CommandResult.Fail("Wrapper executable not found.");
 
-                // Parse enums safely from strings, with defaults
+                // Parse enums safely with defaults
                 var startupType = ParseEnumOption(opts.ServiceStartType, ServiceStartType.Automatic);
                 var processPriority = ParseEnumOption(opts.ProcessPriority, ProcessPriority.Normal);
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
 
-                // Parse numeric string options with fallback
+                // Parse numeric options
                 int rotationSize = int.TryParse(opts.RotationSize, out var rot) ? rot : 0;
                 int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : 0;
-                int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var failed) ? failed : 0;
-                int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var restart) ? restart : 0;
-
-                // pre-launch
+                int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : 0;
+                int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : 0;
                 int preLaunchTimeout = int.TryParse(opts.PreLaunchTimeout, out var plTimeout) ? plTimeout : 30;
-                int preLaunchRetryAttempts = int.TryParse(opts.PreLaunchRetryAttempts, out var plRetryAttempts) ? plRetryAttempts : 0;
+                int preLaunchRetryAttempts = int.TryParse(opts.PreLaunchRetryAttempts, out var plRetry) ? plRetry : 0;
 
                 // Call the service manager install method
-                var success = _serviceManager.InstallService(
+                var success = await _serviceManager.InstallService(
                     opts.ServiceName!,
                     opts.ServiceDescription ?? string.Empty,
                     wrapperExePath,
@@ -82,7 +94,6 @@ namespace Servy.CLI.Commands
                     opts.ServiceDependencies,
                     opts.User,
                     opts.Password,
-
                     // Pre-Launch
                     opts.PreLaunchPath,
                     opts.PreLaunchStartupDir,
@@ -95,9 +106,47 @@ namespace Servy.CLI.Commands
                     opts.PreLaunchIgnoreFailure
                 );
 
-                return success
-                    ? CommandResult.Ok("Service installed successfully.")
-                    : CommandResult.Fail("Failed to install service.");
+                if (!success)
+                    return CommandResult.Fail("Failed to install service.");
+
+                // Map to DTO and persist
+                var dto = new ServiceDto
+                {
+                    Name = opts.ServiceName!,
+                    Description = opts.ServiceDescription,
+                    ExecutablePath = opts.ProcessPath ?? string.Empty,
+                    StartupDirectory = opts.StartupDirectory,
+                    Parameters = opts.ProcessParameters,
+                    StartupType = (int)startupType,
+                    Priority = (int)processPriority,
+                    StdoutPath = opts.StdoutPath,
+                    StderrPath = opts.StderrPath,
+                    EnableRotation = rotationSize > 0,
+                    RotationSize = rotationSize > 0 ? rotationSize : 1_048_576,
+                    EnableHealthMonitoring = heartbeatInterval > 0,
+                    HeartbeatInterval = heartbeatInterval > 0 ? heartbeatInterval : 30,
+                    MaxFailedChecks = maxFailedChecks > 0 ? maxFailedChecks : 3,
+                    RecoveryAction = (int)recoveryAction,
+                    MaxRestartAttempts = maxRestartAttempts > 0 ? maxRestartAttempts : 3,
+                    EnvironmentVariables = opts.EnvironmentVariables,
+                    ServiceDependencies = opts.ServiceDependencies,
+                    RunAsLocalSystem = string.IsNullOrEmpty(opts.User),
+                    UserAccount = opts.User,
+                    Password = opts.Password,
+                    PreLaunchExecutablePath = opts.PreLaunchPath,
+                    PreLaunchStartupDirectory = opts.PreLaunchStartupDir,
+                    PreLaunchParameters = opts.PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = opts.PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = opts.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = opts.PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = preLaunchTimeout,
+                    PreLaunchRetryAttempts = preLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = opts.PreLaunchIgnoreFailure
+                };
+
+                await _serviceRepository.UpsertAsync(dto);
+
+                return CommandResult.Ok("Service installed successfully.");
             });
         }
 
