@@ -53,6 +53,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Monitor and manage services in real-time
+* Export/import service configurations
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
 ## Roadmap
@@ -67,14 +68,14 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
 * [x] Service status query command in CLI
+* [x] Export/import service configurations
 * [ ] Servy Manager App for managing services installed by Servy
-  * [ ] Persist service configuration and track installed services in SQLite
+  * [x] Persist service configuration and track installed services in SQLite
   * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits
   * [ ] Start, Stop, Restart, and Uninstall services
   * [ ] Change service startup type (Automatic, Manual, Disabled)
   * [ ] Display service status and uptime
   * [ ] Search and filter services
-  * [ ] Export/import service configurations
   * [ ] Notifications for service events (failures, restarts)
   * [ ] Log viewer per service
   * [ ] Health monitoring dashboard
