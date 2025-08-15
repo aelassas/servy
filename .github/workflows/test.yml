@@ -20,7 +20,7 @@ jobs:
         run: nuget restore Servy.sln
 
       - name: Build solution
-        run: msbuild Servy.sln /p:Configuration=Release
+        run: msbuild Servy.sln /p:Configuration=Debug
 
       - name: Install Coverlet global tool
         run: dotnet tool install --global coverlet.console
@@ -31,43 +31,50 @@ jobs:
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          coverlet.exe "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
+          coverlet.exe "tests\Servy.Core.UnitTests\bin\Debug\Servy.Core.UnitTests.dll" `
             --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
+            --targetargs "tests\Servy.Core.UnitTests\bin\Debug\Servy.Core.UnitTests.dll" `
             --output "Core\coverage.cobertura.xml" `
             --format "cobertura"
+            --include-directory "${{ github.workspace }}"
         shell: pwsh
 
-      - name: Dump Core\coverage.cobertura.xml
-        run: cat Core\coverage.cobertura.xml 
+      # - name: Dump Core\coverage.cobertura.xml
+      #   run: cat Core\coverage.cobertura.xml 
 
       - name: Run Servy.Infrastructure.UnitTests with coverage
         run: |
-          coverlet.exe "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
+          coverlet.exe "tests\Servy.Infrastructure.UnitTests\bin\Debug\Servy.Infrastructure.UnitTests.dll" `
             --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            --targetargs "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
+            --targetargs "tests\Servy.Infrastructure.UnitTests\bin\Debug\Servy.Infrastructure.UnitTests.dll" `
             --output "Infrastructure\coverage.cobertura.xml" `
             --format "cobertura"
+            --include-directory "${{ github.workspace }}"
         shell: pwsh
 
-      - name: Dump Infrastructure\coverage.cobertura.xml
-        run: cat Infrastructure\coverage.cobertura.xml 
+      # - name: Dump Infrastructure\coverage.cobertura.xml
+      #   run: cat Infrastructure\coverage.cobertura.xml 
+
+      - name: Merge coverage reports
+        run: |
+          coverlet merge --output merged.cobertura.xml --format cobertura Core/coverage.cobertura.xml Infrastructure/coverage.cobertura.xml
 
       - name: Run other Unit Tests (no coverage)
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            "tests\Servy.Restarter.UnitTests\bin\Release\Servy.Restarter.UnitTests.dll" `
-            "tests\Servy.Service.UnitTests\bin\Release\Servy.Service.UnitTests.dll" `
-            "tests\Servy.UnitTests\bin\Release\Servy.UnitTests.dll" `
-            "tests\Servy.CLI.UnitTests\bin\Release\Servy.CLI.UnitTests.dll"
+            "tests\Servy.Restarter.UnitTests\bin\Debug\Servy.Restarter.UnitTests.dll" `
+            "tests\Servy.Service.UnitTests\bin\Debug\Servy.Service.UnitTests.dll" `
+            "tests\Servy.UnitTests\bin\Debug\Servy.UnitTests.dll" `
+            "tests\Servy.CLI.UnitTests\bin\Debug\Servy.CLI.UnitTests.dll"
         shell: pwsh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  
-          files: Core/coverage.cobertura.xml,Infrastructure/coverage.cobertura.xml
+          # files: Core/coverage.cobertura.xml,Infrastructure/coverage.cobertura.xml
+          # merge: true
+          files: merged.cobertura.xml
           flags: unittests
-          merge: true
           fail_ci_if_error: true
           verbose: false
