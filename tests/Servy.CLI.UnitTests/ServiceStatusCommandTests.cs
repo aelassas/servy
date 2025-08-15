@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
-using Servy.Core.Interfaces;
+using Servy.Core.Services;
 using System;
 using System.ServiceProcess;
 using Xunit;

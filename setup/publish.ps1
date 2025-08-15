@@ -23,13 +23,15 @@ $issFile      = "servy.iss"   # Inno Setup script filename
 $SevenZipExe  = "7z"          # Assumes 7-Zip is in PATH
 
 # === PATH RESOLUTION ===
-# Get the directory of this script and move to it so relative paths work
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $ScriptDir
 
-# Build output directories
-$BuildOutputDir     = Join-Path $ScriptDir "..\src\Servy\bin\$BuildConfig"
-$CliBuildOutputDir  = Join-Path $ScriptDir "..\src\Servy.CLI\bin\$BuildConfig"
+# Directories
+$ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
+$ServyDir           = Join-Path $RootDir "src\Servy"
+$CliDir             = Join-Path $RootDir "src\Servy.CLI"
+$BuildOutputDir     = Join-Path $ServyDir "bin\$BuildConfig"
+$CliBuildOutputDir  = Join-Path $CliDir "bin\$BuildConfig"
+Set-Location $ScriptDir
 
 # Package folder structure
 $PackageFolder      = "$AppName-$version-$Framework-$Platform-frameworkdependent"
@@ -60,10 +62,12 @@ New-Item -ItemType Directory -Force -Path $CliPackagePath | Out-Null
 # Copy Servy WPF files
 Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe") -Destination $AppPackagePath -Force
 Copy-Item -Path (Join-Path $BuildOutputDir "*.dll") -Destination $AppPackagePath -Force
+Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe.config") -Destination $AppPackagePath -Force
 
 # Copy Servy CLI files
 Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe") -Destination (Join-Path $CliPackagePath "servy-cli.exe") -Force
 Copy-Item -Path (Join-Path $CliBuildOutputDir "*.dll") -Destination $CliPackagePath -Force
+Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe.config") -Destination (Join-Path $CliPackagePath "servy-cli.exe.config") -Force
 
 # Remove debug symbols (.pdb)
 Get-ChildItem -Path $AppPackagePath -Filter "*.pdb" | Remove-Item -Force

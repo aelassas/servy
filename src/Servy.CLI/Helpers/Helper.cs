@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Servy.CLI.Helpers
 {
@@ -99,6 +100,7 @@ namespace Servy.CLI.Helpers
         /// Copies the embedded executable resource to the application's base directory
         /// if the file does not exist or if the embedded version is newer.
         /// </summary>
+        /// <param name="fileName">The name of the embedded resource without extension.</param>
         /// <param name="extension">The extension of the embedded resource.</param>
         public static void CopyEmbeddedResource(string fileName, string extension)
         {
@@ -182,6 +184,22 @@ namespace Servy.CLI.Helpers
                 Console.WriteLine(result.Message);
 
             return result.ExitCode;
+        }
+
+        /// <summary>
+        /// Awaits the execution of a <see cref="CommandResult"/>-returning task,
+        /// prints its message to the console, and returns an appropriate exit code.
+        /// </summary>
+        /// <param name="task">The task that produces a <see cref="CommandResult"/>.</param>
+        /// <returns>
+        /// A <see cref="Task{Int32}"/> representing the asynchronous operation,
+        /// with 0 if <see cref="CommandResult.Success"/> is <c>true</c>, or 1 otherwise.
+        /// </returns>
+        public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)
+        {
+            var result = await task;
+            Console.WriteLine(result.Message);
+            return result.Success ? 0 : 1;
         }
 
     }

@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using System.Threading.Tasks;
 
 namespace Servy.Services
 {
@@ -41,7 +42,7 @@ namespace Servy.Services
         /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
         /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
         /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
-        void InstallService(
+        Task InstallService(
             string serviceName,
             string serviceDescription,
             string processPath,
@@ -79,7 +80,7 @@ namespace Servy.Services
         /// Uninstalls the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to uninstall.</param>
-        void UninstallService(string serviceName);
+        Task UninstallService(string serviceName);
 
         /// <summary>
         /// Starts the specified Windows service.

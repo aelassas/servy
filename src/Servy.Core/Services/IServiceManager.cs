@@ -1,7 +1,8 @@
 ﻿using Servy.Core.Enums;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
-namespace Servy.Core.Interfaces
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Defines the contract for managing Windows services within Servy, 
@@ -46,7 +47,7 @@ namespace Servy.Core.Interfaces
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
-        bool InstallService(
+        Task<bool> InstallService(
             string serviceName,
             string description,
             string wrapperExePath,
@@ -82,7 +83,7 @@ namespace Servy.Core.Interfaces
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was uninstalled; otherwise false.</returns>
-        bool UninstallService(string serviceName);
+        Task<bool> UninstallService(string serviceName);
 
         /// <summary>
         /// Starts the specified service.

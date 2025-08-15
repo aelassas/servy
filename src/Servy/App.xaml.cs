@@ -1,9 +1,16 @@
-﻿using System;
+﻿using Servy.Constants;
+using Servy.Core;
+using Servy.Core.Helpers;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
+using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Management;
 using System.Reflection;
 using System.Windows;
+using AppConstants = Servy.Core.AppConstants;
 
 namespace Servy
 {
@@ -18,25 +25,59 @@ namespace Servy
         public const string ServyServiceExeFileName = "Servy.Service.Net48";
 
         /// <summary>
-        /// Called when the WPF application starts.
-        /// Subscribes to unhandled exceptions, stops the background service if it's running,
-        /// and extracts the embedded Servy.Service.exe to the application's base directory if needed.
+        /// Connection string.
         /// </summary>
-        /// <param name="e">Startup event arguments.</param>
+        public string ConnectionString { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES encryption key.
+        /// </summary>
+        public string AESKeyFilePath { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES initialization vector (IV).
+        /// </summary>
+        public string AESIVFilePath { get; private set; }
+
+        /// <summary>
+        /// Called when the WPF application starts.
+        /// Loads configuration settings, initializes the database if necessary,
+        /// subscribes to unhandled exception handlers, and extracts required embedded resources.
+        /// </summary>
+        /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             try
             {
+                // Load configuration from appsettings.json
+                var config = ConfigurationManager.AppSettings;
+                ConnectionString = config["DefaultConnection"] ?? AppConstants.DefaultConnectionString;
+                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConstants.DefaultAESKeyPath;
+                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConstants.DefaultAESIVPath;
+
+                // Ensure db and security folders exist
+                AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+
+                // Subscribe to unhandled exceptions
                 AppDomain.CurrentDomain.UnhandledException += (s, args) =>
                 {
-                    MessageBox.Show("Unhandled: " + args.ExceptionObject.ToString());
+                    MessageBox.Show("Unhandled exception: " + args.ExceptionObject);
                 };
 
+                DispatcherUnhandledException += (s, args) =>
+                {
+                    MessageBox.Show("UI thread exception: " + args.Exception);
+                    args.Handled = true;
+                };
+
+                // Extract required embedded resources
                 CopyEmbeddedResource(ServyServiceExeFileName, "exe");
                 CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+#if !DEBUG
                 CopyEmbeddedResource("Servy.Core", "pdb");
+#endif
             }
             catch (Exception ex)
             {
@@ -148,11 +189,28 @@ namespace Servy
         /// <returns>The DateTime of the assembly's last write time in UTC, or current UTC time if unavailable.</returns>
         private DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
+#pragma warning disable IL3000
             string assemblyPath = assembly.Location;
+#pragma warning restore IL3000
 
-            if (File.Exists(assemblyPath))
+            if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
             {
                 return File.GetLastWriteTimeUtc(assemblyPath);
+            }
+
+            // Fallback: try to get the executable's last write time using AppContext.BaseDirectory + executable name
+            try
+            {
+                var exeName = AppDomain.CurrentDomain.FriendlyName;
+                var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
+                if (File.Exists(exePath))
+                {
+                    return File.GetLastWriteTimeUtc(exePath);
+                }
+            }
+            catch
+            {
+                // Ignore exceptions, fallback to UtcNow below
             }
 
             return DateTime.UtcNow;

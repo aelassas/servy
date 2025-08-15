@@ -1,14 +1,19 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Data;
+using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
-using Servy.Core.Interfaces;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
+using Servy.Core.Services;
+using Servy.Helpers;
 using Servy.Resources;
-using Servy.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using static Servy.Constants.AppConstants;
+using CoreHelper = Servy.Core.Helpers.Helper;
 
 namespace Servy.Services
 {
@@ -21,22 +26,13 @@ namespace Servy.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
-        #region Constants
 
-        private const string Caption = "Servy";
-        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
-        private const int MinHeartbeatInterval = 5;                // 5 seconds
-        private const int MinMaxFailedChecks = 1;                  // 1 attempt
-        private const int MinMaxRestartAttempts = 1;               // 1 attempt
-        private const int MinPreLaunchTimeoutSeconds = 5;          // 5 seconds
-        private const int MinPreLaunchRetryAttempts = 0;           // 0 attempts
-
-        #endregion
 
         #region Private Fields
 
         private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
+        private readonly ServiceConfigurationValidator _serviceConfigurationValidator;
 
         #endregion
 
@@ -45,22 +41,25 @@ namespace Servy.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
         /// </summary>
-        /// <param name="serviceManager">The service manager to handle service operations.</param>
-        /// <param name="messageBoxService">The message box service to show user messages.</param>
-        /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
+        /// <param name="serviceManager">The service manager responsible for performing service operations.</param>
+        /// <param name="messageBoxService">The message box service used to display messages to the user.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
+        /// </exception>
         public ServiceCommands(IServiceManager serviceManager, IMessageBoxService messageBoxService)
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            _serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
         }
 
-        #endregion
 
+        #endregion
 
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public void InstallService(
+        public async Task InstallService(
             string serviceName,
             string serviceDescription,
             string processPath,
@@ -94,18 +93,6 @@ namespace Servy.Services
             bool preLaunchIgnoreFailure
             )
         {
-            if (string.IsNullOrWhiteSpace(serviceName) || string.IsNullOrWhiteSpace(processPath))
-            {
-                _messageBoxService.ShowWarning(Strings.Msg_ValidationError, Caption);
-                return;
-            }
-
-            if (!Helper.IsValidPath(processPath) || !File.Exists(processPath))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPath, Caption);
-                return;
-            }
-
             var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{App.ServyServiceExeFileName}.exe");
 
             if (!File.Exists(wrapperExePath))
@@ -114,147 +101,66 @@ namespace Servy.Services
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(startupDirectory) && (!Helper.IsValidPath(startupDirectory) || !Directory.Exists(startupDirectory)))
+            // Build DTO
+            var dto = new ServiceDto
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStartupDirectory, Caption);
-                return;
-            }
+                Name = serviceName,
+                Description = serviceDescription,
+                ExecutablePath = processPath,
+                StartupDirectory = startupDirectory,
+                Parameters = processParameters,
+                StartupType = (int)startupType,
+                Priority = (int)processPriority,
+                StdoutPath = stdoutPath,
+                StderrPath = stderrPath,
+                EnableRotation = enableRotation,
+                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : 1_048_576,
+                EnableHealthMonitoring = enableHealthMonitoring,
+                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : 30,
+                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : 3,
+                RecoveryAction = (int)recoveryAction,
+                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : 3,
+                EnvironmentVariables = environmentVariables,
+                ServiceDependencies = serviceDependencies,
+                RunAsLocalSystem = runAsLocalSystem,
+                UserAccount = runAsLocalSystem ? null : userAccount,
+                Password = runAsLocalSystem ? null : password,
+                PreLaunchExecutablePath = preLaunchExePath,
+                PreLaunchStartupDirectory = preLaunchWorkingDirectory,
+                PreLaunchParameters = preLaunchArgs,
+                PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = preLaunchStdoutPath,
+                PreLaunchStderrPath = preLaunchStderrPath,
+                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : 30,
+                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : 0,
+                PreLaunchIgnoreFailure = preLaunchIgnoreFailure
+            };
 
-            if (!string.IsNullOrWhiteSpace(stdoutPath) && (!Helper.IsValidPath(stdoutPath) || !Helper.CreateParentDirectory(stdoutPath)))
+            // Validate
+            if (!_serviceConfigurationValidator.Validate(dto, wrapperExePath))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStdoutPath, Caption);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(stderrPath) && (!Helper.IsValidPath(stderrPath) || !Helper.CreateParentDirectory(stderrPath)))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStderrPath, Caption);
-                return;
-            }
-
-            int rotationSizeValue = 0;
-            if (enableRotation)
-            {
-                if (!int.TryParse(rotationSize, out rotationSizeValue) || rotationSizeValue < MinRotationSize)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidRotationSize, Caption);
-                    return;
-                }
-            }
-
-            int heartbeatIntervalValue = 0, maxFailedChecksValue = 0, maxRestartAttemptsValue = 0;
-            if (enableHealthMonitoring)
-            {
-                if (!int.TryParse(heartbeatInterval, out heartbeatIntervalValue) || heartbeatIntervalValue < MinHeartbeatInterval)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidHeartbeatInterval, Caption);
-                    return;
-                }
-
-                if (!int.TryParse(maxFailedChecks, out maxFailedChecksValue) || maxFailedChecksValue < MinMaxFailedChecks)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidMaxFailedChecks, Caption);
-                    return;
-                }
-
-                if (!int.TryParse(maxRestartAttempts, out maxRestartAttemptsValue) || maxRestartAttemptsValue < MinMaxRestartAttempts)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidMaxRestartAttempts, Caption);
-                    return;
-                }
-            }
-
-            string normalizedEnvVars = environmentVariables?.Replace("\r\n", ";").Replace("\n", ";").Replace("\r", ";") ?? string.Empty;
-
-            string envVarsErrorMessage;
-            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
-            {
-                _messageBoxService.ShowError(envVarsErrorMessage, Caption);
-                return;
-            }
-
-            List<string> serviceDependenciesErrors;
-            if (!ServiceDependenciesValidator.Validate(serviceDependencies, out serviceDependenciesErrors))
-            {
-                _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), Caption);
-                return;
-            }
-
-            if (!runAsLocalSystem)
-            {
-                try
-                {
-                    if (password != null && !password.Equals(confirmPassword, StringComparison.Ordinal))
-                    {
-                        _messageBoxService.ShowError(Strings.Msg_PasswordsDontMatch, Caption);
-                        return;
-                    }
-
-                    NativeMethods.ValidateCredentials(userAccount, password);
-                }
-                catch (Exception ex)
-                {
-                    _messageBoxService.ShowError(ex.Message, Caption);
-                    return;
-                }
-            }
-            else
-            {
-                userAccount = null;
-                password = null;
-            }
-
-            // PreLaunch
-            if (!string.IsNullOrWhiteSpace(preLaunchExePath) && (!Helper.IsValidPath(preLaunchExePath) || !File.Exists(preLaunchExePath)))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchPath, Caption);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(preLaunchWorkingDirectory) && (!Helper.IsValidPath(preLaunchWorkingDirectory) || !Directory.Exists(preLaunchWorkingDirectory)))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStartupDirectory, Caption);
-                return;
-            }
-
-            string normalizedPreLaunchEnvVars = preLaunchEnvironmentVariables?.Replace("\r\n", ";").Replace("\n", ";").Replace("\r", ";") ?? string.Empty;
-
-            string preLaunchEnvVarsErrorMessage;
-            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out preLaunchEnvVarsErrorMessage))
-            {
-                _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, Caption);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(preLaunchStdoutPath) && (!Helper.IsValidPath(preLaunchStdoutPath) || !Helper.CreateParentDirectory(preLaunchStdoutPath)))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStdoutPath, Caption);
-                return;
-            }
-
-            if (!string.IsNullOrWhiteSpace(preLaunchStderrPath) && (!Helper.IsValidPath(preLaunchStderrPath) || !Helper.CreateParentDirectory(preLaunchStderrPath)))
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStderrPath, Caption);
-                return;
-            }
-
-            int preLaunchTimeoutValue = 30;
-            if (!int.TryParse(preLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchTimeout, Caption);
-                return;
-            }
-
-            int preLaunchRetryAttemptsValue = 30;
-            if (!int.TryParse(preLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
-            {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchRetryAttempts, Caption);
-                return;
+                return; // Validation failed, errors shown in MessageBox
             }
 
             try
             {
-                bool success = _serviceManager.InstallService(
+                var rotationSizeValue = int.Parse(rotationSize);
+                var heartbeatIntervalValue = int.Parse(heartbeatInterval);
+                var maxFailedChecksValue = int.Parse(maxFailedChecks);
+                var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
+                var normalizedEnvVars = Helpers.StringHelper.NormalizeString(dto.EnvironmentVariables);
+                var normalizedDeps = Helpers.StringHelper.NormalizeString(dto.ServiceDependencies);
+                var normalizedPreLaunchEnvVars = Helpers.StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+                var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
+                var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
+
+                if (runAsLocalSystem)
+                {
+                    userAccount = null;
+                    password = null;
+                }
+
+                bool success = await _serviceManager.InstallService(
                     serviceName,
                     serviceDescription,
                     wrapperExePath,
@@ -286,9 +192,13 @@ namespace Servy.Services
                     );
 
                 if (success)
+                {
                     _messageBoxService.ShowInfo(Strings.Msg_ServiceCreated, Caption);
+                }
                 else
+                {
                     _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                }
             }
             catch (UnauthorizedAccessException)
             {
@@ -301,7 +211,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public void UninstallService(string serviceName)
+        public async Task UninstallService(string serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
             {
@@ -311,11 +221,15 @@ namespace Servy.Services
 
             try
             {
-                bool success = _serviceManager.UninstallService(serviceName);
+                bool success = await _serviceManager.UninstallService(serviceName);
                 if (success)
+                {
                     _messageBoxService.ShowInfo(Strings.Msg_ServiceRemoved, Caption);
+                }
                 else
+                {
                     _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                }
             }
             catch (UnauthorizedAccessException)
             {

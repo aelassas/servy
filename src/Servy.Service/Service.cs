@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core;
+using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
@@ -24,7 +25,6 @@ namespace Servy.Service
         #region Constants
 
         private const string WindowsServiceName = "Servy";
-        private const string RestartAttemptsFile = "restartAttempts.dat";
 
         #endregion
 
@@ -181,11 +181,10 @@ namespace Servy.Service
         /// <param name="options">The service startup options containing the service name.</param>
         private void SetupAttemptsFile(StartOptions options)
         {
-            string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Servy");
-            Directory.CreateDirectory(dataFolder); // ensures folder exists
+            Directory.CreateDirectory(AppConstants.ProgramDataPath); // ensures folder exists
 
             string safeServiceName = MakeFilenameSafe(options.ServiceName);
-            _restartAttemptsFile = Path.Combine(dataFolder, $"{safeServiceName}_restartAttempts.dat");
+            _restartAttemptsFile = Path.Combine(AppConstants.ProgramDataPath, $"{safeServiceName}_restartAttempts.dat");
         }
 
         /// <summary>

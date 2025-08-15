@@ -34,7 +34,16 @@ jobs:
           coverlet.exe "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
             --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
             --targetargs "tests\Servy.Core.UnitTests\bin\Release\Servy.Core.UnitTests.dll" `
-            --output "coverage.xml" `
+            --output "Core" `
+            --format "cobertura"
+        shell: pwsh
+
+      - name: Run Servy.Infrastructure.UnitTests with coverage
+        run: |
+          coverlet.exe "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
+            --target "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs "tests\Servy.Infrastructure.UnitTests\bin\Release\Servy.Infrastructure.UnitTests.dll" `
+            --output "Infrastructure" `
             --format "cobertura"
         shell: pwsh
 
@@ -48,11 +57,10 @@ jobs:
         shell: pwsh
 
       - name: Upload coverage to Codecov
-        id: codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
+          files: Core/coverage.cobertura.xml,Infrastructure/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: true

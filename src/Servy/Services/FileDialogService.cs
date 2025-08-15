@@ -17,6 +17,28 @@
         }
 
         /// <inheritdoc />
+        public string OpenXml()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
+                Title = "Select XML file"
+            };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        /// <inheritdoc />
+        public string OpenJson()
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                Title = "Select JSON file"
+            };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        /// <inheritdoc />
         public string OpenFolder()
         {
             using (var dlg = new System.Windows.Forms.FolderBrowserDialog
@@ -36,6 +58,28 @@
             {
                 Title = title,
                 Filter = "All files (*.*)|*.*"
+            };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        /// <inheritdoc />
+        public string SaveXml(string title)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = title,
+                Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
+            };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        /// <inheritdoc />
+        public string SaveJson(string title)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = title,
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
             };
             return dlg.ShowDialog() == true ? dlg.FileName : null;
         }

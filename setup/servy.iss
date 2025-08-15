@@ -49,10 +49,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "..\src\Servy\bin\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy\bin\Release\{#MyAppExeName}.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 Source: "..\src\Servy\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; cli
 Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName:"servy-cli.exe"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe.config"; DestDir: "{app}\cli"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 Source: "..\src\Servy.CLI\bin\Release\*.dll"; DestDir: "{app}\cli"; Flags: ignoreversion
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files

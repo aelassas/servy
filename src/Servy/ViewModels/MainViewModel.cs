@@ -1,5 +1,12 @@
-﻿using Servy.Core.Enums;
+﻿using Newtonsoft.Json;
+using Servy.Constants;
+using Servy.Core.DTOs;
+using Servy.Core.Enums;
+using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
+using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
+using Servy.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -7,8 +14,11 @@ using Servy.ViewModels.Items;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using static Servy.Core.AppConstants;
+using static Servy.Helpers.StringHelper;
 
 namespace Servy.ViewModels
 {
@@ -19,10 +29,13 @@ namespace Servy.ViewModels
     /// </summary>
     public partial class MainViewModel : INotifyPropertyChanged
     {
-        #region Services
+        #region Private Fields
 
+        private readonly ServiceConfiguration _config = new ServiceConfiguration();
         private readonly IFileDialogService _dialogService;
-        private IServiceCommands _serviceCommands;
+        private readonly IServiceCommands _serviceCommands;
+        private readonly IMessageBoxService _messageBoxService;
+        private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
 
         #endregion
 
@@ -42,23 +55,6 @@ namespace Servy.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        #endregion
-
-        #region Constants 
-
-        private const int DefaultRotationSize = 10 * 1024 * 1024; // Default to 10 MB
-        private const int DefaultHeartbeatInterval = 30;          // 30 seconds
-        private const int DefaultMaxFailedChecks = 3;             // 3 attempts
-        private const int DefaultMaxRestartAttempts = 3;          // 3 attempts
-        private const int DefaultPreLaunchTimeoutSeconds = 30;    // 30 seconds
-        private const int DefaultPreLaunchRetryAttempts = 0;      // 0 attempts
-
-        #endregion
-
-        #region Private Fields
-
-        private readonly ServiceConfiguration _config = new ServiceConfiguration();
 
         #endregion
 
@@ -459,6 +455,26 @@ namespace Servy.ViewModels
         /// </summary>
         public ICommand BrowsePreLaunchStderrPathCommand { get; }
 
+        /// <summary>
+        /// Command to browse and import an XML configuration file.
+        /// </summary>
+        public ICommand ImportXmlCommand { get; }
+
+        /// <summary>
+        /// Command to browse and import a JSON configuration file.
+        /// </summary>
+        public ICommand ImportJsonCommand { get; }
+
+        /// <summary>
+        /// Command to export XML configuration file.
+        /// </summary>
+        public ICommand ExportXmlCommand { get; }
+
+        /// <summary>
+        /// Command to export JSON configuration file.
+        /// </summary>
+        public ICommand ExportJsonCommand { get; }
+
         #endregion
 
         #region Constructors
@@ -468,10 +484,14 @@ namespace Servy.ViewModels
         /// </summary>
         /// <param name="dialogService">Service to open file and folder dialogs.</param>
         /// <param name="serviceCommands">Service commands to manage Windows services.</param>
-        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands)
+        /// <param name="messageBoxService">Service to show message dialogs.</param>
+        /// <param name="serviceConfigurationValidator">Service to validate inputs.</param>
+        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands, IMessageBoxService messageBoxService, IServiceConfigurationValidator serviceConfigurationValidator)
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceCommands = serviceCommands;
+            _messageBoxService = messageBoxService;
+            _serviceConfigurationValidator = serviceConfigurationValidator;
 
             // Initialize defaults
             ServiceName = string.Empty;
@@ -508,12 +528,18 @@ namespace Servy.ViewModels
             StartCommand = new RelayCommand(OnStartService);
             StopCommand = new RelayCommand(OnStopService);
             RestartCommand = new RelayCommand(OnRestartService);
-            ClearCommand = new RelayCommand(ClearForm);
+
+            ImportXmlCommand = new RelayCommand(OnImportXmlConfig);
+            ImportJsonCommand = new RelayCommand(OnImportJsonConfig);
+            ExportXmlCommand = new RelayCommand(OnExportXmlConfig);
+            ExportJsonCommand = new RelayCommand(OnExportJsonConfig);
 
             BrowsePreLaunchProcessPathCommand = new RelayCommand(OnBrowsePreLaunchProcessPath);
             BrowsePreLaunchStartupDirectoryCommand = new RelayCommand(OnBrowsePreLaunchStartupDirectory);
             BrowsePreLaunchStdoutPathCommand = new RelayCommand(OnBrowsePreLaunchStdoutPath);
             BrowsePreLaunchStderrPathCommand = new RelayCommand(OnBrowsePreLaunchStderrPath);
+
+            ClearCommand = new RelayCommand(OnClearForm);
         }
 
         /// <summary>
@@ -521,11 +547,13 @@ namespace Servy.ViewModels
         /// </summary>
         public MainViewModel() : this(
             new DesignTimeFileDialogService(),
+            null,
+            null,
             null
             )
         {
             _serviceCommands = new ServiceCommands(
-                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider()),
+                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null),
                 new MessageBoxService()
             );
         }
@@ -604,6 +632,223 @@ namespace Servy.ViewModels
         {
             var path = _dialogService.SaveFile("Select standard error file");
             if (!string.IsNullOrEmpty(path)) PreLaunchStderrPath = path;
+        }
+
+        #endregion
+
+        #region Import/Export Command Handlers
+
+        /// <summary>
+        /// Opens a file dialog to select an XML configuration file for a service,
+        /// validates the XML against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        private void OnImportXmlConfig()
+        {
+            try
+            {
+                var path = _dialogService.OpenXml();
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                var xml = File.ReadAllText(path);
+                if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
+                {
+                    _messageBoxService.ShowError(errorMsg, AppConstants.Caption);
+                    return;
+                }
+
+                var serializer = new XmlServiceSerializer();
+                var dto = serializer.Deserialize(xml);
+                if (dto == null)
+                {
+                    _messageBoxService.ShowError(Strings.Msg_FailedToLoadXml, AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedEnvVars = NormalizeString(dto.EnvironmentVariables);
+
+                string envVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                {
+                    _messageBoxService.ShowError(envVarsErrorMessage, AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedServiceDependencies = NormalizeString(dto.ServiceDependencies);
+
+                List<string> serviceDependenciesErrors;
+                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
+                {
+                    _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedPreLaunchEnvVars = NormalizeString(dto.PreLaunchEnvironmentVariables);
+
+                string preLaunchEnvVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
+                {
+                    _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, AppConstants.Caption);
+                    return;
+                }
+
+                // Map to MainViewModel
+                BindServiceDtoToModel(dto);
+            }
+            catch (Exception ex)
+            {
+                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
+            }
+        }
+
+        /// <summary>
+        /// Opens a file dialog to select an JSON configuration file for a service,
+        /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        private void OnImportJsonConfig()
+        {
+            try
+            {
+                var path = _dialogService.OpenJson();
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                var json = File.ReadAllText(path);
+                if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
+                {
+                    _messageBoxService.ShowError(errorMsg, AppConstants.Caption);
+                    return;
+                }
+
+                var dto = JsonConvert.DeserializeObject<ServiceDto>(json);
+                if (dto == null)
+                {
+                    _messageBoxService.ShowError(Strings.Msg_FailedToLoadJson, AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedEnvVars = NormalizeString(dto.EnvironmentVariables);
+
+                string envVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                {
+                    _messageBoxService.ShowError(envVarsErrorMessage, AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedServiceDependencies = NormalizeString(dto.ServiceDependencies);
+
+                List<string> serviceDependenciesErrors;
+                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
+                {
+                    _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), AppConstants.Caption);
+                    return;
+                }
+
+                string normalizedPreLaunchEnvVars = NormalizeString(dto.PreLaunchEnvironmentVariables);
+
+                string preLaunchEnvVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
+                {
+                    _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, AppConstants.Caption);
+                    return;
+                }
+
+                // Map to MainViewModel
+                BindServiceDtoToModel(dto);
+            }
+            catch (Exception ex)
+            {
+                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
+            }
+        }
+
+        /// <summary>
+        /// Exports the current service configuration to an XML file selected by the user.
+        /// </summary>
+        private void OnExportXmlConfig()
+        {
+            try
+            {
+                var path = _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle);
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                // Map ServiceConfiguration to ServiceDto
+                var dto = ModelToServiceDto();
+
+                // Validation
+                if (!_serviceConfigurationValidator.Validate(dto))
+                {
+                    return;
+                }
+
+                // Serialize to XML
+                var serializer = new XmlServiceSerializer();
+                var xml = new StringWriter();
+                new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto)).Serialize(xml, dto);
+
+                // Write to file
+                File.WriteAllText(path, xml.ToString());
+
+                // Show success message
+                _messageBoxService.ShowInfo(Strings.ExportXml_Success, AppConstants.Caption);
+            }
+            catch (Exception ex)
+            {
+                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
+            }
+        }
+
+        /// <summary>
+        /// Exports the current service configuration to a JSON file selected by the user.
+        /// </summary>
+        private void OnExportJsonConfig()
+        {
+            try
+            {
+                var path = _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle);
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                // Map ServiceConfiguration to ServiceDto
+                var dto = ModelToServiceDto();
+
+                // Validation
+                if (!_serviceConfigurationValidator.Validate(dto))
+                {
+                    return;
+                }
+
+                // Serialize to pretty JSON
+                var json = JsonConvert.SerializeObject(dto, Formatting.Indented,
+                    new JsonSerializerSettings
+                    {
+                        NullValueHandling = NullValueHandling.Ignore
+                    });
+
+                // Write to file
+                File.WriteAllText(path, json);
+
+                // Show success message
+                _messageBoxService.ShowInfo(Strings.ExportJson_Success, AppConstants.Caption);
+            }
+            catch (Exception ex)
+            {
+                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
+            }
         }
 
         #endregion
@@ -689,8 +934,15 @@ namespace Servy.ViewModels
         /// <summary>
         /// Clears all form fields and resets to default values.
         /// </summary>
-        private void ClearForm()
+        private void OnClearForm()
         {
+            // Ask for confirmation before clearing everything
+            bool confirm = _messageBoxService.ShowConfirm(Strings.Confirm_ClearAll, AppConstants.Caption);
+
+            if (!confirm)
+                return;
+
+            // Clear all fields
             ServiceName = string.Empty;
             ServiceDescription = string.Empty;
             ProcessPath = string.Empty;
@@ -707,8 +959,14 @@ namespace Servy.ViewModels
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+
             EnvironmentVariables = string.Empty;
             ServiceDependencies = string.Empty;
+
+            RunAsLocalSystem = true;
+            UserAccount = string.Empty;
+            Password = string.Empty;
+            ConfirmPassword = string.Empty;
 
             PreLaunchExecutablePath = string.Empty;
             PreLaunchStartupDirectory = string.Empty;
@@ -719,6 +977,111 @@ namespace Servy.ViewModels
             PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
             PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
             PreLaunchIgnoreFailure = false;
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Populates the ViewModel's properties from a given <see cref="ServiceDto"/> instance.
+        /// </summary>
+        /// <param name="dto">The <see cref="ServiceDto"/> object containing the service configuration data to bind.</param>
+        /// <remarks>
+        /// This method maps all DTO fields to the corresponding ViewModel properties.
+        /// Some fields (such as environment variables and dependencies) are transformed into 
+        /// display-friendly formats using <c>FormatEnvirnomentVariables</c> and <c>FormatServiceDependencies</c>.
+        /// 
+        /// For security purposes, the <see cref="Password"/> and <see cref="ConfirmPassword"/> properties 
+        /// are both set to the same value from the DTO. This assumes that when loading an existing service 
+        /// configuration, the password is already validated and confirmed.
+        /// </remarks>
+        private void BindServiceDtoToModel(ServiceDto dto)
+        {
+            ServiceName = dto.Name;
+            ServiceDescription = dto.Description;
+            ProcessPath = dto.ExecutablePath;
+            StartupDirectory = dto.StartupDirectory;
+            ProcessParameters = dto.Parameters;
+            SelectedStartupType = dto.StartupType == null ? ServiceStartType.Automatic : (ServiceStartType)dto.StartupType;
+            SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
+            StdoutPath = dto.StdoutPath;
+            StderrPath = dto.StderrPath;
+            EnableRotation = dto.EnableRotation ?? false;
+            RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
+            EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
+            HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
+            MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
+            SelectedRecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction;
+            MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.ToString();
+            EnvironmentVariables = FormatEnvirnomentVariables(dto.EnvironmentVariables);
+            ServiceDependencies = FormatServiceDependencies(dto.ServiceDependencies);
+            RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
+            UserAccount = dto.UserAccount;
+            Password = dto.Password;
+            ConfirmPassword = dto.Password; // Assuming confirm = password
+            PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
+            PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
+            PreLaunchParameters = dto.PreLaunchParameters;
+            PreLaunchEnvironmentVariables = FormatEnvirnomentVariables(dto.PreLaunchEnvironmentVariables);
+            PreLaunchStdoutPath = dto.PreLaunchStdoutPath;
+            PreLaunchStderrPath = dto.PreLaunchStderrPath;
+            PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
+            PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.ToString();
+            PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false;
+        }
+
+        /// <summary>
+        /// Converts the ViewModel's current state into a <see cref="ServiceDto"/> object.
+        /// </summary>
+        /// <returns>
+        /// A new <see cref="ServiceDto"/> instance containing the service configuration values from the ViewModel.
+        /// </returns>
+        /// <remarks>
+        /// This method performs the inverse operation of <see cref="BindServiceDtoToModel(ServiceDto)"/>.
+        /// It maps all ViewModel properties back into the DTO, converting text-based numeric values into integers
+        /// and normalizing certain string inputs (such as environment variables and dependencies) into 
+        /// semicolon-delimited format suitable for persistence or serialization.
+        /// 
+        /// If parsing fails for numeric fields, safe defaults are applied (e.g., <c>0</c> or <c>30</c> seconds for timeouts).
+        /// </remarks>
+        private ServiceDto ModelToServiceDto()
+        {
+            var dto = new ServiceDto
+            {
+                Name = ServiceName,
+                Description = ServiceDescription,
+                ExecutablePath = ProcessPath,
+                StartupDirectory = StartupDirectory,
+                Parameters = ProcessParameters,
+                StartupType = (int)SelectedStartupType,
+                Priority = (int)SelectedProcessPriority,
+                StdoutPath = StdoutPath,
+                StderrPath = StderrPath,
+                EnableRotation = EnableRotation,
+                RotationSize = int.TryParse(RotationSize, out var rs) ? rs : 0,
+                EnableHealthMonitoring = EnableHealthMonitoring,
+                HeartbeatInterval = int.TryParse(HeartbeatInterval, out var hi) ? hi : 0,
+                MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : 0,
+                RecoveryAction = (int)SelectedRecoveryAction,
+                MaxRestartAttempts = int.TryParse(MaxRestartAttempts, out var mr) ? mr : 0,
+                EnvironmentVariables = NormalizeString(EnvironmentVariables),
+                ServiceDependencies = NormalizeString(ServiceDependencies),
+                RunAsLocalSystem = RunAsLocalSystem,
+                UserAccount = UserAccount,
+                Password = Password,
+                PreLaunchExecutablePath = PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = PreLaunchStartupDirectory,
+                PreLaunchParameters = PreLaunchParameters,
+                PreLaunchEnvironmentVariables = NormalizeString(PreLaunchEnvironmentVariables),
+                PreLaunchStdoutPath = PreLaunchStdoutPath,
+                PreLaunchStderrPath = PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = int.TryParse(PreLaunchTimeoutSeconds, out var pt) ? pt : 30,
+                PreLaunchRetryAttempts = int.TryParse(PreLaunchRetryAttempts, out var pr) ? pr : 0,
+                PreLaunchIgnoreFailure = PreLaunchIgnoreFailure
+            };
+
+            return dto;
         }
 
         #endregion

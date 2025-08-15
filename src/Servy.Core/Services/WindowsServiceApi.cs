@@ -1,9 +1,6 @@
-﻿using Servy.Core.Interfaces;
-using Servy.Core.Native;
+﻿using Servy.Core.Native;
 using System;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -91,6 +88,6 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
-
+    
     }
 }
