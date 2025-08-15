@@ -55,13 +55,19 @@ jobs:
       # - name: Dump Infrastructure\coverage.cobertura.xml
       #   run: cat Infrastructure\coverage.cobertura.xml 
 
+      # - name: Merge coverage reports
+      #   run: |
+      #     coverlet.exe merge Core/coverage.cobertura.xml Infrastructure/coverage.cobertura.xml --recursive --output merged.cobertura.xml --format cobertura 
+
+      - name: Install ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
       - name: Merge coverage reports
         run: |
-            dotnet "C:\Users\runner\.dotnet\tools\coverlet.console.dll" merge `
-              --output merged.cobertura.xml `
-              --format cobertura `
-              Core/coverage.cobertura.xml `
-              Infrastructure/coverage.cobertura.xml
+            reportgenerator `
+                "-reports:Core/coverage.cobertura.xml;Infrastructure/coverage.cobertura.xml" `
+                "-targetdir:CoverageMerged" `
+                "-reporttypes:Cobertura"
 
       - name: Run other Unit Tests (no coverage)
         run: |
@@ -78,7 +84,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}  
           # files: Core/coverage.cobertura.xml,Infrastructure/coverage.cobertura.xml
           # merge: true
-          files: merged.cobertura.xml
+          # files: merged.cobertura.xml
+          files: CoverageMerged/Cobertura.xml
           flags: unittests
           fail_ci_if_error: true
           verbose: false
