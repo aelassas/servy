@@ -17,7 +17,6 @@ namespace Servy.DesignTime
         /// <inheritdoc/>
         public Task<int> AddAsync(ServiceDto service) => Task.FromResult(1);
 
-
         /// <inheritdoc/>
         public Task<int> UpdateAsync(ServiceDto service) => Task.FromResult(1);
 
@@ -76,7 +75,7 @@ namespace Servy.DesignTime
                 var serializer = new XmlSerializer(typeof(ServiceDto));
                 using (var stringReader = new StringReader(xml))
                 {
-                    var importedService = (ServiceDto)serializer.Deserialize(stringReader);
+                    var importedService = (ServiceDto)serializer.Deserialize(stringReader)!;
                     return Task.FromResult(true);
                 }
             }
