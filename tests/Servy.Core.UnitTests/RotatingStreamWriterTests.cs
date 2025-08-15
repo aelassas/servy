@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests
@@ -45,41 +46,116 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void WriteLine_WritesToFile()
+        public void Constructor_NoParentDirectory_DoesNotThrow()
         {
-            using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
-            {
-                writer.WriteLine("Line1");
-                writer.WriteLine("Line2");
-            }
+            // Arrange
+            string newFile = "file.log";
 
-            string[] lines = File.ReadAllLines(_logFilePath);
-            Assert.Contains("Line1", lines);
-            Assert.Contains("Line2", lines);
+            // Act
+            var exception = Record.Exception(() =>
+            {
+                using (var writer = new RotatingStreamWriter(newFile, 100)) { }
+            });
+
+            // Assert
+            Assert.Null(exception); // passes if no exception was thrown
         }
 
         [Fact]
-        public void WriteLine_RotatesFileWhenSizeExceeded()
+        public void GenerateUniqueFileName_FileDoesNotExist_ReturnsOriginalPath()
         {
-            const long rotationSize = 100; // small size for test
+            string path = Path.Combine(_testDir, "log.txt");
+            string result = InvokeGenerateUniqueFileName(path);
+            Assert.Equal(path, result);
+        }
 
-            using (var writer = new RotatingStreamWriter(_logFilePath, rotationSize))
+        [Fact]
+        public void GenerateUniqueFileName_FileExists_AppendsNumber()
+        {
+            string path = Path.Combine(_testDir, "log.txt");
+            File.WriteAllText(path, "dummy"); // create first file
+
+            string first = InvokeGenerateUniqueFileName(path);
+            File.WriteAllText(first, "dummy"); // create second file
+
+            string second = InvokeGenerateUniqueFileName(path);
+
+            Assert.Equal(Path.Combine(_testDir, "log(2).txt"), second);
+        }
+
+        [Fact]
+        public void Rotate_CreatesRotatedFileAndNewWriter()
+        {
+            string filePath = Path.Combine(_testDir, "rotate.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, 5))
             {
-                for (int i = 0; i < 20; i++)
-                {
-                    writer.WriteLine(new string('x', 10));
-                }
+                // Write something to trigger rotation
+                writer.WriteLine("more"); // small write
+                writer.WriteLine("12345"); // triggers rotation
+
+                // Original file still exists (new empty log)
+                Assert.True(File.Exists(filePath));
+
+                // There is at least one rotated file
+                var rotatedFiles = Directory.GetFiles(_testDir, "rotate.txt.*");
+                Assert.NotEmpty(rotatedFiles);
             }
 
-            Thread.Sleep(100);
+            // Find the latest rotated file by timestamp
+            var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.txt.*")
+                    .Select(f => new FileInfo(f))
+                    .Where(f => !f.Name.Equals("rotate.txt"))
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .FirstOrDefault();
 
-            var logFiles = Directory.GetFiles(_testDir, "test.log*").ToList();
+            Assert.NotNull(latestRotatedFile); // make sure rotation happened
 
-            Assert.True(logFiles.Count >= 2, "Expected rotated and current log files.");
+            // Read content of the latest rotated file
+            string content = File.ReadAllText(latestRotatedFile.FullName);
 
-            var currentFileInfo = new FileInfo(_logFilePath);
-            Assert.True(currentFileInfo.Length < rotationSize);
+            // Assert that it contains "more"
+            Assert.Contains("more", content);
         }
+
+        [Fact]
+        public void Flush_WhenWriterIsNotNull_CallsUnderlyingFlush()
+        {
+            string filePath = Path.Combine(_testDir, "test.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, 10))
+            {
+                writer.WriteLine("hello");
+
+                // Just call Flush; should not throw and writes should be persisted
+                writer.Flush();
+            }
+
+            // Check that content is actually written to file
+            string content = File.ReadAllText(filePath);
+            Assert.Equal("hello\r\n", content);
+        }
+
+        [Fact]
+        public void Flush_WhenWriterIsNull_DoesNothing()
+        {
+            // Create writer and immediately dispose so _writer becomes null
+            var writer = new RotatingStreamWriter(Path.Combine(_testDir, "test.txt"), 10);
+            writer.Dispose(); // _writer is now null
+
+            // Calling Flush should not throw
+            var exception = Record.Exception(() => writer.Flush());
+            Assert.Null(exception);
+        }
+
+        // Helper to invoke private static GenerateUniqueFileName via reflection
+        private string InvokeGenerateUniqueFileName(string path)
+        {
+            var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            return (string)method.Invoke(null, new object[] { path });
+        }
+
 
         [Fact]
         public void Dispose_ClosesWriter()
@@ -112,8 +188,64 @@ namespace Servy.Core.UnitTests
 
                 Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
             }
-
         }
+
+        [Fact]
+        public void WriteLine_DoesNotRotate_WhenRotationSizeZero()
+        {
+            string filePath = Path.Combine(_testDir, "zero.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, 0))
+            {
+                writer.WriteLine("Hello"); // rotation size = 0, should not rotate
+            }
+
+            Assert.True(File.Exists(filePath));
+
+            var rotatedFiles = Directory.GetFiles(_testDir, "zero.txt.*")
+                    .Select(f => new FileInfo(f))
+                    .Where(f => !f.Name.Equals("zero.txt"));
+            Assert.Empty(rotatedFiles);
+        }
+
+        [Fact]
+        public void WriteLine_DoesNotRotate_WhenFileSmallerThanRotationSize()
+        {
+            string filePath = Path.Combine(_testDir, "small.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, 1024)) // 1 KB
+            {
+                writer.WriteLine("small"); // file < rotation size
+            }
+
+            Assert.True(File.Exists(filePath));
+
+            var rotatedFiles = Directory.GetFiles(_testDir, "small.txt.*")
+                              .Select(f => new FileInfo(f))
+                              .Where(f => !f.Name.Equals("small.txt"));
+            Assert.Empty(rotatedFiles);
+        }
+
+        [Fact]
+        public void WriteLine_Rotates_WhenFileExceedsRotationSize()
+        {
+            string filePath = Path.Combine(_testDir, "rotate.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, 5)) // tiny size
+            {
+                writer.WriteLine("12345"); // exactly 5 bytes → triggers rotation
+                writer.Flush();
+
+                writer.WriteLine("more"); // write to new file
+                writer.Flush();
+            }
+
+            Assert.True(File.Exists(filePath));
+
+            var rotatedFiles = Directory.GetFiles(_testDir, "rotate.txt.*");
+            Assert.NotEmpty(rotatedFiles);
+        }
+
 
         public void Dispose()
         {
