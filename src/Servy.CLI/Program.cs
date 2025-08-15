@@ -9,6 +9,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using System.Reflection;
 using static Servy.CLI.Helpers.Helper;
 
 namespace Servy.CLI
@@ -24,6 +25,12 @@ namespace Servy.CLI
         /// Servy Service executable filename.
         /// </summary>
         public const string ServyServiceExeFileName = "Servy.Service.CLI";
+
+        /// <summary>
+        /// The base namespace where embedded resource files are located.
+        /// Used for locating and extracting files such as the service executable.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.CLI.Resources";
 
         /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
@@ -86,9 +93,20 @@ namespace Servy.CLI
                 var exportCommand = new ExportServiceCommand(serviceRepository);
                 var importCommand = new ImportServiceCommand(serviceRepository);
 
-                CopyEmbeddedResource(ServyServiceExeFileName, "exe");
+                var asm = Assembly.GetExecutingAssembly();
+
+                // Copy service executable from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "exe"))
+                {
+                    Console.WriteLine($"Failed copying embedded resource: {ServyServiceExeFileName}.exe");
+                }
+
 #if DEBUG
-                CopyEmbeddedResource(ServyServiceExeFileName, "pdb");
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "pdb"))
+                {
+                    Console.WriteLine($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
+                }
 #endif
 
                 var exitCode = await Parser.Default.ParseArguments<
