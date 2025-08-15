@@ -1,6 +1,8 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Mappers;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
@@ -35,7 +37,7 @@ namespace Servy.Core.UnitTests
         [InlineData("", "", "")]
         [InlineData("TestService", "", "")]
         [InlineData("TestService", "C:\\Apps\\App.exe", "")]
-        public async System.Threading.Tasks.Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -99,6 +101,75 @@ namespace Servy.Core.UnitTests
                 0,
                 false
                 ));
+        }
+
+        [Theory]
+        [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
+        public async Task InstallService_EmptyOptions(string serviceName, string wrapperExePath, string realExePath)
+        {
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                null,
+                null,
+                null))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<int>(),
+                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
+
+            var result = await _serviceManager.InstallService(
+                 serviceName,
+                 null,
+                 wrapperExePath,
+                 realExePath,
+                 null,
+                 null,
+                 ServiceStartType.Automatic,
+                 ProcessPriority.Normal,
+                 null,
+                 null,
+                 0,
+                 0,
+                 0,
+                 RecoveryAction.None,
+                 0,
+                 null,
+                 null,
+                 null,
+                 null,
+
+                 null,
+                 null,
+                 null,
+                 null,
+                 null,
+                 null,
+                 30,
+                 0,
+                 false
+                 );
+
+            Assert.True(result);
         }
 
         [Fact]

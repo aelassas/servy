@@ -156,6 +156,17 @@ namespace Servy.Infrastructure.UnitTests
         }
 
         [Fact]
+        public async Task DeleteAsync_ByName_ReturnsZero()
+        {
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+
+            var repo = CreateRepository();
+            var rows = await repo.DeleteAsync(string.Empty);
+
+            Assert.Equal(0, rows);
+        }
+
+        [Fact]
         public async Task GetByIdAsync_DecryptsPassword()
         {
             var dto = new ServiceDto { Id = 1, Password = "encrypted" };
@@ -166,6 +177,30 @@ namespace Servy.Infrastructure.UnitTests
             var result = await repo.GetByIdAsync(1);
 
             Assert.Equal("plain", result.Password);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_EmptyPassword()
+        {
+            var dto = new ServiceDto { Id = 1, Password = null };
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+
+            var repo = CreateRepository();
+            var result = await repo.GetByIdAsync(1);
+
+            Assert.Null(result.Password);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_NullDto()
+        {
+            ServiceDto dto = null;
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+
+            var repo = CreateRepository();
+            var result = await repo.GetByIdAsync(1);
+
+            Assert.Null(result);
         }
 
         [Fact]
@@ -210,6 +245,20 @@ namespace Servy.Infrastructure.UnitTests
 
             var repo = CreateRepository();
             var result = (await repo.Search("A")).ToList();
+
+            Assert.Single(result);
+            Assert.Equal("p1", result[0].Password);
+        }
+
+        [Fact]
+        public async Task Search_NullKeyword()
+        {
+            var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
+            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(list);
+            _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
+
+            var repo = CreateRepository();
+            var result = (await repo.Search(null)).ToList();
 
             Assert.Single(result);
             Assert.Equal("p1", result[0].Password);
@@ -339,6 +388,17 @@ namespace Servy.Infrastructure.UnitTests
         {
             var repo = CreateRepository();
             var json = string.Empty;
+
+            var result = await repo.ImportJSON(json);
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ImportJSON_NullObject_ReturnsFalse()
+        {
+            var repo = CreateRepository();
+            var json = "null";
 
             var result = await repo.ImportJSON(json);
 

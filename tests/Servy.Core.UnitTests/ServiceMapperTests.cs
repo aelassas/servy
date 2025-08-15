@@ -156,5 +156,127 @@ namespace Servy.Core.UnitTests
             Assert.Equal(dto.PreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
             Assert.Equal(dto.PreLaunchIgnoreFailure, service.PreLaunchIgnoreFailure);
         }
+
+        [Fact]
+        public void ToDomain_AllNullablesNull_UsesDefaults()
+        {
+            var dto = new ServiceDto
+            {
+                Name = "MyService",
+                Description = "Desc",
+                ExecutablePath = "C:\\service.exe",
+                StartupDirectory = "C:\\",
+                Parameters = "",
+                StartupType = null,
+                Priority = null,
+                StdoutPath = "stdout.log",
+                StderrPath = "stderr.log",
+                EnableRotation = null,
+                RotationSize = null,
+                EnableHealthMonitoring = null,
+                HeartbeatInterval = null,
+                MaxFailedChecks = null,
+                RecoveryAction = null,
+                MaxRestartAttempts = null,
+                EnvironmentVariables = null,
+                ServiceDependencies = null,
+                RunAsLocalSystem = null,
+                UserAccount = null,
+                Password = null,
+                PreLaunchExecutablePath = null,
+                PreLaunchStartupDirectory = null,
+                PreLaunchParameters = null,
+                PreLaunchEnvironmentVariables = null,
+                PreLaunchStdoutPath = null,
+                PreLaunchStderrPath = null,
+                PreLaunchTimeoutSeconds = null,
+                PreLaunchRetryAttempts = null,
+                PreLaunchIgnoreFailure = null
+            };
+
+            var service = ServiceMapper.ToDomain(dto);
+
+            Assert.Equal(dto.Name, service.Name);
+            Assert.Equal(dto.Description, service.Description);
+            Assert.Equal(dto.ExecutablePath, service.ExecutablePath);
+            Assert.Equal(ServiceStartType.Automatic, service.StartupType); // default branch
+            Assert.Equal(ProcessPriority.Normal, service.Priority); // default branch
+            Assert.False(service.EnableRotation); // default branch
+            Assert.Equal(AppConstants.DefaultRotationSize, service.RotationSize); // default branch
+            Assert.False(service.EnableHealthMonitoring);
+            Assert.Equal(AppConstants.DefaultHeartbeatInterval, service.HeartbeatInterval);
+            Assert.Equal(AppConstants.DefaultMaxFailedChecks, service.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction); // default branch
+            Assert.Equal(AppConstants.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
+            Assert.True(service.RunAsLocalSystem);
+            Assert.Equal(AppConstants.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
+            Assert.Equal(AppConstants.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
+            Assert.False(service.PreLaunchIgnoreFailure);
+        }
+
+        [Fact]
+        public void ToDomain_AllValuesSet_UsesDtoValues()
+        {
+            var dto = new ServiceDto
+            {
+                Name = "MyService",
+                Description = "Desc",
+                ExecutablePath = "C:\\service.exe",
+                StartupDirectory = "C:\\",
+                Parameters = "-arg",
+                StartupType = (int)ServiceStartType.Manual,
+                Priority = (int)ProcessPriority.High,
+                StdoutPath = "stdout.log",
+                StderrPath = "stderr.log",
+                EnableRotation = true,
+                RotationSize = 1234,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 99,
+                MaxFailedChecks = 5,
+                RecoveryAction = (int)RecoveryAction.RestartService,
+                MaxRestartAttempts = 7,
+                EnvironmentVariables = "key=val",
+                ServiceDependencies = "dep1;dep2",
+                RunAsLocalSystem = false,
+                UserAccount = "user",
+                Password = "pwd",
+                PreLaunchExecutablePath = "pre.exe",
+                PreLaunchStartupDirectory = "C:\\pre",
+                PreLaunchParameters = "-prearg",
+                PreLaunchEnvironmentVariables = "prekey=preval",
+                PreLaunchStdoutPath = "preout.log",
+                PreLaunchStderrPath = "preerr.log",
+                PreLaunchTimeoutSeconds = 77,
+                PreLaunchRetryAttempts = 9,
+                PreLaunchIgnoreFailure = true
+            };
+
+            var service = ServiceMapper.ToDomain(dto);
+
+            Assert.Equal(ServiceStartType.Manual, service.StartupType);
+            Assert.Equal(ProcessPriority.High, service.Priority);
+            Assert.True(service.EnableRotation);
+            Assert.Equal(1234, service.RotationSize);
+            Assert.True(service.EnableHealthMonitoring);
+            Assert.Equal(99, service.HeartbeatInterval);
+            Assert.Equal(5, service.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction);
+            Assert.Equal(7, service.MaxRestartAttempts);
+            Assert.False(service.RunAsLocalSystem);
+            Assert.Equal(77, service.PreLaunchTimeoutSeconds);
+            Assert.Equal(9, service.PreLaunchRetryAttempts);
+            Assert.True(service.PreLaunchIgnoreFailure);
+
+            Assert.Equal(dto.EnvironmentVariables, service.EnvironmentVariables);
+            Assert.Equal(dto.ServiceDependencies, service.ServiceDependencies);
+            Assert.Equal(dto.UserAccount, service.UserAccount);
+            Assert.Equal(dto.Password, service.Password);
+            Assert.Equal(dto.PreLaunchExecutablePath, service.PreLaunchExecutablePath);
+            Assert.Equal(dto.PreLaunchStartupDirectory, service.PreLaunchStartupDirectory);
+            Assert.Equal(dto.PreLaunchParameters, service.PreLaunchParameters);
+            Assert.Equal(dto.PreLaunchEnvironmentVariables, service.PreLaunchEnvironmentVariables);
+            Assert.Equal(dto.PreLaunchStdoutPath, service.PreLaunchStdoutPath);
+            Assert.Equal(dto.PreLaunchStderrPath, service.PreLaunchStderrPath);
+        }
     }
 }

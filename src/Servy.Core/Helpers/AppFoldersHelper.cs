@@ -47,14 +47,20 @@ namespace Servy.Core.Helpers
                 ? connectionString.Substring(startIndex).Trim()
                 : connectionString.Substring(startIndex, endIndex - startIndex).Trim();
 
-            var dbFolder = Path.GetDirectoryName(dbFilePath)
-                           ?? throw new InvalidOperationException("Cannot determine database folder path.");
+            var dbFolder = Path.GetDirectoryName(dbFilePath);
 
-            var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath)
-                               ?? throw new InvalidOperationException("Cannot determine AES key folder path.");
+            if (string.IsNullOrWhiteSpace(dbFolder))
+                throw new InvalidOperationException("Cannot determine database folder path.");
 
-            var aesIVFolder = Path.GetDirectoryName(aesIVFilePath)
-                              ?? throw new InvalidOperationException("Cannot determine AES IV folder path.");
+            var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath);
+
+            if (string.IsNullOrWhiteSpace(aesKeyFolder))
+                throw new InvalidOperationException("Cannot determine AES key folder path.");
+
+            var aesIVFolder = Path.GetDirectoryName(aesIVFilePath);
+
+            if (string.IsNullOrWhiteSpace(aesIVFolder))
+                throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
             // Ensure folders exist
             Directory.CreateDirectory(dbFolder);

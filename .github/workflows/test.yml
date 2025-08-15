@@ -64,4 +64,4 @@ jobs:
           flags: unittests
           merge: true
           fail_ci_if_error: true
-          verbose: true
+          verbose: false
