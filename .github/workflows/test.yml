@@ -22,28 +22,28 @@ jobs:
         run: dotnet restore Servy.sln
 
       - name: Build solution
-        run: dotnet build Servy.sln --configuration Release --no-restore
+        run: dotnet build Servy.sln --configuration Debug --no-restore
 
       - name: Run Servy.Core.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Release --no-build `
+          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Debug --no-build `
             --collect:"XPlat Code Coverage" `
             --results-directory ./TestResults/Core `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run Servy.Infrastructure.UnitTests with coverage
         run: |
-          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Release --no-build `
+          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Debug --no-build `
             --collect:"XPlat Code Coverage" `
             --results-directory ./TestResults/Infrastructure `
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Run remaining unit tests without coverage
         run: |
-          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Release --no-build
-          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Release --no-build
-          dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Release --no-build
-          dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Release --no-build
+          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Debug --no-build
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Debug --no-build
+          dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Debug --no-build
+          dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Debug --no-build
 
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
