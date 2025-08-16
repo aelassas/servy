@@ -70,6 +70,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
+* [x] Add Help, Documentation, and Check for Updates menus
 * [ ] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits
