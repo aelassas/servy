@@ -502,11 +502,38 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à About Servy.
+        /// </summary>
+        public static string Menu_About {
+            get {
+                return ResourceManager.GetString("Menu_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Check for updates....
+        /// </summary>
+        public static string Menu_CheckUpdates {
+            get {
+                return ResourceManager.GetString("Menu_CheckUpdates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Clear All.
         /// </summary>
         public static string Menu_ClearAll {
             get {
                 return ResourceManager.GetString("Menu_ClearAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Help / Documentation.
+        /// </summary>
+        public static string Menu_Doc {
+            get {
+                return ResourceManager.GetString("Menu_Doc", resourceCulture);
             }
         }
         
@@ -534,6 +561,15 @@ namespace Servy.Resources {
         public static string Menu_ExportXml {
             get {
                 return ResourceManager.GetString("Menu_ExportXml", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Help.
+        /// </summary>
+        public static string Menu_Help {
+            get {
+                return ResourceManager.GetString("Menu_Help", resourceCulture);
             }
         }
         
@@ -975,6 +1011,42 @@ namespace Servy.Resources {
         public static string StartupType_Manual {
             get {
                 return ResourceManager.GetString("StartupType_Manual", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à 
+        ///Servy 1.0.0
+        ///
+        ///Servy is a lightweight tool that allows you to run and manage any application as a Windows service.
+        ///Easily monitor service health, configure startup options, and automate recovery actions.
+        ///
+        ///Built with .NET Framework 4.8
+        ///
+        ///Copyright © 2025 Akram El Assas. All rights reserved.
+        ///  .
+        /// </summary>
+        public static string Text_About {
+            get {
+                return ResourceManager.GetString("Text_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à No updates currently available..
+        /// </summary>
+        public static string Text_NoUpdate {
+            get {
+                return ResourceManager.GetString("Text_NoUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à A new version of Servy is available. Do you want to download it?.
+        /// </summary>
+        public static string Text_UpdateAvailable {
+            get {
+                return ResourceManager.GetString("Text_UpdateAvailable", resourceCulture);
             }
         }
     }

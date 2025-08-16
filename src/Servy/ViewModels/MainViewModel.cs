@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Servy.Constants;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -14,7 +15,9 @@ using Servy.ViewModels.Items;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using static Servy.Core.AppConstants;
@@ -475,6 +478,21 @@ namespace Servy.ViewModels
         /// </summary>
         public ICommand ExportJsonCommand { get; }
 
+        /// <summary>
+        /// Command to open documentation.
+        /// </summary>
+        public ICommand OpenDocumentation { get; }
+
+        /// <summary>
+        /// Command to check for updates.
+        /// </summary>
+        public ICommand CheckUpdates { get; }
+
+        /// <summary>
+        /// Command to open about dialog.
+        /// </summary>
+        public ICommand OpenAboutDialog { get; }
+
         #endregion
 
         #region Constructors
@@ -538,6 +556,10 @@ namespace Servy.ViewModels
             BrowsePreLaunchStartupDirectoryCommand = new RelayCommand(OnBrowsePreLaunchStartupDirectory);
             BrowsePreLaunchStdoutPathCommand = new RelayCommand(OnBrowsePreLaunchStdoutPath);
             BrowsePreLaunchStderrPathCommand = new RelayCommand(OnBrowsePreLaunchStderrPath);
+
+            OpenDocumentation = new RelayCommand(OnOpenDocumentation);
+            CheckUpdates = new RelayCommand(OnCheckUpdates);
+            OpenAboutDialog = new RelayCommand(OnOpenAboutDialog);
 
             ClearCommand = new RelayCommand(OnClearForm);
         }
@@ -850,6 +872,87 @@ namespace Servy.ViewModels
                 _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
             }
         }
+
+        #endregion
+
+        #region Help/Updates/About Commands
+
+        /// <summary>
+        /// Opens the Servy documentation page in the default browser.
+        /// </summary>
+        private void OnOpenDocumentation()
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = DocumentationLink,
+                UseShellExecute = true
+            });
+        }
+
+        /// <summary>
+        /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
+        /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
+        /// </summary>
+        private async void OnCheckUpdates()
+        {
+            try
+            {
+                using (var http = new HttpClient())
+                {
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("ServyApp");
+
+                    // Get latest release from GitHub API
+                    var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
+                    var response = await http.GetStringAsync(url);
+
+                    // Parse JSON response
+                    var json = JsonConvert.DeserializeObject<JObject>(response);
+                    string tagName = json?["tag_name"]?.ToString();
+
+                    if (string.IsNullOrEmpty(tagName))
+                    {
+                        _messageBoxService.ShowInfo(Strings.Text_NoUpdate, AppConstants.Caption);
+                        return;
+                    }
+
+                    // Convert version tag to double (e.g., "v1.2.3" -> 1.23)
+                    var latestVersion = Helper.ParseVersion(tagName);
+                    var currentVersion = Helper.ParseVersion(Core.AppConstants.Version);
+
+                    if (latestVersion > currentVersion)
+                    {
+                        var res = _messageBoxService.ShowConfirm(Strings.Text_UpdateAvailable, AppConstants.Caption);
+
+                        if (res)
+                        {
+                            // Open latest release page
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = LatestReleaseLink,
+                                UseShellExecute = true
+                            });
+                        }
+                    }
+                    else
+                    {
+                        _messageBoxService.ShowInfo(Strings.Text_NoUpdate, AppConstants.Caption);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _messageBoxService.ShowError("Failed to check updates: " + ex.Message, AppConstants.Caption);
+            }
+        }
+
+        /// <summary>
+        /// Displays the "About Servy" dialog with version and copyright information.
+        /// </summary>
+        private void OnOpenAboutDialog()
+        {
+            _messageBoxService.ShowInfo(Strings.Text_About, AppConstants.Caption);
+        }
+
 
         #endregion
 

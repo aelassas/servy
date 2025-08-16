@@ -13,6 +13,59 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>Import XML configuration</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>Import JSON configuration</value>
+  </data>
+  <data name="Menu_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>Export XML configuration</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>Export JSON configuration</value>
+  </data>
+
+  <data name="Menu_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>Help / Documentation</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>Check for updates...</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>About Servy</value>
+  </data>
+
+  <data name="Text_NoUpdate" xml:space="preserve">
+    <value>No updates currently available.</value>
+  </data>
+  <data name="Text_UpdateAvailable" xml:space="preserve">
+    <value>A new version of Servy is available. Do you want to download it?</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+  <value>
+Servy 1.0.0
+
+Servy is a lightweight tool that allows you to run and manage any application as a Windows service.
+Easily monitor service health, configure startup options, and automate recovery actions.
+
+Built with .NET Framework 4.8
+
+Copyright © 2025 Akram El Assas. All rights reserved.
+  </value>
+</data>
+
   <!-- Tabs -->
   <data name="Label_MainTab" xml:space="preserve">
     <value>Main</value>
@@ -214,15 +267,6 @@
   </data>
 
   <!-- XML/JSON import -->
-  <data name="Menu_Import" xml:space="preserve">
-    <value>Import</value>
-  </data>
-  <data name="Menu_ImportXml" xml:space="preserve">
-    <value>Import XML configuration</value>
-  </data>
-  <data name="Menu_ImportJson" xml:space="preserve">
-    <value>Import JSON configuration</value>
-  </data>
   <data name="Msg_FailedToLoadXml" xml:space="preserve">
     <value>Failed to load XML service configuration.</value>
   </data>
@@ -234,15 +278,6 @@
   </data>
 
   <!-- XML/JSON export -->
-  <data name="Menu_Export" xml:space="preserve">
-    <value>Export</value>
-  </data>
-  <data name="Menu_ExportXml" xml:space="preserve">
-    <value>Export XML configuration</value>
-  </data>
-  <data name="Menu_ExportJson" xml:space="preserve">
-    <value>Export JSON configuration</value>
-  </data>
   <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
     <value>Export XML configuration</value>
   </data>
@@ -258,7 +293,7 @@
   <data name="Msg_UnexpectedConfigLoadError" xml:space="preserve">
     <value>An error occurred while saving the configuration</value>
   </data>
-  
+
   <!-- Clear Action -->
   <data name="Menu_ClearAll" xml:space="preserve">
     <value>Clear All</value>
@@ -266,7 +301,7 @@
   <data name="Confirm_ClearAll" xml:space="preserve">
     <value>Are you sure you want to clear all configuration values?</value>
   </data>
-  
+
   <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>
