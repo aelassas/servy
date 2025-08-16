@@ -21,15 +21,25 @@
 
         <!-- Menu Bar -->
         <Menu DockPanel.Dock="Top" Height="28">
-            <MenuItem Header="{x:Static resx:Strings.Menu_Import}">
-                <MenuItem Header="{x:Static resx:Strings.Menu_ImportXml}" Command="{Binding ImportXmlCommand}"/>
-                <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}"/>
-            </MenuItem>
+            <!-- Export/Import Menu -->
             <MenuItem Header="{x:Static resx:Strings.Menu_Export}">
                 <MenuItem Header="{x:Static resx:Strings.Menu_ExportXml}" Command="{Binding ExportXmlCommand}"/>
                 <MenuItem Header="{x:Static resx:Strings.Menu_ExportJson}" Command="{Binding ExportJsonCommand}"/>
             </MenuItem>
+            <MenuItem Header="{x:Static resx:Strings.Menu_Import}">
+                <MenuItem Header="{x:Static resx:Strings.Menu_ImportXml}" Command="{Binding ImportXmlCommand}"/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}"/>
+            </MenuItem>
+
+            <!-- Clear Form Menu -->
             <MenuItem Header="{x:Static resx:Strings.Menu_ClearAll}" Command="{Binding ClearCommand}"/>
+
+            <!-- Help Menu -->
+            <MenuItem Header="{x:Static resx:Strings.Menu_Help}">
+                <MenuItem Header="{x:Static resx:Strings.Menu_Doc}" Command="{Binding OpenDocumentation}"/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_CheckUpdates}" Command="{Binding CheckUpdates}"/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_About}" Command="{Binding OpenAboutDialog}"/>
+            </MenuItem>
         </Menu>
 
         <!-- Menu Grid -->

@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.Helpers
+﻿using System.Globalization;
+
+namespace Servy.Core.Helpers
 {
     public class Helper
     {
@@ -92,5 +94,20 @@
             return $"\"{input}\"";
         }
 
+        /// <summary>
+        /// Helper method to convert "v1.2.3" or "1.2.3" into a comparable double, e.g., 1.23
+        /// </summary>
+        /// <param name="version">Version in the following format  "v1.2.3" or "1.2.3".</param>
+        /// <returns>Version as double.</returns>
+        public static double ParseVersion(string version)
+        {
+            version = version.TrimStart('v', 'V');
+            var parts = version.Split('.');
+            if (parts.Length < 2) return 0;
+
+            var major = parts[0];
+            var minor = parts[1];
+            return double.TryParse($"{major}.{minor}", NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result) ? result : 0;
+        }
     }
 }
