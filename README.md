@@ -73,18 +73,18 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [x] Add Help, Documentation, and Check for Updates menus
 * [ ] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
-  * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits
-  * [ ] Start, Stop, Restart, and Uninstall services
-  * [ ] Display service status and uptime
-  * [ ] Search and filter services
-  * [ ] Notifications for service events (failures, restarts)
-  * [ ] Log viewer per service
-  * [ ] Health monitoring dashboard
-  * [ ] Advanced scheduling and triggers (start service on event, time, or condition)
-  * [ ] Automatic recovery actions beyond simple restart (e.g., run scripts)
-  * [ ] System tray integration for quick access
-  * [ ] Service dependency management (start/stop order)
-  * [ ] Remote management of Servy services on other machines (optional)
+  * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits *(in progress)*
+  * [ ] Start, stop, restart, and uninstall services *(in progress)*
+  * [ ] Display service status and uptime *(in progress)*
+  * [ ] Add search and filter functionality for services *(in progress)*
+  * [ ] Provide notifications for service events (failures, restarts)
+  * [ ] Provide a log viewer per service
+  * [ ] Add a health monitoring dashboard
+  * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
+  * [ ] Support automatic recovery actions beyond simple restart (e.g., run scripts)
+  * [ ] Add system tray integration for quick access
+  * [ ] Support service dependency management (start/stop order)
+  * [ ] Enable remote management of Servy services on other machines *(long-term)*
 
 ## Support & Contributing
 
