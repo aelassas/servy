@@ -123,3 +123,5 @@ jobs:
           format: cobertura
           fail-on-error: true
           debug: false
+        env:
+            COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
