@@ -1,4 +1,6 @@
-﻿using static Servy.Core.Native.NativeMethods;
+﻿using System.Management;
+using System.ServiceProcess;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
 {
@@ -122,5 +124,18 @@ namespace Servy.Core.Services
             int dwInfoLevel,
             ref SERVICE_DESCRIPTION lpInfo
         );
+
+        /// <summary>
+        /// Gets all installed Windows services on the system.
+        /// </summary>
+        /// <returns>An enumerable of <see cref="ServiceController"/> representing installed services.</returns>
+        IEnumerable<WindowsServiceInfo> GetServices();
+
+        /// <summary>
+        /// Executes a WMI query and returns matching management objects.
+        /// </summary>
+        /// <param name="wmiQuery">The WMI query string to execute (e.g., "SELECT * FROM Win32_Service").</param>
+        /// <returns>An enumerable of <see cref="ManagementBaseObject"/> resulting from the query.</returns>
+        IEnumerable<IManagementObject> QueryService(string wmiQuery);
     }
 }

@@ -111,5 +111,25 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The name of the service.</param>
         /// <returns>The current <see cref="ServiceControllerStatus"/> of the service.</returns>
         ServiceControllerStatus GetServiceStatus(string serviceName);
+
+        /// <summary>
+        /// Determines whether a Windows service with the specified name is installed 
+        /// on the local machine.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows service to check.</param>
+        /// <returns>
+        /// <c>true</c> if a service with the specified name is installed; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        bool IsServiceInstalled(string serviceName);
+
+        /// <summary>
+        /// Gets the startup type of a Windows service by its name.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows service.</param>
+        /// <returns>
+        /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>null</c>.
+        /// </returns>
+        ServiceStartType? GetServiceStartupType(string serviceName);
     }
 }

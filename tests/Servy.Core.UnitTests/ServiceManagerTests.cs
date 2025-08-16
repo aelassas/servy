@@ -1,8 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
-using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Mappers;
 using Servy.Core.Services;
 using System.ComponentModel;
 using System.ServiceProcess;
@@ -970,6 +968,80 @@ namespace Servy.Core.UnitTests
 
             // Assert
             Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus(""));
+        }
+
+        [Fact]
+        public void IsServiceInstalled_ReturnsTrue_WhenServiceExists()
+        {
+            _mockWindowsServiceApi.Setup(p => p.GetServices())
+                 .Returns(new[]
+                 {
+                    new WindowsServiceInfo { ServiceName = "MyService", DisplayName = "My Service" }
+                 });
+
+            Assert.True(_serviceManager.IsServiceInstalled("MyService"));
+        }
+
+        [Fact]
+        public void IsServiceInstalled_ReturnsFalse_WhenServiceMissing()
+        {
+            _mockWindowsServiceApi.Setup(p => p.GetServices()).Returns(Array.Empty<WindowsServiceInfo>());
+
+            Assert.False(_serviceManager.IsServiceInstalled("MyService"));
+        }
+
+        [Fact]
+        public void IsServiceInstalled_Throws_ArgumentTnullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => _serviceManager.IsServiceInstalled(string.Empty));
+        }
+
+        [Fact]
+        public void GetServiceStartupType_ReturnsExpectedEnum()
+        {
+            var mockObj = new Mock<IManagementObject>();
+            mockObj.Setup(o => o.StartMode).Returns("Auto");
+
+            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
+                        .Returns(new[] { mockObj.Object });
+
+            var result = _serviceManager.GetServiceStartupType("MyService");
+
+            Assert.Equal(ServiceStartType.Automatic, result);
+        }
+
+        [Fact]
+        public void GetServiceStartupType_ReturnsNull_WhenNull()
+        {
+            var mockObj = new Mock<IManagementObject>();
+            mockObj.Setup(o => o.StartMode).Returns((string?)null);
+
+            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
+                        .Returns(new[] { mockObj.Object });
+
+            var result = _serviceManager.GetServiceStartupType("MyService");
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetServiceStartupType_ReturnsNull_WhenUnknownMode()
+        {
+            var mockObj = new Mock<IManagementObject>();
+            mockObj.Setup(o => o.StartMode).Returns("Unknown");
+
+            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
+                        .Returns(new[] { mockObj.Object });
+
+            var result = _serviceManager.GetServiceStartupType("MyService");
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetServiceStartupType_Throws_ArgumentTnullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => _serviceManager.GetServiceStartupType(string.Empty));
         }
 
     }
