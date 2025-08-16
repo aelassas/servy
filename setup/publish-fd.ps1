@@ -3,10 +3,12 @@
 # Builds WPF and CLI apps, creates Inno Setup installer, and packages a ZIP.
 
 param(
+    [string]$fm     = "net8.0",    
     [string]$version = "1.0.0",
-    [string]$tfm     = "net8.0-windows",
     [switch]$pause
 )
+
+$tfm = "$fm-windows"
 
 # -----------------------------
 # Configuration
@@ -46,12 +48,12 @@ $cliBuildScript = Join-Path $ScriptDir "..\src\Servy.CLI\publish-fd.ps1"
 # -----------------------------
 # Step 3: Build installer (Inno Setup)
 # -----------------------------
-& $innoCompiler $issFile /DMyAppVersion=$version  /DMyAppPlatform=$tfm
+& $innoCompiler $issFile /DMyAppVersion=$version  /DMyAppPlatform=$fm
 
 # -----------------------------
 # Step 4: Prepare ZIP package
 # -----------------------------
-$packageFolder = Join-Path $ScriptDir "servy-$version-$tfm-x64-frameworkdependent"
+$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64-frameworkdependent"
 $outputZip     = "$packageFolder.zip"
 
 # Cleanup old package
@@ -79,8 +81,8 @@ $servyAppsettings  = Join-Path $ServyDir "appsettings.json"
 $cliExeAppsettings = Join-Path $CliDir   "appsettings.json"
 
 # Copy appsettings.json
-Copy-Item $servyAppsettings (Join-Path $servyAppFolder "appsettings.json") -Force
-Copy-Item $cliExeAppsettings   (Join-Path $servyCliFolder "appsettings.json") -Force
+# Copy-Item $servyAppsettings (Join-Path $servyAppFolder "appsettings.json") -Force
+# Copy-Item $cliExeAppsettings   (Join-Path $servyCliFolder "appsettings.json") -Force
 
 # Rename CLI EXE
 $cliExePath = Join-Path $servyCliFolder "Servy.CLI.exe"

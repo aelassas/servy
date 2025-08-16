@@ -6,9 +6,11 @@
 #  3. 7-Zip installed and 7z in PATH
 
 param(
-    [string]$tfm     = "net8.0-windows",
+    [string]$fm     = "net8.0",    
     [string]$version = "1.0.0"
 )
+
+$tfm = "$fm-windows"
 
 $ErrorActionPreference = "Stop"
 
@@ -42,14 +44,16 @@ function Invoke-Script {
 # Build self-contained installer
 Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
     version = $version
-    tfm     = $tfm
+    fm      = $fm
 }
 
+<#
 # Build framework-dependent installer
 Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
     version = $version
-    tfm     = $tfm
+    fm      = $fm
 }
+#>
 
 # Calculate and display elapsed time
 $elapsed = (Get-Date) - $startTime

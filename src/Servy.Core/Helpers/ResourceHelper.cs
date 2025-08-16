@@ -1,5 +1,8 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Management;
 using System.Reflection;
 
 namespace Servy.Core.Helpers
@@ -32,11 +35,17 @@ namespace Servy.Core.Helpers
         /// <returns>True on success and False on failure.</returns>
         public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension)
         {
-            string targetFileName = $"{fileName}.{extension}";
-            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-            string resourceName = $"{resourceNamespace}.{fileName}.{extension}";
+            var targetFileName = $"{fileName}.{extension}";
+#if DEBUG
+            var dir = Path.GetDirectoryName(assembly.Location);
+            var targetPath = Path.Combine(dir!, targetFileName);
+#else
+            var targetPath = Path.Combine(AppConstants.ProgramDataPath, targetFileName);
+#endif
 
-            bool shouldCopy = true;
+            var resourceName = $"{resourceNamespace}.{fileName}.{extension}";
+
+            var shouldCopy = true;
 
             if (File.Exists(targetPath))
             {
@@ -56,7 +65,7 @@ namespace Servy.Core.Helpers
                 {
                     if (resourceStream == null)
                     {
-                        // Embedded resource not found
+                        Console.WriteLine("Embedded resource not found: " + resourceName);
                         return false;
                     }
 
@@ -84,7 +93,7 @@ namespace Servy.Core.Helpers
         public static DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
 #pragma warning disable IL3000
-            string assemblyPath = assembly.Location;
+            var assemblyPath = assembly.Location;
 #pragma warning restore IL3000
 
             if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
@@ -111,12 +120,10 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Terminates all running processes matching the specified process name.
-        /// This is used when replacing the embedded Servy service executable to avoid file locks.
+        /// Kills all running processes with the name.
+        /// This is necessary when replacing the embedded service executable.
         /// </summary>
-        /// <param name="servyProcessName">
-        /// The name of the Servy process to terminate (without file extension).
-        /// </param>
+        /// <param name="servyProcessName">Servy Process Name to kill.</param>
         /// <returns>True on success and False on failure.</returns>
         public static bool KillServyServiceIfRunning(string servyProcessName)
         {
@@ -124,16 +131,49 @@ namespace Servy.Core.Helpers
             {
                 foreach (var process in Process.GetProcessesByName(servyProcessName))
                 {
-                    process.Kill(true);
-                    process.WaitForExit();
+                    KillProcessAndChildren(process.Id);
                 }
                 return true;
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to terminate running service: " + ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Kills process and the entire process tree.
+        /// </summary>
+        /// <param name="pid">Process PID to kill.</param>
+        private static void KillProcessAndChildren(int parentPid)
+        {
+            ManagementObjectSearcher searcher = new ManagementObjectSearcher(
+                "SELECT * FROM Win32_Process WHERE ParentProcessId=" + parentPid);
+
+            ManagementObjectCollection collection = searcher.Get();
+
+            // Kill all child processes recursively first
+            foreach (var mo in collection)
+            {
+                int childPid = Convert.ToInt32(mo["ProcessId"]);
+                KillProcessAndChildren(childPid);
+            }
+
+            // Now kill the parent process
+            try
+            {
+                Process parentProcess = Process.GetProcessById(parentPid);
+                parentProcess.Kill();
+                parentProcess.WaitForExit();
+            }
+            catch (ArgumentException)
+            {
+                // Process has already exited, no action needed
+            }
             catch (Exception)
             {
-                // Handle cases where the process may have already exited or other exceptions
-                // Failed to terminate running service
-                return false;
+                // Handle other exceptions if necessary
             }
         }
     }

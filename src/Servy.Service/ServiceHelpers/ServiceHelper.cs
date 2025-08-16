@@ -1,4 +1,5 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.Logging;
@@ -170,8 +171,12 @@ namespace Servy.Service.ServiceHelpers
         {
             try
             {
+#if DEBUG
                 var exePath = Assembly.GetExecutingAssembly().Location;
-                var dir = Path.GetDirectoryName(exePath);
+                var dir = AppConstants.ProgramDataPath;
+#else
+                var dir = AppConstants.ProgramDataPath;
+#endif
                 var restarter = Path.Combine(dir!, "Servy.Restarter.exe");
 
                 if (!File.Exists(restarter))
