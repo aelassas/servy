@@ -115,5 +115,18 @@ namespace Servy.Core.UnitTests
             // Assert
             Assert.Equal(expected, result);
         }
+
+        [Theory]
+        [InlineData("v1.2.3", 1.2)]
+        [InlineData("1.2.3", 1.2)]
+        [InlineData("V3.4.5", 3.4)]
+        [InlineData("2.0", 2.0)]
+        [InlineData("v1", 0)]
+        [InlineData("invalid", 0)]
+        public void ParseVersion_ReturnsExpectedDouble(string version, double expected)
+        {
+            var result = Helper.ParseVersion(version);
+            Assert.Equal(expected, result);
+        }
     }
 }
