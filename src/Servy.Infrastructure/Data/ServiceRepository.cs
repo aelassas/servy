@@ -1,7 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.Data;
+using Servy.Core.Domain;
 using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Services;
 using System.Xml.Serialization;
 
 namespace Servy.Infrastructure.Data
@@ -38,80 +41,82 @@ namespace Servy.Infrastructure.Data
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
         }
 
+        #region DTO methods
+
         /// <inheritdoc />
-        public async Task<int> AddAsync(ServiceDto service)
+        public virtual async Task<int> AddAsync(ServiceDto service)
         {
             if (!string.IsNullOrWhiteSpace(service.Password))
                 service.Password = _securePassword.Encrypt(service.Password);
 
             var sql = @"
-                INSERT INTO Services (
-                    Name, Description, ExecutablePath, StartupDirectory, Parameters, 
-                    StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
-                    EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
-                    EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
-                    PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
-                    PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure
-                ) VALUES (
-                    @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
-                    @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
-                    @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
-                    @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
-                    @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
-                    @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure
-                );
-                SELECT last_insert_rowid();";
+        INSERT INTO Services (
+            Name, Description, ExecutablePath, StartupDirectory, Parameters, 
+            StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
+            EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
+            EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
+            PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
+            PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure
+        ) VALUES (
+            @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
+            @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
+            @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
+            @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
+            @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
+            @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure
+        );
+        SELECT last_insert_rowid();";
 
 
             return await _dapper.ExecuteScalarAsync<int>(sql, service);
         }
 
         /// <inheritdoc />
-        public async Task<int> UpdateAsync(ServiceDto service)
+        public virtual async Task<int> UpdateAsync(ServiceDto service)
         {
             if (!string.IsNullOrWhiteSpace(service.Password))
                 service.Password = _securePassword.Encrypt(service.Password);
 
             var sql = @"
-                UPDATE Services SET
-                    Name = @Name,
-                    Description = @Description,
-                    ExecutablePath = @ExecutablePath,
-                    StartupDirectory = @StartupDirectory,
-                    Parameters = @Parameters,
-                    StartupType = @StartupType,
-                    Priority = @Priority,
-                    StdoutPath = @StdoutPath,
-                    StderrPath = @StderrPath,
-                    EnableRotation = @EnableRotation,
-                    RotationSize = @RotationSize,
-                    EnableHealthMonitoring = @EnableHealthMonitoring,
-                    HeartbeatInterval = @HeartbeatInterval,
-                    MaxFailedChecks = @MaxFailedChecks,
-                    RecoveryAction = @RecoveryAction,
-                    MaxRestartAttempts = @MaxRestartAttempts,
-                    EnvironmentVariables = @EnvironmentVariables,
-                    ServiceDependencies = @ServiceDependencies,
-                    RunAsLocalSystem = @RunAsLocalSystem,
-                    UserAccount = @UserAccount,
-                    Password = @Password,
-                    PreLaunchExecutablePath = @PreLaunchExecutablePath,
-                    PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
-                    PreLaunchParameters = @PreLaunchParameters,
-                    PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
-                    PreLaunchStdoutPath = @PreLaunchStdoutPath,
-                    PreLaunchStderrPath = @PreLaunchStderrPath,
-                    PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
-                    PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure
-                WHERE Id = @Id;";
+        UPDATE Services SET
+            Name = @Name,
+            Description = @Description,
+            ExecutablePath = @ExecutablePath,
+            StartupDirectory = @StartupDirectory,
+            Parameters = @Parameters,
+            StartupType = @StartupType,
+            Priority = @Priority,
+            StdoutPath = @StdoutPath,
+            StderrPath = @StderrPath,
+            EnableRotation = @EnableRotation,
+            RotationSize = @RotationSize,
+            EnableHealthMonitoring = @EnableHealthMonitoring,
+            HeartbeatInterval = @HeartbeatInterval,
+            MaxFailedChecks = @MaxFailedChecks,
+            RecoveryAction = @RecoveryAction,
+            MaxRestartAttempts = @MaxRestartAttempts,
+            EnvironmentVariables = @EnvironmentVariables,
+            ServiceDependencies = @ServiceDependencies,
+            RunAsLocalSystem = @RunAsLocalSystem,
+            UserAccount = @UserAccount,
+            Password = @Password,
+            PreLaunchExecutablePath = @PreLaunchExecutablePath,
+            PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
+            PreLaunchParameters = @PreLaunchParameters,
+            PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
+            PreLaunchStdoutPath = @PreLaunchStdoutPath,
+            PreLaunchStderrPath = @PreLaunchStderrPath,
+            PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
+            PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
+            PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure
+        WHERE Id = @Id;";
 
-            
+
             return await _dapper.ExecuteAsync(sql, service);
         }
 
         /// <inheritdoc />
-        public async Task<int> UpsertAsync(ServiceDto service)
+        public virtual async Task<int> UpsertAsync(ServiceDto service)
         {
             var exists = await _dapper.QuerySingleOrDefaultAsync<int>(
                 "SELECT Id FROM Services WHERE LOWER(Name) = LOWER(@Name);",
@@ -127,28 +132,28 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<int> DeleteAsync(int id)
+        public virtual async Task<int> DeleteAsync(int id)
         {
             var sql = "DELETE FROM Services WHERE Id = @Id;";
-            
+
             return await _dapper.ExecuteAsync(sql, new { Id = id });
         }
 
         /// <inheritdoc />
-        public async Task<int> DeleteAsync(string name)
+        public virtual async Task<int> DeleteAsync(string name)
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
             var sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            
+
             return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() });
         }
 
         /// <inheritdoc />
-        public async Task<ServiceDto?> GetByIdAsync(int id)
+        public virtual async Task<ServiceDto?> GetByIdAsync(int id)
         {
             var sql = "SELECT * FROM Services WHERE Id = @Id;";
-            
+
 
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Id = id });
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
@@ -158,10 +163,10 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<ServiceDto?> GetByNameAsync(string name)
+        public virtual async Task<ServiceDto?> GetByNameAsync(string name)
         {
             var sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            
+
 
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name.Trim() });
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
@@ -171,10 +176,10 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<ServiceDto>> GetAllAsync()
+        public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync()
         {
             var sql = "SELECT * FROM Services;";
-            
+
 
             var list = await _dapper.QueryAsync<ServiceDto>(sql);
             foreach (var dto in list)
@@ -187,17 +192,17 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<ServiceDto>> Search(string keyword)
+        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword)
         {
             var sql = @"
-                SELECT *
-                FROM Services
-                WHERE LOWER(Name) LIKE @Pattern
-                   OR LOWER(Description) LIKE @Pattern;";
+        SELECT *
+        FROM Services
+        WHERE LOWER(Name) LIKE @Pattern
+           OR LOWER(Description) LIKE @Pattern;";
 
             var pattern = $"%{keyword?.Trim().ToLower()}%";
 
-            
+
 
             var list = await _dapper.QueryAsync<ServiceDto>(sql, new { Pattern = pattern });
             foreach (var dto in list)
@@ -210,7 +215,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<string> ExportXML(string name)
+        public virtual async Task<string> ExportXML(string name)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -225,7 +230,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<bool> ImportXML(string xml)
+        public virtual async Task<bool> ImportXML(string xml)
         {
             if (string.IsNullOrWhiteSpace(xml))
                 return false;
@@ -246,7 +251,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<string> ExportJSON(string name)
+        public virtual async Task<string> ExportJSON(string name)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -256,7 +261,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public async Task<bool> ImportJSON(string json)
+        public virtual async Task<bool> ImportJSON(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return false;
@@ -274,5 +279,162 @@ namespace Servy.Infrastructure.Data
                 return false;
             }
         }
+
+        #endregion
+
+        #region Domain Methods
+
+        /// <inheritdoc />
+        public async Task<int> AddDomainServiceAsync(Service service) => await AddAsync(MapToDto(service));
+
+        /// <inheritdoc />
+        public async Task<int> UpdateDomainServiceAsync(Service service) => await UpdateAsync(MapToDto(service));
+
+        /// <inheritdoc />
+        public async Task<int> UpsertDomainServiceAsync(Service service) => await UpsertAsync(MapToDto(service));
+
+        /// <inheritdoc />
+        public async Task<int> DeleteDomainServiceAsync(int id) => await DeleteAsync(id);
+
+        /// <inheritdoc />
+        public async Task<int> DeleteDomainServiceAsync(string name) => await DeleteAsync(name);
+
+        /// <inheritdoc />
+        public async Task<Service?> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id)
+        {
+            var dto = await GetByIdAsync(id);
+            return dto != null ? MapToDomain(serviceManager, dto) : null;
+        }
+
+        /// <inheritdoc />
+        public async Task<Service?> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name)
+        {
+            var dto = await GetByNameAsync(name);
+            return dto != null ? MapToDomain(serviceManager, dto) : null;
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager)
+        {
+            var dtos = await GetAllAsync();
+            return dtos.Select(dto => MapToDomain(serviceManager, dto));
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword)
+        {
+            var dtos = await Search(keyword);
+            return dtos.Select(dto => MapToDomain(serviceManager, dto));
+        }
+
+        /// <inheritdoc />
+        public async Task<string> ExportDomainServiceXMLAsync(string name) => await ExportXML(name);
+
+        /// <inheritdoc />
+        public async Task<bool> ImportDomainServiceXMLAsync(string xml) => await ImportXML(xml);
+
+        /// <inheritdoc />
+        public async Task<string> ExportDomainServiceJSONAsync(string name) => await ExportJSON(name);
+
+        /// <inheritdoc />
+        public async Task<bool> ImportDomainServiceJSONAsync(string json) => await ImportJSON(json);
+
+        #endregion
+
+        #region Mapping helpers
+
+        /// <summary>
+        /// Maps a <see cref="ServiceDto"/> object to a domain <see cref="Service"/> instance.
+        /// </summary>
+        /// <param name="serviceManager">The <see cref="IServiceManager"/> used to manage the service.</param>
+        /// <param name="dto">The data transfer object representing the service.</param>
+        /// <returns>A new <see cref="Service"/> instance populated from the DTO.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="dto"/> is <c>null</c>.</exception>
+        private Service MapToDomain(IServiceManager serviceManager, ServiceDto? dto)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
+            return new Service(serviceManager)
+            {
+                Name = dto.Name,
+                Description = dto.Description,
+                ExecutablePath = dto.ExecutablePath,
+                StartupDirectory = dto.StartupDirectory,
+                Parameters = dto.Parameters,
+                StartupType = dto.StartupType.HasValue ? (ServiceStartType)dto.StartupType.Value : ServiceStartType.Manual,
+                Priority = dto.Priority.HasValue ? (ProcessPriority)dto.Priority.Value : ProcessPriority.Normal,
+                StdoutPath = dto.StdoutPath,
+                StderrPath = dto.StderrPath,
+                EnableRotation = dto.EnableRotation ?? false,
+                RotationSize = dto.RotationSize ?? 1_048_576,
+                EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false,
+                HeartbeatInterval = dto.HeartbeatInterval ?? 30,
+                MaxFailedChecks = dto.MaxFailedChecks ?? 3,
+                RecoveryAction = dto.RecoveryAction.HasValue ? (RecoveryAction)dto.RecoveryAction.Value : RecoveryAction.None,
+                MaxRestartAttempts = dto.MaxRestartAttempts ?? 3,
+                EnvironmentVariables = dto.EnvironmentVariables,
+                ServiceDependencies = dto.ServiceDependencies,
+                RunAsLocalSystem = dto.RunAsLocalSystem ?? true,
+                UserAccount = dto.UserAccount,
+                Password = dto.Password,
+                PreLaunchExecutablePath = dto.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory,
+                PreLaunchParameters = dto.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
+                PreLaunchStderrPath = dto.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? 30,
+                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? 0,
+                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false
+            };
+        }
+
+        /// <summary>
+        /// Maps a domain <see cref="Service"/> instance to a <see cref="ServiceDto"/> object for persistence.
+        /// </summary>
+        /// <param name="domain">The domain service to map.</param>
+        /// <returns>A <see cref="ServiceDto"/> populated from the domain service.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="domain"/> is <c>null</c>.</exception>
+        private ServiceDto MapToDto(Service? domain)
+        {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
+
+            return new ServiceDto
+            {
+                Name = domain.Name,
+                Description = domain.Description,
+                ExecutablePath = domain.ExecutablePath,
+                StartupDirectory = domain.StartupDirectory,
+                Parameters = domain.Parameters,
+                StartupType = (int)domain.StartupType,
+                Priority = (int)domain.Priority,
+                StdoutPath = domain.StdoutPath,
+                StderrPath = domain.StderrPath,
+                EnableRotation = domain.EnableRotation,
+                RotationSize = domain.RotationSize,
+                EnableHealthMonitoring = domain.EnableHealthMonitoring,
+                HeartbeatInterval = domain.HeartbeatInterval,
+                MaxFailedChecks = domain.MaxFailedChecks,
+                RecoveryAction = (int)domain.RecoveryAction,
+                MaxRestartAttempts = domain.MaxRestartAttempts,
+                EnvironmentVariables = domain.EnvironmentVariables,
+                ServiceDependencies = domain.ServiceDependencies,
+                RunAsLocalSystem = domain.RunAsLocalSystem,
+                UserAccount = domain.UserAccount,
+                Password = domain.Password,
+                PreLaunchExecutablePath = domain.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = domain.PreLaunchStartupDirectory,
+                PreLaunchParameters = domain.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = domain.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = domain.PreLaunchStdoutPath,
+                PreLaunchStderrPath = domain.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = domain.PreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = domain.PreLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = domain.PreLaunchIgnoreFailure
+            };
+        }
+
+        #endregion
+
     }
 }

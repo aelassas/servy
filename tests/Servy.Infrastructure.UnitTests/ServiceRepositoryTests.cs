@@ -1,7 +1,10 @@
 using Moq;
 using Servy.Core.Data;
+using Servy.Core.Domain;
 using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using System.Collections.Generic;
 using System.IO;
@@ -16,12 +19,19 @@ namespace Servy.Infrastructure.UnitTests
         private readonly Mock<IDapperExecutor> _mockDapper;
         private readonly Mock<ISecurePassword> _mockSecurePassword;
         private readonly Mock<IXmlServiceSerializer> _mockXmlServiceSerializer;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly ServiceRepository _repository;
+        private readonly Mock<IServiceManager> _serviceManagerMock;
 
         public ServiceRepositoryTests()
         {
             _mockDapper = new Mock<IDapperExecutor>();
             _mockSecurePassword = new Mock<ISecurePassword>(MockBehavior.Loose);
             _mockXmlServiceSerializer = new Mock<IXmlServiceSerializer>();
+            _serviceRepository = new ServiceRepositoryStub();
+
+            _repository = new ServiceRepository(_mockDapper.Object, _mockSecurePassword.Object, _mockXmlServiceSerializer.Object); // ignore dependencies for this test
+            _serviceManagerMock = new Mock<IServiceManager>();
         }
 
         private ServiceRepository CreateRepository()
@@ -181,7 +191,7 @@ namespace Servy.Infrastructure.UnitTests
         [Fact]
         public async Task GetByIdAsync_EmptyPassword()
         {
-            var dto = new ServiceDto { Id = 1, Password = null};
+            var dto = new ServiceDto { Id = 1, Password = null };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object?>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
@@ -413,6 +423,330 @@ namespace Servy.Infrastructure.UnitTests
             var result = await repo.ImportJSON(json);
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public async Task AddDomainServiceAsync_CallsAddAsync()
+        {
+            var service = new Service(null!) { Name = "TestService" };
+            var result = await _serviceRepository.AddDomainServiceAsync(service);
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public void AddDomainServiceAsync_ThrowsArgumentNullException()
+        {
+            Assert.ThrowsAsync<ArgumentNullException>(() => _serviceRepository.AddDomainServiceAsync(null!));
+        }
+
+        [Fact]
+        public async Task UpdateDomainServiceAsync_CallsUpdateAsync()
+        {
+            var service = new Service(null!) { Name = "TestService" };
+            var result = await _serviceRepository.UpdateDomainServiceAsync(service);
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public async Task UpsertDomainServiceAsync_CallsUpsertAsync()
+        {
+            var service = new Service(null!) { Name = "TestService" };
+            var result = await _serviceRepository.UpsertDomainServiceAsync(service);
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public async Task DeleteDomainServiceAsync_ById_CallsDeleteAsync()
+        {
+            var result = await _serviceRepository.DeleteDomainServiceAsync(1);
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public async Task DeleteDomainServiceAsync_ByName_CallsDeleteAsync()
+        {
+            var result = await _serviceRepository.DeleteDomainServiceAsync("TestService");
+            Assert.Equal(1, result);
+        }
+
+        [Fact]
+        public async Task GetDomainServiceByIdAsync_ReturnsMappedService()
+        {
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1);
+            Assert.NotNull(result);
+            Assert.Equal("StubService", result!.Name);
+        }
+
+        [Fact]
+        public async Task GetDomainServiceByIdAsync_ReturnsNull_WhenDtoNull()
+        {
+            var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = await serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetDomainServiceByNameAsync_ReturnsMappedService()
+        {
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = await _serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService");
+            Assert.NotNull(result);
+            Assert.Equal("TestService", result!.Name);
+        }
+
+        [Fact]
+        public async Task GetDomainServiceByNameAsync_ReturnsNull_WhenDtoNull()
+        {
+            var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = await serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService");
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetAllDomainServicesAsync_ReturnsMappedServices()
+        {
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = (await _serviceRepository.GetAllDomainServicesAsync(serviceManager)).ToList();
+            Assert.Single(result);
+            Assert.Equal("StubService", result[0].Name);
+        }
+
+        [Fact]
+        public async Task SearchDomainServicesAsync_ReturnsMappedServices()
+        {
+            var serviceManager = new Mock<IServiceManager>().Object;
+            var result = (await _serviceRepository.SearchDomainServicesAsync(serviceManager, "StubService")).ToList();
+            Assert.Single(result);
+            Assert.Equal("StubService", result[0].Name);
+        }
+
+        [Fact]
+        public async Task ExportDomainServiceXMLAsync_ReturnsString()
+        {
+            var result = await _serviceRepository.ExportDomainServiceXMLAsync("Service1");
+            Assert.Equal("<xml></xml>", result);
+        }
+
+        [Fact]
+        public async Task ImportDomainServiceXMLAsync_ReturnsBool()
+        {
+            var result = await _serviceRepository.ImportDomainServiceXMLAsync("<xml></xml>");
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task ExportDomainServiceJSONAsync_ReturnsString()
+        {
+            var result = await _serviceRepository.ExportDomainServiceJSONAsync("Service1");
+            Assert.Equal("{ }", result);
+        }
+
+        [Fact]
+        public async Task ImportDomainServiceJSONAsync_ReturnsBool()
+        {
+            var result = await _serviceRepository.ImportDomainServiceJSONAsync("{ }");
+            Assert.True(result);
+        }
+
+        private Service InvokeMapToDomain(ServiceDto dto)
+        {
+            var method = typeof(ServiceRepository)
+                .GetMethod("MapToDomain", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            return (Service)method!.Invoke(_repository, new object[] { _serviceManagerMock.Object, dto })!;
+        }
+
+        [Fact]
+        public void MapToDomain_ThrowsArgumentNullException_WhenDtoIsNull()
+        {
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+                InvokeMapToDomain(null!));
+
+            Assert.IsType<ArgumentNullException>(ex.InnerException);
+        }
+
+        [Fact]
+        public void MapToDomain_MapsAllPropertiesCorrectly()
+        {
+            var dto = new ServiceDto
+            {
+                Name = "MyService",
+                Description = "Test service",
+                ExecutablePath = "C:\\service.exe",
+                StartupDirectory = "C:\\",
+                Parameters = "-arg",
+                StartupType = (int)ServiceStartType.Automatic,
+                Priority = (int)ProcessPriority.High,
+                StdoutPath = "out.log",
+                StderrPath = "err.log",
+                EnableRotation = true,
+                RotationSize = 2048,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 60,
+                MaxFailedChecks = 5,
+                RecoveryAction = (int)RecoveryAction.RestartService,
+                MaxRestartAttempts = 7,
+                EnvironmentVariables = "ENV=1",
+                ServiceDependencies = "Dep1,Dep2",
+                RunAsLocalSystem = false,
+                UserAccount = "user",
+                Password = "secret",
+                PreLaunchExecutablePath = "pre.exe",
+                PreLaunchStartupDirectory = "C:\\pre",
+                PreLaunchParameters = "-prearg",
+                PreLaunchEnvironmentVariables = "PRE_ENV=1",
+                PreLaunchStdoutPath = "preout.log",
+                PreLaunchStderrPath = "preerr.log",
+                PreLaunchTimeoutSeconds = 120,
+                PreLaunchRetryAttempts = 2,
+                PreLaunchIgnoreFailure = true
+            };
+
+            var domain = InvokeMapToDomain(dto);
+
+            Assert.Equal(dto.Name, domain.Name);
+            Assert.Equal(dto.Description, domain.Description);
+            Assert.Equal(dto.ExecutablePath, domain.ExecutablePath);
+            Assert.Equal(dto.StartupDirectory, domain.StartupDirectory);
+            Assert.Equal(dto.Parameters, domain.Parameters);
+            Assert.Equal(ServiceStartType.Automatic, domain.StartupType);
+            Assert.Equal(ProcessPriority.High, domain.Priority);
+            Assert.Equal(dto.StdoutPath, domain.StdoutPath);
+            Assert.Equal(dto.StderrPath, domain.StderrPath);
+            Assert.True(domain.EnableRotation);
+            Assert.Equal(2048, domain.RotationSize);
+            Assert.True(domain.EnableHealthMonitoring);
+            Assert.Equal(60, domain.HeartbeatInterval);
+            Assert.Equal(5, domain.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartService, domain.RecoveryAction);
+            Assert.Equal(7, domain.MaxRestartAttempts);
+            Assert.Equal("ENV=1", domain.EnvironmentVariables);
+            Assert.Equal("Dep1,Dep2", domain.ServiceDependencies);
+            Assert.False(domain.RunAsLocalSystem);
+            Assert.Equal("user", domain.UserAccount);
+            Assert.Equal("secret", domain.Password);
+            Assert.Equal("pre.exe", domain.PreLaunchExecutablePath);
+            Assert.Equal("C:\\pre", domain.PreLaunchStartupDirectory);
+            Assert.Equal("-prearg", domain.PreLaunchParameters);
+            Assert.Equal("PRE_ENV=1", domain.PreLaunchEnvironmentVariables);
+            Assert.Equal("preout.log", domain.PreLaunchStdoutPath);
+            Assert.Equal("preerr.log", domain.PreLaunchStderrPath);
+            Assert.Equal(120, domain.PreLaunchTimeoutSeconds);
+            Assert.Equal(2, domain.PreLaunchRetryAttempts);
+            Assert.True(domain.PreLaunchIgnoreFailure);
+        }
+
+        [Fact]
+        public void MapToDomain_UsesDefaultValues_WhenDtoValuesAreNull()
+        {
+            var dto = new ServiceDto(); // all nulls
+
+            var domain = InvokeMapToDomain(dto);
+
+            Assert.Equal(ServiceStartType.Manual, domain.StartupType);
+            Assert.Equal(ProcessPriority.Normal, domain.Priority);
+            Assert.False(domain.EnableRotation);
+            Assert.Equal(1_048_576, domain.RotationSize);
+            Assert.False(domain.EnableHealthMonitoring);
+            Assert.Equal(30, domain.HeartbeatInterval);
+            Assert.Equal(3, domain.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.None, domain.RecoveryAction);
+            Assert.Equal(3, domain.MaxRestartAttempts);
+            Assert.True(domain.RunAsLocalSystem);
+            Assert.Equal(30, domain.PreLaunchTimeoutSeconds);
+            Assert.Equal(0, domain.PreLaunchRetryAttempts);
+            Assert.False(domain.PreLaunchIgnoreFailure);
+        }
+
+        private ServiceDto InvokeMapToDto(Service domain)
+        {
+            var method = typeof(ServiceRepository)
+                .GetMethod("MapToDto", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            return (ServiceDto)method!.Invoke(_repository, new object[] { domain })!;
+        }
+
+        [Fact]
+        public void MapToDto_ThrowsArgumentNullException_WhenDomainIsNull()
+        {
+            var ex = Assert.Throws<System.Reflection.TargetInvocationException>(() =>
+                InvokeMapToDto(null!));
+
+            Assert.IsType<ArgumentNullException>(ex.InnerException);
+        }
+
+        [Fact]
+        public void MapToDto_MapsAllPropertiesCorrectly()
+        {
+            var domain = new Service(_serviceManagerMock.Object)
+            {
+                Name = "MyService",
+                Description = "Test service",
+                ExecutablePath = "C:\\service.exe",
+                StartupDirectory = "C:\\",
+                Parameters = "-arg",
+                StartupType = ServiceStartType.Automatic,
+                Priority = ProcessPriority.High,
+                StdoutPath = "out.log",
+                StderrPath = "err.log",
+                EnableRotation = true,
+                RotationSize = 2048,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 60,
+                MaxFailedChecks = 5,
+                RecoveryAction = RecoveryAction.RestartService,
+                MaxRestartAttempts = 7,
+                EnvironmentVariables = "ENV=1",
+                ServiceDependencies = "Dep1,Dep2",
+                RunAsLocalSystem = false,
+                UserAccount = "user",
+                Password = "secret",
+                PreLaunchExecutablePath = "pre.exe",
+                PreLaunchStartupDirectory = "C:\\pre",
+                PreLaunchParameters = "-prearg",
+                PreLaunchEnvironmentVariables = "PRE_ENV=1",
+                PreLaunchStdoutPath = "preout.log",
+                PreLaunchStderrPath = "preerr.log",
+                PreLaunchTimeoutSeconds = 120,
+                PreLaunchRetryAttempts = 2,
+                PreLaunchIgnoreFailure = true
+            };
+
+            var dto = InvokeMapToDto(domain);
+
+            Assert.Equal(domain.Name, dto.Name);
+            Assert.Equal(domain.Description, dto.Description);
+            Assert.Equal(domain.ExecutablePath, dto.ExecutablePath);
+            Assert.Equal(domain.StartupDirectory, dto.StartupDirectory);
+            Assert.Equal(domain.Parameters, dto.Parameters);
+            Assert.Equal((int)domain.StartupType, dto.StartupType);
+            Assert.Equal((int)domain.Priority, dto.Priority);
+            Assert.Equal(domain.StdoutPath, dto.StdoutPath);
+            Assert.Equal(domain.StderrPath, dto.StderrPath);
+            Assert.True(dto.EnableRotation);
+            Assert.Equal(2048, dto.RotationSize);
+            Assert.True(dto.EnableHealthMonitoring);
+            Assert.Equal(60, dto.HeartbeatInterval);
+            Assert.Equal(5, dto.MaxFailedChecks);
+            Assert.Equal((int)domain.RecoveryAction, dto.RecoveryAction);
+            Assert.Equal(7, dto.MaxRestartAttempts);
+            Assert.Equal("ENV=1", dto.EnvironmentVariables);
+            Assert.Equal("Dep1,Dep2", dto.ServiceDependencies);
+            Assert.False(dto.RunAsLocalSystem);
+            Assert.Equal("user", dto.UserAccount);
+            Assert.Equal("secret", dto.Password);
+            Assert.Equal("pre.exe", dto.PreLaunchExecutablePath);
+            Assert.Equal("C:\\pre", dto.PreLaunchStartupDirectory);
+            Assert.Equal("-prearg", dto.PreLaunchParameters);
+            Assert.Equal("PRE_ENV=1", dto.PreLaunchEnvironmentVariables);
+            Assert.Equal("preout.log", dto.PreLaunchStdoutPath);
+            Assert.Equal("preerr.log", dto.PreLaunchStderrPath);
+            Assert.Equal(120, dto.PreLaunchTimeoutSeconds);
+            Assert.Equal(2, dto.PreLaunchRetryAttempts);
+            Assert.True(dto.PreLaunchIgnoreFailure);
         }
     }
 }

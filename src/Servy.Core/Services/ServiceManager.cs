@@ -3,6 +3,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.ServiceDependencies;
 using System.ComponentModel;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
@@ -161,35 +162,35 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         public async Task<bool> InstallService(
-    string serviceName,
-    string description,
-    string wrapperExePath,
-    string realExePath,
-    string workingDirectory,
-    string realArgs,
-    ServiceStartType startType,
-    ProcessPriority processPriority,
-    string? stdoutPath,
-    string? stderrPath,
-    int rotationSizeInBytes,
-    int heartbeatInterval,
-    int maxFailedChecks,
-    RecoveryAction recoveryAction,
-    int maxRestartAttempts,
-    string? environmentVariables,
-    string? serviceDependencies,
-    string? username,
-    string? password,
-    string? preLaunchExePath,
-    string? preLaunchWorkingDirectory,
-    string? preLaunchArgs,
-    string? preLaunchEnvironmentVariables,
-    string? preLaunchStdoutPath,
-    string? preLaunchStderrPath,
-    int preLaunchTimeout = 5,
-    int preLaunchRetryAttempts = 0,
-    bool preLaunchIgnoreFailure = false
-)
+                string serviceName,
+                string description,
+                string wrapperExePath,
+                string realExePath,
+                string workingDirectory,
+                string realArgs,
+                ServiceStartType startType,
+                ProcessPriority processPriority,
+                string? stdoutPath,
+                string? stderrPath,
+                int rotationSizeInBytes,
+                int heartbeatInterval,
+                int maxFailedChecks,
+                RecoveryAction recoveryAction,
+                int maxRestartAttempts,
+                string? environmentVariables,
+                string? serviceDependencies,
+                string? username,
+                string? password,
+                string? preLaunchExePath,
+                string? preLaunchWorkingDirectory,
+                string? preLaunchArgs,
+                string? preLaunchEnvironmentVariables,
+                string? preLaunchStdoutPath,
+                string? preLaunchStderrPath,
+                int preLaunchTimeout = 5,
+                int preLaunchRetryAttempts = 0,
+                bool preLaunchIgnoreFailure = false
+            )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -449,7 +450,45 @@ namespace Servy.Core.Services
             }
         }
 
-        #endregion
+        ///<inheritdoc />
+        public bool IsServiceInstalled(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            return _windowsServiceApi.GetServices()
+                            .Any(s => s.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <inheritdoc />
+        public ServiceStartType? GetServiceStartupType(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            string? startMode = null;
+            foreach (var obj in _windowsServiceApi.QueryService(
+                         $"SELECT StartMode FROM Win32_Service WHERE Name = '{serviceName}'"))
+            {
+                startMode = obj.StartMode?.ToString();
+                break;
+            }
+
+            if (string.Equals(startMode, "Auto", StringComparison.OrdinalIgnoreCase))
+                startMode = "Automatic";
+
+            if (!string.IsNullOrEmpty(startMode))
+            {
+                try { return (ServiceStartType)Enum.Parse(typeof(ServiceStartType), startMode, true); }
+                catch (ArgumentException) { return null; }
+            }
+
+            return null;
+        }
     }
+
+
+    #endregion
 }
+
 #pragma warning restore CS8625

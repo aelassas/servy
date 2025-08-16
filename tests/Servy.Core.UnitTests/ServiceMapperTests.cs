@@ -1,17 +1,33 @@
-﻿using Servy.Core.DTOs;
+﻿using Moq;
+using Servy.Core.Domain;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Mappers;
-using Servy.Core.Models;
+using Servy.Core.Services;
+using System.ServiceProcess;
 
 namespace Servy.Core.UnitTests
 {
     public class ServiceMapperTests
     {
+        private readonly Mock<IServiceManager> _serviceManagerMock;
+        private readonly Service _service;
+
+        public ServiceMapperTests()
+        {
+            _serviceManagerMock = new Mock<IServiceManager>();
+            _service = new Service(_serviceManagerMock.Object)
+            {
+                Name = "TestService"
+            };
+        }
+
+
         [Fact]
         public void ToDto_MapsAllPropertiesCorrectly()
         {
             // Arrange
-            var service = new Service
+            var service = new Service(null!)
             {
                 Name = "MyService",
                 Description = "Test Service",
@@ -121,7 +137,7 @@ namespace Servy.Core.UnitTests
             };
 
             // Act
-            var service = ServiceMapper.ToDomain(dto);
+            var service = ServiceMapper.ToDomain(null!, dto);
 
             // Assert
             Assert.Equal(dto.Name, service.Name);
@@ -193,7 +209,7 @@ namespace Servy.Core.UnitTests
                 PreLaunchIgnoreFailure = null
             };
 
-            var service = ServiceMapper.ToDomain(dto);
+            var service = ServiceMapper.ToDomain(null!, dto);
 
             Assert.Equal(dto.Name, service.Name);
             Assert.Equal(dto.Description, service.Description);
@@ -250,7 +266,7 @@ namespace Servy.Core.UnitTests
                 PreLaunchIgnoreFailure = true
             };
 
-            var service = ServiceMapper.ToDomain(dto);
+            var service = ServiceMapper.ToDomain(null!, dto);
 
             Assert.Equal(ServiceStartType.Manual, service.StartupType);
             Assert.Equal(ProcessPriority.High, service.Priority);
@@ -277,5 +293,141 @@ namespace Servy.Core.UnitTests
             Assert.Equal(dto.PreLaunchStdoutPath, service.PreLaunchStdoutPath);
             Assert.Equal(dto.PreLaunchStderrPath, service.PreLaunchStderrPath);
         }
+
+        [Fact]
+        public void Start_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        {
+            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).Returns(true);
+
+            var result = _service.Start();
+
+            Assert.True(result);
+            _serviceManagerMock.Verify(sm => sm.StartService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).Returns(false);
+
+            var result = _service.Start();
+
+            Assert.False(result);
+            _serviceManagerMock.Verify(sm => sm.StartService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void Stop_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        {
+            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).Returns(true);
+
+            var result = _service.Stop();
+
+            Assert.True(result);
+            _serviceManagerMock.Verify(sm => sm.StopService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).Returns(false);
+
+            var result = _service.Stop();
+
+            Assert.False(result);
+            _serviceManagerMock.Verify(sm => sm.StopService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void Restart_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        {
+            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).Returns(true);
+
+            var result = _service.Restart();
+
+            Assert.True(result);
+            _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).Returns(false);
+
+            var result = _service.Restart();
+
+            Assert.False(result);
+            _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void IsInstalled_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        {
+            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+
+            var result = _service.IsInstalled();
+
+            Assert.True(result);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void IsInstalled_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        {
+            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(false);
+
+            var result = _service.IsInstalled();
+
+            Assert.False(result);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void GetStatus_ReturnsStatus_WhenServiceIsInstalled()
+        {
+            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService")).Returns(ServiceControllerStatus.Running);
+
+            var result = _service.GetStatus();
+
+            Assert.Equal(ServiceControllerStatus.Running, result);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void GetStatus_ReturnsNull_WhenServiceIsNotInstalled()
+        {
+            _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(false);
+
+            var result = _service.GetStatus();
+
+            Assert.Null(result);
+            _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStatus(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public void GetServiceStartupType_ReturnsStartupType()
+        {
+            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService")).Returns(ServiceStartType.Automatic);
+
+            var result = _service.GetServiceStartupType();
+
+            Assert.Equal(ServiceStartType.Automatic, result);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService"), Times.Once);
+        }
+
+        [Fact]
+        public void GetServiceStartupType_ReturnsNull_WhenServiceManagerReturnsNull()
+        {
+            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService")).Returns((ServiceStartType?)null);
+
+            var result = _service.GetServiceStartupType();
+
+            Assert.Null(result);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService"), Times.Once);
+        }
+
     }
 }

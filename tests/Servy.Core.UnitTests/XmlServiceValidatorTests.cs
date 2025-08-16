@@ -19,7 +19,7 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void TryValidate_NullOrEmptyXml_ReturnsFalse()
         {
-            var result = XmlServiceValidator.TryValidate(null, out var error);
+            var result = XmlServiceValidator.TryValidate(null!, out var error);
             Assert.False(result);
             Assert.Equal("XML cannot be empty.", error);
 

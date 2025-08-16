@@ -1,5 +1,7 @@
 ﻿using Servy.Core.Native;
 using System.Diagnostics.CodeAnalysis;
+using System.Management;
+using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -87,6 +89,28 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
-    
+
+        /// <inheritdoc />
+        public IEnumerable<WindowsServiceInfo> GetServices()
+        {
+            return ServiceController.GetServices()
+                .Select(s => new WindowsServiceInfo
+                {
+                    ServiceName = s.ServiceName,
+                    DisplayName = s.DisplayName
+                });
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IManagementObject> QueryService(string wmiQuery)
+        {
+            using (var searcher = new ManagementObjectSearcher(wmiQuery))
+            {
+                foreach (ManagementObject obj in searcher.Get())
+                {
+                    yield return new ManagementObjectWrapper(obj);
+                }
+            }
+        }
     }
 }

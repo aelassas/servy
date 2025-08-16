@@ -16,7 +16,7 @@ namespace Servy.Core.Helpers
         /// <param name="xml">The XML string to validate.</param>
         /// <param name="errorMessage">If validation fails, contains the reason.</param>
         /// <returns><c>true</c> if the XML is valid; otherwise, <c>false</c>.</returns>
-        public static bool TryValidate(string xml, out string errorMessage)
+        public static bool TryValidate(string xml, out string? errorMessage)
         {
             errorMessage = null;
 
@@ -39,7 +39,7 @@ namespace Servy.Core.Helpers
             }
 
             // Try deserializing to ServiceDto
-            ServiceDto dto;
+            ServiceDto? dto;
             try
             {
                 var serializer = new XmlSerializer(typeof(ServiceDto));
