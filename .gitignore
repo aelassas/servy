@@ -418,8 +418,8 @@ FodyWeavers.xsd
 *.msp
 
 # setup
-setup/*.exe
-setup/*.zip
+setup/**/*.exe
+setup/**/*.zip
 
 # tests
 coveragereport/
