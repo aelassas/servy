@@ -123,6 +123,7 @@ namespace Servy.Core.UnitTests
         [InlineData("2.0", 2.0)]
         [InlineData("v1", 0)]
         [InlineData("invalid", 0)]
+        [InlineData("1.x.0", 0)]
         public void ParseVersion_ReturnsExpectedDouble(string version, double expected)
         {
             var result = Helper.ParseVersion(version);
