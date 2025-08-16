@@ -66,7 +66,7 @@ $servyExe = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish\S
 $cliExe   = Join-Path $CliDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
 
 # Package folder
-$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64"
+$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64-portable"
 $outputZip     = "$packageFolder.zip"
 
 # Clean old artifacts
