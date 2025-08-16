@@ -42,10 +42,10 @@ namespace Servy.DesignTime
             });
 
         /// <inheritdoc />
-        public Task<ServiceDto> GetByIdAsync(int id) => Task.FromResult<ServiceDto>(null);
+        public Task<ServiceDto?> GetByIdAsync(int id) => Task.FromResult<ServiceDto?>(null);
 
         /// <inheritdoc />
-        public Task<ServiceDto> GetByNameAsync(string name) => Task.FromResult<ServiceDto>(null);
+        public Task<ServiceDto?> GetByNameAsync(string name) => Task.FromResult<ServiceDto?>(null);
 
         /// <inheritdoc />
         public Task<IEnumerable<ServiceDto>> Search(string keyword) =>
@@ -71,7 +71,7 @@ namespace Servy.DesignTime
                 var serializer = new XmlSerializer(typeof(ServiceDto));
                 using (var stringReader = new StringReader(xml))
                 {
-                    var importedService = (ServiceDto)serializer.Deserialize(stringReader);
+                    var importedService = (ServiceDto?)serializer.Deserialize(stringReader);
                     return Task.FromResult(importedService != null);
                 }
             }
@@ -122,18 +122,18 @@ namespace Servy.DesignTime
         public Task<int> DeleteDomainServiceAsync(string name) => Task.FromResult(1);
 
         /// <inheritdoc />
-        public Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id) =>
-            Task.FromResult<Service>(new Service(null) { Name = "Demo Service" });
+        public Task<Service?> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id) =>
+            Task.FromResult<Service?>(new Service(null!) { Name = "Demo Service" });
 
         /// <inheritdoc />
-        public Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name) =>
-            Task.FromResult<Service>(new Service(null) { Name = name, Description = "Design-time domain service" });
+        public Task<Service?> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name) =>
+            Task.FromResult<Service?>(new Service(null!) { Name = name, Description = "Design-time domain service" });
 
         /// <inheritdoc />
         public Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager) =>
             Task.FromResult((IEnumerable<Service>)new List<Service>
             {
-                new Service(null) { Name = "Demo Service", Description = "Sample domain service" }
+                new Service(null !) { Name = "Demo Service", Description = "Sample domain service" }
             });
 
         /// <inheritdoc />
@@ -143,7 +143,7 @@ namespace Servy.DesignTime
         /// <inheritdoc />
         public Task<string> ExportDomainServiceXMLAsync(string name)
         {
-            var service = new Service(null) { Name = name, Description = "Design-time domain XML export sample" };
+            var service = new Service(null!) { Name = name, Description = "Design-time domain XML export sample" };
             var serializer = new XmlSerializer(typeof(Service));
             using (var stringWriter = new StringWriter())
             {
@@ -160,7 +160,7 @@ namespace Servy.DesignTime
                 var serializer = new XmlSerializer(typeof(Service));
                 using (var stringReader = new StringReader(xml))
                 {
-                    var importedService = (Service)serializer.Deserialize(stringReader);
+                    var importedService = (Service?)serializer.Deserialize(stringReader);
                     return Task.FromResult(importedService != null);
                 }
             }
@@ -173,7 +173,7 @@ namespace Servy.DesignTime
         /// <inheritdoc />
         public Task<string> ExportDomainServiceJSONAsync(string name)
         {
-            var service = new Service(null) { Name = name, Description = "Design-time domain JSON export sample" };
+            var service = new Service(null!) { Name = name, Description = "Design-time domain JSON export sample" };
             var json = JsonConvert.SerializeObject(service, Formatting.Indented,
                 new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
             return Task.FromResult(json);
