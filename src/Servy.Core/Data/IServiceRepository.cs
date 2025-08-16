@@ -1,115 +1,209 @@
-﻿using Servy.Core.DTOs;
+﻿using Servy.Core.Domain;
+using Servy.Core.DTOs;
+using Servy.Core.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Servy.Core.Data
 {
     /// <summary>
-    /// Defines a repository interface for managing <see cref="ServiceDto"/> records.
-    /// Provides methods to add, update, upsert, delete, and query services.
+    /// Defines a repository interface for managing <see cref="ServiceDto"/> records
+    /// and domain <see cref="Service"/> operations.
     /// </summary>
     public interface IServiceRepository
     {
+        // -------------------
+        // DTO-based operations
+        // -------------------
+
         /// <summary>
-        /// Adds a new service to the database.
+        /// Adds a new <see cref="ServiceDto"/> record to the repository.
         /// </summary>
-        /// <param name="service">The service DTO to add.</param>
-        /// <returns>The newly created service ID.</returns>
+        /// <param name="service">The DTO representing the service to add.</param>
+        /// <returns>The ID of the added service.</returns>
         Task<int> AddAsync(ServiceDto service);
 
         /// <summary>
-        /// Updates an existing service in the database.
+        /// Updates an existing <see cref="ServiceDto"/> record.
         /// </summary>
-        /// <param name="service">The service DTO containing updated data.</param>
-        /// <returns>The number of affected rows.</returns>
+        /// <param name="service">The DTO containing updated values.</param>
+        /// <returns>The number of affected records.</returns>
         Task<int> UpdateAsync(ServiceDto service);
 
         /// <summary>
-        /// Inserts a new service if it does not exist, or updates it if it already exists.
+        /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
-        /// <param name="service">The service DTO to upsert.</param>
-        /// <returns>The number of affected rows or the ID of the inserted service.</returns>
+        /// <param name="service">The DTO to upsert.</param>
+        /// <returns>The number of affected records.</returns>
         Task<int> UpsertAsync(ServiceDto service);
 
         /// <summary>
-        /// Deletes a service by its numeric ID.
+        /// Deletes a <see cref="ServiceDto"/> by its database ID.
         /// </summary>
         /// <param name="id">The ID of the service to delete.</param>
-        /// <returns>The number of affected rows.</returns>
+        /// <returns>The number of affected records.</returns>
         Task<int> DeleteAsync(int id);
 
         /// <summary>
-        /// Deletes a service by its name.
+        /// Deletes a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
         /// <param name="name">The name of the service to delete.</param>
-        /// <returns>The number of affected rows.</returns>
+        /// <returns>The number of affected records.</returns>
         Task<int> DeleteAsync(string name);
 
         /// <summary>
-        /// Retrieves a service by its numeric ID.
+        /// Retrieves a <see cref="ServiceDto"/> by its database ID.
         /// </summary>
-        /// <param name="id">The ID of the service to retrieve.</param>
-        /// <returns>The service DTO if found; otherwise, null.</returns>
+        /// <param name="id">The ID of the service.</param>
+        /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto> GetByIdAsync(int id);
 
         /// <summary>
-        /// Retrieves a service by its name.
+        /// Retrieves a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
-        /// <param name="name">The name of the service to retrieve.</param>
-        /// <returns>The service DTO if found; otherwise, null.</returns>
+        /// <param name="name">The name of the service.</param>
+        /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto> GetByNameAsync(string name);
 
         /// <summary>
-        /// Retrieves all services from the database.
+        /// Retrieves all <see cref="ServiceDto"/> records in the repository.
         /// </summary>
-        /// <returns>A collection of all <see cref="ServiceDto"/> objects.</returns>
+        /// <returns>A collection of all service DTOs.</returns>
         Task<IEnumerable<ServiceDto>> GetAllAsync();
 
         /// <summary>
-        /// Searches for services where the name or description matches the specified keyword.
+        /// Searches for <see cref="ServiceDto"/> records containing the specified keyword
+        /// in their name or description.
         /// </summary>
-        /// <param name="keyword">The keyword to search for (case-insensitive).</param>
-        /// <returns>A collection of matching <see cref="ServiceDto"/> objects.</returns>
+        /// <param name="keyword">The keyword to search for.</param>
+        /// <returns>A collection of matching <see cref="ServiceDto"/> records.</returns>
         Task<IEnumerable<ServiceDto>> Search(string keyword);
 
         /// <summary>
-        /// Exports the service configuration with the specified name as an XML string.
+        /// Exports a <see cref="ServiceDto"/> to an XML string.
         /// </summary>
         /// <param name="name">The name of the service to export.</param>
-        /// <returns>
-        /// A task representing the asynchronous operation, containing the serialized XML string of the service.
-        /// Returns an empty string if the service is not found.
-        /// </returns>
+        /// <returns>An XML string representing the service.</returns>
         Task<string> ExportXML(string name);
 
         /// <summary>
-        /// Imports a service configuration from an XML string and saves it to the database.
-        /// If a service with the same name exists, it is updated; otherwise, it is inserted.
+        /// Imports a <see cref="ServiceDto"/> from an XML string.
         /// </summary>
-        /// <param name="xml">The XML string representing the <see cref="ServiceDto"/> to import.</param>
-        /// <returns>
-        /// A task representing the asynchronous operation, containing <c>true</c> if the import was successful; otherwise, <c>false</c>.
-        /// </returns>
+        /// <param name="xml">The XML data to import.</param>
+        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
         Task<bool> ImportXML(string xml);
 
         /// <summary>
-        /// Exports the service configuration with the specified name as a JSON string.
+        /// Exports a <see cref="ServiceDto"/> to a JSON string.
         /// </summary>
         /// <param name="name">The name of the service to export.</param>
-        /// <returns>
-        /// A task representing the asynchronous operation, containing the serialized JSON string of the service.
-        /// Returns an empty string if the service is not found.
-        /// </returns>
+        /// <returns>A JSON string representing the service.</returns>
         Task<string> ExportJSON(string name);
 
         /// <summary>
-        /// Imports a service configuration from a JSON string and saves it to the database.
-        /// If a service with the same name exists, it is updated; otherwise, it is inserted.
+        /// Imports a <see cref="ServiceDto"/> from a JSON string.
         /// </summary>
-        /// <param name="json">The JSON string representing the <see cref="ServiceDto"/> to import.</param>
-        /// <returns>
-        /// A task representing the asynchronous operation, containing <c>true</c> if the import was successful; otherwise, <c>false</c>.
-        /// </returns>
+        /// <param name="json">The JSON data to import.</param>
+        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
         Task<bool> ImportJSON(string json);
+
+        // ------------------------
+        // Domain service operations
+        // ------------------------
+
+        /// <summary>
+        /// Adds a new domain <see cref="Service"/> to the repository.
+        /// </summary>
+        /// <param name="service">The domain service to add.</param>
+        /// <returns>The ID of the added service.</returns>
+        Task<int> AddDomainServiceAsync(Service service);
+
+        /// <summary>
+        /// Updates an existing domain <see cref="Service"/>.
+        /// </summary>
+        /// <param name="service">The domain service containing updated values.</param>
+        /// <returns>The number of affected records.</returns>
+        Task<int> UpdateDomainServiceAsync(Service service);
+
+        /// <summary>
+        /// Adds or updates a domain <see cref="Service"/> depending on whether it exists.
+        /// </summary>
+        /// <param name="service">The domain service to upsert.</param>
+        /// <returns>The number of affected records.</returns>
+        Task<int> UpsertDomainServiceAsync(Service service);
+
+        /// <summary>
+        /// Deletes a domain <see cref="Service"/> by ID.
+        /// </summary>
+        /// <param name="id">The ID of the service to delete.</param>
+        /// <returns>The number of affected records.</returns>
+        Task<int> DeleteDomainServiceAsync(int id);
+
+        /// <summary>
+        /// Deletes a domain <see cref="Service"/> by name.
+        /// </summary>
+        /// <param name="name">The name of the service to delete.</param>
+        /// <returns>The number of affected records.</returns>
+        Task<int> DeleteDomainServiceAsync(string name);
+
+        /// <summary>
+        /// Retrieves a domain <see cref="Service"/> by ID.
+        /// </summary>
+        /// <param name="serviceManager">The service manager used to manage the service.</param>
+        /// <param name="id">The ID of the service.</param>
+        /// <returns>The matching <see cref="Service"/> or <c>null</c> if not found.</returns>
+        Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id);
+
+        /// <summary>
+        /// Retrieves a domain <see cref="Service"/> by name.
+        /// </summary>
+        /// <param name="serviceManager">The service manager used to manage the service.</param>
+        /// <param name="name">The name of the service.</param>
+        /// <returns>The matching <see cref="Service"/> or <c>null</c> if not found.</returns>
+        Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name);
+
+        /// <summary>
+        /// Retrieves all domain <see cref="Service"/> objects.
+        /// </summary>
+        /// <param name="serviceManager">The service manager used to manage services.</param>
+        /// <returns>A collection of all domain services.</returns>
+        Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager);
+
+        /// <summary>
+        /// Searches for domain <see cref="Service"/> objects containing the specified keyword
+        /// in their name or description.
+        /// </summary>
+        /// <param name="serviceManager">The service manager used to manage services.</param>
+        /// <param name="keyword">The keyword to search for.</param>
+        /// <returns>A collection of matching domain services.</returns>
+        Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword);
+
+        /// <summary>
+        /// Exports a domain <see cref="Service"/> to an XML string.
+        /// </summary>
+        /// <param name="name">The name of the service to export.</param>
+        /// <returns>An XML string representing the domain service.</returns>
+        Task<string> ExportDomainServiceXMLAsync(string name);
+
+        /// <summary>
+        /// Imports a domain <see cref="Service"/> from an XML string.
+        /// </summary>
+        /// <param name="xml">The XML data to import.</param>
+        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
+        Task<bool> ImportDomainServiceXMLAsync(string xml);
+
+        /// <summary>
+        /// Exports a domain <see cref="Service"/> to a JSON string.
+        /// </summary>
+        /// <param name="name">The name of the service to export.</param>
+        /// <returns>A JSON string representing the domain service.</returns>
+        Task<string> ExportDomainServiceJSONAsync(string name);
+
+        /// <summary>
+        /// Imports a domain <see cref="Service"/> from a JSON string.
+        /// </summary>
+        /// <param name="json">The JSON data to import.</param>
+        /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
+        Task<bool> ImportDomainServiceJSONAsync(string json);
     }
 }

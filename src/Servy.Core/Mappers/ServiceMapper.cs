@@ -1,7 +1,8 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Models;
+using Servy.Core.Domain;
 using static Servy.Core.AppConstants;
+using Servy.Core.Services;
 
 namespace Servy.Core.Mappers
 {
@@ -58,11 +59,14 @@ namespace Servy.Core.Mappers
         /// <summary>
         /// Maps a <see cref="ServiceDto"/> from the database back to the domain <see cref="Service"/> model.
         /// </summary>
+        /// <param name="serviceManager">
+        /// The <see cref="IServiceManager"/> instance used to manage and interact with the service.
+        /// </param>
         /// <param name="dto">The data transfer object to map.</param>
         /// <returns>A <see cref="Service"/> domain object representing the stored service.</returns>
-        public static Service ToDomain(ServiceDto dto)
+        public static Service ToDomain(IServiceManager serviceManager, ServiceDto dto)
         {
-            return new Service
+            return new Service(serviceManager)
             {
                 Name = dto.Name,
                 Description = dto.Description,

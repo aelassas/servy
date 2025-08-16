@@ -4,6 +4,7 @@ using Servy.Core.Helpers;
 using Servy.Core.ServiceDependencies;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Threading;
@@ -450,6 +451,53 @@ namespace Servy.Core.Services
             {
                 return sc.Status;
             }
+        }
+
+        ///<inheritdoc />
+        public bool IsServiceInstalled(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            return _windowsServiceApi.GetServices()
+                            .Any(s => s.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Gets the startup type of a Windows service.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows service.</param>
+        /// <returns>The <see cref="ServiceStartType"/> if found; otherwise, <c>null</c>.</returns>
+        public ServiceStartType? GetServiceStartupType(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            string startMode = null;
+
+            foreach (var obj in _windowsServiceApi.QueryService(
+                         $"SELECT StartMode FROM Win32_Service WHERE Name = '{serviceName}'"))
+            {
+                startMode = obj.StartMode?.ToString();
+                break; // only need the first result
+            }
+
+            if (string.Equals(startMode, "Auto", StringComparison.OrdinalIgnoreCase))
+                startMode = "Automatic";
+
+            if (!string.IsNullOrEmpty(startMode))
+            {
+                try
+                {
+                    return (ServiceStartType)Enum.Parse(typeof(ServiceStartType), startMode, true);
+                }
+                catch (ArgumentException)
+                {
+                    return null; // unknown or invalid StartMode
+                }
+            }
+
+            return null; // service not found or StartMode is empty
         }
 
         #endregion

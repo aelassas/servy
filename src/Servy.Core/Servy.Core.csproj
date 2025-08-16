@@ -85,7 +85,7 @@
     <Compile Include="Helpers\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
-    <Compile Include="Models\Service.cs" />
+    <Compile Include="Domain\Service.cs" />
     <Compile Include="Native\NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Enums\RecoveryAction.cs" />
@@ -94,15 +94,20 @@
     <Compile Include="Security\ProtectedKeyProvider.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesParser.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesValidator.cs" />
+    <Compile Include="Services\IManagementObject.cs" />
     <Compile Include="Services\IServiceControllerWrapper.cs" />
     <Compile Include="Services\IServiceManager.cs" />
     <Compile Include="Services\IWin32ErrorProvider.cs" />
     <Compile Include="Services\IWindowsServiceApi.cs" />
+    <Compile Include="Services\IWindowsServiceProvider.cs" />
+    <Compile Include="Services\ManagementObjectWrapper.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
     <Compile Include="Services\ServiceManager.cs" />
     <Compile Include="Enums\ServiceStartType.cs" />
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
+    <Compile Include="Services\WindowsServiceInfo.cs" />
+    <Compile Include="Services\WindowsServiceProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

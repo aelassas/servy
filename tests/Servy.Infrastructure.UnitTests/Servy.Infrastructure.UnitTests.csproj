@@ -114,6 +114,7 @@
   <ItemGroup>
     <Compile Include="DatabaseInitializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServiceRepositoryStub.cs" />
     <Compile Include="ServiceRepositoryTests.cs" />
   </ItemGroup>
   <ItemGroup>

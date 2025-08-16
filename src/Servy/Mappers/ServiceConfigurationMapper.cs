@@ -1,13 +1,23 @@
-﻿using Servy.Core.Models;
+﻿using Servy.Core.Domain;
+using Servy.Core.Services;
 using Servy.Models;
 
 namespace Servy.Mappers
 {
+    /// <summary>
+    /// Provides mapping methods between <see cref="ServiceConfiguration"/> and domain <see cref="Service"/> objects.
+    /// </summary>
     public static class ServiceConfigurationMapper
     {
-        public static Service ToDomain(ServiceConfiguration config)
+        /// <summary>
+        /// Maps a <see cref="ServiceConfiguration"/> object to a domain <see cref="Service"/> object.
+        /// </summary>
+        /// <param name="serviceManager">The <see cref="IServiceManager"/> used by the domain service.</param>
+        /// <param name="config">The service configuration object to map from.</param>
+        /// <returns>A new <see cref="Service"/> instance populated with values from <paramref name="config"/>.</returns>
+        public static Service ToDomain(IServiceManager serviceManager, ServiceConfiguration config)
         {
-            return new Service
+            return new Service(serviceManager)
             {
                 Name = config.Name,
                 Description = config.Description,
@@ -42,6 +52,11 @@ namespace Servy.Mappers
             };
         }
 
+        /// <summary>
+        /// Maps a domain <see cref="Service"/> object to a <see cref="ServiceConfiguration"/> object.
+        /// </summary>
+        /// <param name="service">The domain service to map from.</param>
+        /// <returns>A new <see cref="ServiceConfiguration"/> instance populated with values from <paramref name="service"/>.</returns>
         public static ServiceConfiguration FromDomain(Service service)
         {
             return new ServiceConfiguration
@@ -80,6 +95,12 @@ namespace Servy.Mappers
             };
         }
 
+        /// <summary>
+        /// Attempts to parse a string into an integer, returning a default value if parsing fails.
+        /// </summary>
+        /// <param name="value">The string value to parse.</param>
+        /// <param name="defaultValue">The default value to return if parsing fails.</param>
+        /// <returns>The parsed integer, or <paramref name="defaultValue"/> if parsing fails.</returns>
         private static int ParseInt(string value, int defaultValue)
         {
             return int.TryParse(value, out var result) ? result : defaultValue;
