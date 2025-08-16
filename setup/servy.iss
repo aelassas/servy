@@ -6,7 +6,7 @@
   #define MyAppVersion "1.0.0"  ; default if not provided
 #endif
 #ifndef MyAppPlatform
-  #define MyAppPlatform "net8.0-windows"  ; default if not provided
+  #define MyAppPlatform "net8.0"  ; default if not provided
 #endif
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
@@ -30,7 +30,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=.
-OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-selfcontained-installer
+OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-installer
 SetupIconFile=..\src\Servy\servy.ico
 Compression=lzma
 SolidCompression=yes
@@ -52,13 +52,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\src\Servy\bin\Release\net8.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Appsettings.json (only copy if not present, and never uninstall)
-Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; CLI exe
 Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName: "servy-cli.exe"; Flags: ignoreversion
 
 ; CLI appsettings.json (only copy if not present, and never uninstall)
-Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

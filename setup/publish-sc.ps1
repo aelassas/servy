@@ -2,10 +2,14 @@
 # Build script for Servy self-contained installer and ZIP package
 
 param(
+    [string]$fm     = "net8.0",
     [string]$version = "1.0.0",
-    [string]$tfm     = "net8.0-windows",
     [switch]$pause
 )
+
+if (-not $tfm) {
+    $tfm = "$fm-windows"
+}
 
 # ========================
 # Configuration
@@ -50,7 +54,7 @@ Write-Host "Building Servy CLI app..."
 # Step 2: Build Installer
 # ========================
 Write-Host "Building installer from $issFile..."
-& $innoCompiler $issFile /DMyAppVersion=$version  /DMyAppPlatform=$tfm
+& $innoCompiler $issFile /DMyAppVersion=$version /DMyAppPlatform=$fm
 
 # ========================
 # Step 3: Build Self-Contained ZIP
@@ -62,7 +66,7 @@ $servyExe = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish\S
 $cliExe   = Join-Path $CliDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
 
 # Package folder
-$packageFolder = Join-Path $ScriptDir "servy-$version-$tfm-x64-selfcontained"
+$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64"
 $outputZip     = "$packageFolder.zip"
 
 # Clean old artifacts

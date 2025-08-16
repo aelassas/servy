@@ -91,7 +91,11 @@ namespace Servy.Services
             bool preLaunchIgnoreFailure
             )
         {
+#if DEBUG
             var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{App.ServyServiceExeFileName}.exe");
+#else
+            var wrapperExePath = Path.Combine(Core.AppConstants.ProgramDataPath, $"{App.ServyServiceExeFileName}.exe");
+#endif
 
             if (!File.Exists(wrapperExePath))
             {
