@@ -69,6 +69,38 @@ jobs:
                 "-targetdir:CoverageMerged" `
                 "-reporttypes:Cobertura"
 
+      - name: Merge and normalize coverage paths (PowerShell)
+        shell: pwsh
+        run: |
+          $fixedDir = "CoverageMerged\fixed"
+          if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
+
+          $coverageFiles = Get-ChildItem -Path CoverageMerged -Recurse -Filter "coverage.cobertura.xml"
+          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
+
+          # Merge coverage files using reportgenerator
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+          reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+
+          # Normalize filename paths for both Core and Infrastructure
+          $mergedFile = Join-Path $fixedDir "Cobertura.xml"
+          $content = Get-Content $mergedFile -Raw
+          $content = [regex]::Replace($content, 'filename="([^"]*)"', {
+              param($match)
+              $origPath = $match.Groups[1].Value -replace '\\', '/'
+              if ($origPath -match 'src/Servy\.Core/(.*)') {
+                  return "filename=`"src/Servy.Core/$($matches[1])`""
+              }
+              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') {
+                  return "filename=`"src/Servy.Infrastructure/$($matches[1])`""
+              }
+              else {
+                  return "filename=`"$origPath`""
+              }
+          })
+          $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
+          $content | Set-Content $normalizedFile
+
       - name: Run other Unit Tests (no coverage)
         run: |
           & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
@@ -89,3 +121,12 @@ jobs:
           flags: unittests
           fail_ci_if_error: true
           verbose: false
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: CoverageMerged/fixed/coverage.cobertura.xml
+          format: cobertura
+          fail-on-error: true
+          debug: false
