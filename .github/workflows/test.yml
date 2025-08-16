@@ -69,21 +69,14 @@ jobs:
                 "-targetdir:CoverageMerged" `
                 "-reporttypes:Cobertura"
 
-      - name: Merge and normalize coverage paths (PowerShell)
+      - name: Normalize coverage paths (PowerShell)
         shell: pwsh
         run: |
           $fixedDir = "CoverageMerged\fixed"
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
-
-          $coverageFiles = Get-ChildItem -Path CoverageMerged -Recurse -Filter "coverage.cobertura.xml"
-          if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
-
-          # Merge coverage files using reportgenerator
-          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
-          reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
-
+        
           # Normalize filename paths for both Core and Infrastructure
-          $mergedFile = Join-Path $fixedDir "Cobertura.xml"
+          $mergedFile = "CoverageMerged\Cobertura.xml"
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
