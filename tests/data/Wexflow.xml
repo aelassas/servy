@@ -7,8 +7,8 @@
   <Parameters>Wexflow.Server.dll</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
-  <StdoutPath>E:\dev\servy\stdout.log</StdoutPath>
-  <StderrPath>E:\dev\servy\stderr.log</StderrPath>
+  <StdoutPath>C:\dev\servy\stdout.log</StdoutPath>
+  <StderrPath>C:\dev\servy\stderr.log</StderrPath>
   <EnableRotation>true</EnableRotation>
   <RotationSize>10485760</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
@@ -17,7 +17,7 @@
   <RecoveryAction>1</RecoveryAction>
   <MaxRestartAttempts>3</MaxRestartAttempts>
   <EnvironmentVariables>var1=val1;var2=val2</EnvironmentVariables>
-  <ServiceDependencies>MongoDB;MySQL80</ServiceDependencies>
+  <ServiceDependencies>MongoDB</ServiceDependencies>
   <RunAsLocalSystem>true</RunAsLocalSystem>
   <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
   <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
