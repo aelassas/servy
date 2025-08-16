@@ -113,7 +113,7 @@ jobs:
           # files: merged.cobertura.xml
           files: CoverageMerged/Cobertura.xml
           flags: unittests
-          fail_ci_if_error: true
+          fail_ci_if_error: false
           verbose: false
 
       - name: Notify Codecov Status in case of failure
@@ -145,7 +145,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           file: CoverageMerged/fixed/coverage.cobertura.xml
           format: cobertura
-          fail-on-error: true
+          fail-on-error: false
           debug: false
         env:
             COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
