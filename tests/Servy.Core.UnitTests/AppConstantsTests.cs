@@ -36,7 +36,7 @@
         public void DefaultConnectionString_ShouldPointToServyDbInDbFolder()
         {
             var expectedDbPath = Path.Combine(AppConstants.DbFolderPath, "Servy.db");
-            var expectedConnectionString = $@"Data Source={expectedDbPath};";
+            var expectedConnectionString = $@"Data Source={expectedDbPath};Journal Mode=WAL;";
             Assert.Equal(expectedConnectionString, AppConstants.DefaultConnectionString);
         }
 
