@@ -1,13 +1,25 @@
-﻿using System;
-using System.IO;
-
-namespace Servy.Core
+﻿namespace Servy.Core
 {
     /// <summary>
     /// Application-wide constants for Servy paths and identifiers.
     /// </summary>
     public static class AppConstants
     {
+        /// <summary>
+        /// Servy's current version.
+        /// </summary>
+        public const string Version = "1.0.0";
+
+        /// <summary>
+        /// Servy's official documentation link.
+        /// </summary>
+        public const string DocumentationLink = "https://github.com/aelassas/servy/wiki";
+
+        /// <summary>
+        /// Latest GitHub release link.
+        /// </summary>
+        public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
+
         /// <summary>
         /// The root folder name under ProgramData.
         /// </summary>
