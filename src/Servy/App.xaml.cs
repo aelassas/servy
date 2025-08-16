@@ -92,7 +92,16 @@ namespace Servy
                 {
                     MessageBox.Show($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
                 }
+#else
+                // Copy Servy.Core.dll from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConstants.ServyCoreDllName, "dll"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConstants.ServyCoreDllName}.dll");
+                }
 #endif
+
+
+
             }
             catch (Exception ex)
             {

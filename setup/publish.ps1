@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
 # === CONFIGURATION ===
-$version      = "1.1.0"
+$version      = "1.0.0"
 $AppName      = "servy"
 $BuildConfig  = "Release"
 $Platform     = "x64"
@@ -34,7 +34,7 @@ $CliBuildOutputDir  = Join-Path $CliDir "bin\$BuildConfig"
 Set-Location $ScriptDir
 
 # Package folder structure
-$PackageFolder      = "$AppName-$version-$Framework-$Platform-frameworkdependent"
+$PackageFolder      = "$AppName-$version-$Framework-$Platform"
 $AppPackageFolder   = "servy-app"
 $CliPackageFolder   = "servy-cli"
 $OutputZip          = "$PackageFolder.zip"
@@ -62,7 +62,7 @@ New-Item -ItemType Directory -Force -Path $CliPackagePath | Out-Null
 # Copy Servy WPF files
 Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe") -Destination $AppPackagePath -Force
 Copy-Item -Path (Join-Path $BuildOutputDir "*.dll") -Destination $AppPackagePath -Force
-Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe.config") -Destination $AppPackagePath -Force
+# Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe.config") -Destination $AppPackagePath -Force
 
 $destSQLiteWPFX64 = Join-Path $AppPackagePath "x64"
 $destSQLiteWPFX86 = Join-Path $AppPackagePath "x86"
@@ -74,7 +74,7 @@ Copy-Item -Path (Join-Path $CliBuildOutputDir "x86\*") -Destination $destSQLiteW
 # Copy Servy CLI files
 Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe") -Destination (Join-Path $CliPackagePath "servy-cli.exe") -Force
 Copy-Item -Path (Join-Path $CliBuildOutputDir "*.dll") -Destination $CliPackagePath -Force
-Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe.config") -Destination (Join-Path $CliPackagePath "servy-cli.exe.config") -Force
+# Copy-Item -Path (Join-Path $CliBuildOutputDir "Servy.CLI.exe.config") -Destination (Join-Path $CliPackagePath "servy-cli.exe.config") -Force
 
 $destSQLiteCLIX64 = Join-Path $CliPackagePath "x64"
 $destSQLiteCLIX86 = Join-Path $CliPackagePath "x86"

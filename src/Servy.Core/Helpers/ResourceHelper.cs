@@ -35,11 +35,17 @@ namespace Servy.Core.Helpers
         /// <returns>True on success and False on failure.</returns>
         public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension)
         {
-            string targetFileName = $"{fileName}.{extension}";
-            string targetPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, targetFileName);
-            string resourceName = $"{resourceNamespace}.{fileName}.{extension}";
+            var targetFileName = $"{fileName}.{extension}";
+#if DEBUG
+            var dir = Path.GetDirectoryName(assembly.Location);
+            var targetPath = Path.Combine(dir, targetFileName);
+#else
+            var targetPath = Path.Combine(AppConstants.ProgramDataPath, targetFileName);
+#endif
 
-            bool shouldCopy = true;
+            var resourceName = $"{resourceNamespace}.{fileName}.{extension}";
+
+            var shouldCopy = true;
 
             if (File.Exists(targetPath))
             {
@@ -87,7 +93,7 @@ namespace Servy.Core.Helpers
         public static DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
 #pragma warning disable IL3000
-            string assemblyPath = assembly.Location;
+            var assemblyPath = assembly.Location;
 #pragma warning restore IL3000
 
             if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))

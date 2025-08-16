@@ -4,29 +4,35 @@ using System.IO;
 namespace Servy.Core
 {
     /// <summary>
-    /// Application-wide constants for Servy paths and identifiers.
+    /// Application-wide static readonlyants for Servy paths and identifiers.
     /// </summary>
     public static class AppConstants
     {
         /// <summary>
+        /// The file name of the Servy.Core assembly (without extension).
+        /// Used when copying or loading the core library dynamically.
+        /// </summary>
+        public static readonly string ServyCoreDllName = "Servy.Core";
+
+        /// <summary>
         /// Servy's current version.
         /// </summary>
-        public const string Version = "1.0.0";
+        public static readonly string Version = "1.0.0";
 
         /// <summary>
         /// Servy's official documentation link.
         /// </summary>
-        public const string DocumentationLink = "https://github.com/aelassas/servy/wiki";
+        public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";
 
         /// <summary>
         /// Latest GitHub release link.
         /// </summary>
-        public const string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
+        public static readonly string LatestReleaseLink = "https://github.com/aelassas/servy/releases/latest";
 
         /// <summary>
         /// The root folder name under ProgramData.
         /// </summary>
-        public const string AppFolderName = "Servy";
+        public static readonly string AppFolderName = "Servy";
 
         /// <summary>
         /// The full root path under ProgramData where Servy stores its data.
@@ -47,7 +53,7 @@ namespace Servy.Core
         /// <summary>
         /// Default SQLite connection string pointing to Servy.db in the database folder.
         /// </summary>
-        public static readonly string DefaultConnectionString = $@"Data Source={Path.Combine(DbFolderPath, "Servy.db")};";
+        public static readonly string DefaultConnectionString = $@"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Journal Mode=WAL;";
 
         /// <summary>
         /// Default AES key file path.

@@ -42,7 +42,7 @@ msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
 $filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
     @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" }
-    #@{ Source = "Servy.Core.pdb";    Destination = "Servy.Core.pdb" }
+    @{ Source = "Servy.Core.dll";    Destination = "Servy.Core.dll" }
 )
 
 # ----------------------------------------------------------------------

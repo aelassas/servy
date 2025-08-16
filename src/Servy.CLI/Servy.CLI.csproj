@@ -116,6 +116,7 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\Servy.Core.dll" />
     <None Include="app.manifest" />
     <None Include="packages.config" />
     <None Include="publish-res-debug.ps1" />

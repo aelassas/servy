@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Helpers;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
 
@@ -53,7 +54,7 @@ namespace Servy.Service
                 );
             }
 #endif
-
+            
             ServiceBase[] servicesToRun =
             {
                 new Service()

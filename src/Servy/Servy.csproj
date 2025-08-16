@@ -168,6 +168,7 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\Servy.Core.dll" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">

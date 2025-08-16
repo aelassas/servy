@@ -108,6 +108,12 @@ namespace Servy.CLI
                 {
                     Console.WriteLine($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
                 }
+#else
+                // Copy Servy.Core.dll from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConstants.ServyCoreDllName, "dll"))
+                {
+                    Console.WriteLine($"Failed copying embedded resource: {AppConstants.ServyCoreDllName}.dll");
+                }
 #endif
 
                 var exitCode = await Parser.Default.ParseArguments<
