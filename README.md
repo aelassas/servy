@@ -75,7 +75,6 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
   * [x] Persist service configuration and track installed services in SQLite
   * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits
   * [ ] Start, Stop, Restart, and Uninstall services
-  * [ ] Change service startup type (Automatic, Manual, Disabled)
   * [ ] Display service status and uptime
   * [ ] Search and filter services
   * [ ] Notifications for service events (failures, restarts)
