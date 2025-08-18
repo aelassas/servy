@@ -37,6 +37,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
 * [Export/Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)
+* [Security](https://github.com/aelassas/servy/wiki/Security)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
 * [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
