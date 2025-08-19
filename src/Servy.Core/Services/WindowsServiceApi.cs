@@ -85,7 +85,7 @@ namespace Servy.Core.Services
                 lpLoadOrderGroup,
                 lpdwTagId,
                 lpDependencies,
-                lpServiceStartName,
+                string.IsNullOrWhiteSpace(lpServiceStartName) ? "LocalSystem" : lpServiceStartName,
                 lpPassword,
                 lpDisplayName);
 

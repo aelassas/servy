@@ -268,6 +268,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Fetching....
+        /// </summary>
+        public static string Label_Fetching {
+            get {
+                return ResourceManager.GetString("Label_Fetching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Local System.
         /// </summary>
         public static string Label_LocalSytem {
@@ -737,12 +746,11 @@ namespace Servy.Manager.Resources {
         
         /// <summary>
         ///   Recherche une chaîne localisée semblable à 
-        ///Servy Manager 1.0.0
+        ///Servy Manager 1.0
         ///
-        ///Servy Manager is a lightweight tool that allows you 
-        ///to manage Windows services installed by Servy.
+        ///Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
         ///
-        ///Built with .NET 8.0
+        ///Built with .NET Framework 4.8
         ///
         ///Copyright © 2025 Akram El Assas. All rights reserved.
         ///  .

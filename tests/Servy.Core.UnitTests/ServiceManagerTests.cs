@@ -497,7 +497,10 @@ namespace Servy.Core.UnitTests
                 serviceName,
                 description,
                 binPath,
-                ServiceStartType.Automatic);
+                ServiceStartType.Automatic,
+                null,
+                null
+                );
 
             Assert.True(result);
         }
@@ -542,7 +545,10 @@ namespace Servy.Core.UnitTests
                     serviceName,
                     description,
                     binPath,
-                    ServiceStartType.Automatic)
+                    ServiceStartType.Automatic,
+                    null,
+                    null
+                    )
             );
 
             serviceHandle = new IntPtr(123);
@@ -558,7 +564,10 @@ namespace Servy.Core.UnitTests
                     serviceName,
                     description,
                     binPath,
-                    ServiceStartType.Automatic)
+                    ServiceStartType.Automatic,
+                    null,
+                    null
+                    )
             );
         }
 

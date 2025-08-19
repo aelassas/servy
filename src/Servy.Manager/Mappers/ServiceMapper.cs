@@ -25,8 +25,8 @@ namespace Servy.Manager
             {
                 Name = service.Name,
                 Description = service.Description ?? string.Empty,
-                Status = System.ServiceProcess.ServiceControllerStatus.Stopped,
-                StartupType = ServiceStartType.Manual,
+                StartupType = null,
+                Status = null,
                 UserSession = service.RunAsLocalSystem ? AppConfig.LocalSystem : service.UserAccount ?? string.Empty,
                 IsInstalled = false,
                 IsConfigurationAppAvailable = app.IsConfigurationAppAvailable

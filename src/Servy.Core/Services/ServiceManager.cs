@@ -93,6 +93,8 @@ namespace Servy.Core.Services
         /// <param name="description">The service description.</param>
         /// <param name="binPath">The path to the service executable.</param>
         /// <param name="startType">The service startup type.</param>
+        /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
+        /// <param name="password">Service account password.</param>
         /// <returns>
         /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
         /// </returns>
@@ -102,7 +104,10 @@ namespace Servy.Core.Services
             string serviceName,
             string description,
             string binPath,
-            ServiceStartType startType)
+            ServiceStartType startType,
+            string username,
+            string password
+            )
         {
             IntPtr serviceHandle = _windowsServiceApi.OpenService(
                 scmHandle,
@@ -114,18 +119,19 @@ namespace Servy.Core.Services
 
             try
             {
-                bool result = _windowsServiceApi.ChangeServiceConfig(
-                    serviceHandle,
-                    SERVICE_WIN32_OWN_PROCESS,
-                    (uint)startType,
-                    SERVICE_ERROR_NORMAL,
-                    binPath,
-                    null,
-                    IntPtr.Zero,
-                    null,
-                    null,
-                    null,
-                    null);
+                var result = _windowsServiceApi.ChangeServiceConfig(
+                        hService: serviceHandle,
+                        dwServiceType: SERVICE_WIN32_OWN_PROCESS,
+                        dwStartType: (uint)startType,
+                        dwErrorControl: SERVICE_ERROR_NORMAL,
+                        lpBinaryPathName: binPath,
+                        lpLoadOrderGroup: null,
+                        lpdwTagId: IntPtr.Zero,
+                        lpDependencies: null,
+                        lpServiceStartName: username,
+                        lpPassword: password,
+                        lpDisplayName: null
+                        );
 
                 if (!result)
                     throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to update service config.");
@@ -249,20 +255,21 @@ namespace Servy.Core.Services
                 string lpPassword = string.IsNullOrEmpty(password) ? null : password;
 
                 serviceHandle = _windowsServiceApi.CreateService(
-                    scmHandle,
-                    serviceName,
-                    serviceName,
-                    SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
-                    SERVICE_WIN32_OWN_PROCESS,
-                    (uint)startType,
-                    SERVICE_ERROR_NORMAL,
-                    binPath,
-                    null,
-                    IntPtr.Zero,
-                    lpDependencies,
-                    lpServiceStartName,
-                    lpPassword
+                    hSCManager: scmHandle,
+                    lpServiceName: serviceName,
+                    lpDisplayName: serviceName,
+                    dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
+                    dwServiceType: SERVICE_WIN32_OWN_PROCESS,
+                    dwStartType: (uint)startType,
+                    dwErrorControl: SERVICE_ERROR_NORMAL,
+                    lpBinaryPathName: binPath,
+                    lpLoadOrderGroup: null,
+                    lpdwTagId: IntPtr.Zero,
+                    lpDependencies: lpDependencies,
+                    lpServiceStartName: lpServiceStartName,
+                    lpPassword: lpPassword
                 );
+
 
                 // Persist service in database
                 var dto = new DTOs.ServiceDto
@@ -304,7 +311,7 @@ namespace Servy.Core.Services
                     int err = _win32ErrorProvider.GetLastWin32Error();
                     if (err == 1073) // ERROR_SERVICE_EXISTS
                     {
-                        var res = UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType);
+                        var res = UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType, lpServiceStartName, lpPassword);
                         await _serviceRepository.UpsertAsync(dto);
                         return res;
                     }
