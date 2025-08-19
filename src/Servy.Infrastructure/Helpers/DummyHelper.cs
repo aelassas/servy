@@ -40,7 +40,7 @@ namespace Servy.Infrastructure.Helpers
 
                 for (int i = 1; i <= count; i++)
                 {
-                    var serviceName = $"Dummy Service {i}";
+                    var serviceName = $"DummyService{i}";
                     var dto = await serviceRepository.GetByNameAsync(serviceName);
 
                     if (dto == null)

@@ -27,7 +27,7 @@
   <data name="Menu_Config" xml:space="preserve">
     <value>Configurator</value>
   </data>
-  
+
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -43,18 +43,17 @@
 
   <data name="Text_About" xml:space="preserve">
   <value>
-Servy Manager 1.0.0
+Servy Manager 1.0
 
-Servy Manager is a lightweight tool that allows you 
-to manage Windows services installed by Servy.
+Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
 
-Built with .NET 8.0
+Built with .NET Framework 4.8
 
 Copyright © 2025 Akram El Assas. All rights reserved.
   </value>
 </data>
-  
-  
+
+
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">
     <value>Search</value>
@@ -108,7 +107,10 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Status_NotInstalled" xml:space="preserve">
     <value>Not Installed</value>
   </data>
-  
+
+  <data name="Label_Fetching" xml:space="preserve">
+    <value>Fetching...</value>
+  </data>
 
   <!--Actions-->
   <data name="Button_Start" xml:space="preserve">
@@ -123,7 +125,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Button_More" xml:space="preserve">
     <value>More Actions</value>
   </data>
-  
+
   <data name="Button_Install" xml:space="preserve">
     <value>Install</value>
   </data>
@@ -142,7 +144,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Button_ExportJSON" xml:space="preserve">
     <value>Export JSON</value>
   </data>
-  
+
   <!-- Startup Type Items -->
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
@@ -284,5 +286,5 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_ConfigurationAppNotFound" xml:space="preserve">
     <value>Servy Configuration App not found.</value>
   </data>
-  
+
 </root>

@@ -72,6 +72,8 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task<List<Service>> SearchServicesAsync(string searchText)
         {
+            //await DummyHelper.InsertDummyServices("Data Source=Servy.db", 5);
+
             var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, searchText ?? string.Empty);
 
             // Materialize all Service models in memory immediately
@@ -188,7 +190,7 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (app.IsConfigurationAppAvailable)
+                if (!app.IsConfigurationAppAvailable)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
                     return;
@@ -321,7 +323,7 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(()=> _serviceRepository.DeleteAsync(service.Name));
+                var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
                 if (res > 0) RemoveService(service);
 
                 return res > 0;

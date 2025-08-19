@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Data;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -206,17 +207,26 @@ namespace Servy.Manager.ViewModels
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
             var app = Application.Current as App;
-
             if (app != null)
             {
                 IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
-                // Initialize refresh timer
                 _refreshTimer = new DispatcherTimer
                 {
                     Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
                 };
-                _refreshTimer.Tick += RefreshServices;
+                _refreshTimer.Tick += async (s, e) =>
+                {
+                    _refreshTimer.Stop(); // prevent overlapping ticks
+                    try
+                    {
+                        await RefreshAllServicesAsync();
+                    }
+                    finally
+                    {
+                        _refreshTimer.Start();
+                    }
+                };
                 _refreshTimer.Start();
             }
 
@@ -234,18 +244,6 @@ namespace Servy.Manager.ViewModels
                 null
                 )
         { }
-
-        #endregion
-
-        #region Refresh Timer
-
-        /// <summary>
-        /// Refresh services DispatchTimer Tick.
-        /// </summary>
-        private async void RefreshServices(object sender, EventArgs e)
-        {
-            await RefreshAllServicesAsync();
-        }
 
         #endregion
 
@@ -365,15 +363,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task RefreshAllServicesAsync()
         {
-            var snapshot = _services.Select(r => r.Service).OrderBy(s => s.Name).ToList();
+            var snapshot = _services.Select(r => r.Service).ToList();
 
-            await Task.Run(() =>
-            {
-                foreach (var service in snapshot)
-                {
-                    RefreshServiceInternal(service);
-                }
-            });
+            // Refresh all services concurrently
+            var tasks = snapshot.Select(RefreshServiceInternal).ToArray();
+            await Task.WhenAll(tasks);
 
             ServicesView.Refresh();
         }
@@ -381,43 +375,48 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refresh service description, status, startup type, user and installation state.
         /// </summary>
-        private void RefreshServiceInternal(Service service)
+        private async Task RefreshServiceInternal(Service service)
         {
             try
             {
                 var isInstalled = _serviceManager.IsServiceInstalled(service.Name);
                 service.IsInstalled = isInstalled;
 
+                if (service.StartupType == null)
+                {
+                    var dto = await _serviceRepository.GetByNameAsync(service.Name);
+                    service.StartupType = (ServiceStartType)dto.StartupType;
+                }
+
                 if (isInstalled)
                 {
-                    var description = _serviceManager.GetServiceDescription(service.Name);
-                    var status = _serviceManager.GetServiceStatus(service.Name);
-                    var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                    var user = _serviceManager.GetServiceUser(service.Name);
+                    // Run multiple queries in parallel
+                    var descriptionTask = Task.Run(() => _serviceManager.GetServiceDescription(service.Name));
+                    var statusTask = Task.Run(() => _serviceManager.GetServiceStatus(service.Name));
+                    var startupTypeTask = Task.Run(() => _serviceManager.GetServiceStartupType(service.Name));
+                    var userTask = Task.Run(() => _serviceManager.GetServiceUser(service.Name));
 
-                    service.Description = description;
-                    service.Status = status;
-                    service.StartupType = (Core.Enums.ServiceStartType)startupType;
+                    await Task.WhenAll(descriptionTask, statusTask, startupTypeTask, userTask);
+
+                    service.Description = descriptionTask.Result;
+                    service.Status = statusTask.Result;
+                    service.StartupType = (ServiceStartType)startupTypeTask.Result;
+
+                    var user = userTask.Result;
                     service.UserSession = string.IsNullOrEmpty(user) || user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
                         ? AppConfig.LocalSystem
                         : user;
                 }
 
-                // Update repository
-                _ = Task.Run(async () =>
+                // Repository update
+                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name);
+                if (dtoUpdate != null
+                    && (!dtoUpdate.Description.Equals(service.Description) || dtoUpdate.StartupType != (int)service.StartupType))
                 {
-                    var dto = await _serviceRepository.GetByNameAsync(service.Name);
-                    var souldUpdate = dto != null
-                        && (!dto.Description.Equals(service.Description) || !dto.StartupType.Equals((int)service.StartupType));
-
-                    if (souldUpdate)
-                    {
-                        dto.Description = service.Description;
-                        dto.StartupType = (int)service.StartupType;
-
-                        await _serviceRepository.UpsertAsync(dto);
-                    }
-                });
+                    dtoUpdate.Description = service.Description;
+                    dtoUpdate.StartupType = (int)service.StartupType;
+                    await _serviceRepository.UpsertAsync(dtoUpdate);
+                }
             }
             catch (Exception ex)
             {

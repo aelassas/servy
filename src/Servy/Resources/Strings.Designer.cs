@@ -989,12 +989,13 @@ namespace Servy.Resources {
         
         /// <summary>
         ///   Recherche une chaîne localisée semblable à 
-        ///Servy 1.0.0
+        ///Servy 1.0
         ///
         ///Servy is a lightweight tool that allows you to run and manage any application as a Windows service.
+        ///
         ///Easily monitor service health, configure startup options, and automate recovery actions.
         ///
-        ///Built with .NET 8.0
+        ///Built with .NET Framework 4.8
         ///
         ///Copyright © 2025 Akram El Assas. All rights reserved.
         ///  .
