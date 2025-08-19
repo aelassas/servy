@@ -127,5 +127,10 @@ namespace Servy.Services
         /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
         /// </summary>
         Task ImportJsonConfig();
+
+        /// <summary>
+        /// Opens Servy Manager to manage services.
+        /// </summary>
+        Task OpenManager();
     }
 }

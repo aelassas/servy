@@ -31,6 +31,9 @@
                 <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}"/>
             </MenuItem>
 
+            <!-- Manager Menu -->
+            <MenuItem Header="{x:Static resx:Strings.Menu_Manager}" Command="{Binding ManagerCommand}" IsEnabled="{Binding IsManagerAppAvailable}"/>
+
             <!-- Clear Form Menu -->
             <MenuItem Header="{x:Static resx:Strings.Menu_ClearAll}" Command="{Binding ClearFormCommand}"/>
 

@@ -13,6 +13,7 @@ using Servy.UI.Services;
 using Servy.ViewModels.Items;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using static Servy.Core.Config.AppConfig;
 
@@ -32,6 +33,7 @@ namespace Servy.ViewModels
         private readonly IMessageBoxService _messageBoxService;
         private readonly IServiceRepository _serviceRepository;
         private readonly IHelpService _helpService;
+        private bool _isManagerAppAvailable;
 
         #endregion
 
@@ -382,6 +384,15 @@ namespace Servy.ViewModels
             set { _config.PreLaunchIgnoreFailure = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the manager application is available.
+        /// </summary>
+        public bool IsManagerAppAvailable
+        {
+            get => _isManagerAppAvailable;
+            set { _isManagerAppAvailable = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -472,6 +483,11 @@ namespace Servy.ViewModels
         public IAsyncCommand ImportJsonCommand { get; }
 
         /// <summary>
+        /// Command to open Servy Manager to manage services.
+        /// </summary>
+        public IAsyncCommand ManagerCommand { get; }
+
+        /// <summary>
         /// Command to open documentation.
         /// </summary>
         public ICommand OpenDocumentationCommand { get; }
@@ -553,6 +569,8 @@ namespace Servy.ViewModels
             StopCommand = new RelayCommand<object>(_ => StopService());
             RestartCommand = new RelayCommand<object>(_ => RestartService());
 
+            ManagerCommand = new AsyncCommand(OpenManager);
+
             ExportXmlCommand = new AsyncCommand(ExportXmlConfig);
             ExportJsonCommand = new AsyncCommand(ExportJsonConfig);
             ImportXmlCommand = new AsyncCommand(ImportXmlConfig);
@@ -569,6 +587,8 @@ namespace Servy.ViewModels
 
             ClearFormCommand = new AsyncCommand(ClearForm);
 
+            var app = (App)Application.Current;
+            IsManagerAppAvailable = app.IsManagerAppAvailable;
         }
 
         /// <summary>
@@ -770,6 +790,14 @@ namespace Servy.ViewModels
         private void RestartService()
         {
             ServiceCommands.RestartService(ServiceName);
+        }
+
+        /// <summary>
+        /// Calls <see cref="IServiceCommands.OpenManager"/> for the current <see cref="ServiceName"/>.
+        /// </summary>
+        private async Task OpenManager(object parameter)
+        {
+            await ServiceCommands.OpenManager();
         }
 
         #endregion

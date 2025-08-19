@@ -190,7 +190,7 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (!app.IsConfigurationAppAvailable)
+                if (string.IsNullOrWhiteSpace(app.ConfigurationAppPublishPath) || !File.Exists(app.ConfigurationAppPublishPath))
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
                     return;
@@ -472,6 +472,8 @@ namespace Servy.Manager.Services
         }
 
 
+        #region Helpers
+
         /// <summary>
         /// Retrieves the domain representation of a service by its name.
         /// </summary>
@@ -499,5 +501,7 @@ namespace Servy.Manager.Services
         {
             _refreshCallback?.Invoke();
         }
+
+        #endregion
     }
 }
