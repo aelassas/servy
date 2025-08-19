@@ -39,6 +39,11 @@ namespace Servy.Manager
         public string ConfigurationAppPublishPath { get; private set; }
 
         /// <summary>
+        /// Indicates whether the configuration application is available.
+        /// </summary>
+        public bool IsConfigurationAppAvailable { get; private set; }
+
+        /// <summary>
         /// Called when the WPF application starts.
         /// Loads configuration settings, initializes the database if necessary,
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
@@ -69,7 +74,9 @@ namespace Servy.Manager
                 {
                     MessageBox.Show($"Configurator App not found: {ConfigurationAppPublishPath}");
                 }
-                
+
+                IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
+
                 // Ensure db and security folders exist
                 AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
 
