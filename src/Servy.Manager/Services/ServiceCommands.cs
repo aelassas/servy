@@ -190,7 +190,7 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (!app.IsConfigurationAppAvailable)
+                if (string.IsNullOrWhiteSpace(app.ConfigurationAppPublishPath) || !File.Exists(app.ConfigurationAppPublishPath))
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
                     return;

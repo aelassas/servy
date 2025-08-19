@@ -11,8 +11,10 @@ using Servy.Resources;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using System.Windows;
 using static Servy.Config.AppConfig;
 
 namespace Servy.Services
@@ -493,6 +495,30 @@ namespace Servy.Services
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
+        }
+
+        ///<inheritdoc/>
+        public async Task OpenManager()
+        {
+            var app = (App)Application.Current;
+            var managerAppPath = app.ManagerAppPublishPath;
+
+            if (string.IsNullOrWhiteSpace(app.ManagerAppPublishPath) || !File.Exists(app.ManagerAppPublishPath))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppNotFound, Caption);
+                return;
+            }
+
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = app.ManagerAppPublishPath,
+                    UseShellExecute = true,
+                }
+            };
+
+            process.Start();
         }
 
         #endregion
