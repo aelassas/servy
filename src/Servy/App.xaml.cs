@@ -2,6 +2,7 @@
 using Servy.Core.Helpers;
 using System;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
@@ -36,6 +37,16 @@ namespace Servy
         public string AESIVFilePath { get; private set; }
 
         /// <summary>
+        /// Servy Manager App publish path.
+        /// </summary>
+        public string ManagerAppPublishPath { get; private set; }
+
+        /// <summary>
+        /// Indicates whether the Manager application is available.
+        /// </summary>
+        public bool IsManagerAppAvailable { get; private set; }
+
+        /// <summary>
         /// Called when the WPF application starts.
         /// Loads configuration settings, initializes the database if necessary,
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
@@ -52,6 +63,18 @@ namespace Servy
                 ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+#if DEBUG
+                ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
+#else
+                ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
+#endif
+                if (!File.Exists(ManagerAppPublishPath))
+                {
+                    MessageBox.Show($"Manager App not found: {ManagerAppPublishPath}");
+                }
+
+                IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
 
                 // Ensure db and security folders exist
                 AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
