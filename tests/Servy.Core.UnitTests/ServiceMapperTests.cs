@@ -1,9 +1,12 @@
 ﻿using Moq;
+using Servy.Core.Config;
+
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Mappers;
 using Servy.Core.Services;
+using System.Management;
 using System.ServiceProcess;
 
 namespace Servy.Core.UnitTests
@@ -217,15 +220,15 @@ namespace Servy.Core.UnitTests
             Assert.Equal(ServiceStartType.Automatic, service.StartupType); // default branch
             Assert.Equal(ProcessPriority.Normal, service.Priority); // default branch
             Assert.False(service.EnableRotation); // default branch
-            Assert.Equal(AppConstants.DefaultRotationSize, service.RotationSize); // default branch
+            Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // default branch
             Assert.False(service.EnableHealthMonitoring);
-            Assert.Equal(AppConstants.DefaultHeartbeatInterval, service.HeartbeatInterval);
-            Assert.Equal(AppConstants.DefaultMaxFailedChecks, service.MaxFailedChecks);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction); // default branch
-            Assert.Equal(AppConstants.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
+            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
             Assert.True(service.RunAsLocalSystem);
-            Assert.Equal(AppConstants.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
-            Assert.Equal(AppConstants.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
+            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
             Assert.False(service.PreLaunchIgnoreFailure);
         }
 
@@ -415,17 +418,6 @@ namespace Servy.Core.UnitTests
             var result = _service.GetServiceStartupType();
 
             Assert.Equal(ServiceStartType.Automatic, result);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService"), Times.Once);
-        }
-
-        [Fact]
-        public void GetServiceStartupType_ReturnsNull_WhenServiceManagerReturnsNull()
-        {
-            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService")).Returns((ServiceStartType?)null);
-
-            var result = _service.GetServiceStartupType();
-
-            Assert.Null(result);
             _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService"), Times.Once);
         }
 

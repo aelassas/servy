@@ -1,13 +1,11 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
-using System;
-using System.IO;
-using System.ServiceProcess;
 
 namespace Servy.CLI.Commands
 {
@@ -56,11 +54,7 @@ namespace Servy.CLI.Commands
                     return validation;
 
                 // Ensure wrapper executable exists
-#if DEBUG
-                var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
-#else
-                var wrapperExePath = Path.Combine(Core.AppConstants.ProgramDataPath, $"{Program.ServyServiceExeFileName}.exe");
-#endif
+                var wrapperExePath = AppConfig.GetServyCLIServicePath();
 
                 if (!File.Exists(wrapperExePath))
                     return CommandResult.Fail("Wrapper executable not found.");

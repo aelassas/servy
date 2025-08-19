@@ -1,7 +1,7 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;
@@ -42,12 +42,12 @@ namespace Servy.Service.UnitTests
 
         public void InvokeHandleLogWriters(StartOptions options) =>
             typeof(Service).GetMethod("HandleLogWriters", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .Invoke(this, [options]);
+                .Invoke(this, new object?[] {options});
 
         public void InvokeSetupHealthMonitoring(StartOptions options)
         {
             var method = typeof(Service).GetMethod("SetupHealthMonitoring", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method?.Invoke(this, [options]);
+            method?.Invoke(this, new object?[] {options});
         }
 
         public void SetMaxFailedChecks(int value)
@@ -89,25 +89,25 @@ namespace Servy.Service.UnitTests
         public void InvokeCheckHealth(object? sender, ElapsedEventArgs? e)
         {
             var method = typeof(Service).GetMethod("CheckHealth", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, [sender, e]);
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
         public void InvokeOnOutputDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnOutputDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, [sender, e]);
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
         public void InvokeOnErrorDataReceived(object? sender, DataReceivedEventArgs e)
         {
             var method = typeof(Service).GetMethod("OnErrorDataReceived", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, [sender, e]);
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
         public void InvokeOnProcessExited(object? sender, EventArgs e)
         {
             var method = typeof(Service).GetMethod("OnProcessExited", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, [sender, e]);
+            method!.Invoke(this, new object?[] { sender, e });
         }
 
         public void OverrideStartProcess(Action<string, string, string, List<EnvironmentVariable>> startProcess)
@@ -137,7 +137,7 @@ namespace Servy.Service.UnitTests
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method!.Invoke(this, [exePath, args, workingDir, environmentVariables]);
+                method!.Invoke(this, new object?[] { exePath, args, workingDir, environmentVariables });
             }
         }
 
@@ -145,7 +145,7 @@ namespace Servy.Service.UnitTests
         public void InvokeSafeKillProcess(IProcessWrapper process)
         {
             var method = typeof(Service).GetMethod("SafeKillProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            method!.Invoke(this, [process, 5000]);
+            method!.Invoke(this, new object?[] { process, 5000 });
         }
 
     }

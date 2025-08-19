@@ -1,8 +1,9 @@
 ﻿using Servy.Core;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;
@@ -181,10 +182,10 @@ namespace Servy.Service
         /// <param name="options">The service startup options containing the service name.</param>
         private void SetupAttemptsFile(StartOptions options)
         {
-            Directory.CreateDirectory(AppConstants.ProgramDataPath); // ensures folder exists
+            Directory.CreateDirectory(AppConfig.ProgramDataPath); // ensures folder exists
 
             string safeServiceName = MakeFilenameSafe(options.ServiceName!);
-            _restartAttemptsFile = Path.Combine(AppConstants.ProgramDataPath, $"{safeServiceName}_restartAttempts.dat");
+            _restartAttemptsFile = Path.Combine(AppConfig.ProgramDataPath, $"{safeServiceName}_restartAttempts.dat");
         }
 
         /// <summary>

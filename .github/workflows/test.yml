@@ -44,6 +44,8 @@ jobs:
           dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Debug --no-build
           dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Debug --no-build
           dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Debug --no-build
+          dotnet test tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj --configuration Debug --no-build
+          dotnet test tests/Servy.UI.UnitTests/Servy.UI.UnitTests.csproj --configuration Debug --no-build
 
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh

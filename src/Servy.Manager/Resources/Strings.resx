@@ -1,0 +1,288 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+
+  <!-- Menus -->
+  <data name="Menu_Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Menu_ImportXml" xml:space="preserve">
+    <value>Import XML configuration</value>
+  </data>
+  <data name="Menu_ImportJson" xml:space="preserve">
+    <value>Import JSON configuration</value>
+  </data>
+
+  <data name="Menu_Config" xml:space="preserve">
+    <value>Configurator</value>
+  </data>
+  
+  <data name="Menu_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="Menu_Doc" xml:space="preserve">
+    <value>Help / Documentation</value>
+  </data>
+  <data name="Menu_CheckUpdates" xml:space="preserve">
+    <value>Check for updates...</value>
+  </data>
+  <data name="Menu_About" xml:space="preserve">
+    <value>About Servy Manager</value>
+  </data>
+
+  <data name="Text_About" xml:space="preserve">
+  <value>
+Servy Manager 1.0.0
+
+Servy Manager is a lightweight tool that allows you 
+to manage Windows services installed by Servy.
+
+Built with .NET 8.0
+
+Copyright © 2025 Akram El Assas. All rights reserved.
+  </value>
+</data>
+  
+  
+  <!-- Search -->
+  <data name="Button_Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Button_Searching" xml:space="preserve">
+    <value>Searching...</value>
+  </data>
+  <data name="Txt_F5_Shortcut" xml:space="preserve">
+    <value>Service statuses auto-refresh. Press F5 to refresh the full list.</value>
+  </data>
+
+  <!-- Services DataGrid -->
+  <data name="Column_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Column_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Column_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Column_StartupType" xml:space="preserve">
+    <value>Startup Type</value>
+  </data>
+  <data name="Column_UserSession" xml:space="preserve">
+    <value>User Session</value>
+  </data>
+
+  <!--Status-->
+  <data name="Status_Stopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="Status_StartPending" xml:space="preserve">
+    <value>Start Pending</value>
+  </data>
+  <data name="Status_StopPending" xml:space="preserve">
+    <value>StopPending</value>
+  </data>
+  <data name="Status_Running" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="Status_ContinuePending" xml:space="preserve">
+    <value>Continue Pending</value>
+  </data>
+  <data name="Status_PausePending" xml:space="preserve">
+    <value>PausePending</value>
+  </data>
+  <data name="Status_Paused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="Status_NotInstalled" xml:space="preserve">
+    <value>Not Installed</value>
+  </data>
+  
+
+  <!--Actions-->
+  <data name="Button_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="Button_More" xml:space="preserve">
+    <value>More Actions</value>
+  </data>
+  
+  <data name="Button_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Button_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Button_Config" xml:space="preserve">
+    <value>Open Configuration</value>
+  </data>
+  <data name="Button_ExportXML" xml:space="preserve">
+    <value>Export XML</value>
+  </data>
+  <data name="Button_ExportJSON" xml:space="preserve">
+    <value>Export JSON</value>
+  </data>
+  
+  <!-- Startup Type Items -->
+  <data name="StartupType_Automatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="StartupType_Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="StartupType_Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+
+  <data name="Label_LocalSytem" xml:space="preserve">
+    <value>Local System</value>
+  </data>
+
+  <!-- Pre-Launch -->
+  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
+    <value>The pre-launch process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
+    <value>The specified pre-launch startup directory is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
+    <value>The specified pre-launch stdout file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
+    <value>The specified pre-launch stderr file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
+    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds.</value>
+  </data>
+  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
+    <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
+  </data>
+
+  <!-- XML/JSON import -->
+  <data name="Msg_FailedToLoadXml" xml:space="preserve">
+    <value>Failed to load XML service configuration.</value>
+  </data>
+  <data name="Msg_FailedToLoadJson" xml:space="preserve">
+    <value>Failed to load JSON service configuration.</value>
+  </data>
+  <data name="ImportXml_Success" xml:space="preserve">
+    <value>XML Configuration imported successfully.</value>
+  </data>
+  <data name="ImportJson_Success" xml:space="preserve">
+    <value>JSON Configuration imported successfully.</value>
+  </data>
+  <data name="ImportXml_Error" xml:space="preserve">
+    <value>Failed to import XML Configuration.</value>
+  </data>
+  <data name="ImportJson_Error" xml:space="preserve">
+    <value>Failed to import JSON Configuration.</value>
+  </data>
+
+  <!-- XML/JSON export -->
+  <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
+    <value>Export XML configuration</value>
+  </data>
+  <data name="SaveFileDialog_JsonTitle" xml:space="preserve">
+    <value>Export JSON configuration</value>
+  </data>
+  <data name="ExportXml_Success" xml:space="preserve">
+    <value>XML Configuration exported successfully.</value>
+  </data>
+  <data name="ExportJson_Success" xml:space="preserve">
+    <value>JSON Configuration exported successfully.</value>
+  </data>
+
+  <!-- Messages -->
+  <data name="Msg_ValidationError" xml:space="preserve">
+    <value>Please fill in all required fields.</value>
+  </data>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>The specified process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>Service wrapper executable not found.</value>
+  </data>
+  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
+    <value>The specified startup directory is invalid.</value>
+  </data>
+
+  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
+    <value>The specified stdout file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidStderrPath" xml:space="preserve">
+    <value>The specified stderr file path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidRotationSize" xml:space="preserve">
+    <value>Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes).</value>
+  </data>
+  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>
+  </data>
+  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
+    <value>Max Failed Checks must be a number greater than or equal to 1.</value>
+  </data>
+  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
+    <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
+  </data>
+
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>Service was installed successfully.</value>
+  </data>
+  <data name="Msg_ServiceUninstalled" xml:space="preserve">
+    <value>Service was uninstalled successfully.</value>
+  </data>
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>Service was removed successfully.</value>
+  </data>
+  <data name="Msg_UnexpectedError" xml:space="preserve">
+    <value>An unexpected error occurred.</value>
+  </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>Administrator privileges are required.</value>
+  </data>
+
+  <data name="Msg_ServiceStarted" xml:space="preserve">
+    <value>Service was started successfully.</value>
+  </data>
+  <data name="Msg_ServiceStopped" xml:space="preserve">
+    <value>Service was stopped successfully.</value>
+  </data>
+  <data name="Msg_ServiceRestarted" xml:space="preserve">
+    <value>Service was restarted successfully.</value>
+  </data>
+
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>Service not found.</value>
+  </data>
+
+  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
+    <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>
+  </data>
+  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
+    <value>Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered.</value>
+  </data>
+  <data name="Msg_ConfigurationAppNotFound" xml:space="preserve">
+    <value>Servy Configuration App not found.</value>
+  </data>
+  
+</root>

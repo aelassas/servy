@@ -131,5 +131,23 @@ namespace Servy.Core.Services
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>null</c>.
         /// </returns>
         ServiceStartType? GetServiceStartupType(string serviceName);
+
+        /// <summary>
+        /// Gets the description of a Windows service by its name.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows service.</param>
+        /// <returns>
+        /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>empty string</c>.
+        /// </returns>
+        string GetServiceDescription(string serviceName);
+
+        /// <summary>
+        /// Gets the account under which the Windows service runs by its name.
+        /// </summary>
+        /// <param name="serviceName">The name of the Windows service.</param>
+        /// <returns>
+        /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>empty string</c>.
+        /// </returns>
+        string GetServiceUser(string serviceName);
     }
 }

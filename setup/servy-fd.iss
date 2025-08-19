@@ -12,6 +12,9 @@
 #define MyAppURL "https://servy-win.github.io/"
 #define MyAppExeName "Servy.exe"
 
+#define ManagerAppName "Servy Manager"
+#define ManagerAppExeName "Servy.Manager.exe"
+
 [Setup]
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -61,17 +64,25 @@ Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.e
 ; CLI appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
+
+; Manager app
+Source: "..\src\Servy.Manager\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}\manager"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon
 
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
 
 [UninstallDelete]
 Type: dirifempty; Name: "{app}\cli"

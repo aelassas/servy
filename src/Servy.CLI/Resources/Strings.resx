@@ -86,13 +86,6 @@
     <value>Service was restarted successfully.</value>
   </data>
 
-  <data name="Message_Success" xml:space="preserve">
-    <value>Service installed successfully.</value>
-  </data>
-  <data name="Message_Error" xml:space="preserve">
-    <value>An error occurred.</value>
-  </data>
-
   <!-- PreLaunch -->
   <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
     <value>The pre-launch process path is invalid.</value>

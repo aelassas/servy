@@ -20,7 +20,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_ValidOptions_ReturnsSuccess()
+        public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
@@ -35,7 +35,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_EmptyServiceName_ReturnsFailure()
+        public async Task Execute_EmptyServiceName_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "" };
@@ -49,7 +49,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_ServiceManagerFails_ReturnsFailure()
+        public async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
@@ -64,7 +64,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_UnauthorizedAccessException_ReturnsFailure()
+        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
@@ -79,7 +79,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_GenericException_ReturnsFailure()
+        public async Task Execute_GenericException_ReturnsFailure()
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };

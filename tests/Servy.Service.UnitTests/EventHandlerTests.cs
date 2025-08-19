@@ -1,13 +1,15 @@
 ﻿using Moq;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using System;
 using System.Diagnostics;
 using System.Reflection;
+using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -44,9 +46,9 @@ namespace Servy.Service.UnitTests
             var ctor = typeof(DataReceivedEventArgs).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                [ typeof(string) ],
+                new Type[] { typeof(string) },
                 null);
-            return (DataReceivedEventArgs)ctor!.Invoke([ data ]);
+            return (DataReceivedEventArgs)ctor!.Invoke(new string[] { data! });
         }
 
         [Fact]

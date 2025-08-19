@@ -39,6 +39,7 @@ namespace Servy.Core.Services
         private readonly IWindowsServiceApi _windowsServiceApi;
         private readonly IWin32ErrorProvider _win32ErrorProvider;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IWmiSearcher _searcher;
 
         #endregion
 
@@ -59,17 +60,21 @@ namespace Servy.Core.Services
         /// <param name="_serviceRepository">
         /// Service repository.
         /// </param>
+        /// <param name="serviceRepository">Service Repository.</param>
+        /// <param name="searcher">WMI searcher.</param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IWindowsServiceApi windowsServiceApi,
             IWin32ErrorProvider win32ErrorProvider,
-            IServiceRepository serviceRepository
+            IServiceRepository serviceRepository,
+            IWmiSearcher searcher
             )
         {
             _controllerFactory = controllerFactory;
             _windowsServiceApi = windowsServiceApi;
             _win32ErrorProvider = win32ErrorProvider;
             _serviceRepository = serviceRepository;
+            _searcher = searcher;
         }
 
         #endregion
@@ -255,18 +260,6 @@ namespace Servy.Core.Services
                     lpPassword
                 );
 
-                if (serviceHandle == IntPtr.Zero)
-                {
-                    int err = _win32ErrorProvider.GetLastWin32Error();
-                    if (err == 1073) // ERROR_SERVICE_EXISTS
-                        return UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType);
-
-                    throw new Win32Exception(err, "Failed to create service.");
-                }
-
-                // Set description
-                SetServiceDescription(serviceHandle, description);
-
                 // Persist service in database
                 var dto = new DTOs.ServiceDto
                 {
@@ -301,6 +294,22 @@ namespace Servy.Core.Services
                     PreLaunchRetryAttempts = preLaunchRetryAttempts,
                     PreLaunchIgnoreFailure = preLaunchIgnoreFailure
                 };
+
+                if (serviceHandle == IntPtr.Zero)
+                {
+                    int err = _win32ErrorProvider.GetLastWin32Error();
+                    if (err == 1073) // ERROR_SERVICE_EXISTS
+                    {
+                        var res = UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType);
+                        await _serviceRepository.UpsertAsync(dto);
+                        return res;
+                    }
+
+                    throw new Win32Exception(err, "Failed to create service.");
+                }
+
+                // Set description
+                SetServiceDescription(serviceHandle, description);
 
                 await _serviceRepository.UpsertAsync(dto);
 
@@ -401,7 +410,7 @@ namespace Servy.Core.Services
                     return true;
                 }
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -484,6 +493,38 @@ namespace Servy.Core.Services
             }
 
             return null;
+        }
+
+        /// <inheritdoc />
+        public string GetServiceDescription(string serviceName)
+        {
+            try
+            {
+                foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'"))
+                {
+                    return service["Description"]?.ToString() ?? string.Empty;
+                }
+            }
+            catch
+            {
+                // Log or handle error
+            }
+            return string.Empty;
+        }
+
+        /// <inheritdoc />
+        public string GetServiceUser(string serviceName)
+        {
+            string? account = null;
+
+            foreach (ManagementObject service in _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'"))
+            {
+                account = service["StartName"]?.ToString();
+                break;
+            }
+
+
+            return account ?? string.Empty;
         }
     }
 

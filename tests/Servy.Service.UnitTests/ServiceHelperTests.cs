@@ -1,9 +1,11 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ServiceHelpers;
 using System.Diagnostics;
+using System.IO;
+using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -128,7 +130,7 @@ namespace Servy.Service.UnitTests
         public void InitializeStartup_ReturnsNull_IfOptionsAreInvalid()
         {
             // Arrange
-            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns([ "ignored.exe" ]); // no valid args
+            _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new string[] { "ignored.exe" }); // no valid args
             var mockLog = new Mock<ILogger>();
 
             // Act

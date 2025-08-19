@@ -23,6 +23,7 @@ $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ServyDir           = Join-Path $RootDir "src\Servy"
 $CliDir             = Join-Path $RootDir "src\Servy.CLI"
+$ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
 
 # Helper function: Remove file or folder if it exists
 function Remove-FileOrFolder {
@@ -34,10 +35,13 @@ function Remove-FileOrFolder {
 }
 
 # -----------------------------
-# Step 1: Build Servy WPF App
+# Step 1: Build Servy WPF Apps
 # -----------------------------
 $wpfBuildScript = Join-Path $ScriptDir "..\src\Servy\publish-fd.ps1"
 & $wpfBuildScript -tfm $tfm
+
+$managerBuildScript = Join-Path $ScriptDir "..\src\Servy.Manager\publish-fd.ps1"
+& $managerBuildScript  -tfm $tfm
 
 # -----------------------------
 # Step 2: Build Servy CLI App
@@ -65,9 +69,11 @@ New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
 $servyPublish = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish"
 $cliPublish   = Join-Path $CliDir "bin\$buildConfiguration\$tfm\$runtime\publish"
+$managerPublish   = Join-Path $ManagerDir "bin\$buildConfiguration\$tfm\$runtime\publish"
 
 $servyAppFolder = Join-Path $packageFolder "servy-app"
 $servyCliFolder = Join-Path $packageFolder "servy-cli"
+$servyManagerFolder = Join-Path $packageFolder "servy-manager"
 
 New-Item -ItemType Directory -Path $servyAppFolder -Force | Out-Null
 New-Item -ItemType Directory -Path $servyCliFolder -Force | Out-Null
@@ -75,10 +81,11 @@ New-Item -ItemType Directory -Path $servyCliFolder -Force | Out-Null
 # Copy published files
 Copy-Item "$servyPublish\*" $servyAppFolder -Recurse -Force
 Copy-Item "$cliPublish\*" $servyCliFolder -Recurse -Force
+Copy-Item "$managerPublish\*" $servyManagerFolder -Recurse -Force
 
 # Paths appsettings.json
-$servyAppsettings  = Join-Path $ServyDir "appsettings.json"
-$cliExeAppsettings = Join-Path $CliDir   "appsettings.json"
+# $servyAppsettings  = Join-Path $ServyDir "appsettings.json"
+# $cliExeAppsettings = Join-Path $CliDir   "appsettings.json"
 
 # Copy appsettings.json
 # Copy-Item $servyAppsettings (Join-Path $servyAppFolder "appsettings.json") -Force
