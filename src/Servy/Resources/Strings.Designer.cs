@@ -601,6 +601,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Manager.
+        /// </summary>
+        public static string Menu_Manager {
+            get {
+                return ResourceManager.GetString("Menu_Manager", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
         /// </summary>
         public static string Msg_AdminRightsRequired {
@@ -777,6 +786,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidWrapperExePath {
             get {
                 return ResourceManager.GetString("Msg_InvalidWrapperExePath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Servy Manager App not found..
+        /// </summary>
+        public static string Msg_ManagerAppNotFound {
+            get {
+                return ResourceManager.GetString("Msg_ManagerAppNotFound", resourceCulture);
             }
         }
         

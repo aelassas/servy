@@ -4,6 +4,7 @@ using Servy.Core.Enums;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
+using System.Windows;
 using IHelpService = Servy.UI.Services.IHelpService;
 
 namespace Servy.UnitTests
@@ -19,6 +20,11 @@ namespace Servy.UnitTests
 
         public MainViewModelTests()
         {
+            if (Application.Current == null)
+            {
+                new App();
+            }
+
             _dialogServiceMock = new Mock<IFileDialogService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxService = new Mock<IMessageBoxService>();

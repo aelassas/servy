@@ -32,7 +32,11 @@
   <data name="Menu_ExportJson" xml:space="preserve">
     <value>Export JSON configuration</value>
   </data>
-
+  
+  <data name="Menu_Manager" xml:space="preserve">
+    <value>Manager</value>
+  </data>
+  
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -381,5 +385,8 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Service was restarted successfully.</value>
   </data>
 
+  <data name="Msg_ManagerAppNotFound" xml:space="preserve">
+    <value>Servy Manager App not found.</value>
+  </data>
 
 </root>

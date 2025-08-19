@@ -420,6 +420,7 @@ FodyWeavers.xsd
 # setup
 setup/**/*.exe
 setup/**/*.zip
+setup/**/*.dll
 
 # tests
 coveragereport/

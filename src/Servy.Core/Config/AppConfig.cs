@@ -52,6 +52,21 @@ namespace Servy.Core.Config
         public static readonly string DefaultConfigrationAppPublishPath = @".\Servy.exe";
 
         /// <summary>
+        /// Servy Manager Release Folder.
+        /// </summary>
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net8.0-windows\win-x64\");
+
+        /// <summary>
+        /// Servy Manager App Publish Path.
+        /// </summary>
+        public static readonly string ManagerAppPublishDebugPath = Path.Combine(ServyManagerReleaseFolder, "publish", "Servy.Manager.exe");
+
+        /// <summary>
+        /// Default Servy Manager App Publish Path (Release).
+        /// </summary>
+        public static readonly string DefaultManagerAppPublishPath = @".\Servy.Manager.exe";
+
+        /// <summary>
         /// The base file name (without extension) of the Servy Service CLI executable.
         /// </summary>
         public static readonly string ServyServiceCLIFileName = "Servy.Service.CLI";
