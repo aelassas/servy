@@ -1,20 +1,25 @@
 ﻿using Servy.Core.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Servy.Helpers
 {
+    /// <summary>
+    /// Provides functionality to validate service configurations.
+    /// </summary>
     public interface IServiceConfigurationValidator
     {
         /// <summary>
-        /// Validates the given service configuration.
+        /// Validates the configuration of the specified service.
         /// </summary>
-        /// <param name="dto">The service DTO containing configuration.</param>
-        /// <param name="wrapperExePath">Path to the wrapper executable.</param>
-        /// <returns>True if valid, otherwise false.</returns>
-        bool Validate(ServiceDto dto, string wrapperExePath = null);
+        /// <param name="dto">
+        /// The <see cref="ServiceDto"/> containing the service configuration to validate.
+        /// </param>
+        /// <param name="wrapperExePath">
+        /// Optional path to the wrapper executable, used for validation.
+        /// </param>
+        /// <returns>
+        /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the configuration is valid; otherwise <c>false</c>.
+        /// </returns>
+        Task<bool> Validate(ServiceDto dto, string wrapperExePath = null);
     }
 }

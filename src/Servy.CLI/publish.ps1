@@ -21,7 +21,7 @@ $ProjectPath = Join-Path $ScriptDir "Servy.CLI.csproj"
 # Step 0: Run publish-res-release.ps1
 $PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
 Write-Host "Running publish-res-release.ps1..."
-& $PublishResScript -tfm $tfm
+& $PublishResScript
 Write-Host "Finished publish-res-release.ps1. Continuing with main build..."
 
 # Step 1: Clean and build the CLI project

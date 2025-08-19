@@ -78,6 +78,7 @@
     </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Reflection.Metadata, Version=1.4.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\..\packages\System.Reflection.Metadata.1.6.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
     </Reference>
@@ -111,7 +112,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppConstantsTests.cs" />
+    <Compile Include="AppConfigTests.cs" />
     <Compile Include="AppFoldersHelperTests.cs" />
     <Compile Include="EnvironmentVariableParserTests.cs" />
     <Compile Include="EnvironmentVariablesValidatorTests.cs" />
@@ -121,6 +122,8 @@
     <Compile Include="SecurePasswordTests.cs" />
     <Compile Include="ServiceDependenciesParserTests.cs" />
     <Compile Include="ServiceDependenciesValidatorTests.cs" />
+    <Compile Include="ServiceDomainTests.cs" />
+    <Compile Include="ServiceExporterTests.cs" />
     <Compile Include="ServiceManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceMapperTests.cs" />

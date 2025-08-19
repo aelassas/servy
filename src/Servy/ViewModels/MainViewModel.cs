@@ -1,27 +1,23 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Servy.Constants;
+﻿using Servy.Config;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
-using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
+using Servy.UI.Commands;
+using Servy.UI.Services;
 using Servy.ViewModels.Items;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using static Servy.Core.AppConstants;
-using static Servy.Helpers.StringHelper;
+using static Servy.Core.Config.AppConfig;
 
 namespace Servy.ViewModels
 {
@@ -36,9 +32,9 @@ namespace Servy.ViewModels
 
         private readonly ServiceConfiguration _config = new ServiceConfiguration();
         private readonly IFileDialogService _dialogService;
-        private readonly IServiceCommands _serviceCommands;
         private readonly IMessageBoxService _messageBoxService;
-        private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IHelpService _helpService;
 
         #endregion
 
@@ -62,6 +58,11 @@ namespace Servy.ViewModels
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Service commands.
+        /// </summary>
+        public IServiceCommands ServiceCommands { get; set; }
 
         /// <summary>
         /// Gets or sets the name of the Windows service. 
@@ -411,12 +412,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to install the configured service.
         /// </summary>
-        public ICommand InstallCommand { get; }
+        public IAsyncCommand InstallCommand { get; }
 
         /// <summary>
         /// Command to uninstall the service.
         /// </summary>
-        public ICommand UninstallCommand { get; }
+        public IAsyncCommand UninstallCommand { get; }
 
         /// <summary>
         /// Command to start the service.
@@ -432,11 +433,6 @@ namespace Servy.ViewModels
         /// Command to restart the service.
         /// </summary>
         public ICommand RestartCommand { get; }
-
-        /// <summary>
-        /// Command to clear the form fields.
-        /// </summary>
-        public ICommand ClearCommand { get; }
 
         /// <summary>
         /// Command to browse and select the pre-launch executable process path.
@@ -459,39 +455,44 @@ namespace Servy.ViewModels
         public ICommand BrowsePreLaunchStderrPathCommand { get; }
 
         /// <summary>
-        /// Command to browse and import an XML configuration file.
-        /// </summary>
-        public ICommand ImportXmlCommand { get; }
-
-        /// <summary>
-        /// Command to browse and import a JSON configuration file.
-        /// </summary>
-        public ICommand ImportJsonCommand { get; }
-
-        /// <summary>
         /// Command to export XML configuration file.
         /// </summary>
-        public ICommand ExportXmlCommand { get; }
+        public IAsyncCommand ExportXmlCommand { get; }
 
         /// <summary>
         /// Command to export JSON configuration file.
         /// </summary>
-        public ICommand ExportJsonCommand { get; }
+        public IAsyncCommand ExportJsonCommand { get; }
+
+        /// <summary>
+        /// Command to browse and import an XML configuration file.
+        /// </summary>
+        public IAsyncCommand ImportXmlCommand { get; }
+
+        /// <summary>
+        /// Command to browse and import a JSON configuration file.
+        /// </summary>
+        public IAsyncCommand ImportJsonCommand { get; }
 
         /// <summary>
         /// Command to open documentation.
         /// </summary>
-        public ICommand OpenDocumentation { get; }
+        public ICommand OpenDocumentationCommand { get; }
 
         /// <summary>
         /// Command to check for updates.
         /// </summary>
-        public ICommand CheckUpdates { get; }
+        public IAsyncCommand CheckUpdatesCommand { get; }
 
         /// <summary>
         /// Command to open about dialog.
         /// </summary>
-        public ICommand OpenAboutDialog { get; }
+        public IAsyncCommand OpenAboutDialogCommand { get; }
+
+        /// <summary>
+        /// Command to clear the form fields.
+        /// </summary>
+        public IAsyncCommand ClearFormCommand { get; }
 
         #endregion
 
@@ -503,13 +504,20 @@ namespace Servy.ViewModels
         /// <param name="dialogService">Service to open file and folder dialogs.</param>
         /// <param name="serviceCommands">Service commands to manage Windows services.</param>
         /// <param name="messageBoxService">Service to show message dialogs.</param>
-        /// <param name="serviceConfigurationValidator">Service to validate inputs.</param>
-        public MainViewModel(IFileDialogService dialogService, IServiceCommands serviceCommands, IMessageBoxService messageBoxService, IServiceConfigurationValidator serviceConfigurationValidator)
+        /// <param name="serviceRepository">Service Repository.</param>
+        /// <param name="helpService">Help service.</param>
+        public MainViewModel(IFileDialogService dialogService,
+            IServiceCommands serviceCommands,
+            IMessageBoxService messageBoxService,
+            IServiceRepository serviceRepository,
+            IHelpService helpService
+            )
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
-            _serviceCommands = serviceCommands;
+            ServiceCommands = serviceCommands;
             _messageBoxService = messageBoxService;
-            _serviceConfigurationValidator = serviceConfigurationValidator;
+            _serviceRepository = serviceRepository;
+            _helpService = helpService;
 
             // Initialize defaults
             ServiceName = string.Empty;
@@ -537,31 +545,33 @@ namespace Servy.ViewModels
             PreLaunchIgnoreFailure = false;
 
             // Commands
-            BrowseProcessPathCommand = new RelayCommand(OnBrowseProcessPath);
-            BrowseStartupDirectoryCommand = new RelayCommand(OnBrowseStartupDirectory);
-            BrowseStdoutPathCommand = new RelayCommand(OnBrowseStdoutPath);
-            BrowseStderrPathCommand = new RelayCommand(OnBrowseStderrPath);
-            InstallCommand = new RelayCommand(OnInstallService);
-            UninstallCommand = new RelayCommand(OnUninstallService);
-            StartCommand = new RelayCommand(OnStartService);
-            StopCommand = new RelayCommand(OnStopService);
-            RestartCommand = new RelayCommand(OnRestartService);
+            BrowseProcessPathCommand = new RelayCommand<object>(_ => BrowseProcessPath());
+            BrowseStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseStartupDirectory());
+            BrowseStdoutPathCommand = new RelayCommand<object>(_ => BrowseStdoutPath());
+            BrowseStderrPathCommand = new RelayCommand<object>(_ => BrowseStderrPath());
 
-            ImportXmlCommand = new RelayCommand(OnImportXmlConfig);
-            ImportJsonCommand = new RelayCommand(OnImportJsonConfig);
-            ExportXmlCommand = new RelayCommand(OnExportXmlConfig);
-            ExportJsonCommand = new RelayCommand(OnExportJsonConfig);
+            InstallCommand = new AsyncCommand(InstallService);
+            UninstallCommand = new AsyncCommand(UninstallService);
+            StartCommand = new RelayCommand<object>(_ => StartService());
+            StopCommand = new RelayCommand<object>(_ => StopService());
+            RestartCommand = new RelayCommand<object>(_ => RestartService());
 
-            BrowsePreLaunchProcessPathCommand = new RelayCommand(OnBrowsePreLaunchProcessPath);
-            BrowsePreLaunchStartupDirectoryCommand = new RelayCommand(OnBrowsePreLaunchStartupDirectory);
-            BrowsePreLaunchStdoutPathCommand = new RelayCommand(OnBrowsePreLaunchStdoutPath);
-            BrowsePreLaunchStderrPathCommand = new RelayCommand(OnBrowsePreLaunchStderrPath);
+            ExportXmlCommand = new AsyncCommand(ExportXmlConfig);
+            ExportJsonCommand = new AsyncCommand(ExportJsonConfig);
+            ImportXmlCommand = new AsyncCommand(ImportXmlConfig);
+            ImportJsonCommand = new AsyncCommand(ImportJsonConfig);
 
-            OpenDocumentation = new RelayCommand(OnOpenDocumentation);
-            CheckUpdates = new RelayCommand(OnCheckUpdates);
-            OpenAboutDialog = new RelayCommand(OnOpenAboutDialog);
+            BrowsePreLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchProcessPath());
+            BrowsePreLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreLaunchStartupDirectory());
+            BrowsePreLaunchStdoutPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStdoutPath());
+            BrowsePreLaunchStderrPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStderrPath());
 
-            ClearCommand = new RelayCommand(OnClearForm);
+            OpenDocumentationCommand = new RelayCommand<object>(_ => OpenDocumentation());
+            CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
+            OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
+
+            ClearFormCommand = new AsyncCommand(ClearForm);
+
         }
 
         /// <summary>
@@ -571,13 +581,46 @@ namespace Servy.ViewModels
             new DesignTimeFileDialogService(),
             null,
             null,
+            null,
             null
             )
         {
-            _serviceCommands = new ServiceCommands(
-                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null),
-                new MessageBoxService()
+            ServiceCommands = new ServiceCommands(
+                ModelToServiceDto,
+                BindServiceDtoToModel,
+                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null, new WmiSearcher()),
+                new MessageBoxService(),
+                new FileDialogService(),
+                new ServiceConfigurationValidator(new MessageBoxService())
             );
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Load current service configuration based on windows service name.
+        /// </summary>
+        /// <param name="serviceName">Service Name.</param>
+        /// <returns>A task representing the asynchronous load operation.</returns>
+        public async Task LoadServiceConfiguration(string serviceName)
+        {
+            try
+            {
+                var dto = await _serviceRepository.GetByNameAsync(serviceName);
+
+                if (dto == null)
+                {
+                    return;
+                }
+
+                BindServiceDtoToModel(dto);
+            }
+            catch (Exception)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+            }
         }
 
         #endregion
@@ -587,7 +630,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for an executable file and sets <see cref="ProcessPath"/>.
         /// </summary>
-        private void OnBrowseProcessPath()
+        private void BrowseProcessPath()
         {
             var path = _dialogService.OpenExecutable();
             if (!string.IsNullOrEmpty(path)) ProcessPath = path;
@@ -596,7 +639,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="StartupDirectory"/>.
         /// </summary>
-        private void OnBrowseStartupDirectory()
+        private void BrowseStartupDirectory()
         {
             var folder = _dialogService.OpenFolder();
             if (!string.IsNullOrEmpty(folder)) StartupDirectory = folder;
@@ -605,7 +648,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for standard output redirection.
         /// </summary>
-        private void OnBrowseStdoutPath()
+        private void BrowseStdoutPath()
         {
             var path = _dialogService.SaveFile("Select standard output file");
             if (!string.IsNullOrEmpty(path)) StdoutPath = path;
@@ -614,7 +657,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for standard error redirection.
         /// </summary>
-        private void OnBrowseStderrPath()
+        private void BrowseStderrPath()
         {
             var path = _dialogService.SaveFile("Select standard error file");
             if (!string.IsNullOrEmpty(path)) StderrPath = path;
@@ -623,7 +666,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a pre-launch executable file and sets <see cref="PreLaunchExecutablePath"/>.
         /// </summary>
-        private void OnBrowsePreLaunchProcessPath()
+        private void BrowsePreLaunchProcessPath()
         {
             var path = _dialogService.OpenExecutable();
             if (!string.IsNullOrEmpty(path)) PreLaunchExecutablePath = path;
@@ -632,7 +675,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to browse for a folder and sets <see cref="PreLaunchStartupDirectory"/>.
         /// </summary>
-        private void OnBrowsePreLaunchStartupDirectory()
+        private void BrowsePreLaunchStartupDirectory()
         {
             var folder = _dialogService.OpenFolder();
             if (!string.IsNullOrEmpty(folder)) PreLaunchStartupDirectory = folder;
@@ -641,7 +684,7 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard output redirection.
         /// </summary>
-        private void OnBrowsePreLaunchStdoutPath()
+        private void BrowsePreLaunchStdoutPath()
         {
             var path = _dialogService.SaveFile("Select standard output file");
             if (!string.IsNullOrEmpty(path)) PreLaunchStdoutPath = path;
@@ -650,309 +693,11 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard error redirection.
         /// </summary>
-        private void OnBrowsePreLaunchStderrPath()
+        private void BrowsePreLaunchStderrPath()
         {
             var path = _dialogService.SaveFile("Select standard error file");
             if (!string.IsNullOrEmpty(path)) PreLaunchStderrPath = path;
         }
-
-        #endregion
-
-        #region Import/Export Command Handlers
-
-        /// <summary>
-        /// Opens a file dialog to select an XML configuration file for a service,
-        /// validates the XML against the expected <see cref="ServiceDto"/> structure,
-        /// and maps the values to the main view model.
-        /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
-        /// </summary>
-        private void OnImportXmlConfig()
-        {
-            try
-            {
-                var path = _dialogService.OpenXml();
-                if (string.IsNullOrEmpty(path))
-                {
-                    return;
-                }
-
-                var xml = File.ReadAllText(path);
-                if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
-                {
-                    _messageBoxService.ShowError(errorMsg, AppConstants.Caption);
-                    return;
-                }
-
-                var serializer = new XmlServiceSerializer();
-                var dto = serializer.Deserialize(xml);
-                if (dto == null)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_FailedToLoadXml, AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedEnvVars = NormalizeString(dto.EnvironmentVariables);
-
-                string envVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
-                {
-                    _messageBoxService.ShowError(envVarsErrorMessage, AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedServiceDependencies = NormalizeString(dto.ServiceDependencies);
-
-                List<string> serviceDependenciesErrors;
-                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
-                {
-                    _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedPreLaunchEnvVars = NormalizeString(dto.PreLaunchEnvironmentVariables);
-
-                string preLaunchEnvVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
-                {
-                    _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, AppConstants.Caption);
-                    return;
-                }
-
-                // Map to MainViewModel
-                BindServiceDtoToModel(dto);
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
-            }
-        }
-
-        /// <summary>
-        /// Opens a file dialog to select an JSON configuration file for a service,
-        /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
-        /// and maps the values to the main view model.
-        /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
-        /// </summary>
-        private void OnImportJsonConfig()
-        {
-            try
-            {
-                var path = _dialogService.OpenJson();
-                if (string.IsNullOrEmpty(path))
-                {
-                    return;
-                }
-
-                var json = File.ReadAllText(path);
-                if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
-                {
-                    _messageBoxService.ShowError(errorMsg, AppConstants.Caption);
-                    return;
-                }
-
-                var dto = JsonConvert.DeserializeObject<ServiceDto>(json);
-                if (dto == null)
-                {
-                    _messageBoxService.ShowError(Strings.Msg_FailedToLoadJson, AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedEnvVars = NormalizeString(dto.EnvironmentVariables);
-
-                string envVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
-                {
-                    _messageBoxService.ShowError(envVarsErrorMessage, AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedServiceDependencies = NormalizeString(dto.ServiceDependencies);
-
-                List<string> serviceDependenciesErrors;
-                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
-                {
-                    _messageBoxService.ShowError(string.Join("\n", serviceDependenciesErrors), AppConstants.Caption);
-                    return;
-                }
-
-                string normalizedPreLaunchEnvVars = NormalizeString(dto.PreLaunchEnvironmentVariables);
-
-                string preLaunchEnvVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
-                {
-                    _messageBoxService.ShowError(preLaunchEnvVarsErrorMessage, AppConstants.Caption);
-                    return;
-                }
-
-                // Map to MainViewModel
-                BindServiceDtoToModel(dto);
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
-            }
-        }
-
-        /// <summary>
-        /// Exports the current service configuration to an XML file selected by the user.
-        /// </summary>
-        private void OnExportXmlConfig()
-        {
-            try
-            {
-                var path = _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle);
-                if (string.IsNullOrEmpty(path))
-                {
-                    return;
-                }
-
-                // Map ServiceConfiguration to ServiceDto
-                var dto = ModelToServiceDto();
-
-                // Validation
-                if (!_serviceConfigurationValidator.Validate(dto))
-                {
-                    return;
-                }
-
-                // Serialize to XML
-                var serializer = new XmlServiceSerializer();
-                var xml = new StringWriter();
-                new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto)).Serialize(xml, dto);
-
-                // Write to file
-                File.WriteAllText(path, xml.ToString());
-
-                // Show success message
-                _messageBoxService.ShowInfo(Strings.ExportXml_Success, AppConstants.Caption);
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
-            }
-        }
-
-        /// <summary>
-        /// Exports the current service configuration to a JSON file selected by the user.
-        /// </summary>
-        private void OnExportJsonConfig()
-        {
-            try
-            {
-                var path = _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle);
-                if (string.IsNullOrEmpty(path))
-                {
-                    return;
-                }
-
-                // Map ServiceConfiguration to ServiceDto
-                var dto = ModelToServiceDto();
-
-                // Validation
-                if (!_serviceConfigurationValidator.Validate(dto))
-                {
-                    return;
-                }
-
-                // Serialize to pretty JSON
-                var json = JsonConvert.SerializeObject(dto, Formatting.Indented,
-                    new JsonSerializerSettings
-                    {
-                        NullValueHandling = NullValueHandling.Ignore
-                    });
-
-                // Write to file
-                File.WriteAllText(path, json);
-
-                // Show success message
-                _messageBoxService.ShowInfo(Strings.ExportJson_Success, AppConstants.Caption);
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError($"{Strings.Msg_UnexpectedConfigLoadError}: {ex.Message}", AppConstants.Caption);
-            }
-        }
-
-        #endregion
-
-        #region Help/Updates/About Commands
-
-        /// <summary>
-        /// Opens the Servy documentation page in the default browser.
-        /// </summary>
-        private void OnOpenDocumentation()
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = DocumentationLink,
-                UseShellExecute = true
-            });
-        }
-
-        /// <summary>
-        /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
-        /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
-        /// </summary>
-        private async void OnCheckUpdates()
-        {
-            try
-            {
-                using (var http = new HttpClient())
-                {
-                    http.DefaultRequestHeaders.UserAgent.ParseAdd("ServyApp");
-
-                    // Get latest release from GitHub API
-                    var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
-                    var response = await http.GetStringAsync(url);
-
-                    // Parse JSON response
-                    var json = JsonConvert.DeserializeObject<JObject>(response);
-                    string tagName = json?["tag_name"]?.ToString();
-
-                    if (string.IsNullOrEmpty(tagName))
-                    {
-                        _messageBoxService.ShowInfo(Strings.Text_NoUpdate, AppConstants.Caption);
-                        return;
-                    }
-
-                    // Convert version tag to double (e.g., "v1.2.3" -> 1.23)
-                    var latestVersion = Helper.ParseVersion(tagName);
-                    var currentVersion = Helper.ParseVersion(Core.AppConstants.Version);
-
-                    if (latestVersion > currentVersion)
-                    {
-                        var res = _messageBoxService.ShowConfirm(Strings.Text_UpdateAvailable, AppConstants.Caption);
-
-                        if (res)
-                        {
-                            // Open latest release page
-                            Process.Start(new ProcessStartInfo
-                            {
-                                FileName = LatestReleaseLink,
-                                UseShellExecute = true
-                            });
-                        }
-                    }
-                    else
-                    {
-                        _messageBoxService.ShowInfo(Strings.Text_NoUpdate, AppConstants.Caption);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _messageBoxService.ShowError("Failed to check updates: " + ex.Message, AppConstants.Caption);
-            }
-        }
-
-        /// <summary>
-        /// Displays the "About Servy" dialog with version and copyright information.
-        /// </summary>
-        private void OnOpenAboutDialog()
-        {
-            _messageBoxService.ShowInfo(Strings.Text_About, AppConstants.Caption);
-        }
-
 
         #endregion
 
@@ -961,9 +706,9 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.InstallService"/> with the current property values.
         /// </summary>
-        private void OnInstallService()
+        private async Task InstallService(object parameter)
         {
-            _serviceCommands.InstallService(
+            await ServiceCommands.InstallService(
                 _config.Name,
                 _config.Description,
                 _config.ExecutablePath,
@@ -1001,33 +746,33 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.UninstallService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void OnUninstallService()
+        private async Task UninstallService(object parameter)
         {
-            _serviceCommands.UninstallService(ServiceName);
+            await ServiceCommands.UninstallService(ServiceName);
         }
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void OnStartService()
+        private void StartService()
         {
-            _serviceCommands.StartService(ServiceName);
+            ServiceCommands.StartService(ServiceName);
         }
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void OnStopService()
+        private void StopService()
         {
-            _serviceCommands.StopService(ServiceName);
+            ServiceCommands.StopService(ServiceName);
         }
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void OnRestartService()
+        private void RestartService()
         {
-            _serviceCommands.RestartService(ServiceName);
+            ServiceCommands.RestartService(ServiceName);
         }
 
         #endregion
@@ -1037,10 +782,10 @@ namespace Servy.ViewModels
         /// <summary>
         /// Clears all form fields and resets to default values.
         /// </summary>
-        private void OnClearForm()
+        private async Task ClearForm(object parameter)
         {
             // Ask for confirmation before clearing everything
-            bool confirm = _messageBoxService.ShowConfirm(Strings.Confirm_ClearAll, AppConstants.Caption);
+            bool confirm = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_ClearAll, AppConfig.Caption);
 
             if (!confirm)
                 return;
@@ -1084,6 +829,77 @@ namespace Servy.ViewModels
 
         #endregion
 
+        #region Import/Export Command Handlers
+
+        /// <summary>
+        /// Exports the current service configuration to an XML file selected by the user.
+        /// </summary>
+        private async Task ExportXmlConfig(object parameter)
+        {
+            await ServiceCommands.ExportXmlConfig();
+        }
+
+        /// <summary>
+        /// Exports the current service configuration to a JSON file selected by the user.
+        /// </summary>
+        private async Task ExportJsonConfig(object parameter)
+        {
+            await ServiceCommands.ExportJsonConfig();
+        }
+
+        /// <summary>
+        /// Opens a file dialog to select an XML configuration file for a service,
+        /// validates the XML against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        private async Task ImportXmlConfig(object parameter)
+        {
+            await ServiceCommands.ImportXmlConfig();
+        }
+
+        /// <summary>
+        /// Opens a file dialog to select an JSON configuration file for a service,
+        /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        private async Task ImportJsonConfig(object parameter)
+        {
+            await ServiceCommands.ImportJsonConfig();
+        }
+
+        #endregion
+
+        #region Help/Updates/About Commands
+
+        /// <summary>
+        /// Opens the Servy documentation page in the default browser.
+        /// </summary>
+        private void OpenDocumentation()
+        {
+            _helpService.OpenDocumentation();
+        }
+
+        /// <summary>
+        /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
+        /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
+        /// </summary>
+        private async Task CheckUpdatesAsync(object parameter)
+        {
+            await _helpService.CheckUpdates(AppConfig.Caption);
+        }
+
+        /// <summary>
+        /// Displays the "About Servy" dialog with version and copyright information.
+        /// </summary>
+        private async Task OpenAboutDialog(object parameter)
+        {
+            await _helpService.OpenAboutDialog(Strings.Text_About, AppConfig.Caption);
+        }
+
+        #endregion
+
         #region Private Helpers
 
         /// <summary>
@@ -1099,7 +915,7 @@ namespace Servy.ViewModels
         /// are both set to the same value from the DTO. This assumes that when loading an existing service 
         /// configuration, the password is already validated and confirmed.
         /// </remarks>
-        private void BindServiceDtoToModel(ServiceDto dto)
+        public void BindServiceDtoToModel(ServiceDto dto)
         {
             ServiceName = dto.Name;
             ServiceDescription = dto.Description;
@@ -1117,8 +933,8 @@ namespace Servy.ViewModels
             MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
             SelectedRecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction;
             MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.ToString();
-            EnvironmentVariables = FormatEnvirnomentVariables(dto.EnvironmentVariables);
-            ServiceDependencies = FormatServiceDependencies(dto.ServiceDependencies);
+            EnvironmentVariables = StringHelper.FormatEnvirnomentVariables(dto.EnvironmentVariables);
+            ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
             RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
             UserAccount = dto.UserAccount;
             Password = dto.Password;
@@ -1126,7 +942,7 @@ namespace Servy.ViewModels
             PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
             PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
             PreLaunchParameters = dto.PreLaunchParameters;
-            PreLaunchEnvironmentVariables = FormatEnvirnomentVariables(dto.PreLaunchEnvironmentVariables);
+            PreLaunchEnvironmentVariables = StringHelper.FormatEnvirnomentVariables(dto.PreLaunchEnvironmentVariables);
             PreLaunchStdoutPath = dto.PreLaunchStdoutPath;
             PreLaunchStderrPath = dto.PreLaunchStderrPath;
             PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
@@ -1148,7 +964,7 @@ namespace Servy.ViewModels
         /// 
         /// If parsing fails for numeric fields, safe defaults are applied (e.g., <c>0</c> or <c>30</c> seconds for timeouts).
         /// </remarks>
-        private ServiceDto ModelToServiceDto()
+        public ServiceDto ModelToServiceDto()
         {
             var dto = new ServiceDto
             {
@@ -1168,15 +984,15 @@ namespace Servy.ViewModels
                 MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : 0,
                 RecoveryAction = (int)SelectedRecoveryAction,
                 MaxRestartAttempts = int.TryParse(MaxRestartAttempts, out var mr) ? mr : 0,
-                EnvironmentVariables = NormalizeString(EnvironmentVariables),
-                ServiceDependencies = NormalizeString(ServiceDependencies),
+                EnvironmentVariables = StringHelper.NormalizeString(EnvironmentVariables),
+                ServiceDependencies = StringHelper.NormalizeString(ServiceDependencies),
                 RunAsLocalSystem = RunAsLocalSystem,
                 UserAccount = UserAccount,
                 Password = Password,
                 PreLaunchExecutablePath = PreLaunchExecutablePath,
                 PreLaunchStartupDirectory = PreLaunchStartupDirectory,
                 PreLaunchParameters = PreLaunchParameters,
-                PreLaunchEnvironmentVariables = NormalizeString(PreLaunchEnvironmentVariables),
+                PreLaunchEnvironmentVariables = StringHelper.NormalizeString(PreLaunchEnvironmentVariables),
                 PreLaunchStdoutPath = PreLaunchStdoutPath,
                 PreLaunchStderrPath = PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = int.TryParse(PreLaunchTimeoutSeconds, out var pt) ? pt : 30,

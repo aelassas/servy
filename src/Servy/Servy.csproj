@@ -92,13 +92,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Constants\AppConstants.cs" />
+    <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="DesignTime\DesignTimeServiceRepository.cs" />
     <Compile Include="Helpers\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />
     <Compile Include="Helpers\ServiceConfigurationValidator.cs" />
-    <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Mappers\ServiceConfigurationMapper.cs" />
     <Compile Include="Models\ServiceConfiguration.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
@@ -106,18 +105,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Strings.resx</DependentUpon>
     </Compile>
-    <Compile Include="Services\DesignTimeFileDialogService.cs" />
-    <Compile Include="Services\FileDialogService.cs" />
-    <Compile Include="Services\IFileDialogService.cs" />
-    <Compile Include="Services\IMessageBoxService.cs" />
     <Compile Include="Services\IServiceCommands.cs" />
-    <Compile Include="Services\MessageBoxService.cs" />
     <Compile Include="Services\ServiceCommands.cs" />
     <Compile Include="ViewModels\Items\ProcessPriorityItem.cs" />
     <Compile Include="ViewModels\Items\RecoveryActionItem.cs" />
     <Compile Include="ViewModels\Items\StartupTypeItem.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
-    <Compile Include="ViewModels\RelayCommand.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -178,6 +171,10 @@
     <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj">
       <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
       <Name>Servy.Infrastructure</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Servy.UI\Servy.UI.csproj">
+      <Project>{4b7e8659-0b61-4eeb-94df-0458bc3e571d}</Project>
+      <Name>Servy.UI</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

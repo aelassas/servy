@@ -67,9 +67,7 @@
   <ItemGroup>
     <Compile Include="CommandLine\CommandLineProvider.cs" />
     <Compile Include="CommandLine\StartOptions.cs" />
-    <Compile Include="Logging\EventLogLogger.cs" />
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
-    <Compile Include="Logging\ILogger.cs" />
     <Compile Include="ProcessManagement\IProcessFactory.cs" />
     <Compile Include="ProcessManagement\IProcessWrapper.cs" />
     <Compile Include="ServiceHelpers\IServiceHelper.cs" />

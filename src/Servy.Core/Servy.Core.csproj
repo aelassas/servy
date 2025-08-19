@@ -65,7 +65,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants\AppConstants.cs" />
+    <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Data\IAppDbContext.cs" />
     <Compile Include="Data\IDapperExecutor.cs" />
     <Compile Include="Data\IServiceRepository.cs" />
@@ -78,12 +78,15 @@
     <Compile Include="Helpers\ISecurePassword.cs" />
     <Compile Include="Helpers\IXmlServiceSerializer.cs" />
     <Compile Include="Helpers\JsonServiceValidator.cs" />
+    <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
     <Compile Include="Helpers\SecurePassword.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Helpers\XmlServiceSerializer.cs" />
     <Compile Include="Helpers\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />
+    <Compile Include="Logging\EventLogLogger.cs" />
+    <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Domain\Service.cs" />
     <Compile Include="Native\NativeMethods.cs" />
@@ -100,14 +103,17 @@
     <Compile Include="Services\IWin32ErrorProvider.cs" />
     <Compile Include="Services\IWindowsServiceApi.cs" />
     <Compile Include="Services\IWindowsServiceProvider.cs" />
+    <Compile Include="Services\IWmiSearcher.cs" />
     <Compile Include="Services\ManagementObjectWrapper.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
+    <Compile Include="Services\ServiceExporter.cs" />
     <Compile Include="Services\ServiceManager.cs" />
     <Compile Include="Enums\ServiceStartType.cs" />
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
     <Compile Include="Services\WindowsServiceProvider.cs" />
+    <Compile Include="Services\WmiSearcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,8 +1,8 @@
-﻿using Servy.Core;
+﻿using Servy.Core.Config;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
@@ -179,9 +179,8 @@ namespace Servy.Service.ServiceHelpers
                 var exePath = Assembly.GetExecutingAssembly().Location;
                 var dir = Path.GetDirectoryName(exePath);
 #else
-                var dir = AppConstants.ProgramDataPath;
+                var dir = AppConfig.ProgramDataPath;
 #endif
-
                 var restarter = Path.Combine(dir, "Servy.Restarter.exe");
 
                 if (!File.Exists(restarter))
@@ -227,14 +226,22 @@ namespace Servy.Service.ServiceHelpers
 
         #region Private Helpers
 
+        /// <summary>
+        /// Converts a list of <see cref="EnvironmentVariable"/> objects to a formatted string.
+        /// Each variable is formatted as "Name=Value" and separated by "; ".
+        /// Returns "(null)" if the list is null.
+        /// </summary>
+        /// <param name="vars">The list of environment variables to format.</param>
+        /// <returns>A formatted string representing the environment variables.</returns>
         private static string EnvironmentVariablesToString(List<EnvironmentVariable> vars)
         {
             string envVarsFormatted = vars != null
-            ? string.Join("; ", vars.Select(ev => $"{ev.Name}={ev.Value}"))
-            : "(null)";
+                ? string.Join("; ", vars.Select(ev => $"{ev.Name}={ev.Value}"))
+                : "(null)";
 
             return envVarsFormatted;
         }
+
 
         #endregion
 

@@ -1,4 +1,6 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.DTOs;
+using Servy.Core.Enums;
+using Servy.Models;
 using System.Threading.Tasks;
 
 namespace Servy.Services
@@ -99,5 +101,32 @@ namespace Servy.Services
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
         void RestartService(string serviceName);
+
+        /// <summary>
+        /// Exports the service configuration to an XML file selected by the user.
+        /// </summary>
+        /// <param name="modelToDtoMapper">MainViewModel to ServiceDto mapper.</param>
+        Task ExportXmlConfig();
+
+        /// <summary>
+        /// Exports the service configuration to an JSON file selected by the user.
+        /// </summary>
+        Task ExportJsonConfig();
+
+        /// <summary>
+        /// Opens a file dialog to select an XML configuration file for a service,
+        /// validates the XML against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the XML is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        Task ImportXmlConfig();
+
+        /// <summary>
+        /// Opens a file dialog to select an JSON configuration file for a service,
+        /// validates the JSON against the expected <see cref="ServiceDto"/> structure,
+        /// and maps the values to the main view model.
+        /// Shows an error message if the JSON is invalid, deserialization fails, or any exception occurs.
+        /// </summary>
+        Task ImportJsonConfig();
     }
 }

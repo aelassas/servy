@@ -5,7 +5,9 @@ using Servy.Helpers;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Services;
+using Servy.UI.Services;
 using Servy.ViewModels;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace Servy
@@ -16,6 +18,8 @@ namespace Servy
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly MainViewModel _mainViewModel;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class,
         /// sets up the UI components and initializes the DataContext with the main ViewModel.
@@ -23,7 +27,21 @@ namespace Servy
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = CreateMainViewModel();
+            _mainViewModel = CreateMainViewModel();
+            DataContext = _mainViewModel;
+        }
+
+        /// <summary>
+        /// Load current service configuration based on windows service name.
+        /// </summary>
+        /// <param name="serviceName">Service Name.</param>
+        /// <returns>A task representing the asynchronous load operation.</returns>
+        public async Task LoadServiceConfiguration(string serviceName)
+        {
+            if (!string.IsNullOrWhiteSpace(serviceName))
+            {
+                await _mainViewModel.LoadServiceConfiguration(serviceName);
+            }
         }
 
         /// <summary>
@@ -50,20 +68,38 @@ namespace Servy
                 name => new ServiceControllerWrapper(name),
                 new WindowsServiceApi(),
                 new Win32ErrorProvider(),
-                serviceRepository
+                serviceRepository,
+                new WmiSearcher()
+            );
+
+            // Initialize ViewModel
+            var messageBoxService = new MessageBoxService();
+            var helperService = new HelpService(messageBoxService);
+
+            var mainViewModel = new MainViewModel(
+                new FileDialogService(),
+                null,
+                messageBoxService,
+                serviceRepository,
+                helperService
             );
 
             // Initialize service commands
-            var messageBoxService = new MessageBoxService();
-            var serviceCommands = new ServiceCommands(serviceManager, messageBoxService);
+            var fileDialogService = new FileDialogService();
+
+            var serviceCommands = new ServiceCommands(
+                mainViewModel.ModelToServiceDto,
+                mainViewModel.BindServiceDtoToModel,
+                serviceManager,
+                messageBoxService,
+                fileDialogService,
+                new ServiceConfigurationValidator(messageBoxService)
+                );
+
+            mainViewModel.ServiceCommands = serviceCommands;
 
             // Create main ViewModel
-            return new MainViewModel(
-                new FileDialogService(),
-                serviceCommands,
-                messageBoxService,
-                new ServiceConfigurationValidator(messageBoxService)
-            );
+            return mainViewModel;
         }
     }
 }

@@ -92,6 +92,7 @@
     <Compile Include="Data\ServiceRepository.cs" />
     <Compile Include="Data\SQLiteDbInitializer.cs" />
     <Compile Include="Helpers\DatabaseInitializer.cs" />
+    <Compile Include="Helpers\DummyHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Diagnostics;
+﻿using Servy.Core.Config;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Management;
 using System.Reflection;
 
 namespace Servy.Core.Helpers
@@ -40,7 +39,7 @@ namespace Servy.Core.Helpers
             var dir = Path.GetDirectoryName(assembly.Location);
             var targetPath = Path.Combine(dir, targetFileName);
 #else
-            var targetPath = Path.Combine(AppConstants.ProgramDataPath, targetFileName);
+            var targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
 #endif
 
             var resourceName = $"{resourceNamespace}.{fileName}.{extension}";
@@ -56,7 +55,7 @@ namespace Servy.Core.Helpers
 
             if (shouldCopy)
             {
-                if (extension.Equals("exe", StringComparison.OrdinalIgnoreCase) && !KillServyServiceIfRunning(targetFileName))
+                if (extension.Equals("exe", StringComparison.OrdinalIgnoreCase) && !ProcessKiller.KillServyProcessTree(targetFileName))
                 {
                     return false;
                 }
@@ -119,62 +118,5 @@ namespace Servy.Core.Helpers
             return DateTime.UtcNow;
         }
 
-        /// <summary>
-        /// Kills all running processes with the name.
-        /// This is necessary when replacing the embedded service executable.
-        /// </summary>
-        /// <param name="servyProcessName">Servy Process Name to kill.</param>
-        /// <returns>True on success and False on failure.</returns>
-        public static bool KillServyServiceIfRunning(string servyProcessName)
-        {
-            try
-            {
-                foreach (var process in Process.GetProcessesByName(servyProcessName))
-                {
-                    KillProcessAndChildren(process.Id);
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed to terminate running service: " + ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Kills process and the entire process tree.
-        /// </summary>
-        /// <param name="pid">Process PID to kill.</param>
-        private static void KillProcessAndChildren(int parentPid)
-        {
-            ManagementObjectSearcher searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_Process WHERE ParentProcessId=" + parentPid);
-
-            ManagementObjectCollection collection = searcher.Get();
-
-            // Kill all child processes recursively first
-            foreach (var mo in collection)
-            {
-                int childPid = Convert.ToInt32(mo["ProcessId"]);
-                KillProcessAndChildren(childPid);
-            }
-
-            // Now kill the parent process
-            try
-            {
-                Process parentProcess = Process.GetProcessById(parentPid);
-                parentProcess.Kill();
-                parentProcess.WaitForExit();
-            }
-            catch (ArgumentException)
-            {
-                // Process has already exited, no action needed
-            }
-            catch (Exception)
-            {
-                // Handle other exceptions if necessary
-            }
-        }
     }
 }

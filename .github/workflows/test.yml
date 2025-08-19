@@ -100,7 +100,9 @@ jobs:
             "tests\Servy.Restarter.UnitTests\bin\Debug\Servy.Restarter.UnitTests.dll" `
             "tests\Servy.Service.UnitTests\bin\Debug\Servy.Service.UnitTests.dll" `
             "tests\Servy.UnitTests\bin\Debug\Servy.UnitTests.dll" `
-            "tests\Servy.CLI.UnitTests\bin\Debug\Servy.CLI.UnitTests.dll"
+            "tests\Servy.CLI.UnitTests\bin\Debug\Servy.CLI.UnitTests.dll" `
+            "tests\Servy.Manager.UnitTests\bin\Debug\Servy.Manager.UnitTests.dll" `
+            "tests\Servy.UI.UnitTests\bin\Debug\Servy.UI.UnitTests.dll"
         shell: pwsh
 
       - name: Upload coverage to Codecov

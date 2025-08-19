@@ -1,7 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Domain;
-using static Servy.Core.AppConstants;
+using static Servy.Core.Config.AppConfig;
 using Servy.Core.Services;
 
 namespace Servy.Core.Mappers

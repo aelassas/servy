@@ -106,11 +106,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\FileDialogServiceTests.cs" />
-    <Compile Include="Services\MessageBoxServiceTests.cs" />
-    <Compile Include="Services\ServiceCommandsTests.cs" />
-    <Compile Include="ViewModels\MainViewModelTests.cs" />
+    <Compile Include="ServiceCommandsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -123,6 +121,10 @@
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\Servy.UI\Servy.UI.csproj">
+      <Project>{4b7e8659-0b61-4eeb-94df-0458bc3e571d}</Project>
+      <Name>Servy.UI</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\src\Servy\Servy.csproj">
       <Project>{62c15840-ea09-4150-84bc-e14f0e703a68}</Project>

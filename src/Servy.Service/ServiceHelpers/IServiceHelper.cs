@@ -1,6 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;

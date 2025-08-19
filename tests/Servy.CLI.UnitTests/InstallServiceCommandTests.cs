@@ -3,6 +3,7 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
@@ -71,7 +72,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -144,7 +145,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -202,7 +203,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -260,7 +261,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
