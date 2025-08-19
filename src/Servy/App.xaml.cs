@@ -1,16 +1,10 @@
-﻿using Servy.Constants;
-using Servy.Core;
+﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
-using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using System;
 using System.Configuration;
-using System.Diagnostics;
-using System.IO;
-using System.Management;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
-using AppConstants = Servy.Core.AppConstants;
 
 namespace Servy
 {
@@ -19,10 +13,6 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-        /// <summary>
-        /// Servy Service executable filename.
-        /// </summary>
-        public const string ServyServiceExeFileName = "Servy.Service.Net48";
 
         /// <summary>
         /// The base namespace where embedded resource files are located.
@@ -51,17 +41,17 @@ namespace Servy
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
             try
             {
-                // Load configuration from appsettings.json
+                // Load configuration from App.config
                 var config = ConfigurationManager.AppSettings;
-                ConnectionString = config["DefaultConnection"] ?? AppConstants.DefaultConnectionString;
-                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConstants.DefaultAESKeyPath;
-                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConstants.DefaultAESIVPath;
+                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
                 // Ensure db and security folders exist
                 AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
@@ -81,26 +71,39 @@ namespace Servy
                 var asm = Assembly.GetExecutingAssembly();
 
                 // Copy service executable from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "exe"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
                 {
-                    MessageBox.Show($"Failed copying embedded resource: {ServyServiceExeFileName}.exe");
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "pdb"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb"))
                 {
-                    MessageBox.Show($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb");
                 }
 #else
+
                 // Copy Servy.Core.dll from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConstants.ServyCoreDllName, "dll"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
                 {
-                    MessageBox.Show($"Failed copying embedded resource: {AppConstants.ServyCoreDllName}.dll");
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
                 }
 #endif
+                string serviceName = null;
 
+                if (e.Args != null && e.Args.Length > 0)
+                {
+                    serviceName = e.Args.FirstOrDefault();
+                }
 
+                var mainWindow = new MainWindow();
+                mainWindow.Show();
+
+                if (!string.IsNullOrWhiteSpace(serviceName))
+                {
+                    await mainWindow.LoadServiceConfiguration(serviceName);
+                }
 
             }
             catch (Exception ex)
@@ -109,6 +112,5 @@ namespace Servy
             }
         }
 
-       
     }
 }

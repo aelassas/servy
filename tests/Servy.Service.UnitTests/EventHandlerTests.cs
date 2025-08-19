@@ -1,6 +1,6 @@
 ﻿using Moq;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;

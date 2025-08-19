@@ -2,7 +2,7 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
-using Servy.Core;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
@@ -24,11 +24,6 @@ namespace Servy.CLI
     /// </summary>
     public class Program
     {
-        /// <summary>
-        /// Servy Service executable filename.
-        /// </summary>
-        public const string ServyServiceExeFileName = "Servy.Service.Net48.CLI";
-
         /// <summary>
         /// The base namespace where embedded resource files are located.
         /// Used for locating and extracting files such as the service executable.
@@ -58,9 +53,9 @@ namespace Servy.CLI
 
                 var config = ConfigurationManager.AppSettings;
 
-                var connectionString = config["DefaultConnection"] ?? AppConstants.DefaultConnectionString;
-                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConstants.DefaultAESKeyPath;
-                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConstants.DefaultAESIVPath;
+                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
                 // Initialize shared dependencies
                 var dbContext = new AppDbContext(connectionString);
@@ -80,7 +75,8 @@ namespace Servy.CLI
                     name => new ServiceControllerWrapper(name),
                     new WindowsServiceApi(),
                     new Win32ErrorProvider(),
-                    serviceRepository
+                    serviceRepository,
+                    new WmiSearcher()
                     );
 
                 var installValidator = new ServiceInstallValidator();
@@ -97,22 +93,22 @@ namespace Servy.CLI
                 var asm = Assembly.GetExecutingAssembly();
 
                 // Copy service executable from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "exe"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe"))
                 {
-                    Console.WriteLine($"Failed copying embedded resource: {ServyServiceExeFileName}.exe");
+                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyServiceExeFileName, "pdb"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb"))
                 {
-                    Console.WriteLine($"Failed copying embedded resource: {ServyServiceExeFileName}.pdb");
+                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                 }
 #else
                 // Copy Servy.Core.dll from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConstants.ServyCoreDllName, "dll"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
                 {
-                    Console.WriteLine($"Failed copying embedded resource: {AppConstants.ServyCoreDllName}.dll");
+                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
                 }
 #endif
 

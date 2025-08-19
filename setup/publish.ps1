@@ -29,15 +29,31 @@ $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ServyDir           = Join-Path $RootDir "src\Servy"
 $CliDir             = Join-Path $RootDir "src\Servy.CLI"
+$ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
 $BuildOutputDir     = Join-Path $ServyDir "bin\$BuildConfig"
 $CliBuildOutputDir  = Join-Path $CliDir "bin\$BuildConfig"
+$ManagerBuildOutputDir  = Join-Path $ManagerDir "bin\$BuildConfig"
 Set-Location $ScriptDir
 
 # Package folder structure
 $PackageFolder      = "$AppName-$version-$Framework-$Platform"
-$AppPackageFolder   = "servy-app"
-$CliPackageFolder   = "servy-cli"
+$AppPackageFolder   = ""
+$CliPackageFolder   = "cli"
 $OutputZip          = "$PackageFolder.zip"
+
+# ========================
+# Functions
+# ========================
+function Remove-FileOrFolder {
+    param (
+        [string]$path
+    )
+    if (Test-Path $path) {
+        Write-Host "Removing: $path"
+        Remove-Item -Recurse -Force $path
+        Write-Host "Removed: $path"
+    }
+}
 
 # === BUILD PROJECTS ===
 Write-Host "Building Servy WPF..."
@@ -46,12 +62,18 @@ Write-Host "Building Servy WPF..."
 Write-Host "Building Servy CLI..."
 & (Join-Path $ScriptDir "..\src\Servy.CLI\publish.ps1") -Version $version
 
+Write-Host "Building Servy Manager..."
+& (Join-Path $ScriptDir "..\src\Servy.Manager\publish.ps1") -Version $version
+
 # === BUILD INSTALLER ===
 Write-Host "Building installer from $issFile..."
 & "$innoCompiler" (Join-Path $ScriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$Framework
 
 # === PREPARE PACKAGE FILES ===
 Write-Host "Preparing package files..."
+
+# Clean old artifacts
+Remove-FileOrFolder -path $PackageFolder
 
 # Create directories
 $AppPackagePath = Join-Path $PackageFolder $AppPackageFolder
@@ -63,6 +85,10 @@ New-Item -ItemType Directory -Force -Path $CliPackagePath | Out-Null
 Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe") -Destination $AppPackagePath -Force
 Copy-Item -Path (Join-Path $BuildOutputDir "*.dll") -Destination $AppPackagePath -Force
 # Copy-Item -Path (Join-Path $BuildOutputDir "Servy.exe.config") -Destination $AppPackagePath -Force
+
+Copy-Item -Path (Join-Path $ManagerBuildOutputDir "Servy.Manager.exe") -Destination $AppPackagePath -Force
+Copy-Item -Path (Join-Path $ManagerBuildOutputDir "*.dll") -Destination $AppPackagePath -Force
+
 
 $destSQLiteWPFX64 = Join-Path $AppPackagePath "x64"
 $destSQLiteWPFX86 = Join-Path $AppPackagePath "x86"
@@ -88,6 +114,10 @@ Get-ChildItem -Path $AppPackagePath -Filter "*.pdb" | Remove-Item -Force
 Get-ChildItem -Path $CliPackagePath -Filter "*.pdb" | Remove-Item -Force
 
 # === CREATE ZIP PACKAGE ===
+# Clean old artifacts
+Remove-FileOrFolder -path $OutputZip
+
+# create zib bundle
 Write-Host "Creating zip package $OutputZip..."
 $ZipArgs = @("a", "-tzip", $OutputZip, "$PackageFolder\*")
 $Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru

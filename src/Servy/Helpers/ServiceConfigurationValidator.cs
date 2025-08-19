@@ -1,12 +1,14 @@
-﻿using Servy.Constants;
+﻿using Servy.Config;
 using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Resources;
-using Servy.Services;
+using Servy.UI.Services;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
 namespace Servy.Helpers
@@ -30,57 +32,60 @@ namespace Servy.Helpers
 
         private readonly IMessageBoxService _messageBoxService;
 
+        /// <summary>
+        /// Creates a new service configuration validator.
+        /// </summary>
+        /// <param name="messageBoxService">MessageBox service.</param>
         public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
         {
             _messageBoxService = messageBoxService;
         }
 
-
         /// <inheritdoc/>
-        public bool Validate(ServiceDto dto, string wrapperExePath = null)
+        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
-                _messageBoxService.ShowWarning(Strings.Msg_ValidationError, AppConstants.Caption);
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, AppConfig.Caption);
                 return false;
             }
 
             if (!CoreHelper.IsValidPath(dto.ExecutablePath) || !File.Exists(dto.ExecutablePath))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(wrapperExePath) && !File.Exists(wrapperExePath))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidWrapperExePath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) &&
                 (!CoreHelper.IsValidPath(dto.StartupDirectory) || !Directory.Exists(dto.StartupDirectory)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStartupDirectory, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartupDirectory, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.StdoutPath) &&
                 (!CoreHelper.IsValidPath(dto.StdoutPath) || !CoreHelper.CreateParentDirectory(dto.StdoutPath)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStdoutPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStdoutPath, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.StderrPath) &&
                 (!CoreHelper.IsValidPath(dto.StderrPath) || !CoreHelper.CreateParentDirectory(dto.StderrPath)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidStderrPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStderrPath, AppConfig.Caption);
                 return false;
             }
 
             if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && dto.RotationSize < MinRotationSize)
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidRotationSize, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
                 return false;
             }
 
@@ -88,19 +93,19 @@ namespace Servy.Helpers
             {
                 if (dto.HeartbeatInterval < MinHeartbeatInterval)
                 {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidHeartbeatInterval, AppConstants.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
                     return false;
                 }
 
                 if (dto.MaxFailedChecks < MinMaxFailedChecks)
                 {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidMaxFailedChecks, AppConstants.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
                     return false;
                 }
 
                 if (dto.MaxRestartAttempts < MinMaxRestartAttempts)
                 {
-                    _messageBoxService.ShowError(Strings.Msg_InvalidMaxRestartAttempts, AppConstants.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
                     return false;
                 }
             }
@@ -108,14 +113,14 @@ namespace Servy.Helpers
             string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
             {
-                _messageBoxService.ShowError(envErrorMsg, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
                 return false;
             }
 
             string normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
             if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
             {
-                _messageBoxService.ShowError(string.Join("\n", depsErrors), AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
                 return false;
             }
 
@@ -125,7 +130,7 @@ namespace Servy.Helpers
                 {
                     if (!string.Equals(dto.Password, dto.Password, StringComparison.Ordinal))
                     {
-                        _messageBoxService.ShowError(Strings.Msg_PasswordsDontMatch, AppConstants.Caption);
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
                         return false;
                     }
 
@@ -133,7 +138,7 @@ namespace Servy.Helpers
                 }
                 catch (Exception ex)
                 {
-                    _messageBoxService.ShowError(ex.Message, AppConstants.Caption);
+                    await _messageBoxService.ShowErrorAsync(ex.Message, AppConfig.Caption);
                     return false;
                 }
             }
@@ -142,47 +147,47 @@ namespace Servy.Helpers
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) &&
                 (!CoreHelper.IsValidPath(dto.PreLaunchExecutablePath) || !File.Exists(dto.PreLaunchExecutablePath)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchPath, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) &&
                 (!CoreHelper.IsValidPath(dto.PreLaunchStartupDirectory) || !Directory.Exists(dto.PreLaunchStartupDirectory)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStartupDirectory, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStartupDirectory, AppConfig.Caption);
                 return false;
             }
 
             string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out var preLaunchEnvErrorMsg))
             {
-                _messageBoxService.ShowError(preLaunchEnvErrorMsg, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(preLaunchEnvErrorMsg, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) &&
                 (!CoreHelper.IsValidPath(dto.PreLaunchStdoutPath) || !CoreHelper.CreateParentDirectory(dto.PreLaunchStdoutPath)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStdoutPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStdoutPath, AppConfig.Caption);
                 return false;
             }
 
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) &&
                 (!CoreHelper.IsValidPath(dto.PreLaunchStderrPath) || !CoreHelper.CreateParentDirectory(dto.PreLaunchStderrPath)))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchStderrPath, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStderrPath, AppConfig.Caption);
                 return false;
             }
 
             if (dto.PreLaunchTimeoutSeconds < MinPreLaunchTimeoutSeconds)
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchTimeout, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.Caption);
                 return false;
             }
 
             if (dto.PreLaunchRetryAttempts < MinPreLaunchRetryAttempts)
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConstants.Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.Caption);
                 return false;
             }
 

@@ -60,7 +60,7 @@ Servy 1.0.0
 Servy is a lightweight tool that allows you to run and manage any application as a Windows service.
 Easily monitor service health, configure startup options, and automate recovery actions.
 
-Built with .NET Framework 4.8
+Built with .NET 8.0
 
 Copyright © 2025 Akram El Assas. All rights reserved.
   </value>
@@ -273,9 +273,6 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_FailedToLoadJson" xml:space="preserve">
     <value>Failed to load JSON service configuration.</value>
   </data>
-  <data name="Msg_UnexpectedConfigLoadError" xml:space="preserve">
-    <value>An error occurred while loading the configuration</value>
-  </data>
 
   <!-- XML/JSON export -->
   <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
@@ -289,9 +286,6 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
   <data name="ExportJson_Success" xml:space="preserve">
     <value>JSON Configuration exported successfully.</value>
-  </data>
-  <data name="Msg_UnexpectedConfigLoadError" xml:space="preserve">
-    <value>An error occurred while saving the configuration</value>
   </data>
 
   <!-- Clear Action -->
@@ -386,10 +380,5 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Service was restarted successfully.</value>
   </data>
 
-  <data name="Message_Success" xml:space="preserve">
-    <value>Service installed successfully.</value>
-  </data>
-  <data name="Message_Error" xml:space="preserve">
-    <value>An error occurred.</value>
-  </data>
+
 </root>

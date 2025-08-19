@@ -12,6 +12,9 @@
 #define MyAppURL "https://servy-win.github.io/"
 #define MyAppExeName "Servy.exe"
 
+#define ManagerAppName "Servy Manager"
+#define ManagerAppExeName "Servy.Manager.exe"
+
 [Setup]
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -54,24 +57,34 @@ Source: "..\src\Servy\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src\Servy\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 Source: "..\src\Servy\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
+; Manager
+Source: "..\src\Servy.Manager\bin\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.Manager\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.Manager\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+Source: "..\src\Servy.Manager\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+
 ; cli
-Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName:"servy-cli.exe"; Flags: ignoreversion
-; Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe.config"; DestDir: "{app}\cli"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
-Source: "..\src\Servy.CLI\bin\Release\*.dll"; DestDir: "{app}\cli"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\bin\Release\x64\*"; DestDir: "{app}\cli\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
-Source: "..\src\Servy.CLI\bin\Release\x86\*"; DestDir: "{app}\cli\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"servy-cli.exe"; Flags: ignoreversion
+; Source: "..\src\Servy.CLI\bin\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+Source: "..\src\Servy.CLI\bin\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+Source: "..\src\Servy.CLI\bin\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon
 
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
 
 [UninstallDelete]
 Type: dirifempty; Name: "{app}\cli"

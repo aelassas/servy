@@ -10,7 +10,6 @@ $ErrorActionPreference = "Stop"
 
 # Configuration
 $buildConfiguration = "Release"
-$tfm = "net8.0-windows"  # Target framework (used by publish-res-release.ps1)
 
 # Get the directory of the current script
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -21,7 +20,7 @@ $PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
 
 # Step 1: Run publish-res-release.ps1
 Write-Host "Running publish-res-release.ps1..."
-& $PublishResScript -tfm $tfm
+& $PublishResScript
 Write-Host "Finished publish-res-release.ps1."
 
 # Step 2: Build project with MSBuild

@@ -1,19 +1,19 @@
-﻿using Servy.Core.Data;
+﻿using Newtonsoft.Json;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
-using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Helpers;
 using Servy.Resources;
+using Servy.UI.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using static Servy.Constants.AppConstants;
-using CoreHelper = Servy.Core.Helpers.Helper;
+using static Servy.Config.AppConfig;
 
 namespace Servy.Services
 {
@@ -27,12 +27,14 @@ namespace Servy.Services
     public class ServiceCommands : IServiceCommands
     {
 
-
         #region Private Fields
 
+        private readonly Func<ServiceDto> _modelToServiceDto;
+        private readonly Action<ServiceDto> _bindServiceDtoToModel;
         private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
-        private readonly ServiceConfigurationValidator _serviceConfigurationValidator;
+        private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
+        private readonly IFileDialogService _dialogService;
 
         #endregion
 
@@ -41,16 +43,29 @@ namespace Servy.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
         /// </summary>
+        /// <param name="modelToServiceDto">MainViewModel to ServiceDto mapper.</param>
+        /// <param name="bindServiceDtoToModel">Binds a service dto MainViewModel.</param>
         /// <param name="serviceManager">The service manager responsible for performing service operations.</param>
         /// <param name="messageBoxService">The message box service used to display messages to the user.</param>
+        /// <param name="dialogService">File Dialog service.</param>
+        /// <param name="serviceConfigurationValidator">Service to validate inputs.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
         /// </exception>
-        public ServiceCommands(IServiceManager serviceManager, IMessageBoxService messageBoxService)
+        public ServiceCommands(
+            Func<ServiceDto> modelToServiceDto,
+            Action<ServiceDto> bindServiceDtoToModel,
+            IServiceManager serviceManager,
+            IMessageBoxService messageBoxService,
+            IFileDialogService dialogService,
+            IServiceConfigurationValidator serviceConfigurationValidator)
         {
+            _modelToServiceDto = modelToServiceDto;
+            _bindServiceDtoToModel = bindServiceDtoToModel;
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
-            _serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
+            _serviceConfigurationValidator = serviceConfigurationValidator;
+            _dialogService = dialogService;
         }
 
 
@@ -93,15 +108,11 @@ namespace Servy.Services
             bool preLaunchIgnoreFailure
             )
         {
-#if DEBUG
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{App.ServyServiceExeFileName}.exe");
-#else
-            var wrapperExePath = Path.Combine(Core.AppConstants.ProgramDataPath, $"{App.ServyServiceExeFileName}.exe");
-#endif
+            var wrapperExePath = AppConfig.GetServyUIServicePath();
 
             if (!File.Exists(wrapperExePath))
             {
-                _messageBoxService.ShowError(Strings.Msg_InvalidWrapperExePath, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, Caption);
                 return;
             }
 
@@ -141,7 +152,7 @@ namespace Servy.Services
             };
 
             // Validate
-            if (!_serviceConfigurationValidator.Validate(dto, wrapperExePath))
+            if (!(await _serviceConfigurationValidator.Validate(dto, wrapperExePath)))
             {
                 return; // Validation failed, errors shown in MessageBox
             }
@@ -152,9 +163,9 @@ namespace Servy.Services
                 var heartbeatIntervalValue = int.Parse(heartbeatInterval);
                 var maxFailedChecksValue = int.Parse(maxFailedChecks);
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
-                var normalizedEnvVars = Helpers.StringHelper.NormalizeString(dto.EnvironmentVariables);
-                var normalizedDeps = Helpers.StringHelper.NormalizeString(dto.ServiceDependencies);
-                var normalizedPreLaunchEnvVars = Helpers.StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+                var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+                var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
+                var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
                 var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
                 var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
 
@@ -165,52 +176,53 @@ namespace Servy.Services
                 }
 
                 bool success = await _serviceManager.InstallService(
-                    serviceName,
-                    serviceDescription,
-                    wrapperExePath,
-                    processPath,
-                    startupDirectory,
-                    processParameters,
-                    startupType,
-                    processPriority,
-                    stdoutPath,
-                    stderrPath,
-                    rotationSizeValue,
-                    heartbeatIntervalValue,
-                    maxFailedChecksValue,
-                    recoveryAction,
-                    maxRestartAttemptsValue,
-                    normalizedEnvVars,
-                    serviceDependencies,
-                    userAccount,
-                    password,
-                    preLaunchExePath,
-                    preLaunchWorkingDirectory,
-                    preLaunchArgs,
-                    normalizedPreLaunchEnvVars,
-                    preLaunchStdoutPath,
-                    preLaunchStderrPath,
-                    preLaunchTimeoutValue,
-                    preLaunchRetryAttemptsValue,
-                    preLaunchIgnoreFailure
-                    );
+                    serviceName: serviceName,
+                    description: serviceDescription,
+                    wrapperExePath: wrapperExePath,
+                    realExePath: processPath,
+                    workingDirectory: startupDirectory,
+                    realArgs: processParameters,
+                    startType: startupType,
+                    processPriority: processPriority,
+                    stdoutPath: stdoutPath,
+                    stderrPath: stderrPath,
+                    rotationSizeInBytes: rotationSizeValue,
+                    heartbeatInterval: heartbeatIntervalValue,
+                    maxFailedChecks: maxFailedChecksValue,
+                    recoveryAction: recoveryAction,
+                    maxRestartAttempts: maxRestartAttemptsValue,
+                    environmentVariables: normalizedEnvVars,
+                    serviceDependencies: serviceDependencies,
+                    username: userAccount,
+                    password: password,
+                    preLaunchExePath: preLaunchExePath,
+                    preLaunchWorkingDirectory: preLaunchWorkingDirectory,
+                    preLaunchArgs: preLaunchArgs,
+                    preLaunchEnvironmentVariables: normalizedPreLaunchEnvVars,
+                    preLaunchStdoutPath: preLaunchStdoutPath,
+                    preLaunchStderrPath: preLaunchStderrPath,
+                    preLaunchTimeout: preLaunchTimeoutValue,
+                    preLaunchRetryAttempts: preLaunchRetryAttemptsValue,
+                    preLaunchIgnoreFailure: preLaunchIgnoreFailure
+                );
+
 
                 if (success)
                 {
-                    _messageBoxService.ShowInfo(Strings.Msg_ServiceCreated, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceCreated, Caption);
                 }
                 else
                 {
-                    _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                _messageBoxService.ShowError(Strings.Msg_AdminRightsRequired, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
             }
             catch (Exception)
             {
-                _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
 
@@ -219,7 +231,7 @@ namespace Servy.Services
         {
             if (string.IsNullOrWhiteSpace(serviceName))
             {
-                _messageBoxService.ShowWarning(Strings.Msg_ValidationError, Caption);
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, Caption);
                 return;
             }
 
@@ -228,71 +240,258 @@ namespace Servy.Services
                 bool success = await _serviceManager.UninstallService(serviceName);
                 if (success)
                 {
-                    _messageBoxService.ShowInfo(Strings.Msg_ServiceRemoved, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
                 }
                 else
                 {
-                    _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 }
             }
             catch (UnauthorizedAccessException)
             {
-                _messageBoxService.ShowError(Strings.Msg_AdminRightsRequired, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
             }
             catch (Exception)
             {
-                _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
 
         /// <inheritdoc />
-        public void StartService(string serviceName)
+        public async void StartService(string serviceName)
         {
             try
             {
                 bool success = _serviceManager.StartService(serviceName);
                 if (success)
-                    _messageBoxService.ShowInfo(Strings.Msg_ServiceStarted, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
                 else
-                    _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
             catch (Exception)
             {
-                _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
 
         /// <inheritdoc />
-        public void StopService(string serviceName)
+        public async void StopService(string serviceName)
         {
             try
             {
                 bool success = _serviceManager.StopService(serviceName);
                 if (success)
-                    _messageBoxService.ShowInfo(Strings.Msg_ServiceStopped, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
                 else
-                    _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
             catch (Exception)
             {
-                _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
 
         /// <inheritdoc />
-        public void RestartService(string serviceName)
+        public async void RestartService(string serviceName)
         {
             try
             {
                 bool success = _serviceManager.RestartService(serviceName);
                 if (success)
-                    _messageBoxService.ShowInfo(Strings.Msg_ServiceRestarted, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
                 else
-                    _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
             catch (Exception)
             {
-                _messageBoxService.ShowError(Strings.Msg_UnexpectedError, Caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+        }
+
+        ///<inheritdoc/>
+        public async Task ExportXmlConfig()
+        {
+            try
+            {
+                var path = _dialogService.SaveXml(Strings.SaveFileDialog_XmlTitle);
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                // Map ServiceConfiguration to ServiceDto
+                var dto = _modelToServiceDto();
+
+                // Validation
+                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                {
+                    return;
+                }
+
+                // Serialize to XML and save to file
+                ServiceExporter.ExportXml(dto, path);
+
+                // Show success message
+                await _messageBoxService.ShowInfoAsync(Strings.ExportXml_Success, Caption);
+            }
+            catch (Exception)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+        }
+
+        ///<inheritdoc/>
+        public async Task ExportJsonConfig()
+        {
+            try
+            {
+                var path = _dialogService.SaveJson(Strings.SaveFileDialog_JsonTitle);
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                // Map ServiceConfiguration to ServiceDto
+                var dto = _modelToServiceDto();
+
+                // Validation
+                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                {
+                    return;
+                }
+
+                // Serialize to pretty JSON and save to file
+                ServiceExporter.ExportJson(dto, path);
+
+                // Show success message
+                await _messageBoxService.ShowInfoAsync(Strings.ExportJson_Success, Caption);
+            }
+            catch (Exception)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+        }
+
+        ///<inheritdoc/>
+        public async Task ImportXmlConfig()
+        {
+            try
+            {
+                var path = _dialogService.OpenXml();
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                var xml = File.ReadAllText(path);
+                if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
+                {
+                    await _messageBoxService.ShowErrorAsync(errorMsg, Caption);
+                    return;
+                }
+
+                var serializer = new XmlServiceSerializer();
+                var dto = serializer.Deserialize(xml);
+                if (dto == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadXml, Caption);
+                    return;
+                }
+
+                string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+
+                string envVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                {
+                    await _messageBoxService.ShowErrorAsync(envVarsErrorMessage, Caption);
+                    return;
+                }
+
+                string normalizedServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
+
+                List<string> serviceDependenciesErrors;
+                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
+                {
+                    await _messageBoxService.ShowErrorAsync(string.Join("\n", serviceDependenciesErrors), Caption);
+                    return;
+                }
+
+                string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+
+                string preLaunchEnvVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
+                {
+                    await _messageBoxService.ShowErrorAsync(preLaunchEnvVarsErrorMessage, Caption);
+                    return;
+                }
+
+                // Map to MainViewModel
+                _bindServiceDtoToModel(dto);
+            }
+            catch (Exception)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+            }
+        }
+
+        ///<inheritdoc/>
+        public async Task ImportJsonConfig()
+        {
+            try
+            {
+                var path = _dialogService.OpenJson();
+                if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                var json = File.ReadAllText(path);
+                if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
+                {
+                    await _messageBoxService.ShowErrorAsync(errorMsg, Caption);
+                    return;
+                }
+
+                var dto = JsonConvert.DeserializeObject<ServiceDto>(json);
+                if (dto == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadJson, Caption);
+                    return;
+                }
+
+                string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+
+                string envVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                {
+                    await _messageBoxService.ShowErrorAsync(envVarsErrorMessage, Caption);
+                    return;
+                }
+
+                string normalizedServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
+
+                List<string> serviceDependenciesErrors;
+                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
+                {
+                    await _messageBoxService.ShowErrorAsync(string.Join("\n", serviceDependenciesErrors), Caption);
+                    return;
+                }
+
+                string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+
+                string preLaunchEnvVarsErrorMessage;
+                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
+                {
+                    await _messageBoxService.ShowErrorAsync(preLaunchEnvVarsErrorMessage, Caption);
+                    return;
+                }
+
+                // Map to MainViewModel
+                _bindServiceDtoToModel(dto);
+            }
+            catch (Exception)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
 
