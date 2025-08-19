@@ -74,10 +74,10 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [x] Add Help, Documentation, and Check for Updates menus
 * [ ] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
-  * [ ] Provide a "shortcut" to open the Servy Configuration App for full edits *(in progress)*
-  * [ ] Start, stop, restart, and uninstall services *(in progress)*
-  * [ ] Display service status and uptime *(in progress)*
-  * [ ] Add search and filter functionality for services *(in progress)*
+  * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
+  * [x] Start, stop, restart, and uninstall services
+  * [x] Display service status and uptime
+  * [x] Add search and filter functionality for services
   * [ ] Provide notifications for service events (failures, restarts)
   * [ ] Provide a log viewer per service
   * [ ] Add a health monitoring dashboard
