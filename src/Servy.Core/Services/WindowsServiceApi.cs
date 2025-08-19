@@ -70,7 +70,7 @@ namespace Servy.Core.Services
             string lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string lpDependencies,
-            string lpServiceStartName,
+            string? lpServiceStartName,
             string? lpPassword,
             string? lpDisplayName)
             => NativeMethods.ChangeServiceConfig(
@@ -82,7 +82,7 @@ namespace Servy.Core.Services
                 lpLoadOrderGroup,
                 lpdwTagId,
                 lpDependencies,
-                lpServiceStartName,
+                string.IsNullOrWhiteSpace(lpServiceStartName) ? "LocalSystem" : lpServiceStartName,
                 lpPassword,
                 lpDisplayName);
 

@@ -107,8 +107,8 @@ namespace Servy.Core.Services
             string lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string lpDependencies,
-            string lpServiceStartName,
-            string lpPassword,
+            string? lpServiceStartName,
+            string? lpPassword,
             string lpDisplayName
         );
 
