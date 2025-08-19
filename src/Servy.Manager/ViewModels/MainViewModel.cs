@@ -10,7 +10,7 @@ using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -209,8 +209,7 @@ namespace Servy.Manager.ViewModels
 
             if (app != null)
             {
-                IsConfiguratorEnabled = !string.IsNullOrEmpty(app.ConfigurationAppPublishPath)
-                    && File.Exists(app.ConfigurationAppPublishPath);
+                IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
                 // Initialize refresh timer
                 _refreshTimer = new DispatcherTimer
@@ -255,6 +254,9 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Performs search of services asynchronously.
         /// </summary>
+        /// <summary>
+        /// Performs search of services asynchronously.
+        /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
             try
@@ -268,13 +270,25 @@ namespace Servy.Manager.ViewModels
                 await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
 
                 // Step 3: fetch data off UI thread
+                var sw = Stopwatch.StartNew();
                 var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText));
+                sw.Stop();
+                Debug.WriteLine($"Created {results.Count()} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
-                // Step 4: update ObservableCollection on UI thread
+                // Step 4: fetch data & build VMs off UI thread
+                sw = Stopwatch.StartNew();
+                var vms = await Task.Run(() =>
+                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)).ToList()
+                );
+                sw.Stop();
+                Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
+
+                // Step 5: update collection on UI thread
                 _services.Clear();
-                _services.AddRange(results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)));
-
+                _services.AddRange(vms);
                 ServicesView.Refresh();
+
+                _ = Task.Run(async () => await RefreshAllServicesAsync());
             }
             catch (Exception ex)
             {
@@ -351,7 +365,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task RefreshAllServicesAsync()
         {
-            var snapshot = _services.Select(r => r.Service).ToList();
+            var snapshot = _services.Select(r => r.Service).OrderBy(s => s.Name).ToList();
 
             await Task.Run(() =>
             {

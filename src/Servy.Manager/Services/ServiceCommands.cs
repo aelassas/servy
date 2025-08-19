@@ -70,12 +70,16 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> SearchServicesAsync(string searchText)
+        public async Task<List<Service>> SearchServicesAsync(string searchText)
         {
-            //await DummyHelper.InsertDummyServices(((App)Application.Current).ConnectionString, 2);
             var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, searchText ?? string.Empty);
-            return results.Select(ServiceMapper.ToModel);
+
+            // Materialize all Service models in memory immediately
+            var services = await Task.Run(() => results.Select(ServiceMapper.ToModel).ToList());
+
+            return services;
         }
+
 
         /// <inheritdoc />
         public async Task<bool> StartServiceAsync(Service service)
@@ -184,7 +188,7 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (string.IsNullOrEmpty(app.ConfigurationAppPublishPath) || !File.Exists(app.ConfigurationAppPublishPath))
+                if (app.IsConfigurationAppAvailable)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
                     return;

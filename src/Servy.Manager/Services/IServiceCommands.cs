@@ -16,7 +16,7 @@ namespace Servy.Manager.Services
         /// </summary>
         /// <param name="searchText">The text to search for in service names.</param>
         /// <returns>A collection of <see cref="Service"/> objects that match the search.</returns>
-        Task<IEnumerable<Service>> SearchServicesAsync(string searchText);
+        Task<List<Service>> SearchServicesAsync(string searchText);
 
         /// <summary>
         /// Starts the specified service.
