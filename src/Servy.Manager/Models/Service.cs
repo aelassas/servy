@@ -12,7 +12,7 @@ namespace Servy.Manager.Models
         private ServiceControllerStatus? _status;
         private bool _isInstalled;
         private bool _isConfigurationAppAvailable;
-        private ServiceStartType _startupType;
+        private ServiceStartType? _startupType;
         private string _userSession;
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the service's startup type.
         /// </summary>
-        public ServiceStartType StartupType
+        public ServiceStartType? StartupType
         {
             get => _startupType;
             set => _startupType = value;

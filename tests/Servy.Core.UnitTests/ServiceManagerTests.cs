@@ -28,10 +28,10 @@ namespace Servy.Core.UnitTests
             _mockServiceRepository = new Mock<IServiceRepository>();
             _mockWmiSearcher = new Mock<IWmiSearcher>();
 
-            _serviceManager = new ServiceManager(_ => 
-            _mockController.Object, 
+            _serviceManager = new ServiceManager(_ =>
+            _mockController.Object,
             _mockWindowsServiceApi.Object,
-            _mockWin32ErrorProvider.Object, 
+            _mockWin32ErrorProvider.Object,
             _mockServiceRepository.Object,
             _mockWmiSearcher.Object
             );
@@ -493,7 +493,10 @@ namespace Servy.Core.UnitTests
                 serviceName,
                 description,
                 binPath,
-                ServiceStartType.Automatic);
+                ServiceStartType.Automatic,
+                null,
+                null
+                );
 
             Assert.True(result);
         }
@@ -538,7 +541,10 @@ namespace Servy.Core.UnitTests
                     serviceName,
                     description,
                     binPath,
-                    ServiceStartType.Automatic)
+                    ServiceStartType.Automatic,
+                    null,
+                    null
+                    )
             );
 
             serviceHandle = new IntPtr(123);
@@ -554,7 +560,10 @@ namespace Servy.Core.UnitTests
                     serviceName,
                     description,
                     binPath,
-                    ServiceStartType.Automatic)
+                    ServiceStartType.Automatic,
+                    null,
+                    null
+                    )
             );
         }
 

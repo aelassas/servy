@@ -35,7 +35,7 @@ namespace Servy.Manager.Converters
                 }
             }
 
-            return value?.ToString() ?? string.Empty;
+            return value?.ToString() ?? Strings.Label_Fetching;
         }
 
         /// <summary>

@@ -66,7 +66,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets the startup type of the service.
         /// </summary>
-        public ServiceStartType StartupType => Service.StartupType;
+        public ServiceStartType? StartupType => Service.StartupType;
 
         /// <summary>
         /// Gets the user session associated with the service.

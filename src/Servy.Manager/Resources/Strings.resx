@@ -43,10 +43,9 @@
 
   <data name="Text_About" xml:space="preserve">
   <value>
-Servy Manager 1.0.0
+Servy Manager 1.0
 
-Servy Manager is a lightweight tool that allows you 
-to manage Windows services installed by Servy.
+Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
 
 Built with .NET 8.0
 
@@ -108,7 +107,10 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Status_NotInstalled" xml:space="preserve">
     <value>Not Installed</value>
   </data>
-  
+
+  <data name="Label_Fetching" xml:space="preserve">
+    <value>Fetching...</value>
+  </data>
 
   <!--Actions-->
   <data name="Button_Start" xml:space="preserve">
