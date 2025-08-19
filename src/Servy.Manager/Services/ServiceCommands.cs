@@ -10,8 +10,12 @@ using Servy.Manager.Helpers;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI.Services;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace Servy.Manager.Services
@@ -66,12 +70,16 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> SearchServicesAsync(string searchText)
+        public async Task<List<Service>> SearchServicesAsync(string searchText)
         {
-            //await DummyHelper.InsertDummyServices(((App)Application.Current).ConnectionString, 2);
             var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, searchText ?? string.Empty);
-            return results.Select(ServiceMapper.ToModel);
+
+            // Materialize all Service models in memory immediately
+            var services = await Task.Run(() => results.Select(ServiceMapper.ToModel).ToList());
+
+            return services;
         }
+
 
         /// <inheritdoc />
         public async Task<bool> StartServiceAsync(Service service)
@@ -180,7 +188,7 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (string.IsNullOrEmpty(app.ConfigurationAppPublishPath) || !File.Exists(app.ConfigurationAppPublishPath))
+                if (app.IsConfigurationAppAvailable)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
                     return;
@@ -313,7 +321,7 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(()=> _serviceRepository.DeleteAsync(service.Name));
+                var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
                 if (res > 0) RemoveService(service);
 
                 return res > 0;
