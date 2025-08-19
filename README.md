@@ -7,7 +7,7 @@
 -->
 
 <p align="center">
-  <img src="https://servy-win.github.io/servy.png?v=10" alt="Servy" />
+  <img src="https://servy-win.github.io/servy.png?v=11" alt="Servy" />
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
@@ -19,7 +19,7 @@
 
 ## .NET Framework 4.8 Version
 
-Servy lets you run any app as a Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. A fully managed alternative to NSSM.
+Servy lets you run any app as a Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters.A free and open-source alternative to FireDaemon Pro and NSSM.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), enabling you to create, configure, and manage Windows services interactively or automate these tasks in scripts and CI/CD pipelines.
 
@@ -35,16 +35,19 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
+* [Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
 * [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
 * [Export/Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)
 * [Security](https://github.com/aelassas/servy/wiki/Security)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
+* [Building from Source](https://github.com/aelassas/servy/wiki/Building-from-Source)
 * [Troubleshooting](https://github.com/aelassas/servy/wiki/Troubleshooting)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 
 ## Features
 
 * Clean, simple UI
+* Quickly monitor and manage all Servy services with Servy Manager
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
