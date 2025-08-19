@@ -36,7 +36,7 @@ $ManagerBuildOutputDir  = Join-Path $ManagerDir "bin\$BuildConfig"
 Set-Location $ScriptDir
 
 # Package folder structure
-$PackageFolder      = "$AppName-$version-$Framework-$Platform"
+$PackageFolder      = "$AppName-$version-$Framework-$Platform-portable"
 $AppPackageFolder   = ""
 $CliPackageFolder   = "cli"
 $OutputZip          = "$PackageFolder.zip"
