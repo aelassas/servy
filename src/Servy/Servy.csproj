@@ -50,10 +50,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
@@ -62,6 +58,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
+    <ProjectReference Include="..\Servy.UI\Servy.UI.csproj" />
   </ItemGroup>
   
   <ItemGroup>

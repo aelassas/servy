@@ -23,6 +23,7 @@ $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ServyDir           = Join-Path $RootDir "src\Servy"
 $CliDir             = Join-Path $RootDir "src\Servy.CLI"
+$ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
 
 # Inno Setup file
 $issFile            = Join-Path $ScriptDir "servy.iss"
@@ -50,6 +51,9 @@ Write-Host "Building Servy WPF app..."
 Write-Host "Building Servy CLI app..."
 & (Join-Path $CliDir "publish.ps1") -tfm $tfm
 
+Write-Host "Building Servy.Manager app..."
+& (Join-Path $ManagerDir "publish.ps1") -tfm $tfm
+
 # ========================
 # Step 2: Build Installer
 # ========================
@@ -62,8 +66,9 @@ Write-Host "Building installer from $issFile..."
 Write-Host "Building self-contained ZIP..."
 
 # Paths to executables
-$servyExe = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
-$cliExe   = Join-Path $CliDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
+$servyExe    = Join-Path $ServyDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
+$cliExe      = Join-Path $CliDir     "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
+$managerExe  = Join-Path $ManagerDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.Manager.exe"
 
 # Package folder
 $packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64-portable"
@@ -75,8 +80,11 @@ Remove-FileOrFolder -path $packageFolder
 New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
 # Copy executables with versioned names
-Copy-Item $servyExe (Join-Path $packageFolder "servy-$version-$tfm-x64.exe") -Force
-Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$version-$tfm-x64.exe") -Force
+# Copy-Item $servyExe (Join-Path $packageFolder "servy-$version-$tfm-x64.exe") -Force
+# Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$version-$tfm-x64.exe") -Force
+Copy-Item $servyExe (Join-Path $packageFolder "Servy.exe") -Force
+Copy-Item $cliExe (Join-Path $packageFolder "servy-cli.exe") -Force
+Copy-Item $managerExe (Join-Path $packageFolder "Servy.Manager.exe") -Force
 
 # Compress with 7-Zip
 Write-Host "Creating ZIP: $outputZip"

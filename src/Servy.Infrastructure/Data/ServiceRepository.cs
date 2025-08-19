@@ -198,7 +198,8 @@ namespace Servy.Infrastructure.Data
         SELECT *
         FROM Services
         WHERE LOWER(Name) LIKE @Pattern
-           OR LOWER(Description) LIKE @Pattern;";
+           OR LOWER(Description) LIKE @Pattern
+        ORDER BY Name ASC;";
 
             var pattern = $"%{keyword?.Trim().ToLower()}%";
 

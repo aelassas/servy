@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
 
@@ -212,7 +213,7 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
         /// </returns>
-        public bool Stop()
+        public virtual bool Stop()
         {
             return _serviceManager.StopService(Name);
         }
@@ -266,6 +267,92 @@ namespace Servy.Core.Domain
         public ServiceStartType? GetServiceStartupType()
         {
             return _serviceManager.GetServiceStartupType(Name);
+        }
+
+        /// <summary>
+        /// Installs the Windows service using the configured domain properties.
+        /// </summary>
+        /// <remarks>
+        /// In <c>DEBUG</c> builds, the service wrapper executable is resolved from the 
+        /// executing assembly directory. In <c>RELEASE</c> builds, it is resolved from 
+        /// the <see cref="AppConfig.ProgramDataPath"/>.
+        /// <para>
+        /// This method passes all service configuration (paths, parameters, startup 
+        /// settings, monitoring options, recovery actions, etc.) to the underlying 
+        /// <see cref="IServiceManager"/> implementation.
+        /// </para>
+        /// </remarks>
+        /// <returns>
+        /// A task that represents the asynchronous install operation. The task result 
+        /// is <c>true</c> if the service was successfully installed or updated; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <param name="wrapperExeDir">Wrapper exe parent directory.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if required properties such as <see cref="Name"/> or 
+        /// <see cref="ExecutablePath"/> are null or empty.
+        /// </exception>
+        /// <exception cref="Win32Exception">
+        /// Thrown if the Service Control Manager cannot be accessed or the service 
+        /// cannot be created/updated.
+        /// </exception>
+        public async Task<bool> Install(string? wrapperExeDir = null)
+        {
+#if DEBUG
+            var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, AppConfig.ServyServiceUIExe);
+#else
+            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, AppConfig.ServyServiceUIExe);
+#endif
+
+            return await _serviceManager.InstallService(
+                serviceName: Name,
+                description: Description ?? string.Empty,
+                wrapperExePath: wrapperExePath,
+                realExePath: ExecutablePath,
+                workingDirectory: StartupDirectory ?? Path.GetDirectoryName(ExecutablePath) ?? string.Empty,
+                realArgs: Parameters ?? string.Empty,
+                startType: StartupType,
+                processPriority: Priority,
+                stdoutPath: StdoutPath,
+                stderrPath: StderrPath,
+                rotationSizeInBytes: EnableRotation ? RotationSize : 0,
+                heartbeatInterval: EnableHealthMonitoring ? HeartbeatInterval : 0,
+                maxFailedChecks: EnableHealthMonitoring ? MaxFailedChecks : 0,
+                recoveryAction: RecoveryAction,
+                maxRestartAttempts: MaxRestartAttempts,
+                environmentVariables: EnvironmentVariables,
+                serviceDependencies: ServiceDependencies,
+                username: RunAsLocalSystem ? null : UserAccount,
+                password: RunAsLocalSystem ? null : Password,
+                preLaunchExePath: PreLaunchExecutablePath,
+                preLaunchWorkingDirectory: PreLaunchStartupDirectory,
+                preLaunchArgs: PreLaunchParameters,
+                preLaunchEnvironmentVariables: PreLaunchEnvironmentVariables,
+                preLaunchStdoutPath: PreLaunchStdoutPath,
+                preLaunchStderrPath: PreLaunchStderrPath,
+                preLaunchTimeout: PreLaunchTimeoutSeconds,
+                preLaunchRetryAttempts: PreLaunchRetryAttempts,
+                preLaunchIgnoreFailure: PreLaunchIgnoreFailure
+            );
+        }
+
+        /// <summary>
+        /// Uninstalls the Windows service with the configured <see cref="Name"/>.
+        /// </summary>
+        /// <returns>
+        /// A task that represents the asynchronous uninstall operation. The task result 
+        /// is <c>true</c> if the service was successfully uninstalled; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <see cref="Name"/> is null or empty.
+        /// </exception>
+        /// <exception cref="Win32Exception">
+        /// Thrown if the Service Control Manager cannot be accessed or the service 
+        /// cannot be removed.
+        /// </exception>
+        public async Task<bool> Uninstall()
+        {
+            return await _serviceManager.UninstallService(Name);
         }
 
         #endregion

@@ -3,6 +3,8 @@ using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
+using Servy.Core.Config;
+
 using Servy.Core.Data;
 using Servy.Core.Services;
 
@@ -24,7 +26,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_ValidOptions_ReturnsSuccess()
+        public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -67,7 +69,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -82,7 +84,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_ValidationFails_ReturnsFailure()
+        public async Task Execute_ValidationFails_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions();
@@ -97,7 +99,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_ServiceManagerFails_ReturnsFailure()
+        public async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -140,7 +142,7 @@ namespace Servy.CLI.UnitTests
             )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -155,7 +157,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_UnauthorizedAccessException_ReturnsFailure()
+        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -198,7 +200,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act
@@ -213,7 +215,7 @@ namespace Servy.CLI.UnitTests
         }
 
         [Fact]
-        public async void Execute_GenericException_ReturnsFailure()
+        public async Task Execute_GenericException_ReturnsFailure()
         {
             // Arrange
             var options = new InstallServiceOptions
@@ -256,7 +258,7 @@ namespace Servy.CLI.UnitTests
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test
-            var wrapperExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{Program.ServyServiceExeFileName}.exe");
+            var wrapperExePath = AppConfig.GetServyCLIServicePath();
             File.WriteAllText(wrapperExePath, "dummy content");
 
             // Act

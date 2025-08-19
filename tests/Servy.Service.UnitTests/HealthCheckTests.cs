@@ -1,14 +1,12 @@
 ﻿using Moq;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
-using Servy.Service.CommandLine;
-using Servy.Service.Logging;
+using Servy.Core.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
-using System.Collections.Generic;
 
 namespace Servy.Service.UnitTests
 {

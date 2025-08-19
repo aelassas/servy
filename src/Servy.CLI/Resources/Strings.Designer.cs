@@ -61,24 +61,6 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à An error occurred..
-        /// </summary>
-        public static string Message_Error {
-            get {
-                return ResourceManager.GetString("Message_Error", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service installed successfully..
-        /// </summary>
-        public static string Message_Success {
-            get {
-                return ResourceManager.GetString("Message_Success", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
         /// </summary>
         public static string Msg_AdminRightsRequired {

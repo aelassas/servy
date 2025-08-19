@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Logging;
 using Servy.Service.ProcessManagement;
 using Servy.Service.ServiceHelpers;
 using Servy.Service.StreamWriters;
@@ -33,7 +33,7 @@ namespace Servy.Service.UnitTests
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
 
             // Act
-            service.TestOnStart([]);
+            service.TestOnStart((new string []{}));
 
             // Assert
             mockHelper.Verify(h => h.InitializeStartup(mockLogger.Object), Times.Once);
@@ -58,7 +58,7 @@ namespace Servy.Service.UnitTests
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
 
             // Act
-            service.TestOnStart([]);
+            service.TestOnStart((new string []{}));
 
             // Assert
             mockHelper.Verify(h => h.InitializeStartup(mockLogger.Object), Times.Once);
@@ -85,7 +85,7 @@ namespace Servy.Service.UnitTests
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
 
             // Act
-            service.TestOnStart([]);
+            service.TestOnStart((new string []{}));
 
             // Assert
             mockLogger.Verify(l => l.Error(
