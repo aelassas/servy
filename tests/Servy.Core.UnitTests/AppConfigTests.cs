@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Xunit;
 
 namespace Servy.Core.UnitTests
 {
@@ -39,6 +40,14 @@ namespace Servy.Core.UnitTests
         public void DefaultAESIVPath_ShouldEndWithAesIvDat()
         {
             Assert.EndsWith("aes_iv.dat", AppConfig.DefaultAESIVPath);
+        }
+
+        [Fact]
+        public void GetHandleExePath_ShouldReturnFullPath()
+        {
+            var path = AppConfig.GetHandleExePath();
+            Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.EndsWith(AppConfig.HandleExe, path);
         }
 
         [Fact]

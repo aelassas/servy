@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
-using Servy.Core;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Views;
+using System;
+using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 
@@ -13,7 +15,6 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-
         /// <summary>
         /// The base namespace where embedded resource files are located.
         /// Used for locating and extracting files such as the service executable.
@@ -57,12 +58,9 @@ namespace Servy
 
             try
             {
-                // Load configuration from appsettings.json
-                var config = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .Build();
-
-                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
+                // Load configuration from App.config
+                var config = ConfigurationManager.AppSettings;
+                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
@@ -99,6 +97,12 @@ namespace Servy
                 if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
                 {
                     MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
+                }
+
+                // Copy Sysinternals from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
                 }
 
 #if DEBUG

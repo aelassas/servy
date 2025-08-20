@@ -1,10 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using Dapper;
+using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Servy.Infrastructure.Data
@@ -44,7 +51,7 @@ namespace Servy.Infrastructure.Data
         #region DTO methods
 
         /// <inheritdoc />
-        public virtual async Task<int> AddAsync(ServiceDto service)
+        public virtual async Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
             if (!string.IsNullOrWhiteSpace(service.Password))
                 service.Password = _securePassword.Encrypt(service.Password);
@@ -72,55 +79,56 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpdateAsync(ServiceDto service)
+        public virtual async Task<int> UpdateAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
             if (!string.IsNullOrWhiteSpace(service.Password))
                 service.Password = _securePassword.Encrypt(service.Password);
 
             var sql = @"
-        UPDATE Services SET
-            Name = @Name,
-            Description = @Description,
-            ExecutablePath = @ExecutablePath,
-            StartupDirectory = @StartupDirectory,
-            Parameters = @Parameters,
-            StartupType = @StartupType,
-            Priority = @Priority,
-            StdoutPath = @StdoutPath,
-            StderrPath = @StderrPath,
-            EnableRotation = @EnableRotation,
-            RotationSize = @RotationSize,
-            EnableHealthMonitoring = @EnableHealthMonitoring,
-            HeartbeatInterval = @HeartbeatInterval,
-            MaxFailedChecks = @MaxFailedChecks,
-            RecoveryAction = @RecoveryAction,
-            MaxRestartAttempts = @MaxRestartAttempts,
-            EnvironmentVariables = @EnvironmentVariables,
-            ServiceDependencies = @ServiceDependencies,
-            RunAsLocalSystem = @RunAsLocalSystem,
-            UserAccount = @UserAccount,
-            Password = @Password,
-            PreLaunchExecutablePath = @PreLaunchExecutablePath,
-            PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
-            PreLaunchParameters = @PreLaunchParameters,
-            PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
-            PreLaunchStdoutPath = @PreLaunchStdoutPath,
-            PreLaunchStderrPath = @PreLaunchStderrPath,
-            PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
-            PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
-            PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure
-        WHERE Id = @Id;";
+                UPDATE Services SET
+                    Name = @Name,
+                    Description = @Description,
+                    ExecutablePath = @ExecutablePath,
+                    StartupDirectory = @StartupDirectory,
+                    Parameters = @Parameters,
+                    StartupType = @StartupType,
+                    Priority = @Priority,
+                    StdoutPath = @StdoutPath,
+                    StderrPath = @StderrPath,
+                    EnableRotation = @EnableRotation,
+                    RotationSize = @RotationSize,
+                    EnableHealthMonitoring = @EnableHealthMonitoring,
+                    HeartbeatInterval = @HeartbeatInterval,
+                    MaxFailedChecks = @MaxFailedChecks,
+                    RecoveryAction = @RecoveryAction,
+                    MaxRestartAttempts = @MaxRestartAttempts,
+                    EnvironmentVariables = @EnvironmentVariables,
+                    ServiceDependencies = @ServiceDependencies,
+                    RunAsLocalSystem = @RunAsLocalSystem,
+                    UserAccount = @UserAccount,
+                    Password = @Password,
+                    PreLaunchExecutablePath = @PreLaunchExecutablePath,
+                    PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
+                    PreLaunchParameters = @PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = @PreLaunchStdoutPath,
+                    PreLaunchStderrPath = @PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure
+                WHERE Id = @Id;";
 
 
             return await _dapper.ExecuteAsync(sql, service);
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> UpsertAsync(ServiceDto service)
+        public virtual async Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
-            var exists = await _dapper.QuerySingleOrDefaultAsync<int>(
-                "SELECT Id FROM Services WHERE LOWER(Name) = LOWER(@Name);",
-                new { Name = service.Name.Trim() });
+            var sql = "SELECT Id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+            var cmd = new CommandDefinition(sql, new { Name = service.Name.Trim() }, cancellationToken: cancellationToken);
+
+            var exists = await _dapper.QuerySingleOrDefaultAsync<int>(cmd);
 
             if (exists > 0)
             {
@@ -132,7 +140,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> DeleteAsync(int id)
+        public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
             var sql = "DELETE FROM Services WHERE Id = @Id;";
 
@@ -140,7 +148,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<int> DeleteAsync(string name)
+        public virtual async Task<int> DeleteAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
@@ -150,12 +158,13 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto?> GetByIdAsync(int id)
+        public virtual async Task<ServiceDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services WHERE Id = @Id;";
 
+            var cmd = new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken);
+            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Id = id });
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
                 dto.Password = _securePassword.Decrypt(dto.Password);
 
@@ -163,12 +172,13 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto?> GetByNameAsync(string name)
+        public virtual async Task<ServiceDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
+            var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
+            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(sql, new { Name = name.Trim() });
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
                 dto.Password = _securePassword.Decrypt(dto.Password);
 
@@ -176,14 +186,18 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync()
+        public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services;";
 
+            var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
+            var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-            var list = await _dapper.QueryAsync<ServiceDto>(sql);
+
             foreach (var dto in list)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (!string.IsNullOrEmpty(dto.Password))
                     dto.Password = _securePassword.Decrypt(dto.Password);
             }
@@ -192,22 +206,25 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword)
+        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword, CancellationToken cancellationToken = default)
         {
             var sql = @"
-        SELECT *
-        FROM Services
-        WHERE LOWER(Name) LIKE @Pattern
-           OR LOWER(Description) LIKE @Pattern
-        ORDER BY Name ASC;";
+                SELECT *
+                FROM Services
+                WHERE LOWER(Name) LIKE @Pattern
+                    OR LOWER(Description) LIKE @Pattern
+                ORDER BY Name ASC;";
 
             var pattern = $"%{keyword?.Trim().ToLower()}%";
 
 
+            var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
+            var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-            var list = await _dapper.QueryAsync<ServiceDto>(sql, new { Pattern = pattern });
             foreach (var dto in list)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 if (!string.IsNullOrEmpty(dto.Password))
                     dto.Password = _securePassword.Decrypt(dto.Password);
             }
@@ -216,7 +233,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportXML(string name)
+        public virtual async Task<string> ExportXML(string name, CancellationToken cancellationToken = default)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -231,7 +248,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportXML(string xml)
+        public virtual async Task<bool> ImportXML(string xml, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(xml))
                 return false;
@@ -252,7 +269,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportJSON(string name)
+        public virtual async Task<string> ExportJSON(string name, CancellationToken cancellationToken = default)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -262,7 +279,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportJSON(string json)
+        public virtual async Task<bool> ImportJSON(string json, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return false;
@@ -286,59 +303,59 @@ namespace Servy.Infrastructure.Data
         #region Domain Methods
 
         /// <inheritdoc />
-        public async Task<int> AddDomainServiceAsync(Service service) => await AddAsync(MapToDto(service));
+        public async Task<int> AddDomainServiceAsync(Service service, CancellationToken cancellationToken = default) => await AddAsync(MapToDto(service), cancellationToken);
 
         /// <inheritdoc />
-        public async Task<int> UpdateDomainServiceAsync(Service service) => await UpdateAsync(MapToDto(service));
+        public async Task<int> UpdateDomainServiceAsync(Service service, CancellationToken cancellationToken = default) => await UpdateAsync(MapToDto(service), cancellationToken);
 
         /// <inheritdoc />
-        public async Task<int> UpsertDomainServiceAsync(Service service) => await UpsertAsync(MapToDto(service));
+        public async Task<int> UpsertDomainServiceAsync(Service service, CancellationToken cancellationToken = default) => await UpsertAsync(MapToDto(service), cancellationToken);
 
         /// <inheritdoc />
-        public async Task<int> DeleteDomainServiceAsync(int id) => await DeleteAsync(id);
+        public async Task<int> DeleteDomainServiceAsync(int id, CancellationToken cancellationToken = default) => await DeleteAsync(id, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<int> DeleteDomainServiceAsync(string name) => await DeleteAsync(name);
+        public async Task<int> DeleteDomainServiceAsync(string name, CancellationToken cancellationToken = default) => await DeleteAsync(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<Service?> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id)
+        public async Task<Service?> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id, CancellationToken cancellationToken = default)
         {
-            var dto = await GetByIdAsync(id);
+            var dto = await GetByIdAsync(id, cancellationToken);
             return dto != null ? MapToDomain(serviceManager, dto) : null;
         }
 
         /// <inheritdoc />
-        public async Task<Service?> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name)
+        public async Task<Service?> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name, CancellationToken cancellationToken = default)
         {
-            var dto = await GetByNameAsync(name);
+            var dto = await GetByNameAsync(name, cancellationToken);
             return dto != null ? MapToDomain(serviceManager, dto) : null;
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager)
+        public async Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager, CancellationToken cancellationToken = default)
         {
-            var dtos = await GetAllAsync();
+            var dtos = await GetAllAsync(cancellationToken);
             return dtos.Select(dto => MapToDomain(serviceManager, dto));
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword)
+        public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, CancellationToken cancellationToken = default)
         {
-            var dtos = await Search(keyword);
+            var dtos = await Search(keyword, cancellationToken);
             return dtos.Select(dto => MapToDomain(serviceManager, dto));
         }
 
         /// <inheritdoc />
-        public async Task<string> ExportDomainServiceXMLAsync(string name) => await ExportXML(name);
+        public async Task<string> ExportDomainServiceXMLAsync(string name, CancellationToken cancellationToken = default) => await ExportXML(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> ImportDomainServiceXMLAsync(string xml) => await ImportXML(xml);
+        public async Task<bool> ImportDomainServiceXMLAsync(string xml, CancellationToken cancellationToken = default) => await ImportXML(xml, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<string> ExportDomainServiceJSONAsync(string name) => await ExportJSON(name);
+        public async Task<string> ExportDomainServiceJSONAsync(string name, CancellationToken cancellationToken = default) => await ExportJSON(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> ImportDomainServiceJSONAsync(string json) => await ImportJSON(json);
+        public async Task<bool> ImportDomainServiceJSONAsync(string json, CancellationToken cancellationToken = default) => await ImportJSON(json, cancellationToken);
 
         #endregion
 
@@ -351,7 +368,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="dto">The data transfer object representing the service.</param>
         /// <returns>A new <see cref="Service"/> instance populated from the DTO.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="dto"/> is <c>null</c>.</exception>
-        private Service MapToDomain(IServiceManager serviceManager, ServiceDto? dto)
+        private Service MapToDomain(IServiceManager serviceManager, ServiceDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -396,7 +413,7 @@ namespace Servy.Infrastructure.Data
         /// <param name="domain">The domain service to map.</param>
         /// <returns>A <see cref="ServiceDto"/> populated from the domain service.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="domain"/> is <c>null</c>.</exception>
-        private ServiceDto MapToDto(Service? domain)
+        private ServiceDto MapToDto(Service domain)
         {
             if (domain == null) throw new ArgumentNullException(nameof(domain));
 

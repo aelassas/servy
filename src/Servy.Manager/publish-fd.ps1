@@ -11,7 +11,25 @@ $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ---------------------------------------------------------------------------------
-# Step 0: Clean and publish Servy.Manager.csproj (Framework-dependent, win-x64)
+# Step 0: Run publish-res-release.ps1 (resource publishing step)
+# ---------------------------------------------------------------------------------
+$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+
+if (-not (Test-Path $PublishResScript)) {
+    Write-Error "Required script not found: $PublishResScript"
+    exit 1
+}
+
+Write-Host "=== Running publish-res-release.ps1 ==="
+& $PublishResScript -tfm $tfm
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "publish-res-release.ps1 failed."
+    exit $LASTEXITCODE
+}
+Write-Host "=== Completed publish-res-release.ps1 ===`n"
+
+# ---------------------------------------------------------------------------------
+# Step 1: Clean and publish Servy.Manager.csproj (Framework-dependent, win-x64)
 # ---------------------------------------------------------------------------------
 $ProjectPath   = Join-Path $ScriptDir "Servy.Manager.csproj"
 $PublishFolder = Join-Path $ScriptDir "bin\Release\$tfm\win-x64\publish"

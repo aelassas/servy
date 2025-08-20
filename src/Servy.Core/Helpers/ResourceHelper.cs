@@ -1,5 +1,7 @@
 ﻿using Servy.Core.Config;
+using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
 
 namespace Servy.Core.Helpers
@@ -53,7 +55,13 @@ namespace Servy.Core.Helpers
 
             if (shouldCopy)
             {
-                if (extension.Equals("exe", StringComparison.OrdinalIgnoreCase) && !ProcessKiller.KillServyProcessTree(targetFileName))
+                var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
+                var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
+                if (isExe && !ProcessKiller.KillProcessTree(targetFileName))
+                {
+                    return false;
+                }
+                else if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
                 {
                     return false;
                 }

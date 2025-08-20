@@ -6,6 +6,11 @@
     public interface ILogger
     {
         /// <summary>
+        /// Prefix to prepend to log messages.
+        /// </summary>
+        string? Prefix { get; set; }
+
+        /// <summary>
         /// Logs an informational message.
         /// </summary>
         /// <param name="message">The message to log.</param>

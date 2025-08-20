@@ -3,6 +3,10 @@ using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.CLI.UnitTests
 {
@@ -34,7 +38,7 @@ namespace Servy.CLI.UnitTests
 
             MockXmlValidator(true);
 
-            _serviceRepoMock.Setup(r => r.ImportXML(xmlContent)).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.ImportXML(xmlContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
             var result = await _command.Execute(opts);
@@ -43,7 +47,7 @@ namespace Servy.CLI.UnitTests
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("XML configuration saved successfully", result.Message);
 
-            _serviceRepoMock.Verify(r => r.ImportXML(xmlContent), Times.Once);
+            _serviceRepoMock.Verify(r => r.ImportXML(xmlContent, It.IsAny<CancellationToken>()), Times.Once);
 
             File.Delete(path);
         }
@@ -82,7 +86,7 @@ namespace Servy.CLI.UnitTests
 
             MockJsonValidator(true);
 
-            _serviceRepoMock.Setup(r => r.ImportJSON(jsonContent)).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.ImportJSON(jsonContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
             var result = await _command.Execute(opts);
@@ -91,7 +95,7 @@ namespace Servy.CLI.UnitTests
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("JSON configuration saved successfully", result.Message);
 
-            _serviceRepoMock.Verify(r => r.ImportJSON(jsonContent), Times.Once);
+            _serviceRepoMock.Verify(r => r.ImportJSON(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
 
             File.Delete(path);
         }
@@ -141,17 +145,17 @@ namespace Servy.CLI.UnitTests
         }
 
         // Helpers for mocking static validators
-        private void MockXmlValidator(bool isValid, string? errorMsg = null)
+        private void MockXmlValidator(bool isValid, string errorMsg = null!)
         {
             var validator = typeof(XmlServiceValidator);
-            validator.GetMethod("TryValidate")!.Invoke(null, new object[] { "", null! });
+            validator!.GetMethod("TryValidate")!.Invoke(null, new object?[] { "", null });
             // Use a library like Pose or replace XmlServiceValidator with an interface to mock in real project
         }
 
-        private void MockJsonValidator(bool isValid, string? errorMsg = null)
+        private void MockJsonValidator(bool isValid, string errorMsg = null!)
         {
             var validator = typeof(JsonServiceValidator);
-            validator.GetMethod("TryValidate")!.Invoke(null, new object[] { "", null! });
+            validator!.GetMethod("TryValidate")!.Invoke(null, new object?[] { "", null });
         }
     }
 }

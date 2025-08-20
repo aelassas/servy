@@ -98,6 +98,12 @@ namespace Servy.CLI
                     Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
                 }
 
+                // Copy Sysinternals from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                {
+                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                }
+
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
                 if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb"))

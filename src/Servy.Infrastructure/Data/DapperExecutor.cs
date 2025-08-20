@@ -1,6 +1,9 @@
 ﻿using Dapper;
 using Servy.Core.Data;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 
 namespace Servy.Infrastructure.Data
 {
@@ -36,14 +39,14 @@ namespace Servy.Infrastructure.Data
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.ExecuteScalarAsync<T>(sql, param);
+                return connection.ExecuteScalarAsync<T?>(sql, param);
             }
         }
 
         /// <summary>
         /// Executes a SQL command that does not return a result set.
         /// </summary>
-        /// <param name="sql">The SQL command. Cannot be null.</param>
+        /// <param name="sql">The SQL query. Cannot be null.</param>
         /// <param name="param">Optional parameters for the command.</param>
         /// <returns>The number of affected rows.</returns>
         public Task<int> ExecuteAsync(string sql, object? param = null)
@@ -61,17 +64,14 @@ namespace Servy.Infrastructure.Data
         /// Executes a SQL query and returns a collection of results.
         /// </summary>
         /// <typeparam name="T">The type of the result objects.</typeparam>
-        /// <param name="sql">The SQL query. Cannot be null.</param>
-        /// <param name="param">Optional parameters for the query.</param>
+        /// <param name="command">The SQL query. Cannot be null.</param>
         /// <returns>A collection of results.</returns>
-        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+        public Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
         {
-            if (sql == null) throw new ArgumentNullException(nameof(sql));
-
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.QueryAsync<T>(sql, param);
+                return connection.QueryAsync<T>(command);
             }
         }
 
@@ -79,17 +79,14 @@ namespace Servy.Infrastructure.Data
         /// Executes a SQL query and returns a single result or default if no result exists.
         /// </summary>
         /// <typeparam name="T">The type of the result object.</typeparam>
-        /// <param name="sql">The SQL query. Cannot be null.</param>
-        /// <param name="param">Optional parameters for the query.</param>
+        /// <param name="command">The SQL query. Cannot be null.</param>
         /// <returns>The single result or default value of <typeparamref name="T"/>.</returns>
-        public Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null)
+        public Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
-            if (sql == null) throw new ArgumentNullException(nameof(sql));
-
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.QuerySingleOrDefaultAsync<T>(sql, param);
+                return connection.QuerySingleOrDefaultAsync<T>(command);
             }
         }
     }

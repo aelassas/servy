@@ -2,7 +2,10 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Services;
+using System;
 using System.ServiceProcess;
+using System.Threading;
+using Xunit;
 
 namespace Servy.CLI.UnitTests
 {
@@ -22,7 +25,7 @@ namespace Servy.CLI.UnitTests
         {
             // Arrange
             var options = new ServiceStatusOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService")).Returns(ServiceControllerStatus.Running);
+            _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
             // Act
             var result = _command.Execute(options);
@@ -51,7 +54,7 @@ namespace Servy.CLI.UnitTests
         {
             // Arrange
             var options = new ServiceStatusOptions { ServiceName = "TestService" };
-            _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService")).Throws<ArgumentException>();
+            _mockServiceManager.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Throws<ArgumentException>();
 
             // Act
             var result = _command.Execute(options);

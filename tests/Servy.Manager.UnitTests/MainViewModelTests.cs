@@ -30,7 +30,7 @@ namespace Servy.Manager.UnitTests
 
             if (Application.Current == null)
             {
-                new Application(); // minimal Application instance
+                new App(); // Application instance
             }
         }
 
