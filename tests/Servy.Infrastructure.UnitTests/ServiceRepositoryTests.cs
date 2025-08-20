@@ -1,3 +1,4 @@
+using Dapper;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.Domain;
@@ -8,7 +9,6 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -90,7 +90,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task UpsertAsync_ExistingService_Updates()
         {
             var dto = new ServiceDto { Name = "S1" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(5);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(5);
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
@@ -105,7 +105,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task UpsertAsync_NewService_Adds()
         {
             var dto = new ServiceDto { Name = "NewService" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(7);
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
@@ -123,9 +123,7 @@ namespace Servy.Infrastructure.UnitTests
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
 
             // Service does not exist
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(
-                It.IsAny<string>(), It.IsAny<object>()))
-                .ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
 
             // AddAsync returns 7
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
@@ -180,7 +178,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task GetByIdAsync_DecryptsPassword()
         {
             var dto = new ServiceDto { Id = 1, Password = "encrypted" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
 
             var repo = CreateRepository();
@@ -193,7 +191,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task GetByIdAsync_EmptyPassword()
         {
             var dto = new ServiceDto { Id = 1, Password = null };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1);
@@ -205,7 +203,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task GetByIdAsync_NullDto()
         {
             ServiceDto dto = null;
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1);
@@ -217,7 +215,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task GetByNameAsync_DecryptsPassword()
         {
             var dto = new ServiceDto { Name = "S", Password = "encrypted" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
 
             var repo = CreateRepository();
@@ -234,7 +232,7 @@ namespace Servy.Infrastructure.UnitTests
                 new ServiceDto { Id = 1, Password = "e1" },
                 new ServiceDto { Id = 2, Password = "e2" }
             };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), null)).ReturnsAsync(list);
+            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
             _mockSecurePassword.Setup(s => s.Decrypt("e2")).Returns("p2");
 
@@ -250,7 +248,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task Search_DecryptsPasswords()
         {
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(list);
+            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
@@ -264,7 +262,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task Search_NullKeyword()
         {
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(list);
+            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
@@ -278,7 +276,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task ExportXML_ReturnsEmptyString()
         {
             _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync((ServiceDto)null);
 
             var repo = CreateRepository();
@@ -294,7 +292,7 @@ namespace Servy.Infrastructure.UnitTests
             var dto = new ServiceDto { Name = "A", Password = "p1" };
 
             _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync(dto);
 
             _mockSecurePassword
@@ -316,7 +314,7 @@ namespace Servy.Infrastructure.UnitTests
             var xml = $"<ServiceDto><Name>{dto.Name}</Name></ServiceDto>";
 
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var result = await repo.ImportXML(xml);
@@ -358,7 +356,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task ExportJSON_ReturnsEmptyString()
         {
             _mockDapper
-                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>()))
+                .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync((ServiceDto)null);
 
             var repo = CreateRepository();
@@ -372,7 +370,7 @@ namespace Servy.Infrastructure.UnitTests
         public async Task ExportJSON_ReturnsSerializedService()
         {
             var dto = new ServiceDto { Name = "A" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(dto);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
             var json = await repo.ExportJSON("A");
@@ -386,7 +384,7 @@ namespace Servy.Infrastructure.UnitTests
             var repo = CreateRepository();
             var json = "{\"Name\":\"A\"}";
 
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var result = await repo.ImportJSON(json);

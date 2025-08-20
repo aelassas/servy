@@ -43,6 +43,14 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
+        public void GetHandleExePath_ShouldReturnFullPath()
+        {
+            var path = AppConfig.GetHandleExePath();
+            Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.EndsWith(AppConfig.HandleExe, path);
+        }
+
+        [Fact]
         public void GetServyCLIServicePath_ShouldReturnFullPath()
         {
             var path = AppConfig.GetServyCLIServicePath();

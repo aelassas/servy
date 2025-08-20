@@ -28,13 +28,14 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $serviceProject      = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
 $resourcesFolder     = Join-Path $ScriptDir "..\Servy.CLI\Resources"
 $buildConfiguration  = "Release"
-$buildOutput         = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
+$platform            = "x64"
+$buildOutput         = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
 
 # ----------------------------------------------------------------------
 # Step 1 - Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
-msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform
 
 # ----------------------------------------------------------------------
 # Step 2 - Files to copy (with renamed outputs where applicable)

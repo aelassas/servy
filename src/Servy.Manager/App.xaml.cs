@@ -5,6 +5,7 @@ using Servy.Infrastructure.Helpers;
 using System;
 using System.Configuration;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 
 namespace Servy.Manager
@@ -14,6 +15,12 @@ namespace Servy.Manager
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// The base namespace where embedded resource files are located.
+        /// Used for locating and extracting files such as the service executable.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.Manager.Resources";
+
         /// <summary>
         /// Connection string.
         /// </summary>
@@ -94,6 +101,35 @@ namespace Servy.Manager
                     MessageBox.Show("UI thread exception: " + args.Exception);
                     args.Handled = true;
                 };
+
+                var asm = Assembly.GetExecutingAssembly();
+
+                // Copy service executable from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
+                }
+
+                // Copy Sysinternals from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                }
+
+#if DEBUG
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb");
+                }
+#else
+
+                // Copy Servy.Core.dll from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
+                }
+#endif
 
             }
             catch (Exception ex)

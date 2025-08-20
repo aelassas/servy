@@ -116,6 +116,7 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\Servy.Core.dll" />
     <None Include="app.manifest" />
     <None Include="packages.config" />

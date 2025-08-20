@@ -30,15 +30,15 @@ $RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ServyDir           = Join-Path $RootDir "src\Servy"
 $CliDir             = Join-Path $RootDir "src\Servy.CLI"
 $ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
-$BuildOutputDir     = Join-Path $ServyDir "bin\$BuildConfig"
-$CliBuildOutputDir  = Join-Path $CliDir "bin\$BuildConfig"
-$ManagerBuildOutputDir  = Join-Path $ManagerDir "bin\$BuildConfig"
+$BuildOutputDir     = Join-Path $ServyDir "bin\$Platform\$BuildConfig"
+$CliBuildOutputDir  = Join-Path $CliDir "bin\$Platform\$BuildConfig"
+$ManagerBuildOutputDir  = Join-Path $ManagerDir "bin\$Platform\$BuildConfig"
 Set-Location $ScriptDir
 
 # Package folder structure
 $PackageFolder      = "$AppName-$version-$Framework-$Platform-portable"
 $AppPackageFolder   = ""
-$CliPackageFolder   = "cli"
+$CliPackageFolder   = ""
 $OutputZip          = "$PackageFolder.zip"
 
 # ========================

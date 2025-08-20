@@ -55,7 +55,13 @@ namespace Servy.Core.Helpers
 
             if (shouldCopy)
             {
-                if (extension.Equals("exe", StringComparison.OrdinalIgnoreCase) && !ProcessKiller.KillServyProcessTree(targetFileName))
+                var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
+                var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
+                if (isExe && !ProcessKiller.KillProcessTree(targetFileName))
+                {
+                    return false;
+                }
+                else if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
                 {
                     return false;
                 }

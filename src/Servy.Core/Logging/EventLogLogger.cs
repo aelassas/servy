@@ -12,6 +12,9 @@ namespace Servy.Core.Logging
     {
         private readonly EventLog _eventLog;
 
+        ///<inheritdoc/>
+        public string Prefix { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source.
         /// </summary>
@@ -32,20 +35,34 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Info(string message)
         {
-            _eventLog.WriteEntry(message, EventLogEntryType.Information);
+            _eventLog.WriteEntry(Format(message), EventLogEntryType.Information);
         }
 
         /// <inheritdoc/>
         public void Warning(string message)
         {
-            _eventLog.WriteEntry(message, EventLogEntryType.Warning);
+            _eventLog.WriteEntry(Format(message), EventLogEntryType.Warning);
         }
 
         /// <inheritdoc/>
         public void Error(string message, Exception ex = null)
         {
             var fullMessage = ex != null ? $"{message}\n{ex}" : message;
-            _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error);
+            _eventLog.WriteEntry(Format(fullMessage), EventLogEntryType.Error);
         }
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Formats a log message by prepending the <see cref="Prefix"/> if it is set.
+        /// </summary>
+        /// <param name="message">The original log message.</param>
+        /// <returns>The formatted message with prefix if available.</returns>
+        private string Format(string message)
+        {
+            return string.IsNullOrEmpty(Prefix) ? message : $"[{Prefix}] {message}";
+        }
+
+        #endregion
     }
 }

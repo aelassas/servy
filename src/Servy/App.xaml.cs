@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Views;
 using System;
 using System.Configuration;
 using System.IO;
@@ -14,7 +15,6 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-
         /// <summary>
         /// The base namespace where embedded resource files are located.
         /// Used for locating and extracting files such as the service executable.
@@ -97,6 +97,12 @@ namespace Servy
                 if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
                 {
                     MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
+                }
+
+                // Copy Sysinternals from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
                 }
 
 #if DEBUG

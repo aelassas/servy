@@ -24,7 +24,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Absolute paths to relevant folders and project
 $serviceProject     = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy\Resources"
+$resourcesFolder    = Join-Path $ScriptDir "..\Servy.Manager\Resources"
 $buildConfiguration = "Release"
 $platform           = "x64"
 $buildOutput        = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"

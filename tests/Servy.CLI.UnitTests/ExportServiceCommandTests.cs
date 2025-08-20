@@ -5,6 +5,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -61,7 +62,7 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Execute_ShouldFail_WhenServiceNotFound()
         {
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc")).ReturnsAsync((ServiceDto)null);
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync((ServiceDto)null);
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
             var result = await _command.Execute(opts);
             Assert.False(result.Success);
@@ -72,8 +73,8 @@ namespace Servy.CLI.UnitTests
         public async Task Execute_ShouldExportXml_WhenConfigTypeIsXml()
         {
             var filePath = Path.Combine(_tempDir, "out.xml");
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc")).ReturnsAsync(new ServiceDto { Name = "TestService" });
-            _serviceRepoMock.Setup(r => r.ExportXML("svc")).ReturnsAsync("<xml>data</xml>");
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
+            _serviceRepoMock.Setup(r => r.ExportXML("svc", It.IsAny<CancellationToken>())).ReturnsAsync("<xml>data</xml>");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = filePath };
             var result = await _command.Execute(opts);
@@ -88,8 +89,8 @@ namespace Servy.CLI.UnitTests
         public async Task Execute_ShouldExportJson_WhenConfigTypeIsJson()
         {
             var filePath = Path.Combine(_tempDir, "out.json");
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc")).ReturnsAsync(new ServiceDto { Name = "TestService" });
-            _serviceRepoMock.Setup(r => r.ExportJSON("svc")).ReturnsAsync("{\"name\":\"svc\"}");
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<CancellationToken>())).ReturnsAsync(new ServiceDto { Name = "TestService" });
+            _serviceRepoMock.Setup(r => r.ExportJSON("svc", It.IsAny<CancellationToken>())).ReturnsAsync("{\"name\":\"svc\"}");
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "json", Path = filePath };
             var result = await _command.Execute(opts);
@@ -103,7 +104,7 @@ namespace Servy.CLI.UnitTests
         [Fact]
         public async Task Execute_ShouldHandleException()
         {
-            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc")).ThrowsAsync(new Exception("boom"));
+            _serviceRepoMock.Setup(r => r.GetByNameAsync("svc", It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("boom"));
 
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
             var result = await _command.Execute(opts);

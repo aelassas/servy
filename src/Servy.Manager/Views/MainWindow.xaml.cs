@@ -14,7 +14,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace Servy.Manager
+namespace Servy.Manager.Views
 {
     /// <summary>
     /// Interaction logic for <see cref="MainWindow"/>.
@@ -174,5 +174,22 @@ namespace Servy.Manager
             if (DataContext is MainViewModel vm)
                 await vm.ConfigureCommand.ExecuteAsync(null);
         }
+
+        /// <summary>
+        /// Handles the <see cref="System.Windows.Window.Closing"/> event for the main window.
+        /// </summary>
+        /// <param name="sender">The source of the event, typically the window being closed.</param>
+        /// <param name="e">
+        /// A <see cref="System.ComponentModel.CancelEventArgs"/> instance that can be used to cancel the closing operation.
+        /// </param>
+        /// <remarks>
+        /// Calls <see cref="MainViewModel.Cleanup"/> to stop background timers and cancel ongoing tasks before the window closes.
+        /// </remarks>
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+                vm.Cleanup();
+        }
+
     }
 }
