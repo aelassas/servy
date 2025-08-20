@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -37,7 +38,7 @@ namespace Servy.CLI.UnitTests
 
             MockXmlValidator(true);
 
-            _serviceRepoMock.Setup(r => r.ImportXML(xmlContent)).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.ImportXML(xmlContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
             var result = await _command.Execute(opts);
@@ -46,7 +47,7 @@ namespace Servy.CLI.UnitTests
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("XML configuration saved successfully", result.Message);
 
-            _serviceRepoMock.Verify(r => r.ImportXML(xmlContent), Times.Once);
+            _serviceRepoMock.Verify(r => r.ImportXML(xmlContent, It.IsAny<CancellationToken>()), Times.Once);
 
             File.Delete(path);
         }
@@ -85,7 +86,7 @@ namespace Servy.CLI.UnitTests
 
             MockJsonValidator(true);
 
-            _serviceRepoMock.Setup(r => r.ImportJSON(jsonContent)).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.ImportJSON(jsonContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             // Act
             var result = await _command.Execute(opts);
@@ -94,7 +95,7 @@ namespace Servy.CLI.UnitTests
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("JSON configuration saved successfully", result.Message);
 
-            _serviceRepoMock.Verify(r => r.ImportJSON(jsonContent), Times.Once);
+            _serviceRepoMock.Verify(r => r.ImportJSON(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
 
             File.Delete(path);
         }

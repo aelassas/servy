@@ -10,7 +10,7 @@ using Servy.ViewModels;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Servy
+namespace Servy.Views
 {
     /// <summary>
     /// Interaction logic for <see cref="MainWindow"/>.

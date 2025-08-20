@@ -10,14 +10,21 @@ $ErrorActionPreference = "Stop"
 
 # Configuration
 $buildConfiguration = "Release"
+$platform           = "x64"
 
 # Get the directory of the current script
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Paths
 $ProjectPath = Join-Path $ScriptDir "Servy.Manager.csproj"
+$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
 
-# Step 1: Build project with MSBuild
+# Step 1: Run publish-res-release.ps1
+Write-Host "Running publish-res-release.ps1..."
+& $PublishResScript
+Write-Host "Finished publish-res-release.ps1."
+
+# Step 2: Build project with MSBuild
 Write-Host "Building Servy.Manager project in $buildConfiguration mode..."
-& msbuild $ProjectPath /t:Clean,Build /p:Configuration=$buildConfiguration
+& msbuild $ProjectPath /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform
 Write-Host "Build completed."

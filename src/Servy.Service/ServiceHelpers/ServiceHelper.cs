@@ -50,41 +50,46 @@ namespace Servy.Service.ServiceHelpers
                 return;
             }
 
-            logger?.Info($"[Args] {string.Join(" ", args)}");
-            logger?.Info($"[Args] fullArgs Length: {args.Length}");
+            if (logger != null)
+            {
+                logger.Prefix = options.ServiceName;
+            }
+
+            //logger?.Info($"[Args] {string.Join(" ", args)}");
+            //logger?.Info($"[Args] fullArgs Length: {args.Length}");
 
             string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
             string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
             logger?.Info(
-              $"[Startup Parameters]\n" +
-              $"- serviceName: {options.ServiceName}\n" +
-              $"- realExePath: {options.ExecutablePath}\n" +
-              $"- realArgs: {options.ExecutableArgs}\n" +
-              $"- workingDir: {options.WorkingDirectory}\n" +
-              $"- priority: {options.Priority}\n" +
-              $"- stdoutFilePath: {options.StdOutPath}\n" +
-              $"- stderrFilePath: {options.StdErrPath}\n" +
-              $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
-              $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
-              $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
-              $"- recoveryAction: {options.RecoveryAction}\n" +
-              $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
-              $"- environmentVariables: {envVarsFormatted}" +
+                  $"[Startup Parameters]\n" +
+                  $"- serviceName: {options.ServiceName}\n" +
+                  $"- realExePath: {options.ExecutablePath}\n" +
+                  $"- realArgs: {options.ExecutableArgs}\n" +
+                  $"- workingDir: {options.WorkingDirectory}\n" +
+                  $"- priority: {options.Priority}\n" +
+                  $"- stdoutFilePath: {options.StdOutPath}\n" +
+                  $"- stderrFilePath: {options.StdErrPath}\n" +
+                  $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
+                  $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
+                  $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
+                  $"- recoveryAction: {options.RecoveryAction}\n" +
+                  $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
+                  $"- environmentVariables: {envVarsFormatted}" +
 
-              // Pre-Launch
-              "\n--------Pre-Launch args--------\n" +
-              $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
-              $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
-              $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
-              $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n" +
-              $"- preLaunchStdOutPath: {options.PreLaunchStdOutPath}\n" +
-              $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
-              $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
-              $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
-              $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n" +
-              "---------------------------------\n"
-          );
+                  // Pre-Launch
+                  "\n--------Pre-Launch args--------\n" +
+                  $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
+                  $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
+                  $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
+                  $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n" +
+                  $"- preLaunchStdOutPath: {options.PreLaunchStdOutPath}\n" +
+                  $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
+                  $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
+                  $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
+                  $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n" +
+                  "---------------------------------\n"
+              );
         }
 
         /// <inheritdoc />

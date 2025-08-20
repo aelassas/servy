@@ -3,6 +3,7 @@ using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -78,7 +79,7 @@ namespace Servy.Core.UnitTests
         {
             var service = CreateService();
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService")).Returns(true);
-            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService")).Returns(ServiceControllerStatus.Running);
+            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
             var result = service.GetStatus();
 
@@ -101,7 +102,7 @@ namespace Servy.Core.UnitTests
         public void GetServiceStartupType_ShouldDelegateToServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService"))
+            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
                 .Returns(ServiceStartType.Automatic);
 
             var result = service.GetServiceStartupType();

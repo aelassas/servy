@@ -14,6 +14,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
@@ -35,11 +37,13 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly ILogger _logger;
         private readonly IHelpService _helpService;
-        private readonly DispatcherTimer _refreshTimer;
+        private CancellationTokenSource _cts;
+        private DispatcherTimer _refreshTimer;
         private bool _isBusy;
         private List<ServiceRowViewModel> _services = new List<ServiceRowViewModel>();
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
+        private string _searchText;
 
         #endregion
 
@@ -64,7 +68,9 @@ namespace Servy.Manager.ViewModels
 
         #region Properties
 
-        private string _searchText;
+        /// <summary>
+        /// Gets or sets the search text used for filtering or querying services.
+        /// </summary>
         public string SearchText
         {
             get => _searchText;
@@ -77,7 +83,6 @@ namespace Servy.Manager.ViewModels
                 }
             }
         }
-
 
         /// <summary>
         /// The set of service commands available for each service row.
@@ -206,29 +211,17 @@ namespace Servy.Manager.ViewModels
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
-            var app = Application.Current as App;
-            if (app != null)
-            {
-                IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
+            var app = (App)Application.Current;
+            IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
-                _refreshTimer = new DispatcherTimer
-                {
-                    Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
-                };
-                _refreshTimer.Tick += async (s, e) =>
-                {
-                    _refreshTimer.Stop(); // prevent overlapping ticks
-                    try
-                    {
-                        await RefreshAllServicesAsync();
-                    }
-                    finally
-                    {
-                        _refreshTimer.Start();
-                    }
-                };
-                _refreshTimer.Start();
-            }
+            _cts = new CancellationTokenSource();
+
+            _refreshTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
+            };
+            _refreshTimer.Tick += RefreshTimer_Tick;
+            _refreshTimer.Start();
 
         }
 
@@ -247,6 +240,34 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
+        #region Private Methods/Events
+
+        /// <summary>
+        /// Handles the <see cref="DispatcherTimer.Tick"/> event for refreshing services.
+        /// Stops the timer before invoking <see cref="RefreshAllServicesAsync"/> to prevent overlapping ticks,
+        /// and restarts the timer afterward if it still exists.
+        /// </summary>
+        /// <param name="sender">The <see cref="DispatcherTimer"/> that raised the event.</param>
+        /// <param name="e">Event data associated with the tick.</param>
+        private async void RefreshTimer_Tick(object sender, EventArgs e)
+        {
+            _refreshTimer.Stop(); // prevent overlapping ticks
+            try
+            {
+                if (_cts != null && _cts.IsCancellationRequested)
+                    return; // Exit if cancellation is requested
+
+                await RefreshAllServicesAsync();
+            }
+            finally
+            {
+                if (_refreshTimer != null) // make sure timer still exists
+                    _refreshTimer.Start();
+            }
+        }
+
+        #endregion
+
         #region Service Commands
 
         /// <summary>
@@ -259,6 +280,11 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
+                // Step 0: cancel any previous search
+                _cts?.Cancel();
+                _cts?.Dispose();
+                _cts = new CancellationTokenSource();
+
                 // Step 1: show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
                 SearchButtonText = Strings.Button_Searching;
@@ -269,7 +295,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText));
+                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText), _cts.Token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count()} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
@@ -277,7 +303,7 @@ namespace Servy.Manager.ViewModels
                 sw = Stopwatch.StartNew();
                 var vms = await Task.Run(() =>
                     results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)).ToList()
-                );
+                , _cts.Token);
                 sw.Stop();
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
@@ -286,7 +312,8 @@ namespace Servy.Manager.ViewModels
                 _services.AddRange(vms);
                 ServicesView.Refresh();
 
-                _ = Task.Run(async () => await RefreshAllServicesAsync());
+                // Setp 5: refresh all service statuses and details in the background
+                _ = Task.Run(RefreshAllServicesAsync, _cts.Token);
             }
             catch (Exception ex)
             {
@@ -294,7 +321,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                // Step 6: restore button text and IsBusy
+                // Step 7: restore button text and IsBusy
                 Mouse.OverrideCursor = null;
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
@@ -356,6 +383,29 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
+        #region Public Methods
+
+        /// <summary>
+        /// Stops and cleans up the refresh timer to release resources and prevent references
+        /// from keeping the UI Dispatcher alive. Should be called when the window or view model is closing.
+        /// </summary>
+        public void Cleanup()
+        {
+            if (_cts != null)
+            {
+                _cts.Cancel(); // cancel any in-progress async work
+            }
+
+            if (_refreshTimer != null)
+            {
+                _refreshTimer.Stop();           // Stop the timer
+                _refreshTimer.Tick -= RefreshTimer_Tick; // Unsubscribe event
+                _refreshTimer = null;
+            }
+        }
+
+        #endregion
+
         #region Helpers
 
         /// <summary>
@@ -365,12 +415,13 @@ namespace Servy.Manager.ViewModels
         {
             var snapshot = _services.Select(r => r.Service).ToList();
 
-            // Refresh all services concurrently
-            var tasks = snapshot.Select(RefreshServiceInternal).ToArray();
+            var tasks = snapshot.Select(s => RefreshServiceInternal(s)).ToArray();
             await Task.WhenAll(tasks);
 
-            ServicesView.Refresh();
+            if (_cts != null && !_cts.IsCancellationRequested)
+                ServicesView.Refresh(); // only touch UI if not cancelled
         }
+
 
         /// <summary>
         /// Refresh service description, status, startup type, user and installation state.
@@ -379,22 +430,81 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
+                _cts?.Token.ThrowIfCancellationRequested();
+
                 var isInstalled = _serviceManager.IsServiceInstalled(service.Name);
                 service.IsInstalled = isInstalled;
 
                 if (service.StartupType == null)
                 {
-                    var dto = await _serviceRepository.GetByNameAsync(service.Name);
+                    var dto = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
                     service.StartupType = (ServiceStartType)dto.StartupType;
                 }
 
                 if (isInstalled)
                 {
+                    // snapshot current values to avoid overwriting with defaults on cancel
+                    var prevDescription = service.Description;
+                    var prevStatus = service.Status;
+                    var prevStartupType = service.StartupType;
+                    var prevUser = service.UserSession;
+
                     // Run multiple queries in parallel
-                    var descriptionTask = Task.Run(() => _serviceManager.GetServiceDescription(service.Name));
-                    var statusTask = Task.Run(() => _serviceManager.GetServiceStatus(service.Name));
-                    var startupTypeTask = Task.Run(() => _serviceManager.GetServiceStartupType(service.Name));
-                    var userTask = Task.Run(() => _serviceManager.GetServiceUser(service.Name));
+                    var descriptionTask = Task.Run(() =>
+                    {
+                        try
+                        {
+                            var desc = _serviceManager.GetServiceDescription(service.Name, _cts.Token);
+
+                            // Distinguish between "valid empty" and "failure"
+                            return desc ?? prevDescription; // only fallback on null, not ""
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return prevDescription; // fallback when canceled
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warning($"Failed to get description for {service.Name}: {ex.Message}");
+                            return prevDescription; // fallback on real error
+                        }
+                    }, _cts.Token);
+
+                    var statusTask = Task.Run(() =>
+                    {
+                        try
+                        {
+                            return _serviceManager.GetServiceStatus(service.Name, _cts.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return prevStatus;
+                        }
+                    }, _cts.Token);
+
+                    var startupTypeTask = Task.Run(() =>
+                    {
+                        try
+                        {
+                            return _serviceManager.GetServiceStartupType(service.Name, _cts.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return prevStartupType ?? ServiceStartType.Automatic;
+                        }
+                    }, _cts.Token);
+
+                    var userTask = Task.Run(() =>
+                    {
+                        try
+                        {
+                            return _serviceManager.GetServiceUser(service.Name, _cts.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return prevUser ?? AppConfig.LocalSystem;
+                        }
+                    }, _cts.Token);
 
                     await Task.WhenAll(descriptionTask, statusTask, startupTypeTask, userTask);
 
@@ -403,26 +513,33 @@ namespace Servy.Manager.ViewModels
                     service.StartupType = (ServiceStartType)startupTypeTask.Result;
 
                     var user = userTask.Result;
-                    service.UserSession = string.IsNullOrEmpty(user) || user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
+                    service.UserSession = string.IsNullOrEmpty(user) ||
+                                          user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
                         ? AppConfig.LocalSystem
                         : user;
                 }
 
                 // Repository update
-                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name);
-                if (dtoUpdate != null
-                    && (!dtoUpdate.Description.Equals(service.Description) || dtoUpdate.StartupType != (int)service.StartupType))
+                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
+                if (dtoUpdate != null &&
+                    (!dtoUpdate.Description.Equals(service.Description) ||
+                     dtoUpdate.StartupType != (int)service.StartupType))
                 {
                     dtoUpdate.Description = service.Description;
                     dtoUpdate.StartupType = (int)service.StartupType;
-                    await _serviceRepository.UpsertAsync(dtoUpdate);
+                    await _serviceRepository.UpsertAsync(dtoUpdate, _cts.Token);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // expected when cancelling
             }
             catch (Exception ex)
             {
                 _logger.Warning($"Failed to refresh {service.Name}: {ex}");
             }
         }
+
 
         /// <summary>
         /// Removes a service from the services collection and refreshes the view.
@@ -446,5 +563,6 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
+
     }
 }

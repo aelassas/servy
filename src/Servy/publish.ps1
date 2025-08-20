@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 
 # Configuration
 $buildConfiguration = "Release"
+$platform = "x64"
 
 # Get the directory of the current script
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -25,5 +26,5 @@ Write-Host "Finished publish-res-release.ps1."
 
 # Step 2: Build project with MSBuild
 Write-Host "Building Servy project in $buildConfiguration mode..."
-& msbuild $ProjectPath /t:Clean,Build /p:Configuration=$buildConfiguration
+& msbuild $ProjectPath /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform
 Write-Host "Build completed."

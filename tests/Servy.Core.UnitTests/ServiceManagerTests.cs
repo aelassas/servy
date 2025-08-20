@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Management;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using static Servy.Core.Native.NativeMethods;
@@ -1026,11 +1027,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsExpectedEnum()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns("Auto");
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = "Auto";
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1040,11 +1040,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsNull_WhenNull()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns((string)null);
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = null;
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1054,11 +1053,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsNull_WhenUnknownMode()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns("Unknown");
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = "Unknown";
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1079,40 +1077,40 @@ namespace Servy.Core.UnitTests
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["Description"] = "My Service Description";
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceDescription("MyService");
             Assert.Equal("My Service Description", result);
         }
 
         [Fact]
-        public void GetServiceDescription_ServiceExistsButDescriptionNull_ReturnsEmptyString()
+        public void GetServiceDescription_ServiceExistsButDescriptionNull_ReturnsNull()
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["Description"] = null;
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceDescription("MyService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceDescription_NoServices_ReturnsEmptyString()
+        public void GetServiceDescription_NoServices_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(Array.Empty<ManagementObject>());
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
             var result = _serviceManager.GetServiceDescription("NonExistentService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceDescription_ExceptionThrown_ReturnsEmptyString()
+        public void GetServiceDescription_ExceptionThrown_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Throws(new System.Exception("Boom"));
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Throws(new System.Exception("Boom"));
 
             var result = _serviceManager.GetServiceDescription("Service");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         #endregion
@@ -1125,31 +1123,31 @@ namespace Servy.Core.UnitTests
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["StartName"] = "LocalSystem";
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceUser("MyService");
             Assert.Equal("LocalSystem", result);
         }
 
         [Fact]
-        public void GetServiceUser_ServiceExistsButStartNameNull_ReturnsEmptyString()
+        public void GetServiceUser_ServiceExistsButStartNameNull_ReturnsNull()
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["StartName"] = null;
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceUser("MyService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceUser_NoServices_ReturnsEmptyString()
+        public void GetServiceUser_NoServices_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(Array.Empty<ManagementObject>());
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
             var result = _serviceManager.GetServiceUser("NonExistentService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         #endregion

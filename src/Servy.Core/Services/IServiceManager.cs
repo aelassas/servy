@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Enums;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.Core.Services
@@ -110,8 +111,9 @@ namespace Servy.Core.Services
         /// Gets the current status of the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The current <see cref="ServiceControllerStatus"/> of the service.</returns>
-        ServiceControllerStatus GetServiceStatus(string serviceName);
+        ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Determines whether a Windows service with the specified name is installed 
@@ -128,27 +130,30 @@ namespace Servy.Core.Services
         /// Gets the startup type of a Windows service by its name.
         /// </summary>
         /// <param name="serviceName">The name of the Windows service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>null</c>.
         /// </returns>
-        ServiceStartType? GetServiceStartupType(string serviceName);
+        ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the description of a Windows service by its name.
         /// </summary>
         /// <param name="serviceName">The name of the Windows service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>empty string</c>.
         /// </returns>
-        string GetServiceDescription(string serviceName);
+        string GetServiceDescription(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the account under which the Windows service runs by its name.
         /// </summary>
         /// <param name="serviceName">The name of the Windows service.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>empty string</c>.
         /// </returns>
-        string GetServiceUser(string serviceName);
+        string GetServiceUser(string serviceName, CancellationToken cancellationToken = default);
     }
 }
