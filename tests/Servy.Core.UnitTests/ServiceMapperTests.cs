@@ -6,8 +6,9 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Mappers;
 using Servy.Core.Services;
-using System.Management;
 using System.ServiceProcess;
+using System.Threading;
+using Xunit;
 
 namespace Servy.Core.UnitTests
 {
@@ -389,13 +390,13 @@ namespace Servy.Core.UnitTests
         public void GetStatus_ReturnsStatus_WhenServiceIsInstalled()
         {
             _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService")).Returns(ServiceControllerStatus.Running);
+            _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
             var result = _service.GetStatus();
 
             Assert.Equal(ServiceControllerStatus.Running, result);
             _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -407,18 +408,18 @@ namespace Servy.Core.UnitTests
 
             Assert.Null(result);
             _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStatus(It.IsAny<string>()), Times.Never);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStatus(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public void GetServiceStartupType_ReturnsStartupType()
         {
-            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService")).Returns(ServiceStartType.Automatic);
+            _serviceManagerMock.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
             var result = _service.GetServiceStartupType();
 
             Assert.Equal(ServiceStartType.Automatic, result);
-            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
     }

@@ -2,9 +2,14 @@
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Management;
 using System.ServiceProcess;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 using static Servy.Core.Native.NativeMethods;
 
 #pragma warning disable CS8625
@@ -42,7 +47,7 @@ namespace Servy.Core.UnitTests
         [InlineData("", "", "")]
         [InlineData("TestService", "", "")]
         [InlineData("TestService", "C:\\Apps\\App.exe", "")]
-        public void InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -75,7 +80,7 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 wrapperExePath,
@@ -110,7 +115,7 @@ namespace Servy.Core.UnitTests
 
         [Theory]
         [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
-        public async void InstallService_EmptyOptions(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_EmptyOptions(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -178,7 +183,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void InstallService_Throws_Win32Exception()
+        public async Task InstallService_Throws_Win32Exception()
         {
             var scmHandle = IntPtr.Zero;
             var serviceHandle = new IntPtr(456);
@@ -212,7 +217,7 @@ namespace Servy.Core.UnitTests
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -249,7 +254,7 @@ namespace Servy.Core.UnitTests
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
 
-            Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
                 serviceName,
                 description,
                 "wrapper.exe",
@@ -284,7 +289,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
+        public async Task InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -360,7 +365,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
+        public async Task InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
         {
             var scmHandle = new IntPtr(123);
             var serviceName = "TestService";
@@ -595,7 +600,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
+        public async Task UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
         {
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(IntPtr.Zero);
@@ -605,7 +610,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void UninstallService_ReturnsFalse_WhenOpenServiceFails()
+        public async Task UninstallService_ReturnsFalse_WhenOpenServiceFails()
         {
             var scmHandle = new IntPtr(123);
 
@@ -622,7 +627,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void UninstallService_ReturnsFalse_WhenDeleteServiceFails()
+        public async Task UninstallService_ReturnsFalse_WhenDeleteServiceFails()
         {
             var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
@@ -694,7 +699,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async void UninstallService_StopsAndDeletesServiceSuccessfully()
+        public async Task UninstallService_StopsAndDeletesServiceSuccessfully()
         {
             var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
@@ -770,7 +775,7 @@ namespace Servy.Core.UnitTests
 
 
         [Fact]
-        public async void UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
+        public async Task UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
         {
             var serviceName = "ServiceName";
             var scmHandle = new IntPtr(123);
@@ -1022,11 +1027,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsExpectedEnum()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns("Auto");
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = "Auto";
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1036,11 +1040,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsNull_WhenNull()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns((string?)null);
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = null;
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1050,11 +1053,10 @@ namespace Servy.Core.UnitTests
         [Fact]
         public void GetServiceStartupType_ReturnsNull_WhenUnknownMode()
         {
-            var mockObj = new Mock<IManagementObject>();
-            mockObj.Setup(o => o.StartMode).Returns("Unknown");
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["StartMode"] = "Unknown";
 
-            _mockWindowsServiceApi.Setup(p => p.QueryService(It.IsAny<string>()))
-                        .Returns(new[] { mockObj.Object });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceStartupType("MyService");
 
@@ -1075,40 +1077,40 @@ namespace Servy.Core.UnitTests
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["Description"] = "My Service Description";
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceDescription("MyService");
             Assert.Equal("My Service Description", result);
         }
 
         [Fact]
-        public void GetServiceDescription_ServiceExistsButDescriptionNull_ReturnsEmptyString()
+        public void GetServiceDescription_ServiceExistsButDescriptionNull_ReturnsNull()
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["Description"] = null;
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceDescription("MyService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceDescription_NoServices_ReturnsEmptyString()
+        public void GetServiceDescription_NoServices_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(Array.Empty<ManagementObject>());
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
             var result = _serviceManager.GetServiceDescription("NonExistentService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceDescription_ExceptionThrown_ReturnsEmptyString()
+        public void GetServiceDescription_ExceptionThrown_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Throws(new System.Exception("Boom"));
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Throws(new System.Exception("Boom"));
 
             var result = _serviceManager.GetServiceDescription("Service");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         #endregion
@@ -1121,31 +1123,31 @@ namespace Servy.Core.UnitTests
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["StartName"] = "LocalSystem";
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceUser("MyService");
             Assert.Equal("LocalSystem", result);
         }
 
         [Fact]
-        public void GetServiceUser_ServiceExistsButStartNameNull_ReturnsEmptyString()
+        public void GetServiceUser_ServiceExistsButStartNameNull_ReturnsNull()
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["StartName"] = null;
 
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(new[] { mo });
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
             var result = _serviceManager.GetServiceUser("MyService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
-        public void GetServiceUser_NoServices_ReturnsEmptyString()
+        public void GetServiceUser_NoServices_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>())).Returns(Array.Empty<ManagementObject>());
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
             var result = _serviceManager.GetServiceUser("NonExistentService");
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         #endregion

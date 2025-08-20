@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using System;
+using System.Configuration;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 
 namespace Servy.Manager
@@ -13,6 +15,12 @@ namespace Servy.Manager
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// The base namespace where embedded resource files are located.
+        /// Used for locating and extracting files such as the service executable.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.Manager.Resources";
+
         /// <summary>
         /// Connection string.
         /// </summary>
@@ -55,12 +63,10 @@ namespace Servy.Manager
 
             try
             {
-                // Load configuration from appsettings.json
-                var config = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .Build();
+                // Load configuration from App.confg
+                var config = ConfigurationManager.AppSettings;
 
-                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
+                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
                 RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var result) ? result : AppConfig.DefaultRefreshIntervalInSeconds;
@@ -95,6 +101,28 @@ namespace Servy.Manager
                     MessageBox.Show("UI thread exception: " + args.Exception);
                     args.Handled = true;
                 };
+
+                var asm = Assembly.GetExecutingAssembly();
+
+                // Copy service executable from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
+                }
+
+                // Copy Sysinternals from embedded resources
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                }
+
+#if DEBUG
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb"))
+                {
+                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb");
+                }
+#endif
 
             }
             catch (Exception ex)

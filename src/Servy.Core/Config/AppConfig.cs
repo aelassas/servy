@@ -16,6 +16,17 @@ namespace Servy.Core.Config
         public static readonly string Version = "1.0.0";
 
         /// <summary>
+        /// The default file name of the Sysinternals Handle executable used to detect
+        /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
+        /// </summary>
+        public static readonly string HandleExeFileName = "handle64";
+
+        /// <summary>
+        /// Gets the full file name of the Sysinternals Handle executable, including the ".exe" extension.
+        /// </summary>
+        public static readonly string HandleExe = $"{HandleExeFileName}.exe";
+
+        /// <summary>
         /// The file name of the Servy.Core assembly (without extension).
         /// Used when copying or loading the core library dynamically.
         /// </summary>
@@ -162,6 +173,22 @@ namespace Servy.Core.Config
         #region Public Methods
 
         /// <summary>
+        /// Gets the full path to the Sysinternals Handle executable (<c>handle64.exe</c> or <c>handle.exe</c>)
+        /// depending on the build configuration. In DEBUG mode, it looks in the application's base directory;
+        /// in RELEASE mode, it looks in the ProgramData folder.
+        /// </summary>
+        /// <returns>The full path to the Handle executable.</returns>
+        public static string GetHandleExePath()
+        {
+#if DEBUG
+            var handleExePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"{AppConfig.HandleExeFileName}.exe");
+#else
+            var handleExePath  = Path.Combine(AppConfig.ProgramDataPath, $"{AppConfig.HandleExeFileName}.exe");
+#endif
+            return handleExePath;
+        }
+
+        /// <summary>
         /// Gets the absolute path to the Servy CLI service executable.
         /// </summary>
         /// <remarks>
@@ -196,7 +223,6 @@ namespace Servy.Core.Config
 #endif
             return wrapperExePath;
         }
-
 
         #endregion
 

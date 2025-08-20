@@ -1,5 +1,9 @@
-﻿using System.Diagnostics;
+﻿using Servy.Core.Config;
+using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.Helpers
@@ -10,6 +14,8 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public static class ProcessKiller
     {
+        #region Win32 API
+
         /// <summary>
         /// Represents the basic information of a process used for querying the parent PID via Win32 API.
         /// </summary>
@@ -33,6 +39,8 @@ namespace Servy.Core.Helpers
             out uint returnLength
         );
 
+        #endregion
+
         /// <summary>
         /// Retrieves the parent process ID of a given <see cref="Process"/>.
         /// </summary>
@@ -51,7 +59,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="processName">The name of the process to kill. Can include or exclude ".exe".</param>
         /// <returns>True if the operation succeeded; otherwise, false.</returns>
-        public static bool KillServyProcessTree(string processName)
+        public static bool KillProcessTree(string processName)
         {
             try
             {
@@ -59,14 +67,14 @@ namespace Servy.Core.Helpers
                     processName = processName.Substring(0, processName.Length - 4);
 
                 var allProcesses = Process.GetProcesses();
-                var servyProcesses = allProcesses
+                var processes = allProcesses
                     .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                foreach (var proc in servyProcesses)
+                foreach (var proc in processes)
                     KillProcessTree(proc, allProcesses);
 
-                foreach (var proc in servyProcesses)
+                foreach (var proc in processes)
                     KillParentProcesses(proc, allProcesses);
 
                 return true;
@@ -75,6 +83,60 @@ namespace Servy.Core.Helpers
             {
                 return false;
             }
+        }
+
+
+        /// <summary>
+        /// Kills all processes that currently hold a handle to the specified file.
+        /// </summary>
+        /// <param name="filePath">Full path to the file.</param>
+        /// <returns><c>true</c> if all processes were successfully killed; otherwise <c>false</c>.</returns>
+        /// <remarks>
+        /// This method requires Sysinternals Handle.exe or Handle64.exe to be available
+        /// and assumes its path is in <c>C:\Program Files\Sysinternals\handle64.exe</c> by default.
+        /// </remarks>
+        public static bool KillProcessesUsingFile(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Debug.WriteLine($"File not found: {filePath}");
+                return false;
+            }
+
+            var handleExePath = AppConfig.GetHandleExePath();
+
+            if (!File.Exists(handleExePath))
+            {
+                Debug.WriteLine($"Handle.exe not found at: {handleExePath}");
+                return false;
+            }
+
+            bool success = true;
+
+            try
+            {
+                var processes = HandleHelper.GetProcessesUsingFile(handleExePath, filePath);
+
+                foreach (var procInfo in processes)
+                {
+                    try
+                    {
+                        KillProcessTree(procInfo.ProcessName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}): {ex.Message}");
+                        success = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to enumerate processes using {filePath}: {ex.Message}");
+                return false;
+            }
+
+            return success;
         }
 
         /// <summary>

@@ -3,6 +3,9 @@ using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.Core.UnitTests
 {
@@ -76,7 +79,7 @@ namespace Servy.Core.UnitTests
         {
             var service = CreateService();
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService")).Returns(true);
-            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService")).Returns(ServiceControllerStatus.Running);
+            _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
             var result = service.GetStatus();
 
@@ -99,7 +102,7 @@ namespace Servy.Core.UnitTests
         public void GetServiceStartupType_ShouldDelegateToServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService"))
+            _serviceManagerMock.Setup(s => s.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()))
                 .Returns(ServiceStartType.Automatic);
 
             var result = service.GetServiceStartupType();
@@ -188,7 +191,7 @@ namespace Servy.Core.UnitTests
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
-                Description = null!,
+                Description = null,
                 ExecutablePath = @"C:\real.exe",
                 StartupDirectory = null,
                 Parameters = null,
@@ -199,7 +202,7 @@ namespace Servy.Core.UnitTests
                 HeartbeatInterval = 30,
                 EnableHealthMonitoring = true,
                 RecoveryAction = RecoveryAction.RestartService,
-                MaxFailedChecks = 1,   
+                MaxFailedChecks = 1,
                 MaxRestartAttempts = 3,
                 RunAsLocalSystem = true,
                 PreLaunchExecutablePath = null,
@@ -216,11 +219,11 @@ namespace Servy.Core.UnitTests
             _serviceManagerMock
                  .Setup(s => s.InstallService(
                      service.Name,
-                     It.IsAny<string?>()!,
+                     It.IsAny<string>(),
                      It.IsAny<string>(),          // wrapperExePath
                      service.ExecutablePath,
-                     It.IsAny<string?>()!,    // workingDirectory
-                     It.IsAny<string?>()!,
+                     It.IsAny<string>(),    // workingDirectory
+                     It.IsAny<string>(),
                      service.StartupType,
                      service.Priority,
                      null,                        // stdoutPath
@@ -279,7 +282,7 @@ namespace Servy.Core.UnitTests
             _serviceManagerMock
                 .Setup(s => s.InstallService(
                     service.Name,                        // serviceName
-                    It.IsAny<string?>()!,                 // description
+                    It.IsAny<string>(),                 // description
                     It.IsAny<string>(),                   // wrapperExePath
                     service.ExecutablePath,              // realExePath
                     string.Empty,                        // workingDirectory

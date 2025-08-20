@@ -1,21 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Moq;
+﻿using Moq;
 using Newtonsoft.Json;
 using Servy.Core.Data;
-using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
-using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Services;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Manager.UnitTests
@@ -80,7 +78,7 @@ namespace Servy.Manager.UnitTests
             var sut = CreateServiceCommands();
             var service = new Models.Service { Name = "FakeService" };
             _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(_serviceManagerMock.Object, "FakeService"))
+                .Setup(r => r.SearchDomainServicesAsync(_serviceManagerMock.Object, "FakeService", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Core.Domain.Service>());
 
             // Act
@@ -103,7 +101,7 @@ namespace Servy.Manager.UnitTests
             var domain = new FakeService(serviceManagerMock.Object, "TestService", stopResult: true);
 
             _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "TestService"))
+                .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Core.Domain.Service> { domain });
 
             _messageBoxServiceMock
@@ -124,21 +122,21 @@ namespace Servy.Manager.UnitTests
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var dto = new ServiceDto { Name = "MyService", ExecutablePath= @"C:\myApp.exe" };
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\myApp.exe" };
             var json = JsonConvert.SerializeObject(dto);
 
             var tempFile = Path.GetTempFileName();
-            await File.WriteAllTextAsync(tempFile, json);
+            File.WriteAllText(tempFile, json);
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
-            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>())).ReturnsAsync(1);
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
             await sut.ImportJsonConfigAsync();
 
             // Assert
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.Is<ServiceDto>(d => d.Name == "MyService")), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.Is<ServiceDto>(d => d.Name == "MyService"), It.IsAny<CancellationToken>()), Times.Once);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, AppConfig.Caption));
             Assert.True(_refreshCalled);
 
@@ -151,7 +149,7 @@ namespace Servy.Manager.UnitTests
             // Arrange
             var sut = CreateServiceCommands();
             var tempFile = Path.GetTempFileName();
-            await File.WriteAllTextAsync(tempFile, "{ invalid-json }");
+            File.WriteAllText(tempFile, "{ invalid-json }");
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
 
@@ -160,7 +158,7 @@ namespace Servy.Manager.UnitTests
 
             // Assert
             _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), AppConfig.Caption));
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>()), Times.Never);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
 
             File.Delete(tempFile);
         }
@@ -177,9 +175,9 @@ namespace Servy.Manager.UnitTests
             _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption))
                 .ReturnsAsync(true);
             _serviceRepositoryMock
-                 .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "S1"))
+                 .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Core.Domain.Service> { domain });
-            _serviceRepositoryMock.Setup(r => r.DeleteAsync("S1")).ReturnsAsync(1);
+            _serviceRepositoryMock.Setup(r => r.DeleteAsync("S1", It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
             var result = await sut.RemoveServiceAsync(service);

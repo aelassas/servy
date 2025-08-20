@@ -455,10 +455,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus GetServiceStatus(string serviceName)
+        public ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             using (var sc = _controllerFactory(serviceName))
             {
@@ -477,16 +479,16 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceStartType? GetServiceStartupType(string serviceName)
+        public ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
 
             string? startMode = null;
-            foreach (var obj in _windowsServiceApi.QueryService(
-                         $"SELECT StartMode FROM Win32_Service WHERE Name = '{serviceName}'"))
+
+            foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
             {
-                startMode = obj.StartMode?.ToString();
+                startMode = service["StartMode"]?.ToString() ?? string.Empty;
                 break;
             }
 
@@ -503,35 +505,35 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public string GetServiceDescription(string serviceName)
+        public string? GetServiceDescription(string serviceName, CancellationToken cancellationToken = default)
         {
             try
             {
-                foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'"))
+                foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
                 {
-                    return service["Description"]?.ToString() ?? string.Empty;
+                    return service["Description"]?.ToString() ?? null;
                 }
             }
             catch
             {
                 // Log or handle error
             }
-            return string.Empty;
+            return null;
         }
 
         /// <inheritdoc />
-        public string GetServiceUser(string serviceName)
+        public string? GetServiceUser(string serviceName, CancellationToken cancellationToken = default)
         {
             string? account = null;
 
-            foreach (ManagementObject service in _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'"))
+            foreach (ManagementObject service in _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
             {
                 account = service["StartName"]?.ToString();
                 break;
             }
 
 
-            return account ?? string.Empty;
+            return account;
         }
     }
 
