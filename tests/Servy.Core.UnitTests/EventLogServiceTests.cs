@@ -133,6 +133,21 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
+        public async Task Search_WithKeyword_NoMatch()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                      .Returns(new[] { fakeEvt });
+
+            var service = CreateService(mockReader);
+
+            var result = await service.SearchAsync(null, null, null, "unknown");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
         public async Task Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
             var mockReader = new Mock<IEventLogReader>();
