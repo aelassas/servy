@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
@@ -6,6 +7,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
+using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using System;
@@ -38,7 +40,7 @@ namespace Servy.Manager.ViewModels
         private readonly IHelpService _helpService;
         private CancellationTokenSource _cts;
         private DispatcherTimer _refreshTimer;
-        private List<ServiceRowViewModel> _services = new List<ServiceRowViewModel>();
+        private BulkObservableCollection<ServiceRowViewModel> _services = new BulkObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
@@ -321,12 +323,33 @@ namespace Servy.Manager.ViewModels
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
                 // Step 5: update collection on UI thread
-                _services.Clear();
-                _services.AddRange(vms);
-                ServicesView.Refresh();
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    _services.Clear();
+                    _services.AddRange(vms);
+                    //ServicesView.Refresh();
+                }, DispatcherPriority.Background);
 
                 // Setp 5: refresh all service statuses and details in the background
-                _ = Task.Run(RefreshAllServicesAsync, _cts.Token);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await RefreshAllServicesAsync();
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // expected when cancelled
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Warning($"RefreshAllServicesAsync failed: {ex}");
+                    }
+                }, _cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // expected when cancelled
             }
             catch (Exception ex)
             {
@@ -444,112 +467,95 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task RefreshAllServicesAsync()
         {
-            var snapshot = _services.Select(r => r.Service).ToList();
+            try
+            {
+                _cts?.Token.ThrowIfCancellationRequested();
 
-            var tasks = snapshot.Select(RefreshServiceInternal).ToArray();
-            await Task.WhenAll(tasks);
+                // Take snapshot of services
+                var snapshot = _services.Select(r => r.Service).ToList();
 
-            if (_cts != null && !_cts.IsCancellationRequested)
-                ServicesView.Refresh(); // only touch UI if not cancelled
+                // Fetch all service info once
+                var allServicesList = await Task.Run(() =>
+                {
+                    try
+                    {
+                        return _serviceManager.GetAllServices(_cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        return new List<ServiceInfo>(); // empty list if canceled
+                    }
+                }, _cts.Token);
+                var allServicesDict = allServicesList.ToDictionary(
+                    s => s.Name,
+                    StringComparer.OrdinalIgnoreCase);
+
+                // Refresh all services in parallel
+                var tasks = snapshot.Select(service => RefreshServiceInternal(service, allServicesDict));
+                await Task.WhenAll(tasks);
+
+                // Refresh UI only if not cancelled
+                //if (_cts != null && !_cts.IsCancellationRequested)
+                //{
+                //    await Application.Current.Dispatcher.InvokeAsync(() =>
+                //    {
+                //        ServicesView.Refresh();
+                //    }, DispatcherPriority.Background);
+                //}
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected on cancellation
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed to refresh all services: {ex}");
+            }
         }
-
 
         /// <summary>
         /// Refresh service description, status, startup type, user and installation state.
         /// </summary>
-        private async Task RefreshServiceInternal(Service service)
+        /// <param name="service">The service to refresh.</param>
+        /// <param name="allServices">Dictionary of all installed services keyed by name.</param>
+        private async Task RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices)
         {
             try
             {
                 _cts?.Token.ThrowIfCancellationRequested();
 
-                var isInstalled = _serviceManager.IsServiceInstalled(service.Name);
-                service.IsInstalled = isInstalled;
+                // Check if service is installed
+                service.IsInstalled = allServices.ContainsKey(service.Name);
 
+                // Load startup type from repository if null
                 if (service.StartupType == null)
                 {
                     var dto = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
-                    service.StartupType = (ServiceStartType)dto.StartupType;
+                    if (dto != null)
+                        service.StartupType = (ServiceStartType)dto.StartupType;
                 }
 
-                if (isInstalled)
+                // If installed, populate info from dictionary
+                if (service.IsInstalled && allServices.TryGetValue(service.Name, out var info))
                 {
-                    // snapshot current values to avoid overwriting with defaults on cancel
-                    var prevDescription = service.Description;
-                    var prevStatus = service.Status;
-                    var prevStartupType = service.StartupType;
-                    var prevUser = service.UserSession;
-
-                    // Run multiple queries in parallel
-                    var descriptionTask = Task.Run(() =>
+                    if (info != null)
                     {
-                        try
-                        {
-                            var desc = _serviceManager.GetServiceDescription(service.Name, _cts.Token);
+                        if (service.Status != info.Status)
+                            service.Status = info.Status;
 
-                            // Distinguish between "valid empty" and "failure"
-                            return desc ?? prevDescription; // only fallback on null, not ""
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return prevDescription; // fallback when canceled
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.Warning($"Failed to get description for {service.Name}: {ex.Message}");
-                            return prevDescription; // fallback on real error
-                        }
-                    }, _cts.Token);
+                        if (service.StartupType != info.StartupType)
+                            service.StartupType = info.StartupType;
 
-                    var statusTask = Task.Run(() =>
-                    {
-                        try
-                        {
-                            return _serviceManager.GetServiceStatus(service.Name, _cts.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return prevStatus;
-                        }
-                    }, _cts.Token);
+                        var user = string.IsNullOrEmpty(info.UserSession) ? AppConfig.LocalSystem : info.UserSession;
+                        if (service.UserSession != user)
+                            service.UserSession = ServiceMapper.GetUserSessionDisplayName(user);
 
-                    var startupTypeTask = Task.Run(() =>
-                    {
-                        try
-                        {
-                            return _serviceManager.GetServiceStartupType(service.Name, _cts.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return prevStartupType ?? ServiceStartType.Automatic;
-                        }
-                    }, _cts.Token);
-
-                    var userTask = Task.Run(() =>
-                    {
-                        try
-                        {
-                            return _serviceManager.GetServiceUser(service.Name, _cts.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            return prevUser ?? AppConfig.LocalSystem;
-                        }
-                    }, _cts.Token);
-
-                    await Task.WhenAll(descriptionTask, statusTask, startupTypeTask, userTask);
-
-                    service.Description = descriptionTask.Result;
-                    service.Status = statusTask.Result;
-                    service.StartupType = (ServiceStartType)startupTypeTask.Result;
-
-                    var user = userTask.Result;
-                    service.UserSession = string.IsNullOrEmpty(user) || user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
-                        ? AppConfig.LocalSystem
-                        : user;
+                        if (service.Description != info.Description)
+                            service.Description = info.Description;
+                    }
                 }
 
-                // Repository update
+                // Repository update if needed
                 var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
                 if (dtoUpdate != null &&
                     (!dtoUpdate.Description.Equals(service.Description) ||
@@ -562,7 +568,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (OperationCanceledException)
             {
-                // expected when cancelling
+                // Expected when cancelling
             }
             catch (Exception ex)
             {
