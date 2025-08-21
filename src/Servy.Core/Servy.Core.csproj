@@ -84,6 +84,7 @@
     <Compile Include="DTOs\EventLogEntry.cs" />
     <Compile Include="DTOs\ServiceDto.cs" />
     <Compile Include="Enums\EventLogLevel.cs" />
+    <Compile Include="Enums\ServiceStatus.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariable.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariableParser.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidator.cs" />
