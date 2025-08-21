@@ -5,6 +5,7 @@ using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using System.Collections.Generic;
@@ -123,7 +124,7 @@ namespace Servy.Manager.UnitTests
             var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object, _loggerMock.Object);
 
             var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var servicesList = (List<ServiceRowViewModel>)servicesField?.GetValue(vm);
+            var servicesList = (BulkObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
             servicesList?.AddRange(new[] { srvm1, srvm2 });
             vm.ServicesView.Refresh();
 
