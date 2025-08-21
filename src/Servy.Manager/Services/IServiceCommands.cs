@@ -1,6 +1,4 @@
 ﻿using Servy.Manager.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Servy.Manager.Services
 {
@@ -15,8 +13,9 @@ namespace Servy.Manager.Services
         /// Searches for services matching the specified search text.
         /// </summary>
         /// <param name="searchText">The text to search for in service names.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of <see cref="Service"/> objects that match the search.</returns>
-        Task<List<Service>> SearchServicesAsync(string searchText);
+        Task<List<Service>> SearchServicesAsync(string searchText, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified service.

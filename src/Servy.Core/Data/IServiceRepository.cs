@@ -1,9 +1,6 @@
 ﻿using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Servy.Core.Data
 {
