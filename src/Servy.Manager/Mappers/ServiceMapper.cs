@@ -26,11 +26,25 @@ namespace Servy.Manager
                 Name = service.Name,
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
-                Status = null,
-                UserSession = service.RunAsLocalSystem ? AppConfig.LocalSystem : service.UserAccount ?? string.Empty,
+                Status = ServiceStatus.None,
+                UserSession = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetUserSessionDisplayName(service.UserAccount) ?? string.Empty,
                 IsInstalled = false,
                 IsConfigurationAppAvailable = app.IsConfigurationAppAvailable
             };
+        }
+
+        /// <summary>
+        /// Gets user session display name.
+        /// </summary>
+        /// <param name="userSession">User session.</param>
+        /// <returns>ser session display name.</returns>
+        public static string GetUserSessionDisplayName(string userSession)
+        {
+            if (string.IsNullOrEmpty(userSession))
+                return AppConfig.LocalSystem;
+            if (userSession.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
+                return AppConfig.LocalSystem;
+            return userSession;
         }
     }
 }
