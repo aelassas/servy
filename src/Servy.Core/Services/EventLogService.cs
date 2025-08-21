@@ -5,6 +5,9 @@ using Servy.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Servy.Core.Services
 {
@@ -30,65 +33,76 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public IEnumerable<EventLogEntry> Search(EventLogLevel? level, DateTime? startDate, DateTime? endDate, string keyword)
+        /// <inheritdoc />
+        public async Task<IEnumerable<EventLogEntry>> SearchAsync(
+            EventLogLevel? level,
+            DateTime? startDate,
+            DateTime? endDate,
+            string keyword,
+            CancellationToken token = default)
         {
-            // Build query dynamically based on parameters
-            string timeFilter = string.Empty;
-            if (startDate.HasValue)
+            return await Task.Run(() =>
             {
-                timeFilter = $@"TimeCreated[@SystemTime >= '{startDate.Value.ToUniversalTime():o}']";
-            }
-            if (endDate.HasValue)
-            {
-                if (!string.IsNullOrEmpty(timeFilter))
+                token.ThrowIfCancellationRequested();
+
+                // Build System filters
+                var systemFilters = new List<string>();
+
+                if (!string.IsNullOrEmpty(SourceName))
+                    systemFilters.Add($"Provider[@Name='{SourceName}']");
+
+                if (level.HasValue && level != EventLogLevel.All)
+                    systemFilters.Add($"Level={(int)level.Value}");
+
+                if (startDate.HasValue)
                 {
-                    timeFilter += " and ";
+                    var startUtc = startDate.Value.Date.ToUniversalTime();
+                    systemFilters.Add($"TimeCreated[@SystemTime >= '{startUtc:o}']");
                 }
-                timeFilter += $@"TimeCreated[@SystemTime <= '{endDate.Value.ToUniversalTime():o}']";
-            }
 
-            string keywordFilter = string.Empty;
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                keywordFilter = $@"
-                    *[EventData[
-                        contains(Data, '{keyword}') or contains(*, '{keyword}')
-                    ]]
-                ";
-            }
-
-            string levelFilter = string.Empty;
-            if (level.HasValue)
-            {
-                levelFilter = $@"Level={(int)level.Value}";
-            }
-
-            string query = $@"
-                *[System[
-                    Provider[@Name='{SourceName}']
-                    {(string.IsNullOrEmpty(levelFilter) ? "" : "and " + levelFilter)}
-                    {(string.IsNullOrEmpty(timeFilter) ? "" : "and " + timeFilter)}
-                ]]
-                {keywordFilter}
-            ";
-
-            var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
-            var records = _reader.ReadEvents(eventQuery);
-
-            var results = new List<EventLogEntry>();
-            foreach (var evt in records)
-            {
-                results.Add(new EventLogEntry
+                if (endDate.HasValue)
                 {
-                    EventId = evt.Id,
-                    Time = evt.TimeCreated ?? DateTime.MinValue,
-                    Level = ParseLevel(evt.Level ?? 0),
-                    Message = evt.FormatDescription()
-                });
-            }
+                    var endUtc = endDate.Value.Date.AddDays(1).AddTicks(-1).ToUniversalTime();
+                    systemFilters.Add($"TimeCreated[@SystemTime <= '{endUtc:o}']");
+                }
 
-            return results;
+                string systemFilterString = string.Join(" and ", systemFilters);
+
+                string query = $"*[System[{systemFilterString}]]";
+
+                var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
+                var records = _reader.ReadEvents(eventQuery);
+
+                var results = new List<EventLogEntry>();
+
+                foreach (var evt in records)
+                {
+                    token.ThrowIfCancellationRequested(); // check cancellation
+                    results.Add(new EventLogEntry
+                    {
+                        EventId = evt.Id,
+                        Time = evt.TimeCreated ?? DateTime.MinValue,
+                        Level = ParseLevel(evt.Level ?? 0),
+                        Message = evt.FormatDescription() ?? string.Empty
+                    });
+                }
+
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    results = results
+                        .Where(r => r.Message != null &&
+                                    r.Message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+                        .ToList();
+                }
+
+                return results
+                    .OrderByDescending(r => r.Time)
+                    .Take(1000)
+                    .ToList();
+            }, token);
         }
+
+
 
         /// <summary>
         /// Converts a raw event log level (byte) into a strongly typed <see cref="EventLogLevel"/>.

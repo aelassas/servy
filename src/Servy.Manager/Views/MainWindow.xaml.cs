@@ -6,12 +6,15 @@ using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
+using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 
 namespace Servy.Manager.Views
@@ -22,6 +25,9 @@ namespace Servy.Manager.Views
     /// </summary>
     public partial class MainWindow : Window
     {
+        private ILogger _logger;
+        private IMessageBoxService _messageBoxService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class,
         /// sets up the UI components and initializes the DataContext with the main ViewModel.
@@ -40,6 +46,11 @@ namespace Servy.Manager.Views
         {
             var app = (App)Application.Current;
 
+            // Initialize Logs view
+            LogsView logsView = new LogsView();
+            logsView.DataContext = new LogsViewModel(new EventLogLogger(Config.AppConfig.EventSource), new EventLogService(new EventLogReader()));
+            LogsTab.Content = logsView;
+
             // Initialize database and helpers
             var dbContext = new AppDbContext(app.ConnectionString);
             DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
@@ -52,7 +63,7 @@ namespace Servy.Manager.Views
             var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
 
             // Initialize logger
-            var logger = new EventLogLogger(AppConfig.EventSource);
+            _logger = new EventLogLogger(AppConfig.EventSource);
 
             // Initialize service manager
             var serviceManager = new ServiceManager(
@@ -65,25 +76,25 @@ namespace Servy.Manager.Views
 
             // Initialize service commands and helpers
             var fileDialogService = new FileDialogService();
-            var messageBoxService = new MessageBoxService();
-            var helpService = new HelpService(messageBoxService);
+            _messageBoxService = new MessageBoxService();
+            var helpService = new HelpService(_messageBoxService);
 
             // Create main ViewModel
             var viewModel = new MainViewModel(
-                logger,
+                _logger,
                 serviceManager,
                 serviceRepository,
                 null,                   // We'll set ServiceCommands next
                 helpService
             );
 
-            var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService);
+            var serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
 
             var serviceCommands = new ServiceCommands(
                 serviceManager,
                 serviceRepository,
-                messageBoxService,
-                logger,
+                _messageBoxService,
+                _logger,
                 fileDialogService,
                 viewModel.RemoveService,
                 viewModel.Resfresh,
@@ -158,10 +169,19 @@ namespace Servy.Manager.Views
         /// </summary>
         private async void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.F5 && DataContext is MainViewModel vm)
+            if (e.Key == Key.F5)
             {
-                if (vm.SearchCommand.CanExecute(null))
-                    await vm.SearchCommand.ExecuteAsync(null);
+                if (MainTab.IsSelected)
+                {
+                    if (DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
+                        await vm.SearchCommand.ExecuteAsync(null);
+                }
+                else if (LogsTab.IsSelected)
+                {
+                    if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel vm && vm.SearchCommand.CanExecute(null))
+                        await vm.SearchCommand.ExecuteAsync(null);
+                }
+
             }
         }
 
@@ -189,6 +209,75 @@ namespace Servy.Manager.Views
         {
             if (DataContext is MainViewModel vm)
                 vm.Cleanup();
+        }
+
+        /// <summary>
+        /// Handles the <see cref="SelectionChanged"/> event of the main TabControl.
+        /// Cancels background tasks or timers when switching tabs and triggers
+        /// searches for logs or services depending on the selected tab.
+        /// </summary>
+        /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
+        /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
+        private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // Only react if the TabControl itself fired the event
+                if (!ReferenceEquals(sender, e.OriginalSource))
+                    return;
+
+                // Temporarily disable tab switching to avoid reentrancy
+                EnableTabs(false);
+
+                if (DataContext is MainViewModel vm)
+                {
+                    if (LogsTab.IsSelected)
+                    {
+                        // Cleanup all background tasks and stop timers in main tab
+                        vm.Cleanup();
+
+                        // Trigger search in Logs tab
+                        if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel logsVm)
+                        {
+                            await logsVm.SearchCommand.ExecuteAsync(null);
+                        }
+                    }
+                    else if (MainTab.IsSelected)
+                    {
+                        // Stop ongoing search in Logs tab
+                        if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel logsVm)
+                        {
+                            logsVm.Cleanup();
+                        }
+
+                        // Run search for main tab if applicable
+                        await vm.SearchCommand.ExecuteAsync(null);
+
+                        // Start periodic timer updates in main tab
+                        vm.CreateAndStartTimer();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error in MainTabControl_SelectionChanged", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
+            }
+            finally
+            {
+                // Re-enable tabs after processing
+                EnableTabs(true);
+            }
+        }
+
+        /// <summary>
+        /// Enables or disables the main and logs tabs to prevent reentrant tab switching.
+        /// </summary>
+        /// <param name="enable">If true, enables the tabs; otherwise, disables them.</param>
+        private void EnableTabs(bool enable)
+        {
+            MainTab.IsEnabled = enable;
+            LogsTab.IsEnabled = enable;
         }
 
     }

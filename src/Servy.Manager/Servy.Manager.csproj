@@ -97,6 +97,7 @@
     <Compile Include="Helpers\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\ServiceConfigurationValidator.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
+    <Compile Include="Models\LogEntryModel.cs" />
     <Compile Include="Models\Service.cs" />
     <Compile Include="Resources\Strings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -105,8 +106,13 @@
     </Compile>
     <Compile Include="Services\IServiceCommands.cs" />
     <Compile Include="Services\ServiceCommands.cs" />
+    <Compile Include="ViewModels\LogsViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\ServiceRowViewModel.cs" />
+    <Page Include="Views\LogsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -114,6 +120,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Views\LogsView.xaml.cs">
+      <DependentUpon>LogsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -156,6 +165,9 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\Icons\Error.png" />
+    <Resource Include="Resources\Icons\Info.png" />
+    <Resource Include="Resources\Icons\Warning.png" />
     <EmbeddedResource Include="Resources\handle64.exe" />
     <EmbeddedResource Include="Resources\Servy.Core.dll" />
     <EmbeddedResource Include="Resources\Servy.Service.Net48.pdb" />

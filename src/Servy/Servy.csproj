@@ -94,7 +94,6 @@
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
-    <Compile Include="DesignTime\DesignTimeServiceRepository.cs" />
     <Compile Include="Helpers\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />
     <Compile Include="Helpers\ServiceConfigurationValidator.cs" />
