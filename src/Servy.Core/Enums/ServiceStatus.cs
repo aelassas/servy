@@ -45,5 +45,10 @@
         /// Represents a "Fetching..." or unknown state used in the Manager UI.
         /// </summary>
         None = 7,
+
+        /// <summary>
+        /// Represents a service that is not installed.
+        /// </summary>
+        NotInstalled = 8,
     }
 }
