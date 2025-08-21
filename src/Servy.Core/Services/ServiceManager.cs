@@ -1,8 +1,10 @@
 ﻿using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.ServiceDependencies;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Management;
@@ -539,8 +541,87 @@ namespace Servy.Core.Services
 
             return account;
         }
-    }
 
+
+        /// <inheritdoc/>
+        public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
+        {
+            var services = new List<ServiceInfo>();
+
+            // WMI query to get essential service properties
+            const string query = "SELECT Name, State, StartMode, StartName, Description FROM Win32_Service";
+
+            foreach (ManagementObject service in _searcher.Get(query))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Map WMI State to ServiceStatus enum
+                var stateObj = service["State"];
+                ServiceStatus status = ServiceStatus.None;
+                if (stateObj != null)
+                {
+                    switch (stateObj?.ToString()?.ToLowerInvariant())
+                    {
+                        case "running":
+                            status = ServiceStatus.Running;
+                            break;
+                        case "stopped":
+                            status = ServiceStatus.Stopped;
+                            break;
+                        case "paused":
+                            status = ServiceStatus.Paused;
+                            break;
+                        case "start pending":
+                            status = ServiceStatus.StartPending;
+                            break;
+                        case "stop pending":
+                            status = ServiceStatus.StopPending;
+                            break;
+                        case "pause pending":
+                            status = ServiceStatus.PausePending;
+                            break;
+                        case "continue pending":
+                            status = ServiceStatus.ContinuePending;
+                            break;
+                    }
+                }
+
+                // Map WMI StartMode to ServiceStartType enum
+                var startMode = (service["StartMode"]?.ToString() ?? string.Empty).ToLowerInvariant();
+                ServiceStartType startupType = ServiceStartType.Automatic; // default
+                switch (startMode)
+                {
+                    case "auto":
+                    case "automatic":
+                        startupType = ServiceStartType.Automatic;
+                        break;
+                    case "manual":
+                        startupType = ServiceStartType.Manual;
+                        break;
+                    case "disabled":
+                        startupType = ServiceStartType.Disabled;
+                        break;
+                }
+
+                // Get user and description
+                var user = service["StartName"]?.ToString() ?? "LocalSystem";
+                var description = service["Description"]?.ToString() ?? string.Empty;
+                var name = service["Name"]?.ToString() ?? string.Empty;
+
+                services.Add(new ServiceInfo
+                {
+                    Name = name,
+                    Status = status,
+                    StartupType = startupType,
+                    UserSession = user,
+                    Description = description
+                });
+            }
+
+            return services;
+        }
+
+    }
 
     #endregion
 }

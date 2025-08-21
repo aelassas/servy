@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
-using Servy.Infrastructure.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
 using Servy.Manager.Models;
@@ -97,10 +97,10 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(serviceDomain.Start);
+                var res = await Task.Run(() => serviceDomain.Start());
                 if (res)
                 {
-                    service.Status = System.ServiceProcess.ServiceControllerStatus.Running;
+                    service.Status = ServiceStatus.Running;
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, AppConfig.Caption);
                 }
                 else
@@ -130,10 +130,10 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(serviceDomain.Stop);
+                var res = await Task.Run(() => serviceDomain.Stop());
                 if (res)
                 {
-                    service.Status = System.ServiceProcess.ServiceControllerStatus.Stopped;
+                    service.Status = ServiceStatus.Stopped;
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption);
                 }
                 else
@@ -164,10 +164,10 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(serviceDomain.Restart);
+                var res = await Task.Run(() => serviceDomain.Restart());
                 if (res)
                 {
-                    service.Status = System.ServiceProcess.ServiceControllerStatus.Running;
+                    service.Status = ServiceStatus.Running;
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, AppConfig.Caption);
                 }
                 else
@@ -293,7 +293,7 @@ namespace Servy.Manager.Services
                     return false;
                 }
 
-                var res = await Task.Run(serviceDomain.Uninstall);
+                var res = await Task.Run(() => serviceDomain.Uninstall());
                 if (res) RemoveService(service);
 
                 return res;
@@ -472,6 +472,8 @@ namespace Servy.Manager.Services
         }
 
 
+        #region Helpers
+
         /// <summary>
         /// Retrieves the domain representation of a service by its name.
         /// </summary>
@@ -499,5 +501,7 @@ namespace Servy.Manager.Services
         {
             _refreshCallback?.Invoke();
         }
+
+        #endregion
     }
 }
