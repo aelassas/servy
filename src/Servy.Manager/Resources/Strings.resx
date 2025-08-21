@@ -53,6 +53,13 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </value>
 </data>
   
+  <!--Tabs-->
+  <data name="Label_ServicesTab" xml:space="preserve">
+    <value>Services</value>
+  </data>
+  <data name="Label_LogsTab" xml:space="preserve">
+    <value>Logs</value>
+  </data>
   
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">
@@ -61,7 +68,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Button_Searching" xml:space="preserve">
     <value>Searching...</value>
   </data>
-  <data name="Txt_F5_Shortcut" xml:space="preserve">
+  <data name="Label_F5_Shortcut" xml:space="preserve">
     <value>Service statuses auto-refresh. Press F5 to refresh the full list.</value>
   </data>
 
@@ -287,4 +294,39 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Servy Configuration App not found.</value>
   </data>
   
+  <!--Logs View-->
+  <data name="Label_Level" xml:space="preserve">
+    <value>Level:</value>
+  </data>
+  <data name="Label_AllLevel" xml:space="preserve">
+    <value>All Levels</value>
+  </data>
+  <data name="Label_From" xml:space="preserve">
+    <value>From:</value>
+  </data>
+  <data name="Label_To" xml:space="preserve">
+    <value>To:</value>
+  </data>
+  <data name="Label_Keyword" xml:space="preserve">
+    <value>Keyword:</value>
+  </data>
+
+  <data name="Column_Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Column_Level" xml:space="preserve">
+    <value>Level</value>
+  </data>
+  <data name="Column_EventId" xml:space="preserve">
+    <value>Event Id</value>
+  </data>
+  <data name="Column_Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+
+  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
+    <value>An error occurred while switching tabs. Please try again.</value>
+  </data>
+  
+
 </root>

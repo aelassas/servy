@@ -15,7 +15,8 @@ namespace Servy.Core.Services
         /// <param name="startDate">The start date of the search range (null for no lower bound).</param>
         /// <param name="endDate">The end date of the search range (null for no upper bound).</param>
         /// <param name="keyword">The keyword to search for in event data (null or empty for no keyword filtering).</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
         /// <returns>A collection of matching <see cref="EventLogEntry"/> records.</returns>
-        IEnumerable<EventLogEntry> Search(EventLogLevel? level, DateTime? startDate, DateTime? endDate, string keyword);
+        Task<IEnumerable<EventLogEntry>> SearchAsync(EventLogLevel? level, DateTime? startDate, DateTime? endDate, string keyword, CancellationToken token = default);
     }
 }

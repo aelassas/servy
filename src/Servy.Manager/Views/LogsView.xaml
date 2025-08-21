@@ -1,0 +1,99 @@
+﻿<UserControl x:Class="Servy.Manager.Views.LogsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             xmlns:local="clr-namespace:Servy.Manager"
+             xmlns:resx="clr-namespace:Servy.Manager.Resources"
+             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <!-- Filters -->
+            <RowDefinition Height="Auto"/>
+            <!-- DataGrid -->
+            <RowDefinition Height="*"/>
+            <!-- Full description -->
+            <!--<RowDefinition Height="Auto"/>-->
+        </Grid.RowDefinitions>
+
+        <!-- Search Filters -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="{x:Static resx:Strings.Label_Level}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <ComboBox Width="120"
+                      SelectedItem="{Binding SelectedLevel, Mode=TwoWay}"
+                      ItemsSource="{Binding LogLevels}"
+                      Margin="0,0,10,0"/>
+
+            <TextBlock Text="{x:Static resx:Strings.Label_From}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <DatePicker SelectedDate="{Binding FromDate, Mode=TwoWay}" DisplayDateEnd="{Binding FromDateMaxDate}" Width="150" Margin="0,0,10,0"/>
+
+            <TextBlock Text="{x:Static resx:Strings.Label_To}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <DatePicker SelectedDate="{Binding ToDate, Mode=TwoWay}" DisplayDateStart="{Binding ToDateMinDate}" Width="150" Margin="0,0,10,0"/>
+
+            <TextBlock Text="{x:Static resx:Strings.Label_Keyword}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox Text="{Binding Keyword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="0,0,10,0">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
+
+            <Button Content="{Binding SearchButtonText}" Command="{Binding SearchCommand}" Width="80"/>
+        </StackPanel>
+
+        <!-- Logs Grid -->
+        <DataGrid Grid.Row="1"
+          ItemsSource="{Binding Logs}"
+          SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
+          SelectionMode="Single"
+          Margin="0,0,0,10"
+          AutoGenerateColumns="False"
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          IsReadOnly="True"
+          EnableRowVirtualization="True"
+          VirtualizingStackPanel.IsVirtualizing="True"
+          VirtualizingStackPanel.VirtualizationMode="Recycling"
+          ScrollViewer.CanContentScroll="True"
+          VirtualizingStackPanel.ScrollUnit="Pixel"
+          >
+            <DataGrid.Columns>
+                <!--Time-->
+                <DataGridTextColumn Header="{x:Static resx:Strings.Column_Time}" Binding="{Binding Time}" Width="200"/>
+
+                <!-- Level column with icon and text -->
+                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Level}" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,5,0">
+                                <Image Source="{Binding LevelIcon}" Width="16" Height="16" Margin="0,0,5,0"/>
+                                <TextBlock Text="{Binding Level}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100"/>-->
+
+                <!--Message-->
+                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Message}"
+                               TextWrapping="Wrap"
+                               VerticalAlignment="Top"
+                               TextTrimming="None"
+                             />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Full Event Description -->
+        <!--<ScrollViewer Grid.Row="2" Height="100" VerticalScrollBarVisibility="Auto">
+            <TextBlock Text="{Binding SelectedLogMessage}" TextWrapping="Wrap"/>
+        </ScrollViewer>-->
+    </Grid>
+</UserControl>

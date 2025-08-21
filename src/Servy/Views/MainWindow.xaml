@@ -13,7 +13,7 @@
         MinWidth="600"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
-        d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel, IsDesignTimeCreatable=True}">
+        >
     <Window.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
     </Window.Resources>

@@ -33,8 +33,8 @@ namespace Servy.Manager.ViewModels
         private readonly IHelpService _helpService;
         private CancellationTokenSource _cts;
         private DispatcherTimer _refreshTimer;
-        private bool _isBusy;
         private List<ServiceRowViewModel> _services = new List<ServiceRowViewModel>();
+        private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
         private string _searchText;
@@ -61,32 +61,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties
-
-        /// <summary>
-        /// Gets or sets the search text used for filtering or querying services.
-        /// </summary>
-        public string SearchText
-        {
-            get => _searchText;
-            set
-            {
-                if (_searchText != value)
-                {
-                    _searchText = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// The set of service commands available for each service row.
-        /// </summary>
-        public IServiceCommands ServiceCommands { get; set; }
-
-        /// <summary>
-        /// Collection of services displayed in the DataGrid.
-        /// </summary>
-        public ICollectionView ServicesView { get; private set; }
 
         /// <summary>
         /// Indicates whether a background operation is running.
@@ -119,6 +93,33 @@ namespace Servy.Manager.ViewModels
                 }
             }
         }
+
+        /// <summary>
+        /// Gets or sets the search text used for filtering or querying services.
+        /// </summary>
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The set of service commands available for each service row.
+        /// </summary>
+        public IServiceCommands ServiceCommands { get; set; }
+
+        /// <summary>
+        /// Collection of services displayed in the DataGrid.
+        /// </summary>
+        public ICollectionView ServicesView { get; private set; }
+
 
         /// <summary>
         /// Determines whether the configuration app launch button is enabled.
@@ -210,12 +211,7 @@ namespace Servy.Manager.ViewModels
 
             _cts = new CancellationTokenSource();
 
-            _refreshTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
-            };
-            _refreshTimer.Tick += RefreshTimer_Tick;
-            _refreshTimer.Start();
+            CreateAndStartTimer();
 
         }
 
@@ -235,6 +231,24 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods/Events
+
+        /// <summary>
+        /// Creates a new <see cref="DispatcherTimer"/> configured with the application's refresh interval.
+        /// </summary>
+        /// <returns>A <see cref="DispatcherTimer"/> instance ready to be started.</returns>
+        private DispatcherTimer CreateTimer()
+        {
+            var app = (App)Application.Current;
+            var timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
+            };
+
+            // Subscribe to the tick event
+            timer.Tick += RefreshTimer_Tick;
+
+            return timer;
+        }
 
         /// <summary>
         /// Handles the <see cref="DispatcherTimer.Tick"/> event for refreshing services.
@@ -398,6 +412,24 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Ensures the refresh timer exists and is running. Creates the timer if it does not exist,
+        /// and starts it if it is not already enabled.
+        /// </summary>
+        public void CreateAndStartTimer()
+        {
+            if (_refreshTimer == null)
+            {
+                _refreshTimer = CreateTimer();
+            }
+
+            // Start the timer only if it is not already running
+            if (!_refreshTimer.IsEnabled)
+            {
+                _refreshTimer.Start();
+            }
+        }
+
         #endregion
 
         #region Helpers
@@ -409,7 +441,7 @@ namespace Servy.Manager.ViewModels
         {
             var snapshot = _services.Select(r => r.Service).ToList();
 
-            var tasks = snapshot.Select(s => RefreshServiceInternal(s)).ToArray();
+            var tasks = snapshot.Select(RefreshServiceInternal).ToArray();
             await Task.WhenAll(tasks);
 
             if (_cts != null && !_cts.IsCancellationRequested)
@@ -507,8 +539,7 @@ namespace Servy.Manager.ViewModels
                     service.StartupType = (ServiceStartType)startupTypeTask.Result;
 
                     var user = userTask.Result;
-                    service.UserSession = string.IsNullOrEmpty(user) ||
-                                          user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
+                    service.UserSession = string.IsNullOrEmpty(user) || user.Trim().Equals("LocalSystem", StringComparison.OrdinalIgnoreCase)
                         ? AppConfig.LocalSystem
                         : user;
                 }

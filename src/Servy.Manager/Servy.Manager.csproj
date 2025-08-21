@@ -33,6 +33,9 @@
 
   <ItemGroup>
     <None Remove="Resources\handle64.exe" />
+    <None Remove="Resources\Icons\Error.png" />
+    <None Remove="Resources\Icons\Info.png" />
+    <None Remove="Resources\Icons\Warning.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +59,12 @@
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
     <ProjectReference Include="..\Servy.UI\Servy.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icons\Error.png" />
+    <Resource Include="Resources\Icons\Info.png" />
+    <Resource Include="Resources\Icons\Warning.png" />
   </ItemGroup>
 
   <ItemGroup>

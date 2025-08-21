@@ -178,6 +178,33 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Event Id.
+        /// </summary>
+        public static string Column_EventId {
+            get {
+                return ResourceManager.GetString("Column_EventId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Level.
+        /// </summary>
+        public static string Column_Level {
+            get {
+                return ResourceManager.GetString("Column_Level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Message.
+        /// </summary>
+        public static string Column_Message {
+            get {
+                return ResourceManager.GetString("Column_Message", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Name.
         /// </summary>
         public static string Column_Name {
@@ -201,6 +228,15 @@ namespace Servy.Manager.Resources {
         public static string Column_Status {
             get {
                 return ResourceManager.GetString("Column_Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Time.
+        /// </summary>
+        public static string Column_Time {
+            get {
+                return ResourceManager.GetString("Column_Time", resourceCulture);
             }
         }
         
@@ -268,6 +304,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à All Levels.
+        /// </summary>
+        public static string Label_AllLevel {
+            get {
+                return ResourceManager.GetString("Label_AllLevel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh. Press F5 to refresh the full list..
+        /// </summary>
+        public static string Label_F5_Shortcut {
+            get {
+                return ResourceManager.GetString("Label_F5_Shortcut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Fetching....
         /// </summary>
         public static string Label_Fetching {
@@ -277,11 +331,65 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à From:.
+        /// </summary>
+        public static string Label_From {
+            get {
+                return ResourceManager.GetString("Label_From", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Keyword:.
+        /// </summary>
+        public static string Label_Keyword {
+            get {
+                return ResourceManager.GetString("Label_Keyword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Level:.
+        /// </summary>
+        public static string Label_Level {
+            get {
+                return ResourceManager.GetString("Label_Level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Local System.
         /// </summary>
         public static string Label_LocalSytem {
             get {
                 return ResourceManager.GetString("Label_LocalSytem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Logs.
+        /// </summary>
+        public static string Label_LogsTab {
+            get {
+                return ResourceManager.GetString("Label_LogsTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Services.
+        /// </summary>
+        public static string Label_ServicesTab {
+            get {
+                return ResourceManager.GetString("Label_ServicesTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à To:.
+        /// </summary>
+        public static string Label_To {
+            get {
+                return ResourceManager.GetString("Label_To", resourceCulture);
             }
         }
         
@@ -529,6 +637,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à An error occurred while switching tabs. Please try again..
+        /// </summary>
+        public static string Msg_MainTabControl_SelectionChangedError {
+            get {
+                return ResourceManager.GetString("Msg_MainTabControl_SelectionChangedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered..
         /// </summary>
         public static string Msg_RemoveServiceConfirm {
@@ -758,15 +875,6 @@ namespace Servy.Manager.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh. Press F5 to refresh the full list..
-        /// </summary>
-        public static string Txt_F5_Shortcut {
-            get {
-                return ResourceManager.GetString("Txt_F5_Shortcut", resourceCulture);
             }
         }
     }
