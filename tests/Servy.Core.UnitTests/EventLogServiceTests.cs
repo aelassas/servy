@@ -8,6 +8,7 @@ namespace Servy.Core.UnitTests
 {
     public class EventLogServiceTests
     {
+
         private EventLogService CreateService(Mock<IEventLogReader> mockReader)
         {
             return new EventLogService(mockReader.Object);
@@ -28,7 +29,7 @@ namespace Servy.Core.UnitTests
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "error happened");
+            var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "[service] error happened");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -46,7 +47,7 @@ namespace Servy.Core.UnitTests
         public async void Search_WithLevelFilter_ReturnsCorrectLevel()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "warning");
+            var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -62,7 +63,7 @@ namespace Servy.Core.UnitTests
         public async void Search_WithStartDateAndEndDate_AppendsBothFilters()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "info");
+            var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -81,7 +82,7 @@ namespace Servy.Core.UnitTests
         public async void Search_WithOnlyEndDate_AppendsFilterCorrectly()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "unknown level");
+            var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -99,7 +100,7 @@ namespace Servy.Core.UnitTests
         public async void Search_WithKeyword_AddsKeywordFilter()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
+            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -111,11 +112,27 @@ namespace Servy.Core.UnitTests
             Assert.Contains("servy", entry.Message);
         }
 
+
+        [Fact]
+        public async void Search_WithKeyword_EmptyResult()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                      .Returns(new[] { fakeEvt });
+
+            var service = CreateService(mockReader);
+
+            var result = await service.SearchAsync(null, null, null, "servy");
+
+            Assert.Empty(result);
+        }
+
         [Fact]
         public async void Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var fakeEvt = CreateFakeEvent(6, 4, null, "no time");
+            var fakeEvt = CreateFakeEvent(6, 4, null, "[service] no time");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Returns(new[] { fakeEvt });
 
@@ -131,7 +148,7 @@ namespace Servy.Core.UnitTests
         public async Task SearchAsync_ShouldReturnMinValueWhenTimeCreatedIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 1, null, "Test");
+            var evt = CreateFakeEvent(1, 1, null, "[service] Test");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
@@ -143,7 +160,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public async Task SearchAsync_ShouldReturnEmptyMessageWhenFormatDescriptionIsNull()
+        public async Task SearchAsync_ShouldReturnEmptyCollectionWhenFormatDescriptionIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
             var evt = CreateFakeEvent(1, 1, DateTime.Now, null!);
@@ -153,15 +170,14 @@ namespace Servy.Core.UnitTests
 
             var results = await service.SearchAsync(null, null, null, null!);
 
-            Assert.Single(results);
-            Assert.Equal(string.Empty, results.First().Message);
+            Assert.Empty(results);
         }
 
         [Fact]
         public async Task SearchAsync_ShouldUseDefaultLevelWhenLevelIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 0, DateTime.Now, "Message"); // level = 0
+            var evt = CreateFakeEvent(1, 0, DateTime.Now, "[service] Message"); // level = 0
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
@@ -177,7 +193,7 @@ namespace Servy.Core.UnitTests
         public async Task SearchAsync_ShouldThrowWhenCancelled()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 1, DateTime.Now, "Message");
+            var evt = CreateFakeEvent(1, 1, DateTime.Now, "[service] Message");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);

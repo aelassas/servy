@@ -28,11 +28,6 @@ namespace Servy.Manager.UnitTests
             _loggerMock = new Mock<ILogger>();
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
-
-            if (Application.Current == null)
-            {
-                new App(); // Application instance
-            }
         }
 
         private MainViewModel CreateViewModel()
@@ -63,10 +58,9 @@ namespace Servy.Manager.UnitTests
         [Fact]
         public void SearchCommand_ShouldPopulateServicesView()
         {
-
             Helper.RunOnSTA(async () =>
             {
-                    var vm = CreateViewModel();
+                var vm = CreateViewModel();
                     var services = new List<Service>
                     {
                         new Service { Name = "S1" },

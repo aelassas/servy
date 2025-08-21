@@ -30,7 +30,7 @@ namespace Servy.Manager.UnitTests
             if (ex != null) throw ex;
         }
 
-        public static T RunOnSTA<T>(Func<T> func)
+        public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
         {
             T? result = default;
             Exception? ex = null;
@@ -39,8 +39,8 @@ namespace Servy.Manager.UnitTests
             {
                 try
                 {
-                    if (Application.Current == null)
-                        new Application();
+                    if (createApp && Application.Current == null)
+                        new App();
 
                     result = func();
                 }

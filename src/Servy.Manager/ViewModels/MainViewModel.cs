@@ -10,14 +10,9 @@ using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -213,12 +208,15 @@ namespace Servy.Manager.ViewModels
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
-            var app = (App)Application.Current;
-            IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
+            var app = Application.Current as App;
+            if (app != null)
+            {
+                IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
-            _cts = new CancellationTokenSource();
+                _cts = new CancellationTokenSource();
 
-            CreateAndStartTimer();
+                CreateAndStartTimer();
+            }
 
         }
 
