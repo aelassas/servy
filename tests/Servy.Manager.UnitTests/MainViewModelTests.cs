@@ -73,7 +73,7 @@ namespace Servy.Manager.UnitTests
                     };
 
                     _serviceCommandsMock
-                        .Setup(s => s.SearchServicesAsync(It.IsAny<string>()))
+                        .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(services);
 
                     await ((IAsyncCommand)vm.SearchCommand).ExecuteAsync(null);
