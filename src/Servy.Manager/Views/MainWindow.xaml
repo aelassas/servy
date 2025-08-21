@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:Servy.Manager"
         xmlns:resx="clr-namespace:Servy.Manager.Resources"
-        xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+        xmlns:views="clr-namespace:Servy.Manager.Views"
+        xmlns:vm="clr-namespace:Servy.Manager.ViewModels"
         xmlns:managerConverters="clr-namespace:Servy.Manager.Converters"
         xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -43,39 +44,43 @@
             </MenuItem>
         </Menu>
 
-        <Grid Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <!-- Search panel -->
-                <RowDefinition Height="*"/>
-                <!-- DataGrid -->
-            </Grid.RowDefinitions>
+        <TabControl x:Name="MainTabControl" Grid.Row="0" SelectionChanged="MainTabControl_SelectionChanged">
 
-            <!-- Search Panel -->
-            <Grid Grid.Row="0" Margin="0,0,0,10" VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <!-- Search box -->
-                    <ColumnDefinition Width="Auto"/>
-                    <!-- Button -->
-                    <ColumnDefinition Width="Auto"/>
-                    <!-- Spacer -->
-                    <ColumnDefinition Width="*"/>
-                    <!-- Right aligned text -->
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!--Services Tab-->
+            <TabItem x:Name="MainTab" Header="{x:Static resx:Strings.Label_ServicesTab}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Search panel -->
+                        <RowDefinition Height="*"/>
+                        <!-- DataGrid -->
+                    </Grid.RowDefinitions>
 
-                <TextBox x:Name="SearchTextBox" Grid.Column="0"
+                    <!-- Search Panel -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <!-- Search box -->
+                            <ColumnDefinition Width="Auto"/>
+                            <!-- Button -->
+                            <ColumnDefinition Width="Auto"/>
+                            <!-- Spacer -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Right aligned text -->
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox x:Name="SearchTextBox" Grid.Column="0"
                          Width="200" Height="24" Margin="0,0,5,0"  
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                          KeyDown="SearchTextBox_KeyDown" />
 
-                <Button Grid.Column="1"
+                        <Button Grid.Column="1"
                         Content="{Binding SearchButtonText, UpdateSourceTrigger=PropertyChanged}"
                         Width="80" Height="24" 
                         Command="{Binding SearchCommand}"
                         IsEnabled="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanConverter}}"/>
 
-                <!--<ProgressBar Grid.Column="3"  x:Name="AnimatedProgressBar"
+                        <!--<ProgressBar Grid.Column="3"  x:Name="AnimatedProgressBar"
                              Width="150" Height="20"
                              Margin="10,0,0,0"
                              VerticalAlignment="Center"
@@ -84,16 +89,16 @@
                              Minimum="0" Maximum="100" Value="50"
                              />-->
 
-                <TextBlock Grid.Column="3"
+                        <TextBlock Grid.Column="3"
                            Margin="10,3,0,0"
-                           Text="{x:Static resx:Strings.Txt_F5_Shortcut}" 
+                           Text="{x:Static resx:Strings.Label_F5_Shortcut}" 
                            FontStyle="Normal" 
                            Foreground="Gray" 
                            TextWrapping="Wrap"/>
-            </Grid>
+                    </Grid>
 
-            <!-- Services DataGrid -->
-            <DataGrid 
+                    <!-- Services DataGrid -->
+                    <DataGrid 
                 Grid.Row="1"
                 ItemsSource="{Binding ServicesView}"
                 VirtualizingStackPanel.IsVirtualizing="True"
@@ -107,21 +112,21 @@
                 IsReadOnly="True"
                 RowHeight="32">
 
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="{x:Static resx:Strings.Column_Name}" Binding="{Binding Name}" Width="2*"/>
-                    <DataGridTextColumn Header="{x:Static resx:Strings.Column_Description}" Binding="{Binding Description}" Width="3*"/>
-                    <DataGridTextColumn Header="{x:Static resx:Strings.Column_Status}" Binding="{Binding Status, Converter={StaticResource StatusConverter}}" Width="*"/>
-                    <DataGridTextColumn Header="{x:Static resx:Strings.Column_StartupType}" Binding="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}" Width="*"/>
-                    <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*"/>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Name}" Binding="{Binding Name}" Width="2*"/>
+                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Description}" Binding="{Binding Description}" Width="3*"/>
+                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Status}" Binding="{Binding Status, Converter={StaticResource StatusConverter}}" Width="*"/>
+                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_StartupType}" Binding="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}" Width="*"/>
+                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*"/>
 
-                    <!-- Actions -->
-                    <DataGridTemplateColumn Width="200" Header="">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Tag="{Binding DataContext, ElementName=This}">
+                            <!-- Actions -->
+                            <DataGridTemplateColumn Width="200" Header="">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Tag="{Binding DataContext, ElementName=This}">
 
-                                    <!-- Start, Stop, Restart buttons -->
-                                    <Button ToolTip="{x:Static resx:Strings.Button_Start}" 
+                                            <!-- Start, Stop, Restart buttons -->
+                                            <Button ToolTip="{x:Static resx:Strings.Button_Start}" 
                                             Command="{Binding StartCommand}"
                                             CommandParameter="{Binding}" 
                                             Content="▶" Width="24" Height="24" Margin="2,0,0,0"
@@ -129,70 +134,78 @@
                                             PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
 
 
-                                    <Button ToolTip="{x:Static resx:Strings.Button_Stop}" 
+                                            <Button ToolTip="{x:Static resx:Strings.Button_Stop}" 
                                             Command="{Binding StopCommand}"
                                             CommandParameter="{Binding}" 
                                             Content="■" Width="24" Height="24" Margin="2,0,0,0" 
                                             IsEnabled="{Binding IsInstalled}"
                                             PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
 
-                                    <Button ToolTip="{x:Static resx:Strings.Button_Restart}" 
+                                            <Button ToolTip="{x:Static resx:Strings.Button_Restart}" 
                                             Command="{Binding RestartCommand}"
                                             CommandParameter="{Binding}" 
                                             Content="⟳" Width="24" Height="24" Margin="2,0,0,0" 
                                             IsEnabled="{Binding IsInstalled}"
                                             PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
 
-                                    <!-- Menu button for other actions -->
-                                    <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0"
+                                            <!-- Menu button for other actions -->
+                                            <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0"
                                             PreviewMouseLeftButtonDown="MenuButton_PreviewMouseLeftButtonDown">
-                                        <Button.ContextMenu>
-                                            <ContextMenu>
+                                                <Button.ContextMenu>
+                                                    <ContextMenu>
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_Install}"
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_Install}"
                                                       Command="{Binding InstallCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}" 
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}" 
                                                       Command="{Binding UninstallCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                                       IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_Remove}" 
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_Remove}" 
                                                       Command="{Binding RemoveCommand}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                                       IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}" />
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_Config}" 
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_Config}" 
                                                     Command="{Binding ConfigureCommand}"
                                                     CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                                     IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}" 
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}" 
                                                     Command="{Binding ExportXmlCommand}"
                                                     CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                                <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}" 
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}" 
                                                     Command="{Binding ExportJsonCommand}"
                                                     CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
-                                            </ContextMenu>
-                                        </Button.ContextMenu>
-                                    </Button>
+                                                    </ContextMenu>
+                                                </Button.ContextMenu>
+                                            </Button>
 
 
 
 
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                </DataGrid.Columns>
+                        </DataGrid.Columns>
 
-            </DataGrid>
+                    </DataGrid>
 
-        </Grid>
+                </Grid>
+            </TabItem>
+
+            <!--Logs Tab-->
+            <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
+                <views:LogsView/>
+            </TabItem>
+
+        </TabControl>
     </DockPanel>
 
 </Window>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Servy.UI.Commands
 {
@@ -55,6 +56,13 @@ namespace Servy.UI.Commands
         public event EventHandler CanExecuteChanged;
 
         /// <inheritdoc/>
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        public void RaiseCanExecuteChanged()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            });
+        }
+
     }
 }
