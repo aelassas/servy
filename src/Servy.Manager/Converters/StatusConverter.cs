@@ -31,6 +31,8 @@ namespace Servy.Manager.Converters
                 {
                     case ServiceStatus.None:
                         return Strings.Label_Fetching;
+                    case ServiceStatus.NotInstalled:
+                        return Strings.Status_NotInstalled;
                     case ServiceStatus.Stopped:
                         return Strings.Status_Stopped;
                     case ServiceStatus.StartPending:

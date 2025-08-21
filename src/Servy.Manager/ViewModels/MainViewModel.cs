@@ -538,6 +538,11 @@ namespace Servy.Manager.ViewModels
                         service.StartupType = (ServiceStartType)dto.StartupType;
                 }
 
+                if(!service.IsInstalled)
+                {
+                  service.Status = ServiceStatus.NotInstalled;
+                }
+
                 // If installed, populate info from dictionary
                 if (service.IsInstalled && allServices.TryGetValue(service.Name, out var info))
                 {
