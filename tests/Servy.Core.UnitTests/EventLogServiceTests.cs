@@ -126,5 +126,67 @@ namespace Servy.Core.UnitTests
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
         }
+
+        [Fact]
+        public async Task SearchAsync_ShouldReturnMinValueWhenTimeCreatedIsNull()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 1, null, "Test");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
+
+            var service = CreateService(mockReader);
+
+            var results = await service.SearchAsync(null, null, null, null!);
+
+            Assert.Single(results);
+            Assert.Equal(DateTime.MinValue, results.First().Time);
+        }
+
+        [Fact]
+        public async Task SearchAsync_ShouldReturnEmptyMessageWhenFormatDescriptionIsNull()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 1, DateTime.Now, null!);
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
+
+            var service = CreateService(mockReader);
+
+            var results = await service.SearchAsync(null, null, null, null!);
+
+            Assert.Single(results);
+            Assert.Equal(string.Empty, results.First().Message);
+        }
+
+        [Fact]
+        public async Task SearchAsync_ShouldUseDefaultLevelWhenLevelIsNull()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 0, DateTime.Now, "Message"); // level = 0
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
+
+            var service = CreateService(mockReader);
+
+            var results = await service.SearchAsync(null, null, null, null!);
+
+            Assert.Single(results);
+            // Here check the mapping from 0 -> your default ParseLevel
+            Assert.Equal(EventLogLevel.Information, results.First().Level); // Example
+        }
+
+        [Fact]
+        public async Task SearchAsync_ShouldThrowWhenCancelled()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 1, DateTime.Now, "Message");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
+
+            var service = CreateService(mockReader);
+            var cts = new CancellationTokenSource();
+            cts.Cancel(); // cancel immediately
+
+            await Assert.ThrowsAsync<TaskCanceledException>(() =>
+                service.SearchAsync(null, null, null, null!, cts.Token));
+        }
+
     }
 }
