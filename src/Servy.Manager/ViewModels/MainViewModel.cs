@@ -14,7 +14,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -295,7 +294,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText), _cts.Token);
+                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, _cts.Token), _cts.Token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count()} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
