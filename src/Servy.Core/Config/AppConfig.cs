@@ -16,6 +16,12 @@ namespace Servy.Core.Config
         public static readonly string Version = "1.0.0";
 
         /// <summary>
+        /// The name of the Windows service and the associated Event Log source.
+        /// Used for service registration and writing logs to the Windows Event Viewer.
+        /// </summary>
+        public static readonly string ServiceNameEventSource = "Servy";
+
+        /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect
         /// processes holding handles to files. Typically <c>handle64.exe</c> on 64-bit systems.
         /// </summary>

@@ -1,5 +1,4 @@
-﻿using Servy.Core;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
@@ -19,15 +18,6 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
-        #region Constants
-
-        /// <summary>
-        /// The name of the Windows service and the associated Event Log source.
-        /// Used for service registration and writing logs to the Windows Event Viewer.
-        /// </summary>
-        public const string ServiceNameEventSource = "Servy";
-
-        #endregion
 
         #region Private Fields
 
@@ -72,7 +62,7 @@ namespace Servy.Service
         /// </summary>
         public Service() : this(
             new ServiceHelper(new CommandLineProvider()),
-            new EventLogLogger(ServiceNameEventSource),
+            new EventLogLogger(AppConfig.ServiceNameEventSource),
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
@@ -99,7 +89,7 @@ namespace Servy.Service
             IProcessFactory processFactory,
             IPathValidator pathValidator)
         {
-            ServiceName = ServiceNameEventSource;
+            ServiceName = AppConfig.ServiceNameEventSource;
 
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
