@@ -81,7 +81,9 @@
     <Compile Include="Data\IAppDbContext.cs" />
     <Compile Include="Data\IDapperExecutor.cs" />
     <Compile Include="Data\IServiceRepository.cs" />
+    <Compile Include="DTOs\EventLogEntry.cs" />
     <Compile Include="DTOs\ServiceDto.cs" />
+    <Compile Include="Enums\EventLogLevel.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariable.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariableParser.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidator.cs" />
@@ -99,6 +101,8 @@
     <Compile Include="Helpers\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />
     <Compile Include="Logging\EventLogLogger.cs" />
+    <Compile Include="Logging\EventLogReader.cs" />
+    <Compile Include="Logging\IEventLogReader.cs" />
     <Compile Include="Logging\ILogger.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Domain\Service.cs" />
@@ -110,6 +114,8 @@
     <Compile Include="Security\ProtectedKeyProvider.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesParser.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesValidator.cs" />
+    <Compile Include="Services\EventLogService.cs" />
+    <Compile Include="Services\IEventLogService.cs" />
     <Compile Include="Services\IManagementObject.cs" />
     <Compile Include="Services\IServiceControllerWrapper.cs" />
     <Compile Include="Services\IServiceManager.cs" />

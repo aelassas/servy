@@ -116,6 +116,7 @@
     <Compile Include="AppFoldersHelperTests.cs" />
     <Compile Include="EnvironmentVariableParserTests.cs" />
     <Compile Include="EnvironmentVariablesValidatorTests.cs" />
+    <Compile Include="EventLogServiceTests.cs" />
     <Compile Include="HelperTests.cs" />
     <Compile Include="JsonServiceValidatorTests.cs" />
     <Compile Include="RotatingStreamWriterTests.cs" />

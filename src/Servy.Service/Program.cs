@@ -1,4 +1,5 @@
-﻿using Servy.Core.Helpers;
+﻿using Servy.Core.Config;
+using Servy.Core.Helpers;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -28,7 +29,7 @@ namespace Servy.Service
         static void Main()
         {
             var asm = Assembly.GetExecutingAssembly();
-            const string eventSource = Service.ServiceNameEventSource;
+            string eventSource = AppConfig.ServiceNameEventSource;
 
             EnsureEventSourceExists(eventSource);
 
