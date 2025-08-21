@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using Servy.Core.Services;
 using System;
 using System.Diagnostics.Eventing.Reader;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests
@@ -26,7 +27,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void Search_NoFilters_ReturnsResult()
+        public async Task Search_NoFilters_ReturnsResult()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
@@ -37,7 +38,7 @@ namespace Servy.Core.UnitTests
             var service = CreateService(mockReader);
 
             // Act
-            var result = service.Search(null, null, null, null);
+            var result = await service.SearchAsync(null, null, null, null);
 
             // Assert
             var entry = Assert.Single(result);
@@ -45,7 +46,7 @@ namespace Servy.Core.UnitTests
         }
 
         [Fact]
-        public void Search_WithLevelFilter_ReturnsCorrectLevel()
+        public async Task Search_WithLevelFilter_ReturnsCorrectLevel()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "warning");
@@ -54,14 +55,14 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(EventLogLevel.Warning, null, null, null);
+            var result = await service.SearchAsync(EventLogLevel.Warning, null, null, null);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Warning, entry.Level);
         }
 
         [Fact]
-        public void Search_WithStartDateAndEndDate_AppendsBothFilters()
+        public async Task Search_WithStartDateAndEndDate_AppendsBothFilters()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "info");
@@ -73,14 +74,14 @@ namespace Servy.Core.UnitTests
             var start = DateTime.UtcNow.AddDays(-1);
             var end = DateTime.UtcNow.AddDays(1);
 
-            var result = service.Search(null, start, end, null);
+            var result = await service.SearchAsync(null, start, end, null);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
         }
 
         [Fact]
-        public void Search_WithOnlyEndDate_AppendsFilterCorrectly()
+        public async Task Search_WithOnlyEndDate_AppendsFilterCorrectly()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "unknown level");
@@ -91,14 +92,14 @@ namespace Servy.Core.UnitTests
 
             var end = DateTime.UtcNow;
 
-            var result = service.Search(null, null, end, null);
+            var result = await service.SearchAsync(null, null, end, null);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level); // default branch
         }
 
         [Fact]
-        public void Search_WithKeyword_AddsKeywordFilter()
+        public async Task Search_WithKeyword_AddsKeywordFilter()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
@@ -107,14 +108,14 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(null, null, null, "servy");
+            var result = await service.SearchAsync(null, null, null, "servy");
 
             var entry = Assert.Single(result);
             Assert.Contains("servy", entry.Message);
         }
 
         [Fact]
-        public void Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
+        public async Task Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(6, 4, null, "no time");
@@ -123,7 +124,7 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(null, null, null, null);
+            var result = await service.SearchAsync(null, null, null, null);
 
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
