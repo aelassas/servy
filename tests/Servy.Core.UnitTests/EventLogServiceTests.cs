@@ -35,7 +35,7 @@ namespace Servy.Core.UnitTests
             var service = CreateService(mockReader);
 
             // Act
-            var result = service.Search(null, null, null, null!);
+            var result = service.SearchAsync(null, null, null, null!);
 
             // Assert
             var entry = Assert.Single(result);
@@ -52,7 +52,7 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(EventLogLevel.Warning, null, null, null!);
+            var result = service.SearchAsync(EventLogLevel.Warning, null, null, null!);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Warning, entry.Level);
@@ -71,7 +71,7 @@ namespace Servy.Core.UnitTests
             var start = DateTime.UtcNow.AddDays(-1);
             var end = DateTime.UtcNow.AddDays(1);
 
-            var result = service.Search(null, start, end, null!);
+            var result = service.SearchAsync(null, start, end, null!);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
@@ -89,7 +89,7 @@ namespace Servy.Core.UnitTests
 
             var end = DateTime.UtcNow;
 
-            var result = service.Search(null, null, end, null!);
+            var result = service.SearchAsync(null, null, end, null!);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level); // default branch
@@ -105,7 +105,7 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(null, null, null, "servy");
+            var result = service.SearchAsync(null, null, null, "servy");
 
             var entry = Assert.Single(result);
             Assert.Contains("servy", entry.Message);
@@ -121,7 +121,7 @@ namespace Servy.Core.UnitTests
 
             var service = CreateService(mockReader);
 
-            var result = service.Search(null, null, null, null!);
+            var result = service.SearchAsync(null, null, null, null!);
 
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
