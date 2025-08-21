@@ -1,7 +1,5 @@
 ﻿#nullable enable
 
-using System.Windows;
-
 namespace Servy.UI.Commands
 {
     /// <inheritdoc/>
@@ -58,10 +56,15 @@ namespace Servy.UI.Commands
         /// <inheritdoc/>
         public void RaiseCanExecuteChanged()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            var context = SynchronizationContext.Current;
+            if (context != null)
+            {
+                context.Post(_ => CanExecuteChanged?.Invoke(this, EventArgs.Empty), null);
+            }
+            else
             {
                 CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-            });
+            }
         }
 
     }
