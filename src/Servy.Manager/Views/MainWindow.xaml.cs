@@ -13,7 +13,6 @@ using Servy.UI.Services;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 using System.Windows.Input;
 
 namespace Servy.Manager.Views
@@ -46,8 +45,9 @@ namespace Servy.Manager.Views
             var app = (App)Application.Current;
 
             // Initialize Logs view
-            LogsView logsView = new LogsView();
-            logsView.DataContext = new LogsViewModel(new EventLogLogger(Config.AppConfig.EventSource), new EventLogService(new EventLogReader()));
+            var logsView = new LogsView();
+            var logsVm = new LogsViewModel(new EventLogLogger(AppConfig.EventSource), new EventLogService(new EventLogReader()));
+            logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
             // Initialize database and helpers

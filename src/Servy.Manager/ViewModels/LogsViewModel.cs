@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json.Linq;
-using Servy.Core.Enums;
+﻿using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
+using Servy.UI;
 using Servy.UI.Commands;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
@@ -33,10 +33,16 @@ namespace Servy.Manager.ViewModels
         private DateTime? _toDateMinDate;
         private string _keyword = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
+        private BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
 
         #endregion
 
         #region Events
+
+        /// <summary>
+        /// Scroll DataGrid to top event.
+        /// </summary>
+        public event Action ScrollLogsToTopRequested;
 
         /// <summary>
         /// Occurs when a property value changes.
@@ -56,6 +62,11 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Collection of logs displayed in the DataGrid.
+        /// </summary>
+        public ICollectionView LogsView { get; private set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether a background operation is in progress.
@@ -181,11 +192,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Gets the collection of log entries displayed in the Logs tab.
-        /// </summary>
-        public ObservableCollection<LogEntryModel> Logs { get; }
-
-        /// <summary>
         /// Gets or sets the currently selected log entry in the UI.
         /// </summary>
         public LogEntryModel SelectedLog
@@ -261,7 +267,7 @@ namespace Servy.Manager.ViewModels
             FromDate = DateTime.Now.AddDays(-3); // Default to last 3 days
             ToDate = DateTime.Now; // Default to now
 
-            Logs = new ObservableCollection<LogEntryModel>();
+            LogsView = new ListCollectionView(_logs);
             SearchCommand = new AsyncCommand(Search);
             RowClickCommand = new RelayCommand<object>(OnRowClick);
 
@@ -301,17 +307,19 @@ namespace Servy.Manager.ViewModels
                 {
                     token.ThrowIfCancellationRequested();
 
-                    Logs.Clear();
-                    foreach (var entry in results)
-                    {
-                        Logs.Add(new LogEntryModel
+                    _logs.Clear();
+                    _logs.AddRange(results.Select(
+                        entry => new LogEntryModel
                         {
                             Time = entry.Time,
                             Level = entry.Level.ToString(),
                             EventId = entry.EventId,
                             Message = entry.Message
-                        });
-                    }
+                        }));
+
+                    // Scroll DataGrid to Top
+                    ScrollLogsToTopRequested?.Invoke();
+
                 });
             }
             catch (OperationCanceledException)
