@@ -33,11 +33,6 @@ namespace Servy.Manager.UnitTests
             _loggerMock = new Mock<ILogger>();
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
-
-            if (Application.Current == null)
-            {
-                new App(); // Application instance
-            }
         }
 
         private MainViewModel CreateViewModel()
@@ -68,26 +63,25 @@ namespace Servy.Manager.UnitTests
         [Fact]
         public void SearchCommand_ShouldPopulateServicesView()
         {
-
             Helper.RunOnSTA(async () =>
             {
-                    var vm = CreateViewModel();
-                    var services = new List<Service>
+                var vm = CreateViewModel();
+                var services = new List<Service>
                     {
                         new Service { Name = "S1" },
                         new Service { Name = "S2" }
                     };
 
-                    _serviceCommandsMock
-                        .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(services);
+                _serviceCommandsMock
+                    .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(services);
 
-                    await ((IAsyncCommand)vm.SearchCommand).ExecuteAsync(null);
+                await ((IAsyncCommand)vm.SearchCommand).ExecuteAsync(null);
 
-                    var view = (ListCollectionView)vm.ServicesView;
-                    Assert.Equal(2, view.Cast<ServiceRowViewModel>().Count());
-                    Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S1");
-                    Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S2");
+                var view = (ListCollectionView)vm.ServicesView;
+                Assert.Equal(2, view.Cast<ServiceRowViewModel>().Count());
+                Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S1");
+                Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S2");
             });
         }
 

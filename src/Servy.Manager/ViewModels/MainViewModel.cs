@@ -213,12 +213,15 @@ namespace Servy.Manager.ViewModels
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
-            var app = (App)Application.Current;
-            IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
+            var app = Application.Current as App;
+            if (app != null)
+            {
+                IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
-            _cts = new CancellationTokenSource();
+                _cts = new CancellationTokenSource();
 
-            CreateAndStartTimer();
+                CreateAndStartTimer();
+            }
 
         }
 
