@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
@@ -153,5 +154,17 @@ namespace Servy.Core.Services
         /// A <see cref="ServiceStartType"/> value if the service is found; otherwise, <c>empty string</c>.
         /// </returns>
         string? GetServiceUser(string serviceName, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves all Windows services on the local machine and maps them to <see cref="ServiceInfo"/> objects.
+        /// </summary>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to cancel the operation.</param>
+        /// <returns>A list of <see cref="ServiceInfo"/> representing all services with status, startup type, user, and description.</returns>
+        /// <remarks>
+        /// This method uses WMI (Win32_Service) to query all services in a single call for performance.
+        /// It maps the WMI <c>State</c> property to <see cref="ServiceStatus"/> enum,
+        /// and the WMI <c>StartMode</c> property to <see cref="ServiceStartType"/> enum.
+        /// </remarks>
+        List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default);
     }
 }

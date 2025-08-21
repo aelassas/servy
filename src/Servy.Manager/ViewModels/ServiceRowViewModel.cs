@@ -30,6 +30,9 @@ namespace Servy.Manager.ViewModels
             _serviceCommands = serviceCommands;
             _logger = logger;
 
+            // Subscribe to property changes in the Service model
+            Service.PropertyChanged += Service_PropertyChanged;
+
             StartCommand = new AsyncCommand(StartServiceAsync, CanExecuteServiceCommand);
             StopCommand = new AsyncCommand(StopServiceAsync, CanExecuteServiceCommand);
             RestartCommand = new AsyncCommand(RestartServiceAsync, CanExecuteServiceCommand);
@@ -46,47 +49,19 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public Service Service { get; }
 
-        #region Properties
+        #region Properties (forwarded from Service)
 
-        /// <summary>
-        /// Gets the service name.
-        /// </summary>
         public string Name => Service.Name;
-
-        /// <summary>
-        /// Gets the service description.
-        /// </summary>
         public string Description => Service.Description;
-
-        /// <summary>
-        /// Gets the current status of the service.
-        /// </summary>
-        public ServiceControllerStatus? Status => Service.Status;
-
-        /// <summary>
-        /// Gets the startup type of the service.
-        /// </summary>
+        public ServiceStatus? Status => Service.Status;
         public ServiceStartType? StartupType => Service.StartupType;
-
-        /// <summary>
-        /// Gets the user session associated with the service.
-        /// </summary>
         public string UserSession => Service.UserSession;
-
-        /// <summary>
-        /// Gets whether the service is installed.
-        /// </summary>
         public bool IsInstalled => Service.IsInstalled;
-
-        /// <summary>
-        /// Gets whether the configuration app is available for this service.
-        /// </summary>
         public bool IsConfigurationAppAvailable => Service.IsConfigurationAppAvailable;
 
         #endregion
 
         #region INotifyPropertyChanged
-        /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
@@ -96,6 +71,41 @@ namespace Servy.Manager.ViewModels
         private void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Handles property changes in the underlying <see cref="Service"/> and forwards them to the UI.
+        /// </summary>
+        private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            // Forward all property changes from Service to ViewModel
+            switch (e.PropertyName)
+            {
+                case nameof(Service.Description):
+                    OnPropertyChanged(nameof(Description));
+                    break;
+                case nameof(Service.Status):
+                    OnPropertyChanged(nameof(Status));
+                    break;
+                case nameof(Service.StartupType):
+                    OnPropertyChanged(nameof(StartupType));
+                    break;
+                case nameof(Service.UserSession):
+                    OnPropertyChanged(nameof(UserSession));
+                    break;
+                case nameof(Service.IsInstalled):
+                    OnPropertyChanged(nameof(IsInstalled));
+                    break;
+                case nameof(Service.IsConfigurationAppAvailable):
+                    OnPropertyChanged(nameof(IsConfigurationAppAvailable));
+                    break;
+                case nameof(Service.Name):
+                    OnPropertyChanged(nameof(Name));
+                    break;
+                default:
+                    OnPropertyChanged(e.PropertyName);
+                    break;
+            }
         }
         #endregion
 

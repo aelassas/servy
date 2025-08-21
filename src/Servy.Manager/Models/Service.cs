@@ -1,15 +1,17 @@
 ﻿using Servy.Core.Enums;
-using System.ServiceProcess;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace Servy.Manager.Models
 {
     /// <summary>
     /// Represents a Windows service and its metadata within Servy Manager.
+    /// Implements INotifyPropertyChanged to support UI bindings.
     /// </summary>
-    public class Service
+    public class Service : INotifyPropertyChanged
     {
         private string _description;
-        private ServiceControllerStatus? _status;
+        private ServiceStatus? _status;
         private bool _isInstalled;
         private bool _isConfigurationAppAvailable;
         private ServiceStartType? _startupType;
@@ -26,16 +28,16 @@ namespace Servy.Manager.Models
         public string Description
         {
             get => _description;
-            set => _description = value;
+            set => SetProperty(ref _description, value);
         }
 
         /// <summary>
         /// Gets or sets the current status of the service.
         /// </summary>
-        public ServiceControllerStatus? Status
+        public ServiceStatus? Status
         {
             get => _status;
-            set => _status = value;
+            set => SetProperty(ref _status, value);
         }
 
         /// <summary>
@@ -44,7 +46,7 @@ namespace Servy.Manager.Models
         public bool IsInstalled
         {
             get => _isInstalled;
-            set => _isInstalled = value;
+            set => SetProperty(ref _isInstalled, value);
         }
 
         /// <summary>
@@ -53,7 +55,7 @@ namespace Servy.Manager.Models
         public bool IsConfigurationAppAvailable
         {
             get => _isConfigurationAppAvailable;
-            set => _isConfigurationAppAvailable = value;
+            set => SetProperty(ref _isConfigurationAppAvailable, value);
         }
 
         /// <summary>
@@ -62,7 +64,7 @@ namespace Servy.Manager.Models
         public ServiceStartType? StartupType
         {
             get => _startupType;
-            set => _startupType = value;
+            set => SetProperty(ref _startupType, value);
         }
 
         /// <summary>
@@ -71,7 +73,33 @@ namespace Servy.Manager.Models
         public string UserSession
         {
             get => _userSession;
-            set => _userSession = value;
+            set => SetProperty(ref _userSession, value);
         }
+
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Raises PropertyChanged event for the specified property.
+        /// </summary>
+        /// <param name="propertyName">Name of the property that changed.</param>
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Helper to set property and raise PropertyChanged if value is different.
+        /// </summary>
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        {
+            if (Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        #endregion
     }
 }
