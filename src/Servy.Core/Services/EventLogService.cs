@@ -35,11 +35,11 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         /// <inheritdoc />
         public async Task<IEnumerable<EventLogEntry>> SearchAsync(
-            EventLogLevel? level,
-            DateTime? startDate,
-            DateTime? endDate,
-            string keyword,
-            CancellationToken token = default)
+    EventLogLevel? level,
+    DateTime? startDate,
+    DateTime? endDate,
+    string keyword,
+    CancellationToken token = default)
         {
             return await Task.Run(() =>
             {
@@ -67,7 +67,6 @@ namespace Servy.Core.Services
                 }
 
                 string systemFilterString = string.Join(" and ", systemFilters);
-
                 string query = $"*[System[{systemFilterString}]]";
 
                 var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
@@ -77,22 +76,26 @@ namespace Servy.Core.Services
 
                 foreach (var evt in records)
                 {
-                    token.ThrowIfCancellationRequested(); // check cancellation
+                    token.ThrowIfCancellationRequested();
+
+                    var message = evt.FormatDescription() ?? string.Empty;
+
+                    // Only include Servy service logs: messages with [..]
+                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
+                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
+                    if (!string.IsNullOrEmpty(keyword) &&
+                        message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
                     results.Add(new EventLogEntry
                     {
                         EventId = evt.Id,
                         Time = evt.TimeCreated ?? DateTime.MinValue,
                         Level = ParseLevel(evt.Level ?? 0),
-                        Message = evt.FormatDescription() ?? string.Empty
+                        Message = message
                     });
-                }
-
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    results = results
-                        .Where(r => r.Message != null &&
-                                    r.Message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
-                        .ToList();
                 }
 
                 return results
@@ -101,8 +104,6 @@ namespace Servy.Core.Services
                     .ToList();
             }, token);
         }
-
-
 
         /// <summary>
         /// Converts a raw event log level (byte) into a strongly typed <see cref="EventLogLevel"/>.

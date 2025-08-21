@@ -43,8 +43,10 @@
         </StackPanel>
 
         <!-- Logs Grid -->
-        <DataGrid Grid.Row="1"
-          ItemsSource="{Binding Logs}"
+        <DataGrid 
+          x:Name="LogsDataGrid"  
+          Grid.Row="1"
+          ItemsSource="{Binding LogsView}"
           SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
           SelectionMode="Single"
           Margin="0,0,0,10"
