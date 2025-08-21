@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -113,7 +114,7 @@ namespace Servy.Manager.UnitTests
 
             // Assert
             Assert.True(result); // now should pass
-            Assert.Equal(System.ServiceProcess.ServiceControllerStatus.Stopped, service.Status);
+            Assert.Equal(ServiceStatus.Stopped, service.Status);
             _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption), Times.Once);
         }
 
