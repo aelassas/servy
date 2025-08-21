@@ -5,6 +5,7 @@ using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Management;
 using System.ServiceProcess;
 using System.Threading;
@@ -1149,6 +1150,187 @@ namespace Servy.Core.UnitTests
             var result = _serviceManager.GetServiceUser("NonExistentService");
             Assert.Null(result);
         }
+
+        #endregion
+
+        #region GetAllServices Tests
+
+        [Fact]
+        public void GetAllServices_ShouldReturnEmptyList_WhenNoServices()
+        {
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                            .Returns(new ManagementObject[0]);
+
+            var result = _serviceManager.GetAllServices();
+
+            Assert.Empty(result);
+        }
+
+        [Theory]
+        [InlineData("Running", ServiceStatus.Running)]
+        [InlineData("Stopped", ServiceStatus.Stopped)]
+        [InlineData("Paused", ServiceStatus.Paused)]
+        [InlineData("Start Pending", ServiceStatus.StartPending)]
+        [InlineData("Stop Pending", ServiceStatus.StopPending)]
+        [InlineData("Pause Pending", ServiceStatus.PausePending)]
+        [InlineData("Continue Pending", ServiceStatus.ContinuePending)]
+        [InlineData(null, ServiceStatus.None)]
+        [InlineData("UnknownState", ServiceStatus.None)]
+        public void GetAllServices_ShouldMapStateCorrectly(string wmiState, ServiceStatus expectedStatus)
+        {
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["State"] = wmiState;
+            mo["StartMode"] = "Automatic";
+            mo["StartName"] = "LocalSystem";
+            mo["Description"] = "desc";
+            mo["Name"] = "svc1";
+
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                            .Returns(new[] { mo });
+
+            var result = _serviceManager.GetAllServices();
+
+            var service = Assert.Single(result);
+            Assert.Equal(expectedStatus, service.Status);
+        }
+
+        [Theory]
+        [InlineData("Auto", ServiceStartType.Automatic)]
+        [InlineData("Automatic", ServiceStartType.Automatic)]
+        [InlineData("Manual", ServiceStartType.Manual)]
+        [InlineData("Disabled", ServiceStartType.Disabled)]
+        [InlineData(null, ServiceStartType.Automatic)]
+        [InlineData("Unknown", ServiceStartType.Automatic)]
+        public void GetAllServices_ShouldMapStartModeCorrectly(string wmiStartMode, ServiceStartType expectedType)
+        {
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["State"] = "Running";
+            mo["StartMode"] = wmiStartMode;
+            mo["StartName"] = "LocalSystem";
+            mo["Description"] = "desc";
+            mo["Name"] = "svc1";
+
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                            .Returns(new[] { mo });
+
+            var result = _serviceManager.GetAllServices();
+
+            var service = Assert.Single(result);
+            Assert.Equal(expectedType, service.StartupType);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldUseDefaults_WhenFieldsAreNull()
+        {
+            var mo = new ManagementClass("Win32_Service").CreateInstance();
+            mo["State"] = null;
+            mo["StartMode"] = null;
+            mo["StartName"] = null;
+            mo["Description"] = null;
+            mo["Name"] = null;
+
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                            .Returns(new[] { mo });
+
+            var result = _serviceManager.GetAllServices();
+
+            var service = Assert.Single(result);
+            Assert.Equal(ServiceStatus.None, service.Status);
+            Assert.Equal(ServiceStartType.Automatic, service.StartupType);
+            Assert.Equal("LocalSystem", service.UserSession);
+            Assert.Equal(string.Empty, service.Description);
+            Assert.Equal(string.Empty, service.Name);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldHandleMultipleServices()
+        {
+            var mo1 = new ManagementClass("Win32_Service").CreateInstance();
+            mo1["State"] = "Running";
+            mo1["StartMode"] = "Manual";
+            mo1["StartName"] = "User1";
+            mo1["Description"] = "desc1";
+            mo1["Name"] = "svc1";
+
+            var mo2 = new ManagementClass("Win32_Service").CreateInstance();
+            mo2["State"] = "Stopped";
+            mo2["StartMode"] = "Disabled";
+            mo2["StartName"] = "User2";
+            mo2["Description"] = "desc2";
+            mo2["Name"] = "svc2";
+
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                            .Returns(new[] { mo1, mo2 });
+
+            var result = _serviceManager.GetAllServices();
+
+            Assert.Equal(2, result.Count);
+
+            Assert.Equal("svc1", result[0].Name);
+            Assert.Equal(ServiceStatus.Running, result[0].Status);
+            Assert.Equal(ServiceStartType.Manual, result[0].StartupType);
+            Assert.Equal("User1", result[0].UserSession);
+
+            Assert.Equal("svc2", result[1].Name);
+            Assert.Equal(ServiceStatus.Stopped, result[1].Status);
+            Assert.Equal(ServiceStartType.Disabled, result[1].StartupType);
+            Assert.Equal("User2", result[1].UserSession);
+        }
+
+        [Fact]
+        public void GetAllServices_ShouldMapAllServiceStates_CoverNullToString()
+        {
+            // Arrange
+            var moNull = new ManagementClass("Win32_Service").CreateInstance();
+            moNull["State"] = null;        // Simulate null state
+            moNull["StartMode"] = "Auto";
+            moNull["StartName"] = null;
+            moNull["Description"] = null;
+            moNull["Name"] = "NullStateService";
+
+            var moRunning = new ManagementClass("Win32_Service").CreateInstance();
+            moRunning["State"] = "Running";
+            moRunning["StartMode"] = "Manual";
+            moRunning["StartName"] = "User1";
+            moRunning["Description"] = "Running Service";
+            moRunning["Name"] = "RunningService";
+
+            var moStopped = new ManagementClass("Win32_Service").CreateInstance();
+            moStopped["State"] = "Stopped";
+            moStopped["StartMode"] = "Disabled";
+            moStopped["StartName"] = "User2";
+            moStopped["Description"] = "Stopped Service";
+            moStopped["Name"] = "StoppedService";
+
+            var mos = new[] { moNull, moRunning, moStopped };
+
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(mos);
+
+            // Act
+            var services = _serviceManager.GetAllServices();
+
+            // Assert
+            Assert.Equal(3, services.Count);
+
+            var nullStateService = services.First(s => s.Name == "NullStateService");
+            Assert.Equal(ServiceStatus.None, nullStateService.Status);       // branch with stateObj null
+            Assert.Equal(ServiceStartType.Automatic, nullStateService.StartupType);
+            Assert.Equal("LocalSystem", nullStateService.UserSession);
+            Assert.Equal(string.Empty, nullStateService.Description);
+
+            var runningService = services.First(s => s.Name == "RunningService");
+            Assert.Equal(ServiceStatus.Running, runningService.Status);
+            Assert.Equal(ServiceStartType.Manual, runningService.StartupType);
+            Assert.Equal("User1", runningService.UserSession);
+            Assert.Equal("Running Service", runningService.Description);
+
+            var stoppedService = services.First(s => s.Name == "StoppedService");
+            Assert.Equal(ServiceStatus.Stopped, stoppedService.Status);
+            Assert.Equal(ServiceStartType.Disabled, stoppedService.StartupType);
+            Assert.Equal("User2", stoppedService.UserSession);
+            Assert.Equal("Stopped Service", stoppedService.Description);
+        }
+
 
         #endregion
 

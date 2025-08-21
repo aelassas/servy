@@ -560,7 +560,7 @@ namespace Servy.Core.Services
                 ServiceStatus status = ServiceStatus.None;
                 if (stateObj != null)
                 {
-                    switch (stateObj?.ToString()?.ToLowerInvariant())
+                    switch (stateObj.ToString().ToLowerInvariant())
                     {
                         case "running":
                             status = ServiceStatus.Running;
