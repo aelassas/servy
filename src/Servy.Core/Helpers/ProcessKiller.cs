@@ -100,7 +100,7 @@ namespace Servy.Core.Helpers
             if (!File.Exists(filePath))
             {
                 Debug.WriteLine($"File not found: {filePath}");
-                return false;
+                return true;
             }
 
             var handleExePath = AppConfig.GetHandleExePath();

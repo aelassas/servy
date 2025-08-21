@@ -10,9 +10,14 @@ using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -531,6 +536,11 @@ namespace Servy.Manager.ViewModels
                     var dto = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
                     if (dto != null)
                         service.StartupType = (ServiceStartType)dto.StartupType;
+                }
+
+                if (!service.IsInstalled)
+                {
+                    service.Status = ServiceStatus.NotInstalled;
                 }
 
                 // If installed, populate info from dictionary

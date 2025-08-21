@@ -110,15 +110,14 @@ namespace Servy.Manager
                     MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
                 }
 
-                // Copy Sysinternals from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                 {
                     MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                 {
                     MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb");
                 }
