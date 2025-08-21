@@ -98,6 +98,7 @@
     <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
     <Compile Include="Helpers\SecurePassword.cs" />
+    <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Helpers\XmlServiceSerializer.cs" />
     <Compile Include="Helpers\XmlServiceValidator.cs" />
