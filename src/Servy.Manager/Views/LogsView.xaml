@@ -16,6 +16,8 @@
             <RowDefinition Height="*"/>
             <!-- Full description -->
             <!--<RowDefinition Height="Auto"/>-->
+            <!--Footer-->
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Search Filters -->
@@ -97,5 +99,13 @@
         <!--<ScrollViewer Grid.Row="2" Height="100" VerticalScrollBarVisibility="Auto">
             <TextBlock Text="{Binding SelectedLogMessage}" TextWrapping="Wrap"/>
         </ScrollViewer>-->
+
+        <TextBlock Grid.Row="2"
+            Margin="0,5,0,0"
+            Text="{Binding FooterText}"
+            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+            FontSize="12"
+            TextWrapping="Wrap"
+            HorizontalAlignment="Left"/>
     </Grid>
 </UserControl>

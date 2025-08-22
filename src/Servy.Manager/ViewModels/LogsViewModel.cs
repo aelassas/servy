@@ -5,9 +5,11 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI;
 using Servy.UI.Commands;
+using Servy.UI.Helpers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -39,6 +41,7 @@ namespace Servy.Manager.ViewModels
         private string _keyword = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
         private BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
+        private string _footerText;
 
         #endregion
 
@@ -85,6 +88,22 @@ namespace Servy.Manager.ViewModels
                 if (_isBusy != value)
                 {
                     _isBusy = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets footer text displayed in the UI.
+        /// </summary>
+        public string FooterText
+        {
+            get => _footerText;
+            set
+            {
+                if (_footerText != value)
+                {
+                    _footerText = value;
                     OnPropertyChanged();
                 }
             }
@@ -290,6 +309,8 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Optional command parameter (not used).</param>
         private async Task Search(object parameter)
         {
+            var stopwatch = Stopwatch.StartNew();
+
             // Cancel previous search and dispose previous CTS
             _cancellationTokenSource?.Cancel();
             _cancellationTokenSource?.Dispose();
@@ -298,6 +319,8 @@ namespace Servy.Manager.ViewModels
 
             try
             {
+                FooterText = string.Empty; // Clear footer text before search
+
                 // Step 1: show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
                 SearchButtonText = Strings.Button_Searching;
@@ -326,6 +349,9 @@ namespace Servy.Manager.ViewModels
                     ScrollLogsToTopRequested?.Invoke();
 
                 });
+
+                stopwatch.Stop();
+                FooterText = Helper.GetRowsInfo(_logs.Count, stopwatch.Elapsed, Strings.Footer_LogRowText);
             }
             catch (OperationCanceledException)
             {

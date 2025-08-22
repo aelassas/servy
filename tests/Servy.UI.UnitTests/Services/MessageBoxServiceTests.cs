@@ -2,7 +2,7 @@
 using Servy.UI.Services;
 using Xunit;
 
-namespace Servy.UnitTests.Services
+namespace Servy.UI.UnitTests.Services
 {
     public class MessageBoxServiceTests
     {

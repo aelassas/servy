@@ -33,13 +33,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        /// <inheritdoc />
         public async Task<IEnumerable<EventLogEntry>> SearchAsync(
-    EventLogLevel? level,
-    DateTime? startDate,
-    DateTime? endDate,
-    string keyword,
-    CancellationToken token = default)
+            EventLogLevel? level,
+            DateTime? startDate,
+            DateTime? endDate,
+            string keyword,
+            CancellationToken token = default)
         {
             return await Task.Run(() =>
             {
@@ -100,7 +99,6 @@ namespace Servy.Core.Services
 
                 return results
                     .OrderByDescending(r => r.Time)
-                    .Take(1000)
                     .ToList();
             }, token);
         }
