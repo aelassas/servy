@@ -10,6 +10,9 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -195,24 +198,6 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="System.Windows.Window.Closing"/> event for the main window.
-        /// </summary>
-        /// <param name="sender">The source of the event, typically the window being closed.</param>
-        /// <param name="e">
-        /// A <see cref="System.ComponentModel.CancelEventArgs"/> instance that can be used to cancel the closing operation.
-        /// </param>
-        /// <remarks>
-        /// Calls <see cref="MainViewModel.Cleanup"/> to stop background timers and cancel ongoing tasks before the window closes.
-        /// </remarks>
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-        {
-            if (DataContext is MainViewModel vm)
-                vm.Cleanup();
-
-            Task.Run(() => ProcessKiller.KillProcessTreeAndParents("Servy.exe", false));
-        }
-
-        /// <summary>
         /// Handles the <see cref="SelectionChanged"/> event of the main TabControl.
         /// Cancels background tasks or timers when switching tabs and triggers
         /// searches for logs or services depending on the selected tab.
@@ -269,6 +254,35 @@ namespace Servy.Manager.Views
                 // Re-enable tabs after processing
                 EnableTabs(true);
             }
+        }
+
+        /// <summary>
+        /// Handles the <see cref="System.Windows.Window.Closing"/> event for the main window.
+        /// </summary>
+        /// <param name="sender">The source of the event, typically the window being closed.</param>
+        /// <param name="e">
+        /// A <see cref="System.ComponentModel.CancelEventArgs"/> instance that can be used to cancel the closing operation.
+        /// </param>
+        /// <remarks>
+        /// Calls <see cref="MainViewModel.Cleanup"/> to stop background timers and cancel ongoing tasks before the window closes.
+        /// </remarks>
+        private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+                vm.Cleanup();
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var currentPID = Process.GetCurrentProcess().Id;
+                    ProcessKiller.KillChildren(currentPID);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error killing child processes: {ex}");
+                }
+            });
         }
 
         /// <summary>
