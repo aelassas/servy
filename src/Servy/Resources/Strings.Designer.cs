@@ -979,6 +979,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Loading Servy....
+        /// </summary>
+        public static string Splash_Text {
+            get {
+                return ResourceManager.GetString("Splash_Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Automatic (default).
         /// </summary>
         public static string StartupType_Automatic {

@@ -64,7 +64,7 @@ namespace Servy.Core.Helpers
                     if (stopServices)
                         ServiceHelper.StopServices(runningServices);
 
-                    if (isExe && !ProcessKiller.KillProcessTree(targetFileName))
+                    if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                         return false;
 
                     if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
