@@ -268,6 +268,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à log.
+        /// </summary>
+        public static string Footer_LogRowText {
+            get {
+                return ResourceManager.GetString("Footer_LogRowText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à service.
+        /// </summary>
+        public static string Footer_ServiceRowText {
+            get {
+                return ResourceManager.GetString("Footer_ServiceRowText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Failed to import JSON Configuration..
         /// </summary>
         public static string ImportJson_Error {
