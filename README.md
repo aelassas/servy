@@ -47,7 +47,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Features
 
 * Clean, simple UI
-* Quickly monitor and manage all Servy services with Servy Manager
+* Quickly monitor and manage all installed services with Servy Manager
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
