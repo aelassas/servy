@@ -92,6 +92,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
+    <Compile Include="Converters\MessageConverter.cs" />
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
     <Compile Include="Helpers\IServiceConfigurationValidator.cs" />

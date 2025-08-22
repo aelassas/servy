@@ -41,6 +41,7 @@ namespace Servy.Manager.ViewModels
         private string _keyword = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
         private BulkObservableCollection<LogEntryModel> _logs = new BulkObservableCollection<LogEntryModel>();
+        private string _selectedLogMessage;
         private string _footerText;
 
         #endregion
@@ -224,8 +225,8 @@ namespace Servy.Manager.ViewModels
             set
             {
                 _selectedLog = value;
+                SelectedLogMessage = value?.Message ?? string.Empty;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(SelectedLogMessage));
             }
         }
 
@@ -233,7 +234,18 @@ namespace Servy.Manager.ViewModels
         /// Gets the message of the currently selected log entry.
         /// Returns an empty string if none is selected.
         /// </summary>
-        public string SelectedLogMessage => SelectedLog?.Message ?? string.Empty;
+        public string SelectedLogMessage
+        {
+            get => _selectedLogMessage;
+            set
+            {
+                if (_selectedLogMessage != value)
+                {
+                    _selectedLogMessage = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private EventLogLevel? _selectedLevel = EventLogLevel.All;
 
