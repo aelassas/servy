@@ -7,6 +7,8 @@ using Servy.Infrastructure.Helpers;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
+using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -111,9 +113,20 @@ namespace Servy.Views
         /// Provides data for the <see cref="System.ComponentModel.CancelEventArgs"/>, 
         /// allowing the closing event to be canceled if needed.
         /// </param>
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            Task.Run(() => ProcessKiller.KillProcessTreeAndParents("Servy.Manager.exe", false));
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var currentPID = Process.GetCurrentProcess().Id;
+                    ProcessKiller.KillChildren(currentPID);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error killing child processes: {ex}");
+                }
+            });
         }
     }
 }
