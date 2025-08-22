@@ -42,16 +42,51 @@ namespace Servy.Core.Helpers
         #endregion
 
         /// <summary>
-        /// Retrieves the parent process ID of a given <see cref="Process"/>.
+        /// Kills all children of the specified process.
         /// </summary>
-        /// <param name="process">The process to query.</param>
-        /// <returns>The parent process ID.</returns>
-        private static int GetParentProcessId(Process process)
+        /// <param name="parentPid">Parent process PD.</param>
+        public static void KillChildren(int parentPid)
         {
-            PROCESS_BASIC_INFORMATION pbi = new PROCESS_BASIC_INFORMATION();
-            uint retLen;
-            NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
-            return pbi.InheritedFromUniqueProcessId.ToInt32();
+            try
+            {
+                // Get all processes once to avoid repeated expensive calls
+                var allProcesses = Process.GetProcesses();
+
+                var children = allProcesses.Where(p =>
+                {
+                    try
+                    {
+                        return GetParentProcessId(p) == parentPid;
+                    }
+                    catch
+                    {
+                        return false; // process may have exited or access denied
+                    }
+                }).ToList();
+
+                foreach (var child in children)
+                {
+                    try
+                    {
+                        if (!child.HasExited)
+                        {
+                            child.Kill();
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore if the process has already exited or access denied
+                    }
+                    finally
+                    {
+                        child.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore if parent process already exited
+            }
         }
 
         /// <summary>
@@ -140,6 +175,19 @@ namespace Servy.Core.Helpers
             }
 
             return success;
+        }
+
+        /// <summary>
+        /// Retrieves the parent process ID of a given <see cref="Process"/>.
+        /// </summary>
+        /// <param name="process">The process to query.</param>
+        /// <returns>The parent process ID.</returns>
+        private static int GetParentProcessId(Process process)
+        {
+            PROCESS_BASIC_INFORMATION pbi = new PROCESS_BASIC_INFORMATION();
+            uint retLen;
+            NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
+            return pbi.InheritedFromUniqueProcessId.ToInt32();
         }
 
         /// <summary>
