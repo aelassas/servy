@@ -13,6 +13,7 @@
         MinWidth="600"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
+        Closing="Window_Closing"
         >
     <Window.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />

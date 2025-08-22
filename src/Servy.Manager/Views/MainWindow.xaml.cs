@@ -11,6 +11,7 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -209,6 +210,8 @@ namespace Servy.Manager.Views
         {
             if (DataContext is MainViewModel vm)
                 vm.Cleanup();
+
+            Task.Run(() => ProcessKiller.KillProcessTreeAndParents("Servy.exe", false));
         }
 
         /// <summary>
