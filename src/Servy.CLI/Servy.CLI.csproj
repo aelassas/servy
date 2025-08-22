@@ -91,6 +91,7 @@
     <Compile Include="Commands\StopServiceCommand.cs" />
     <Compile Include="Commands\UninstallServiceCommand.cs" />
     <Compile Include="Enums\ConfigFileType.cs" />
+    <Compile Include="Helpers\ConsoleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\CommandResult.cs" />
     <Compile Include="Options\ExportServiceOptions.cs" />
