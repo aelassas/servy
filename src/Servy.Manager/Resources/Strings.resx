@@ -12,7 +12,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-
+  
+  <!--Splash screen-->
+  <data name="Splash_Text" xml:space="preserve">
+    <value>Loading Servy Manager...</value>
+  </data>
+  
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>

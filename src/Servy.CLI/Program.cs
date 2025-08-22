@@ -93,7 +93,7 @@ namespace Servy.CLI
                 var asm = Assembly.GetExecutingAssembly();
 
                 // Copy service executable from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe"))
+                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
                 {
                     Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
                 }

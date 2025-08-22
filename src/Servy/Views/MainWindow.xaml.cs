@@ -89,7 +89,7 @@ namespace Servy.Views
             var serviceCommands = new ServiceCommands(
                 mainViewModel.ModelToServiceDto,
                 mainViewModel.BindServiceDtoToModel,
-                serviceManager, 
+                serviceManager,
                 messageBoxService,
                 fileDialogService,
                 new ServiceConfigurationValidator(messageBoxService)
@@ -99,6 +99,20 @@ namespace Servy.Views
 
             // Create main ViewModel
             return mainViewModel;
+        }
+
+        /// <summary>
+        /// Handles the <see cref="Window.Closing"/> event.
+        /// Ensures that the Servy Manager process is terminated when the window is closed.
+        /// </summary>
+        /// <param name="sender">The source of the event (the window being closed).</param>
+        /// <param name="e">
+        /// Provides data for the <see cref="System.ComponentModel.CancelEventArgs"/>, 
+        /// allowing the closing event to be canceled if needed.
+        /// </param>
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Task.Run(() => ProcessKiller.KillProcessTreeAndParents("Servy.Manager.exe", false));
         }
     }
 }

@@ -18,6 +18,28 @@ namespace Servy.Core.Helpers
         #region Public Methods
 
         /// <summary>
+        /// Gets the names of all currently running Servy UI services.
+        /// </summary>
+        /// <returns>A list of service names.</returns>
+        public static List<string> GetRunningServyUIServices()
+        {
+            var wrapperExe = AppConfig.ServyServiceUIExe;
+            var services = GetRunningServices(wrapperExe);
+            return services;
+        }
+
+        /// <summary>
+        /// Gets the names of all currently running Servy CLI services.
+        /// </summary>
+        /// <returns>A list of service names.</returns>
+        public static List<string> GetRunningServyCLIServices()
+        {
+            var wrapperExe = AppConfig.ServyServiceCLIExe;
+            var services = GetRunningServices(wrapperExe);
+            return services;
+        }
+
+        /// <summary>
         /// Gets the names of all currently running Servy services (GUI and CLI).
         /// </summary>
         /// <returns>A list of service names.</returns>
@@ -103,28 +125,6 @@ namespace Servy.Core.Helpers
         #endregion
 
         #region Private Methods
-
-        /// <summary>
-        /// Gets the names of all currently running Servy UI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
-        private static List<string> GetRunningServyUIServices()
-        {
-            var wrapperExe = AppConfig.ServyServiceUIExe;
-            var services = GetRunningServices(wrapperExe);
-            return services;
-        }
-
-        /// <summary>
-        /// Gets the names of all currently running Servy CLI services.
-        /// </summary>
-        /// <returns>A list of service names.</returns>
-        private static List<string> GetRunningServyCLIServices()
-        {
-            var wrapperExe = AppConfig.ServyServiceCLIExe;
-            var services = GetRunningServices(wrapperExe);
-            return services;
-        }
 
         /// <summary>
         /// Queries WMI to get all running services whose executable matches the given wrapper filename.
