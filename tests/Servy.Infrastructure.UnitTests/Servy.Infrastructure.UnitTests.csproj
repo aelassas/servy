@@ -118,10 +118,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseInitializerTests.cs" />
+    <Compile Include="Helpers\DatabaseInitializerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceRepositoryStub.cs" />
-    <Compile Include="ServiceRepositoryTests.cs" />
+    <Compile Include="Data\ServiceRepositoryStub.cs" />
+    <Compile Include="Data\ServiceRepositoryTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

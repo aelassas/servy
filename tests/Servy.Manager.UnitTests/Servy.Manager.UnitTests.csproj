@@ -112,13 +112,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FakeService.cs" />
+    <Compile Include="Services\FakeService.cs" />
     <Compile Include="Helper.cs" />
-    <Compile Include="LogsViewModelTests.cs" />
-    <Compile Include="MainViewModelTests.cs" />
+    <Compile Include="ViewModels\LogsViewModelTests.cs" />
+    <Compile Include="ViewModels\MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceCommandsTests.cs" />
-    <Compile Include="ServiceRowViewModelTests.cs" />
+    <Compile Include="Services\ServiceCommandsTests.cs" />
+    <Compile Include="ViewModels\ServiceRowViewModelTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

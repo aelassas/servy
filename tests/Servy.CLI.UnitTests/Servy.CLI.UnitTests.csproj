@@ -107,15 +107,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExportServiceCommandTests.cs" />
-    <Compile Include="ImportServiceCommandTests.cs" />
-    <Compile Include="InstallServiceCommandTests.cs" />
+    <Compile Include="Commands\ExportServiceCommandTests.cs" />
+    <Compile Include="Commands\ImportServiceCommandTests.cs" />
+    <Compile Include="Commands\InstallServiceCommandTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RestartServiceCommandTests.cs" />
-    <Compile Include="ServiceStatusCommandTests.cs" />
-    <Compile Include="StartServiceCommandTests.cs" />
-    <Compile Include="StopServiceCommandTests.cs" />
-    <Compile Include="UninstallServiceCommandTests.cs" />
+    <Compile Include="Commands\RestartServiceCommandTests.cs" />
+    <Compile Include="Commands\ServiceStatusCommandTests.cs" />
+    <Compile Include="Commands\StartServiceCommandTests.cs" />
+    <Compile Include="Commands\StopServiceCommandTests.cs" />
+    <Compile Include="Commands\UninstallServiceCommandTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

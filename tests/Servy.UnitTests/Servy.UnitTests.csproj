@@ -108,9 +108,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainViewModelTests.cs" />
+    <Compile Include="ViewModels\MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceCommandsTests.cs" />
+    <Compile Include="Services\ServiceCommandsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

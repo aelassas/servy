@@ -111,7 +111,7 @@
     <Compile Include="HealthCheckTests.cs" />
     <Compile Include="HelperOverride.cs" />
     <Compile Include="ProcessManagementTests.cs" />
-    <Compile Include="ServiceHelperTests.cs" />
+    <Compile Include="ServiceHelpers\ServiceHelperTests.cs" />
     <Compile Include="ServiceTests.cs" />
     <Compile Include="TestableService.cs">
       <SubType>Component</SubType>
@@ -137,6 +137,7 @@
       <Name>Servy.Service</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

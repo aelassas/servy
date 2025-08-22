@@ -112,25 +112,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppConfigTests.cs" />
-    <Compile Include="AppFoldersHelperTests.cs" />
-    <Compile Include="EnvironmentVariableParserTests.cs" />
-    <Compile Include="EnvironmentVariablesValidatorTests.cs" />
-    <Compile Include="EventLogServiceTests.cs" />
-    <Compile Include="HelperTests.cs" />
-    <Compile Include="JsonServiceValidatorTests.cs" />
-    <Compile Include="RotatingStreamWriterTests.cs" />
-    <Compile Include="SecurePasswordTests.cs" />
-    <Compile Include="ServiceDependenciesParserTests.cs" />
-    <Compile Include="ServiceDependenciesValidatorTests.cs" />
-    <Compile Include="ServiceDomainTests.cs" />
-    <Compile Include="ServiceExporterTests.cs" />
-    <Compile Include="ServiceManagerTests.cs" />
+    <Compile Include="Config\AppConfigTests.cs" />
+    <Compile Include="Helpers\AppFoldersHelperTests.cs" />
+    <Compile Include="EnvironmentVariables\EnvironmentVariableParserTests.cs" />
+    <Compile Include="EnvironmentVariables\EnvironmentVariablesValidatorTests.cs" />
+    <Compile Include="Services\EventLogServiceTests.cs" />
+    <Compile Include="Helpers\HelperTests.cs" />
+    <Compile Include="Helpers\JsonServiceValidatorTests.cs" />
+    <Compile Include="IO\RotatingStreamWriterTests.cs" />
+    <Compile Include="Helpers\SecurePasswordTests.cs" />
+    <Compile Include="ServiceDependencies\ServiceDependenciesParserTests.cs" />
+    <Compile Include="ServiceDependencies\ServiceDependenciesValidatorTests.cs" />
+    <Compile Include="Domain\ServiceDomainTests.cs" />
+    <Compile Include="Services\ServiceExporterTests.cs" />
+    <Compile Include="Services\ServiceManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceMapperTests.cs" />
-    <Compile Include="StringHelperTests.cs" />
-    <Compile Include="XmlServiceSerializerTests.cs" />
-    <Compile Include="XmlServiceValidatorTests.cs" />
+    <Compile Include="Mappers\ServiceMapperTests.cs" />
+    <Compile Include="Helpers\StringHelperTests.cs" />
+    <Compile Include="Helpers\XmlServiceSerializerTests.cs" />
+    <Compile Include="Helpers\XmlServiceValidatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
