@@ -90,7 +90,6 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
   * [ ] Batch service operations (start/stop multiple at once)
   * [ ] Enable remote management of Servy services on other machines *(long-term)*
   * [ ] Advanced filtering and grouping in the service list *(long-term)* 
-* [ ] Dark mode UI *(long-term)*
 
 ## Support & Contributing
 
