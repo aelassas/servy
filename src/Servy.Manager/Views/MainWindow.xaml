@@ -50,10 +50,12 @@
             <TabItem x:Name="MainTab" Header="{x:Static resx:Strings.Label_ServicesTab}">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <!-- Search panel -->
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <!-- DataGrid -->
+                        <RowDefinition Height="*"/>
+                        <!-- Footer -->
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Search Panel -->
@@ -93,24 +95,24 @@
                            Margin="10,3,0,0"
                            Text="{x:Static resx:Strings.Label_F5_Shortcut}" 
                            FontStyle="Normal" 
-                           Foreground="Gray" 
+                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                            TextWrapping="Wrap"/>
                     </Grid>
 
                     <!-- Services DataGrid -->
                     <DataGrid 
-                Grid.Row="1"
-                ItemsSource="{Binding ServicesView}"
-                VirtualizingStackPanel.IsVirtualizing="True"
-                VirtualizingStackPanel.VirtualizationMode="Recycling"
-                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                EnableRowVirtualization="True"
-                EnableColumnVirtualization="True"
-                AutoGenerateColumns="False"
-                CanUserAddRows="False"
-                CanUserDeleteRows="False"
-                IsReadOnly="True"
-                RowHeight="32">
+                        Grid.Row="1"
+                        ItemsSource="{Binding ServicesView}"
+                        VirtualizingStackPanel.IsVirtualizing="True"
+                        VirtualizingStackPanel.VirtualizationMode="Recycling"
+                        VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                        EnableRowVirtualization="True"
+                        EnableColumnVirtualization="True"
+                        AutoGenerateColumns="False"
+                        CanUserAddRows="False"
+                        CanUserDeleteRows="False"
+                        IsReadOnly="True"
+                        RowHeight="32">
 
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_Name}" Binding="{Binding Name}" Width="2*"/>
@@ -197,6 +199,13 @@
 
                     </DataGrid>
 
+                    <TextBlock Grid.Row="2"
+                       Margin="0,5,0,0"
+                       Text="{Binding FooterText}"
+                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                       FontSize="12"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Left"/>
                 </Grid>
             </TabItem>
             

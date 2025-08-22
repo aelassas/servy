@@ -76,6 +76,12 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Label_F5_Shortcut" xml:space="preserve">
     <value>Service statuses auto-refresh. Press F5 to refresh the full list.</value>
   </data>
+  <data name="Footer_ServiceRowText" xml:space="preserve">
+    <value>service</value>
+  </data>
+  <data name="Footer_LogRowText" xml:space="preserve">
+    <value>log</value>
+  </data>
 
   <!-- Services DataGrid -->
   <data name="Column_Name" xml:space="preserve">
