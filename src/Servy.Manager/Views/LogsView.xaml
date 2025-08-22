@@ -6,16 +6,25 @@
              mc:Ignorable="d"
              xmlns:local="clr-namespace:Servy.Manager"
              xmlns:resx="clr-namespace:Servy.Manager.Resources"
-             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels">
+             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+             xmlns:converters="clr-namespace:Servy.Manager.Converters"
+             >
 
+    <UserControl.Resources>
+        <!-- Converters -->
+        <converters:MessageConverter x:Key="MessageConverter"/>
+    </UserControl.Resources>
+    
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <!-- Filters -->
             <RowDefinition Height="Auto"/>
             <!-- DataGrid -->
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="*" MinHeight="180"/>
+            <!-- GridSplitter -->
+            <RowDefinition Height="5"/>
             <!-- Full description -->
-            <!--<RowDefinition Height="Auto"/>-->
+            <RowDefinition Height="0.25*" MinHeight="120"/>
             <!--Footer-->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -84,10 +93,10 @@
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Message}"
-                               TextWrapping="Wrap"
-                               VerticalAlignment="Top"
-                               TextTrimming="None"
+                            <TextBlock Text="{Binding Message, Converter={StaticResource MessageConverter}}"
+                                       VerticalAlignment="Top"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"
                              />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -95,17 +104,33 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Full Event Description -->
-        <!--<ScrollViewer Grid.Row="2" Height="100" VerticalScrollBarVisibility="Auto">
-            <TextBlock Text="{Binding SelectedLogMessage}" TextWrapping="Wrap"/>
-        </ScrollViewer>-->
+        <!--TODO make DataGrid and Full Event Description resizable-->
+        <!-- GridSplitter -->
+        <GridSplitter Grid.Row="2"
+              Height="5"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Center"
+              Background="Gray"
+              ShowsPreview="True"
+              ResizeBehavior="PreviousAndNext"/>
+        
+        <!-- Full Event Description (read-only, wrapped) -->
+        <TextBox Grid.Row="3"
+             Text="{Binding SelectedLogMessage}"
+             Margin="0,5"
+             IsReadOnly="True"
+             TextWrapping="Wrap"
+             VerticalScrollBarVisibility="Auto"
+             HorizontalScrollBarVisibility="Auto" />
 
-        <TextBlock Grid.Row="2"
+        <TextBlock Grid.Row="4"
             Margin="0,5,0,0"
             Text="{Binding FooterText}"
             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
             FontSize="12"
             TextWrapping="Wrap"
             HorizontalAlignment="Left"/>
+        
+        
     </Grid>
 </UserControl>
