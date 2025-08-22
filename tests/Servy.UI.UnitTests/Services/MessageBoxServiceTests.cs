@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.UI.Services;
 
-namespace Servy.UnitTests.Services
+namespace Servy.UI.UnitTests.Services
 {
     public class MessageBoxServiceTests
     {

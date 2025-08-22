@@ -9,15 +9,11 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI;
 using Servy.UI.Commands;
+using Servy.UI.Helpers;
 using Servy.UI.Services;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -45,6 +41,7 @@ namespace Servy.Manager.ViewModels
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
         private string _searchText;
+        private string _footerText;
 
         #endregion
 
@@ -80,6 +77,22 @@ namespace Servy.Manager.ViewModels
                 if (_isBusy != value)
                 {
                     _isBusy = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets footer text displayed in the UI.
+        /// </summary>
+        public string FooterText
+        {
+            get => _footerText;
+            set
+            {
+                if (_footerText != value)
+                {
+                    _footerText = value;
                     OnPropertyChanged();
                 }
             }
@@ -298,6 +311,10 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
+                var stopwatch = Stopwatch.StartNew();
+
+                FooterText = string.Empty; // Clear footer text before search
+
                 // Step 0: cancel any previous search
                 _cts?.Cancel();
                 _cts?.Dispose();
@@ -332,6 +349,9 @@ namespace Servy.Manager.ViewModels
                     _services.AddRange(vms);
                     //ServicesView.Refresh();
                 }, DispatcherPriority.Background);
+
+                stopwatch.Stop();
+                FooterText = Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
 
                 // Setp 5: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
