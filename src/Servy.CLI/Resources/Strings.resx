@@ -21,6 +21,10 @@
     <value>This field is required.</value>
   </data>
 
+  <data name="Msg_Preparing" xml:space="preserve">
+    <value>Preparing environment...</value>
+  </data>
+
   <!-- Messages -->
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>

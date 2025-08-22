@@ -250,6 +250,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Preparing environment....
+        /// </summary>
+        public static string Msg_Preparing {
+            get {
+                return ResourceManager.GetString("Msg_Preparing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was created successfully..
         /// </summary>
         public static string Msg_ServiceCreated {
