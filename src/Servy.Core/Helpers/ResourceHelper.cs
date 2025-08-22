@@ -23,8 +23,9 @@ namespace Servy.Core.Helpers
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
+        /// <param name="isCli">Whether we are in CLI or not.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true)
+        public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true, bool isCli = false)
         {
             try
             {
@@ -56,7 +57,8 @@ namespace Servy.Core.Helpers
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
-                    runningServices = ServiceHelper.GetRunningServyServices();
+                    //runningServices = ServiceHelper.GetRunningServyServices();
+                    runningServices = isCli ? ServiceHelper.GetRunningServyCLIServices() : ServiceHelper.GetRunningServyUIServices();
                 }
 
                 try
@@ -64,7 +66,7 @@ namespace Servy.Core.Helpers
                     if (stopServices)
                         ServiceHelper.StopServices(runningServices);
 
-                    if (isExe && !ProcessKiller.KillProcessTree(targetFileName))
+                    if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                         return false;
 
                     if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))

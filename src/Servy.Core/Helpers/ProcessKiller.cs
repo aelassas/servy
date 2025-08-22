@@ -58,8 +58,9 @@ namespace Servy.Core.Helpers
         /// Kills all processes with the specified name, including their child and parent processes.
         /// </summary>
         /// <param name="processName">The name of the process to kill. Can include or exclude ".exe".</param>
+        /// <param name="killParents">Whether to kill parents as well.</param>
         /// <returns>True if the operation succeeded; otherwise, false.</returns>
-        public static bool KillProcessTree(string processName)
+        public static bool KillProcessTreeAndParents(string processName, bool killParents = true)
         {
             try
             {
@@ -74,8 +75,11 @@ namespace Servy.Core.Helpers
                 foreach (var proc in processes)
                     KillProcessTree(proc, allProcesses);
 
-                foreach (var proc in processes)
-                    KillParentProcesses(proc, allProcesses);
+                if (killParents)
+                {
+                    foreach (var proc in processes)
+                        KillParentProcesses(proc, allProcesses);
+                }
 
                 return true;
             }
@@ -84,7 +88,6 @@ namespace Servy.Core.Helpers
                 return false;
             }
         }
-
 
         /// <summary>
         /// Kills all processes that currently hold a handle to the specified file.
@@ -121,7 +124,7 @@ namespace Servy.Core.Helpers
                 {
                     try
                     {
-                        KillProcessTree(procInfo.ProcessName);
+                        KillProcessTreeAndParents(procInfo.ProcessName);
                     }
                     catch (Exception ex)
                     {

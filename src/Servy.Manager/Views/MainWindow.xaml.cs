@@ -208,6 +208,8 @@ namespace Servy.Manager.Views
         {
             if (DataContext is MainViewModel vm)
                 vm.Cleanup();
+
+            Task.Run(() => ProcessKiller.KillProcessTreeAndParents("Servy.exe", false));
         }
 
         /// <summary>

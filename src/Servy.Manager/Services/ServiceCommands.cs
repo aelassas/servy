@@ -196,6 +196,7 @@ namespace Servy.Manager.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = app.ConfigurationAppPublishPath,
+                        Arguments = "\"false\"", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
                 };
@@ -213,7 +214,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                process.StartInfo.Arguments = $"\"{service.Name}\"";
+                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\""; // Pass false to skip splash screen
 
                 process.Start();
             }

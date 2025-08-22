@@ -1,10 +1,11 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Views;
-using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Windows;
 
@@ -15,11 +16,14 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
+
+        #region Constants
+
         /// <summary>
         /// The base namespace where embedded resource files are located.
         /// Used for locating and extracting files such as the service executable.
         /// </summary>
-        private const string ResourcesNamespace = "Servy.Resources";
+        public static readonly string ResourcesNamespace = "Servy.Resources";
 
         /// <summary>
         /// Connection string.
@@ -46,6 +50,10 @@ namespace Servy
         /// </summary>
         public bool IsManagerAppAvailable { get; private set; }
 
+        #endregion
+
+        #region Events
+
         /// <summary>
         /// Called when the WPF application starts.
         /// Loads configuration settings, initializes the database if necessary,
@@ -55,6 +63,43 @@ namespace Servy
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Subscribe to unhandled exceptions
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                MessageBox.Show("Unhandled exception: " + args.ExceptionObject);
+            };
+
+            DispatcherUnhandledException += (s, args) =>
+            {
+                MessageBox.Show("UI thread exception: " + args.Exception);
+                args.Handled = true;
+            };
+
+            // Initialize configuration and splash screen if enabled
+            string serviceName = null;
+            var showSplash = true;
+
+            if (e.Args != null)
+            {
+                if (e.Args.Length > 0)
+                {
+                    bool.TryParse(e.Args[0], out showSplash);
+                }
+                if (e.Args.Length > 1)
+                {
+                    serviceName = e.Args[1];
+                }
+            }
+
+            var splash = new SplashWindow();
+
+            if (showSplash)
+            {
+                splash.Show();
+
+                await Task.Yield(); // let UI render
+            }
 
             try
             {
@@ -76,49 +121,52 @@ namespace Servy
 
                 IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
 
-                // Ensure db and security folders exist
-                AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
-
-                // Subscribe to unhandled exceptions
-                AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+                // Run heavy startup work off UI thread
+                await Task.Run(() =>
                 {
-                    MessageBox.Show("Unhandled exception: " + args.ExceptionObject);
-                };
+                    var stopwatch = Stopwatch.StartNew();
 
-                DispatcherUnhandledException += (s, args) =>
-                {
-                    MessageBox.Show("UI thread exception: " + args.Exception);
-                    args.Handled = true;
-                };
+                    var asm = Assembly.GetExecutingAssembly();
 
-                var asm = Assembly.GetExecutingAssembly();
+                    // Copy service executable from embedded resources
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
+                    {
+                        Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}")
+                        );
+                    }
 
-                // Copy service executable from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
-                {
-                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}");
-                }
-
-                // Copy Sysinternals from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
-                {
-                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}");
-                }
+                    // Copy Sysinternals from embedded resources
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    {
+                        Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}")
+                        );
+                    }
 
 #if DEBUG
-                // Copy debug symbols from embedded resources (only in debug builds)
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
-                {
-                    MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb");
-                }
+                    // Copy debug symbols from embedded resources (only in debug builds)
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    {
+                        Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb")
+                        );
+                    }
 #endif
 
-                string serviceName = null;
+                    stopwatch.Stop();
 
-                if (e.Args != null && e.Args.Length > 0)
-                {
-                    serviceName = e.Args.FirstOrDefault();
-                }
+                    // Delay on UI thread if elapsed time is too short
+                    if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
+                    {
+                        Current.Dispatcher.Invoke(async () =>
+                        {
+                            await Task.Delay(500);
+                        }).Wait(); // Wait synchronously inside background thread
+                    }
+
+                });
+
 
                 var mainWindow = new MainWindow();
                 mainWindow.Show();
@@ -132,8 +180,18 @@ namespace Servy
             catch (Exception ex)
             {
                 MessageBox.Show("Startup error: " + ex.Message);
+                Shutdown();
+            }
+            finally
+            {
+                if (showSplash && splash.IsVisible)
+                {
+                    splash.Close();
+                }
             }
         }
+
+        #endregion
 
     }
 }
