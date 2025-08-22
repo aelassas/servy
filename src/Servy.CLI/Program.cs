@@ -1,6 +1,8 @@
 ﻿using CommandLine;
 using Servy.CLI.Commands;
+using Servy.CLI.Helpers;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
@@ -12,6 +14,7 @@ using System;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using static Servy.CLI.Helpers.Helper;
 
@@ -65,12 +68,6 @@ namespace Servy.CLI
                 var xmlSerializer = new XmlServiceSerializer();
                 var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
 
-                // Ensure db and security folders exist
-                AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
-
-                // Initialize the database
-                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
                 var serviceManager = new ServiceManager(
                     name => new ServiceControllerWrapper(name),
                     new WindowsServiceApi(),
@@ -90,33 +87,42 @@ namespace Servy.CLI
                 var exportCommand = new ExportServiceCommand(serviceRepository);
                 var importCommand = new ImportServiceCommand(serviceRepository);
 
-                var asm = Assembly.GetExecutingAssembly();
-
-                // Copy service executable from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe"))
+                await ConsoleHelper.RunWithLoadingAnimation(() =>
                 {
-                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
-                }
+                    var asm = Assembly.GetExecutingAssembly();
 
-                // Copy Sysinternals from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
-                {
-                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
-                }
+                    // Copy service executable from embedded resources
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe"))
+                    {
+                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
+                    }
+
+                    // Copy Sysinternals from embedded resources
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    {
+                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
+                    }
 
 #if DEBUG
-                // Copy debug symbols from embedded resources (only in debug builds)
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
-                {
-                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
-                }
+                    // Copy debug symbols from embedded resources (only in debug builds)
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                    {
+                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
+                    }
 #else
-                // Copy Servy.Core.dll from embedded resources
-                if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
-                {
-                    Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
-                }
+                    // Copy Servy.Core.dll from embedded resources
+                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
+                    {
+                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
+                    }
 #endif
+
+                    // Ensure db and security folders exist
+                    AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
+
+                    // Initialize the database
+                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+                }, Strings.Msg_Preparing);
 
                 var exitCode = await Parser.Default.ParseArguments<
                         InstallServiceOptions,
@@ -144,9 +150,10 @@ namespace Servy.CLI
             }
             catch (Exception e)
             {
-                Console.WriteLine("An unexpected error occured:", e.Message);
+                Console.WriteLine($"An unexpected error occurred: {e.Message}");
                 return 1;
             }
         }
+
     }
 }
