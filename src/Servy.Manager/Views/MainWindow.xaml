@@ -13,7 +13,6 @@
         Title="Servy Manager" Height="600" Width="1000"
         Loaded="Window_Loaded"
         KeyDown="Window_KeyDown"
-        Closing="Window_Closing"
         >
 
     <Window.Resources>
