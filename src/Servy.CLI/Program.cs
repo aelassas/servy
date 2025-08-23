@@ -89,6 +89,12 @@ namespace Servy.CLI
 
                 await ConsoleHelper.RunWithLoadingAnimation(() =>
                 {
+                    // Ensure db and security folders exist
+                    AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
+
+                    // Initialize the database
+                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
                     var asm = Assembly.GetExecutingAssembly();
 
                     // Copy service executable from embedded resources
@@ -117,11 +123,6 @@ namespace Servy.CLI
                     }
 #endif
 
-                    // Ensure db and security folders exist
-                    AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
-
-                    // Initialize the database
-                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
                 }, Strings.Msg_Preparing);
 
                 var exitCode = await Parser.Default.ParseArguments<
