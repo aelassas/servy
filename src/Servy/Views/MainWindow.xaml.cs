@@ -105,28 +105,31 @@ namespace Servy.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="Window.Closing"/> event.
-        /// Ensures that the Servy Manager process is terminated when the window is closed.
+        /// Handles the <see cref="Window.Closed"/> event.
         /// </summary>
-        /// <param name="sender">The source of the event (the window being closed).</param>
-        /// <param name="e">
-        /// Provides data for the <see cref="System.ComponentModel.CancelEventArgs"/>, 
-        /// allowing the closing event to be canceled if needed.
-        /// </param>
-        private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
+        /// <remarks>
+        /// This override ensures that when the main window is closed, all child processes
+        /// spawned by the current process are terminated. This prevents orphaned processes
+        /// from remaining in the system after the application exits.
+        /// 
+        /// The method retrieves the current process ID and passes it to
+        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
+        /// Any exceptions thrown during this cleanup are caught and logged for debugging.
+        /// </remarks>
+        protected override void OnClosed(EventArgs e)
         {
-            await Task.Run(() =>
+            try
             {
-                try
-                {
-                    var currentPID = Process.GetCurrentProcess().Id;
-                    ProcessKiller.KillChildren(currentPID);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error killing child processes: {ex}");
-                }
-            });
+                var currentPID = Process.GetCurrentProcess().Id;
+                ProcessKiller.KillChildren(currentPID);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error killing child processes: {ex}");
+            }
+
+            base.OnClosed(e);
         }
     }
 }
