@@ -124,6 +124,9 @@ namespace Servy
                 {
                     var stopwatch = Stopwatch.StartNew();
 
+                    // Ensure db and security folders exist
+                    AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+
                     var asm = Assembly.GetExecutingAssembly();
 
                     // Copy service executable from embedded resources
