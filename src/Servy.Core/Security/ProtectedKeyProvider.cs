@@ -30,7 +30,7 @@ namespace Servy.Core.Security
             if (File.Exists(_keyFilePath))
             {
                 var encrypted = File.ReadAllBytes(_keyFilePath);
-                return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+                return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.LocalMachine);
             }
 
             var key = GenerateRandomBytes(32);
@@ -44,7 +44,7 @@ namespace Servy.Core.Security
             if (File.Exists(_ivFilePath))
             {
                 var encrypted = File.ReadAllBytes(_ivFilePath);
-                return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.CurrentUser);
+                return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.LocalMachine);
             }
 
             var iv = GenerateRandomBytes(16);
@@ -59,7 +59,7 @@ namespace Servy.Core.Security
         /// <param name="data">The data to protect.</param>
         private void SaveProtected(string path, byte[] data)
         {
-            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.CurrentUser);
+            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.  );
             File.WriteAllBytes(path, encrypted);
         }
 
