@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -61,30 +62,32 @@ namespace Servy.Core.Helpers
             try
             {
                 using (var searcher = new ManagementObjectSearcher(
-                 $"SELECT ProcessId, ParentProcessId FROM Win32_Process WHERE ParentProcessId={parentPid}"))
+                    $"SELECT ProcessId, ParentProcessId FROM Win32_Process WHERE ParentProcessId={parentPid.ToString(CultureInfo.InvariantCulture)}"
+                ))
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         int childPid = Convert.ToInt32(obj["ProcessId"]);
 
+                        if (childPid == Process.GetCurrentProcess().Id)
+                            continue;
+
                         KillChildren(childPid); // Recursively kill grandchildren
 
-                        var child = Process.GetProcessById(childPid);
-
-                        try
+                        using (var child = Process.GetProcessById(childPid))
                         {
-                            if (!child.HasExited)
+                            try
                             {
-                                child.Kill();
+                                if (!child.HasExited)
+                                {
+                                    child.Kill();
+                                    child.WaitForExit();
+                                }
                             }
-                        }
-                        catch
-                        {
-                            // Ignore if the process has already exited or access denied
-                        }
-                        finally
-                        {
-                            child.Dispose();
+                            catch
+                            {
+                                // Ignore if the process has already exited or access denied
+                            }
                         }
                     }
                 }
