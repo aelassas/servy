@@ -257,32 +257,31 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="System.Windows.Window.Closing"/> event for the main window.
+        /// Handles the <see cref="Window.Closed"/> event.
         /// </summary>
-        /// <param name="sender">The source of the event, typically the window being closed.</param>
-        /// <param name="e">
-        /// A <see cref="System.ComponentModel.CancelEventArgs"/> instance that can be used to cancel the closing operation.
-        /// </param>
+        /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
         /// <remarks>
-        /// Calls <see cref="MainViewModel.Cleanup"/> to stop background timers and cancel ongoing tasks before the window closes.
+        /// This override ensures that when the main window is closed, all child processes
+        /// spawned by the current process are terminated. This prevents orphaned processes
+        /// from remaining in the system after the application exits.
+        /// 
+        /// The method retrieves the current process ID and passes it to
+        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
+        /// Any exceptions thrown during this cleanup are caught and logged for debugging.
         /// </remarks>
-        private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        protected override void OnClosed(EventArgs e)
         {
-            if (DataContext is MainViewModel vm)
-                vm.Cleanup();
-
-            await Task.Run(() =>
+            try
             {
-                try
-                {
-                    var currentPID = Process.GetCurrentProcess().Id;
-                    ProcessKiller.KillChildren(currentPID);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error killing child processes: {ex}");
-                }
-            });
+                var currentPID = Process.GetCurrentProcess().Id;
+                ProcessKiller.KillChildren(currentPID);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error killing child processes: {ex}");
+            }
+
+            base.OnClosed(e);
         }
 
         /// <summary>
