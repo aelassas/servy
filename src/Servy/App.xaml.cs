@@ -1,7 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
-using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using Servy.Views;
 using System.Configuration;
 using System.Diagnostics;
