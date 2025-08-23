@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.Helpers
@@ -42,46 +43,52 @@ namespace Servy.Core.Helpers
         #endregion
 
         /// <summary>
-        /// Kills all children of the specified process.
+        /// Recursively kills all child processes of a specified parent process.
         /// </summary>
-        /// <param name="parentPid">Parent process PD.</param>
+        /// <param name="parentPid">The process ID of the parent whose children should be terminated.</param>
+        /// <remarks>
+        /// This method uses WMI (<c>Win32_Process</c>) to enumerate processes where
+        /// <c>ParentProcessId</c> matches the given <paramref name="parentPid"/>.
+        /// 
+        /// It then recursively calls itself to ensure that grandchildren and deeper
+        /// descendants are also terminated before finally killing the child itself.
+        /// 
+        /// Exceptions such as access denied or processes that have already exited are
+        /// caught and ignored to allow cleanup to continue without interruption.
+        /// </remarks>
         public static void KillChildren(int parentPid)
         {
             try
             {
-                // Get all processes once to avoid repeated expensive calls
-                var allProcesses = Process.GetProcesses();
-
-                var children = allProcesses.Where(p =>
+                using (var searcher = new ManagementObjectSearcher(
+                 $"SELECT ProcessId, ParentProcessId FROM Win32_Process WHERE ParentProcessId={parentPid}"))
                 {
-                    try
+                    foreach (ManagementObject obj in searcher.Get())
                     {
-                        return GetParentProcessId(p) == parentPid;
-                    }
-                    catch
-                    {
-                        return false; // process may have exited or access denied
-                    }
-                }).ToList();
+                        int childPid = Convert.ToInt32(obj["ProcessId"]);
 
-                foreach (var child in children)
-                {
-                    try
-                    {
-                        if (!child.HasExited)
+                        KillChildren(childPid); // Recursively kill grandchildren
+
+                        var child = Process.GetProcessById(childPid);
+
+                        try
                         {
-                            child.Kill();
+                            if (!child.HasExited)
+                            {
+                                child.Kill();
+                            }
+                        }
+                        catch
+                        {
+                            // Ignore if the process has already exited or access denied
+                        }
+                        finally
+                        {
+                            child.Dispose();
                         }
                     }
-                    catch
-                    {
-                        // Ignore if the process has already exited or access denied
-                    }
-                    finally
-                    {
-                        child.Dispose();
-                    }
                 }
+
             }
             catch
             {
@@ -184,10 +191,21 @@ namespace Servy.Core.Helpers
         /// <returns>The parent process ID.</returns>
         private static int GetParentProcessId(Process process)
         {
-            PROCESS_BASIC_INFORMATION pbi = new PROCESS_BASIC_INFORMATION();
-            uint retLen;
-            NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
-            return pbi.InheritedFromUniqueProcessId.ToInt32();
+            try
+            {
+                PROCESS_BASIC_INFORMATION pbi = new PROCESS_BASIC_INFORMATION();
+                uint retLen;
+                int status = NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
+
+                if (status != 0) // STATUS_SUCCESS == 0
+                    return -1;   // could not query parent
+
+                return pbi.InheritedFromUniqueProcessId.ToInt32();
+            }
+            catch
+            {
+                return -1; // safer fallback
+            }
         }
 
         /// <summary>
