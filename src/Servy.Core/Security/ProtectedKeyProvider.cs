@@ -59,7 +59,7 @@ namespace Servy.Core.Security
         /// <param name="data">The data to protect.</param>
         private void SaveProtected(string path, byte[] data)
         {
-            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.  );
+            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.LocalMachine);
             File.WriteAllBytes(path, encrypted);
         }
 
