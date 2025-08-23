@@ -128,6 +128,9 @@ namespace Servy.Manager
                 {
                     var stopwatch = Stopwatch.StartNew();
 
+                    // Ensure db and security folders exist
+                    AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+
                     var asm = Assembly.GetExecutingAssembly();
 
                     if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
