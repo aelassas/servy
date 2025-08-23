@@ -53,6 +53,9 @@ namespace Servy.Manager.Views
             logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
+            // Ensure db and security folders exist
+            AppFoldersHelper.EnsureFolders(app.ConnectionString, app.AESKeyFilePath, app.AESIVFilePath);
+
             // Initialize database and helpers
             var dbContext = new AppDbContext(app.ConnectionString);
             DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
