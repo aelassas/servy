@@ -188,18 +188,29 @@ namespace Servy.Manager.ViewModels
                     // Treat null (indeterminate) click as true
                     bool newValue = value ?? true;
 
-                    foreach (var s in _services)
-                    {
-                        s.IsChecked = newValue;
-                        s.IsSelected = false;
-                    }
+                    var allUnselected = _services.All(s => !s.IsSelected);
 
-                    // After updating rows, update header to reflect current state
-                    UpdateSelectAllState();
+                    if (allUnselected)
+                    {
+                        foreach (var s in _services)
+                        {
+                            s.IsChecked = newValue;
+                            s.IsSelected = false;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var s in _services.Where(s => s.IsSelected))
+                        {
+                            s.IsChecked = !s.IsChecked;
+                            s.IsSelected = false;
+                        }
+                    }
 
                     _isUpdatingSelectAll = false;
 
-
+                    // After updating rows, update header to reflect current state
+                    UpdateSelectAllState();
                 }
             }
         }
