@@ -10,30 +10,45 @@ namespace Servy.Core.ServiceDependencies
     public class ServiceDependenciesParser
     {
         /// <summary>
-        /// Parses a string of service dependencies separated by semicolons or new lines
-        /// into a double-null-terminated string suitable for Windows service API calls.
+        /// Represents the MULTI_SZ value that indicates a service has no dependencies.
+        /// This is a double-null terminator ("\0\0") required by the Windows Service Control Manager (SCM).
+        /// </summary>
+        public const string NoDependencies = "\0\0";
+
+        /// <summary>
+        /// Parses a textual dependency list into the Windows MULTI_SZ format required by the Service Control Manager.
         /// </summary>
         /// <param name="input">
-        /// The raw input string containing one or more service names separated by semicolons (';') or new lines.
-        /// Each service name should be the internal service name (no spaces or special characters).
+        /// A string containing service names separated by semicolons (;) or newlines.
+        /// If the input is <c>null</c>, empty, or contains no valid entries, the service is configured with no dependencies.
         /// </param>
         /// <returns>
-        /// A double-null-terminated string with service names separated by single null characters,
-        /// or <c>null</c> if the input is null or empty.
+        /// A MULTI_SZ string suitable for the <c>lpDependencies</c> parameter of 
+        /// <c>ChangeServiceConfig</c>. The format is:
+        /// <list type="bullet">
+        /// <item><description>Each dependency is separated by a single null character ('\0').</description></item>
+        /// <item><description>The list is terminated by an additional null character, resulting in a double-null termination ("\0\0").</description></item>
+        /// <item><description>If no dependencies are specified, returns <c>"\0\0"</c> to explicitly clear dependencies.</description></item>
+        /// </list>
         /// </returns>
+        /// <remarks>
+        /// - Duplicate dependency names are removed (case-insensitive).  
+        /// - Passing <c>null</c> or an empty string will clear all dependencies.  
+        /// </remarks>
         public static string Parse(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
-                return null;
+                return NoDependencies;
 
             var parts = input
                 .Split(new[] { ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(s => s.Trim())
                 .Where(s => s.Length > 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
             if (parts.Length == 0)
-                return null;
+                return NoDependencies;
 
             // Windows API compatibility: When working with Windows service dependencies,
             // the Service Control Manager expects dependency lists as a multi-string (MULTI_SZ),
