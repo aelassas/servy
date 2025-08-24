@@ -13,6 +13,7 @@
         Title="Servy Manager" Height="600" Width="1000"
         Loaded="Window_Loaded"
         KeyDown="Window_KeyDown"
+        MouseDown="Window_MouseDown"
         >
 
     <Window.Resources>
@@ -149,8 +150,8 @@
                                 <!--Check all checkbox in header-->
                                 <DataGridTemplateColumn.Header>
                                     <CheckBox IsThreeState="True"
-                                                  IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                         />
+                                              IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                     />
                                 </DataGridTemplateColumn.Header>
                                 <!--Row checkbox-->
                                 <DataGridTemplateColumn.CellTemplate>
