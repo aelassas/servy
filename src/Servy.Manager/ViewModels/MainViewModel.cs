@@ -480,6 +480,8 @@ namespace Servy.Manager.ViewModels
                         _services.Add(vm);
                     }
 
+                    SelectAll = false;
+
                     //ServicesView.Refresh();
                 }, DispatcherPriority.Background);
 
