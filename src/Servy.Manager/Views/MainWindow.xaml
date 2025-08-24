@@ -100,6 +100,7 @@
 
                     <!-- Services DataGrid -->
                     <DataGrid 
+                        x:Name="ServicesDataGrid"
                         Grid.Row="1"
                         ItemsSource="{Binding ServicesView}"
                         VirtualizingStackPanel.IsVirtualizing="True"
@@ -111,9 +112,55 @@
                         CanUserAddRows="False"
                         CanUserDeleteRows="False"
                         IsReadOnly="True"
-                        RowHeight="32">
+                        SelectionUnit="FullRow"
+                        SelectionMode="Extended"
+                        RowHeight="32"
+                        >
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <!-- default background -->
+                                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+
+                                <EventSetter Event="MouseDoubleClick" Handler="DataGridRow_MouseDoubleClick"/>
+
+                                <Style.Triggers>
+                                    <!-- change background when IsChecked is true -->
+                                    <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="CheckBoxCell_PreviewMouseLeftButtonDown"/>
+                            </Style>
+                        </DataGrid.CellStyle>
 
                         <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="32">
+                                <!--Check all checkbox in header-->
+                                <DataGridTemplateColumn.Header>
+                                    <CheckBox IsThreeState="True"
+                                                  IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                         />
+                                </DataGridTemplateColumn.Header>
+                                <!--Row checkbox-->
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_Name}" Binding="{Binding Name}" Width="2*"/>
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_Description}" Binding="{Binding Description}" Width="3*"/>
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_Status}" Binding="{Binding Status, Converter={StaticResource StatusConverter}}" Width="*"/>
@@ -121,7 +168,37 @@
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*"/>
 
                             <!-- Actions -->
-                            <DataGridTemplateColumn Width="200" Header="">
+                            <DataGridTemplateColumn Width="200">
+                                <!--Bulk actions-->
+                                <DataGridTemplateColumn.Header>
+                                    <Grid Width="186">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <!-- Start Selected -->
+                                            <Button ToolTip="{x:Static resx:Strings.Button_StartSelected}" 
+                                            Command="{Binding DataContext.StartSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            Content="▶" Width="24" Height="24" Margin="2,0,0,0"/>
+
+                                            <!-- Stop Selected -->
+                                            <Button ToolTip="{x:Static resx:Strings.Button_StopSelected}" 
+                                            Command="{Binding DataContext.StopSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            Content="■" Width="24" Height="24" Margin="2,0,0,0"/>
+
+                                            <!-- Restart Selected -->
+                                            <Button ToolTip="{x:Static resx:Strings.Button_RestartSelected}" 
+                                            Command="{Binding DataContext.RestartSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            Content="⟳" Width="24" Height="24" Margin="2,0,0,0"/>
+
+                                            <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0" Visibility="Hidden"
+                                                    IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataGridTemplateColumn.Header>
+                                
+                                <!--Row actions-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Tag="{Binding DataContext, ElementName=This}">

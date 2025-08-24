@@ -10,9 +10,7 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -87,7 +85,8 @@ namespace Servy.Manager.Views
                 serviceManager,
                 serviceRepository,
                 null,                   // We'll set ServiceCommands next
-                helpService
+                helpService,
+                _messageBoxService
             );
 
             var serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
@@ -282,6 +281,64 @@ namespace Servy.Manager.Views
             }
 
             base.OnClosed(e);
+        }
+
+        /// <summary>
+        /// Handles the PreviewMouseLeftButtonDown event for the DataGrid "Check All" header checkbox.
+        /// Toggles the SelectAll property in the MainViewModel when the user clicks the header checkbox.
+        /// </summary>
+        /// <param name="sender">The DataGridColumnHeader that raised the event.</param>
+        /// <param name="e">Mouse button event arguments.</param>
+        private void ColumnHeader_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGridColumnHeader header &&
+                header.Content is CheckBox cb &&
+                ServicesDataGrid.DataContext is MainViewModel vm)
+            {
+                // Toggle the SelectAll value manually (true if unchecked or indeterminate, false if checked)
+                bool newValue = cb.IsChecked != true;
+                vm.SelectAll = newValue;
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles the PreviewMouseLeftButtonDown event for cells in the checkbox column.
+        /// Toggles the IsChecked property of the corresponding ServiceRowViewModel when the user clicks the checkbox cell.
+        /// Also ensures that IsSelected is cleared if the checkbox is checked.
+        /// </summary>
+        /// <param name="sender">The DataGridCell that raised the event.</param>
+        /// <param name="e">Mouse button event arguments.</param>
+        private void CheckBoxCell_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGridCell cell && cell.DataContext is ServiceRowViewModel vm)
+            {
+                // Only toggle for the first column, which contains the checkbox
+                if (cell.Column.DisplayIndex == 0)
+                {
+                    vm.IsChecked = !vm.IsChecked;
+                    if (vm.IsChecked) vm.IsSelected = false;
+                    e.Handled = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles the <see cref="DataGridRow.MouseDoubleClick"/> event.
+        /// Toggles the <see cref="ServiceRowViewModel.IsChecked"/> property when a row is double-clicked,
+        /// which visually changes the row background through a style trigger.
+        /// </summary>
+        /// <param name="sender">The source of the event, expected to be a <see cref="DataGridRow"/>.</param>
+        /// <param name="e">The <see cref="MouseButtonEventArgs"/> instance containing event data.</param>
+        private void DataGridRow_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGridRow row && row.DataContext is ServiceRowViewModel vm)
+            {
+                vm.IsChecked = !vm.IsChecked;
+
+                // Optional: prevent DataGrid from entering edit mode
+                e.Handled = true;
+            }
         }
 
         /// <summary>
