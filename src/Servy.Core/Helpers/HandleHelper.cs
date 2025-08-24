@@ -56,6 +56,9 @@ namespace Servy.Core.Helpers
 
             using (var process = Process.Start(psi))
             {
+                if (process == null)
+                    throw new InvalidOperationException($"Failed to start process: {handleExePath}");
+
                 string output = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
 

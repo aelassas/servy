@@ -5,14 +5,12 @@ using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
-using Servy.UI;
-using Servy.UI.Commands;
 using Servy.UI.Services;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Data;
 using Xunit;
 
@@ -25,6 +23,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<ILogger> _loggerMock;
         private readonly Mock<IHelpService> _helpServiceMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
 
         public MainViewModelTests()
         {
@@ -33,6 +32,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _loggerMock = new Mock<ILogger>();
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _messageBoxServiceMock = new Mock<IMessageBoxService>();
         }
 
         private MainViewModel CreateViewModel()
@@ -42,7 +42,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceManagerMock.Object,
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
-                _helpServiceMock.Object
+                _helpServiceMock.Object,
+                _messageBoxServiceMock.Object
             );
         }
 
@@ -76,7 +77,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(services);
 
-                await ((IAsyncCommand)vm.SearchCommand).ExecuteAsync(null);
+                await vm.SearchCommand.ExecuteAsync(null);
 
                 var view = (ListCollectionView)vm.ServicesView;
                 Assert.Equal(2, view.Cast<ServiceRowViewModel>().Count());
@@ -118,8 +119,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object, _loggerMock.Object);
 
             var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var servicesList = (BulkObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
-            servicesList?.AddRange(new[] { srvm1, srvm2 });
+            var servicesList = (ObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
+            servicesList?.Add(srvm1);
+            servicesList?.Add(srvm2);
             vm.ServicesView.Refresh();
 
             // Act

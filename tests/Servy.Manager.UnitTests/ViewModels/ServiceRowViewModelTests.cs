@@ -7,7 +7,6 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System.Threading.Tasks;
-using System.Windows;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
@@ -64,7 +63,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.StartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -81,7 +80,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             var service = new Service { Name = "S" };
 
             _serviceCommandsMock
-                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+                .Setup(s => s.StopServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
@@ -97,7 +96,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.RestartServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<bool>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 
