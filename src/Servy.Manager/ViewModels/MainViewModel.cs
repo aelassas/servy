@@ -7,13 +7,18 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
-using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Helpers;
 using Servy.UI.Services;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -32,16 +37,19 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IMessageBoxService _messageBoxService;
         private readonly ILogger _logger;
         private readonly IHelpService _helpService;
         private CancellationTokenSource _cts;
         private DispatcherTimer _refreshTimer;
-        private BulkObservableCollection<ServiceRowViewModel> _services = new BulkObservableCollection<ServiceRowViewModel>();
+        private ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
         private string _searchText;
         private string _footerText;
+        private bool? _selectAll;
+        private bool _isUpdatingSelectAll;
 
         #endregion
 
@@ -140,6 +148,61 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public ICollectionView ServicesView { get; private set; }
 
+        /// <summary>
+        /// Indicates whether any services are currently selected.
+        /// </summary>
+        public bool HasSelectedServices => _services.Any(s => s.IsChecked);
+
+        /// <summary>
+        /// Gets or sets the tri-state "Select All" value for the services.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if all services are checked;  
+        /// <c>false</c> if no services are checked;  
+        /// <c>null</c> if some but not all services are checked.
+        /// </value>
+        /// <remarks>
+        /// When the property is set by the user (i.e. not during an internal update),  
+        /// all services in <c>_services</c> are updated to match the new value.  
+        /// An indeterminate (<c>null</c>) state set by the user is interpreted as <c>true</c>.  
+        /// After updating, <see cref="UpdateSelectAllState"/> is called to keep the header
+        /// checkbox state in sync.  
+        /// The <c>_isUpdatingSelectAll</c> flag prevents recursive updates when the property
+        /// is modified programmatically.
+        /// </remarks>
+        public bool? SelectAll
+        {
+            get => _selectAll;
+            set
+            {
+                if (_selectAll == value) return;
+
+                _selectAll = value;
+                OnPropertyChanged();
+
+                // Only handle user clicks
+                if (!_isUpdatingSelectAll)
+                {
+                    _isUpdatingSelectAll = true;
+
+                    // Treat null (indeterminate) click as true
+                    bool newValue = value ?? true;
+
+                    foreach (var s in _services)
+                    {
+                        s.IsChecked = newValue;
+                        s.IsSelected = false;
+                    }
+
+                    // After updating rows, update header to reflect current state
+                    UpdateSelectAllState();
+
+                    _isUpdatingSelectAll = false;
+
+
+                }
+            }
+        }
 
         /// <summary>
         /// Determines whether the configuration app launch button is enabled.
@@ -182,6 +245,21 @@ namespace Servy.Manager.ViewModels
         public IAsyncCommand ImportJsonCommand { get; }
 
         /// <summary>
+        /// Start selected services command.
+        /// </summary>
+        public IAsyncCommand StartSelectedCommand { get; }
+
+        /// <summary>
+        /// Stop selected services command.
+        /// </summary>
+        public IAsyncCommand StopSelectedCommand { get; }
+
+        /// <summary>
+        /// Restart selected services command.
+        /// </summary>
+        public IAsyncCommand RestartSelectedCommand { get; }
+
+        /// <summary>
         /// Command to open documentation.
         /// </summary>
         public ICommand OpenDocumentationCommand { get; }
@@ -207,7 +285,8 @@ namespace Servy.Manager.ViewModels
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
-            IHelpService helpService
+            IHelpService helpService,
+            IMessageBoxService messageBoxService
             )
         {
             _logger = logger;
@@ -215,6 +294,8 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _helpService = helpService;
+            _messageBoxService = messageBoxService;
+            _selectAll = false;
 
             ServicesView = new ListCollectionView(_services);
 
@@ -222,6 +303,9 @@ namespace Servy.Manager.ViewModels
             ConfigureCommand = new AsyncCommand(ConfigureServiceAsync);
             ImportXmlCommand = new AsyncCommand(ImportXmlConfigAsync);
             ImportJsonCommand = new AsyncCommand(ImportJsonConfigAsync);
+            StartSelectedCommand = new AsyncCommand(StartSelectedAsync);
+            StopSelectedCommand = new AsyncCommand(StopSelectedAsync);
+            RestartSelectedCommand = new AsyncCommand(RestartSelectedAsync);
             OpenDocumentationCommand = new RelayCommand<object>(_ => OpenDocumentation());
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
@@ -247,6 +331,7 @@ namespace Servy.Manager.ViewModels
                 null,
                 null,
                 null,
+                null,
                 null
                 )
         { }
@@ -254,6 +339,48 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods/Events
+
+        /// <summary>
+        /// Triggers when a property on a service row changes.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ServiceRowViewModel.IsChecked))
+            {
+                UpdateSelectAllState();
+                OnPropertyChanged(nameof(HasSelectedServices));
+            }
+        }
+
+        /// <summary>
+        /// Updates the <see cref="SelectAll"/> property based on the current state of all services.
+        /// Sets it to <c>true</c> if all services are checked, <c>false</c> if none are checked,
+        /// or <c>null</c> if there is a mix of checked and unchecked services.
+        /// </summary>
+        /// <remarks>
+        /// The <c>_isUpdatingSelectAll</c> flag is used to prevent recursive updates
+        /// when the <see cref="SelectAll"/> property changes.
+        /// </remarks>
+        private void UpdateSelectAllState()
+        {
+            if (_isUpdatingSelectAll) return;
+
+            _isUpdatingSelectAll = true;
+
+            var all = _services.All(s => s.IsChecked);
+            var none = _services.All(s => !s.IsChecked);
+
+            if (all)
+                SelectAll = true;
+            else if (none)
+                SelectAll = false;
+            else
+                SelectAll = null;
+
+            _isUpdatingSelectAll = false;
+        }
 
         /// <summary>
         /// Creates a new <see cref="DispatcherTimer"/> configured with the application's refresh interval.
@@ -346,7 +473,13 @@ namespace Servy.Manager.ViewModels
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     _services.Clear();
-                    _services.AddRange(vms);
+
+                    foreach (var vm in vms)
+                    {
+                        vm.PropertyChanged += Service_PropertyChanged;
+                        _services.Add(vm);
+                    }
+
                     //ServicesView.Refresh();
                 }, DispatcherPriority.Background);
 
@@ -409,6 +542,204 @@ namespace Servy.Manager.ViewModels
         private async Task ImportJsonConfigAsync(object parameter)
         {
             await ServiceCommands.ImportJsonConfigAsync();
+        }
+
+        /// <summary>
+        /// Starts all selected services.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        private async Task StartSelectedAsync(object parameter)
+        {
+            try
+            {
+                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
+                if (selectedServices.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
+                    return;
+                }
+
+                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_StartSelectedServices, AppConfig.Caption);
+
+                if (!res) return;
+
+                var tasks = selectedServices.Select(async service =>
+                {
+                    var ok = await ServiceCommands.StartServiceAsync(service, showMessageBox: false);
+                    return (Service: service, Success: ok);
+                });
+
+                SetIsBusy(true);
+
+                var results = await Task.WhenAll(tasks);
+
+                var failed = results
+                    .Where(r => !r.Success)
+                    .Select(r => r.Service.Name)
+                    .ToList();
+
+                if (failed.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(
+                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                }
+                else
+                {
+                    if (failed.Count == results.Length)
+                    {
+                        await _messageBoxService.ShowErrorAsync(
+                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
+                    }
+                    else
+                    {
+                        var message = string.Format(
+                            Strings.Msg_OperationCompletedWithErrorsDetails,
+                            string.Join(", ", failed));
+                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed to start selected services: {ex}");
+            }
+            finally
+            {
+                SetIsBusy(false);
+            }
+        }
+
+        /// <summary>
+        /// Stop all selected services.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        private async Task StopSelectedAsync(object parameter)
+        {
+            try
+            {
+                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
+                if (selectedServices.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
+                    return;
+                }
+
+                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_StopSelectedServices, AppConfig.Caption);
+
+                if (!res) return;
+
+                var tasks = selectedServices.Select(async service =>
+                {
+                    var ok = await ServiceCommands.StopServiceAsync(service, showMessageBox: false);
+                    return (Service: service, Success: ok);
+                });
+
+                SetIsBusy(true);
+
+                var results = await Task.WhenAll(tasks);
+
+                var failed = results
+                    .Where(r => !r.Success)
+                    .Select(r => r.Service.Name)
+                    .ToList();
+
+                if (failed.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(
+                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                }
+                else
+                {
+                    if (failed.Count == results.Length)
+                    {
+                        await _messageBoxService.ShowErrorAsync(
+                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
+                    }
+                    else
+                    {
+                        var message = string.Format(
+                            Strings.Msg_OperationCompletedWithErrorsDetails,
+                            string.Join(", ", failed));
+                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed to start selected services: {ex}");
+            }
+            finally
+            {
+                SetIsBusy(false);
+            }
+        }
+
+        /// <summary>
+        /// Restart all selected services.
+        /// </summary>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        private async Task RestartSelectedAsync(object parameter)
+        {
+            try
+            {
+                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
+                if (selectedServices.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
+                    return;
+                }
+
+                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_RestartSelectedServices, AppConfig.Caption);
+
+                if (!res) return;
+
+                var tasks = selectedServices.Select(async service =>
+                {
+                    var ok = await ServiceCommands.RestartServiceAsync(service, showMessageBox: false);
+                    return (Service: service, Success: ok);
+                });
+
+                SetIsBusy(true);
+
+                var results = await Task.WhenAll(tasks);
+
+                var failed = results
+                    .Where(r => !r.Success)
+                    .Select(r => r.Service.Name)
+                    .ToList();
+
+                if (failed.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(
+                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                }
+                else
+                {
+                    if (failed.Count == results.Length)
+                    {
+                        await _messageBoxService.ShowErrorAsync(
+                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
+                    }
+                    else
+                    {
+                        var message = string.Format(
+                            Strings.Msg_OperationCompletedWithErrorsDetails,
+                            string.Join(", ", failed));
+                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed to start selected services: {ex}");
+            }
+            finally
+            {
+                SetIsBusy(false);
+            }
         }
 
         #endregion
@@ -604,6 +935,26 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        ///  Sets the busy state and updates the mouse cursor accordingly.
+        /// </summary>
+        /// <param name="busy"></param>
+        private void SetIsBusy(bool busy)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                IsBusy = busy;
+
+                if (busy)
+                {
+                    Mouse.OverrideCursor = Cursors.Wait;
+                }
+                else
+                {
+                    Mouse.OverrideCursor = null;
+                }
+            });
+        }
 
         /// <summary>
         /// Removes a service from the services collection and refreshes the view.
