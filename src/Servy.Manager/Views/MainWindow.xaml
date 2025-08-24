@@ -198,7 +198,7 @@
                                         </StackPanel>
                                     </Grid>
                                 </DataGridTemplateColumn.Header>
-                                
+
                                 <!--Row actions-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
