@@ -1,15 +1,11 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Management;
 using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using static Servy.Core.Native.NativeMethods;
 
 #pragma warning disable CS8625
@@ -49,8 +45,8 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("TestService", "C:\\Apps\\App.exe", "")]
         public async Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
         {
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
             var description = "Test Description";
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
@@ -66,7 +62,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null))
@@ -78,7 +74,7 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<nint>())).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(
                 serviceName,
@@ -117,8 +113,8 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("TestService", "C:\\Apps\\App.exe", "C:\\Apps\\App.exe")]
         public async Task InstallService_EmptyOptions(string serviceName, string wrapperExePath, string realExePath)
         {
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -133,8 +129,8 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
-                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
                 null,
                 null))
                 .Returns(serviceHandle);
@@ -145,7 +141,7 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<nint>())).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var result = await _serviceManager.InstallService(
                  serviceName,
@@ -185,8 +181,8 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task InstallService_Throws_Win32Exception()
         {
-            var scmHandle = nint.Zero;
-            var serviceHandle = new nint(456);
+            var scmHandle = IntPtr.Zero;
+            var serviceHandle = new IntPtr(456);
             var serviceName = "TestService";
             var description = "Test Description";
 
@@ -203,7 +199,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null))
@@ -215,7 +211,7 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<nint>())).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
                 serviceName,
@@ -249,7 +245,7 @@ namespace Servy.Core.UnitTests.Services
                 true
                 ));
 
-            scmHandle = new nint(123);
+            scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
@@ -291,8 +287,8 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task InstallService_CreatesService_AndSetsDescription_WhenServiceDoesNotExist()
         {
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
             var serviceName = "TestService";
             var description = "Test Description";
 
@@ -309,8 +305,8 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
-                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
                 null,
                 null))
                 .Returns(serviceHandle);
@@ -321,7 +317,7 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<nint>())).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var result = await _serviceManager.InstallService(
                 serviceName,
@@ -358,7 +354,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result);
 
             _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null, null, It.IsAny<uint>()), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, nint.Zero, null, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(serviceHandle), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(scmHandle), Times.Once);
@@ -367,7 +363,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task InstallService_CallsUpdateServiceConfig_WhenServiceExistsError()
         {
-            var scmHandle = new nint(123);
+            var scmHandle = new IntPtr(123);
             var serviceName = "TestService";
             var description = "Test Description";
 
@@ -384,17 +380,17 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null))
-                .Returns(nint.Zero);
+                .Returns(IntPtr.Zero);
 
             // Simulate ERROR_SERVICE_EXISTS
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1073);
 
             // Setup OpenService for UpdateServiceConfig
-            var serviceHandle = new nint(456);
+            var serviceHandle = new IntPtr(456);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
@@ -405,8 +401,8 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 It.IsAny<string>(),
                 null,
-                nint.Zero,
-                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
                 null,
                 null,
                 null))
@@ -455,15 +451,15 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.True(result);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, nint.Zero, null, null, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, nint.Zero, null, null, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null, null), Times.Once);
         }
 
         [Fact]
         public void UpdateServiceConfig_Succeeds_WhenServiceIsOpenedAndConfigChanged()
         {
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
             var serviceName = "TestService";
             var description = "Updated Description";
             var binPath = "binaryPath";
@@ -478,7 +474,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 binPath,
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null,
@@ -500,6 +496,7 @@ namespace Servy.Core.UnitTests.Services
                 binPath,
                 ServiceStartType.Automatic,
                 null,
+                null,
                 null
                 );
 
@@ -509,8 +506,8 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void UpdateServiceConfig_Throws_Win32Exception()
         {
-            var scmHandle = new nint(123);
-            var serviceHandle = nint.Zero;
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = IntPtr.Zero;
             var serviceName = "TestService";
             var description = "Updated Description";
             var binPath = "binaryPath";
@@ -525,7 +522,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 binPath,
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null,
@@ -548,11 +545,12 @@ namespace Servy.Core.UnitTests.Services
                     binPath,
                     ServiceStartType.Automatic,
                     null,
+                    null,
                     null
                     )
             );
 
-            serviceHandle = new nint(123);
+            serviceHandle = new IntPtr(123);
 
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                .Returns(serviceHandle);
@@ -567,6 +565,7 @@ namespace Servy.Core.UnitTests.Services
                     binPath,
                     ServiceStartType.Automatic,
                     null,
+                    null,
                     null
                     )
             );
@@ -575,7 +574,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void SetServiceDescription_ReturnsImmediately_WhenDescriptionIsNullOrEmpty()
         {
-            var serviceHandle = new nint(456);
+            var serviceHandle = new IntPtr(456);
 
             // Should not call ChangeServiceConfig2 if description is null or empty
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
@@ -590,7 +589,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void SetServiceDescription_Throws_WhenChangeServiceConfig2Fails()
         {
-            var serviceHandle = new nint(456);
+            var serviceHandle = new IntPtr(456);
             var description = "desc";
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
@@ -603,7 +602,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallService_ReturnsFalse_WhenOpenSCManagerFails()
         {
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
-                .Returns(nint.Zero);
+                .Returns(IntPtr.Zero);
 
             var result = await _serviceManager.UninstallService("ServiceName");
             Assert.False(result);
@@ -612,13 +611,13 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task UninstallService_ReturnsFalse_WhenOpenServiceFails()
         {
-            var scmHandle = new nint(123);
+            var scmHandle = new IntPtr(123);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
 
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "ServiceName", It.IsAny<uint>()))
-                .Returns(nint.Zero);
+                .Returns(IntPtr.Zero);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
@@ -630,8 +629,8 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallService_ReturnsFalse_WhenDeleteServiceFails()
         {
             var serviceName = "ServiceName";
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -646,7 +645,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 null,
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null,
@@ -702,8 +701,8 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallService_StopsAndDeletesServiceSuccessfully()
         {
             var serviceName = "ServiceName";
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -718,7 +717,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 null,
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null,
@@ -778,8 +777,8 @@ namespace Servy.Core.UnitTests.Services
         public async Task UninstallService_StopsAndDeletesServiceSuccessfully_WithPolling()
         {
             var serviceName = "ServiceName";
-            var scmHandle = new nint(123);
-            var serviceHandle = new nint(456);
+            var scmHandle = new IntPtr(123);
+            var serviceHandle = new IntPtr(456);
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -794,7 +793,7 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<uint>(),
                 null,
                 null,
-                nint.Zero,
+                IntPtr.Zero,
                 null,
                 null,
                 null,

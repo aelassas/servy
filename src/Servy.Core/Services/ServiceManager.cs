@@ -92,6 +92,7 @@ namespace Servy.Core.Services
         /// <param name="startType">The service startup type.</param>
         /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
         /// <param name="password">Service account password.</param>
+        /// <param name="lpDependencies">Service dependencies</param>
         /// <returns>
         /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
         /// </returns>
@@ -103,7 +104,8 @@ namespace Servy.Core.Services
             string binPath,
             ServiceStartType startType,
             string? username,
-            string? password
+            string? password,
+            string? lpDependencies
             )
         {
             IntPtr serviceHandle = _windowsServiceApi.OpenService(
@@ -124,7 +126,7 @@ namespace Servy.Core.Services
                         lpBinaryPathName: binPath,
                         lpLoadOrderGroup: null,
                         lpdwTagId: IntPtr.Zero,
-                        lpDependencies: null,
+                        lpDependencies: lpDependencies,
                         lpServiceStartName: username,
                         lpPassword: password,
                         lpDisplayName: null
@@ -269,7 +271,7 @@ namespace Servy.Core.Services
 
 
                 // Persist service in database
-                var dto = new DTOs.ServiceDto
+                var dto = new ServiceDto
                 {
                     Name = serviceName,
                     Description = description,
@@ -306,9 +308,19 @@ namespace Servy.Core.Services
                 if (serviceHandle == IntPtr.Zero)
                 {
                     int err = _win32ErrorProvider.GetLastWin32Error();
-                    if (err == 1073) // ERROR_SERVICE_EXISTS
+                    if (err == 1073) // service already exists
                     {
-                        var res = UpdateServiceConfig(scmHandle, serviceName, description, binPath, startType, lpServiceStartName, lpPassword);
+                        var res = UpdateServiceConfig(
+                            scmHandle: scmHandle,
+                            serviceName: serviceName,
+                            description: description,
+                            binPath: binPath,
+                            startType: startType,
+                            username: lpServiceStartName,
+                            password: lpPassword,
+                            lpDependencies: lpDependencies
+                        );
+
                         await _serviceRepository.UpsertAsync(dto);
                         return res;
                     }
