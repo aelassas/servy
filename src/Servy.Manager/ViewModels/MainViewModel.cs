@@ -561,7 +561,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Starts all selected services.
+        /// Start all selected services.
         /// </summary>
         /// <param name="parameter"></param>
         /// <returns></returns>
@@ -569,51 +569,41 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
-                if (selectedServices.Count == 0)
+                var selectedServices = _services
+                    .Where(s => s.IsInstalled && s.IsChecked)
+                    .Select(s => s.Service)
+                    .ToList();
+
+                if (!selectedServices.Any())
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
                     return;
                 }
 
                 var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_StartSelectedServices, AppConfig.Caption);
-
                 if (!res) return;
-
-                var tasks = selectedServices.Select(async service =>
-                {
-                    var ok = await ServiceCommands.StartServiceAsync(service, showMessageBox: false);
-                    return (Service: service, Success: ok);
-                });
 
                 SetIsBusy(true);
 
-                var results = await Task.WhenAll(tasks);
+                var failed = new List<string>();
 
-                var failed = results
-                    .Where(r => !r.Success)
-                    .Select(r => r.Service.Name)
-                    .ToList();
-
-                if (failed.Count == 0)
+                foreach (var service in selectedServices)
                 {
-                    await _messageBoxService.ShowInfoAsync(
-                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                    var ok = await ServiceCommands.StartServiceAsync(service, showMessageBox: false);
+                    if (!ok) failed.Add(service.Name);
+                }
+
+                if (!failed.Any())
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
                 }
                 else
                 {
-                    if (failed.Count == results.Length)
-                    {
-                        await _messageBoxService.ShowErrorAsync(
-                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
-                    }
-                    else
-                    {
-                        var message = string.Format(
-                            Strings.Msg_OperationCompletedWithErrorsDetails,
-                            string.Join(", ", failed));
-                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                    }
+                    var message = failed.Count == selectedServices.Count
+                        ? Strings.Msg_AllOperationsFailed
+                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
+
+                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
                 }
             }
             catch (Exception ex)
@@ -625,6 +615,7 @@ namespace Servy.Manager.ViewModels
                 SetIsBusy(false);
             }
         }
+
 
         /// <summary>
         /// Stop all selected services.
@@ -646,41 +637,29 @@ namespace Servy.Manager.ViewModels
 
                 if (!res) return;
 
-                var tasks = selectedServices.Select(async service =>
-                {
-                    var ok = await ServiceCommands.StopServiceAsync(service, showMessageBox: false);
-                    return (Service: service, Success: ok);
-                });
-
                 SetIsBusy(true);
 
-                var results = await Task.WhenAll(tasks);
+                var failed = new List<string>();
 
-                var failed = results
-                    .Where(r => !r.Success)
-                    .Select(r => r.Service.Name)
-                    .ToList();
-
-                if (failed.Count == 0)
+                foreach (var service in selectedServices)
                 {
-                    await _messageBoxService.ShowInfoAsync(
-                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                    var ok = await ServiceCommands.StopServiceAsync(service, showMessageBox: false);
+                    if (!ok) failed.Add(service.Name);
+                }
+
+                if (!failed.Any())
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
                 }
                 else
                 {
-                    if (failed.Count == results.Length)
-                    {
-                        await _messageBoxService.ShowErrorAsync(
-                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
-                    }
-                    else
-                    {
-                        var message = string.Format(
-                            Strings.Msg_OperationCompletedWithErrorsDetails,
-                            string.Join(", ", failed));
-                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                    }
+                    var message = failed.Count == selectedServices.Count
+                        ? Strings.Msg_AllOperationsFailed
+                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
+
+                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
                 }
+
             }
             catch (Exception ex)
             {
@@ -712,40 +691,27 @@ namespace Servy.Manager.ViewModels
 
                 if (!res) return;
 
-                var tasks = selectedServices.Select(async service =>
-                {
-                    var ok = await ServiceCommands.RestartServiceAsync(service, showMessageBox: false);
-                    return (Service: service, Success: ok);
-                });
-
                 SetIsBusy(true);
 
-                var results = await Task.WhenAll(tasks);
+                var failed = new List<string>();
 
-                var failed = results
-                    .Where(r => !r.Success)
-                    .Select(r => r.Service.Name)
-                    .ToList();
-
-                if (failed.Count == 0)
+                foreach (var service in selectedServices)
                 {
-                    await _messageBoxService.ShowInfoAsync(
-                        Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                    var ok = await ServiceCommands.RestartServiceAsync(service, showMessageBox: false);
+                    if (!ok) failed.Add(service.Name);
+                }
+
+                if (!failed.Any())
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
                 }
                 else
                 {
-                    if (failed.Count == results.Length)
-                    {
-                        await _messageBoxService.ShowErrorAsync(
-                            Strings.Msg_AllOperationsFailed, AppConfig.Caption);
-                    }
-                    else
-                    {
-                        var message = string.Format(
-                            Strings.Msg_OperationCompletedWithErrorsDetails,
-                            string.Join(", ", failed));
-                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                    }
+                    var message = failed.Count == selectedServices.Count
+                        ? Strings.Msg_AllOperationsFailed
+                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
+
+                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
                 }
             }
             catch (Exception ex)
