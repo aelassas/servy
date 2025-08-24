@@ -25,7 +25,7 @@ namespace Servy.Core.Helpers
             /// <summary>
             /// Gets or sets the process name.
             /// </summary>
-            public string ProcessName { get; set; }
+            public string? ProcessName { get; set; }
         }
 
         /// <summary>
@@ -56,6 +56,9 @@ namespace Servy.Core.Helpers
 
             using (var process = Process.Start(psi))
             {
+                if (process == null)
+                    throw new InvalidOperationException($"Failed to start process: {handleExePath}");
+
                 string output = process.StandardOutput.ReadToEnd();
                 process.WaitForExit();
 

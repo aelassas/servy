@@ -10,7 +10,7 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Sets or gets the unique identifier of the service.
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the current state of the service.

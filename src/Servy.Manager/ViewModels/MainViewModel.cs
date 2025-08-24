@@ -482,6 +482,9 @@ namespace Servy.Manager.ViewModels
 
                     SelectAll = false;
 
+                    // Notify that bulk action availability changed
+                    OnPropertyChanged(nameof(HasSelectedServices));
+
                     //ServicesView.Refresh();
                 }, DispatcherPriority.Background);
 
