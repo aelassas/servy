@@ -12,7 +12,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy Manager" Height="600" Width="1000"
         Loaded="Window_Loaded"
-        KeyDown="Window_KeyDown"
+        PreviewKeyDown="Window_PreviewKeyDown"
         MouseDown="Window_MouseDown"
         >
 
