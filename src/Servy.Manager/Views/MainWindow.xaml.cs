@@ -16,6 +16,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace Servy.Manager.Views
 {
@@ -343,6 +344,38 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
+        /// Handles mouse clicks on the window and clears the DataGrid selection
+        /// if the click occurred outside the DataGrid.
+        /// </summary>
+        /// <param name="sender">The source of the event (typically the Window).</param>
+        /// <param name="e">Mouse button event arguments containing click information.</param>
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Check if the click was outside the DataGrid
+            if (e.OriginalSource is DependencyObject source)
+            {
+                if (!IsDescendantOf(source, ServicesDataGrid))
+                {
+                    ServicesDataGrid.SelectedItems.Clear();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper to check if a visual element is a child of a parent
+        /// </summary>
+        private bool IsDescendantOf(DependencyObject source, DependencyObject parent)
+        {
+            while (source != null)
+            {
+                if (source == parent)
+                    return true;
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Enables or disables the main and logs tabs to prevent reentrant tab switching.
         /// </summary>
         /// <param name="enable">If true, enables the tabs; otherwise, disables them.</param>
@@ -351,6 +384,5 @@ namespace Servy.Manager.Views
             MainTab.IsEnabled = enable;
             LogsTab.IsEnabled = enable;
         }
-
     }
 }
