@@ -17,7 +17,7 @@
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy Manager...</value>
   </data>
-  
+
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
@@ -142,6 +142,38 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
   <data name="Button_More" xml:space="preserve">
     <value>More Actions</value>
+  </data>
+
+  <data name="Button_StartSelected" xml:space="preserve">
+    <value>Start Selected</value>
+  </data>
+  <data name="Button_StopSelected" xml:space="preserve">
+    <value>Stop Selected</value>
+  </data>
+  <data name="Button_RestartSelected" xml:space="preserve">
+    <value>Restart Selected</value>
+  </data>
+
+  <data name="Msg_NoServicesSelected" xml:space="preserve">
+    <value>No services selected.</value>
+  </data>
+  <data name="Confirm_StartSelectedServices" xml:space="preserve">
+    <value>Start selected services?</value>
+  </data>
+  <data name="Confirm_StopSelectedServices" xml:space="preserve">
+    <value>Stop selected services?</value>
+  </data>
+  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
+    <value>Restart selected services?</value>
+  </data>
+  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
+    <value>Operation completed successfully.</value>
+  </data>
+  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
+    <value>An error occurred while performing the operation on: {0}</value>
+  </data>
+  <data name="Msg_AllOperationsFailed" xml:space="preserve">
+    <value>All operations failed.</value>
   </data>
 
   <data name="Button_Install" xml:space="preserve">
@@ -338,5 +370,6 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
     <value>An error occurred while switching tabs. Please try again.</value>
   </data>
+
 
 </root>

@@ -124,6 +124,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Selected.
+        /// </summary>
+        public static string Button_RestartSelected {
+            get {
+                return ResourceManager.GetString("Button_RestartSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Search.
         /// </summary>
         public static string Button_Search {
@@ -151,11 +160,29 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start Selected.
+        /// </summary>
+        public static string Button_StartSelected {
+            get {
+                return ResourceManager.GetString("Button_StartSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Stop.
         /// </summary>
         public static string Button_Stop {
             get {
                 return ResourceManager.GetString("Button_Stop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop Selected.
+        /// </summary>
+        public static string Button_StopSelected {
+            get {
+                return ResourceManager.GetString("Button_StopSelected", resourceCulture);
             }
         }
         
@@ -246,6 +273,33 @@ namespace Servy.Manager.Resources {
         public static string Column_UserSession {
             get {
                 return ResourceManager.GetString("Column_UserSession", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart selected services?.
+        /// </summary>
+        public static string Confirm_RestartSelectedServices {
+            get {
+                return ResourceManager.GetString("Confirm_RestartSelectedServices", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start selected services?.
+        /// </summary>
+        public static string Confirm_StartSelectedServices {
+            get {
+                return ResourceManager.GetString("Confirm_StartSelectedServices", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop selected services?.
+        /// </summary>
+        public static string Confirm_StopSelectedServices {
+            get {
+                return ResourceManager.GetString("Confirm_StopSelectedServices", resourceCulture);
             }
         }
         
@@ -493,6 +547,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à All operations failed..
+        /// </summary>
+        public static string Msg_AllOperationsFailed {
+            get {
+                return ResourceManager.GetString("Msg_AllOperationsFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Servy Configuration App not found..
         /// </summary>
         public static string Msg_ConfigurationAppNotFound {
@@ -660,6 +723,33 @@ namespace Servy.Manager.Resources {
         public static string Msg_MainTabControl_SelectionChangedError {
             get {
                 return ResourceManager.GetString("Msg_MainTabControl_SelectionChangedError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à No services selected..
+        /// </summary>
+        public static string Msg_NoServicesSelected {
+            get {
+                return ResourceManager.GetString("Msg_NoServicesSelected", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Operation completed successfully..
+        /// </summary>
+        public static string Msg_OperationCompletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Msg_OperationCompletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à An error occurred while performing the operation on: {0}.
+        /// </summary>
+        public static string Msg_OperationCompletedWithErrorsDetails {
+            get {
+                return ResourceManager.GetString("Msg_OperationCompletedWithErrorsDetails", resourceCulture);
             }
         }
         

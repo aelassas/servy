@@ -84,7 +84,7 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> StartServiceAsync(Service service)
+        public async Task<bool> StartServiceAsync(Service service, bool showMessageBox = true)
         {
             if (service == null) return false;
 
@@ -93,7 +93,7 @@ namespace Servy.Manager.Services
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
                     return false;
                 }
 
@@ -101,23 +101,23 @@ namespace Servy.Manager.Services
                 if (res)
                 {
                     service.Status = ServiceStatus.Running;
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, AppConfig.Caption);
                 }
                 else
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
                 return res;
             }
             catch (Exception ex)
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 _logger.Warning($"Failed to start {service.Name}: {ex}");
                 return false;
             }
         }
 
-        public async Task<bool> StopServiceAsync(Service service)
+        public async Task<bool> StopServiceAsync(Service service, bool showMessageBox = true)
         {
             if (service == null) return false;
 
@@ -126,7 +126,7 @@ namespace Servy.Manager.Services
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
                     return false;
                 }
 
@@ -134,24 +134,24 @@ namespace Servy.Manager.Services
                 if (res)
                 {
                     service.Status = ServiceStatus.Stopped;
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption);
                 }
                 else
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
                 return res;
             }
             catch (Exception ex)
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 _logger.Warning($"Failed to stop {service.Name}: {ex}");
                 return false;
             }
         }
 
         /// <inheritdoc />
-        public async Task<bool> RestartServiceAsync(Service service)
+        public async Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true)
         {
             if (service == null) return false;
 
@@ -160,7 +160,7 @@ namespace Servy.Manager.Services
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
                     return false;
                 }
 
@@ -168,17 +168,17 @@ namespace Servy.Manager.Services
                 if (res)
                 {
                     service.Status = ServiceStatus.Running;
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, AppConfig.Caption);
                 }
                 else
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
                 return res;
             }
             catch (Exception ex)
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 _logger.Warning($"Failed to restart {service.Name}: {ex}");
                 return false;
             }
