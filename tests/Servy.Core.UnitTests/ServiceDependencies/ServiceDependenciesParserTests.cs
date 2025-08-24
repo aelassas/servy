@@ -8,21 +8,21 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         public void Parse_NullInput_ReturnsNull()
         {
             var result = ServiceDependenciesParser.Parse(null);
-            Assert.Null(result);
+            Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
         public void Parse_EmptyString_ReturnsNull()
         {
             var result = ServiceDependenciesParser.Parse(string.Empty);
-            Assert.Null(result);
+            Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
         public void Parse_WhitespaceOnly_ReturnsNull()
         {
             var result = ServiceDependenciesParser.Parse("   \r\n  ");
-            Assert.Null(result);
+            Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Servy.Core.UnitTests.ServiceDependencies
         public void Parse_AllEmptyEntries_ReturnsNull()
         {
             var result = ServiceDependenciesParser.Parse(";;\n\n;;");
-            Assert.Null(result);
+            Assert.Equal(ServiceDependenciesParser.NoDependencies, result);
         }
 
         [Fact]
