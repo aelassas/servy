@@ -131,7 +131,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 IntPtr.Zero,
                 ServiceDependenciesParser.NoDependencies,
-                null,
+                ServiceManager.LocalSystemAccount,
                 null))
                 .Returns(serviceHandle);
 
@@ -307,7 +307,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 IntPtr.Zero,
                 ServiceDependenciesParser.NoDependencies,
-                null,
+                ServiceManager.LocalSystemAccount,
                 null))
                 .Returns(serviceHandle);
 
@@ -354,7 +354,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.True(result);
 
             _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null, null, It.IsAny<uint>()), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(serviceHandle), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(scmHandle), Times.Once);
@@ -382,7 +382,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 IntPtr.Zero,
                 null,
-                null,
+                ServiceManager.LocalSystemAccount,
                 null))
                 .Returns(IntPtr.Zero);
 
@@ -403,7 +403,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 IntPtr.Zero,
                 ServiceDependenciesParser.NoDependencies,
-                null,
+                ServiceManager.LocalSystemAccount,
                 null,
                 null))
                 .Returns(true);
@@ -451,8 +451,8 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.True(result);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, null, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, null), Times.Once);
         }
 
         [Fact]
