@@ -6,7 +6,6 @@ using Servy.UI.Commands;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.ServiceProcess;
 using System.Threading.Tasks;
 
 namespace Servy.Manager.ViewModels
@@ -19,6 +18,8 @@ namespace Servy.Manager.ViewModels
     {
         private readonly IServiceCommands _serviceCommands;
         private readonly ILogger _logger;
+        private bool _isSelected;
+        private bool _isChecked;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ServiceRowViewModel"/>.
@@ -46,12 +47,46 @@ namespace Servy.Manager.ViewModels
             ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand);
         }
 
+
+
+        #region Properties
+
         /// <summary>
         /// The underlying service model.
         /// </summary>
         public Service Service { get; }
 
-        #region Properties (forwarded from Service)
+        /// <summary>
+        /// Gets or sets whether this service row is selected in the UI.
+        /// </summary>
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether this service row is checked (for bulk operations).
+        /// </summary>
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set
+            {
+                if (_isChecked != value)
+                {
+                    _isChecked = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         public string Name => Service.Name;
         public string Description => Service.Description;
@@ -64,6 +99,7 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region INotifyPropertyChanged
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
@@ -109,6 +145,7 @@ namespace Servy.Manager.ViewModels
                     break;
             }
         }
+
         #endregion
 
         #region Row-level Commands

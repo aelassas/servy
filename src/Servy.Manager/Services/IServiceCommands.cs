@@ -24,22 +24,25 @@ namespace Servy.Manager.Services
         /// Starts the specified service.
         /// </summary>
         /// <param name="service">The service to start.</param>
+        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
         /// <returns>True if the service started successfully; otherwise, false.</returns>
-        Task<bool> StartServiceAsync(Service service);
+        Task<bool> StartServiceAsync(Service service, bool showMessageBox = true);
 
         /// <summary>
         /// Stops the specified service.
         /// </summary>
         /// <param name="service">The service to stop.</param>
+        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
         /// <returns>True if the service stopped successfully; otherwise, false.</returns>
-        Task<bool> StopServiceAsync(Service service);
+        Task<bool> StopServiceAsync(Service service, bool showMessageBox = true);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="service">The service to restart.</param>
+        /// <param name="showMessageBox"">Whether to show a message box on success or failure.</param>
         /// <returns>True if the service restarted successfully; otherwise, false.</returns>
-        Task<bool> RestartServiceAsync(Service service);
+        Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true);
 
         /// <summary>
         /// Opens the configuration app for the specified service.
