@@ -37,6 +37,8 @@ namespace Servy.Core.Services
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
         private const int ServiceStopTimeoutSeconds = 60;
 
+        public const string LocalSystemAccount = "LocalSystem";
+
         #endregion
 
         #region Private Fields
@@ -255,7 +257,7 @@ namespace Servy.Core.Services
             try
             {
                 string lpDependencies = ServiceDependenciesParser.Parse(serviceDependencies);
-                string lpServiceStartName = string.IsNullOrWhiteSpace(username) ? null : username;
+                string lpServiceStartName = string.IsNullOrWhiteSpace(username) ? LocalSystemAccount : username;
                 string lpPassword = string.IsNullOrEmpty(password) ? null : password;
 
                 serviceHandle = _windowsServiceApi.CreateService(
