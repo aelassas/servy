@@ -177,7 +177,8 @@ namespace Servy.Manager.ViewModels
             {
                 if (_selectAll == value) return;
 
-                _selectAll = value;
+                //_selectAll = value;
+                _selectAll = _selectAll == null ? false : value;
                 OnPropertyChanged();
 
                 // Only handle user clicks
@@ -186,11 +187,15 @@ namespace Servy.Manager.ViewModels
                     _isUpdatingSelectAll = true;
 
                     // Treat null (indeterminate) click as true
-                    bool newValue = value ?? true;
+                    bool newValue = _selectAll ?? true;
 
-                    var allUnselected = _services.All(s => !s.IsSelected);
+                    //foreach (var s in _services)
+                    //{
+                    //    s.IsChecked = newValue;
+                    //    s.IsSelected = false;
+                    //}
 
-                    if (allUnselected)
+                    if (_services.Count(s => s.IsSelected) <= 1)
                     {
                         foreach (var s in _services)
                         {
