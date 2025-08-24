@@ -169,7 +169,7 @@ namespace Servy.Manager.Views
         /// Handles KeyDown on the window for global shortcuts.
         /// Executes search when F5 is pressed.
         /// </summary>
-        private async void Window_KeyDown(object sender, KeyEventArgs e)
+        private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.F5)
             {
@@ -184,6 +184,17 @@ namespace Servy.Manager.Views
                         await vm.SearchCommand.ExecuteAsync(null);
                 }
 
+            }
+
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                if (MainTab.IsSelected)
+                {
+                    ServicesDataGrid.Focus();
+                    ServicesDataGrid.SelectAll();
+
+                    e.Handled = true;
+                }
             }
         }
 
