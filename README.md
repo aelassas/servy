@@ -89,8 +89,6 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
   * [ ] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Enable remote management of Servy services on other machines *(long-term)*
-  * [ ] Advanced filtering and grouping in the service list *(long-term)* 
-
 
 ## Support & Contributing
 
