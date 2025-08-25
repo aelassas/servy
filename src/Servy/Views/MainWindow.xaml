@@ -214,9 +214,11 @@
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
                                  AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="120" />
-                        <TextBlock Grid.Row="2"  Grid.Column="1" Grid.ColumnSpan="2" 
-                                   Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" 
-                                   TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                Text="{x:Static resx:Strings.Info_EnvironmentVariables}" 
+                                FontStyle="Normal" 
+                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                TextWrapping="Wrap"/>
 
                         <!-- Service Dependencies -->
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDependencies}" Margin="0,5,10,5"/>
