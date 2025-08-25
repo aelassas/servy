@@ -385,11 +385,20 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh. Press F5 to refresh the full list..
+        ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh - Press F5 to refresh the full list.
         /// </summary>
         public static string Label_F5_Shortcut {
             get {
                 return ResourceManager.GetString("Label_F5_Shortcut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Press F5 to refresh logs.
+        /// </summary>
+        public static string Label_F5_Shortcut_Logs {
+            get {
+                return ResourceManager.GetString("Label_F5_Shortcut_Logs", resourceCulture);
             }
         }
         
