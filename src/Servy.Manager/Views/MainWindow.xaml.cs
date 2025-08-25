@@ -12,6 +12,7 @@ using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -210,12 +211,18 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles the <see cref="SelectionChanged"/> event of the main TabControl.
-        /// Cancels background tasks or timers when switching tabs and triggers
-        /// searches for logs or services depending on the selected tab.
+        /// Handles the <see cref="SelectionChanged"/> event of the main <see cref="TabControl"/>.
+        /// Cancels background tasks or timers when switching tabs and triggers searches
+        /// for logs or services depending on the selected tab.
         /// </summary>
         /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
         /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
+        /// <remarks>
+        /// The tab-specific logic is split into separate methods (<see cref="HandleLogsTabSelected"/> and
+        /// <see cref="HandleMainTabSelected"/>) to improve readability, maintainability, and to clearly
+        /// separate concerns. This allows the main event handler to remain concise and ensures that
+        /// each tab’s behavior (cleanup, searches, timers) is encapsulated in a dedicated method.
+        /// </remarks>
         private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
@@ -224,49 +231,73 @@ namespace Servy.Manager.Views
                 if (!ReferenceEquals(sender, e.OriginalSource))
                     return;
 
-                // Temporarily disable tab switching to avoid reentrancy
-                EnableTabs(false);
-
                 if (DataContext is MainViewModel vm)
                 {
+                    var logsVm = GetLogsVm();
+
                     if (LogsTab.IsSelected)
-                    {
-                        // Cleanup all background tasks and stop timers in main tab
-                        vm.Cleanup();
-
-                        // Trigger search in Logs tab
-                        if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel logsVm)
-                        {
-                            await logsVm.SearchCommand.ExecuteAsync(null);
-                        }
-                    }
+                        await HandleLogsTabSelected(vm, logsVm);
                     else if (MainTab.IsSelected)
-                    {
-                        // Stop ongoing search in Logs tab
-                        if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel logsVm)
-                        {
-                            logsVm.Cleanup();
-                        }
-
-                        // Run search for main tab if applicable
-                        await vm.SearchCommand.ExecuteAsync(null);
-
-                        // Start periodic timer updates in main tab
-                        vm.CreateAndStartTimer();
-                    }
+                        await HandleMainTabSelected(vm, logsVm);
                 }
             }
             catch (Exception ex)
             {
-                _logger.Error("Error in MainTabControl_SelectionChanged", ex);
+                _logger?.Error("Error in MainTabControl_SelectionChanged", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
             }
-            finally
-            {
-                // Re-enable tabs after processing
-                EnableTabs(true);
-            }
         }
+
+        /// <summary>
+        /// Handles tasks when the Logs tab is selected:
+        /// cleans up main tab resources and triggers a search for logs if the logs collection is empty.
+        /// </summary>
+        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
+        /// <param name="logsVm">
+        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
+        /// </param>
+        private async Task HandleLogsTabSelected(MainViewModel vm, LogsViewModel logsVm)
+        {
+            // Cleanup all background tasks and stop timers in main tab
+            vm.Cleanup();
+
+            // Run search for logs tab if applicable
+            if (logsVm != null && logsVm.LogsView.IsEmpty)
+                await logsVm.SearchCommand.ExecuteAsync(null);
+
+        }
+
+        /// <summary>
+        /// Handles tasks when the Main tab is selected:
+        /// cleans up logs tab resources, triggers a search for services if needed,
+        /// and starts periodic timer updates in the main tab.
+        /// </summary>
+        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
+        /// <param name="logsVm">
+        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
+        /// </param>
+        private async Task HandleMainTabSelected(MainViewModel vm, LogsViewModel logsVm)
+        {
+            // Stop ongoing search in Logs tab
+            logsVm?.Cleanup();
+
+            // Run search for main tab if applicable
+            if (vm.ServicesView.IsEmpty)
+                await vm.SearchCommand.ExecuteAsync(null);
+
+            // Start periodic timer updates in main tab
+            vm.CreateAndStartTimer();
+        }
+
+        /// <summary>
+        /// Retrieves the <see cref="LogsViewModel"/> instance bound to the <see cref="LogsTab"/> content, if available.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="LogsViewModel"/> instance if the <see cref="LogsTab"/> has content and its DataContext 
+        /// is a <see cref="LogsViewModel"/>; otherwise, <c>null</c>.
+        /// </returns>
+        private LogsViewModel GetLogsVm()
+            => LogsTab.Content is LogsView logsView ? logsView.DataContext as LogsViewModel : null;
 
         /// <summary>
         /// Handles the <see cref="Window.Closed"/> event.

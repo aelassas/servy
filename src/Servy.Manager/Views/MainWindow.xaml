@@ -153,6 +153,7 @@
                                               IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                      />
                                 </DataGridTemplateColumn.Header>
+
                                 <!--Row checkbox-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -162,10 +163,39 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Name}" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Description}" Binding="{Binding Description}" Width="3*"/>
+                            <!--Name-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" Width="2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}"
+                                                   ToolTip="{Binding Name}"
+                                                   VerticalAlignment="Top"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!--Description-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" Width="3*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Description}"
+                                                   ToolTip="{Binding Description}"
+                                                   VerticalAlignment="Top"
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!--Status-->
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_Status}" Binding="{Binding Status, Converter={StaticResource StatusConverter}}" Width="*"/>
+                            <!--Startup Type-->
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_StartupType}" Binding="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}" Width="*"/>
+                            <!--User Session-->
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*"/>
 
                             <!-- Actions -->
@@ -288,7 +318,7 @@
 
             <!--Logs Tab-->
             <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
-                <views:LogsView/>
+                <views:LogsView />
             </TabItem>
 
         </TabControl>
