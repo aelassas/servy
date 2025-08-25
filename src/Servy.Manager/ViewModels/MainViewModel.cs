@@ -35,7 +35,7 @@ namespace Servy.Manager.ViewModels
         private readonly IMessageBoxService _messageBoxService;
         private readonly ILogger _logger;
         private readonly IHelpService _helpService;
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource _cancellationTokenSource;
         private DispatcherTimer _refreshTimer;
         private ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
@@ -326,8 +326,6 @@ namespace Servy.Manager.ViewModels
             {
                 IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
 
-                _cts = new CancellationTokenSource();
-
                 CreateAndStartTimer();
             }
 
@@ -423,7 +421,7 @@ namespace Servy.Manager.ViewModels
             _refreshTimer.Stop(); // prevent overlapping ticks
             try
             {
-                if (_cts != null && _cts.IsCancellationRequested)
+                if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
                     return; // Exit if cancellation is requested
 
                 await RefreshAllServicesAsync();
@@ -454,9 +452,9 @@ namespace Servy.Manager.ViewModels
                 FooterText = string.Empty; // Clear footer text before search
 
                 // Step 0: cancel any previous search
-                _cts?.Cancel();
-                _cts?.Dispose();
-                _cts = new CancellationTokenSource();
+                _cancellationTokenSource?.Cancel();
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = new CancellationTokenSource();
 
                 // Step 1: show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
@@ -468,7 +466,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, _cts.Token), _cts.Token);
+                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, _cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count()} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
@@ -476,7 +474,7 @@ namespace Servy.Manager.ViewModels
                 sw = Stopwatch.StartNew();
                 var vms = await Task.Run(() =>
                     results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)).ToList()
-                , _cts.Token);
+                , _cancellationTokenSource.Token);
                 sw.Stop();
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
@@ -517,7 +515,7 @@ namespace Servy.Manager.ViewModels
                     {
                         _logger.Warning($"RefreshAllServicesAsync failed: {ex}");
                     }
-                }, _cts.Token);
+                }, _cancellationTokenSource.Token);
             }
             catch (OperationCanceledException)
             {
@@ -763,9 +761,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            if (_cts != null)
+            if (_cancellationTokenSource != null)
             {
-                _cts.Cancel(); // cancel any in-progress async work
+                _cancellationTokenSource.Cancel(); // cancel any in-progress async work
             }
 
             if (_refreshTimer != null)
@@ -784,6 +782,7 @@ namespace Servy.Manager.ViewModels
         {
             if (_refreshTimer == null)
             {
+                _cancellationTokenSource = new CancellationTokenSource();
                 _refreshTimer = CreateTimer();
             }
 
@@ -805,7 +804,7 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                _cts?.Token.ThrowIfCancellationRequested();
+                _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
 
                 // Take snapshot of services
                 var snapshot = _services.Select(r => r.Service).ToList();
@@ -815,13 +814,13 @@ namespace Servy.Manager.ViewModels
                 {
                     try
                     {
-                        return _serviceManager.GetAllServices(_cts.Token);
+                        return _serviceManager.GetAllServices(_cancellationTokenSource.Token);
                     }
                     catch (OperationCanceledException)
                     {
                         return new List<ServiceInfo>(); // empty list if canceled
                     }
-                }, _cts.Token);
+                }, _cancellationTokenSource.Token);
                 var allServicesDict = allServicesList.ToDictionary(
                     s => s.Name,
                     StringComparer.OrdinalIgnoreCase);
@@ -858,7 +857,7 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                _cts?.Token.ThrowIfCancellationRequested();
+                _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
 
                 // Check if service is installed
                 service.IsInstalled = allServices.ContainsKey(service.Name);
@@ -866,7 +865,7 @@ namespace Servy.Manager.ViewModels
                 // Load startup type from repository if null
                 if (service.StartupType == null)
                 {
-                    var dto = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
+                    var dto = await _serviceRepository.GetByNameAsync(service.Name, _cancellationTokenSource.Token);
                     if (dto != null)
                         service.StartupType = (ServiceStartType)dto.StartupType;
                 }
@@ -897,14 +896,14 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // Repository update if needed
-                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name, _cts.Token);
+                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name, _cancellationTokenSource.Token);
                 if (dtoUpdate != null &&
                     (!dtoUpdate.Description.Equals(service.Description) ||
                      dtoUpdate.StartupType != (int)service.StartupType))
                 {
                     dtoUpdate.Description = service.Description;
                     dtoUpdate.StartupType = (int)service.StartupType;
-                    await _serviceRepository.UpsertAsync(dtoUpdate, _cts.Token);
+                    await _serviceRepository.UpsertAsync(dtoUpdate, _cancellationTokenSource.Token);
                 }
             }
             catch (OperationCanceledException)
