@@ -167,6 +167,9 @@ namespace Servy.Core.Helpers
 
                 foreach (var procInfo in processes)
                 {
+                    if (string.IsNullOrEmpty(procInfo.ProcessName))
+                        continue; // skip null or empty names
+
                     try
                     {
                         KillProcessTreeAndParents(procInfo.ProcessName);
