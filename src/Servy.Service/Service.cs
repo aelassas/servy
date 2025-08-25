@@ -908,7 +908,7 @@ namespace Servy.Service
 
                 if (!closedGracefully)
                 {
-                    // Either no GUI window or close failed — kill forcibly
+                    // Either no GUI window or close failed - kill forcibly
                     _logger?.Warning("Graceful shutdown not supported. Forcing kill.");
                     process.Kill();
                 }
