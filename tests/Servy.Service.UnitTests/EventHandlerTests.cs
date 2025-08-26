@@ -2,7 +2,7 @@
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
-using Servy.Service.ServiceHelpers;
+using Servy.Service.Helpers;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;

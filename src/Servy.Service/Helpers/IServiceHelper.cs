@@ -5,7 +5,7 @@ using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
 
-namespace Servy.Service.ServiceHelpers
+namespace Servy.Service.Helpers
 {
     /// <summary>
     /// Defines methods to assist with service startup operations,

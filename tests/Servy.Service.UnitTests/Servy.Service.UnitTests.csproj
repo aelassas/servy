@@ -110,8 +110,9 @@
     <Compile Include="EventHandlerTests.cs" />
     <Compile Include="HealthCheckTests.cs" />
     <Compile Include="HelperOverride.cs" />
+    <Compile Include="Helpers\EnvironmentVariableHelperTests.cs" />
     <Compile Include="ProcessManagementTests.cs" />
-    <Compile Include="ServiceHelpers\ServiceHelperTests.cs" />
+    <Compile Include="Helpers\ServiceHelperTests.cs" />
     <Compile Include="ServiceTests.cs" />
     <Compile Include="TestableService.cs">
       <SubType>Component</SubType>

@@ -1,4 +1,6 @@
-﻿using Servy.Core.Config;
+﻿#if !DEBUG
+using Servy.Core.Config;
+#endif
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -11,7 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace Servy.Service.ServiceHelpers
+namespace Servy.Service.Helpers
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
