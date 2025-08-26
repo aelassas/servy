@@ -89,9 +89,13 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
-            input = input.Replace("\"", "\"\"").TrimStart('"').TrimEnd('"').TrimEnd('\\');
+            // Escape internal quotes and trim end '\'
+            string escaped = input.Replace("\"", "\\\"").TrimEnd('\\');
 
-            return $"\"{input}\"";
+            // Wrap in quotes
+            escaped = $"\"{escaped}\"";
+
+            return escaped;
         }
 
         /// <summary>

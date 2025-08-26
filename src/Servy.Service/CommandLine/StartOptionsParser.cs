@@ -19,7 +19,10 @@ namespace Servy.Service.CommandLine
         /// </returns>
         public static StartOptions Parse(string[] fullArgs)
         {
-            fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
+            //fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
+
+            if (fullArgs == null || fullArgs.Length == 0)
+                return new StartOptions();
 
             return new StartOptions
             {
@@ -39,7 +42,7 @@ namespace Servy.Service.CommandLine
 
                 // Pre-Launch args
                 PreLaunchExecutablePath = fullArgs.Length > 14 ? fullArgs[14] : string.Empty,
-                PreLaunchWorkingDirectory= fullArgs.Length > 15 ? fullArgs[15] : string.Empty,
+                PreLaunchWorkingDirectory = fullArgs.Length > 15 ? fullArgs[15] : string.Empty,
                 PreLaunchExecutableArgs = fullArgs.Length > 16 ? fullArgs[16] : string.Empty,
                 PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 17 ? fullArgs[17] : string.Empty),
                 PreLaunchStdOutPath = fullArgs.Length > 18 ? fullArgs[18] : string.Empty,
