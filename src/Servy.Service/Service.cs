@@ -4,7 +4,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
-using Servy.Service.ServiceHelpers;
+using Servy.Service.Helpers;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
@@ -546,29 +546,36 @@ namespace Servy.Service
         /// <param name="environmentVariables">Environment variables.</param>
         private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(environmentVariables);
+
+            foreach (var kvp in expandedEnv)
+            {
+                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+            }
+
             _realExePath = realExePath;
-            _realArgs = realArgs;
+            _realArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(realArgs, expandedEnv);
             _workingDir = workingDir;
             _environmentVariables = environmentVariables;
+
+            // Log any remaining unexpanded placeholders
+            LogUnexpandedPlaceholders(_realArgs, "Arguments");
 
             // Configure the process start info
             var psi = new ProcessStartInfo
             {
-                FileName = realExePath,
-                Arguments = realArgs,
-                WorkingDirectory = workingDir,
+                FileName = _realExePath,
+                Arguments = _realArgs,
+                WorkingDirectory = _workingDir,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
 
-            if (environmentVariables != null)
+            foreach (var envVar in expandedEnv)
             {
-                foreach (var envVar in environmentVariables)
-                {
-                    psi.EnvironmentVariables[envVar.Name] = envVar.Value;
-                }
+                psi.EnvironmentVariables[envVar.Key] = envVar.Value;
             }
 
             _childProcess = _processFactory.Create(psi);
@@ -586,6 +593,45 @@ namespace Servy.Service
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
+        }
+
+        /// <summary>
+        /// Logs a warning for any unexpanded environment variable placeholders found in the given string.
+        /// Placeholders are identified as text surrounded by '%' signs (e.g., %VAR_NAME%).
+        /// </summary>
+        /// <param name="input">The string to inspect for unexpanded environment variable placeholders.</param>
+        /// <param name="context">
+        /// A descriptive name of the context where the string is used, 
+        /// e.g., "Executable Path", "Arguments", or "Working Directory".
+        /// This helps in logging clear warning messages.
+        /// </param>
+        /// <remarks>
+        /// This method does not throw exceptions and will safely ignore null or empty input strings.
+        /// Warnings are logged via the service logger (_logger) if configured.
+        /// </remarks>
+        private void LogUnexpandedPlaceholders(string input, string context)
+        {
+            if (string.IsNullOrEmpty(input))
+                return;
+
+            int start = input.IndexOf('%');
+            while (start >= 0)
+            {
+                int end = input.IndexOf('%', start + 1);
+                if (end > start)
+                {
+                    string placeholder = input.Substring(start, end - start + 1);
+                    if (!string.IsNullOrEmpty(placeholder))
+                    {
+                        _logger?.Warning($"Unexpanded environment variable {placeholder} in {context}");
+                    }
+                    start = input.IndexOf('%', end + 1);
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -908,7 +954,7 @@ namespace Servy.Service
 
                 if (!closedGracefully)
                 {
-                    // Either no GUI window or close failed - kill forcibly
+                    // Either no GUI window or close failed — kill forcibly
                     _logger?.Warning("Graceful shutdown not supported. Forcing kill.");
                     process.Kill();
                 }

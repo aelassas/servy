@@ -17,7 +17,7 @@
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy...</value>
   </data>
-  
+
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
@@ -41,7 +41,7 @@
   <data name="Menu_Manager" xml:space="preserve">
     <value>Manager</value>
   </data>
-  
+
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -105,6 +105,10 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
   <data name="Label_ProcessParameters" xml:space="preserve">
     <value>Process Parameters</value>
+  </data>
+  <data name="Info_ProcessParameters" xml:space="preserve">
+    <value>Process parameters support environment variable expansion. Example:
+--param="%ProgramData%\MyApp" --param="%MY_VAR%\bin"</value>
   </data>
   <data name="Label_RequiredFields" xml:space="preserve">
     <value>* Required fields</value>
@@ -207,7 +211,10 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Environment Variables</value>
   </data>
   <data name="Info_EnvironmentVariables" xml:space="preserve">
-    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\).</value>
+    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\).
+Supports environment variable expansion. Example:
+MY_VAR1="%ProgramData%\MyApp"; MY_VAR2="%MY_VAR1%\bin"
+    </value>
   </data>
 
   <!-- Service Dependencies -->
@@ -393,5 +400,5 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_ManagerAppNotFound" xml:space="preserve">
     <value>Servy Manager App not found.</value>
   </data>
-  
+
 </root>

@@ -68,9 +68,10 @@
     <Compile Include="CommandLine\CommandLineProvider.cs" />
     <Compile Include="CommandLine\StartOptions.cs" />
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
+    <Compile Include="Helpers\EnvironmentVariableHelper.cs" />
     <Compile Include="ProcessManagement\IProcessFactory.cs" />
     <Compile Include="ProcessManagement\IProcessWrapper.cs" />
-    <Compile Include="ServiceHelpers\IServiceHelper.cs" />
+    <Compile Include="Helpers\IServiceHelper.cs" />
     <Compile Include="StreamWriters\IStreamWriter.cs" />
     <Compile Include="StreamWriters\IStreamWriterFactory.cs" />
     <Compile Include="Timers\ITimer.cs" />
@@ -87,7 +88,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServiceHelpers\ServiceHelper.cs" />
+    <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="CommandLine\StartOptionsParser.cs" />
     <Compile Include="StreamWriters\StreamWriterFactory.cs" />
     <Compile Include="Timers\TimerAdapter.cs" />

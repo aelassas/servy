@@ -2,12 +2,12 @@
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.ServiceHelpers;
+using Servy.Service.Helpers;
 using System.Diagnostics;
 using System.IO;
 using Xunit;
 
-namespace Servy.Service.UnitTests.ServiceHelpers
+namespace Servy.Service.UnitTests.Helpers
 {
     public class ServiceHelperTests
     {
