@@ -151,7 +151,10 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\)..
+        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\).
+        ///Supports environment variable expansion. Example:
+        ///MY_VAR1=&quot;%ProgramData%\MyApp&quot;; MY_VAR2=&quot;%MY_VAR1%\bin&quot;
+        ///    .
         /// </summary>
         public static string Info_EnvironmentVariables {
             get {
@@ -174,6 +177,16 @@ namespace Servy.Resources {
         public static string Info_PreLaunchStartupDirectory {
             get {
                 return ResourceManager.GetString("Info_PreLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process parameters support environment variable expansion. Example:
+        ///--param=&quot;%ProgramData%\MyApp&quot; --param=&quot;%MY_VAR%\bin&quot;.
+        /// </summary>
+        public static string Info_ProcessParameters {
+            get {
+                return ResourceManager.GetString("Info_ProcessParameters", resourceCulture);
             }
         }
         

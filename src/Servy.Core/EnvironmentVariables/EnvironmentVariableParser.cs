@@ -41,7 +41,7 @@ namespace Servy.Core.EnvironmentVariables
 
                 // Unescape both key and value
                 var key = Unescape(rawKey).Trim();
-                var value = Unescape(rawValue).Trim();
+                var value = Unescape(rawValue).Trim(' ', '"');
 
                 if (string.IsNullOrEmpty(key))
                     throw new FormatException($"Environment variable key cannot be empty: {part}");
