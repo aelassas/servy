@@ -69,7 +69,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [x] Automatic restart on failure
 * [x] CLI for full scripting and automated deployments
 * [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
-* [x] Support environment variable expansion in process parameters ([#6](https://github.com/aelassas/servy/issues/6))
+* [x] Support environment variable expansion ([#6](https://github.com/aelassas/servy/issues/6))
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
