@@ -91,7 +91,8 @@ namespace Servy.Core.Helpers
                 return "\"\"";
 
             // Escape internal quotes and trim end '\'
-            string escaped = input.Replace("\"", "\\\"").TrimEnd('\\');
+            //string escaped = input.Replace("\"", "\\\"").TrimEnd('\\');
+            string escaped = input.Replace("\"", "\"\"").TrimEnd('\\');
 
             // Wrap in quotes
             escaped = $"\"{escaped}\"";
