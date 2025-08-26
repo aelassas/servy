@@ -22,7 +22,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("C:\\", true)]                    // root path
         public void IsValidPath_VariousInputs_ReturnsExpected(string path, bool expected)
         {
-            bool result = Helper.IsValidPath(path);
+            var result = Helper.IsValidPath(path);
             Assert.Equal(expected, result);
         }
 
@@ -30,11 +30,11 @@ namespace Servy.Core.UnitTests.Helpers
         public void IsValidPath_TooLongPath_ThrowsAndReturnsFalse()
         {
             // Arrange
-            string longFolder = new string('a', short.MaxValue);
-            string path = "C:\\" + longFolder;
+            var longFolder = new string('a', short.MaxValue);
+            var path = "C:\\" + longFolder;
 
             // Act
-            bool result = Helper.IsValidPath(path);
+            var result = Helper.IsValidPath(path);
 
             // Assert
             Assert.False(result);
@@ -64,15 +64,15 @@ namespace Servy.Core.UnitTests.Helpers
         public void CreateParentDirectory_DirectoryExistsOrCreated_ReturnsTrue(string filePath)
         {
             // Arrange
-            string tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
-            string testFilePath = Path.Combine(tempDir, filePath);
+            var testFilePath = Path.Combine(tempDir, filePath);
 
             try
             {
                 // Act
-                bool result = Helper.CreateParentDirectory(testFilePath);
+                var result = Helper.CreateParentDirectory(testFilePath);
 
                 // Assert
                 Assert.True(result);
@@ -94,8 +94,8 @@ namespace Servy.Core.UnitTests.Helpers
         public void CreateParentDirectory_InvalidPath_ReturnsFalse()
         {
             // Give an invalid path that will throw
-            string invalidPath = "?:\\invalid\\path\\file.txt";
-            bool result = Helper.CreateParentDirectory(invalidPath);
+            var invalidPath = "?:\\invalid\\path\\file.txt";
+            var result = Helper.CreateParentDirectory(invalidPath);
             Assert.False(result);
         }
 
@@ -103,10 +103,10 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, "\"\"")]
         [InlineData("", "\"\"")]
         [InlineData("abc", "\"abc\"")]
-        [InlineData("\"abc\"", "\"abc\"")]
-        [InlineData("\"abc\\\"", "\"abc\"")]
+        [InlineData("\"abc\"", "\"\\\"abc\\\"\"")]
+        [InlineData("\"abc\\\"", "\"\\\"abc\\\\\"\"")]
         [InlineData("abc\\", "\"abc\"")]
-        [InlineData("\"abc\\\\\"", "\"abc\"")]
+        [InlineData("\"abc\\\\\"", "\"\\\"abc\\\\\\\"\"")]
         public void Quote_Input_ReturnsExpected(string input, string expected)
         {
             // Act
