@@ -2,7 +2,6 @@
 using Servy.Core.EnvironmentVariables;
 using System;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Servy.Service.CommandLine
 {
@@ -21,7 +20,10 @@ namespace Servy.Service.CommandLine
         /// </returns>
         public static StartOptions Parse(string[] fullArgs)
         {
-            fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
+            //fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
+
+            if (fullArgs == null || fullArgs.Length == 0)
+                return new StartOptions();
 
             return new StartOptions
             {

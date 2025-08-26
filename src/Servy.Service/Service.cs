@@ -343,10 +343,21 @@ namespace Servy.Service
 
                 try
                 {
+                    var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
+
+                    foreach (var kvp in expandedEnv)
+                    {
+                        LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
+                    }
+
+                    var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
+
+                    LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
+
                     var startInfo = new ProcessStartInfo
                     {
                         FileName = options.PreLaunchExecutablePath,
-                        Arguments = options.PreLaunchExecutableArgs ?? string.Empty,
+                        Arguments = args,
                         WorkingDirectory = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
                             ? options.WorkingDirectory
                             : options.PreLaunchWorkingDirectory,
@@ -357,12 +368,9 @@ namespace Servy.Service
                     };
 
                     // Apply environment variables
-                    foreach (var envVar in options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>())
+                    foreach (var envVar in expandedEnv)
                     {
-                        if (!string.IsNullOrWhiteSpace(envVar?.Name))
-                        {
-                            startInfo.Environment[envVar.Name] = envVar.Value ?? string.Empty;
-                        }
+                        startInfo.Environment[envVar.Key] = envVar.Value ?? string.Empty;
                     }
 
                     using (var process = new Process { StartInfo = startInfo })

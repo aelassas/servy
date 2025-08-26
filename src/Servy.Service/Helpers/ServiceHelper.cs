@@ -43,6 +43,7 @@ namespace Servy.Service.Helpers
             return args.Select(a => a.Trim(' ', '"')).ToArray();
         }
 
+
         /// <inheritdoc />
         public void LogStartupArguments(ILogger logger, string[] args, StartOptions options)
         {
@@ -134,7 +135,8 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public StartOptions InitializeStartup(ILogger logger)
         {
-            var fullArgs = GetSanitizedArgs();
+            //var fullArgs = GetSanitizedArgs();
+            var fullArgs = _commandLineProvider.GetArgs();
             var options = StartOptionsParser.Parse(fullArgs);
 
             LogStartupArguments(logger, fullArgs, options);
