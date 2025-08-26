@@ -142,7 +142,7 @@ namespace Servy.CLI.Options
         /// Gets or sets environment variables for the process.
         /// Optional.
         /// </summary>
-        [Option("env", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue, separated by semicolons (;). Use \\= to escape '=' and \\; to escape ';'. To include a literal backslash before '=', ';', or at the end of a line, use double backslashes (\\\\). Supports environment variable expansion, example: MY_VAR1=%ProgramData%\\MyApp; MY_VAR2=%MY_VAR1%\\bin")]
+        [Option("env", HelpText = "Environment variables for the process. Enter variables in the format varName=varValue, separated by semicolons (;). Use \\= to escape '=' and \\; to escape ';'. To include a literal backslash before '=', ';', or at the end of a line, use double backslashes (\\\\). Supports environment variable expansion, example: VAR1=%ProgramData%\\MyApp; VAR2=%VAR1%\\bin")]
         public string EnvironmentVariables { get; set; }
 
         /// <summary>
