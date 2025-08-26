@@ -67,7 +67,7 @@ namespace Servy.Service.Helpers
             // Now expand all values using the merged dictionary
             foreach (var key in result.Keys.ToList())
             {
-                result[key] = ExpandWithDictionary(result[key], result);
+                result[key] = ExpandWithDictionary(result[key]!, result);
             }
 
             return result;
@@ -83,7 +83,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// The input string with all environment variable references expanded.
         /// </returns>
-        public static string? ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
+        public static string ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
         {
             return ExpandWithDictionary(input, expandedEnv);
         }
@@ -96,7 +96,7 @@ namespace Servy.Service.Helpers
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string? ExpandWithDictionary(string? value, IDictionary<string, string?> variables)
+        private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables)
         {
             if (string.IsNullOrEmpty(value))
                 return value;
