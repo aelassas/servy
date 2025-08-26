@@ -105,8 +105,8 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("\"abc\"", "\"\"\"abc\"\"\"")]
         [InlineData("\"abc\\\"", "\"\"\"abc\\\"\"\"")]
         [InlineData("abc\\", "\"abc\"")]
-        [InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
         //[InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
+        [InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
         public void Quote_Input_ReturnsExpected(string input, string expected)
         {
             // Act
