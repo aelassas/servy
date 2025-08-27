@@ -56,6 +56,9 @@ function Remove-FileOrFolder {
 }
 
 # === BUILD PROJECTS ===
+Write-Host "Restoring NuGet packages..."
+nuget restore "..\Servy.sln"
+
 Write-Host "Building Servy WPF..."
 & (Join-Path $ScriptDir "..\src\Servy\publish.ps1") -Version $version
 
