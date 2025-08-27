@@ -34,10 +34,10 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
-* [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
 * [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
+* [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
 * [Export/Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)
 * [Security](https://github.com/aelassas/servy/wiki/Security)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
