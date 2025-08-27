@@ -82,7 +82,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
   * [x] Start, stop, restart, and uninstall services
   * [x] Display service status and uptime
   * [x] Add search and filter functionality for services
-  * [ ] Provide notifications for service events (failures, restarts)
+  * [ ] Provide toast and email notifications for service events (failures)
   * [x] Provide a log viewer
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [ ] Support automatic recovery actions beyond simple restart (e.g., run scripts)
