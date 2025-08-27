@@ -67,6 +67,9 @@ Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.e
 ; Manager
 Source: "..\src\Servy.Manager\bin\Release\net8.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
+; taskschd
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
