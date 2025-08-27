@@ -695,7 +695,7 @@ namespace Servy.Service
                     {
                         if (code != 0)
                         {
-                            _logger.Info("Recovery disabled and child process failed. Stopping service.");
+                            _logger.Error("Recovery disabled and child process failed. Stopping service.");
                             Stop();
                         }
                         else
