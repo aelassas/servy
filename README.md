@@ -52,6 +52,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * CLI for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
+* Environment variable expansion supported in both environment variables and process parameters (e.g., `VAR1=%ProgramData%\MyApp`, `VAR2=%VAR1%\bin`)
 * Run services as Local System, local user, or domain account
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Run pre-launch script execution before starting the service, with retries, timeout, logging and failure handling
