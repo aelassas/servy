@@ -21,7 +21,7 @@
 
 # Servy
 
-Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM and FireDaemon.
+Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM, WinSW and FireDaemon.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), allowing you to create, configure, and manage Windows services either interactively or through scripts and CI/CD pipelines. Additionally, it provides a Manager interface for quickly monitoring and managing all installed services.
 
