@@ -60,6 +60,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * Monitor and manage services in real-time
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
 * Export/Import service configurations
+* Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
 ## Roadmap
