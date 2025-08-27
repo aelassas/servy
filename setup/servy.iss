@@ -3,7 +3,7 @@
 
 #define MyAppName "Servy"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.0"  ; default if not provided
+  #define MyAppVersion "1.0"  ; default if not provided
 #endif
 #ifndef MyAppPlatform
   #define MyAppPlatform "net8.0"  ; default if not provided
@@ -68,7 +68,7 @@ Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.e
 Source: "..\src\Servy.Manager\bin\Release\net8.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; taskschd
-Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -87,8 +87,7 @@ Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhid
 Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
 
 [UninstallDelete]
-Type: dirifempty; Name: "{app}\cli"
-Type: filesandordirs; Name: "{app}\cli"
+; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
 function GetUninstallString(): String;
