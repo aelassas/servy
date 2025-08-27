@@ -70,6 +70,9 @@ Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignor
 Source: "..\src\Servy.CLI\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 Source: "..\src\Servy.CLI\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
+; taskschd
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
