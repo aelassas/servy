@@ -64,9 +64,11 @@ Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.e
 ; CLI appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
-
 ; Manager app
 Source: "..\src\Servy.Manager\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}\manager"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
+
+; taskschd
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

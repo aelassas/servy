@@ -159,8 +159,8 @@ namespace Servy.Services
             try
             {
                 var rotationSizeValue = int.Parse(rotationSize);
-                var heartbeatIntervalValue = int.Parse(heartbeatInterval);
-                var maxFailedChecksValue = int.Parse(maxFailedChecks);
+                var heartbeatIntervalValue = enableHealthMonitoring ? int.Parse(heartbeatInterval) : 0;
+                var maxFailedChecksValue = enableHealthMonitoring ? int.Parse(maxFailedChecks) : 0;
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
                 var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
