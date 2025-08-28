@@ -87,7 +87,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taskschd", "taskschd", "{92
 		setup\taskschd\ServyFailureNotification.ps1 = setup\taskschd\ServyFailureNotification.ps1
 		setup\taskschd\ServyFailureNotification.vbs = setup\taskschd\ServyFailureNotification.vbs
 		setup\taskschd\ServyFailureNotification.xml = setup\taskschd\ServyFailureNotification.xml
-		setup\taskschd\Show-ServiceFailure.ps1 = setup\taskschd\Show-ServiceFailure.ps1
 	EndProjectSection
 EndProject
 Global
