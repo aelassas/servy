@@ -19,7 +19,7 @@
 
 ## .NET Framework 4.8 Version
 
-Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM and FireDaemon.
+Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM, WinSW and FireDaemon.
 
 Servy offers both a GUI and a Command-Line Interface (CLI), allowing you to create, configure, and manage Windows services either interactively or through scripts and CI/CD pipelines. Additionally, it provides a Manager interface for quickly monitoring and managing all installed services.
 
@@ -34,10 +34,10 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
-* [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
 * [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
+* [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
 * [Export/Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)
 * [Security](https://github.com/aelassas/servy/wiki/Security)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
