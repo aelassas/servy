@@ -1,7 +1,7 @@
 # publish.ps1
 # Main setup bundle script for .NET Framework build of Servy
 # Requirements:
-#  1. Add msbuild to PATH
+#  1. Add msbuild and nuget.exe to PATH
 #  2. Inno Setup installed (ISCC.exe path updated if different)
 #  3. 7-Zip installed and 7z in PATH
 
