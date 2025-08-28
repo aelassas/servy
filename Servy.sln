@@ -79,6 +79,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Manager.UnitTests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UI.UnitTests", "tests\Servy.UI.UnitTests\Servy.UI.UnitTests.csproj", "{62ABE4F3-41AB-4ADC-AF50-C77992E5846D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "taskschd", "taskschd", "{9253D26F-5A46-4EE3-B0B7-0097AB90384E}"
+	ProjectSection(SolutionItems) = preProject
+		setup\taskschd\ServyFailureEmail.ps1 = setup\taskschd\ServyFailureEmail.ps1
+		setup\taskschd\ServyFailureEmail.vbs = setup\taskschd\ServyFailureEmail.vbs
+		setup\taskschd\ServyFailureEmail.xml = setup\taskschd\ServyFailureEmail.xml
+		setup\taskschd\ServyFailureNotification.ps1 = setup\taskschd\ServyFailureNotification.ps1
+		setup\taskschd\ServyFailureNotification.vbs = setup\taskschd\ServyFailureNotification.vbs
+		setup\taskschd\ServyFailureNotification.xml = setup\taskschd\ServyFailureNotification.xml
+		setup\taskschd\Show-ServiceFailure.ps1 = setup\taskschd\Show-ServiceFailure.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -174,6 +185,7 @@ Global
 		{7A15D976-7395-4827-BB96-9362167C7D26} = {7D103998-9A71-474A-A668-10311727E6E7}
 		{9947CE01-9A62-4503-92DD-25723F8EA56B} = {50795869-2933-430F-98BD-956C414ABBE4}
 		{62ABE4F3-41AB-4ADC-AF50-C77992E5846D} = {50795869-2933-430F-98BD-956C414ABBE4}
+		{9253D26F-5A46-4EE3-B0B7-0097AB90384E} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}
