@@ -772,7 +772,9 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à A service with this name already exists. Would you like to replace it?.
+        ///   Recherche une chaîne localisée semblable à A service with this name already exists. Would you like to replace it?
+        ///
+        ///If the service is disabled and marked for deletion, the installation will fail until you restart your PC..
         /// </summary>
         public static string Msg_ServiceAlreadyExists {
             get {
