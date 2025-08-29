@@ -1,7 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using System.Threading.Tasks;
 
-namespace Servy.Helpers
+namespace Servy.Validators
 {
     /// <summary>
     /// Provides functionality to validate service configurations.
@@ -17,9 +17,12 @@ namespace Servy.Helpers
         /// <param name="wrapperExePath">
         /// Optional path to the wrapper executable, used for validation.
         /// </param>
+        /// <param name="checkServiceStatus">
+        /// Optional flag to check service status on validation.
+        /// </param>
         /// <returns>
         /// A <see cref="Task{TResult}"/> that resolves to <c>true</c> if the configuration is valid; otherwise <c>false</c>.
         /// </returns>
-        Task<bool> Validate(ServiceDto dto, string wrapperExePath = null);
+        Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true);
     }
 }

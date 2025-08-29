@@ -94,9 +94,9 @@
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
-    <Compile Include="Helpers\IServiceConfigurationValidator.cs" />
+    <Compile Include="Validators\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />
-    <Compile Include="Helpers\ServiceConfigurationValidator.cs" />
+    <Compile Include="Validators\ServiceConfigurationValidator.cs" />
     <Compile Include="Mappers\ServiceConfigurationMapper.cs" />
     <Compile Include="Models\ServiceConfiguration.cs" />
     <Compile Include="Resources\Strings.Designer.cs">

@@ -836,7 +836,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Please choose a different name..
+        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Choose a different name..
         /// </summary>
         public static string Msg_ServiceDisabled {
             get {

@@ -12,7 +12,7 @@ using System.IO;
 using System.Threading.Tasks;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
-namespace Servy.Helpers
+namespace Servy.Validators
 {
     /// <summary>
     /// Validates all required parameters for service configuration.
@@ -46,7 +46,7 @@ namespace Servy.Helpers
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null)
+        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
@@ -54,15 +54,18 @@ namespace Servy.Helpers
                 return false;
             }
 
-            var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
-            if (serviceNameExists)
+            if (checkServiceStatus)
             {
-                var startupType = _serviceManager.GetServiceStartupType(dto.Name);
-
-                if (startupType == Core.Enums.ServiceStartType.Disabled)
+                var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
+                if (serviceNameExists)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
-                    return false;
+                    var startupType = _serviceManager.GetServiceStartupType(dto.Name);
+
+                    if (startupType == Core.Enums.ServiceStartType.Disabled)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
+                        return false;
+                    }
                 }
             }
 
