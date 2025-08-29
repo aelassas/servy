@@ -5,7 +5,7 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
-using System;
+using Servy.Core.Services;
 
 namespace Servy.CLI.Validators
 {
@@ -21,6 +21,17 @@ namespace Servy.CLI.Validators
         private const int MinPreLaunchTimeoutSeconds = 5;
         private const int MinPreLaunchRetryAttempts = 0;
 
+        private readonly IServiceManager _serviceManager;
+
+        /// <summary>
+        /// Creates a new service validator. 
+        /// </summary>
+        /// <param name="serviceManager">Service manager.</param>
+        public ServiceInstallValidator(IServiceManager serviceManager)
+        {
+            _serviceManager = serviceManager;
+        }
+
         /// <summary>
         /// Validates the install service options.
         /// </summary>
@@ -30,6 +41,17 @@ namespace Servy.CLI.Validators
         {
             if (string.IsNullOrWhiteSpace(opts.ServiceName) || string.IsNullOrWhiteSpace(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_ValidationError);
+
+            var serviceNameExists = _serviceManager.IsServiceInstalled(opts.ServiceName);
+            if (serviceNameExists)
+            {
+                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
+
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    return CommandResult.Fail(Strings.Msg_ServiceDisabled);
+                }
+            }
 
             if (!Helper.IsValidPath(opts.ProcessPath) || !File.Exists(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);

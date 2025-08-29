@@ -6,10 +6,11 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
-using Servy.Helpers;
 using Servy.Resources;
 using Servy.UI.Services;
+using Servy.Validators;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Windows;
 using static Servy.Config.AppConfig;
@@ -332,7 +333,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
                 {
                     return;
                 }
@@ -364,7 +365,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
                 {
                     return;
                 }
