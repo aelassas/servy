@@ -4,6 +4,7 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
+using Servy.Core.Services;
 using Servy.Resources;
 using Servy.UI.Services;
 using System;
@@ -30,14 +31,17 @@ namespace Servy.Helpers
 
         #endregion
 
+        private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
         /// Creates a new service configuration validator.
         /// </summary>
+        /// <param name="serviceManager">Service manager.</param>
         /// <param name="messageBoxService">MessageBox service.</param>
-        public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
+        public ServiceConfigurationValidator(IServiceManager serviceManager, IMessageBoxService messageBoxService)
         {
+            _serviceManager = serviceManager;
             _messageBoxService = messageBoxService;
         }
 
@@ -48,6 +52,18 @@ namespace Servy.Helpers
             {
                 await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, AppConfig.Caption);
                 return false;
+            }
+
+            var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
+            if (serviceNameExists)
+            {
+                var startupType = _serviceManager.GetServiceStartupType(dto.Name);
+
+                if (startupType == Core.Enums.ServiceStartType.Disabled)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
+                    return false;
+                }
             }
 
             if (!CoreHelper.IsValidPath(dto.ExecutablePath) || !File.Exists(dto.ExecutablePath))
