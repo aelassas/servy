@@ -239,12 +239,22 @@ begin
     begin
       message := 'A newer version of Servy is already installed. Would you like to replace it with this older version?';
     end
-    else if installedVersion = myAppVersion then
+    else
     begin
       message := 'The same version of Servy is already installed. Would you like to repair it?';
     end;
 
-    v := MsgBox(message, mbInformation, MB_YESNO);
+    if WizardSilent then
+    begin
+      // Auto-accept in silent mode
+      v := IDYES;
+    end
+    else
+    begin
+      // Interactive mode: show dialog
+      v := MsgBox(message, mbInformation, MB_YESNO);
+    end;
+
     if v <> IDYES then
     begin
       Result := False;
