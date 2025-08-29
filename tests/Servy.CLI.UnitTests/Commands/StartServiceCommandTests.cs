@@ -21,6 +21,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new StartServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             _mockServiceManager.Setup(sm => sm.StartService("TestService")).Returns(true);
 
             // Act
@@ -50,6 +52,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new StartServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             _mockServiceManager.Setup(sm => sm.StartService("TestService")).Returns(false);
 
             // Act
@@ -65,6 +69,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new StartServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             _mockServiceManager.Setup(sm => sm.StartService("TestService")).Throws<UnauthorizedAccessException>();
 
             // Act
@@ -80,6 +86,8 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new StartServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
             _mockServiceManager.Setup(sm => sm.StartService("TestService")).Throws<Exception>();
 
             // Act

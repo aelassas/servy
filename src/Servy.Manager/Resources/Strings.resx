@@ -373,6 +373,12 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
     <value>An error occurred while switching tabs. Please try again.</value>
   </data>
-  
+
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>A service with this name already exists. Would you like to replace it?</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>The specified service is disabled.</value>
+  </data>
 
 </root>

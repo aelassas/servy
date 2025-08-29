@@ -85,6 +85,14 @@ namespace Servy.Manager.Services
 
             try
             {
+                var startupType = _serviceManager.GetServiceStartupType(service.Name);
+
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
+                    return false;
+                }
+
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
@@ -118,6 +126,14 @@ namespace Servy.Manager.Services
 
             try
             {
+                var startupType = _serviceManager.GetServiceStartupType(service.Name);
+
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
+                    return false;
+                }
+
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
@@ -152,6 +168,14 @@ namespace Servy.Manager.Services
 
             try
             {
+                var startupType = _serviceManager.GetServiceStartupType(service.Name);
+
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
+                    return false;
+                }
+
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
@@ -232,6 +256,18 @@ namespace Servy.Manager.Services
 
             try
             {
+                var exists = _serviceManager.IsServiceInstalled(service.Name);
+
+                if (exists)
+                {
+                    var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, AppConfig.Caption);
+                    if (!result)
+                    {
+                        return true;
+                    }
+
+                }
+
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
