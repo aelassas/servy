@@ -605,13 +605,16 @@ namespace Servy.ViewModels
             null
             )
         {
+            var serviceManager = new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null, new WmiSearcher());
             ServiceCommands = new ServiceCommands(
                 ModelToServiceDto,
                 BindServiceDtoToModel,
-                new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null, new WmiSearcher()),
+                serviceManager,
                 new MessageBoxService(),
                 new FileDialogService(),
-                new ServiceConfigurationValidator(new MessageBoxService())
+                new ServiceConfigurationValidator(
+                 serviceManager,
+                new MessageBoxService())
             );
         }
 

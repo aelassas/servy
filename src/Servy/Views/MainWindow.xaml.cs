@@ -95,7 +95,7 @@ namespace Servy.Views
                 serviceManager,
                 messageBoxService,
                 fileDialogService,
-                new ServiceConfigurationValidator(messageBoxService)
+                new ServiceConfigurationValidator(serviceManager, messageBoxService)
                 );
 
             mainViewModel.ServiceCommands = serviceCommands;
