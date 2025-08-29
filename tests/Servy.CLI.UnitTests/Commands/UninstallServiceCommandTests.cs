@@ -24,6 +24,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(true));
 
             // Act
@@ -53,6 +54,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(false));
 
             // Act
@@ -68,6 +70,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<UnauthorizedAccessException>();
 
             // Act
@@ -83,6 +86,7 @@ namespace Servy.CLI.UnitTests.Commands
         {
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
+            _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<Exception>();
 
             // Act
