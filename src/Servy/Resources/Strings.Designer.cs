@@ -818,11 +818,29 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A service with this name already exists. Would you like to replace it?.
+        /// </summary>
+        public static string Msg_ServiceAlreadyExists {
+            get {
+                return ResourceManager.GetString("Msg_ServiceAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was created successfully..
         /// </summary>
         public static string Msg_ServiceCreated {
             get {
                 return ResourceManager.GetString("Msg_ServiceCreated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Please choose a different name..
+        /// </summary>
+        public static string Msg_ServiceDisabled {
+            get {
+                return ResourceManager.GetString("Msg_ServiceDisabled", resourceCulture);
             }
         }
         
