@@ -399,8 +399,10 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
-    <value>A service with this name already exists. Would you like to replace it?</value>
-  </data>
+  <value>A service with this name already exists. Would you like to replace it?
+
+If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
+</data>
 
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>
