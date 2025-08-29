@@ -40,12 +40,6 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
-                }
-
                 var success = _serviceManager.StopService(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service stopped successfully.")

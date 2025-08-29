@@ -319,13 +319,6 @@ namespace Servy.Services
                     return;
                 }
 
-                var startupType = _serviceManager.GetServiceStartupType(serviceName);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
-                    return;
-                }
-
                 bool success = _serviceManager.StopService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);

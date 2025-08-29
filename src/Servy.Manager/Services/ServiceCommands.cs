@@ -131,14 +131,6 @@ namespace Servy.Manager.Services
 
             try
             {
-                var startupType = _serviceManager.GetServiceStartupType(service.Name);
-
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
-                    return false;
-                }
-
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
