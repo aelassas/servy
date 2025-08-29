@@ -10,7 +10,7 @@ using Servy.UI.Services;
 using System.IO;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
-namespace Servy.Helpers
+namespace Servy.Validators
 {
     /// <summary>
     /// Validates all required parameters for service configuration.
@@ -44,7 +44,7 @@ namespace Servy.Helpers
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null)
+        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true)
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
@@ -52,15 +52,18 @@ namespace Servy.Helpers
                 return false;
             }
 
-            var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
-            if (serviceNameExists)
+            if (checkServiceStatus)
             {
-                var startupType = _serviceManager.GetServiceStartupType(dto.Name);
-
-                if (startupType == Core.Enums.ServiceStartType.Disabled)
+                var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
+                if (serviceNameExists)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
-                    return false;
+                    var startupType = _serviceManager.GetServiceStartupType(dto.Name);
+
+                    if (startupType == Core.Enums.ServiceStartType.Disabled)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
+                        return false;
+                    }
                 }
             }
 
@@ -124,14 +127,14 @@ namespace Servy.Helpers
                 }
             }
 
-            string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+            var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
             {
                 await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
                 return false;
             }
 
-            string normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
+            var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
             if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
             {
                 await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
@@ -172,7 +175,7 @@ namespace Servy.Helpers
                 return false;
             }
 
-            string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+            var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out var preLaunchEnvErrorMsg))
             {
                 await _messageBoxService.ShowErrorAsync(preLaunchEnvErrorMsg, AppConfig.Caption);

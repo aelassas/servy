@@ -268,6 +268,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Choose a different name..
+        /// </summary>
+        public static string Msg_ServiceDisabled {
+            get {
+                return ResourceManager.GetString("Msg_ServiceDisabled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was removed successfully..
         /// </summary>
         public static string Msg_ServiceRemoved {
