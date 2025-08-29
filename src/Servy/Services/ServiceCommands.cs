@@ -6,7 +6,6 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
-using Servy.Helpers;
 using Servy.Resources;
 using Servy.UI.Services;
 using Servy.Validators;
@@ -248,6 +247,13 @@ namespace Servy.Services
                 return;
             }
 
+            var exists = _serviceManager.IsServiceInstalled(serviceName);
+            if (!exists)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                return;
+            }
+
             try
             {
                 bool success = await _serviceManager.UninstallService(serviceName);
@@ -275,6 +281,20 @@ namespace Servy.Services
         {
             try
             {
+                var exists = _serviceManager.IsServiceInstalled(serviceName);
+                if (!exists)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    return;
+                }
+
+                var startupType = _serviceManager.GetServiceStartupType(serviceName);
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
+                    return;
+                }
+
                 bool success = _serviceManager.StartService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
@@ -292,6 +312,20 @@ namespace Servy.Services
         {
             try
             {
+                var exists = _serviceManager.IsServiceInstalled(serviceName);
+                if (!exists)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    return;
+                }
+
+                var startupType = _serviceManager.GetServiceStartupType(serviceName);
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
+                    return;
+                }
+
                 bool success = _serviceManager.StopService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
@@ -309,6 +343,20 @@ namespace Servy.Services
         {
             try
             {
+                var exists = _serviceManager.IsServiceInstalled(serviceName);
+                if (!exists)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    return;
+                }
+
+                var startupType = _serviceManager.GetServiceStartupType(serviceName);
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
+                    return;
+                }
+
                 bool success = _serviceManager.RestartService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);

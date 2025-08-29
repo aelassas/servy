@@ -405,6 +405,11 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
-  
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>The specified service was not found.</value>
+  </data>
+  <data name="Msg_ServiceDisabledError" xml:space="preserve">
+    <value>The specified service is disabled.</value>
+  </data>
   
 </root>

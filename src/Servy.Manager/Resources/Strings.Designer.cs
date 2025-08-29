@@ -772,6 +772,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A service with this name already exists. Would you like to replace it?.
+        /// </summary>
+        public static string Msg_ServiceAlreadyExists {
+            get {
+                return ResourceManager.GetString("Msg_ServiceAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified service is disabled..
+        /// </summary>
+        public static string Msg_ServiceDisabledError {
+            get {
+                return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was installed successfully..
         /// </summary>
         public static string Msg_ServiceInstalled {
