@@ -398,4 +398,13 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Servy Manager App not found.</value>
   </data>
 
+  <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
+    <value>A service with this name already exists. Would you like to replace it?</value>
+  </data>
+  
+  <data name="Msg_ServiceDisabled" xml:space="preserve">
+    <value>A disabled service with this name already exists. Please choose a different name.</value>
+  </data>
+  
+
 </root>

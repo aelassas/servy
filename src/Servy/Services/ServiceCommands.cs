@@ -156,6 +156,16 @@ namespace Servy.Services
                 return; // Validation failed, errors shown in MessageBox
             }
 
+            if (_serviceManager.IsServiceInstalled(dto.Name))
+            {
+                var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
+
+                if (!res)
+                {
+                    return;
+                }
+            }
+
             try
             {
                 var rotationSizeValue = int.Parse(rotationSize);
@@ -500,7 +510,7 @@ namespace Servy.Services
             var app = (App)Application.Current;
             var managerAppPath = app.ManagerAppPublishPath;
 
-            if(string.IsNullOrWhiteSpace(app.ManagerAppPublishPath)|| !File.Exists(app.ManagerAppPublishPath))
+            if (string.IsNullOrWhiteSpace(app.ManagerAppPublishPath) || !File.Exists(app.ManagerAppPublishPath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppNotFound, Caption);
                 return;
