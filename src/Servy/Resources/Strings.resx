@@ -403,7 +403,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
 
   <data name="Msg_ServiceDisabled" xml:space="preserve">
-    <value>A disabled service with this name already exists. Please choose a different name.</value>
+    <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
   
   

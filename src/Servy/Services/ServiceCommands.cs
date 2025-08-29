@@ -9,6 +9,7 @@ using Servy.Core.Services;
 using Servy.Helpers;
 using Servy.Resources;
 using Servy.UI.Services;
+using Servy.Validators;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -335,7 +336,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
                 {
                     return;
                 }
@@ -367,7 +368,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
                 {
                     return;
                 }

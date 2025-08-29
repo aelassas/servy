@@ -5,6 +5,7 @@ using Servy.Core.Services;
 using Servy.Helpers;
 using Servy.Services;
 using Servy.UI.Services;
+using Servy.Validators;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -187,7 +188,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(Task.FromResult(true));
 
             var serviceCommands = new ServiceCommands(
                 modelToServiceDto: () => new ServiceDto(),
@@ -214,7 +215,7 @@ namespace Servy.UnitTests.Services
             var path = "export.json";
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(Task.FromResult(true));
 
             var serviceCommands = new ServiceCommands(
                 modelToServiceDto: () => new ServiceDto(),
@@ -241,7 +242,7 @@ namespace Servy.UnitTests.Services
             var xmlContent = @"<ServiceDto><Name>TestService</Name><ExecutablePath>C:\MyApp.exe</ExecutablePath></ServiceDto>";
             var path = "test.xml";
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(Task.FromResult(true));
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
@@ -283,7 +284,7 @@ namespace Servy.UnitTests.Services
             var jsonContent = "{\"Name\":\"TestService\", \"ExecutablePath\":\"C:\\\\MyApp.exe\"}";
             var path = "test.json";
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>())).Returns(Task.FromResult(true));
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
