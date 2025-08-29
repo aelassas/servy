@@ -845,6 +845,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified service is disabled..
+        /// </summary>
+        public static string Msg_ServiceDisabledError {
+            get {
+                return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified service was not found..
+        /// </summary>
+        public static string Msg_ServiceNotFound {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was removed successfully..
         /// </summary>
         public static string Msg_ServiceRemoved {

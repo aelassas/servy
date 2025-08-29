@@ -1,5 +1,7 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
+using Servy.Core.Enums;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -31,6 +33,18 @@ namespace Servy.CLI.Commands
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
+
+                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
+                if (!exists)
+                {
+                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
+                }
+
+                var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
+                if (startupType == ServiceStartType.Disabled)
+                {
+                    return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
+                }
 
                 var success = _serviceManager.StopService(opts.ServiceName);
                 return success

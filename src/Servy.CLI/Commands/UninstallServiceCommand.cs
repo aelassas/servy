@@ -1,5 +1,6 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
@@ -40,6 +41,12 @@ namespace Servy.CLI.Commands
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
+
+                var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
+                if (!exists)
+                {
+                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
+                }
 
                 // Attempt to uninstall the service
                 var success = await _serviceManager.UninstallService(opts.ServiceName);
