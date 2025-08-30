@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>servy</id>
+    <version>1.0.0</version>
+    <title>Servy</title>
+    <authors>Akram El Assas</authors>
+    <owners>Akram El Assas</owners>
+    <projectUrl>https://servy-win.github.io/</projectUrl>
+    <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Servy allows you to run any application as a native Windows service, with full management capabilities via GUI or CLI.</description>
+    <releaseNotes>Initial release of Servy. Installer is unsigned and may trigger a SmartScreen prompt.</releaseNotes>
+    <tags>windows service automation cli</tags>
+  </metadata>
+</package>
