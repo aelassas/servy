@@ -1,0 +1,25 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community
+in verifying that this package's contents are trustworthy.
+
+The installers for Servy can be downloaded from the official GitHub Releases page:
+
+https://github.com/aelassas/servy/releases/tag/v1.0
+
+Package: servy
+Version: 1.0.0
+Architecture: x64
+
+Installer URL:
+https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net48-x64-installer.exe
+
+Installer SHA256 Checksum:
+CE60EAC89E1ACAE4BC9E7DBFBBEBB9EA78CB2DF8BC76D1039DBD2B8081C2AE08
+
+To verify:
+1. Download the installer from the URL above.
+2. Compute the SHA256 checksum of the file.
+3. Ensure it matches the value provided in this document.
+
+This package does not contain the actual installer file; it simply downloads
+it from the official source and verifies it using the checksum.
