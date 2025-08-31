@@ -895,7 +895,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="process">Process to stop.</param>
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 5000)
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 30_000)
         {
             try
             {
