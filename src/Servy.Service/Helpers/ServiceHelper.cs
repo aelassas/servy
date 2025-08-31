@@ -1,4 +1,6 @@
-﻿#if !DEBUG
+﻿#if DEBUG
+using System.Reflection;
+#else
 using Servy.Core.Config;
 #endif
 using Servy.Core.EnvironmentVariables;
@@ -7,7 +9,6 @@ using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Servy.Service.Helpers
 {
