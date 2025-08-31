@@ -920,7 +920,10 @@ namespace Servy.Service
                     process.Kill();
                 }
 
-                process.WaitForExit(timeoutMs);
+                if (!process.WaitForExit(timeoutMs))
+                {
+                    _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds.");
+                }
             }
             catch (Exception ex)
             {
