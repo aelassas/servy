@@ -402,7 +402,7 @@ namespace Servy.Service
 
                         if (!process.WaitForExit(effectiveTimeout))
                         {
-                            try { KillProcessTree(process); } catch { /* ignore */ }
+                            try { ProcessHelper.KillProcessTree(process); } catch { /* ignore */ }
                             throw new System.TimeoutException($"Pre-launch process timed out after {effectiveTimeout / 1000} seconds.");
                         }
 
@@ -446,53 +446,6 @@ namespace Servy.Service
             }
 
             return false; // stop service start
-        }
-
-        /// <summary>
-        /// Recursively kills the specified process and all of its child processes.
-        /// This method is intended for .NET Framework 4.8 where <c>Process.Kill(true)</c>
-        /// is not available.
-        /// </summary>
-        /// <param name="process">The root process to terminate.</param>
-        /// <remarks>
-        /// Uses WMI (<c>Win32_Process</c>) to enumerate child processes by <c>ParentProcessId</c>.
-        /// Children are killed first, followed by the parent process, to avoid leaving orphaned processes.
-        /// Any exceptions (e.g., process already exited) are caught and ignored.
-        /// </remarks>
-        private static void KillProcessTree(Process process)
-        {
-            try
-            {
-                if (process == null || process.HasExited)
-                    return;
-
-                // Query all child processes for the given process ID
-                var searcher = new System.Management.ManagementObjectSearcher(
-                    $"Select * From Win32_Process Where ParentProcessId={process.Id}");
-
-                foreach (var obj in searcher.Get())
-                {
-                    var childPid = Convert.ToInt32(obj["ProcessId"]);
-                    try
-                    {
-                        using (var childProc = Process.GetProcessById(childPid))
-                        {
-                            KillProcessTree(childProc); // Recursively kill children
-                        }
-                    }
-                    catch
-                    {
-                        // Child process might have already exited
-                    }
-                }
-
-                // Kill the main process last
-                process.Kill();
-            }
-            catch
-            {
-                // Ignore any errors during process termination
-            }
         }
 
 
@@ -946,7 +899,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="process">Process to stop.</param>
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 5000)
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 30_000)
         {
             try
             {

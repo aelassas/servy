@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Service.Helpers;
+using System;
 using System.Diagnostics;
 
 namespace Servy.Service.ProcessManagement
@@ -76,7 +77,17 @@ namespace Servy.Service.ProcessManagement
         public void Start() => _process.Start();
 
         /// <inheritdoc/>
-        public void Kill() => _process.Kill();
+        public void Kill(bool entireProcessTree = true)
+        {
+            if (entireProcessTree)
+            {
+                ProcessHelper.KillProcessTree(_process);
+            }
+            else
+            {
+                _process.Kill();
+            }
+        }
 
         /// <inheritdoc/>
         public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
