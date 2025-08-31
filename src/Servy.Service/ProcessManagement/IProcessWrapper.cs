@@ -58,9 +58,10 @@ namespace Servy.Service.ProcessManagement
         void Start();
 
         /// <summary>
-        /// Immediately stops the associated process.
+        /// Immediately stops the associated process and optionally its child/descendent processes.
         /// </summary>
-        void Kill();
+        /// <param name="entireProcessTree">Kill entire process tree.</param>
+        void Kill(bool entireProcessTree = true);
 
         /// <summary>
         /// Instructs the process to wait for exit for a specified time.

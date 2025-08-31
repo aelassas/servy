@@ -75,7 +75,7 @@ namespace Servy.Service.ProcessManagement
         public void Start() => _process.Start();
 
         /// <inheritdoc/>
-        public void Kill() => _process.Kill(true);
+        public void Kill(bool entireProcessTree = true) => _process.Kill(entireProcessTree);
 
         /// <inheritdoc/>
         public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);

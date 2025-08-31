@@ -9,6 +9,7 @@
  */
 
 import process from "node:process"
+import { spawn } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -37,4 +38,22 @@ for (const [key, val] of Object.entries(process.env)) {
 // await new Promise((res) => setTimeout(res, 6 * 1000))
 process.stderr.write('boo!')
 
-process.exit(0)
+// process.exit(0)
+
+// start child process notepad.exe (Windows) detached
+const child = spawn('notepad.exe', [], {
+  detached: true,   // let child live independently
+  stdio: 'ignore'   // ignore stdio so parent can exit cleanly
+})
+
+// allow the child process to keep running after parent exits
+child.unref()
+
+// keep Node alive until key press
+process.stdin.setRawMode(true)
+process.stdin.resume()
+process.stdin.on('data', () => {
+  console.log('Exiting...')
+  child.kill() // kill the child process
+  process.exit(0)
+})
