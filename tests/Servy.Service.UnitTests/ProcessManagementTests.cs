@@ -104,6 +104,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.MainWindowHandle).Returns(new IntPtr(123456));
             mockProcess.Setup(p => p.CloseMainWindow()).Returns(false);
             mockProcess.Setup(p => p.Kill(It.IsAny<bool>()));
+            mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
