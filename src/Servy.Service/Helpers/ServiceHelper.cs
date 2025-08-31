@@ -167,7 +167,10 @@ namespace Servy.Service.Helpers
                 if (process != null && !process.HasExited)
                 {
                     process.Kill();
-                    process.WaitForExit();
+                    if (!process.WaitForExit(30_000))
+                    {
+                        logger?.Warning("Process did not exit within 30 seconds; continuing with restart.");
+                    }
                 }
 
                 startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);

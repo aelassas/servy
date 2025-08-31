@@ -49,7 +49,7 @@ namespace Servy.Service.Helpers
 
                 // Kill the main process last
                 process.Kill();
-                process.WaitForExit(30 * 1000); // safety timeout
+                process.WaitForExit(30_000); // safety timeout
             }
             catch
             {
