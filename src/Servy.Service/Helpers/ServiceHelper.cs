@@ -1,4 +1,6 @@
-﻿#if !DEBUG
+﻿#if DEBUG
+using System.Reflection;
+#else
 using Servy.Core.Config;
 #endif
 using Servy.Core.EnvironmentVariables;
