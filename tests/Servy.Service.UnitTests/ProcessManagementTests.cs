@@ -86,7 +86,7 @@ namespace Servy.Service.UnitTests
 
             mockProcess.Verify(p => p.CloseMainWindow(), Times.Once);
             mockProcess.Verify(p => p.WaitForExit(It.IsAny<int>()), Times.Once);
-            mockProcess.Verify(p => p.Kill(), Times.Never);
+            mockProcess.Verify(p => p.Kill(It.IsAny<bool>()), Times.Never);
 
             logger.Verify(l => l.Warning(It.IsAny<string>()), Times.Never);
         }
@@ -106,12 +106,12 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.HasExited).Returns(false);
             mockProcess.Setup(p => p.MainWindowHandle).Returns(new IntPtr(123456));
             mockProcess.Setup(p => p.CloseMainWindow()).Returns(false);
-            mockProcess.Setup(p => p.Kill());
+            mockProcess.Setup(p => p.Kill(It.IsAny<bool>()));
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
             mockProcess.Verify(p => p.CloseMainWindow(), Times.Once);
-            mockProcess.Verify(p => p.Kill(), Times.Once);
+            mockProcess.Verify(p => p.Kill(It.IsAny<bool>()), Times.Once);
 
             logger.Verify(l => l.Warning(It.IsAny<string>()), Times.Once);
         }

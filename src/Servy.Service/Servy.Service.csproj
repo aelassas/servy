@@ -69,6 +69,7 @@
     <Compile Include="CommandLine\StartOptions.cs" />
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelper.cs" />
+    <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="ProcessManagement\IProcessFactory.cs" />
     <Compile Include="ProcessManagement\IProcessWrapper.cs" />
     <Compile Include="Helpers\IServiceHelper.cs" />
