@@ -111,7 +111,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Verify(p => p.CloseMainWindow(), Times.Once);
             mockProcess.Verify(p => p.Kill(It.IsAny<bool>()), Times.Once);
 
-            logger.Verify(l => l.Warning(It.IsAny<string>()), Times.Once);
+            logger.Verify(l => l.Info(It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
