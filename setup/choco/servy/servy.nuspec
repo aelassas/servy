@@ -10,7 +10,12 @@
     <licenseUrl>https://opensource.org/licenses/MIT</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Servy allows you to run any application as a native Windows service, with full management capabilities via GUI or CLI.</description>
-    <releaseNotes>Initial release of Servy. Installer is unsigned and may trigger a SmartScreen prompt.</releaseNotes>
+    <releaseNotes>
+      Initial release of Servy. 
+      Installer is unsigned and may trigger a SmartScreen prompt. 
+      This is a known behavior for Inno Setup-based installers. 
+      See: https://jrsoftware.org/isinfo.php
+    </releaseNotes>
     <tags>windows service automation cli</tags>
   </metadata>
 </package>
