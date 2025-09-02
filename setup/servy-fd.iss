@@ -35,8 +35,14 @@ LicenseFile=..\LICENSE.txt
 OutputDir=.
 OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-frameworkdependent-installer
 SetupIconFile=..\src\Servy\servy.ico
-Compression=lzma
+
+Compression=lzma2
+LZMAAlgorithm=1
+LZMADictionarySize=65536
+LZMANumFastBytes=273
+LZMAUseSeparateProcess=yes
 SolidCompression=yes
+
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
