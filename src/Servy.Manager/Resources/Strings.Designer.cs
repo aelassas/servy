@@ -1009,7 +1009,7 @@ namespace Servy.Manager.Resources {
         
         /// <summary>
         ///   Recherche une chaîne localisée semblable à 
-        ///Servy Manager 1.0
+        ///Servy Manager {0}
         ///
         ///Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
         ///
