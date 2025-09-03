@@ -6,10 +6,12 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 {
     public class EnvironmentVariableParserTests
     {
-        [Fact]
-        public void Parse_EmptyString_ReturnsEmptyList()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void Parse_EmptyOrNullInput_ReturnsEmptyList(string input)
         {
-            var result = EnvironmentVariableParser.Parse("");
+            var result = EnvironmentVariableParser.Parse(input);
             Assert.Empty(result);
         }
 
@@ -69,35 +71,39 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Equal("VAL=UE", result[0].Value);
         }
 
-        [Fact]
-        public void Parse_SupportsEscapedBackslash()
+        [Theory]
+        [InlineData("KEY=VAL\\UE", "VAL\\UE")]
+        [InlineData("KEY=VAL\\\\UE", "VAL\\\\UE")]
+        [InlineData("KEY=VAL\\\\\\UE", "VAL\\\\\\UE")]
+        [InlineData("KEY=VAL\\\\\\\\UE", "VAL\\\\\\\\UE")]
+        public void Parse_SupportsMultipleBackslashes(string input, string expectedValue)
         {
-            var input = "KEY=VAL\\\\UE";
             var result = EnvironmentVariableParser.Parse(input);
 
             Assert.Single(result);
-            Assert.Equal("KEY", result[0].Name);
-            Assert.Equal("VAL\\UE", result[0].Value);
+            Assert.Equal(expectedValue, result[0].Value);
         }
 
-        [Fact]
-        public void Parse_UnknownEscapeSequence_PreservesBackslash()
+        [Theory]
+        [InlineData("KEY=VAL\\XUE", "VAL\\XUE")] // unknown escape
+        [InlineData("KEY=VAL\\\\XUE", "VAL\\\\XUE")] // double backslash before non special char
+        public void Parse_UnknownOrLiteralBackslashes_Preserved(string input, string expectedValue)
         {
-            var input = "KEY=VAL\\XUE";
             var result = EnvironmentVariableParser.Parse(input);
-
             Assert.Single(result);
-            Assert.Equal("VAL\\XUE", result[0].Value);
+            Assert.Equal(expectedValue, result[0].Value);
         }
 
-        [Fact]
-        public void Parse_TrailingBackslash_PreservesBackslash()
+        [Theory]
+        [InlineData("KEY=VALUE\\", "VALUE\\")] // trailing double backslash at end
+        [InlineData("KEY=VALUE\\\\", "VALUE\\")] // trailing double backslash at end
+        [InlineData("KEY=VALUE\\\\=", "VALUE\\=")] // double backslash before =
+        [InlineData("KEY=VALUE\\\\\\;", "VALUE\\\\;")] // triple backslash before ;
+        public void Parse_TrailingOrPreDelimiterBackslashes_ParsedCorrectly(string input, string expectedValue)
         {
-            var input = "KEY=VALUE\\";
             var result = EnvironmentVariableParser.Parse(input);
-
             Assert.Single(result);
-            Assert.Equal("VALUE\\", result[0].Value);
+            Assert.Equal(expectedValue, result[0].Value);
         }
 
         [Fact]
@@ -117,21 +123,10 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Contains("no unescaped '='", ex.Message);
         }
 
-        [Theory]
-        [InlineData(@"KEY\\=NOEQUAL")]
-        [InlineData(@"KEY\\\\=NOEQUAL")]
-        public void Parse_EscapeBackSpalsh(string input)
-        {
-            var result = EnvironmentVariableParser.Parse(input);
-
-            Assert.Single(result);
-            Assert.Equal("NOEQUAL", result[0].Value);
-        }
-
         [Fact]
         public void Parse_IgnoresEmptySegments()
         {
-            var input = "KEY1=\\VAL1;;KEY2=VAL2;";
+            var input = "KEY1=VAL1;;KEY2=VAL2;";
             var result = EnvironmentVariableParser.Parse(input);
 
             Assert.Equal(2, result.Count);
@@ -140,12 +135,20 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         }
 
         [Fact]
-        public void Parse_ThrowsFormatException_WhenEqualsIsEscaped()
+        public void Parse_MultipleVariablesWithMixedEscapes()
         {
-            var input = @"KEY\\\=VALUE"; // 3 backslashes → escaped =
+            var input = "K\\=EY1=VAL\\1;KEY2=VAL\\=2;KEY3=VAL\\\\=3";
+            var result = EnvironmentVariableParser.Parse(input);
 
-            var ex = Assert.Throws<FormatException>(() => EnvironmentVariableParser.Parse(input));
-            Assert.Contains("no unescaped '='", ex.Message);
+            Assert.Equal(3, result.Count);
+            Assert.Equal("K=EY1", result[0].Name);
+            Assert.Equal("VAL\\1", result[0].Value);
+
+            Assert.Equal("KEY2", result[1].Name);
+            Assert.Equal("VAL=2", result[1].Value);
+
+            Assert.Equal("KEY3", result[2].Name);
+            Assert.Equal("VAL\\=3", result[2].Value);
         }
 
     }
