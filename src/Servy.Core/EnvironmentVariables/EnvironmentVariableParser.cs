@@ -130,44 +130,88 @@ namespace Servy.Core.EnvironmentVariables
         }
 
         /// <summary>
-        /// Unescapes backslash-escaped characters: \=, \;, and \\ become =, ;, and \ respectively.
+        /// Unescapes backslash-escaped characters in environment variable strings.
+        /// <list type="bullet">
+        ///   <item>
+        ///     <description>
+        ///     Before <c>=</c> or <c>;</c>: keeps <c>N-1</c> backslashes, then appends the delimiter.  
+        ///     (e.g., <c>\=</c> → <c>=</c>, <c>\\=</c> → <c>\=</c>, <c>\\\=</c> → <c>\\=</c>).
+        ///     </description>
+        ///   </item>
+        ///   <item>
+        ///     <description>
+        ///     At the end of the string:  
+        ///     - A single backslash (<c>\</c>) is preserved.  
+        ///     - Two or more backslashes are collapsed to <c>⌊N/2⌋</c>.  
+        ///     (e.g., <c>\</c> → <c>\</c>, <c>\\</c> → <c>\</c>, <c>\\\</c> → <c>\\</c>, <c>\\\\</c> → <c>\\</c>).
+        ///     </description>
+        ///   </item>
+        ///   <item>
+        ///     <description>
+        ///     Elsewhere (not before <c>=</c>, <c>;</c>, or end-of-string), backslashes are preserved literally.
+        ///     </description>
+        ///   </item>
+        /// </list>
         /// </summary>
-        /// <param name="input">Input string to unescape.</param>
-        /// <returns>Unescaped string.</returns>
+        /// <param name="input">The input string to unescape.</param>
+        /// <returns>The unescaped string with the above rules applied.</returns>
         private static string Unescape(string input)
         {
-            var sb = new StringBuilder();
-            var escape = false;
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
 
-            foreach (var c in input)
+            var sb = new StringBuilder();
+            int i = 0;
+
+            while (i < input.Length)
             {
-                if (escape)
+                if (input[i] == '\\')
                 {
-                    // Only unescape =, ;, and \, else keep the backslash literal
-                    if (c == '=' || c == ';' || c == '\\')
-                        sb.Append(c);
+                    int start = i;
+                    while (i < input.Length && input[i] == '\\')
+                        i++;
+                    int count = i - start;
+
+                    char next = i < input.Length ? input[i] : '\0';
+
+                    if (next == '=' || next == ';')
+                    {
+                        // Rule 1: before '=' or ';'
+                        if (count > 1)
+                            sb.Append(new string('\\', count - 1));
+
+                        sb.Append(next);
+                        i++; // consume delimiter
+                    }
+                    else if (next == '\0')
+                    {
+                        // Rule 2: at end-of-string
+                        if (count == 1)
+                        {
+                            sb.Append('\\'); // keep single
+                        }
+                        else
+                        {
+                            sb.Append(new string('\\', count / 2));
+                        }
+                    }
                     else
                     {
-                        sb.Append('\\'); // Keep the backslash literal
-                        sb.Append(c);
+                        // Rule 3: preserve literally
+                        sb.Append(new string('\\', count));
                     }
-                    escape = false;
-                }
-                else if (c == '\\')
-                {
-                    escape = true;
                 }
                 else
                 {
-                    sb.Append(c);
+                    sb.Append(input[i]);
+                    i++;
                 }
             }
 
-            // If string ends with a backslash, keep it literally
-            if (escape)
-                sb.Append('\\');
-
             return sb.ToString();
         }
+
+
+
     }
 }
