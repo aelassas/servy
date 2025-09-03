@@ -12,7 +12,16 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("line1\nline2", "line1;line2")]
         [InlineData("line1\rline2", "line1;line2")]
         [InlineData("line1\r\nline2\nline3\rline4", "line1;line2;line3;line4")]
-        public void NormalizeString_ShouldReplaceLineBreaksWithSemicolon(string input, string expected)
+        // New cases for trailing backslash before line breaks
+        [InlineData("VAR1=C:\\Path\\\r\nVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
+        [InlineData("VAR1=C:\\Path\\\nVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
+        [InlineData("VAR1=C:\\Path\\\rVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
+        // New case: ends with a backslash (no line break)
+        [InlineData("C:\\Path\\", "C:\\Path\\")]
+        // New case: multiple variables with trailing backslash
+        [InlineData("PATH=C:\\Windows\\System32\\\r\nTEMP=C:\\Temp", "PATH=C:\\Windows\\System32\\\\;TEMP=C:\\Temp")]
+        [InlineData("PATH=C:\\Windows\\System32\\\\\r\nTEMP=C:\\Temp", "PATH=C:\\Windows\\System32\\\\\\\\;TEMP=C:\\Temp")]
+        public void NormalizeString_ShouldNormalizeCorrectly(string input, string expected)
         {
             var result = StringHelper.NormalizeString(input);
             Assert.Equal(expected, result);
