@@ -37,18 +37,12 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrEmpty(str))
                 return string.Empty;
 
-            string doubled = str;
-
-            // Double every run of backslashes immediately before a line break,
-            // but only if the string looks like an environment variable assignment
-            if (doubled.Contains("="))
-            {
-                doubled = Regex.Replace(
-                    doubled,
-                    @"\\+(?=\r\n|\r|\n)",
-                    m => new string('\\', m.Value.Length * 2)
-                );
-            }
+            // Double every run of backslashes immediately before a line break
+            string doubled = Regex.Replace(
+                str,
+                @"\\+(?=\r\n|\r|\n)",
+                m => new string('\\', m.Value.Length * 2)
+            );
 
             // Replace line breaks with semicolons
             string normalized = doubled
