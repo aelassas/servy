@@ -748,7 +748,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OpenAboutDialog(object parameter)
         {
-            await _helpService.OpenAboutDialog(Strings.Text_About, AppConfig.Caption);
+            await _helpService.OpenAboutDialog(string.Format(Strings.Text_About, Core.Config.AppConfig.Version), AppConfig.Caption);
         }
 
         #endregion
