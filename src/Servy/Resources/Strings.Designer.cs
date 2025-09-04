@@ -151,8 +151,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos; or &apos;;&apos;, use double backslashes (\\). Supports environment variable expansion, example:
-        ///VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
+        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos; and \; to escape &apos;;&apos;. To include a literal backslash before &apos;=&apos;, &apos;;&apos;, or at the end of a line, use double backslashes (\\). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
         /// </summary>
         public static string Info_EnvironmentVariables {
             get {
