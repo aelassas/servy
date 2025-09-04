@@ -1,5 +1,4 @@
 ﻿using Servy.Core.EnvironmentVariables;
-using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
 {
@@ -10,45 +9,26 @@ namespace Servy.Core.Helpers
     public static class StringHelper
     {
         /// <summary>
-        /// Normalizes an input string for use in service configuration values such as 
-        /// environment variables or service dependencies.
-        /// <list type="bullet">
-        ///   <item>
-        ///     <description>Replaces CR, LF, or CRLF line breaks with semicolons (';').</description>
-        ///   </item>
-        ///   <item>
-        ///     <description>Doubles every sequence of backslashes that appears immediately 
-        ///     before a line break (e.g., <c>\</c> → <c>\\</c>, <c>\\</c> → <c>\\\\</c>), 
-        ///     ensuring that trailing backslashes are preserved correctly.</description>
-        ///   </item>
-        ///   <item>
-        ///     <description>Returns an empty string if the input is <c>null</c> or empty.</description>
-        ///   </item>
-        /// </list>
+        /// Normalizes line breaks in a string by replacing CR, LF, or CRLF with semicolons.
+        /// Returns an empty string if the input is null.
         /// </summary>
         /// <param name="str">The input string to normalize.</param>
-        /// <returns>
-        /// A normalized string where line breaks are replaced with semicolons, and backslashes 
-        /// immediately before line breaks are doubled to preserve their meaning in environment 
-        /// variables, service dependencies, and similar configuration values.
-        /// </returns>
+        /// <returns>A string with all line breaks replaced by semicolons.</returns>
         public static string NormalizeString(string str)
         {
             if (string.IsNullOrEmpty(str))
                 return string.Empty;
 
-            // Double every run of backslashes immediately before a line break
-            string doubled = Regex.Replace(
-                str,
-                @"\\+(?=\r\n|\r|\n)",
-                m => new string('\\', m.Value.Length * 2)
-            );
-
             // Replace line breaks with semicolons
-            string normalized = doubled
+            string normalized = str
                 .Replace("\r\n", ";")
                 .Replace("\n", ";")
                 .Replace("\r", ";");
+
+            //if (normalized.Contains("="))
+            //{
+            //    var x = EnvironmentVariableParser.Parse(normalized);
+            //}
 
             return normalized;
         }
