@@ -14,16 +14,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("line1\nline2", "line1;line2")]
         [InlineData("line1\rline2", "line1;line2")]
         [InlineData("line1\r\nline2\nline3\rline4", "line1;line2;line3;line4")]
-        // New cases for trailing backslash before line breaks
-        [InlineData("VAR1=C:\\Path\\\r\nVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
-        [InlineData("VAR1=C:\\Path\\\nVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
-        [InlineData("VAR1=C:\\Path\\\rVAR2=Next", "VAR1=C:\\Path\\\\;VAR2=Next")]
-        // New case: ends with a backslash (no line break)
-        [InlineData("C:\\Path\\", "C:\\Path\\")]
-        // New case: multiple variables with trailing backslash
-        [InlineData("PATH=C:\\Windows\\System32\\\r\nTEMP=C:\\Temp", "PATH=C:\\Windows\\System32\\\\;TEMP=C:\\Temp")]
-        [InlineData("PATH=C:\\Windows\\System32\\\\\r\nTEMP=C:\\Temp", "PATH=C:\\Windows\\System32\\\\\\\\;TEMP=C:\\Temp")]
-        public void NormalizeString_ShouldNormalizeCorrectly(string input, string expected)
+        public void NormalizeString_ShouldReplaceLineBreaksWithSemicolon(string input, string expected)
         {
             var result = StringHelper.NormalizeString(input);
             Assert.Equal(expected, result);
@@ -32,7 +23,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void FormatServiceDependencies_ShouldReturnNull_WhenInputIsNull()
         {
-            string result = StringHelper.FormatServiceDependencies(null);
+            var result = StringHelper.FormatServiceDependencies(null);
             Assert.Null(result);
         }
 
@@ -42,7 +33,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("singleDep", "singleDep")]
         public void FormatServiceDependencies_ShouldReplaceSemicolonWithNewLine(string input, string expected)
         {
-            string result = StringHelper.FormatServiceDependencies(input);
+            var result = StringHelper.FormatServiceDependencies(input);
             Assert.Equal(expected, result);
         }
 
@@ -53,10 +44,10 @@ namespace Servy.Core.UnitTests.Helpers
             var rawVars = "VAR1=val1;VAR2=val2";
 
             // Act
-            string result = StringHelper.FormatEnvirnomentVariables(rawVars);
+            var result = StringHelper.FormatEnvirnomentVariables(rawVars);
 
             // Assert
-            string expected = "VAR1=val1" + Environment.NewLine + "VAR2=val2";
+            var expected = "VAR1=val1" + Environment.NewLine + "VAR2=val2";
             Assert.Equal(expected, result);
         }
     }

@@ -211,8 +211,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Environment Variables</value>
   </data>
   <data name="Info_EnvironmentVariables" xml:space="preserve">
-    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=' or ';', use double backslashes (\\). Supports environment variable expansion, example:
-VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=' and \; to escape ';'. To include a literal backslash before '=', ';', or at the end of a line, use double backslashes (\\). Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
   </data>
 
   <!-- Service Dependencies -->
