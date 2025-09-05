@@ -27,14 +27,23 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [Fact]
         public void Parse_MultipleVariablesSeparatedBySemicolon_ParsesCorrectly()
         {
-            var input = "KEY1=VALUE1;KEY2=VALUE2";
+            var input = "KEY1=VALUE1;KEY2=VALUE2;KEY3=\"VALUE3\";KEY4= \"VALUE4\" ;KEY5=  VALUE5 ; KEY6 = \" VALUE6 \"";
             var result = EnvironmentVariableParser.Parse(input);
 
-            Assert.Equal(2, result.Count);
+            Assert.Equal(6, result.Count);
             Assert.Equal("KEY1", result[0].Name);
             Assert.Equal("VALUE1", result[0].Value);
             Assert.Equal("KEY2", result[1].Name);
             Assert.Equal("VALUE2", result[1].Value);
+
+            Assert.Equal("KEY3", result[2].Name);
+            Assert.Equal("VALUE3", result[2].Value);
+            Assert.Equal("KEY4", result[3].Name);
+            Assert.Equal("VALUE4", result[3].Value);
+            Assert.Equal("KEY5", result[4].Name);
+            Assert.Equal("VALUE5", result[4].Value);
+            Assert.Equal("KEY6", result[5].Name);
+            Assert.Equal(" VALUE6 ", result[5].Value);
         }
 
         [Fact]
@@ -67,6 +76,24 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Single(result);
             Assert.Equal("KEY", result[0].Name);
             Assert.Equal("VAL=UE", result[0].Value);
+        }
+
+        [Fact]
+        public void Parse_SupportsEscapedDoubleQuotesInValue()
+        {
+            var input = "KEY=VAL\\\"UE";
+            var result = EnvironmentVariableParser.Parse(input);
+
+            Assert.Single(result);
+            Assert.Equal("KEY", result[0].Name);
+            Assert.Equal("VAL\"UE", result[0].Value);
+
+            input = "KEY=\"\\\"VAL\\\"UE\\\"\"";
+            result = EnvironmentVariableParser.Parse(input);
+
+            Assert.Single(result);
+            Assert.Equal("KEY", result[0].Name);
+            Assert.Equal("\"VAL\"UE\"", result[0].Value);
         }
 
         [Fact]
