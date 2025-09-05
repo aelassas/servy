@@ -43,7 +43,16 @@ namespace Servy.Core.EnvironmentVariables
 
                 // Unescape both key and value
                 var key = Unescape(rawKey).Trim();
-                var value = Unescape(rawValue).Trim(' ', '"');
+
+                var unescaped = Unescape(rawValue).Trim();
+
+                // Remove surrounding quotes only if both start and end with a quote
+                if (unescaped.Length >= 2 && unescaped[0] == '"' && unescaped[unescaped.Length - 1] == '"')
+                {
+                    unescaped = unescaped.Substring(1, unescaped.Length - 2);
+                }
+
+                var value = unescaped;
 
                 if (string.IsNullOrEmpty(key))
                     throw new FormatException($"Environment variable key cannot be empty: {part}");
@@ -130,12 +139,15 @@ namespace Servy.Core.EnvironmentVariables
         }
 
         /// <summary>
-        /// Unescapes backslash-escaped characters: \=, \;, and \\ become =, ;, and \ respectively.
+        /// Unescapes backslash-escaped characters: \=, \;, \" and \\ become =, ;, " and \ respectively.
         /// </summary>
         /// <param name="input">Input string to unescape.</param>
         /// <returns>Unescaped string.</returns>
         private static string Unescape(string input)
         {
+            if (string.IsNullOrEmpty(input))
+                return string.Empty;
+
             var sb = new StringBuilder();
             var escape = false;
 
@@ -143,8 +155,8 @@ namespace Servy.Core.EnvironmentVariables
             {
                 if (escape)
                 {
-                    // Only unescape =, ;, and \, else keep the backslash literal
-                    if (c == '=' || c == ';' || c == '\\')
+                    // Unescape =, ;, \, and " 
+                    if (c == '=' || c == ';' || c == '\\' || c == '"')
                         sb.Append(c);
                     else
                     {
