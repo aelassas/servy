@@ -107,7 +107,7 @@ begin
   end;
 
   // Force refresh for silent installs
-  if WizardSilent and (CurStep = ssInstall) then
+  if WizardSilent and (CurStep = ssDone) then
   begin
     RefreshIconCache();
   end;
