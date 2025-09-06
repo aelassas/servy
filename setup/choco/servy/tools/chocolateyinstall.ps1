@@ -4,7 +4,7 @@ $packageName    = 'servy'
 $toolsDir       = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $installerType  = 'exe'
 $url64          = 'https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net8.0-x64-installer.exe'
-$checksum64     = '3EA6AB7CC3DACD4FBCD1D2FAF0421F90340ACE88DA7C7D7BD42A6B43A670364C'
+$checksum64     = '8D8EB49758E388EABD60A09B4CE609727F5DADB111532D925183D1CA4C8633A4'
 $checksumType64 = 'sha256'
 $silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
 
