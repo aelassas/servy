@@ -104,7 +104,7 @@ end;
 // Called after installation finishes
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if (not WizardSilent) and (CurStep = ssPostInstall) then
+  if CurStep = ssPostInstall then
   begin
     RefreshIconCache();
   end;
