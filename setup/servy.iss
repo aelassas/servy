@@ -60,7 +60,6 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 [Files]
 ; Main app EXE
 Source: "..\src\Servy\bin\Release\net8.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; Source: "..\src\Servy\servy.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
