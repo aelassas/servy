@@ -10,8 +10,7 @@ Installers:
   - Architecture: x64
     InstallerType: inno
     InstallerUrl: https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net48-x64-installer.exe
-    InstallerSha256: EBB67865BBA6331DF5906390E6DB124F4F572E5D1EBB245571A2FD3529C0F183
+    InstallerSha256: 02D653D58ED1CB143A3B197252E864B2FC6CDE5FC8431AF1DB72D2B1F36815D2
     InstallerSwitches:
       Silent: /VERYSILENT /NORESTART /SUPPRESSMSGBOXES
       SilentWithProgress: /SILENT /NORESTART /SUPPRESSMSGBOXES
-    UninstallCommand: '"C:\Program Files\Servy\unins000.exe" /VERYSILENT /NORESTART'
