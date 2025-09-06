@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>servy</id>
+    <version>1.0.0</version>
+    <title>Servy</title>
+    <authors>Akram El Assas</authors>
+    <owners>Akram El Assas</owners>
+    <projectUrl>https://github.com/aelassas/servy</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/aelassas/servy/refs/heads/main/src/Servy/servy.ico</iconUrl>
+    <licenseUrl>https://github.com/aelassas/servy/blob/main/LICENSE.txt</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
+    <docsUrl>https://github.com/aelassas/servy/wiki</docsUrl>
+    <bugTrackerUrl>https://github.com/aelassas/servy/issues</bugTrackerUrl>
+    <tags>servy windows service nssm winsw firedaemon alternative</tags>
+    <summary>Turn any application into a Windows Service with Servy.</summary>
+    <description>
+      Servy is an open-source tool that allows you to run any application as a native Windows
+      Service.
+      It is a modern, lightweight, and open alternative to NSSM, WinSW, and FireDaemon.
+    </description>
+    <releaseNotes>
+      Initial release of Servy.
+      Installer is unsigned and may trigger a SmartScreen prompt.
+      This is a known behavior for Inno Setup-based installers.
+      See: https://jrsoftware.org/isinfo.php
+    </releaseNotes>
+  </metadata>
+</package>
