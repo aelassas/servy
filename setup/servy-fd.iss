@@ -36,7 +36,7 @@ OutputDir=.
 OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-frameworkdependent-installer
 SetupIconFile=..\src\Servy\servy.ico
 
-Compression=lzma2
+Compression=lzma
 LZMAAlgorithm=1
 LZMADictionarySize=65536
 LZMANumFastBytes=273
@@ -101,13 +101,7 @@ end;
 // Called after installation finishes
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
-  if CurStep = ssPostInstall then
-  begin
-    RefreshIconCache();
-  end;
-
-  // Force refresh for silent installs
-  if WizardSilent and (CurStep = ssDone) then
+  if (not WizardSilent) and (CurStep = ssPostInstall) then
   begin
     RefreshIconCache();
   end;
