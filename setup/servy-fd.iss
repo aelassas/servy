@@ -105,6 +105,12 @@ begin
   begin
     RefreshIconCache();
   end;
+
+  // Force refresh for silent installs
+  if WizardSilent and (CurStep = ssInstall) then
+  begin
+    RefreshIconCache();
+  end;
 end;
 
 [UninstallRun]
