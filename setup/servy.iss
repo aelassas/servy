@@ -108,8 +108,13 @@ begin
   begin
     RefreshIconCache();
   end;
-end;
 
+  // Force refresh for silent installs
+  if WizardSilent and (CurStep = ssInstall) then
+  begin
+    RefreshIconCache();
+  end;
+end;
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
 Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
