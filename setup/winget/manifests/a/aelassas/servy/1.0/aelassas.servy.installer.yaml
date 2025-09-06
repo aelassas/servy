@@ -10,7 +10,7 @@ Installers:
   - Architecture: x64
     InstallerType: inno
     InstallerUrl: https://github.com/aelassas/servy/releases/download/v1.0/servy-1.0-net8.0-x64-installer.exe
-    InstallerSha256: 4AFD0680789126FD43FB79AA92E4AF914B443C514852AFC158CAC1C7590D2DAD
+    InstallerSha256: C4BF252FFB3DE5B2A993C044416021AA0C5243C8F704556F19CA68BD3AAA74A2
     InstallerSwitches:
       Silent: /VERYSILENT /NORESTART /SUPPRESSMSGBOXES
       SilentWithProgress: /SILENT /NORESTART /SUPPRESSMSGBOXES
