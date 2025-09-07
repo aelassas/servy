@@ -70,7 +70,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 | Feature | Servy | NSSM | WinSW |
 |---------|-------|------|-------|
-| GUI Management | ✅ Real-time GUI for monitoring and configuration | ❌ CLI only | ❌ Config file only |
+| GUI Management | ✅ Real-time GUI for monitoring and configuration | ⚪ Basic GUI for service creation | ❌ Config file only |
 | CLI / Automation | ✅ Full CLI support for scripting and deployments | ✅ CLI only | ✅ XML config + CLI |
 | Run any executable as service | ✅ | ✅ | ✅ |
 | Environment variables & expansion | ✅ Fully supported | ⚪ Basic support | ⚪ Basic support |
