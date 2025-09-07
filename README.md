@@ -66,6 +66,24 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
+## Servy vs NSSM vs WinSW
+
+| Feature | Servy | NSSM | WinSW |
+|---------|-------|------|-------|
+| GUI Management | ✅ Real-time GUI for monitoring and configuration | ❌ CLI only | ❌ Config file only |
+| CLI / Automation | ✅ Full CLI support for scripting and deployments | ✅ CLI only | ✅ XML config + CLI |
+| Run any executable as service | ✅ | ✅ | ✅ |
+| Environment variables & expansion | ✅ Fully supported | ⚪ Basic support | ⚪ Basic support |
+| Service accounts | ✅ Local System, local user, or domain | ⚪ Limited | ⚪ Limited |
+| Pre-launch scripts, retries, timeouts | ✅ Advanced | ❌ | ❌ |
+| Stdout/stderr logging with rotation | ✅ Automatic | ⚪ Basic | ⚪ Basic |
+| Health checks & automatic recovery | ✅ | ❌ | ⚪ Limited |
+| Notifications & alerts | ✅ Windows notifications + email | ❌ | ❌ |
+| Export / Import service configs | ✅ | ❌ | ❌ |
+| Supported OS | Windows 7–11 x64, Server editions | Windows 7+ | Windows 7+ |
+
+Servy is designed for professionals who need reliable, monitored, and fully configurable Windows services, combining a GUI, CLI, logging, notifications, and advanced lifecycle management. NSSM and WinSW are suitable for lightweight service wrapping, but lack monitoring, alerts, and professional-grade management features.
+
 ## Roadmap
 
 * [x] Windows Service creation via GUI (Servy Configuration App)
