@@ -96,14 +96,15 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## Support & Contributing
 
-If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by [starring the repository](https://github.com/aelassas/servy) to increase visibility, sharing the project with colleagues, communities, or on social media, or making a donation to help fund development via [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
+If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by [starring the repository](https://github.com/aelassas/servy) to show your appreciation and increase visibility, sharing the project with colleagues, communities, or on social media, or by making a donation. Your contributions help keep Servy alive, improving, and accessible to everyone. You can donate through [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
 
-Open-source software requires time, effort, and resources to maintain. Your support helps keep this project alive, up to date, and accessible to everyone. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
+Open-source software requires time, effort, and resources to maintain. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
 
 If you have suggestions, issues, or would like to contribute, feel free to [open an issue](https://github.com/aelassas/servy/issues) or [submit a pull request](https://github.com/aelassas/servy/pulls).
 
 ## License
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
+
 
 
