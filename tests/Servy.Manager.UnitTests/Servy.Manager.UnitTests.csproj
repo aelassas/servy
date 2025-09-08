@@ -11,6 +11,17 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyTitle>Servy.Manager.UnitTests</AssemblyTitle>
+    <AssemblyDescription>Servy.Manager unit tests</AssemblyDescription>
+    <Company>Akram El Assas</Company>
+    <Product>Servy.Manager.UnitTests</Product>
+    <Version>1.1.0</Version>
+    <FileVersion>1.1.0.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
