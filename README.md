@@ -98,7 +98,7 @@ choco install -y servy
 | GUI Management | ✅ Real-time GUI for monitoring and configuration | ⚪ Basic GUI for service creation | ❌ Config file only |
 | CLI / Automation | ✅ Full CLI support for scripting and deployments | ✅ CLI only | ✅ XML config + CLI |
 | Run any executable as service | ✅ | ✅ | ✅ |
-| Environment variables & expansion | ✅ Fully supported | ⚪ Basic support | ⚪ Basic support |
+| Environment variables & expansion | ✅ Fully supported | ⚪ Basic | ⚪ Basic |
 | Service accounts | ✅ Local System, local user, or domain | ⚪ Limited | ⚪ Limited |
 | Pre-launch scripts, retries, timeouts | ✅ Advanced | ❌ | ❌ |
 | Stdout/stderr logging with rotation | ✅ Automatic | ⚪ Basic | ⚪ Basic |
