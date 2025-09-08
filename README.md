@@ -120,7 +120,7 @@ Servy is designed for professionals who need reliable, monitored, and fully conf
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
-* [ ] Add package manager support (WinGet, Chocolatey) ([#9](https://github.com/aelassas/servy/issues/6))
+* [ ] Add package manager support (WinGet, Chocolatey) ([#9](https://github.com/aelassas/servy/issues/9)) *(in progress)*
 * [ ] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
