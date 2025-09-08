@@ -8,5 +8,14 @@ $checksum64     = '8D8EB49758E388EABD60A09B4CE609727F5DADB111532D925183D1CA4C863
 $checksumType64 = 'sha256'
 $silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
 
-Install-ChocolateyPackage $packageName $installerType $silentArgs $url64 `
-  -Checksum $checksum64 -ChecksumType $checksumType64
+# Use splatting for better readability
+$installParams = @{
+    PackageName  = $packageName
+    FileType     = $installerType
+    SilentArgs   = $silentArgs
+    Url          = $url64
+    Checksum     = $checksum64
+    ChecksumType = $checksumType64
+}
+
+Install-ChocolateyPackage @installParams
