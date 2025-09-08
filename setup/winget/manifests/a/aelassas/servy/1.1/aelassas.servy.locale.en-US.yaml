@@ -9,6 +9,7 @@ PublisherUrl: https://github.com/aelassas
 PublisherSupportUrl: https://github.com/aelassas/servy/issues
 Author: Akram El Assas
 PackageName: Servy
+Moniker: servy
 PackageUrl: https://servy-win.github.io/
 License: MIT
 LicenseUrl: https://github.com/aelassas/servy#MIT-1-ov-file
