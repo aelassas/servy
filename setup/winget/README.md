@@ -13,3 +13,12 @@ git push origin servy-1.1
 
 # Open a Pull Request
 https://github.com/aelassas/winget-pkgs
+
+# test
+winget show servy
+winget search servy
+winget install servy
+winget uninstall servy
+
+winget install aelassas.Servy
+winget uninstall aelassas.Servy
