@@ -65,6 +65,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * Export/Import service configurations
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
+<!--
 ## Servy vs NSSM vs WinSW
 
 | Feature | Servy | NSSM | WinSW |
@@ -82,6 +83,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 | Supported OS | Windows 7–11 x64, Server editions | Windows 7+ | Windows 7+ |
 
 Servy is designed for professionals who need reliable, monitored, and fully configurable Windows services, combining a GUI, CLI, logging, notifications, and advanced lifecycle management. NSSM and WinSW are suitable for lightweight service wrapping, but lack monitoring, alerts, and professional-grade management features.
+-->
 
 ## Support & Contributing
 
