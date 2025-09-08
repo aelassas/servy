@@ -40,7 +40,7 @@ Make sure you have [Chocolatey](https://chocolatey.org/install) installed.
 
 To install Servy quickly, run the following command as administrator from the command line or from PowerShell:
 ```powershell
-choco install servy
+choco install -y servy
 ```
 
 <!--
@@ -54,7 +54,7 @@ To install Servy quickly, run one of the following commands as administrator fro
 winget install servy
 
 # Chocolatey
-choco install servy
+choco install -y servy
 ```
 -->
 
