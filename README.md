@@ -91,6 +91,7 @@ choco install -y servy
 * Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
+<!--
 ## Servy vs NSSM vs WinSW
 
 | Feature | Servy | NSSM | WinSW |
@@ -139,6 +140,7 @@ Servy is designed for professionals who need reliable, monitored, and fully conf
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Enable remote management of Servy services on other machines *(long-term)*
   * [ ] Add a health monitoring dashboard *(long-term)*
+-->
 
 ## Support & Contributing
 
