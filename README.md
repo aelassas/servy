@@ -48,12 +48,15 @@ You have two options to install Servy. Download and [install manually](https://g
 
 Make sure you have [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/) or [Chocolatey](https://chocolatey.org/install) installed.
 
-To install Servy quickly, run one of the following commands as administrator from the command line or from PowerShell:
-```powershell
-# WinGet
-winget install servy
+Run one of the following commands as administrator from Command Prompt or PowerShell:
 
-# Chocolatey
+**WinGet**
+```powershell
+winget install servy
+```
+
+**Chocolatey**
+```powershell
 choco install -y servy
 ```
 -->
