@@ -56,6 +56,11 @@ jobs:
           git commit -m "chore(choco): update package for version ${env:VERSION}" -a || Write-Host "No changes to commit"
           git push origin main
 
+      - name: Check Chocolatey version
+        shell: pwsh
+        run: |
+          choco --version
+
       - name: Pack Chocolatey package
         shell: pwsh
         run: |
