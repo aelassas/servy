@@ -18,6 +18,7 @@ https://github.com/aelassas/winget-pkgs
 winget show servy
 winget search servy
 winget install servy
+winget install servy --silent
 winget uninstall servy
 
 winget install aelassas.Servy
