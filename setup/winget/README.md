@@ -14,12 +14,11 @@ git push origin servy-1.1
 # Open a Pull Request
 https://github.com/aelassas/winget-pkgs
 
-# test
+# Test
+winget source update
 winget show servy
 winget search servy
 winget install servy
 winget install servy --silent
 winget uninstall servy
 
-winget install aelassas.Servy
-winget uninstall aelassas.Servy
