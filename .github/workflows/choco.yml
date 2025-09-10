@@ -1,0 +1,69 @@
+name: choco
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  choco:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set version from tag
+        shell: pwsh
+        run: |
+          $VERSION = $env:GITHUB_REF -replace 'refs/tags/v',''
+          Write-Host "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Download installer
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/aelassas/servy/releases/download/${env:GITHUB_REF_NAME}/servy-${env:VERSION}-net8.0-x64-installer.exe" `
+                            -OutFile "servy-${env:VERSION}-net8.0-x64-installer.exe"
+
+      - name: Compute SHA256
+        shell: pwsh
+        run: |
+          $HASH = Get-FileHash "servy-${env:VERSION}-net8.0-x64-installer.exe" -Algorithm SHA256
+          $UPPER = $HASH.Hash.ToUpper()
+          Write-Host "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Update nuspec version and release notes
+        shell: pwsh
+        run: |
+          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<version>.*</version>', "<version>${env:VERSION}</version>" |
+            Set-Content "setup/choco/servy/servy.nuspec"
+          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>" |
+            Set-Content "setup/choco/servy/servy.nuspec"
+
+      - name: Update chocolateyinstall.ps1
+        shell: pwsh
+        run: |
+          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$url64\s*=.*", "\$url64 = 'https://github.com/aelassas/servy/releases/download/${env:GITHUB_REF_NAME}/servy-${env:VERSION}-net8.0-x64-installer.exe'" |
+            Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
+          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$checksum64\s*=.*", "\$checksum64 = '${env:HASH}'" |
+            Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
+
+      - name: Commit updated files
+        shell: pwsh
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout main
+          git add setup/choco/servy/*
+          git commit -m "chore(choco): update package for version ${env:VERSION}" -a || Write-Host "No changes to commit"
+          git push origin main
+
+      - name: Pack Chocolatey package
+        shell: pwsh
+        run: |
+          choco pack setup/choco/servy/servy.nuspec
+
+      - name: Push Chocolatey package
+        shell: pwsh
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          choco push setup/choco/servy/servy.${env:VERSION}.nupkg --source https://push.chocolatey.org/
