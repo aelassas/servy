@@ -1,15 +1,14 @@
-# Created using wingetcreate 1.10.3.0
+# Created with komac v2.12.1
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
 
-PackageIdentifier: aelassas.servy
-PackageVersion: '1.0'
+PackageIdentifier: aelassas.Servy
+PackageVersion: '1.1'
 PackageLocale: en-US
 Publisher: Akram El Assas
 PublisherUrl: https://github.com/aelassas
 PublisherSupportUrl: https://github.com/aelassas/servy/issues
 Author: Akram El Assas
 PackageName: Servy
-Moniker: servy
 PackageUrl: https://servy-win.github.io/
 License: MIT
 LicenseUrl: https://github.com/aelassas/servy#MIT-1-ov-file
@@ -40,6 +39,7 @@ Description: |-
   - Developers: Run development servers, scripts, or custom tools as services without extra setup.
   - Sysadmins & IT professionals: Ensure critical background processes stay alive, monitored, and properly logged.
   - Teams or organizations: Automate background services reliably across multiple machines.
+Moniker: servy
 Tags:
 - background-service
 - dotnet
@@ -49,7 +49,7 @@ Tags:
 - windows-service
 - windows-tools
 - winsw
-ReleaseNotesUrl: https://github.com/aelassas/servy/releases/tag/v1.0
+ReleaseNotesUrl: https://github.com/aelassas/servy/releases/tag/v1.1
 Documentations:
 - DocumentLabel: Wiki
   DocumentUrl: https://github.com/aelassas/servy/wiki
