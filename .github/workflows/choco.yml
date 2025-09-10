@@ -33,9 +33,9 @@ jobs:
       - name: Update nuspec version and release notes
         shell: pwsh
         run: |
-          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<version>.*</version>', "<version>${env:VERSION}</version>" |
+          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<version>.*</version>', "<version>${env:VERSION}.0</version>" |
             Set-Content "setup/choco/servy/servy.nuspec"
-          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>" |
+          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>" |
             Set-Content "setup/choco/servy/servy.nuspec"
 
       - name: Update chocolateyinstall.ps1
