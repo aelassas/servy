@@ -1,0 +1,16 @@
+name: winget
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Publish Servy to WinGet
+        uses: vedantmgoyal9/winget-releaser@main
+        with:
+          identifier: aelassas.Servy
+          token: ${{ secrets.WINGET_TOKEN }}
+          installers-regex: "servy-.*-net8.0-x64-installer\\.exe$"
