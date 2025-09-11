@@ -12,6 +12,8 @@ on:
 jobs:
   choco:
     runs-on: windows-latest
+    env:
+      MANUAL_TAG: ${{ github.event.inputs.tag }}  # pass input to env
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -20,9 +22,9 @@ jobs:
         shell: pwsh
         run: |
           if ($env:GITHUB_REF_NAME) {
-              $tag = $env:GITHUB_REF_NAME        # Release trigger
-          } elseif (${{ github.event.inputs.tag }}) {
-              $tag = ${{ github.event.inputs.tag }} # Manual trigger
+              $tag = $env:GITHUB_REF_NAME         # Release trigger
+          } elseif ($env:MANUAL_TAG) {
+              $tag = $env:MANUAL_TAG              # Manual trigger
           } else {
               Write-Error "No tag provided. Set tag via release or workflow_dispatch input."
               exit 1
