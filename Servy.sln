@@ -42,8 +42,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\choco.yml = .github\workflows\choco.yml
 		.github\workflows\loc.yml = .github\workflows\loc.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
+		.github\workflows\winget.yml = .github\workflows\winget.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.UnitTests", "tests\Servy.UnitTests\Servy.UnitTests.csproj", "{7EFC59C8-8037-4E5A-8B43-08273045AE64}"
