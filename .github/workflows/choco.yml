@@ -4,6 +4,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1)'
+        required: false
 
 jobs:
   choco:
@@ -15,8 +19,16 @@ jobs:
       - name: Set version vars
         shell: pwsh
         run: |
-          $tag = $env:GITHUB_REF_NAME        # e.g. v1.1
-          $version = $tag.TrimStart("v")     # e.g. 1.1
+          if ($env:GITHUB_REF_NAME) {
+              $tag = $env:GITHUB_REF_NAME        # Release trigger
+          } elseif (${{ github.event.inputs.tag }}) {
+              $tag = ${{ github.event.inputs.tag }} # Manual trigger
+          } else {
+              Write-Error "No tag provided. Set tag via release or workflow_dispatch input."
+              exit 1
+          }
+
+          $version = $tag.TrimStart("v")         # e.g. 1.1
           "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
