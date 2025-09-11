@@ -11,16 +11,18 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set version from tag
+      - name: Set version vars
         shell: pwsh
         run: |
-          $VERSION = $env:GITHUB_REF -replace 'refs/tags/v',''
-          Write-Host "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+          $tag = $env:GITHUB_REF_NAME        # e.g. v1.1
+          $version = $tag.TrimStart("v")     # e.g. 1.1
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download installer
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/aelassas/servy/releases/download/${env:GITHUB_REF_NAME}/servy-${env:VERSION}-net8.0-x64-installer.exe" `
+          Invoke-WebRequest -Uri "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe" `
                             -OutFile "servy-${env:VERSION}-net8.0-x64-installer.exe"
 
       - name: Compute SHA256
@@ -28,7 +30,7 @@ jobs:
         run: |
           $HASH = Get-FileHash "servy-${env:VERSION}-net8.0-x64-installer.exe" -Algorithm SHA256
           $UPPER = $HASH.Hash.ToUpper()
-          Write-Host "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+          "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Update nuspec version and release notes
         shell: pwsh
@@ -41,7 +43,7 @@ jobs:
       - name: Update chocolateyinstall.ps1
         shell: pwsh
         run: |
-          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$url64\s*=.*", "\$url64 = 'https://github.com/aelassas/servy/releases/download/${env:GITHUB_REF_NAME}/servy-${env:VERSION}-net8.0-x64-installer.exe'" |
+          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$url64\s*=.*", "\$url64 = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe'" |
             Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
           (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$checksum64\s*=.*", "\$checksum64 = '${env:HASH}'" |
             Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
@@ -58,17 +60,14 @@ jobs:
 
       - name: Check Chocolatey version
         shell: pwsh
-        run: |
-          choco --version
+        run: choco --version
 
       - name: Pack Chocolatey package
         shell: pwsh
-        run: |
-          choco pack setup/choco/servy/servy.nuspec
+        run: choco pack setup/choco/servy/servy.nuspec
 
       - name: Push Chocolatey package
         shell: pwsh
         env:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-        run: |
-          choco push setup/choco/servy/servy.${env:VERSION}.nupkg --source https://push.chocolatey.org/
+        run: choco push setup/choco/servy/servy.${env:VERSION}.nupkg --source https://push.chocolatey.org/
