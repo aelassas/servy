@@ -20,17 +20,25 @@ jobs:
 
       - name: Set version vars
         shell: pwsh
+        env:
+          MANUAL_TAG: ${{ github.event.inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              $tag = $env:MANUAL_TAG         # Manual trigger input
-          } elseif ($env:GITHUB_EVENT_NAME -eq 'release') {
-              $tag = ${{ github.event.release.tag_name }}  # Release trigger
+              $tag = $env:MANUAL_TAG                       # Manual trigger input
+          } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
+              $tag = $env:RELEASE_TAG                      # Release trigger
+          } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+              $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
           } else {
               Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
               exit 1
           }
 
           $version = $tag.TrimStart("v")         # e.g. v1.1 -> 1.1
+          Write-Host "Using tag: $tag"
+          Write-Host "Using version: $version"
+
           "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
