@@ -3,6 +3,7 @@ name: choco
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   choco:
@@ -35,18 +36,20 @@ jobs:
       - name: Update nuspec version and release notes
         shell: pwsh
         run: |
-          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<version>.*</version>', "<version>${env:VERSION}.0</version>" |
-            Set-Content "setup/choco/servy/servy.nuspec"
-          (Get-Content "setup/choco/servy/servy.nuspec") -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>" |
-            Set-Content "setup/choco/servy/servy.nuspec"
+           $file = "setup/choco/servy/servy.nuspec"
+           $content = Get-Content $file -Raw
+           $content = $content -replace '<version>.*</version>', "<version>${env:VERSION}.0</version>"
+           $content = $content -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>"
+           Set-Content -Path $file -Value $content
 
       - name: Update chocolateyinstall.ps1
         shell: pwsh
         run: |
-          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$url64\s*=.*", "\$url64 = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe'" |
-            Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
-          (Get-Content "setup/choco/servy/tools/chocolateyinstall.ps1") -replace "\$checksum64\s*=.*", "\$checksum64 = '${env:HASH}'" |
-            Set-Content "setup/choco/servy/tools/chocolateyinstall.ps1"
+            $file = "setup/choco/servy/tools/chocolateyinstall.ps1"
+            $content = Get-Content $file -Raw
+            $content = $content -replace '\$url64\s*=.*', "\$url64 = 'https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe'"
+            $content = $content -replace '\$checksum64\s*=.*', "\$checksum64 = '${env:HASH}'"
+            Set-Content -Path $file -Value $content
 
       - name: Commit updated files
         shell: pwsh
@@ -75,6 +78,6 @@ jobs:
         shell: pwsh
         run: choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
 
-      - name: Push Chocolatey package
-        shell: pwsh
-        run: choco push setup/choco/servy/servy.$env:VERSION.0.nupkg --source https://push.chocolatey.org/
+      # - name: Push Chocolatey package
+      #   shell: pwsh
+      #   run: choco push setup/choco/servy/servy.$env:VERSION.0.nupkg --source https://push.chocolatey.org/
