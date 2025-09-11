@@ -21,12 +21,12 @@ jobs:
       - name: Set version vars
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
-              $tag = $env:GITHUB_REF_NAME         # Release trigger
-          } elseif ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              $tag = $env:MANUAL_TAG              # Manual trigger
+          if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
+              $tag = $env:MANUAL_TAG         # Manual trigger input
+          } elseif ($env:GITHUB_EVENT_NAME -eq 'release') {
+              $tag = ${{ github.event.release.tag_name }}  # Release trigger
           } else {
-              Write-Error "No tag provided. Set tag via release or workflow_dispatch input."
+              Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
               exit 1
           }
 
