@@ -35,8 +35,7 @@ jobs:
       - name: Download installer
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe" `
-                            -OutFile "servy-${env:VERSION}-net8.0-x64-installer.exe"
+          Invoke-WebRequest -Uri "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe" -OutFile "servy-${env:VERSION}-net8.0-x64-installer.exe"
 
       - name: Compute SHA256
         shell: pwsh
