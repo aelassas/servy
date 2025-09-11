@@ -53,7 +53,9 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git fetch origin main
           git checkout main
+          git pull origin main
           git add setup/choco/servy/*
           git commit -m "chore(choco): update package for version ${env:VERSION}" -a || Write-Host "No changes to commit"
           git push origin main
