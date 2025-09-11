@@ -74,18 +74,19 @@ jobs:
           $file = "setup/choco/servy/tools/chocolateyinstall.ps1"
           $content = Get-Content $file -Raw
 
+          # Build replacement strings
           $urlReplacement = "`$url64 = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-net8.0-x64-installer.exe'"
           $checksumReplacement = "`$checksum64 = '$($env:HASH)'"
 
           Write-Host "URL: $urlReplacement"
           Write-Host "HASH: $checksumReplacement"
 
-          $content = $content -replace '\$url64\s*=.*', $urlReplacement
-          $content = $content -replace '\$checksum64\s*=.*', $checksumReplacement
+          # Use [regex]::Replace to handle $ literally
+          $content = [regex]::Replace($content, [regex]::Escape('$url64') + '\s*=.*', $urlReplacement)
+          $content = [regex]::Replace($content, [regex]::Escape('$checksum64') + '\s*=.*', $checksumReplacement)
 
-          # Write without adding extra newline
+          # Write content back without extra newline
           [System.IO.File]::WriteAllText($file, $content)
-
 
       - name: Commit updated files
         shell: pwsh
