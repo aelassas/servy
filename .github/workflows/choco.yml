@@ -68,14 +68,18 @@ jobs:
       - name: Update chocolateyinstall.ps1
         shell: pwsh
         run: |
-            $file = "setup/choco/servy/tools/chocolateyinstall.ps1"
-            $content = Get-Content $file -Raw
+          $file = "setup/choco/servy/tools/chocolateyinstall.ps1"
+          $content = Get-Content $file -Raw
 
-            # Use single quotes around the replacement to avoid variable interpolation issues
-            $content = $content -replace '\$url64\s*=.*', '$url64 = ''https://github.com/aelassas/servy/releases/download/' + $env:TAG + '/servy-' + $env:VERSION + '-net8.0-x64-installer.exe'''
-            $content = $content -replace '\$checksum64\s*=.*', '$checksum64 = ''' + $env:HASH + ''''
+          # Build replacement strings
+          $urlReplacement = '$url64 = ''https://github.com/aelassas/servy/releases/download/' + $env:TAG + '/servy-' + $env:VERSION + '-net8.0-x64-installer.exe'''
+          $checksumReplacement = '$checksum64 = ''' + $env:HASH + ''''
 
-            Set-Content -Path $file -Value $content
+          # Apply replacements
+          $content = $content -replace '\$url64\s*=.*', $urlReplacement
+          $content = $content -replace '\$checksum64\s*=.*', $checksumReplacement
+
+          Set-Content -Path $file -Value $content
 
       - name: Commit updated files
         shell: pwsh
