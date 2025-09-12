@@ -96,8 +96,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add setup/choco/servy/*
-          git commit -m "chore(choco): update package for version ${env:VERSION}" -a || Write-Host "No changes to commit"
-          git push
+          git commit -m "chore(choco): update package for version ${env:VERSION}" || Write-Host "No changes to commit"
+          git pull --rebase=merges --autostash origin main
+          git push origin HEAD:main
 
       - name: Check Chocolatey version
         shell: pwsh
@@ -114,6 +115,6 @@ jobs:
         shell: pwsh
         run: choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
 
-      # - name: Push Chocolatey package
-      #   shell: pwsh
-      #   run: choco push setup/choco/servy/servy.$env:VERSION.0.nupkg --source https://push.chocolatey.org/
+      - name: Push Chocolatey package
+        shell: pwsh
+        run: choco push setup/choco/servy/servy.$env:VERSION.0.nupkg --source https://push.chocolatey.org/
