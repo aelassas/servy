@@ -139,14 +139,15 @@
                         </DataGrid.CellStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Width="32">
+                            <DataGridTemplateColumn Width="32" CanUserResize="False">
                                 <!--Check all checkbox in header-->
                                 <DataGridTemplateColumn.Header>
                                     <CheckBox IsThreeState="True"
+                                              Margin="3,0,0,0"
                                               IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                     />
+                                              />
                                 </DataGridTemplateColumn.Header>
-                                
+
                                 <!--Row checkbox-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -192,7 +193,7 @@
                             <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*"/>
 
                             <!-- Actions -->
-                            <DataGridTemplateColumn Width="200">
+                            <DataGridTemplateColumn Width="200" CanUserResize="False">
                                 <!--Bulk actions-->
                                 <DataGridTemplateColumn.Header>
                                     <Grid Width="186">
@@ -306,7 +307,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        
+
                         <TextBlock Grid.Row="0" Grid.Column="0"
                            Margin="0,5,0,0"
                            Text="{Binding FooterText}"
