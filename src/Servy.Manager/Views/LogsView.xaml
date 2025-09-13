@@ -71,7 +71,7 @@
           ScrollViewer.CanContentScroll="True"
           VirtualizingStackPanel.ScrollUnit="Pixel"
           >
-            <!-- Apply padding to all rows -->
+            <!-- Apply height to all rows -->
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Setter Property="Height" Value="26"/>
