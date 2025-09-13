@@ -317,6 +317,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -342,33 +343,38 @@
                         <!-- Process Parameters -->
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                         <!-- Environment Variables -->
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
                                  AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="100" />
-                        <TextBlock Grid.Row="6"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="7"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
 
                         <!-- Stdout Path -->
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="7" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStdoutPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="8" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStdoutPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Stderr Path -->
-                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="8" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStderrPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="9" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStderrPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Timeout -->
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
                         <!-- Retry Attempts -->
-                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
                         <!-- Ignore Failure -->
-                        <CheckBox Grid.Row="11" Grid.Column="1"
+                        <CheckBox Grid.Row="12" Grid.Column="1"
                           Content="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
                           IsChecked="{Binding PreLaunchIgnoreFailure, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           Margin="0,5" />
