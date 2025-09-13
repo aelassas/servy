@@ -10,7 +10,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        Title="Servy Manager" Height="600" Width="1000"
+        Title="Servy Manager" 
+        Width="1000"
+        MinWidth="840"
+        Height="600" 
+        MinHeight="500"
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown"
         MouseDown="Window_MouseDown"
@@ -163,7 +167,8 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Name}"
                                                    ToolTip="{Binding Name}"
-                                                   VerticalAlignment="Top"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    />
@@ -177,7 +182,8 @@
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Description}"
                                                    ToolTip="{Binding Description}"
-                                                   VerticalAlignment="Top"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    />
@@ -186,12 +192,41 @@
                             </DataGridTemplateColumn>
 
                             <!--Status-->
-                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_Status}" Binding="{Binding Status, Converter={StaticResource StatusConverter}}" Width="*" MinWidth="80" CanUserReorder="False"/>
-                            <!--Startup Type-->
-                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_StartupType}" Binding="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}" Width="*" MinWidth="80" CanUserReorder="False"/>
-                            <!--User Session-->
-                            <DataGridTextColumn Header="{x:Static resx:Strings.Column_UserSession}" Binding="{Binding UserSession}" Width="*" MinWidth="80" CanUserReorder="False"/>
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="Status">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource StatusConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
+                            <!--Startup Type-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="StartupType">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!--User Session-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding UserSession}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
                             <!-- Actions -->
                             <DataGridTemplateColumn Width="200" CanUserResize="False" CanUserReorder="False">
                                 <!--Bulk actions-->
