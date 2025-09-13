@@ -71,15 +71,28 @@
           ScrollViewer.CanContentScroll="True"
           VirtualizingStackPanel.ScrollUnit="Pixel"
           >
+            <!-- Apply padding to all rows -->
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Height" Value="26"/>
+                </Style>
+            </DataGrid.RowStyle>
+            
             <DataGrid.Columns>
                 <!--Time-->
-                <DataGridTextColumn Header="{x:Static resx:Strings.Column_Time}" Binding="{Binding Time}" Width="200"/>
-
-                <!-- Level column with icon and text -->
-                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Level}" Width="120">
+                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Time}" Width="180" MinWidth="180" CanUserReorder="False" CanUserResize="False" SortMemberPath="Time">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,5,0">
+                            <TextBlock Text="{Binding Time}" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
+                <!-- Level column with icon and text -->
+                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Level}" Width="120" MinWidth="120" CanUserReorder="False" CanUserResize="False" SortMemberPath="Level">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Margin="5,0,5,0">
                                 <Image Source="{Binding LevelIcon}" Width="16" Height="16" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Level}" VerticalAlignment="Center"/>
                             </StackPanel>
@@ -90,11 +103,12 @@
                 <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100"/>-->
 
                 <!--Message-->
-                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*">
+                <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*" MinWidth="300" CanUserReorder="False"  CanUserResize="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Message, Converter={StaticResource MessageConverter}}"
-                                       VerticalAlignment="Top"
+                                       VerticalAlignment="Center"
+                                       Margin="5,0,0,0"
                                        TextWrapping="NoWrap"
                                        TextTrimming="CharacterEllipsis"
                              />
