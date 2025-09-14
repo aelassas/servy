@@ -49,7 +49,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Logging & Log Rotation](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation)
 * [Examples & Recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 * [Comparison with Alternatives](https://github.com/aelassas/servy/wiki/Comparison-with-Alternatives)
-* [Servy vs FireDeamon](https://github.com/aelassas/servy/wiki/Servy-vs-FireDaemon)
+* [Servy vs FireDaemon](https://github.com/aelassas/servy/wiki/Servy-vs-FireDaemon)
 * [Security](https://github.com/aelassas/servy/wiki/Security)
 * [Architecture](https://github.com/aelassas/servy/wiki/Architecture)
 * [Building from Source](https://github.com/aelassas/servy/wiki/Building-from-Source)
