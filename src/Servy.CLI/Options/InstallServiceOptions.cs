@@ -88,7 +88,7 @@ namespace Servy.CLI.Options
         /// <summary>
         /// Gets or sets a value indicating whether log rotation is enabled.
         /// </summary>
-        [Option("enableRotation", HelpText = "Enable log rotation.")]
+        [Option("rotationSize", HelpText = "Log rotation size in bytes. Must be greater than 1048576 (1 MB).")]
         public bool EnableRotation { get; set; }
 
         /// <summary>
