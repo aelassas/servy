@@ -43,7 +43,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Integration with Monitoring Tools](https://github.com/aelassas/servy/wiki/Integration-with-Monitoring-Tools)
 * [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
 * [Export/Import Services](https://github.com/aelassas/servy/wiki/Export-Import-Services)
-* [Pre‐Launch & Post‐Launch Actions](https://github.com/aelassas/servy/wiki/Pre%E2%80%90Launch-&-Post%E2%80%90Launch-Actions)
+* [Pre‐Launch & Post‐Launch Actions](https://github.com/aelassas/servy/wiki/Pre‐Launch-&-Post‐Launch-Actions)
 * [Service Dependencies](https://github.com/aelassas/servy/wiki/Service-Dependencies)
 * [Monitoring & Health Checks](https://github.com/aelassas/servy/wiki/Monitoring-&-Health-Checks)
 * [Logging & Log Rotation](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation)
