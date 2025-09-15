@@ -29,11 +29,16 @@ namespace Servy.CLI.Helpers
         public static string[] GetVerbs()
         {
             var verbs = Assembly.GetExecutingAssembly()
-                 .GetTypes()
-                 .Where(t => t.GetCustomAttribute<VerbAttribute>() != null)
-                 .Select(t => t.GetCustomAttribute<VerbAttribute>()!.Name.ToLowerInvariant())
-                 .ToArray();
-            return verbs;
+                .GetTypes()
+                .Select(t => t.GetCustomAttribute<VerbAttribute>())
+                .Where(attr => attr != null)
+                .Select(attr => attr!.Name.ToLowerInvariant())
+                .ToList();
+
+            verbs.Add("version");
+            verbs.Add("--version");
+
+            return verbs.ToArray();
         }
 
         /// <summary>
