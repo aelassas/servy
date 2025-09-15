@@ -96,6 +96,7 @@ choco install -y servy
 * Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7–11 x64 and Windows Server editions
 
+<!--
 ## Roadmap
 
 * [x] Windows Service creation via GUI (Servy Configuration App)
@@ -108,7 +109,7 @@ choco install -y servy
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
-* [ ] Add support for post-launch script execution after starting the service, with retries and timeout *(in progress)*
+* [ ] Add support for post-launch script execution after starting the service, with retries and timeout
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
@@ -121,12 +122,13 @@ choco install -y servy
   * [x] Add search and filter functionality for services
   * [x] Provide Windows toast and email notifications for service events (failures)
   * [x] Provide a log viewer
-  * [ ] Support automatic recovery actions beyond simple restart (e.g., run scripts)  *(in progress)*
+  * [ ] Support automatic recovery actions beyond simple restart (e.g., run scripts)
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Enable remote management of Servy services on other machines *(not planned – too dangerous)*
   * [ ] Add a health monitoring dashboard *(long-term)*
+-->
 
 ## Support & Contributing
 
