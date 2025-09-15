@@ -10,7 +10,7 @@
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
-* [ ] Add support for post-launch script execution after starting the service, with retries and timeout
+* [ ] Add support for post-launch script execution after starting the service, with retries, timeout, and failure handling
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
@@ -27,5 +27,5 @@
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
-  * [ ] Enable remote management of Servy services on other machines *(not planned – too dangerous)*
+  * [ ] Enable remote management of Servy services on other machines *(not planned â€“ too dangerous)*
   * [ ] Add a health monitoring dashboard *(long-term)*
