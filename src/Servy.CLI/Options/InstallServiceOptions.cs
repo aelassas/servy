@@ -156,7 +156,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the Windows service account username.
         /// Optional.
         /// </summary>
-        [Option("user", HelpText = "The service account username (e.g., .\\username, DOMAIN\\username).")]
+        [Option("user", HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, or DOMAIN\\gMSA$ for Group Managed Service Accounts).")]
         public string User { get; set; }
 
         /// <summary>

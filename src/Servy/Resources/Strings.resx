@@ -230,7 +230,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>User Account</value>
   </data>
   <data name="Info_UserAccount" xml:space="preserve">
-    <value>The service account username (e.g., .\username, DOMAIN\username).</value>
+    <value>The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$ for Group Managed Service Accounts).</value>
   </data>
   <data name="Label_Password" xml:space="preserve">
     <value>Password</value>
