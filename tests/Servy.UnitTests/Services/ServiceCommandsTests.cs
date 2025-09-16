@@ -38,7 +38,7 @@ namespace Servy.UnitTests.Services
             var stdoutPath = @"C:\logs\stdout.log";
             var stderrPath = @"C:\logs\stderr.log";
             var enableRotation = true;
-            var rotationSize = "10485760"; // 10 MB
+            var rotationSize = "10"; // 10 MB
             var enableHealthMonitoring = true;
             var heartbeatInterval = "30";
             var maxFailedChecks = "3";

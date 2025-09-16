@@ -7,7 +7,7 @@
   <StartupType>2</StartupType>
   <Priority>2</Priority>
   <EnableRotation>false</EnableRotation>
-  <RotationSize>10485760</RotationSize>
+  <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>
   <MaxFailedChecks>3</MaxFailedChecks>

@@ -9,7 +9,7 @@
   "StdoutPath": "E:\\dev\\servy\\stdout.log",
   "StderrPath": "E:\\dev\\servy\\stderr.log",
   "EnableRotation": true,
-  "RotationSize": 10485761,
+  "RotationSize": 10,
   "EnableHealthMonitoring": true,
   "HeartbeatInterval": 5,
   "MaxFailedChecks": 1,
