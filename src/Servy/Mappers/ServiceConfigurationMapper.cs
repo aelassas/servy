@@ -29,7 +29,7 @@ namespace Servy.Mappers
                 StdoutPath = config.StdoutPath,
                 StderrPath = config.StderrPath,
                 EnableRotation = config.EnableRotation,
-                RotationSize = ParseInt(config.RotationSize, 1048576),
+                RotationSize = ParseInt(config.RotationSize, Core.Config.AppConfig.DefaultRotationSize),
                 EnableHealthMonitoring = config.EnableHealthMonitoring,
                 HeartbeatInterval = ParseInt(config.HeartbeatInterval, 30),
                 MaxFailedChecks = ParseInt(config.MaxFailedChecks, 3),
