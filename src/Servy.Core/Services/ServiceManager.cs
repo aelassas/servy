@@ -290,7 +290,7 @@ namespace Servy.Core.Services
                     StdoutPath = stdoutPath,
                     StderrPath = stderrPath,
                     EnableRotation = rotationSizeInBytes > 0,
-                    RotationSize = rotationSizeInBytes,
+                    RotationSize = rotationSizeInBytes / (1024 * 1024),
                     EnableHealthMonitoring = heartbeatInterval > 0,
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,

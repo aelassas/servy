@@ -187,7 +187,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes)..
+        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of Megabytes (MB) greater than or equal to 1 MB..
         /// </summary>
         public static string Msg_InvalidRotationSize {
             get {
