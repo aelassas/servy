@@ -82,7 +82,7 @@ choco install -y servy
 
 * Clean, simple UI
 * Quickly monitor and manage all installed services with Servy Manager
-* CLI for full scripting and automated deployments
+* CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Environment variable expansion supported in both environment variables and process parameters
