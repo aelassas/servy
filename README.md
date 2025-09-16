@@ -60,6 +60,7 @@ choco install -y servy
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
 * [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
+* [Servy PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module)
 * [Servy Automation & CI/CD](https://github.com/aelassas/servy/wiki/Servy-Automation-&-CI-CD)
 * [Integration with Monitoring Tools](https://github.com/aelassas/servy/wiki/Integration-with-Monitoring-Tools)
 * [Service Event Notifications](https://github.com/aelassas/servy/wiki/Service-Event-Notifications)
