@@ -124,6 +124,8 @@
     <None Include="publish-res-debug.ps1" />
     <None Include="publish-res-release.ps1" />
     <None Include="publish.ps1" />
+    <None Include="servy-module-examples.ps1" />
+    <None Include="Servy.psm1" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="servy.ico" />
