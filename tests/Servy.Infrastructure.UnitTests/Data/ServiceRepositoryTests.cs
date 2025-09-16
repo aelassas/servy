@@ -1,5 +1,6 @@
 using Dapper;
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
@@ -648,7 +649,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(ServiceStartType.Manual, domain.StartupType);
             Assert.Equal(ProcessPriority.Normal, domain.Priority);
             Assert.False(domain.EnableRotation);
-            Assert.Equal(1_048_576, domain.RotationSize);
+            Assert.Equal(AppConfig.DefaultRotationSize, domain.RotationSize);
             Assert.False(domain.EnableHealthMonitoring);
             Assert.Equal(30, domain.HeartbeatInterval);
             Assert.Equal(3, domain.MaxFailedChecks);

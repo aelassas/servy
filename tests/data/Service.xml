@@ -10,7 +10,7 @@
   <StdoutPath>C:\Logs\TestService_out.log</StdoutPath>
   <StderrPath>C:\Logs\TestService_err.log</StderrPath>
   <EnableRotation>true</EnableRotation>
-  <RotationSize>1048576</RotationSize>
+  <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>
   <MaxFailedChecks>3</MaxFailedChecks>

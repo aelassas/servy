@@ -195,7 +195,7 @@ function Install-ServyService {
             -Stdout "C:\Logs\WexflowServer.out.log" `
             -Stderr "C:\Logs\WexflowServer.err.log" `
             -EnableRotation `
-            -RotationSize 10485760 `
+            -RotationSize 10 `
             -EnableHealth `
             -HeartbeatInterval 30 `
             -MaxFailedChecks 3 `

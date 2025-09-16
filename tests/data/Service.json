@@ -9,7 +9,7 @@
   "StdoutPath": "C:\\Logs\\TestService_out.log",
   "StderrPath": "C:\\Logs\\TestService_err.log",
   "EnableRotation": true,
-  "RotationSize": 1048576,
+  "RotationSize": 10,
   "EnableHealthMonitoring": true,
   "HeartbeatInterval": 30,
   "MaxFailedChecks": 3,

@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Newtonsoft.Json;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
@@ -384,7 +385,7 @@ namespace Servy.Infrastructure.Data
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
                 EnableRotation = dto.EnableRotation ?? false,
-                RotationSize = dto.RotationSize ?? 1_048_576,
+                RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize,
                 EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = dto.HeartbeatInterval ?? 30,
                 MaxFailedChecks = dto.MaxFailedChecks ?? 3,
