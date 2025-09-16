@@ -17,7 +17,7 @@
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy...</value>
   </data>
-
+  
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
@@ -37,11 +37,11 @@
   <data name="Menu_ExportJson" xml:space="preserve">
     <value>Export JSON configuration</value>
   </data>
-
+  
   <data name="Menu_Manager" xml:space="preserve">
     <value>Manager</value>
   </data>
-
+  
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -165,7 +165,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Rotation Size</value>
   </data>
   <data name="Label_RotationSizeUnity" xml:space="preserve">
-    <value>bytes</value>
+    <value>Megabytes (MB)</value>
   </data>
 
   <!-- Health monitoring -->
@@ -359,7 +359,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>The specified stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes).</value>
+    <value>Rotation size must be specified in megabytes (MB) and be greater than or equal to 1 MB.</value>
   </data>
   <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
     <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>
@@ -403,7 +403,6 @@ Copyright © 2025 Akram El Assas. All rights reserved.
 
 If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
 </data>
-
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
@@ -413,5 +412,5 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
     <value>The specified service is disabled.</value>
   </data>
-  
+
 </root>

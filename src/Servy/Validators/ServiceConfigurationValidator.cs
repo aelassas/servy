@@ -22,7 +22,7 @@ namespace Servy.Validators
     {
         #region Constants
 
-        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
+        private const int MinRotationSize = 1;                     // 1 MB
         private const int MinHeartbeatInterval = 5;                // 5 seconds
         private const int MinMaxFailedChecks = 1;                  // 1 attempt
         private const int MinMaxRestartAttempts = 1;               // 1 attempt

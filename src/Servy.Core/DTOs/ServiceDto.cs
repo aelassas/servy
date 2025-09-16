@@ -61,7 +61,7 @@
         public bool? EnableRotation { get; set; }
 
         /// <summary>
-        /// Maximum size of the log file in bytes before rotation.
+        /// Maximum size of the log file in Megabytes (MB) before rotation.
         /// </summary>
         public int? RotationSize { get; set; }
 
