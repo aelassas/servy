@@ -151,7 +151,7 @@ namespace Servy.Services
             };
 
             // Validate
-            if (!(await _serviceConfigurationValidator.Validate(dto, wrapperExePath)))
+            if (!(await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword)))
             {
                 return; // Validation failed, errors shown in MessageBox
             }

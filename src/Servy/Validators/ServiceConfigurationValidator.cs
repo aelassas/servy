@@ -44,7 +44,7 @@ namespace Servy.Validators
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true)
+        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true, string confirmPassword = "")
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
@@ -141,17 +141,27 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (!dto.RunAsLocalSystem.HasValue && !dto.RunAsLocalSystem.Value)
+            if (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
             {
                 try
                 {
-                    if (!string.Equals(dto.Password, dto.Password, StringComparison.Ordinal))
-                    {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
-                        return false;
-                    }
+                    bool isGmsa = dto.UserAccount.EndsWith("$");
 
-                    NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
+                    if (!isGmsa)
+                    {
+                        // Only validate passwords for normal accounts
+                        if (!string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
+                        {
+                            await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
+                            return false;
+                        }
+
+                        NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
+                    }
+                    else
+                    {
+                        // For gMSA, skip password validation
+                    }
                 }
                 catch (Exception ex)
                 {
