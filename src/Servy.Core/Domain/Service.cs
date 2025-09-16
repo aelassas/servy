@@ -85,9 +85,8 @@ namespace Servy.Core.Domain
 
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
-        /// Default is 1 MB.
         /// </summary>
-        public int RotationSize { get; set; } = 1;
+        public int RotationSize { get; set; } = AppConfig.DefaultRotationSize;
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.

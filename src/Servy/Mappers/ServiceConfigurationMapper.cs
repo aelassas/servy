@@ -1,6 +1,4 @@
-﻿using Servy.Config;
-using Servy.Core.Config;
-using Servy.Core.Domain;
+﻿using Servy.Core.Domain;
 using Servy.Core.Services;
 using Servy.Models;
 
