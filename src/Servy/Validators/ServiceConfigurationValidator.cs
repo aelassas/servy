@@ -46,7 +46,7 @@ namespace Servy.Validators
         }
 
         /// <inheritdoc/>
-        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true)
+        public async Task<bool> Validate(ServiceDto dto, string wrapperExePath = null, bool checkServiceStatus = true, string confirmPassword = "")
         {
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
@@ -129,31 +129,41 @@ namespace Servy.Validators
                 }
             }
 
-            string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+            var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
             {
                 await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
                 return false;
             }
 
-            string normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
+            var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
             if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
             {
                 await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
                 return false;
             }
 
-            if (!dto.RunAsLocalSystem.HasValue && !dto.RunAsLocalSystem.Value)
+            if (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
             {
                 try
                 {
-                    if (!string.Equals(dto.Password, dto.Password, StringComparison.Ordinal))
-                    {
-                        await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
-                        return false;
-                    }
+                    bool isGmsa = dto.UserAccount.EndsWith("$");
 
-                    NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
+                    if (!isGmsa)
+                    {
+                        // Only validate passwords for normal accounts
+                        if (!string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
+                        {
+                            await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
+                            return false;
+                        }
+
+                        NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
+                    }
+                    else
+                    {
+                        // For gMSA, skip password validation
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -177,7 +187,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
+            var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out var preLaunchEnvErrorMsg))
             {
                 await _messageBoxService.ShowErrorAsync(preLaunchEnvErrorMsg, AppConfig.Caption);
