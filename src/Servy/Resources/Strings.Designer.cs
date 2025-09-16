@@ -197,7 +197,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username)..
+        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$ for Group Managed Service Accounts)..
         /// </summary>
         public static string Info_UserAccount {
             get {
