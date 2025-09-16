@@ -145,9 +145,9 @@ namespace Servy.Core.Config
         public static readonly string DefaultAESIVPath = Path.Combine(SecurityFolderPath, "aes_iv.dat");
 
         /// <summary>
-        /// Default log rotation size in bytes. Default is 10 MB.
+        /// Default log rotation size in Megabytes (MB). Default is 10 MB.
         /// </summary>
-        public static readonly int DefaultRotationSize = 10 * 1024 * 1024;
+        public static readonly int DefaultRotationSize = 10;
 
         /// <summary>
         /// Default heartbeat interval in seconds. Default is 30 seconds.

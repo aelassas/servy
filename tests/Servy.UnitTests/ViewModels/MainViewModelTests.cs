@@ -1,4 +1,5 @@
 using Moq;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Services;
@@ -155,7 +156,7 @@ namespace Servy.UnitTests.ViewModels
             Assert.Equal(string.Empty, _viewModel.ServiceName);
             Assert.Equal(string.Empty, _viewModel.ProcessPath);
             Assert.False(_viewModel.EnableRotation);
-            Assert.Equal((10 * 1024 * 1024).ToString(), _viewModel.RotationSize);
+            Assert.Equal(AppConfig.DefaultRotationSize.ToString(), _viewModel.RotationSize);
         }
 
         [Fact]

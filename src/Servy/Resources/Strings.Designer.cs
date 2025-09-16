@@ -413,7 +413,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à bytes.
+        ///   Recherche une chaîne localisée semblable à Megabytes (MB).
         /// </summary>
         public static string Label_RotationSizeUnity {
             get {
@@ -746,7 +746,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes)..
+        ///   Recherche une chaîne localisée semblable à Rotation size must be specified in megabytes (MB) and be greater than or equal to 1 MB..
         /// </summary>
         public static string Msg_InvalidRotationSize {
             get {

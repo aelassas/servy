@@ -31,7 +31,7 @@ namespace Servy.Core.Services
         private const uint SERVICE_DELETE = 0x00010000;
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
         private const int ServiceStopTimeoutSeconds = 60;
-        
+
         public const string LocalSystemAccount = "LocalSystem";
 
         #endregion
@@ -285,7 +285,7 @@ namespace Servy.Core.Services
                     StdoutPath = stdoutPath,
                     StderrPath = stderrPath,
                     EnableRotation = rotationSizeInBytes > 0,
-                    RotationSize = rotationSizeInBytes,
+                    RotationSize = rotationSizeInBytes / (1024 * 1024),
                     EnableHealthMonitoring = heartbeatInterval > 0,
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,

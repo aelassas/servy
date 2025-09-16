@@ -95,7 +95,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the rotation size in bytes for log files.
         /// Must be >= 1 MB if rotation is enabled.
         /// </summary>
-        [Option("rotationSize", HelpText = "Log rotation size in bytes. Must be greater than 1048576 (1 MB).")]
+        [Option("rotationSize", HelpText = "Log rotation size in Megabytes (MB). Must be greater than or equal to 1 MB.")]
         public string? RotationSize { get; set; }
 
         /// <summary>

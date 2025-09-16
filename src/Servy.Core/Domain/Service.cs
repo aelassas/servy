@@ -84,8 +84,8 @@ namespace Servy.Core.Domain
         public bool EnableRotation { get; set; } = false;
 
         /// <summary>
-        /// Gets or sets the rotation size in bytes for log files.
-        /// Default is 1,048,576 (1 MB).
+        /// Gets or sets the rotation size in Megabytes (MB) for log files.
+        /// Default is 1 MB.
         /// </summary>
         public int RotationSize { get; set; } = 1_048_576;
 

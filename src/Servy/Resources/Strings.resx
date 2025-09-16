@@ -165,7 +165,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>Rotation Size</value>
   </data>
   <data name="Label_RotationSizeUnity" xml:space="preserve">
-    <value>bytes</value>
+    <value>Megabytes (MB)</value>
   </data>
 
   <!-- Health monitoring -->
@@ -359,7 +359,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>The specified stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes).</value>
+    <value>Rotation size must be specified in megabytes (MB) and be greater than or equal to 1 MB.</value>
   </data>
   <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
     <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>

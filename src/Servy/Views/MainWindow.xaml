@@ -45,7 +45,7 @@
             </MenuItem>
         </Menu>
 
-        <!-- Menu Grid -->
+        <!-- Grid -->
         <Grid>
             <Grid.RowDefinitions>
                 <!-- Tabs -->
@@ -82,7 +82,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Service Name -->
@@ -213,7 +213,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Environment Variables -->
@@ -323,7 +323,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Info -->

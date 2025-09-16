@@ -65,7 +65,7 @@ namespace Servy.CLI.Commands
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
 
                 // Parse numeric options
-                int rotationSize = int.TryParse(opts.RotationSize, out var rot) ? rot : 0;
+                int rotationSize = opts.EnableRotation ? (int.TryParse(opts.RotationSize, out var rot) ? rot : AppConfig.DefaultRotationSize) * 1024 * 1024 : 0;
                 int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : 0;
                 int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : 0;
                 int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : 0;
@@ -107,43 +107,6 @@ namespace Servy.CLI.Commands
 
                 if (!success)
                     return CommandResult.Fail("Failed to install service.");
-
-                // Map to DTO and persist
-                var dto = new ServiceDto
-                {
-                    Name = opts.ServiceName!,
-                    Description = opts.ServiceDescription,
-                    ExecutablePath = opts.ProcessPath ?? string.Empty,
-                    StartupDirectory = opts.StartupDirectory,
-                    Parameters = opts.ProcessParameters,
-                    StartupType = (int)startupType,
-                    Priority = (int)processPriority,
-                    StdoutPath = opts.StdoutPath,
-                    StderrPath = opts.StderrPath,
-                    EnableRotation = rotationSize > 0,
-                    RotationSize = rotationSize > 0 ? rotationSize : 1_048_576,
-                    EnableHealthMonitoring = heartbeatInterval > 0,
-                    HeartbeatInterval = heartbeatInterval > 0 ? heartbeatInterval : 30,
-                    MaxFailedChecks = maxFailedChecks > 0 ? maxFailedChecks : 3,
-                    RecoveryAction = (int)recoveryAction,
-                    MaxRestartAttempts = maxRestartAttempts > 0 ? maxRestartAttempts : 3,
-                    EnvironmentVariables = opts.EnvironmentVariables,
-                    ServiceDependencies = opts.ServiceDependencies,
-                    RunAsLocalSystem = string.IsNullOrEmpty(opts.User),
-                    UserAccount = opts.User,
-                    Password = opts.Password,
-                    PreLaunchExecutablePath = opts.PreLaunchPath,
-                    PreLaunchStartupDirectory = opts.PreLaunchStartupDir,
-                    PreLaunchParameters = opts.PreLaunchParameters,
-                    PreLaunchEnvironmentVariables = opts.PreLaunchEnvironmentVariables,
-                    PreLaunchStdoutPath = opts.PreLaunchStdoutPath,
-                    PreLaunchStderrPath = opts.PreLaunchStderrPath,
-                    PreLaunchTimeoutSeconds = preLaunchTimeout,
-                    PreLaunchRetryAttempts = preLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = opts.PreLaunchIgnoreFailure
-                };
-
-                await _serviceRepository.UpsertAsync(dto);
 
                 return CommandResult.Ok("Service installed successfully.");
             });

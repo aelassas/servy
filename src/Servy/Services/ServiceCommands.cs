@@ -128,7 +128,7 @@ namespace Servy.Services
                 StdoutPath = stdoutPath,
                 StderrPath = stderrPath,
                 EnableRotation = enableRotation,
-                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : 1_048_576,
+                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : 1,
                 EnableHealthMonitoring = enableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : 30,
                 MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : 3,
@@ -168,7 +168,7 @@ namespace Servy.Services
 
             try
             {
-                var rotationSizeValue = int.Parse(rotationSize);
+                var rotationSizeValue = int.Parse(rotationSize) * 1024 * 1024;
                 var heartbeatIntervalValue = enableHealthMonitoring ? int.Parse(heartbeatInterval) : 0;
                 var maxFailedChecksValue = enableHealthMonitoring ? int.Parse(maxFailedChecks) : 0;
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
