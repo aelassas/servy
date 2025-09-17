@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -153,9 +154,11 @@ namespace Servy.Core.UnitTests.Domain
                      service.Priority,
                      null,                        // stdoutPath
                      null,                        // stderrPath
-                     0,                           // rotationSizeInBytes
-                     0,                           // heartbeatInterval
-                     0,                           // maxFailedChecks
+                     false,
+                     service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                     false,
+                     service.HeartbeatInterval, // heartbeatInterval
+                     service.MaxFailedChecks,   // maxFailedChecks
                      service.RecoveryAction,
                      service.MaxRestartAttempts,
                      null,                        // environmentVariables
@@ -202,7 +205,7 @@ namespace Servy.Core.UnitTests.Domain
                 HeartbeatInterval = 30,
                 EnableHealthMonitoring = true,
                 RecoveryAction = RecoveryAction.RestartService,
-                MaxFailedChecks = 1,   
+                MaxFailedChecks = 1,
                 MaxRestartAttempts = 3,
                 RunAsLocalSystem = true,
                 PreLaunchExecutablePath = null,
@@ -228,7 +231,9 @@ namespace Servy.Core.UnitTests.Domain
                      service.Priority,
                      null,                        // stdoutPath
                      null,                        // stderrPath
-                     service.RotationSize,        // rotationSizeInBytes
+                     true,
+                     service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                     true,
                      service.HeartbeatInterval,   // heartbeatInterval
                      service.MaxFailedChecks,     // maxFailedChecks
                      service.RecoveryAction,
@@ -291,9 +296,11 @@ namespace Servy.Core.UnitTests.Domain
                     service.Priority,                    // processPriority
                     null,                                // stdoutPath
                     null,                                // stderrPath
-                    0,                                   // rotationSizeInBytes
-                    0,                                   // heartbeatInterval
-                    0,                                   // maxFailedChecks
+                    false,
+                    service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                    false,
+                    service.HeartbeatInterval,           // heartbeatInterval
+                    service.MaxFailedChecks,             // maxFailedChecks
                     service.RecoveryAction,              // recoveryAction
                     service.MaxRestartAttempts,          // maxRestartAttempts
                     null,                                // environmentVariables

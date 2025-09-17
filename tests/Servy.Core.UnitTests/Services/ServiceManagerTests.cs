@@ -93,7 +93,9 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
+                false,
                 0,
+                false,
                 0,
                 0,
                 RecoveryAction.None,
@@ -160,7 +162,9 @@ namespace Servy.Core.UnitTests.Services
                  ProcessPriority.Normal,
                  null,
                  null,
+                 false,
                  0,
+                 false,
                  0,
                  0,
                  RecoveryAction.None,
@@ -230,7 +234,9 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
+                false,
                 0,
+                false,
                 0,
                 0,
                 RecoveryAction.None,
@@ -267,7 +273,9 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
+                false,
                 0,
+                false,
                 0,
                 0,
                 RecoveryAction.None,
@@ -336,7 +344,9 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
+                false,
                 0,
+                false,
                 0,
                 0,
                 RecoveryAction.None,
@@ -434,7 +444,9 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
+                false,
                 0,
+                false,
                 0,
                 0,
                 RecoveryAction.None,
@@ -596,7 +608,7 @@ namespace Servy.Core.UnitTests.Services
         public void SetServiceDescription_Throws_WhenChangeServiceConfig2Fails()
         {
             var serviceHandle = new IntPtr(456);
-            string description = "desc";
+            var description = "desc";
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
                 .Returns(false);
@@ -1112,7 +1124,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void GetServiceDescription_ExceptionThrown_ReturnsNull()
         {
-            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Throws(new System.Exception("Boom"));
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Throws(new Exception("Boom"));
 
             var result = _serviceManager.GetServiceDescription("Service");
             Assert.Null(result);
