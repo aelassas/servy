@@ -128,12 +128,12 @@ namespace Servy.Services
                 StdoutPath = stdoutPath,
                 StderrPath = stderrPath,
                 EnableRotation = enableRotation,
-                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : 1,
+                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : AppConfig.DefaultRotationSize,
                 EnableHealthMonitoring = enableHealthMonitoring,
-                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : 30,
-                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : 3,
+                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : AppConfig.DefaultHeartbeatInterval,
+                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks,
                 RecoveryAction = (int)recoveryAction,
-                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : 3,
+                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = environmentVariables,
                 ServiceDependencies = serviceDependencies,
                 RunAsLocalSystem = runAsLocalSystem,
@@ -145,8 +145,8 @@ namespace Servy.Services
                 PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = preLaunchStdoutPath,
                 PreLaunchStderrPath = preLaunchStderrPath,
-                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : 30,
-                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : 0,
+                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : AppConfig.DefaultPreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : AppConfig.DefaultPreLaunchRetryAttempts,
                 PreLaunchIgnoreFailure = preLaunchIgnoreFailure
             };
 
@@ -169,8 +169,8 @@ namespace Servy.Services
             try
             {
                 var rotationSizeValue = int.Parse(rotationSize) * 1024 * 1024;
-                var heartbeatIntervalValue = enableHealthMonitoring ? int.Parse(heartbeatInterval) : 0;
-                var maxFailedChecksValue = enableHealthMonitoring ? int.Parse(maxFailedChecks) : 0;
+                var heartbeatIntervalValue = int.Parse(heartbeatInterval);
+                var maxFailedChecksValue = int.Parse(maxFailedChecks);
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
                 var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
@@ -195,7 +195,9 @@ namespace Servy.Services
                     processPriority: processPriority,
                     stdoutPath: stdoutPath,
                     stderrPath: stderrPath,
+                    enableRotation: enableRotation,
                     rotationSizeInBytes: rotationSizeValue,
+                    enableHealthMonitoring: enableHealthMonitoring,
                     heartbeatInterval: heartbeatIntervalValue,
                     maxFailedChecks: maxFailedChecksValue,
                     recoveryAction: recoveryAction,

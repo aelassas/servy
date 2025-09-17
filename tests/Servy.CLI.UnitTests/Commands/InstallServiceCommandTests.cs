@@ -46,7 +46,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<Core.Enums.ProcessPriority>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<Core.Enums.RecoveryAction>(),
@@ -119,7 +121,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<Core.Enums.ProcessPriority>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<Core.Enums.RecoveryAction>(),
@@ -177,7 +181,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<Core.Enums.ProcessPriority>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<Core.Enums.RecoveryAction>(),
@@ -235,7 +241,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<Core.Enums.ProcessPriority>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
+                It.IsAny<bool>(),
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<Core.Enums.RecoveryAction>(),
@@ -272,5 +280,3 @@ namespace Servy.CLI.UnitTests.Commands
         }
     }
 }
-
-

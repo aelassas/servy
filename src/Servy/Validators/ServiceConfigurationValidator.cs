@@ -100,31 +100,28 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && dto.RotationSize < MinRotationSize)
+            if ( dto.RotationSize < MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.EnableHealthMonitoring.HasValue && dto.EnableHealthMonitoring.Value)
+            if (dto.HeartbeatInterval < MinHeartbeatInterval)
             {
-                if (dto.HeartbeatInterval < MinHeartbeatInterval)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
-                    return false;
-                }
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
+                return false;
+            }
 
-                if (dto.MaxFailedChecks < MinMaxFailedChecks)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
-                    return false;
-                }
+            if (dto.MaxFailedChecks < MinMaxFailedChecks)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
+                return false;
+            }
 
-                if (dto.MaxRestartAttempts < MinMaxRestartAttempts)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
-                    return false;
-                }
+            if (dto.MaxRestartAttempts < MinMaxRestartAttempts)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
+                return false;
             }
 
             var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
