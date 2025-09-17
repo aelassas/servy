@@ -3,7 +3,6 @@ using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System;
@@ -68,10 +67,10 @@ namespace Servy.CLI.Commands
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
 
                 // Parse numeric options
-                int rotationSize = opts.EnableRotation ? (int.TryParse(opts.RotationSize, out var rot) ? rot : AppConfig.DefaultRotationSize) * 1024 * 1024 : 0;
-                int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : 0;
-                int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : 0;
-                int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : 0;
+                int rotationSize = (int.TryParse(opts.RotationSize, out var rot) ? rot : AppConfig.DefaultRotationSize) * 1024 * 1024;
+                int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : AppConfig.DefaultHeartbeatInterval;
+                int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks;
+                int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts;
                 int preLaunchTimeout = int.TryParse(opts.PreLaunchTimeout, out var plTimeout) ? plTimeout : 30;
                 int preLaunchRetryAttempts = int.TryParse(opts.PreLaunchRetryAttempts, out var plRetry) ? plRetry : 0;
 
@@ -87,7 +86,9 @@ namespace Servy.CLI.Commands
                     processPriority,
                     opts.StdoutPath,
                     opts.StderrPath,
+                    opts.EnableRotation,
                     rotationSize,
+                    opts.EnableHealthMonitoring,
                     heartbeatInterval,
                     maxFailedChecks,
                     recoveryAction,

@@ -29,7 +29,9 @@ namespace Servy.Core.Services
         /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
         /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
         /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
+        /// <param name="enableRotation">Enable size-based log rotation.</param>
         /// <param name="rotationSizeInBytes">Size in bytes for log rotation. If 0, no rotation is performed.</param>
+        /// <param name="enableHealthMonitoring">Enable health monitoring.</param>
         /// <param name="heartbeatInterval">Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
         /// <param name="maxFailedChecks">Maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
         /// <param name="recoveryAction">Recovery action to take if the service fails. If None, health monitoring is disabled.</param>
@@ -61,7 +63,9 @@ namespace Servy.Core.Services
             ProcessPriority processPriority,
             string stdoutPath = null,
             string stderrPath = null,
+            bool enableRotation = false,
             int rotationSizeInBytes = 0,
+            bool enableHealthMonitoring = false,
             int heartbeatInterval = 0,
             int maxFailedChecks = 0,
             RecoveryAction recoveryAction = RecoveryAction.None,
