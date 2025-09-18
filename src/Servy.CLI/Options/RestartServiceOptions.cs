@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Options for the <c>restart</c> command to restart a Windows service.
     /// </summary>
     [Verb("restart", HelpText = "Restart a Windows service.")]
-    public class RestartServiceOptions
+    public class RestartServiceOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the name of the service to restart.

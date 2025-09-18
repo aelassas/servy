@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Options for the <c>start</c> command to start a Windows service.
     /// </summary>
     [Verb("start", HelpText = "Start a Windows service.")]
-    public class StartServiceOptions
+    public class StartServiceOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the name of the service to start.

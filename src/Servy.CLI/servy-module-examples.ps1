@@ -34,12 +34,12 @@
 # ----------------------------------------------------------------
 # Import the Servy PowerShell module (force reload if already imported)
 # ----------------------------------------------------------------
-Import-Module .\Servy.psm1 -Force
+Import-Module ".\Servy.psm1" -Force
 
 # ----------------------------------------------------------------
 # Display the current version of Servy CLI
 # ----------------------------------------------------------------
-Show-ServyVersion
+Show-ServyVersion -Quiet
 
 # ----------------------------------------------------------------
 # Display full help information for Servy CLI
@@ -50,6 +50,7 @@ Show-ServyVersion
 # Install a new Windows service using Servy
 # ----------------------------------------------------------------
 Install-ServyService `
+  -Quiet `
   -Name "WexflowServer" `
   -Description "Wexflow Workflow Engine" `
   -Path "C:\Program Files\dotnet\dotnet.exe" `
@@ -66,6 +67,7 @@ Install-ServyService `
 # Export the service configuration to a file (XML)
 # ----------------------------------------------------------------
 Export-ServyServiceConfig `
+  -Quiet `
   -Name "WexflowServer" `
   -ConfigFileType "xml" `
   -Path "C:\WexflowServer.xml"
@@ -74,6 +76,7 @@ Export-ServyServiceConfig `
 # Export the service configuration to a file (JSON)
 # ----------------------------------------------------------------
 Export-ServyServiceConfig `
+  -Quiet `
   -Name "WexflowServer" `
   -ConfigFileType "json" `
   -Path "C:\WexflowServer.json"
@@ -82,34 +85,36 @@ Export-ServyServiceConfig `
 # Import previously exported service configurations
 # ----------------------------------------------------------------
 Import-ServyServiceConfig `
+  -Quiet `
   -ConfigFileType "xml" `
   -Path "C:\WexflowServer.xml"
 
 Import-ServyServiceConfig `
+  -Quiet `
   -ConfigFileType "json" `
   -Path "C:\WexflowServer.json"
 
 # ----------------------------------------------------------------
 # Start the service
 # ----------------------------------------------------------------
-Start-ServyService -Name "WexflowServer"
+Start-ServyService -Name "WexflowServer" -Quiet
 
 # ----------------------------------------------------------------
 # Get the current status of the service
 # ----------------------------------------------------------------
-Get-ServyServiceStatus -Name "WexflowServer"
+Get-ServyServiceStatus -Name "WexflowServer" -Quiet
 
 # ----------------------------------------------------------------
 # Stop the service
 # ----------------------------------------------------------------
-Stop-ServyService -Name "WexflowServer"
+Stop-ServyService -Name "WexflowServer" -Quiet
 
 # ----------------------------------------------------------------
 # Restart the service
 # ----------------------------------------------------------------
-Restart-ServyService -Name "WexflowServer"
+Restart-ServyService -Name "WexflowServer" -Quiet
 
 # ----------------------------------------------------------------
 # Uninstall the service
 # ----------------------------------------------------------------
-Uninstall-ServyService -Name "WexflowServer"
+Uninstall-ServyService -Name "WexflowServer" -Quiet

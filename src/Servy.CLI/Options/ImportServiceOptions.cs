@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Options for the <c>import</c> command to import a Windows service configuration into Servy's database.
     /// </summary>
     [Verb("import", HelpText = "Import a Windows service configuration into Servy's database.")]
-    public class ImportServiceOptions
+    public class ImportServiceOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the configuration file type.

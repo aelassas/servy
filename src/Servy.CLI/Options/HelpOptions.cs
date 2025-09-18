@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Represents the 'help' verb to display help information for the CLI.
     /// </summary>
     [Verb("help", HelpText = "Display help information")]
-    public class HelpOptions
+    public class HelpOptions : GlobalOptionsBase
     {
     }
 }
