@@ -89,6 +89,21 @@ namespace Servy.Models
         public string MaxRestartAttempts { get; set; }
 
         /// <summary>
+        /// Gets or sets the path to the process to run on failure.
+        /// </summary>
+        public string FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the failure program.
+        /// </summary>
+        public string FailureProgramStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line parameters for the failure program.
+        /// </summary>
+        public string FailureProgramParameters { get; set; }
+
+        /// <summary>
         /// Environment Variables.
         /// </summary>
         public string EnvironmentVariables { get; set; }

@@ -44,6 +44,9 @@ namespace Servy.Services
         /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
         /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
         /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
+        /// <param name="failureProgramPath">Failure program path.</param>
+        /// <param name="failureProgramWorkingDirectory">Failure program working directory.</param>
+        /// <param name="failureProgramArgs">Failure program parameters.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -75,7 +78,10 @@ namespace Servy.Services
             string preLaunchStderrPath,
             string preLaunchTimeout,
             string preLaunchRetryAttempts,
-            bool preLaunchIgnoreFailure
+            bool preLaunchIgnoreFailure,
+            string failureProgramPath,
+            string failureProgramWorkingDirectory,
+            string failureProgramArgs
             );
 
         /// <summary>

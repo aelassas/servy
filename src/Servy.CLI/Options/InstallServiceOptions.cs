@@ -139,6 +139,27 @@ namespace Servy.CLI.Options
         public string MaxRestartAttempts { get; set; }
 
         /// <summary>
+        /// Gets or sets the failure program path.
+        /// Optional.
+        /// </summary>
+        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the process fails to start. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed.")]
+        public string FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the failure program startup directory.
+        /// Optional. Defaults to the failure program directory.
+        /// </summary>
+        [Option("failureProgramStartupDir", HelpText = "Specifies the directory in which the failure program will start. Defaults to the failure program directory.")]
+        public string FailureProgramStartupDir { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional command-line parameters for the failure program.
+        /// Optional.
+        /// </summary>
+        [Option("failureProgramParams", HelpText = "Additional parameters for the failure program.")]
+        public string FailureProgramParameters { get; set; }
+
+        /// <summary>
         /// Gets or sets environment variables for the process.
         /// Optional.
         /// </summary>

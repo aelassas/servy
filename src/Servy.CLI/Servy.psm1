@@ -145,6 +145,15 @@ function Install-ServyService {
     .PARAMETER MaxRestartAttempts
         Maximum number of restart attempts after failure. Optional.
 
+    .PARAMETER FailureProgramPath
+        Path to a failure program or script. Optional.
+
+    .PARAMETER FailureProgramStartupDir
+        Startup directory for the failure program. Optional.
+
+    .PARAMETER FailureProgramParams
+        Additional parameters for the failure program. Optional.
+
     .PARAMETER Env
         Environment variables for the service process. Format: Name=Value;Name=Value. Optional.
 
@@ -228,6 +237,9 @@ function Install-ServyService {
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
     [string] $MaxRestartAttempts,
+    [string] $FailureProgramPath,
+    [string] $FailureProgramStartupDir,
+    [string] $FailureProgramParams,
     [string] $Env,
     [string] $Deps,
     [string] $User,
@@ -269,6 +281,9 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks
   $argsList = Add-Arg $argsList "--recoveryAction" $RecoveryAction
   $argsList = Add-Arg $argsList "--maxRestartAttempts" $MaxRestartAttempts
+  $argsList = Add-Arg $argsList "--failureProgramPath" $FailureProgramPath
+  $argsList = Add-Arg $argsList "--failureProgramStartupDir" $FailureProgramStartupDir
+  $argsList = Add-Arg $argsList "--failureProgramParams" $FailureProgramParams
   $argsList = Add-Arg $argsList "--env" $Env
   $argsList = Add-Arg $argsList "--deps" $Deps
   $argsList = Add-Arg $argsList "--user" $User

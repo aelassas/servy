@@ -79,6 +79,24 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The failure program path is invalid..
+        /// </summary>
+        public static string Msg_InvalidFailureProgramPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidFailureProgramPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified failure program startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidFailureProgramStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidFailureProgramStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number of seconds greater than or equal to 5 seconds..
         /// </summary>
         public static string Msg_InvalidHeartbeatInterval {

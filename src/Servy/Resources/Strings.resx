@@ -17,7 +17,7 @@
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy...</value>
   </data>
-  
+
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
@@ -37,11 +37,11 @@
   <data name="Menu_ExportJson" xml:space="preserve">
     <value>Export JSON configuration</value>
   </data>
-  
+
   <data name="Menu_Manager" xml:space="preserve">
     <value>Manager</value>
   </data>
-  
+
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -79,6 +79,9 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <!-- Tabs -->
   <data name="Label_MainTab" xml:space="preserve">
     <value>Main</value>
+  </data>
+  <data name="Label_RecoveryTab" xml:space="preserve">
+    <value>Recovery</value>
   </data>
   <data name="Label_AdvancedTab" xml:space="preserve">
     <value>Advanced</value>
@@ -204,6 +207,19 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
   <data name="Label_MaxRestartAttempts" xml:space="preserve">
     <value>Max Restart Attempts</value>
+  </data>
+
+  <data name="Info_FailureProgram" xml:space="preserve">
+    <value>Run a Program on Failure. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed.</value>
+  </data>
+  <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
+    <value>Optional. Defaults to the failure program directory.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>The failure program path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>The specified failure program startup directory is invalid.</value>
   </data>
 
   <!-- Environment Variables -->

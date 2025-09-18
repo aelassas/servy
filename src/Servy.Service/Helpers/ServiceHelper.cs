@@ -8,11 +8,11 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
+using System.Diagnostics;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
+using System.IO;
 
 namespace Servy.Service.Helpers
 {
@@ -79,6 +79,9 @@ namespace Servy.Service.Helpers
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
+                  $"- failureProgramPath: {options.FailureProgramPath}\n" +
+                  $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n" +
+                  $"- failureProgramArgs: {options.FailureProgramArgs}\n" +
                   $"- environmentVariables: {envVarsFormatted}" +
 
                   // Pre-Launch
