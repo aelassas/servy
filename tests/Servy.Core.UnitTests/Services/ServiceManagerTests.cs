@@ -344,13 +344,13 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
-                false,
-                0,
-                false,
-                0,
-                0,
+                true,
+                1024 * 1024,
+                true,
+                30,
+                3,
                 RecoveryAction.None,
-                0,
+                1,
                 string.Empty,
                 null,
                 null,
@@ -364,7 +364,10 @@ namespace Servy.Core.UnitTests.Services
                 "pre-launch-stderr.log",
                 30,
                 0,
-                true
+                true,
+                @"C:\Apps\App\app.exe",
+                @"C:\Apps\App",
+                "--arg1 val1"
                 );
 
             Assert.True(result);
