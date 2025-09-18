@@ -54,6 +54,9 @@ namespace Servy.CLI
                     args[0] = args[0].ToLowerInvariant();
                 }
 
+                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
+                 a.Equals("-q", StringComparison.OrdinalIgnoreCase));
+
                 var config = ConfigurationManager.AppSettings;
 
                 var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
@@ -87,7 +90,7 @@ namespace Servy.CLI
                 var exportCommand = new ExportServiceCommand(serviceRepository);
                 var importCommand = new ImportServiceCommand(serviceRepository);
 
-                await ConsoleHelper.RunWithLoadingAnimation(() =>
+                void Run()
                 {
                     // Ensure db and security folders exist
                     AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
@@ -122,8 +125,19 @@ namespace Servy.CLI
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
                     }
 #endif
+                }
 
-                }, Strings.Msg_Preparing);
+                if (quiet)
+                {
+                    Run();
+                }
+                else
+                {
+                    await ConsoleHelper.RunWithLoadingAnimation(() =>
+                    {
+                        Run();
+                    });
+                }
 
                 var exitCode = await Parser.Default.ParseArguments<
                         InstallServiceOptions,
