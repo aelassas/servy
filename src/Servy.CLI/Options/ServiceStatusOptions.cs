@@ -9,7 +9,7 @@ namespace Servy.CLI.Options
         "status",
         HelpText = "Get the current status of a Windows service. Possible results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused."
     )]
-    public class ServiceStatusOptions
+    public class ServiceStatusOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the name of the Windows service to check.

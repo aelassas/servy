@@ -95,6 +95,7 @@
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Models\CommandResult.cs" />
     <Compile Include="Options\ExportServiceOptions.cs" />
+    <Compile Include="Options\GlobalOptionsBase.cs" />
     <Compile Include="Options\HelpOptions.cs" />
     <Compile Include="Options\ImportServiceOptions.cs" />
     <Compile Include="Options\InstallServiceOptions.cs" />

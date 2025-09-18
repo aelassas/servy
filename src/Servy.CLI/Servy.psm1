@@ -38,7 +38,6 @@
   Export-ServyServiceConfig -Name "WexflowServer" -ConfigFileType "xml" -Path "C:\WexflowServer.xml"
 #>
 
-
 $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
 
 function Show-ServyVersion {
@@ -50,16 +49,27 @@ function Show-ServyVersion {
         Wraps the Servy CLI `--version` command to show the current version
         of the Servy tool installed on the system.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .EXAMPLE
         Show-ServyVersion
         # Displays the current version of Servy CLI.
     #>
-    
+    param(
+        [switch] $Quiet
+    )
+
+    $arguments = @("--version")
+
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
-        & $script:ServyCliPath "--version"
+        & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to get Servy CLI version: $_"
+        exit 1
     }
 }
 
@@ -72,16 +82,27 @@ function Show-ServyHelp {
         Wraps the Servy CLI `help` command to show usage information
         and details about all available commands and options.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .EXAMPLE
         Show-ServyHelp
         # Displays help for the Servy CLI.
     #>
-    
+    param(
+        [switch] $Quiet
+    )
+
+    $arguments = @("--help")
+
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
-        & $script:ServyCliPath "help"
+        & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to display Servy CLI help: $_"
+        exit 1
     }
 }
 
@@ -96,6 +117,9 @@ function Install-ServyService {
         startup directory, parameters, startup type, process priority, logging, health monitoring,
         recovery actions, environment variables, dependencies, service account credentials,
         and optional pre-launch executables.
+
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
 
     .PARAMETER Name
         The unique name of the service to install. (Required)
@@ -213,6 +237,7 @@ function Install-ServyService {
     #>
   
   param(
+    [switch] $Quiet,
     [Parameter(Mandatory = $true)]
     [string] $Name,
 
@@ -267,6 +292,8 @@ function Install-ServyService {
 
   $argsList = @("install", "-n", "`"$Name`"", "-p", "`"$Path`"")
 
+  if ($Quiet) { $argsList += "--quiet" }
+
   $argsList = Add-Arg $argsList "--description" $Description
   $argsList = Add-Arg $argsList "--startupDir" $StartupDir
   $argsList = Add-Arg $argsList "--params" $Params
@@ -304,6 +331,7 @@ function Install-ServyService {
   }
   catch {
     Write-Error "Failed to install service '$Name': $_"
+    exit 1
   }
 }
 
@@ -316,6 +344,9 @@ function Uninstall-ServyService {
         Wraps the Servy CLI `uninstall` command. 
         Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER Name
         The name of the service to uninstall.
 
@@ -324,6 +355,7 @@ function Uninstall-ServyService {
     #>
   
   param(
+    [switch] $Quiet,
     [Parameter(Mandatory = $true)]
     [string]$Name
   )
@@ -333,11 +365,14 @@ function Uninstall-ServyService {
     "-n", "`"$Name`""
   )
 
+  if ($Quiet) { $arguments += "--quiet" }
+
   try {
     & $script:ServyCliPath @arguments
   }
   catch {
     Write-Error "Failed to uninstall service '$Name': $_"
+    exit 1
   }
 }
 
@@ -350,6 +385,9 @@ function Start-ServyService {
         Wraps the Servy CLI `start` command to start a service by its name.
         Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER Name
         The name of the service to start. (Required)
 
@@ -358,6 +396,7 @@ function Start-ServyService {
         # Starts the service named 'WexflowServer'.
     #>
   param(
+    [switch] $Quiet,
     [Parameter(Mandatory = $true)]
     [string]$Name
   )
@@ -367,11 +406,14 @@ function Start-ServyService {
     "-n", "`"$Name`""
   )
 
+  if ($Quiet) { $arguments += "--quiet" }
+
   try {
     & $script:ServyCliPath @arguments
   }
   catch {
     Write-Error "Failed to start service '$Name': $_"
+    exit 1
   }
 }
 
@@ -384,6 +426,9 @@ function Stop-ServyService {
         Wraps the Servy CLI `stop` command to stop a service by its name.
         Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER Name
         The name of the service to stop. (Required)
 
@@ -392,6 +437,7 @@ function Stop-ServyService {
         # Stops the service named 'WexflowServer'.
     #>
     param(
+        [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [string]$Name
     )
@@ -401,11 +447,14 @@ function Stop-ServyService {
         "-n", "`"$Name`""
     )
 
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
         & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to stop service '$Name': $_"
+        exit 1
     }
 }
 
@@ -418,6 +467,9 @@ function Restart-ServyService {
         Wraps the Servy CLI `restart` command to restart a service by its name.
         Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER Name
         The name of the service to restart. (Required)
 
@@ -426,6 +478,7 @@ function Restart-ServyService {
         # Restarts the service named 'WexflowServer'.
     #>
     param(
+        [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [string]$Name
     )
@@ -435,11 +488,14 @@ function Restart-ServyService {
         "-n", "`"$Name`""
     )
 
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
         & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to restart service '$Name': $_"
+        exit 1
     }
 }
 
@@ -453,6 +509,9 @@ function Get-ServyServiceStatus {
         Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused.
         Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER Name
         The name of the service to check. (Required)
 
@@ -461,6 +520,7 @@ function Get-ServyServiceStatus {
         # Retrieves the current status of the service named 'WexflowServer'.
     #>
     param(
+        [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [string]$Name
     )
@@ -470,11 +530,14 @@ function Get-ServyServiceStatus {
         "-n", "`"$Name`""
     )
 
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
         & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to get status of service '$Name': $_"
+        exit 1
     }
 }
 
@@ -486,6 +549,9 @@ function Export-ServyServiceConfig {
     .DESCRIPTION
         Wraps the Servy CLI `export` command to export the configuration of a service
         to a file. Supports XML and JSON file types. Requires Administrator privileges.
+
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
 
     .PARAMETER Name
         The name of the service to export. (Required)
@@ -501,6 +567,7 @@ function Export-ServyServiceConfig {
         # Exports the configuration of 'WexflowServer' to a JSON file at the specified path.
     #>
     param(
+        [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [string]$Name,
 
@@ -519,11 +586,14 @@ function Export-ServyServiceConfig {
         "-p", "`"$Path`""
     )
 
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
         & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to export configuration for service '$Name': $_"
+        exit 1
     }
 }
 
@@ -536,6 +606,9 @@ function Import-ServyServiceConfig {
         Wraps the Servy CLI `import` command to import a service configuration file
         (XML or JSON) into Servy's database. Requires Administrator privileges.
 
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
     .PARAMETER ConfigFileType
         The configuration file type. Valid values are 'xml' or 'json'. (Required)
 
@@ -547,6 +620,7 @@ function Import-ServyServiceConfig {
         # Imports the configuration file into Servy's database.
     #>
     param(
+        [switch] $Quiet,
         [Parameter(Mandatory = $true)]
         [ValidateSet("xml","json")]
         [string]$ConfigFileType,
@@ -561,11 +635,14 @@ function Import-ServyServiceConfig {
         "-p", "`"$Path`""
     )
 
+    if ($Quiet) { $arguments += "--quiet" }
+
     try {
         & $script:ServyCliPath @arguments
     }
     catch {
         Write-Error "Failed to import configuration from '$Path': $_"
+        exit 1
     }
 }
 

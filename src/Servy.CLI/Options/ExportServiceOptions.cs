@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Options for the <c>export</c> command to export a Servy Windows service configuration to a file.
     /// </summary>
     [Verb("export", HelpText = "Export a Servy Windows service configuration to a configuration file.")]
-    public class ExportServiceOptions
+    public class ExportServiceOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the name of the service to export.

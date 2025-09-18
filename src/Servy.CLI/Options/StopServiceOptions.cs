@@ -6,7 +6,7 @@ namespace Servy.CLI.Options
     /// Options for the <c>stop</c> command to stop a Windows service.
     /// </summary>
     [Verb("stop", HelpText = "Stop a Windows service.")]
-    public class StopServiceOptions
+    public class StopServiceOptions : GlobalOptionsBase
     {
         /// <summary>
         /// Gets or sets the name of the service to stop.
