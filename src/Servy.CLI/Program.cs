@@ -2,7 +2,6 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Helpers;
 using Servy.CLI.Options;
-using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
@@ -14,7 +13,6 @@ using System;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using static Servy.CLI.Helpers.Helper;
 
