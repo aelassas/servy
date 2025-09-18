@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA68
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 		ROADMAP.md = ROADMAP.md
+		update-version.ps1 = update-version.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "apps", "apps", "{525B29D4-743C-4A5B-BFB6-82A3F981495E}"
@@ -72,13 +73,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{600A36AC-7
 	ProjectSection(SolutionItems) = preProject
 		tests\data\Service.json = tests\data\Service.json
 		tests\data\Service.xml = tests\data\Service.xml
-		tests\data\Service2_Exp.xml = tests\data\Service2_Exp.xml
-		tests\data\Service_min.xml = tests\data\Service_min.xml
-		tests\data\ServyNodeJSApp.xml = tests\data\ServyNodeJSApp.xml
-		tests\data\ServyNodeJSApp2.xml = tests\data\ServyNodeJSApp2.xml
-		tests\data\sss.xml = tests\data\sss.xml
-		tests\data\Wexflow.json = tests\data\Wexflow.json
-		tests\data\Wexflow.xml = tests\data\Wexflow.xml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Manager", "src\Servy.Manager\Servy.Manager.csproj", "{502C7577-7E31-4BAE-B259-E2EDC15CF541}"
