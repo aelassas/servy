@@ -57,14 +57,9 @@
 
             <TabControl Grid.Row="0">
                 <!-- Main tab UI -->
-                <TabItem Header="{x:Static resx:Strings.Label_MainTab}" >
+                <TabItem Header="{x:Static resx:Strings.Label_MainTab}">
                     <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -154,40 +149,91 @@
                         <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableRotation}" />
                         <TextBlock Grid.Row="11" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
+
+
+                    </Grid>
+                </TabItem>
+
+                <!-- Recovery Tab UI -->
+                <TabItem Header="{x:Static resx:Strings.Label_RecoveryTab}">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+
                         <!-- Enable Health Monitoring -->
-                        <CheckBox Grid.Row="12" 
-                                  Grid.Column="1" 
-                                  Content="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
-                                  IsChecked="{Binding EnableHealthMonitoring, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                  Margin="0,5" />
+                        <CheckBox Grid.Row="0" 
+                          Grid.Column="1" 
+                          Content="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
+                          IsChecked="{Binding EnableHealthMonitoring, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          Margin="0,5" />
 
                         <!-- Heartbeat Interval -->
-                        <TextBlock Grid.Row="13" Grid.Column="0" Text="{x:Static resx:Strings.Label_HeartbeatInterval}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding HeartbeatInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
-                        <TextBlock Grid.Row="13" Grid.Column="2" Text="{x:Static resx:Strings.Label_Seconds}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_HeartbeatInterval}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HeartbeatInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="2" Text="{x:Static resx:Strings.Label_Seconds}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
                         <!-- Max Failed Checks -->
-                        <TextBlock Grid.Row="14" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxFailedChecks}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding MaxFailedChecks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
-                        <TextBlock Grid.Row="14" Grid.Column="2" Text="{x:Static resx:Strings.Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxFailedChecks}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MaxFailedChecks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Text="{x:Static resx:Strings.Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
                         <!-- Recovery Action -->
-                        <TextBlock Grid.Row="15" Grid.Column="0" Text="{x:Static resx:Strings.Label_RecoveryAction}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="15" 
-                                  Grid.Column="1"
-                                  ItemsSource="{Binding RecoveryActions, UpdateSourceTrigger=PropertyChanged}"
-                                  DisplayMemberPath="DisplayName"
-                                  SelectedValue="{Binding SelectedRecoveryAction, Mode=TwoWay}"
-                                  SelectedValuePath="RecoveryAction"
-                                  Margin="0,5"
-                                  IsEnabled="{Binding EnableHealthMonitoring}"
-                                  Grid.ColumnSpan="2" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_RecoveryAction}" Margin="0,5,10,5"/>
+                        <ComboBox Grid.Row="3" 
+                          Grid.Column="1"
+                          ItemsSource="{Binding RecoveryActions, UpdateSourceTrigger=PropertyChanged}"
+                          DisplayMemberPath="DisplayName"
+                          SelectedValue="{Binding SelectedRecoveryAction, Mode=TwoWay}"
+                          SelectedValuePath="RecoveryAction"
+                          Margin="0,5"
+                          IsEnabled="{Binding EnableHealthMonitoring}"
+                          Grid.ColumnSpan="2" />
 
                         <!-- Max Restart Attempts -->
-                        <TextBlock Grid.Row="16" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxRestartAttempts}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="16" Grid.Column="1" Text="{Binding MaxRestartAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
-                        <TextBlock Grid.Row="16" Grid.Column="2" Text="{x:Static resx:Strings.Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxRestartAttempts}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding MaxRestartAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"/>
+                        <TextBlock Grid.Row="4" Grid.Column="2" Text="{x:Static resx:Strings.Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
+                        <!-- Failure Program -->
+                        <!-- Info -->
+                        <TextBlock Grid.Row="5"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_FailureProgram}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
+
+                        <!-- Process Path -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding FailureProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="6" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramPathCommand}" Margin="5,5,0,5"/>
+
+                        <!-- Startup Directory -->
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding FailureProgramStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="7" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramStartupDirectoryCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="8"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+
+                        <!-- Process Parameters -->
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
                     </Grid>
                 </TabItem>
 

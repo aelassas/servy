@@ -34,8 +34,8 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository = new Mock<IServiceRepository>();
             _helpService = new Mock<IHelpService>();
             _viewModel = new MainViewModel(_dialogServiceMock.Object,
-                _serviceCommandsMock.Object, 
-                _messageBoxService.Object, 
+                _serviceCommandsMock.Object,
+                _messageBoxService.Object,
                 _serviceRepository.Object,
                 _helpService.Object
                 );
@@ -96,6 +96,10 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PreLaunchRetryAttempts = "3";
             _viewModel.PreLaunchIgnoreFailure = true;
 
+            _viewModel.FailureProgramPath = @"C:\failureProgram.exe";
+            _viewModel.FailureProgramStartupDirectory = @"C:\failureProgramDir";
+            _viewModel.FailureProgramParameters = "--failureProgramParam1 val1";
+
             // Act
             _viewModel.InstallCommand.Execute(null);
 
@@ -132,7 +136,11 @@ namespace Servy.UnitTests.ViewModels
                  @"C:\pre-launch-stderr.log",
                  "40",
                  "3",
-                 true
+                 true,
+
+                 @"C:\failureProgram.exe",
+                 @"C:\failureProgramDir",
+                 "--failureProgramParam1 val1"
 
             ), Times.Once);
         }

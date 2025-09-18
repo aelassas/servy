@@ -87,7 +87,7 @@ namespace Servy.CLI.Commands
                     opts.StdoutPath,
                     opts.StderrPath,
                     opts.EnableRotation,
-                    rotationSize,
+                    (ulong)rotationSize,
                     opts.EnableHealthMonitoring,
                     heartbeatInterval,
                     maxFailedChecks,
@@ -106,7 +106,11 @@ namespace Servy.CLI.Commands
                     opts.PreLaunchStderrPath,
                     preLaunchTimeout,
                     preLaunchRetryAttempts,
-                    opts.PreLaunchIgnoreFailure
+                    opts.PreLaunchIgnoreFailure,
+                    // Failure program
+                    failureProgramPath: opts.FailureProgramPath,
+                    failureProgramWorkingDirectory: opts.FailureProgramStartupDir,
+                    failureProgramArgs: opts.FailureProgramParameters
                 );
 
                 if (!success)

@@ -1,6 +1,8 @@
 ﻿using Dapper;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 /// <summary>
 /// Provides helper methods to initialize the SQLite database schema for Servy.
@@ -9,14 +11,9 @@ using System.Diagnostics.CodeAnalysis;
 public static class SQLiteDbInitializer
 {
     /// <summary>
-    /// Creates the <c>Services</c> table and necessary indexes if they do not exist.
+    /// Creates or updates the <c>Services</c> table and necessary indexes.
     /// </summary>
     /// <param name="connection">An open database connection to execute commands on.</param>
-    /// <remarks>
-    /// This method uses Dapper to execute raw SQL commands. It ensures that the
-    /// <c>Services</c> table is created with all expected columns and that an index
-    /// on the lowercase <c>Name</c> column exists for case-insensitive lookups.
-    /// </remarks>
     public static void Initialize(IDbConnection connection)
     {
         var createTableSql = @"
@@ -58,5 +55,36 @@ public static class SQLiteDbInitializer
 
         var createIndexSql = "CREATE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
         connection.Execute(createIndexSql);
+
+        EnsureColumns(connection);
+    }
+
+    /// <summary>
+    /// Ensures that all expected columns exist in the Services table.
+    /// Adds missing columns for backward compatibility.
+    /// </summary>
+    private static void EnsureColumns(IDbConnection connection)
+    {
+        // Use dynamic since PRAGMA returns multiple columns
+        var existingColumns = new HashSet<string>(
+            connection.Query("PRAGMA table_info(Services);")
+                      .Select(row => (string)row.name) // 'row' is dynamic
+        );
+
+        // Use KeyValuePair instead of tuples for .NET Framework 4.8
+        var expectedColumns = new List<KeyValuePair<string, string>>
+        {
+            new KeyValuePair<string, string>("FailureProgramPath", "ALTER TABLE Services ADD COLUMN FailureProgramPath TEXT;"),
+            new KeyValuePair<string, string>("FailureProgramStartupDirectory", "ALTER TABLE Services ADD COLUMN FailureProgramStartupDirectory TEXT;"),
+            new KeyValuePair<string, string>("FailureProgramParameters", "ALTER TABLE Services ADD COLUMN FailureProgramParameters TEXT;"),
+        };
+
+        foreach (var column in expectedColumns)
+        {
+            if (!existingColumns.Contains(column.Key))
+            {
+                connection.Execute(column.Value);
+            }
+        }
     }
 }

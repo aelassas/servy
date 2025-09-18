@@ -58,23 +58,24 @@ namespace Servy.Infrastructure.Data
                 service.Password = _securePassword.Encrypt(service.Password);
 
             var sql = @"
-        INSERT INTO Services (
-            Name, Description, ExecutablePath, StartupDirectory, Parameters, 
-            StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
-            EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
-            EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
-            PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
-            PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure
-        ) VALUES (
-            @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
-            @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
-            @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
-            @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
-            @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
-            @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure
-        );
-        SELECT last_insert_rowid();";
-
+                INSERT INTO Services (
+                    Name, Description, ExecutablePath, StartupDirectory, Parameters, 
+                    StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
+                    EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
+                    EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
+                    PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
+                    PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
+                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters
+                ) VALUES (
+                    @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
+                    @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
+                    @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
+                    @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
+                    @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
+                    @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
+                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters
+                );
+                SELECT last_insert_rowid();";
 
             return await _dapper.ExecuteScalarAsync<int>(sql, service);
         }
@@ -116,12 +117,15 @@ namespace Servy.Infrastructure.Data
                     PreLaunchStderrPath = @PreLaunchStderrPath,
                     PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
                     PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure
+                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,
+                    FailureProgramPath = @FailureProgramPath,
+                    FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
+                    FailureProgramParameters = @FailureProgramParameters
                 WHERE Id = @Id;";
-
 
             return await _dapper.ExecuteAsync(sql, service);
         }
+
 
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default)
@@ -194,7 +198,7 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-            
+
             foreach (var dto in list)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -391,6 +395,9 @@ namespace Servy.Infrastructure.Data
                 MaxFailedChecks = dto.MaxFailedChecks ?? 3,
                 RecoveryAction = dto.RecoveryAction.HasValue ? (RecoveryAction)dto.RecoveryAction.Value : RecoveryAction.None,
                 MaxRestartAttempts = dto.MaxRestartAttempts ?? 3,
+                FailureProgramPath = dto.FailureProgramPath,
+                FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
+                FailureProgramParameters = dto.FailureProgramParameters,
                 EnvironmentVariables = dto.EnvironmentVariables,
                 ServiceDependencies = dto.ServiceDependencies,
                 RunAsLocalSystem = dto.RunAsLocalSystem ?? true,
@@ -436,6 +443,9 @@ namespace Servy.Infrastructure.Data
                 MaxFailedChecks = domain.MaxFailedChecks,
                 RecoveryAction = (int)domain.RecoveryAction,
                 MaxRestartAttempts = domain.MaxRestartAttempts,
+                FailureProgramPath = domain.FailureProgramPath,
+                FailureProgramStartupDirectory = domain.FailureProgramStartupDirectory,
+                FailureProgramParameters = domain.FailureProgramParameters,
                 EnvironmentVariables = domain.EnvironmentVariables,
                 ServiceDependencies = domain.ServiceDependencies,
                 RunAsLocalSystem = domain.RunAsLocalSystem,

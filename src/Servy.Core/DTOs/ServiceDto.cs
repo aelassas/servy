@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.DTOs
+﻿using Servy.Core.Config;
+
+namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Data Transfer Object for persisting a Windows service configuration in SQLite.
@@ -91,6 +93,21 @@
         public int? MaxRestartAttempts { get; set; }
 
         /// <summary>
+        /// Gets or sets the path to the process to run on failure.
+        /// </summary>
+        public string FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the failure program.
+        /// </summary>
+        public string FailureProgramStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line parameters for the failure program.
+        /// </summary>
+        public string FailureProgramParameters { get; set; }
+
+        /// <summary>
         /// Optional environment variables for the service, in key=value format separated by semicolons.
         /// </summary>
         public string EnvironmentVariables { get; set; }
@@ -177,6 +194,9 @@
         public bool ShouldSerializeMaxFailedChecks() => MaxFailedChecks.HasValue;
         public bool ShouldSerializeRecoveryAction() => RecoveryAction.HasValue;
         public bool ShouldSerializeMaxRestartAttempts() => MaxRestartAttempts.HasValue;
+        public bool ShouldSerializeFailureProgramPath() => !string.IsNullOrWhiteSpace(FailureProgramPath);
+        public bool ShouldSerializeFailureProgramStartupDirectory() => !string.IsNullOrWhiteSpace(FailureProgramStartupDirectory);
+        public bool ShouldSerializeFailureProgramParameters() => !string.IsNullOrWhiteSpace(FailureProgramParameters);
         public bool ShouldSerializeEnvironmentVariables() => !string.IsNullOrWhiteSpace(EnvironmentVariables);
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
         public bool ShouldSerializeRunAsLocalSystem() => RunAsLocalSystem.HasValue;

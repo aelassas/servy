@@ -65,6 +65,9 @@ namespace Servy.UnitTests.Services
             var preLaunchRetryAttempts = "0";
             var preLaunchIgnoreError = true;
 
+            var failureProgramExe = @"C:\failureProgram.exe";
+            var failureProgramDir = @"C:\failureProgramDir";
+            var failureProgramArgs = "failureProgramArgs";
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -99,7 +102,11 @@ namespace Servy.UnitTests.Services
                 preLaunchStderrPath,
                 preLaunchTimeout,
                 preLaunchRetryAttempts,
-                preLaunchIgnoreError
+                preLaunchIgnoreError,
+
+                failureProgramExe,
+                failureProgramDir,
+                failureProgramArgs
                 );
 
             // Assert
@@ -135,7 +142,11 @@ namespace Servy.UnitTests.Services
                 preLaunchStderrPath,
                 preLaunchTimeout,
                 preLaunchRetryAttempts,
-                preLaunchIgnoreError
+                preLaunchIgnoreError,
+
+                failureProgramExe,
+                failureProgramDir,
+                failureProgramArgs
                 ), Times.Once);
         }
 

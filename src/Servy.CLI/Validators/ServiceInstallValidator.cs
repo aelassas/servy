@@ -100,6 +100,14 @@ namespace Servy.CLI.Validators
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
 
+            if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!Helper.IsValidPath(opts.FailureProgramPath) || !File.Exists(opts.FailureProgramPath)))
+                return CommandResult.Fail(Strings.Msg_InvalidFailureProgramPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.FailureProgramStartupDir) && (!Helper.IsValidPath(opts.FailureProgramStartupDir) || !Directory.Exists(opts.FailureProgramStartupDir)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidFailureProgramStartupDirectory);
+            }
+
             if (!string.IsNullOrWhiteSpace(opts.User))
             {
                 try

@@ -47,8 +47,6 @@ namespace Servy.Manager.ViewModels
             ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand);
         }
 
-
-
         #region Properties
 
         /// <summary>
@@ -252,7 +250,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Service command failed for {Service?.Name}: {ex}");
+                _logger.Warning($"Service command failed for {Service.Name}: {ex}");
             }
         }
 

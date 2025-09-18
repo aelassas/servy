@@ -95,8 +95,8 @@
     <Compile Include="Converters\MessageConverter.cs" />
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
-    <Compile Include="Helpers\IServiceConfigurationValidator.cs" />
-    <Compile Include="Helpers\ServiceConfigurationValidator.cs" />
+    <Compile Include="Validators\IServiceConfigurationValidator.cs" />
+    <Compile Include="Validators\ServiceConfigurationValidator.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Models\LogEntryModel.cs" />
     <Compile Include="Models\Service.cs" />
