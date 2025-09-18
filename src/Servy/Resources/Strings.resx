@@ -210,7 +210,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   </data>
 
   <data name="Info_FailureProgram" xml:space="preserve">
-    <value>Run a Program on Failure. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed.</value>
+    <value>Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.</value>
   </data>
   <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
     <value>Optional. Defaults to the failure program directory.</value>

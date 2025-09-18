@@ -177,7 +177,7 @@ namespace Servy.Services
 
             try
             {
-                var rotationSizeValue = int.Parse(rotationSize) * 1024 * 1024;
+                var rotationSizeValue = ulong.Parse(rotationSize) * 1024 * 1024;
                 var heartbeatIntervalValue = int.Parse(heartbeatInterval);
                 var maxFailedChecksValue = int.Parse(maxFailedChecks);
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
@@ -205,7 +205,7 @@ namespace Servy.Services
                     stdoutPath: stdoutPath,
                     stderrPath: stderrPath,
                     enableRotation: enableRotation,
-                    rotationSizeInBytes: (ulong)rotationSizeValue,
+                    rotationSizeInBytes: rotationSizeValue,
                     enableHealthMonitoring: enableHealthMonitoring,
                     heartbeatInterval: heartbeatIntervalValue,
                     maxFailedChecks: maxFailedChecksValue,
