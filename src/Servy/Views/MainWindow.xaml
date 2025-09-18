@@ -216,7 +216,7 @@
                         <TextBlock Grid.Row="5"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_FailureProgram}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <!-- Process Path -->
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPath}" Margin="0,5,10,5"/>
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding FailureProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="6" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramPathCommand}" Margin="5,5,0,5"/>
 
@@ -376,7 +376,7 @@
                         <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PreLaunch}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <!-- Process Path -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchProcessPath}" Margin="0,5,10,5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PreLaunchExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="1" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchProcessPathCommand}" Margin="5,5,0,5"/>
 

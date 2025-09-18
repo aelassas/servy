@@ -262,7 +262,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="Info_PreLaunch" xml:space="preserve">
     <value>Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable "Ignore Failure".</value>
   </data>
-  <data name="Label_PreLaunchProcessPath" xml:space="preserve">
+  <data name="Label_ProcessPathNotRequired" xml:space="preserve">
     <value>Process Path</value>
   </data>
   <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">

@@ -343,9 +343,9 @@ namespace Servy.Resources {
         /// <summary>
         ///   Recherche une chaîne localisée semblable à Process Path.
         /// </summary>
-        public static string Label_PreLaunchProcessPath {
+        public static string Label_ProcessPathNotRequired {
             get {
-                return ResourceManager.GetString("Label_PreLaunchProcessPath", resourceCulture);
+                return ResourceManager.GetString("Label_ProcessPathNotRequired", resourceCulture);
             }
         }
         
