@@ -338,13 +338,13 @@ namespace Servy.Core.UnitTests.Services
                 ProcessPriority.Normal,
                 null,
                 null,
-                false,
-                0,
-                false,
-                0,
-                0,
+                true,
+                1024 * 1024,
+                true,
+                30,
+                3,
                 RecoveryAction.None,
-                0,
+                1,
                 string.Empty,
                 null,
                 null,
@@ -358,7 +358,10 @@ namespace Servy.Core.UnitTests.Services
                 "pre-launch-stderr.log",
                 30,
                 0,
-                true
+                true,
+                @"C:\Apps\App\app.exe",
+                @"C:\Apps\App",
+                "--arg1 val1"
                 );
 
             Assert.True(result);
@@ -1186,7 +1189,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("Continue Pending", ServiceStatus.ContinuePending)]
         [InlineData(null, ServiceStatus.None)]
         [InlineData("UnknownState", ServiceStatus.None)]
-        public void GetAllServices_ShouldMapStateCorrectly(string wmiState, ServiceStatus expectedStatus)
+        public void GetAllServices_ShouldMapStateCorrectly(string? wmiState, ServiceStatus expectedStatus)
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["State"] = wmiState;
@@ -1211,7 +1214,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("Disabled", ServiceStartType.Disabled)]
         [InlineData(null, ServiceStartType.Automatic)]
         [InlineData("Unknown", ServiceStartType.Automatic)]
-        public void GetAllServices_ShouldMapStartModeCorrectly(string wmiStartMode, ServiceStartType expectedType)
+        public void GetAllServices_ShouldMapStartModeCorrectly(string? wmiStartMode, ServiceStartType expectedType)
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["State"] = "Running";
