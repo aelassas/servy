@@ -67,7 +67,7 @@ namespace Servy.CLI.Commands
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
 
                 // Parse numeric options
-                ulong rotationSize = (ulong)(int.TryParse(opts.RotationSize, out var rot) ? rot : AppConfig.DefaultRotationSize) * 1024 * 1024;
+                ulong rotationSize = (ulong.TryParse(opts.RotationSize, out var rot) ? rot : (ulong)AppConfig.DefaultRotationSize) * 1024 * 1024;
                 int heartbeatInterval = int.TryParse(opts.HeartbeatInterval, out var hb) ? hb : AppConfig.DefaultHeartbeatInterval;
                 int maxFailedChecks = int.TryParse(opts.MaxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks;
                 int maxRestartAttempts = int.TryParse(opts.MaxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts;
