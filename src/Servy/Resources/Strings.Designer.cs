@@ -160,7 +160,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Run a Program on Failure. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed..
+        ///   Recherche une chaîne localisée semblable à Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed..
         /// </summary>
         public static string Info_FailureProgram {
             get {

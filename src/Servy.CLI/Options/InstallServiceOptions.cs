@@ -142,7 +142,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the failure program path.
         /// Optional.
         /// </summary>
-        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the process fails to start. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed.")]
+        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.")]
         public string? FailureProgramPath { get; set; }
 
         /// <summary>
