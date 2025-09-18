@@ -56,6 +56,7 @@ choco install -y servy
 
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
+* [Screenshots](https://github.com/aelassas/servy/wiki/Screenshots)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
