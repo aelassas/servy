@@ -86,7 +86,7 @@ choco install -y servy
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Environment variable expansion supported in both environment variables and process parameters
-* Run services as Local System, local user, or domain account
+* Run services as Local System, local user, domain account, or DOMAIN\gMSA$ for Group Managed Service Accounts
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Run pre-launch script execution before starting the service, with retries, timeout, logging and failure handling
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
