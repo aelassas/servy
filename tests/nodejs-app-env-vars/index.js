@@ -34,6 +34,8 @@ for (const [key, val] of Object.entries(process.env)) {
 }
 // process.exit(1)
 
+fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
+
 // simulate some work
 // await new Promise((res) => setTimeout(res, 6 * 1000))
 process.stderr.write('boo!')
@@ -41,19 +43,19 @@ process.stderr.write('boo!')
 // process.exit(0)
 
 // start child process notepad.exe (Windows) detached
-const child = spawn('notepad.exe', [], {
-  detached: true,   // let child live independently
-  stdio: 'ignore'   // ignore stdio so parent can exit cleanly
-})
+// const child = spawn('notepad.exe', [], {
+//   detached: true,   // let child live independently
+//   stdio: 'ignore'   // ignore stdio so parent can exit cleanly
+// })
 
-// allow the child process to keep running after parent exits
-child.unref()
+// // allow the child process to keep running after parent exits
+// child.unref()
 
-// keep Node alive until key press
-process.stdin.setRawMode(true)
-process.stdin.resume()
-process.stdin.on('data', () => {
-  console.log('Exiting...')
-  child.kill() // kill the child process
-  process.exit(0)
-})
+// // keep Node alive until key press
+// process.stdin.setRawMode(true)
+// process.stdin.resume()
+// process.stdin.on('data', () => {
+//   console.log('Exiting...')
+//   child.kill() // kill the child process
+//   process.exit(0)
+// })

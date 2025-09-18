@@ -124,5 +124,20 @@ namespace Servy.Service.CommandLine
         /// Defaults to false.
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the full path to the failure program to run.
+        /// </summary>
+        public string? FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the failure program.
+        /// </summary>
+        public string? FailureProgramWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line arguments to pass to the failure program.
+        /// </summary>
+        public string? FailureProgramArgs { get; set; }
     }
 }

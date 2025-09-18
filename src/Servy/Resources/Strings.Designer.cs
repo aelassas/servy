@@ -160,6 +160,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run a Program on Failure. If health checks are disabled, the program will run when the process fails to start. If health checks are enabled, the program will only run after all configured recovery action retries have failed..
+        /// </summary>
+        public static string Info_FailureProgram {
+            get {
+                return ResourceManager.GetString("Info_FailureProgram", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the failure program directory..
+        /// </summary>
+        public static string Info_FailureProgramStartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_FailureProgramStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable &quot;Ignore Failure&quot;..
         /// </summary>
         public static string Info_PreLaunch {
@@ -391,6 +409,15 @@ namespace Servy.Resources {
         public static string Label_RecoveryAction {
             get {
                 return ResourceManager.GetString("Label_RecoveryAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery.
+        /// </summary>
+        public static string Label_RecoveryTab {
+            get {
+                return ResourceManager.GetString("Label_RecoveryTab", resourceCulture);
             }
         }
         
@@ -652,6 +679,24 @@ namespace Servy.Resources {
         public static string Msg_FieldRequired {
             get {
                 return ResourceManager.GetString("Msg_FieldRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The failure program path is invalid..
+        /// </summary>
+        public static string Msg_InvalidFailureProgramPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidFailureProgramPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified failure program startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidFailureProgramStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidFailureProgramStartupDirectory", resourceCulture);
             }
         }
         

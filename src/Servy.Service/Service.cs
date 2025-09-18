@@ -47,6 +47,7 @@ namespace Servy.Service
         private bool _recoveryActionEnabled = false;
         private string? _restartAttemptsFile;
         private bool _preLaunchEnabled = false;
+        private StartOptions? _options;
 
         #endregion
 
@@ -97,6 +98,7 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator;
+            _options = null;
         }
 
         /// <summary>
@@ -122,6 +124,8 @@ namespace Servy.Service
                     Stop();
                     return;
                 }
+
+                _options = options;
 
                 // Ensure working directory is valid
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
@@ -493,13 +497,13 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Starts the child process and assigns it to a Windows Job Object to ensure proper cleanup.
+        /// Starts the child process.
         /// Redirects standard output and error streams, and sets up event handlers for output, error, and exit events.
         /// </summary>
         /// <param name="realExePath">The full path to the executable to run.</param>
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
-        /// <param name="environmentVariables">Environment variables.</param>
+        /// <param name="environmentVariables">Environment variables to pass to the process.</param>
         private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(environmentVariables);
@@ -550,6 +554,58 @@ namespace Servy.Service
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
         }
+
+        /// <summary>
+        /// Executes the configured failure program if specified in the service options.
+        /// This is intended to be called when the main child process fails to start or when
+        /// all recovery action retries have failed.
+        /// </summary>
+        /// <remarks>
+        /// The failure program path, arguments, and working directory are taken from
+        /// the service options:
+        /// - <c>FailureProgramPath</c>: the full path to the program to run.
+        /// - <c>FailureProgramParameters</c>: the command-line arguments to pass.
+        /// - <c>FailureProgramStartupDirectory</c>: the working directory for the program.
+        /// 
+        /// Exceptions thrown while attempting to start the failure program are caught
+        /// and logged to avoid crashing the service.
+        /// </remarks>
+        private void RunFailureProgram()
+        {
+            if (_options == null || string.IsNullOrWhiteSpace(_options.FailureProgramPath))
+                return;
+
+            try
+            {
+                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                    _options.FailureProgramArgs ?? string.Empty,
+                    new Dictionary<string, string?>()
+                );
+
+                var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
+                    ? Path.GetDirectoryName(_options.FailureProgramPath)
+                    : _options.FailureProgramWorkingDirectory;
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = _options.FailureProgramPath,
+                    Arguments = args,
+                    WorkingDirectory = workingDir,
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+
+                _logger?.Info($"Running failure program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+
+                // Fire-and-forget: start the process without disposing immediately
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Failed to run failure program: {ex.Message}", ex);
+            }
+        }
+
 
         /// <summary>
         /// Logs a warning for any unexpanded environment variable placeholders found in the given string.
@@ -622,6 +678,9 @@ namespace Servy.Service
         /// If recovery is disabled and the process exits successfully, the service continues running
         /// (unless configured otherwise).
         /// If recovery is enabled, logs that recovery/restart logic will be applied.
+        /// If the process fails to start and recovery actions are disabled, the configured failure program (if any)
+        /// will be executed. When recovery actions are enabled, the failure program will only be executed if all 
+        /// retries are exhausted.
         /// </summary>
         private void OnProcessExited(object? sender, EventArgs e)
         {
@@ -644,6 +703,9 @@ namespace Servy.Service
                         if (code != 0)
                         {
                             _logger.Error("Recovery disabled and child process failed. Stopping service.");
+
+                            RunFailureProgram();
+
                             Stop();
                         }
                         else
@@ -748,7 +810,11 @@ namespace Servy.Service
 
                                 // No more retries → reset counter so next session starts fresh
                                 SaveRestartAttempts(0);
+
+                                RunFailureProgram();
+
                                 Stop();
+
                                 return;
                             }
 
@@ -918,7 +984,7 @@ namespace Servy.Service
 
                 if (!process.WaitForExit(timeoutMs))
                 {
-                    _logger?.Warning($"Process did not exit within {timeoutMs/1000.0} seconds.");
+                    _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds.");
                 }
             }
             catch (Exception ex)

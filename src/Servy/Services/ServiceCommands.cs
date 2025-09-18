@@ -104,7 +104,10 @@ namespace Servy.Services
             string preLaunchStderrPath,
             string preLaunchTimeout,
             string preLaunchRetryAttempts,
-            bool preLaunchIgnoreFailure
+            bool preLaunchIgnoreFailure,
+            string failureProgramPath,
+            string failureProgramWorkingDirectory,
+            string failureProgramArgs
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -134,6 +137,9 @@ namespace Servy.Services
                 MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks,
                 RecoveryAction = (int)recoveryAction,
                 MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts,
+                FailureProgramPath = failureProgramPath,
+                FailureProgramStartupDirectory = failureProgramWorkingDirectory,
+                FailureProgramParameters = failureProgramArgs,
                 EnvironmentVariables = environmentVariables,
                 ServiceDependencies = serviceDependencies,
                 RunAsLocalSystem = runAsLocalSystem,
@@ -196,7 +202,7 @@ namespace Servy.Services
                     stdoutPath: stdoutPath,
                     stderrPath: stderrPath,
                     enableRotation: enableRotation,
-                    rotationSizeInBytes: rotationSizeValue,
+                    rotationSizeInBytes: (ulong)rotationSizeValue,
                     enableHealthMonitoring: enableHealthMonitoring,
                     heartbeatInterval: heartbeatIntervalValue,
                     maxFailedChecks: maxFailedChecksValue,
@@ -214,9 +220,11 @@ namespace Servy.Services
                     preLaunchStderrPath: preLaunchStderrPath,
                     preLaunchTimeout: preLaunchTimeoutValue,
                     preLaunchRetryAttempts: preLaunchRetryAttemptsValue,
-                    preLaunchIgnoreFailure: preLaunchIgnoreFailure
+                    preLaunchIgnoreFailure: preLaunchIgnoreFailure,
+                    failureProgramPath: failureProgramPath,
+                    failureProgramWorkingDirectory: failureProgramWorkingDirectory,
+                    failureProgramArgs: failureProgramArgs
                 );
-
 
                 if (success)
                 {

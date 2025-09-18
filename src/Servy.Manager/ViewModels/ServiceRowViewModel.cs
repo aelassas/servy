@@ -45,8 +45,6 @@ namespace Servy.Manager.ViewModels
             ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand);
         }
 
-
-
         #region Properties
 
         /// <summary>

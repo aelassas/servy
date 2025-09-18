@@ -18,7 +18,7 @@ namespace Servy.Manager.Helpers
     {
         #region Constants
 
-        private const int MinRotationSize = 1 * 1024 * 1024;       // 1 MB
+        private const int MinRotationSize = 1;                     // 1 MB
         private const int MinHeartbeatInterval = 5;                // 5 seconds
         private const int MinMaxFailedChecks = 1;                  // 1 attempt
         private const int MinMaxRestartAttempts = 1;               // 1 attempt
@@ -99,6 +99,20 @@ namespace Servy.Manager.Helpers
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
                     return false;
                 }
+            }
+
+            // Failure Program
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && (!CoreHelper.IsValidPath(dto.FailureProgramPath) || !File.Exists(dto.FailureProgramPath)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) &&
+                (!CoreHelper.IsValidPath(dto.FailureProgramStartupDirectory) || !Directory.Exists(dto.FailureProgramStartupDirectory)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramStartupDirectory, AppConfig.Caption);
+                return false;
             }
 
             string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);

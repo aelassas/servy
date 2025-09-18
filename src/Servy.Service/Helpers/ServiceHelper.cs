@@ -75,6 +75,9 @@ namespace Servy.Service.Helpers
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
+                  $"- failureProgramPath: {options.FailureProgramPath}\n" +
+                  $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n" +
+                  $"- failureProgramArgs: {options.FailureProgramArgs}\n" +
                   $"- environmentVariables: {envVarsFormatted}" +
 
                   // Pre-Launch

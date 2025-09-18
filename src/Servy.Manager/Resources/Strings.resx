@@ -288,7 +288,7 @@ Copyright © 2025 Akram El Assas. All rights reserved.
     <value>The specified stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of bytes greater than or equal to 1 MB (1,048,576 bytes).</value>
+    <value>Rotation size must be a number of Megabytes (MB) greater than or equal to 1 MB.</value>
   </data>
   <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
     <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>
@@ -383,4 +383,11 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified service is disabled.</value>
   </data>
 
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>The failure program path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>The specified failure program startup directory is invalid.</value>
+  </data>
+  
 </root>

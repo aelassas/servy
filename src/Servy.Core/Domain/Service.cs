@@ -118,6 +118,21 @@ namespace Servy.Core.Domain
         public int MaxRestartAttempts { get; set; } = 3;
 
         /// <summary>
+        /// Gets or sets the path to the process to run on failure.
+        /// </summary>
+        public string? FailureProgramPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the failure program.
+        /// </summary>
+        public string? FailureProgramStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line parameters for the failure program.
+        /// </summary>
+        public string? FailureProgramParameters { get; set; }
+
+        /// <summary>
         /// Gets or sets environment variables for the service in the form "KEY=VALUE;KEY2=VALUE2".
         /// </summary>
         public string? EnvironmentVariables { get; set; }
@@ -315,7 +330,7 @@ namespace Servy.Core.Domain
                 stdoutPath: StdoutPath,
                 stderrPath: StderrPath,
                 enableRotation: EnableRotation,
-                rotationSizeInBytes: RotationSize * 1024 * 1024,
+                rotationSizeInBytes: (ulong)RotationSize * 1024 * 1024,
                 enableHealthMonitoring: EnableHealthMonitoring,
                 heartbeatInterval: HeartbeatInterval,
                 maxFailedChecks: MaxFailedChecks,
@@ -333,7 +348,10 @@ namespace Servy.Core.Domain
                 preLaunchStderrPath: PreLaunchStderrPath,
                 preLaunchTimeout: PreLaunchTimeoutSeconds,
                 preLaunchRetryAttempts: PreLaunchRetryAttempts,
-                preLaunchIgnoreFailure: PreLaunchIgnoreFailure
+                preLaunchIgnoreFailure: PreLaunchIgnoreFailure,
+                failureProgramPath: FailureProgramPath,
+                failureProgramWorkingDirectory: FailureProgramStartupDirectory,
+                failureProgramArgs: FailureProgramParameters
             );
         }
 

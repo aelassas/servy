@@ -139,7 +139,11 @@ namespace Servy.Core.UnitTests.Domain
                 PreLaunchStderrPath = "C:\\pre-launch-stderr.log",
                 PreLaunchTimeoutSeconds = 30,
                 PreLaunchRetryAttempts = 0,
-                PreLaunchIgnoreFailure = true
+                PreLaunchIgnoreFailure = true,
+
+                FailureProgramPath = "C:\\failure-program.exe",
+                FailureProgramStartupDirectory = "C:\\failureProgramDir",
+                FailureProgramParameters = "--failureProgramArg",
             };
 
             _serviceManagerMock
@@ -155,7 +159,7 @@ namespace Servy.Core.UnitTests.Domain
                      null,                        // stdoutPath
                      null,                        // stderrPath
                      false,
-                     service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                     (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
                      false,
                      service.HeartbeatInterval, // heartbeatInterval
                      service.MaxFailedChecks,   // maxFailedChecks
@@ -173,7 +177,11 @@ namespace Servy.Core.UnitTests.Domain
                      service.PreLaunchStderrPath,
                      service.PreLaunchTimeoutSeconds,
                      service.PreLaunchRetryAttempts,
-                     service.PreLaunchIgnoreFailure
+                     service.PreLaunchIgnoreFailure,
+
+                     service.FailureProgramPath,
+                     service.FailureProgramStartupDirectory,
+                     service.FailureProgramParameters
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -216,7 +224,11 @@ namespace Servy.Core.UnitTests.Domain
                 PreLaunchStderrPath = null,
                 PreLaunchTimeoutSeconds = 30,
                 PreLaunchRetryAttempts = 0,
-                PreLaunchIgnoreFailure = true
+                PreLaunchIgnoreFailure = true,
+
+                FailureProgramPath = null,
+                FailureProgramStartupDirectory = null,
+                FailureProgramParameters = null,
             };
 
             _serviceManagerMock
@@ -232,7 +244,7 @@ namespace Servy.Core.UnitTests.Domain
                      null,                        // stdoutPath
                      null,                        // stderrPath
                      true,
-                     service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                     (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
                      true,
                      service.HeartbeatInterval,   // heartbeatInterval
                      service.MaxFailedChecks,     // maxFailedChecks
@@ -250,7 +262,11 @@ namespace Servy.Core.UnitTests.Domain
                      service.PreLaunchStderrPath,
                      service.PreLaunchTimeoutSeconds,
                      service.PreLaunchRetryAttempts,
-                     service.PreLaunchIgnoreFailure
+                     service.PreLaunchIgnoreFailure,
+
+                     service.FailureProgramPath,
+                     service.FailureProgramStartupDirectory,
+                     service.FailureProgramParameters
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -297,7 +313,7 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // stdoutPath
                     null,                                // stderrPath
                     false,
-                    service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
+                    (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
                     false,
                     service.HeartbeatInterval,           // heartbeatInterval
                     service.MaxFailedChecks,             // maxFailedChecks
@@ -315,7 +331,10 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // preLaunchStderrPath
                     It.IsAny<int>(),                     // preLaunchTimeout
                     It.IsAny<int>(),                     // preLaunchRetryAttempts
-                    It.IsAny<bool>()                     // preLaunchIgnoreFailure
+                    It.IsAny<bool>(),                    // preLaunchIgnoreFailure
+                    null,                                // failureProgramPath
+                    null,                                // failureProgramWorkingDirectory
+                    null                                 // failureProgramArgs
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

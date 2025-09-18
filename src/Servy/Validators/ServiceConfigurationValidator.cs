@@ -124,6 +124,20 @@ namespace Servy.Validators
                 return false;
             }
 
+            // Failure Program
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && (!CoreHelper.IsValidPath(dto.FailureProgramPath) || !File.Exists(dto.FailureProgramPath)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) &&
+                (!CoreHelper.IsValidPath(dto.FailureProgramStartupDirectory) || !Directory.Exists(dto.FailureProgramStartupDirectory)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramStartupDirectory, AppConfig.Caption);
+                return false;
+            }
+
             var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
             if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
             {

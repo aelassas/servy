@@ -46,6 +46,9 @@ namespace Servy.Core.Services
         /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
         /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
         /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
+        /// <param name="failureProgramPath">Failure program path.</param>
+        /// <param name="failureProgramWorkingDirectory">Failure program working directory.</param>
+        /// <param name="failureProgramArgs">Failure program parameters.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -61,7 +64,7 @@ namespace Servy.Core.Services
             string? stdoutPath = null,
             string? stderrPath = null,
             bool enableRotation = false,
-            int rotationSizeInBytes = 0,
+            ulong rotationSizeInBytes = 0,
             bool enableHealthMonitoring = false,
             int heartbeatInterval = 0,
             int maxFailedChecks = 0,
@@ -79,7 +82,10 @@ namespace Servy.Core.Services
             string? preLaunchStderrPath = null,
             int preLaunchTimeout = 30,
             int preLaunchRetryAttempts = 0,
-            bool preLaunchIgnoreFailure = false
+            bool preLaunchIgnoreFailure = false,
+            string? failureProgramPath = null,
+            string? failureProgramWorkingDirectory = null,
+            string? failureProgramArgs = null
         );
 
         /// <summary>

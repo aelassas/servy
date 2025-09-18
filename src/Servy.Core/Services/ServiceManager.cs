@@ -189,7 +189,7 @@ namespace Servy.Core.Services
                 string? stdoutPath,
                 string? stderrPath,
                 bool enableRotation,
-                int rotationSizeInBytes,
+                ulong rotationSizeInBytes,
                 bool enableHealthMonitoring,
                 int heartbeatInterval,
                 int maxFailedChecks,
@@ -207,7 +207,10 @@ namespace Servy.Core.Services
                 string? preLaunchStderrPath,
                 int preLaunchTimeout = 5,
                 int preLaunchRetryAttempts = 0,
-                bool preLaunchIgnoreFailure = false
+                bool preLaunchIgnoreFailure = false,
+                string? failureProgramPath = null,
+                string? failureProgramWorkingDirectory = null,
+                string? failureProgramArgs = null
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -243,7 +246,12 @@ namespace Servy.Core.Services
                 Helper.Quote(preLaunchStderrPath ?? string.Empty),
                 Helper.Quote(preLaunchTimeout.ToString()),
                 Helper.Quote(preLaunchRetryAttempts.ToString()),
-                Helper.Quote(preLaunchIgnoreFailure.ToString())
+                Helper.Quote(preLaunchIgnoreFailure.ToString()),
+
+                // Failure program
+                Helper.Quote(failureProgramPath ?? string.Empty),
+                Helper.Quote(failureProgramWorkingDirectory ?? string.Empty),
+                Helper.Quote(failureProgramArgs ?? string.Empty)
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -287,12 +295,15 @@ namespace Servy.Core.Services
                     StdoutPath = stdoutPath,
                     StderrPath = stderrPath,
                     EnableRotation = enableRotation,
-                    RotationSize = rotationSizeInBytes / (1024 * 1024),
+                    RotationSize = (int)(rotationSizeInBytes / (1024 * 1024)),
                     EnableHealthMonitoring = enableHealthMonitoring,
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,
                     RecoveryAction = (int)recoveryAction,
                     MaxRestartAttempts = maxRestartAttempts,
+                    FailureProgramPath = failureProgramPath,
+                    FailureProgramStartupDirectory = failureProgramWorkingDirectory,
+                    FailureProgramParameters = failureProgramArgs,
                     EnvironmentVariables = environmentVariables,
                     ServiceDependencies = serviceDependencies,
                     RunAsLocalSystem = string.IsNullOrWhiteSpace(username),

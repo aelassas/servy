@@ -251,6 +251,33 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Gets or sets failure program path as a string.
+        /// </summary>
+        public string FailureProgramPath
+        {
+            get => _config.FailureProgramPath;
+            set { _config.FailureProgramPath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets failure program startup directory as a string.
+        /// </summary>
+        public string FailureProgramStartupDirectory
+        {
+            get => _config.FailureProgramStartupDirectory;
+            set { _config.FailureProgramStartupDirectory = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets failure program parameters as a string.
+        /// </summary>
+        public string FailureProgramParameters
+        {
+            get => _config.FailureProgramParameters;
+            set { _config.FailureProgramParameters = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
         /// Gets or sets environment variables as a string.
         /// </summary>
         public string EnvironmentVariables
@@ -444,6 +471,16 @@ namespace Servy.ViewModels
         public ICommand RestartCommand { get; }
 
         /// <summary>
+        /// Command to browse and select the failure program path.
+        /// </summary>
+        public ICommand BrowseFailureProgramPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the failure program startup directory.
+        /// </summary>
+        public ICommand BrowseFailureProgramStartupDirectoryCommand { get; }
+
+        /// <summary>
         /// Command to browse and select the pre-launch executable process path.
         /// </summary>
         public ICommand BrowsePreLaunchProcessPathCommand { get; }
@@ -577,6 +614,9 @@ namespace Servy.ViewModels
             ImportXmlCommand = new AsyncCommand(ImportXmlConfig);
             ImportJsonCommand = new AsyncCommand(ImportJsonConfig);
 
+            BrowseFailureProgramPathCommand = new RelayCommand<object>(_ => BrowseFailureProgramPath());
+            BrowseFailureProgramStartupDirectoryCommand = new RelayCommand<object>(_ => BrowseFailureProgramStartupDirectory());
+
             BrowsePreLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchProcessPath());
             BrowsePreLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreLaunchStartupDirectory());
             BrowsePreLaunchStdoutPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStdoutPath());
@@ -685,6 +725,24 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
+        /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramExecutablePath"/>.
+        /// </summary>
+        private void BrowseFailureProgramPath()
+        {
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) FailureProgramPath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a folder and sets <see cref="FailureProgramStartupDirectory"/>.
+        /// </summary>
+        private void BrowseFailureProgramStartupDirectory()
+        {
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) FailureProgramStartupDirectory = folder;
+        }
+
+        /// <summary>
         /// Opens a dialog to browse for a pre-launch executable file and sets <see cref="PreLaunchExecutablePath"/>.
         /// </summary>
         private void BrowsePreLaunchProcessPath()
@@ -760,7 +818,10 @@ namespace Servy.ViewModels
                 _config.PreLaunchStderrPath,
                 _config.PreLaunchTimeoutSeconds,
                 _config.PreLaunchRetryAttempts,
-                _config.PreLaunchIgnoreFailure
+                _config.PreLaunchIgnoreFailure,
+                _config.FailureProgramPath,
+                _config.FailureProgramStartupDirectory,
+                _config.FailureProgramParameters
                 );
         }
 
@@ -836,6 +897,9 @@ namespace Servy.ViewModels
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
+            FailureProgramPath = string.Empty;
+            FailureProgramStartupDirectory  = string.Empty;
+            FailureProgramParameters = string.Empty;
 
             EnvironmentVariables = string.Empty;
             ServiceDependencies = string.Empty;
@@ -962,6 +1026,9 @@ namespace Servy.ViewModels
             MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
             SelectedRecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction;
             MaxRestartAttempts = dto.MaxRestartAttempts == null ? DefaultMaxRestartAttempts.ToString() : dto.MaxRestartAttempts.ToString();
+            FailureProgramPath = dto.FailureProgramPath;
+            FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory;
+            FailureProgramParameters = dto.FailureProgramParameters;
             EnvironmentVariables = StringHelper.FormatEnvirnomentVariables(dto.EnvironmentVariables);
             ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
             RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
@@ -1013,6 +1080,9 @@ namespace Servy.ViewModels
                 MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : 0,
                 RecoveryAction = (int)SelectedRecoveryAction,
                 MaxRestartAttempts = int.TryParse(MaxRestartAttempts, out var mr) ? mr : 0,
+                FailureProgramPath = FailureProgramPath,
+                FailureProgramStartupDirectory = FailureProgramStartupDirectory,
+                FailureProgramParameters = FailureProgramParameters,
                 EnvironmentVariables = StringHelper.NormalizeString(EnvironmentVariables),
                 ServiceDependencies = StringHelper.NormalizeString(ServiceDependencies),
                 RunAsLocalSystem = RunAsLocalSystem,

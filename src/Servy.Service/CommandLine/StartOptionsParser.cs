@@ -49,7 +49,12 @@ namespace Servy.Service.CommandLine
                 PreLaunchStdErrPath = fullArgs.Length > 19 ? fullArgs[19] : string.Empty,
                 PreLaunchTimeout = fullArgs.Length > 20 && int.TryParse(fullArgs[20], out int preLaunchTimeout) ? preLaunchTimeout : 30,
                 PreLaunchRetryAttempts = fullArgs.Length > 21 && int.TryParse(fullArgs[21], out int preLaunchRetryAttempts) ? preLaunchRetryAttempts : 0,
-                PreLaunchIgnoreFailure = fullArgs.Length > 22 && bool.TryParse(fullArgs[22], out bool preLaunchIgnoreFailure) && preLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = fullArgs.Length > 22 && bool.TryParse(fullArgs[22], out bool preLaunchIgnoreFailure) && preLaunchIgnoreFailure,
+
+                // Failure program
+                FailureProgramPath = fullArgs.Length > 23 ? fullArgs[23] : string.Empty,
+                FailureProgramWorkingDirectory = fullArgs.Length > 24 ? fullArgs[24] : string.Empty,
+                FailureProgramArgs = fullArgs.Length > 25 ? fullArgs[25] : string.Empty,
             };
         }
     }
