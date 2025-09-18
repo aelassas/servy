@@ -23,7 +23,7 @@
   * [x] Add search and filter functionality for services
   * [x] Provide Windows toast and email notifications for service events (failures)
   * [x] Provide a log viewer
-  * [ ] Support automatic recovery actions beyond simple restart (e.g., run scripts)
+  * [x] Support automatic recovery actions beyond simple restart (e.g., run scripts)
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
