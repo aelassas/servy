@@ -4,7 +4,6 @@ using Servy.CLI.Commands;
 using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
-using Servy.Core;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Security;
