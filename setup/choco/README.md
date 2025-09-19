@@ -11,6 +11,7 @@ choco apikey --key="YOUR_API_KEY_HERE" --source="https://push.chocolatey.org/"
 
 ## Test
 ```
+choco search servy
 choco install servy -y
 ```
 
