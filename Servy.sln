@@ -44,6 +44,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\bump-version.yml = .github\workflows\bump-version.yml
 		.github\workflows\choco.yml = .github\workflows\choco.yml
 		.github\workflows\loc.yml = .github\workflows\loc.yml
 		.github\workflows\test.yml = .github\workflows\test.yml

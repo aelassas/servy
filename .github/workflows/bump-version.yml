@@ -1,0 +1,112 @@
+name: bump-version
+
+on:
+  release:
+    types: [published]   # Trigger on GitHub release publish
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.1)'
+        required: false    # Optional manual trigger
+
+permissions:
+  contents: write       # Needed to push commits back
+
+jobs:
+  choco:
+    runs-on: windows-latest
+
+    steps:
+      # 1. Checkout the repository with full history to allow pushing commits
+      - name: Checkout repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # 2. Determine the tag/version to use, support multiple trigger sources
+      - name: Set version vars
+        shell: pwsh
+        env:
+          MANUAL_TAG: ${{ github.event.inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Determine the tag to use
+          if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
+              $tag = $env:MANUAL_TAG                       # Manual trigger input
+          } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
+              $tag = $env:RELEASE_TAG                      # Release trigger
+          } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+              $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
+          } else {
+              Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
+              exit 1
+          }
+
+          # Remove leading "v" if present
+          $version = $tag.TrimStart("v")
+          Write-Host "Using tag: $tag"
+          Write-Host "Current version: $version"
+
+          # Calculate NEXT_VERSION: increment minor, roll over major if minor >= 9
+          $parts = $version.Split('.')
+          $major = [int]$parts[0]
+          $minor = [int]$parts[1]
+
+          if ($minor -lt 9) {
+              $minor++
+          } else {
+              $major++
+              $minor = 0
+          }
+          $next_version = "$major.$minor"
+          Write-Host "Next version: $next_version"
+
+          # Persist variables for later steps
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NEXT_VERSION=$next_version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      # 3. Bump version on main branch
+      - name: Bump version on main branch
+        shell: pwsh
+        run: |
+          git checkout main
+
+          # Run your PowerShell script to update version numbers
+          ./bump-version.ps1 -Version $env:NEXT_VERSION
+
+          # Configure Git for automated commit
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Only commit if there are changes to avoid empty commits
+          if (git diff --quiet) {
+              Write-Host "No changes detected, skipping commit."
+          } else {
+              git add .
+              git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
+              git push origin main
+          }
+
+      # 4. Bump version on net48 branch
+      - name: Bump version on net48 branch
+        shell: pwsh
+        run: |
+          git fetch origin net48
+          git checkout net48
+
+          # Run version bump script
+          ./bump-version.ps1 -Version $env:NEXT_VERSION
+
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Commit only if there are changes
+          if (git diff --quiet) {
+              Write-Host "No changes detected on net48 branch, skipping commit."
+          } else {
+              git add .
+              git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
+              git push origin net48
+          }
