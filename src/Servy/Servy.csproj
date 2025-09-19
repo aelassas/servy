@@ -25,9 +25,9 @@
     <AssemblyDescription>A tool to run any app as a Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy</Product>
-    <Version>1.6.0</Version>
-    <FileVersion>1.6.0.0</FileVersion>
-    <AssemblyVersion>1.6.0.0</AssemblyVersion>
+    <Version>3.0.0</Version>
+    <FileVersion>3.0.0.0</FileVersion>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
