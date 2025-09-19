@@ -16,9 +16,9 @@
     <AssemblyDescription>Servy.Core unit tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Core.UnitTests</Product>
-    <Version>3.0.0</Version>
-    <FileVersion>3.0.0.0</FileVersion>
-    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <Version>1.5.0</Version>
+    <FileVersion>1.5.0.0</FileVersion>
+    <AssemblyVersion>1.5.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
