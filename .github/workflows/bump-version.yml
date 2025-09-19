@@ -13,7 +13,7 @@ permissions:
   contents: write       # Needed to push commits back
 
 jobs:
-  choco:
+  bump-version:
     runs-on: windows-latest
 
     steps:
