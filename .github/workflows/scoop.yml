@@ -135,7 +135,7 @@ jobs:
                       }
                   }
                   innosetup  = $true
-                  bin        = @("servy-cli.exe")
+                  bin        = "servy-cli.exe"
                   checkver   = @{
                       github = "https://github.com/aelassas/servy"
                   }
@@ -149,6 +149,7 @@ jobs:
               }
 
               $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+              Add-Content -Path $manifestPath -Value "`n"
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
