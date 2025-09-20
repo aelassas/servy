@@ -92,3 +92,67 @@ jobs:
           } else {
             Write-Host "No changes to commit"
           }
+
+      - name: Update servy.json in ScoopInstaller/Extras and create PR
+        shell: pwsh
+        env:
+          HASH: ${{ env:HASH }}
+          VERSION: ${{ env:VERSION }}
+        run: |
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
+          Set-Location extras
+          git remote add upstream https://github.com/ScoopInstaller/Extras.git
+          git fetch upstream
+          git checkout -b update-servy-${{ env:VERSION }} upstream/master
+
+          $manifestPath = "bucket/servy.json"
+          
+          if (-Not (Test-Path $manifestPath)) {
+              Write-Host "Creating new manifest..."
+          
+              $jsonObj = [PSCustomObject]@{
+                  version     = $env:VERSION
+                  description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
+                  homepage    = "https://servy-win.github.io"
+                  license     = "MIT"
+                  url         = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+                  hash        = $env:HASH
+                  installer   = [PSCustomObject]@{
+                      type = "exe"
+                      args = @("/VERYSILENT", "/NORESTART", "/SUPPRESSMSGBOXES", "/SP-", "/CLOSEAPPLICATIONS", "/NOCANCEL", "/DIR=`$dir")
+                      keep = $true
+                  }
+                  bin = @("servy-cli.exe")
+              }
+          
+              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+          }
+          else {
+              $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
+              $json.version = $env:VERSION
+              $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+              $json.hash    = $env:HASH
+              $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ((git status --porcelain) -ne '') {
+            git add $manifestPath
+            git commit -m "servy: Update to version $env:VERSION"
+            git push origin HEAD:update-servy-${{ env:VERSION }}
+          } else {
+            Write-Host "No changes to commit"
+          }
+
+      # - name: Open Pull Request
+      #   uses: peter-evans/create-pull-request@v6
+      #   with:
+      #     token: ${{ secrets.PAT }}
+      #     commit-message: "servy: Update to version ${{ env.VERSION }}"
+      #     branch: update-servy-${{ env.VERSION }}
+      #     title: "servy: Update to version ${{ env.VERSION }}"
+      #     body: |
+      #       Update Servy to ${{ env.VERSION }}.
+      #     base: master
+      #     push-to-fork: aelassas/Extras
