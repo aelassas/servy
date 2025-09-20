@@ -147,6 +147,7 @@ jobs:
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
                   git commit -m "servy: Update to version $env:VERSION"
+                  git push --set-upstream origin "update-servy-$env:VERSION" --force
               }
           }
           
@@ -164,9 +165,11 @@ jobs:
         run: |
           Set-Location extras
           
-          # Check if branch has commits
-          $commitsAhead = git rev-list origin/master..update-servy-$env:VERSION --count
-          if ($commitsAhead -gt 0) {
+          # Check if the branch exists on remote
+          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
+          
+          if ($branchExists) {
+              # Create PR
               gh pr create `
                 --title "servy: Add version $env:VERSION" `
                 --body "Add Servy version $env:VERSION." `
@@ -175,6 +178,6 @@ jobs:
                 --repo aelassas/Extras `
                 --fill
           } else {
-              Write-Host "No new commits on PR branch, skipping PR creation."
+              Write-Host "PR branch does not exist on remote, skipping PR creation."
           }
           
