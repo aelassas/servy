@@ -100,23 +100,28 @@ jobs:
 
       - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
+          # Clone fork
+          git clone https://x-access-token:${env:GH_TOKEN}@github.com/aelassas/Extras.git extras
           Set-Location extras
+          
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream
           
-          # Create or reset PR branch to match upstream/master
+          # Create or reset PR branch from fork's main
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
               git branch -D "update-servy-$env:VERSION"
           }
-          git checkout -b "update-servy-$env:VERSION" upstream/master
+          git checkout -b "update-servy-$env:VERSION" origin/main
+          
+          # Set user for commits
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           
           $manifestPath = "bucket/servy.json"
           
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
           if (-Not (Test-Path $manifestPath)) {
               # Create new manifest
               $jsonObj = [PSCustomObject]@{
@@ -134,8 +139,6 @@ jobs:
                   bin = @("servy-cli.exe")
               }
               $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
-              git add $manifestPath
-              git commit -m "servy: Update to version $env:VERSION"
           } else {
               # Update existing manifest
               $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
@@ -143,41 +146,36 @@ jobs:
               $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
               $json.hash    = $env:HASH
               $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
-          
-              if ((git status --porcelain) -ne '') {
-                  git add $manifestPath
-                  git commit -m "servy: Update to version $env:VERSION"
-              }
           }
           
-          # Force push to fork (overwrite old branch if exists)
-          git push --set-upstream origin "update-servy-$env:VERSION" --force
-        
-      - name: Check Chocolatey version
-        shell: pwsh
-        run: choco --version
-        
+          # Commit only if there are changes
+          if ((git status --porcelain) -ne '') {
+              git add $manifestPath
+              git commit -m "servy: Add version $env:VERSION"
+              git push --set-upstream origin "update-servy-$env:VERSION" --force
+          } else {
+              Write-Host "No changes to commit, skipping push"
+          }
+
       - name: Open Pull Request in ScoopInstaller/Extras
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
-          # Install GitHub CLI
-          choco install gh -y
-          
-          # Change to extras folder
           Set-Location extras
           
-          # Create PR if not exists
-          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
-          if ($branchExists) {
+          # Check if branch has commits
+          $commitsAhead = git rev-list origin/main..update-servy-$env:VERSION --count
+          if ($commitsAhead -gt 0) {
               gh pr create `
                 --title "servy: Add version $env:VERSION" `
                 --body "Add Servy version $env:VERSION." `
                 --base main `
                 --head "update-servy-$env:VERSION" `
-                --repo aelassas/Extras
+                --repo aelassas/Extras `
+                --fill
           } else {
-              Write-Host "PR branch not found on remote. Skipping PR creation."
+              Write-Host "No new commits on PR branch, skipping PR creation."
           }
+
           
