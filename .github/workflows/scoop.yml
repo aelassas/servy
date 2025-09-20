@@ -100,13 +100,17 @@ jobs:
           Set-Location extras
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream
+          
+          # Create or reset PR branch to match upstream/master
+          if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
+              git branch -D "update-servy-$env:VERSION"
+          }
           git checkout -b "update-servy-$env:VERSION" upstream/master
           
           $manifestPath = "bucket/servy.json"
           
           if (-Not (Test-Path $manifestPath)) {
-              Write-Host "Creating new manifest..."
-          
+              # Create new manifest
               $jsonObj = [PSCustomObject]@{
                   version     = $env:VERSION
                   description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
@@ -121,26 +125,25 @@ jobs:
                   }
                   bin = @("servy-cli.exe")
               }
-          
               $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
-          }
-          else {
+              git add $manifestPath
+              git commit -m "servy: Update to version $env:VERSION"
+          } else {
+              # Update existing manifest
               $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $json.version = $env:VERSION
               $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
               $json.hash    = $env:HASH
               $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
+          
+              if ((git status --porcelain) -ne '') {
+                  git add $manifestPath
+                  git commit -m "servy: Update to version $env:VERSION"
+              }
           }
           
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ((git status --porcelain) -ne '') {
-              git add $manifestPath
-              git commit -m "servy: Update to version $env:VERSION"
-              git push origin "HEAD:update-servy-$env:VERSION"
-          } else {
-              Write-Host "No changes to commit"
-          }
+          # Force push to fork (overwrite old branch if exists)
+          git push --set-upstream origin "update-servy-$env:VERSION" --force
           
       - name: Open Pull Request
         uses: peter-evans/create-pull-request@v6
