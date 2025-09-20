@@ -59,7 +59,7 @@ jobs:
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
           $InstallerPath = "$InstallerDir\servy-${env:VERSION}-net8.0-x64-installer.exe"
           $HASH = Get-FileHash $InstallerPath -Algorithm SHA256
-          $UPPER = $HASH.Hash.ToUpper()
+          $UPPER = $HASH.Hash.ToLower()
           "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Remove-Item $InstallerPath
 
@@ -85,7 +85,7 @@ jobs:
           $json.hash = $env:HASH
           
           # Save formatted JSON
-          $json | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
+          $json | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
           
           # Commit and push
           git config user.name "github-actions[bot]"
@@ -125,19 +125,30 @@ jobs:
               $jsonObj = [PSCustomObject]@{
                   version     = $env:VERSION
                   description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
+                  notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from Start Menu. For more info, visit https://servy-win.github.io"
                   homepage    = "https://servy-win.github.io"
                   license     = "MIT"
-                  url         = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-                  hash        = $env:HASH
-                  notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from Start Menu. For more info, visit https://servy-win.github.io"
-                  installer   = [PSCustomObject]@{
-                      type = "exe"
-                      args = @("/VERYSILENT", "/NORESTART", "/SUPPRESSMSGBOXES", "/SP-", "/CLOSEAPPLICATIONS", "/NOCANCEL", "/DIR=`$dir")
-                      keep = $false
+                  architecture = @{
+                      '64bit' = @{
+                          url  = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+                          hash = $env:HASH
+                      }
                   }
-                  bin = @("servy-cli.exe")
+                  innosetup  = $true
+                  bin        = @("servy-cli.exe")
+                  checkver   = @{
+                      github = "https://github.com/aelassas/servy"
+                  }
+                  autoupdate = @{
+                      architecture = @{
+                          '64bit' = @{
+                              url = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-net8.0-x64-installer.exe"
+                          }
+                      }
+                  }
               }
-              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$true | Out-File $manifestPath -Encoding UTF8 -NoNewline
+
+              $jsonObj | ConvertTo-Json -Depth 10 -Compress:false | Out-File $manifestPath -Encoding UTF8
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
@@ -146,7 +157,7 @@ jobs:
               $json.version = $env:VERSION
               $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
               $json.hash    = $env:HASH
-              $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
+              $json | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
           
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
