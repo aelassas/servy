@@ -154,6 +154,11 @@ jobs:
               # Convert JSON to string
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
 
+              # Replace 2-space indents with 4-space indents
+              $jsonString = ($jsonString -split "`n" | ForEach-Object {
+                  ($_ -replace "^( +)", { " " * ($matches[1].Length * 2) })
+              }) -join "`n"
+
               # Trim any trailing newlines and append exactly one
               $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
 
