@@ -3,8 +3,8 @@ $ErrorActionPreference = 'Stop'
 $packageName    = 'servy'
 $toolsDir       = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $installerType  = 'exe'
-$url64 = 'https://github.com/aelassas/servy/releases/download/v1.4/servy-1.4-net8.0-x64-installer.exe'
-$checksum64 = '5491E0D00CE50F58E05E180B322C5097E3B09F76D097E19B1BFAAE0D2ED438EA'
+$url64 = 'https://github.com/aelassas/servy/releases/download/v1.5/servy-1.5-net8.0-x64-installer.exe'
+$checksum64 = '5AADEE0290115CD98134E8C3FF09C45E86173D41FE431F2537EEE4448FF27B74'
 $checksumType64 = 'sha256'
 $silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
 
