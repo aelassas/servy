@@ -165,7 +165,7 @@ jobs:
           Set-Location extras
           
           # Check if branch has commits
-          $commitsAhead = git rev-list origin/main..update-servy-$env:VERSION --count
+          $commitsAhead = git rev-list origin/master..update-servy-$env:VERSION --count
           if ($commitsAhead -gt 0) {
               gh pr create `
                 --title "servy: Add version $env:VERSION" `
