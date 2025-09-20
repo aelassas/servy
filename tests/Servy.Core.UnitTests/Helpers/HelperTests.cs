@@ -17,9 +17,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("C:\\valid\\..\\path", false)]    // contains ..
         [InlineData("/usr/bin/bash", true)]           // absolute path (Unix style)
         [InlineData("C:\\", true)]                    // root path
-        public void IsValidPath_VariousInputs_ReturnsExpected(string path, bool expected)
+        public void IsValidPath_VariousInputs_ReturnsExpected(string? path, bool expected)
         {
-            var result = Helper.IsValidPath(path);
+            var result = Helper.IsValidPath(path!);
             Assert.Equal(expected, result);
         }
 
@@ -107,7 +107,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("abc\\", "\"abc\"")]
         //[InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
         [InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
-        public void Quote_Input_ReturnsExpected(string input, string expected)
+        public void Quote_Input_ReturnsExpected(string? input, string expected)
         {
             // Act
             var result = Helper.Quote(input);

@@ -25,9 +25,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("", "key.aes", "iv.aes")]
         [InlineData("Data Source=db.db;", "", "iv.aes")]
         [InlineData("Data Source=db.db;", "key.aes", "")]
-        public void EnsureFolders_NullOrWhitespaceArgs_Throws(string conn, string key, string iv)
+        public void EnsureFolders_NullOrWhitespaceArgs_Throws(string? conn, string? key, string? iv)
         {
-            Assert.Throws<ArgumentNullException>(() => AppFoldersHelper.EnsureFolders(conn, key, iv));
+            Assert.Throws<ArgumentNullException>(() => AppFoldersHelper.EnsureFolders(conn!, key!, iv!));
         }
 
         [Fact]
