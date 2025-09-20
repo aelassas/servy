@@ -90,7 +90,7 @@ jobs:
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: false
-          verbose: false
+          verbose: true
           
       - name: Notify Codecov Status in case of failure
         if: steps.codecov.outcome != 'success'
