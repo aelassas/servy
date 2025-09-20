@@ -148,11 +148,8 @@ jobs:
                   }
               }
 
-              # Make sure the folder exists
-              $folder = Split-Path $manifestPath -Parent
-              if (-not (Test-Path $folder)) {
-                  New-Item -Path $folder -ItemType Directory -Force | Out-Null
-              }
+
+              $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
 
               # Convert JSON to string
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
@@ -161,7 +158,7 @@ jobs:
               $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
 
               # Write to file
-              [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
 
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
