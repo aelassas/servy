@@ -159,9 +159,9 @@ jobs:
           
                   # Split, modify each line, then join back
                   $jsonString = (
-                      $jsonString -split "\r?\n" | ForEach-Object {
-                          $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
-                      }
+                    $jsonString.Split("`r", "`n") | ForEach-Object {
+                        $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
+                    }
                   ) -join "`n"
           
                   # Trim trailing newlines and append exactly one
