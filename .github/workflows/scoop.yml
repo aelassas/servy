@@ -170,7 +170,7 @@ jobs:
               gh pr create `
                 --title "servy: Add version $env:VERSION" `
                 --body "Add Servy version $env:VERSION." `
-                --base main `
+                --base master `
                 --head "update-servy-$env:VERSION" `
                 --repo aelassas/Extras `
                 --fill
