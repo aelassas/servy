@@ -93,6 +93,12 @@ jobs:
             Write-Host "No changes to commit"
           }
 
+      - name: Set Git identity
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
         shell: pwsh
         run: |
@@ -154,5 +160,5 @@ jobs:
           title: "servy: Add version ${{ env.VERSION }}"
           body: |
             Add Servy version ${{ env.VERSION }}.
-          base: master
+          base: main
           
