@@ -153,14 +153,16 @@ jobs:
           # Force push to fork (overwrite old branch if exists)
           git push --set-upstream origin "update-servy-$env:VERSION" --force
           
-      # - name: Open Pull Request
-      #   uses: peter-evans/create-pull-request@v6
-      #   with:
-      #     token: ${{ secrets.PAT }}
-      #     commit-message: "servy: Add version ${{ env.VERSION }}"
-      #     branch: update-servy-${{ env.VERSION }}
-      #     title: "servy: Add version ${{ env.VERSION }}"
-      #     body: |
-      #       Add Servy version ${{ env.VERSION }}.
-      #     base: main
+      - name: Open Pull Request
+        uses: peter-evans/create-pull-request@v6
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}/extras   # override workspace: switch to extras folder
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "servy: Add version ${{ env.VERSION }}"
+          branch: update-servy-${{ env.VERSION }}
+          title: "servy: Add version ${{ env.VERSION }}"
+          body: |
+            Add Servy version ${{ env.VERSION }}.
+          base: main
           
