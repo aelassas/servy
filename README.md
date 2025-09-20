@@ -56,7 +56,7 @@ winget install servy
 choco install -y servy
 ```
 
-> Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. This is a known false positive. You can safely allow the installation if downloaded from the official GitHub, WinGet, or Chocolatey package.
+> Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. The installer performs only standard installation tasks and does not contain malware, adware, or unwanted software. It passes VirusTotal scans and is published in the Windows Package Manager (winget) and Chocolatey. This is a known false positive. You can safely allow the installation if downloaded from the official GitHub repository, WinGet, or Chocolatey package.
 
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
