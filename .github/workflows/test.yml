@@ -89,6 +89,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           files: TestResults/fixed/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
