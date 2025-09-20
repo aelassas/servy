@@ -100,60 +100,63 @@ jobs:
 
       - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
         run: |
-          # Clone fork
-          git clone https://x-access-token:${env:GH_TOKEN}@github.com/aelassas/Extras.git extras
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
           Set-Location extras
-          
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream
           
-          # Create or reset PR branch from fork's main
+          # Create or reset PR branch to match upstream/master
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
               git branch -D "update-servy-$env:VERSION"
           }
-          git checkout -b "update-servy-$env:VERSION" origin/main
-          
-          # Set user for commits
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "update-servy-$env:VERSION" upstream/master
           
           $manifestPath = "bucket/servy.json"
           
-          # Create or update manifest
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           if (-Not (Test-Path $manifestPath)) {
+              # Create new manifest
               $jsonObj = [PSCustomObject]@{
                   version     = $env:VERSION
-                  description = "Servy lets you run any app as a native Windows service..."
+                  description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
                   homepage    = "https://servy-win.github.io"
                   license     = "MIT"
                   url         = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
                   hash        = $env:HASH
-                  installer   = [PSCustomObject]@{ type="exe"; args=@("/VERYSILENT","/NORESTART"); keep=$true }
+                  installer   = [PSCustomObject]@{
+                      type = "exe"
+                      args = @("/VERYSILENT", "/NORESTART", "/SUPPRESSMSGBOXES", "/SP-", "/CLOSEAPPLICATIONS", "/NOCANCEL", "/DIR=`$dir")
+                      keep = $true
+                  }
                   bin = @("servy-cli.exe")
               }
               $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+              git add $manifestPath
+              git commit -m "servy: Update to version $env:VERSION"
           } else {
+              # Update existing manifest
               $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $json.version = $env:VERSION
               $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
               $json.hash    = $env:HASH
               $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
+          
+              if ((git status --porcelain) -ne '') {
+                  git add $manifestPath
+                  git commit -m "servy: Update to version $env:VERSION"
+              }
           }
           
-          # Commit only if there are changes
-          if ((git status --porcelain) -ne '') {
-              git add $manifestPath
-              git commit -m "servy: Add version $env:VERSION"
-              git push --set-upstream origin "update-servy-$env:VERSION" --force
-              Write-Host "Branch pushed with changes."
-          } else {
-              Write-Host "No changes detected, skipping push."
-          }
-
-
+          # Force push to fork (overwrite old branch if exists)
+          git push --set-upstream origin "update-servy-$env:VERSION" --force
+        
+      - name: Check Chocolatey version
+        shell: pwsh
+        run: choco --version
+        
       - name: Open Pull Request in ScoopInstaller/Extras
         shell: pwsh
         env:
@@ -174,5 +177,4 @@ jobs:
           } else {
               Write-Host "No new commits on PR branch, skipping PR creation."
           }
-
           
