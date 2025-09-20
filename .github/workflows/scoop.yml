@@ -160,22 +160,27 @@ jobs:
       - name: Open Pull Request in ScoopInstaller/Extras
         shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PAT: ${{ secrets.PAT }}
         run: |
           # Install GitHub CLI
           choco install gh -y
           
-          # Authenticate
-          $env:GITHUB_TOKEN | gh auth login --with-token
+          # Authenticate with GitHub CLI using the PAT
+          Write-Output $env:PAT | gh auth login --with-token
           
           # Change to extras folder
           Set-Location extras
           
           # Create PR if not exists
-          gh pr create `
-            --title "servy: Add version $env:VERSION" `
-            --body "Add Servy version $env:VERSION." `
-            --base main `
-            --head "update-servy-$env:VERSION" `
-            --repo aelassas/Extras
+          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
+          if ($branchExists) {
+              gh pr create `
+                --title "servy: Add version $env:VERSION" `
+                --body "Add Servy version $env:VERSION." `
+                --base main `
+                --head "update-servy-$env:VERSION" `
+                --repo aelassas/Extras
+          } else {
+              Write-Host "PR branch not found on remote. Skipping PR creation."
+          }
           
