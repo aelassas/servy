@@ -88,14 +88,14 @@ jobs:
         id: codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
           flags: unittests
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
-          commit_parent: ${{ github.event.before }} 
+          commit_parent: ${{ github.event.before }}
+          use_oidc: true
           
       - name: Notify Codecov Status in case of failure
         if: steps.codecov.outcome != 'success'
