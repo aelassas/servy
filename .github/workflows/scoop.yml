@@ -157,7 +157,7 @@ jobs:
         shell: pwsh
         run: choco --version
         
-      - name: Open Pull Request in Extras
+      - name: Open Pull Request in ScoopInstaller/Extras
         shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -166,7 +166,7 @@ jobs:
           choco install gh -y
           
           # Authenticate
-          gh auth login --with-token < $env:GITHUB_TOKEN
+          $env:GITHUB_TOKEN | gh auth login --with-token
           
           # Change to extras folder
           Set-Location extras
