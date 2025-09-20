@@ -176,7 +176,7 @@ jobs:
                 --title "servy: Add version $env:VERSION" `
                 --body "Add Servy version $env:VERSION." `
                 --base master `
-                --head "update-servy-$env:VERSION" `
+                --head "aelassas:update-servy-$env:VERSION" `
                 --repo ScoopInstaller/Extras `
                 --fill
           } else {
