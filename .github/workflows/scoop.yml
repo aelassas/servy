@@ -142,15 +142,14 @@ jobs:
               Write-Host "No changes to commit"
           }
           
-
-      # - name: Open Pull Request
-      #   uses: peter-evans/create-pull-request@v6
-      #   with:
-      #     token: ${{ secrets.PAT }}
-      #     commit-message: "servy: Update to version ${{ env.VERSION }}"
-      #     branch: update-servy-${{ env.VERSION }}
-      #     title: "servy: Update to version ${{ env.VERSION }}"
-      #     body: |
-      #       Update Servy to ${{ env.VERSION }}.
-      #     base: master
-      #     push-to-fork: aelassas/Extras
+      - name: Open Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.PAT }}
+          commit-message: "servy: Update to version ${{ env.VERSION }}"
+          branch: update-servy-${{ env.VERSION }}
+          title: "servy: Update to version ${{ env.VERSION }}"
+          body: |
+            Update Servy to ${{ env.VERSION }}.
+          base: master
+          push-to-fork: aelassas/Extras
