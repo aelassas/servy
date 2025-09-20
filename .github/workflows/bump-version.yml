@@ -8,6 +8,7 @@ on:
     workflows: ["choco"]    # must match the `name:` in choco.yml
     types:
       - completed
+
   workflow_dispatch:
     inputs:
       tag:
