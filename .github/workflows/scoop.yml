@@ -157,10 +157,12 @@ jobs:
               # Only process if conversion succeeded
               if (-not [string]::IsNullOrEmpty($jsonString)) {
           
-                  # Replace 2-space indentation with 4-space
-                  $jsonString = ($jsonString -split "\r?\n") | ForEach-Object {
-                     $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
-                  } -join "`n"
+                  # Split, modify each line, then join back
+                  $jsonString = (
+                      $jsonString -split "\r?\n" | ForEach-Object {
+                          $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
+                      }
+                  ) -join "`n"
           
                   # Trim trailing newlines and append exactly one
                   $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
