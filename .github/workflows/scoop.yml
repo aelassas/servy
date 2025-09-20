@@ -93,7 +93,7 @@ jobs:
             Write-Host "No changes to commit"
           }
 
-      - name: Update servy.json in ScoopInstaller/Extras and create PR
+      - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
         shell: pwsh
         run: |
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
@@ -149,10 +149,10 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.PAT }}
-          commit-message: "servy: Update to version ${{ env.VERSION }}"
+          commit-message: "servy: Add to version ${{ env.VERSION }}"
           branch: update-servy-${{ env.VERSION }}
-          title: "servy: Update to version ${{ env.VERSION }}"
+          title: "servy: Add version ${{ env.VERSION }}"
           body: |
-            Update Servy to ${{ env.VERSION }}.
+            Add Servy version ${{ env.VERSION }}.
           base: master
-          push-to-fork: aelassas/Extras
+          
