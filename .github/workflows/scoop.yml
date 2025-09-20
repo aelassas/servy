@@ -81,8 +81,8 @@ jobs:
           # Load and update JSON
           $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $json.version = $env:VERSION
-          $json.architecture.64bit.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-          $json.architecture.64bit.hash = $env:HASH
+          $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+          $json.architecture.'64bit'.hash = $env:HASH
           
           # Save formatted JSON
           $json | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
