@@ -148,8 +148,15 @@ jobs:
                   }
               }
 
-              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
-              Add-Content -Path $manifestPath -Value "`n"
+              # Convert JSON to string
+              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+
+              # Trim any trailing newlines and append exactly one
+              $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
+
+              # Write to file
+              [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
