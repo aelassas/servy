@@ -94,8 +94,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
-          commit_parent: ${{ github.event.before }}
-          use_oidc: true
+          commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
         if: steps.codecov.outcome != 'success'
