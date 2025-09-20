@@ -154,10 +154,30 @@ jobs:
               # Convert JSON to string
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
 
-              # Replace 2-space indents with 4-space indents
-              $jsonString = ($jsonString -split "`n" | ForEach-Object {
-                  ($_ -replace "^( +)", { " " * ($matches[1].Length * 2) })
-              }) -join "`n"
+              # Ensure $jsonObj is not null
+              if (-not $null -eq $jsonObj) {
+          
+                  # Convert JSON with default 2-space indentation
+                  $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+          
+                  # Only process if conversion succeeded
+                  if ($jsonString) {
+                      # Replace 2-space indents with 4-space indents
+                      $jsonString = ($jsonString -split "`r?`n" | ForEach-Object {
+                          ($_ -replace "^( +)", { " " * ($matches[1].Length * 2) })
+                      }) -join "`n"
+          
+                      # Trim trailing newlines and append exactly one
+                      $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
+          
+                      # Write to file
+                      [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+                  } else {
+                      throw "ConvertTo-Json returned null"
+                  }
+              } else {
+                  throw "`$jsonObj is null, cannot generate JSON"
+              }
 
               # Trim any trailing newlines and append exactly one
               $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
