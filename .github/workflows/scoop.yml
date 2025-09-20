@@ -95,9 +95,6 @@ jobs:
 
       - name: Update servy.json in ScoopInstaller/Extras and create PR
         shell: pwsh
-        env:
-          HASH: ${{ env:HASH }}
-          VERSION: ${{ env:VERSION }}
         run: |
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
           Set-Location extras
