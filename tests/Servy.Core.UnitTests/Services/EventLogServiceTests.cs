@@ -25,7 +25,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_NoFilters_ReturnsResult()
+        public async Task Search_NoFilters_ReturnsResult()
         {
             // Arrange
             var mockReader = new Mock<IEventLogReader>();
@@ -44,7 +44,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WithLevelFilter_ReturnsCorrectLevel()
+        public async Task Search_WithLevelFilter_ReturnsCorrectLevel()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(2, 3, DateTime.UtcNow, "[service] warning");
@@ -60,7 +60,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WithStartDateAndEndDate_AppendsBothFilters()
+        public async Task Search_WithStartDateAndEndDate_AppendsBothFilters()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(3, 4, DateTime.UtcNow, "[service] info");
@@ -79,7 +79,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WithOnlyEndDate_AppendsFilterCorrectly()
+        public async Task Search_WithOnlyEndDate_AppendsFilterCorrectly()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(4, 0, DateTime.UtcNow, "[service] unknown level");
@@ -97,7 +97,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WithKeyword_AddsKeywordFilter()
+        public async Task Search_WithKeyword_AddsKeywordFilter()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
@@ -114,7 +114,7 @@ namespace Servy.Core.UnitTests.Services
 
 
         [Fact]
-        public async void Search_WithKeyword_EmptyResult()
+        public async Task Search_WithKeyword_EmptyResult()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "servy failed");
@@ -129,7 +129,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WithKeyword_NoMatch()
+        public async Task Search_WithKeyword_NoMatch()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
@@ -144,7 +144,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async void Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
+        public async Task Search_WhenTimeCreatedIsNull_UsesDateTimeMinValue()
         {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(6, 4, null, "[service] no time");
