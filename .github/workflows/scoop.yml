@@ -129,14 +129,15 @@ jobs:
                   license     = "MIT"
                   url         = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
                   hash        = $env:HASH
+                  notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from Start Menu. For more info, visit https://servy-win.github.io"
                   installer   = [PSCustomObject]@{
                       type = "exe"
                       args = @("/VERYSILENT", "/NORESTART", "/SUPPRESSMSGBOXES", "/SP-", "/CLOSEAPPLICATIONS", "/NOCANCEL", "/DIR=`$dir")
-                      keep = $true
+                      keep = $false
                   }
                   bin = @("servy-cli.exe")
               }
-              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$true | Out-File $manifestPath -Encoding UTF8 -NoNewline
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
