@@ -1,8 +1,13 @@
 name: bump-version
 
 on:
-  release:
-    types: [published]   # Trigger on GitHub release publish
+  # release:
+  #   types: [published]   # Trigger on GitHub release publish
+
+  workflow_run:             # auto-trigger after choco.yml
+    workflows: ["choco"]    # must match the `name:` in choco.yml
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       tag:
