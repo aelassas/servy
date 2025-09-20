@@ -107,7 +107,7 @@ jobs:
           # Make sure your fork's main is up-to-date
           git fetch origin
           git checkout main
-          git reset --hard origin/main
+          git reset --hard origin/master
           
           # Create or reset PR branch
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
@@ -177,7 +177,7 @@ jobs:
                 --body "Add Servy version $env:VERSION." `
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
-                --repo ScoopInstaller/Extras `
+                --repo aelassas/Extras `
                 --fill
           } else {
               Write-Host "PR branch does not exist on remote, skipping PR creation."
