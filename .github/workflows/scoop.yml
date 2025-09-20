@@ -58,36 +58,37 @@ jobs:
           $UPPER = $HASH.Hash.ToUpper()
           "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Clone Scoop bucket
-        shell: pwsh
-        run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/scoop-bucket.git scoop-bucket
-          Set-Location scoop-bucket
-
-      - name: Update servy.json in scoop-bucket
+      - name: Update servy.json in scoop-bucket and push
         shell: pwsh
         env:
           HASH: ${{ env.HASH }}
           VERSION: ${{ env.VERSION }}
         run: |
-          $manifestPath = "servy.json"
-
+          # Clone scoop-bucket into a folder
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/scoop-bucket.git scoop-bucket
+          
+          # Change to the folder where servy.json is
+          Set-Location scoop-bucket
+          
+          # Path to the manifest inside the cloned repo
+          $manifestPath = "servy.json"   # adjust if servy.json is elsewhere
+          
+          # Load and update JSON
           $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $json.version = $env:VERSION
           $json.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
           $json.hash = $env:HASH
+          
+          # Save formatted JSON
           $json | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-
-      - name: Commit & push updated manifest to scoop-bucket
-        shell: pwsh
-        run: |
+          
+          # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add servy.json
-          git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-          git push origin main
-
-
-
-
-
+          if ((git status --porcelain) -ne '') {
+            git add $manifestPath
+            git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
+            git push origin main
+          } else {
+            Write-Host "No changes to commit"
+          }
