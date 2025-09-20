@@ -148,15 +148,15 @@ jobs:
                   }
               }
 
-              $jsonObj | ConvertTo-Json -Depth 10 -Compress:false | Out-File $manifestPath -Encoding UTF8
+              $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
               # Update existing manifest
               $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $json.version = $env:VERSION
-              $json.url     = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-              $json.hash    = $env:HASH
+              $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+              $json.architecture.'64bit'.hash = $env:HASH
               $json | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
           
               if ((git status --porcelain) -ne '') {
