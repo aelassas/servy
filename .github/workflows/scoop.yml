@@ -167,22 +167,11 @@ jobs:
                   # Trim trailing newlines and append exactly one
                   $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
           
-                  # Ensure folder exists
-                  $folder = Split-Path $manifestPath -Parent
-                  if (-not (Test-Path $folder)) { New-Item -Path $folder -ItemType Directory -Force | Out-Null }
-          
                   # Write to file
-                  [System.IO.File]::WriteAllText($manifestPath, $jsonString, [System.Text.Encoding]::UTF8)
+                  [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
               } else {
                   throw "`$jsonObj is null or empty; cannot write JSON"
               }
-          
-
-              # Trim any trailing newlines and append exactly one
-              $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
-
-              # Write to file
-              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
 
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
