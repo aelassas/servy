@@ -160,13 +160,10 @@ jobs:
       - name: Open Pull Request in ScoopInstaller/Extras
         shell: pwsh
         env:
-          PAT: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT }}
         run: |
           # Install GitHub CLI
           choco install gh -y
-          
-          # Authenticate with GitHub CLI using the PAT
-          Write-Output $env:PAT | gh auth login --with-token
           
           # Change to extras folder
           Set-Location extras
