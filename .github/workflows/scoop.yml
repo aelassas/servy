@@ -103,8 +103,11 @@ jobs:
         run: |
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
           Set-Location extras
-          git remote add upstream https://github.com/ScoopInstaller/Extras.git
-          git fetch upstream
+
+          # Make sure your fork's main is up-to-date
+          git fetch origin
+          git checkout main
+          git reset --hard origin/main
           
           # Create or reset PR branch to match upstream/master
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
