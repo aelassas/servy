@@ -148,6 +148,12 @@ jobs:
                   }
               }
 
+              # Make sure the folder exists
+              $folder = Split-Path $manifestPath
+              if (-not (Test-Path $folder)) {
+                  New-Item -Path $folder -ItemType Directory -Force | Out-Null
+              }
+
               # Convert JSON to string
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
 
