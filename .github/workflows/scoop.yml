@@ -103,8 +103,8 @@ jobs:
           Set-Location extras
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream
-          git checkout -b update-servy-${{ env:VERSION }} upstream/master
-
+          git checkout -b "update-servy-$env:VERSION" upstream/master
+          
           $manifestPath = "bucket/servy.json"
           
           if (-Not (Test-Path $manifestPath)) {
@@ -134,16 +134,17 @@ jobs:
               $json.hash    = $env:HASH
               $json | ConvertTo-Json -Depth 10 -Compress:$false | Set-Content $manifestPath -Encoding UTF8
           }
-
+          
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if ((git status --porcelain) -ne '') {
-            git add $manifestPath
-            git commit -m "servy: Update to version $env:VERSION"
-            git push origin HEAD:update-servy-${{ env:VERSION }}
+              git add $manifestPath
+              git commit -m "servy: Update to version $env:VERSION"
+              git push origin "HEAD:update-servy-$env:VERSION"
           } else {
-            Write-Host "No changes to commit"
+              Write-Host "No changes to commit"
           }
+          
 
       # - name: Open Pull Request
       #   uses: peter-evans/create-pull-request@v6
