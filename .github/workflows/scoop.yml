@@ -178,7 +178,7 @@ jobs:
                 --body "Add Servy version $env:VERSION." `
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
-                --repo aelassas/Extras `
+                --repo ScoopInstaller/Extras `
                 --fill
           } else {
               Write-Host "PR branch does not exist on remote, skipping PR creation."
