@@ -42,7 +42,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Getting Started
 You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet or Chocolatey.
 
-Make sure you have [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/) or [Chocolatey](https://chocolatey.org/install) installed.
+Make sure you have [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/), [Chocolatey](https://chocolatey.org/install), or [Scoop](https://scoop.sh/) installed.
 
 Run one of the following commands as administrator from Command Prompt or PowerShell:
 
@@ -54,6 +54,12 @@ winget install servy
 **Chocolatey**
 ```powershell
 choco install -y servy
+```
+
+**Scoop**
+```
+scoop bucket add aelassas https://github.com/aelassas/scoop-bucket
+scoop install servy
 ```
 
 > Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. The installer performs only standard installation tasks and does not contain malware, adware, or unwanted software. It passes VirusTotal scans and is published in the Windows Package Manager (WinGet) and Chocolatey. This is a known false positive. You can safely allow the installation if downloaded from GitHub, WinGet, or Chocolatey.
