@@ -149,7 +149,7 @@ jobs:
               }
 
               # Make sure the folder exists
-              $folder = Split-Path $manifestPath
+              $folder = Split-Path $manifestPath -Parent
               if (-not (Test-Path $folder)) {
                   New-Item -Path $folder -ItemType Directory -Force | Out-Null
               }
