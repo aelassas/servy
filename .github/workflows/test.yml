@@ -91,10 +91,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
-          commit_parent: ${{ github.event.before }}
-          git_commit_author: ${{ github.event.head_commit.author.name }}
-          git_commit_message: ${{ github.event.head_commit.message }}
-
+          
       - name: Notify Codecov Status in case of failure
         if: steps.codecov.outcome != 'success'
         uses: actions/github-script@v7
