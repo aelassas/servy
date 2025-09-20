@@ -109,12 +109,11 @@ jobs:
           git checkout main
           git reset --hard origin/main
           
-          # Create or reset PR branch to match upstream/master
-          git fetch upstream
+          # Create or reset PR branch
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
               git branch -D "update-servy-$env:VERSION"
           }
-          git checkout -b "update-servy-$env:VERSION" upstream/master
+          git checkout -b "update-servy-$env:VERSION"
           
           $manifestPath = "bucket/servy.json"
           
@@ -151,12 +150,11 @@ jobs:
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
                   git commit -m "servy: Update to version $env:VERSION"
-                  git push --set-upstream origin "update-servy-$env:VERSION" --force
               }
           }
           
           # Force push to fork (overwrite old branch if exists)
-          git push --set-upstream origin "update-servy-$env:VERSION" --force
+          git push origin "update-servy-$env:VERSION" --force
         
       - name: Check Chocolatey version
         shell: pwsh
