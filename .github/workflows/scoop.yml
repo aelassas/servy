@@ -110,6 +110,7 @@ jobs:
           git reset --hard origin/main
           
           # Create or reset PR branch to match upstream/master
+          git fetch upstream
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
               git branch -D "update-servy-$env:VERSION"
           }
