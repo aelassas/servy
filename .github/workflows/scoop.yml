@@ -150,28 +150,30 @@ jobs:
 
 
               $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
-
+          
               # Convert object to JSON (2-space indent)
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
           
               # Only process if conversion succeeded
               if (-not [string]::IsNullOrEmpty($jsonString)) {
           
-                  # Split, modify each line, then join back
-                  $jsonString = (
-                    $jsonString.Split("`r", "`n") | ForEach-Object {
-                        $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
-                    }
-                  ) -join "`n"
+                  # Split lines correctly using regex
+                  $lines = [regex]::Split($jsonString, "`r?`n")
           
-                  # Trim trailing newlines and append exactly one
-                  $jsonString = $jsonString.TrimEnd("`r", "`n") + "`n"
+                  # Modify each line
+                  $lines = $lines | ForEach-Object {
+                      $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
+                  }
+          
+                  # Join lines back together
+                  $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
           
                   # Write to file
                   [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
               } else {
                   throw "`$jsonObj is null or empty; cannot write JSON"
               }
+
 
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
@@ -213,7 +215,7 @@ jobs:
                 --body "Add Servy version $env:VERSION." `
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
-                --repo ScoopInstaller/Extras `
+                --repo aelassas/Extras `
                 --fill
           } else {
               Write-Host "PR branch does not exist on remote, skipping PR creation."
