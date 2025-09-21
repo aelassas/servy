@@ -166,7 +166,6 @@ jobs:
                   }
               }
 
-
               $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
           
               # Convert object to JSON (2-space indent)
@@ -196,12 +195,30 @@ jobs:
               git add $manifestPath
               git commit -m "servy: Update to version $env:VERSION"
           } else {
+              $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
+
               # Update existing manifest
-              $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
-              $json.version = $env:VERSION
-              $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-              $json.architecture.'64bit'.hash = $env:HASH
-              $json | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+              $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
+              $jsonObj.version = $env:VERSION
+              $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+              $jsonObj.architecture.'64bit'.hash = $env:HASH
+              # $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+
+              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+
+              # Split lines correctly using regex
+              $lines = [regex]::Split($jsonString, "\r?\n")
+          
+              # Modify each line
+              $lines = $lines | ForEach-Object {
+                  [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+              }
+          
+              # Join lines back together
+              $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
+          
+              # Write to file
+              [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
           
               if ((git status --porcelain) -ne '') {
                   git add $manifestPath
