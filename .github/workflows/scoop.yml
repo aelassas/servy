@@ -158,7 +158,7 @@ jobs:
               if (-not [string]::IsNullOrEmpty($jsonString)) {
           
                   # Split lines correctly using regex
-                  $lines = [regex]::Split($jsonString, "`r?`n")
+                  $lines = [regex]::Split($jsonString, "\r?\n")
           
                   # Modify each line
                   $lines = $lines | ForEach-Object {
