@@ -78,15 +78,31 @@ jobs:
           # Path to the manifest inside the cloned repo
           $manifestPath = "servy.json"   # adjust if servy.json is elsewhere
           
+          $jsonPath = Join-Path (Get-Location) "servy.json"
+
           # Load and update JSON
-          $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
-          $json.version = $env:VERSION
-          $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-          $json.architecture.'64bit'.hash = $env:HASH
+          $jsonString = Get-Content $manifestPath -Raw | ConvertFrom-Json
+          $jsonString.version = $env:VERSION
+          $jsonString.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+          $jsonString.architecture.'64bit'.hash = $env:HASH
           
           # Save formatted JSON
-          $json | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
+          # $jsonString | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
           
+          # Split lines correctly using regex
+          $lines = [regex]::Split($jsonString, "\r?\n")
+          
+          # Modify each line
+          $lines = $lines | ForEach-Object {
+              [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+          }
+          
+          # Join lines back together
+          $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
+          
+          # Write to file
+          [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
+
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -98,126 +114,126 @@ jobs:
             Write-Host "No changes to commit"
           }
 
-      - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
-        shell: pwsh
-        run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
-          Set-Location extras
+      # - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
+      #   shell: pwsh
+      #   run: |
+      #     git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
+      #     Set-Location extras
 
-          # Make sure your fork's main is up-to-date
-          git fetch origin
-          git checkout main
-          git reset --hard origin/master
+      #     # Make sure your fork's main is up-to-date
+      #     git fetch origin
+      #     git checkout main
+      #     git reset --hard origin/master
           
-          # Create or reset PR branch
-          if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
-              git branch -D "update-servy-$env:VERSION"
-          }
-          git checkout -b "update-servy-$env:VERSION"
+      #     # Create or reset PR branch
+      #     if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
+      #         git branch -D "update-servy-$env:VERSION"
+      #     }
+      #     git checkout -b "update-servy-$env:VERSION"
           
-          $manifestPath = "bucket/servy.json"
+      #     $manifestPath = "bucket/servy.json"
           
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if (-Not (Test-Path $manifestPath)) {
-              # Create new manifest
-              $jsonObj = [PSCustomObject]@{
-                  version     = $env:VERSION
-                  description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
-                  notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from Start Menu. For more info, visit https://servy-win.github.io"
-                  homepage    = "https://servy-win.github.io"
-                  license     = "MIT"
-                  architecture = @{
-                      '64bit' = @{
-                          url  = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-                          hash = $env:HASH
-                      }
-                  }
-                  innosetup  = $true
-                  bin        = "servy-cli.exe"
-                  checkver   = @{
-                      github = "https://github.com/aelassas/servy"
-                  }
-                  autoupdate = @{
-                      architecture = @{
-                          '64bit' = @{
-                              url = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-net8.0-x64-installer.exe"
-                          }
-                      }
-                  }
-              }
-
-
-              $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
-          
-              # Convert object to JSON (2-space indent)
-              $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
-          
-              # Only process if conversion succeeded
-              if (-not [string]::IsNullOrEmpty($jsonString)) {
-          
-                  # Split lines correctly using regex
-                  $lines = [regex]::Split($jsonString, "\r?\n")
-          
-                  # Modify each line
-                  $lines = $lines | ForEach-Object {
-                      [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
-                  }
-          
-                  # Join lines back together
-                  $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
-          
-                  # Write to file
-                  [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
-              } else {
-                  throw "`$jsonObj is null or empty; cannot write JSON"
-              }
+      #     if (-Not (Test-Path $manifestPath)) {
+      #         # Create new manifest
+      #         $jsonObj = [PSCustomObject]@{
+      #             version     = $env:VERSION
+      #             description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
+      #             notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from Start Menu. For more info, visit https://servy-win.github.io"
+      #             homepage    = "https://servy-win.github.io"
+      #             license     = "MIT"
+      #             architecture = @{
+      #                 '64bit' = @{
+      #                     url  = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+      #                     hash = $env:HASH
+      #                 }
+      #             }
+      #             innosetup  = $true
+      #             bin        = "servy-cli.exe"
+      #             checkver   = @{
+      #                 github = "https://github.com/aelassas/servy"
+      #             }
+      #             autoupdate = @{
+      #                 architecture = @{
+      #                     '64bit' = @{
+      #                         url = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-net8.0-x64-installer.exe"
+      #                     }
+      #                 }
+      #             }
+      #         }
 
 
-              git add $manifestPath
-              git commit -m "servy: Update to version $env:VERSION"
-          } else {
-              # Update existing manifest
-              $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
-              $json.version = $env:VERSION
-              $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-              $json.architecture.'64bit'.hash = $env:HASH
-              $json | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+      #         $jsonPath = Join-Path (Get-Location) "bucket/servy.json"
           
-              if ((git status --porcelain) -ne '') {
-                  git add $manifestPath
-                  git commit -m "servy: Update to version $env:VERSION"
-              }
-          }
+      #         # Convert object to JSON (2-space indent)
+      #         $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
           
-          # Force push to fork (overwrite old branch if exists)
-          git push origin "update-servy-$env:VERSION" --force
+      #         # Only process if conversion succeeded
+      #         if (-not [string]::IsNullOrEmpty($jsonString)) {
+          
+      #             # Split lines correctly using regex
+      #             $lines = [regex]::Split($jsonString, "\r?\n")
+          
+      #             # Modify each line
+      #             $lines = $lines | ForEach-Object {
+      #                 [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
+      #             }
+          
+      #             # Join lines back together
+      #             $jsonString = ($lines -join "`n").TrimEnd("`r", "`n") + "`n"
+          
+      #             # Write to file
+      #             [System.IO.File]::WriteAllText($jsonPath, $jsonString, [System.Text.Encoding]::UTF8)
+      #         } else {
+      #             throw "`$jsonObj is null or empty; cannot write JSON"
+      #         }
+
+
+      #         git add $manifestPath
+      #         git commit -m "servy: Update to version $env:VERSION"
+      #     } else {
+      #         # Update existing manifest
+      #         $json = Get-Content $manifestPath -Raw | ConvertFrom-Json
+      #         $json.version = $env:VERSION
+      #         $json.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+      #         $json.architecture.'64bit'.hash = $env:HASH
+      #         $json | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
+          
+      #         if ((git status --porcelain) -ne '') {
+      #             git add $manifestPath
+      #             git commit -m "servy: Update to version $env:VERSION"
+      #         }
+      #     }
+          
+      #     # Force push to fork (overwrite old branch if exists)
+      #     git push origin "update-servy-$env:VERSION" --force
         
-      - name: Check Chocolatey version
-        shell: pwsh
-        run: choco --version
+      # - name: Check Chocolatey version
+      #   shell: pwsh
+      #   run: choco --version
         
-      - name: Open Pull Request in ScoopInstaller/Extras
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
-          Set-Location extras
+      # - name: Open Pull Request in ScoopInstaller/Extras
+      #   shell: pwsh
+      #   env:
+      #     GH_TOKEN: ${{ secrets.PAT }}
+      #   run: |
+      #     Set-Location extras
           
-          # Check if the branch exists on remote
-          $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
+      #     # Check if the branch exists on remote
+      #     $branchExists = git ls-remote --heads origin "update-servy-$env:VERSION"
           
-          if ($branchExists) {
-              # Create PR
-              gh pr create `
-                --title "servy: Update to version $env:VERSION" `
-                --body "Update Servy to version $env:VERSION." `
-                --base master `
-                --head "aelassas:update-servy-$env:VERSION" `
-                --repo ScoopInstaller/Extras `
-                --fill
-          } else {
-              Write-Host "PR branch does not exist on remote, skipping PR creation."
-          }
+      #     if ($branchExists) {
+      #         # Create PR
+      #         gh pr create `
+      #           --title "servy: Update to version $env:VERSION" `
+      #           --body "Update Servy to version $env:VERSION." `
+      #           --base master `
+      #           --head "aelassas:update-servy-$env:VERSION" `
+      #           --repo ScoopInstaller/Extras `
+      #           --fill
+      #     } else {
+      #         Write-Host "PR branch does not exist on remote, skipping PR creation."
+      #     }
           
