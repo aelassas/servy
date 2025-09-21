@@ -162,7 +162,7 @@ jobs:
           
                   # Modify each line
                   $lines = $lines | ForEach-Object {
-                      $_ -replace "^( +)", { " " * ($matches[1].Length * 2) }
+                      [regex]::Replace($_, '^( +)', { param($m) " " * ($m.Value.Length * 2) })
                   }
           
                   # Join lines back together
