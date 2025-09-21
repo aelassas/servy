@@ -81,14 +81,16 @@ jobs:
           $jsonPath = Join-Path (Get-Location) "servy.json"
 
           # Load and update JSON
-          $jsonString = Get-Content $manifestPath -Raw | ConvertFrom-Json
-          $jsonString.version = $env:VERSION
-          $jsonString.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
-          $jsonString.architecture.'64bit'.hash = $env:HASH
+          $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
+          $jsonObj.version = $env:VERSION
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.hash = $env:HASH
           
           # Save formatted JSON
-          # $jsonString | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
+          # $jsonObj | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
           
+          $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
+
           # Split lines correctly using regex
           $lines = [regex]::Split($jsonString, "\r?\n")
           
