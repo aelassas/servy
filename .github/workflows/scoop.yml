@@ -229,8 +229,8 @@ jobs:
           if ($branchExists) {
               # Create PR
               gh pr create `
-                --title "servy: Update to version $env:VERSION" `
-                --body "Update Servy to version $env:VERSION." `
+                --title "servy: Add version $env:VERSION" `
+                --body "Add Servy version $env:VERSION." `
                 --base master `
                 --head "aelassas:update-servy-$env:VERSION" `
                 --repo ScoopInstaller/Extras `
