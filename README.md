@@ -41,7 +41,7 @@ Servy lets you run an optional script or executable before the main service star
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background without having to rewrite them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 ## Getting Started
-You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet or Chocolatey.
+You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
 
 Make sure you have [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/), [Chocolatey](https://chocolatey.org/install), or [Scoop](https://scoop.sh/) installed.
 
@@ -63,7 +63,7 @@ scoop bucket add aelassas https://github.com/aelassas/scoop-bucket
 scoop install servy
 ```
 
-> Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. The installer performs only standard installation tasks and does not contain malware, adware, or unwanted software. It passes VirusTotal scans and is published in the Windows Package Manager (WinGet) and Chocolatey. This is a known false positive. You can safely allow the installation if downloaded from GitHub, WinGet, or Chocolatey.
+> Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. The installer performs only standard installation tasks and does not contain malware, adware, or unwanted software. It passes VirusTotal scans and is published in the Windows Package Manager (WinGet), Chocolatey and Scoop. This is a known false positive. You can safely allow the installation if downloaded from GitHub, WinGet, Chocolatey, or Scoop.
 
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
