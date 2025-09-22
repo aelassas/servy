@@ -8,6 +8,10 @@ on:
       tag:
         description: 'Release tag (e.g. v1.1)'
         required: false
+      run_extras_pr:
+        description: 'Also update ScoopInstaller/Extras?'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write   # allows pushing commits back
@@ -16,6 +20,9 @@ jobs:
   scoop:
     runs-on: windows-latest
     
+    env:
+        RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -117,6 +124,7 @@ jobs:
           }
 
       - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
+        if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
         run: |
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
@@ -234,6 +242,7 @@ jobs:
         run: choco --version
         
       - name: Open Pull Request in ScoopInstaller/Extras
+        if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.PAT }}
