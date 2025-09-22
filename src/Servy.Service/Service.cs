@@ -3,8 +3,8 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.ProcessManagement;
 using Servy.Service.Helpers;
+using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
 
@@ -52,6 +53,7 @@ namespace Servy.Service
         private string _restartAttemptsFile;
         private bool _preLaunchEnabled;
         private StartOptions _options;
+        private const int StartupTimeout = 10; // seconds
 
         #endregion
 
@@ -558,6 +560,68 @@ namespace Servy.Service
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
+            // Fire and forget the post-launch script when process confirmed running
+            Task.Run(async () =>
+            {
+                if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout)))
+                {
+                    StartPostLaunchProcess();
+                }
+            });
+        }
+
+        /// <summary>
+        /// Starts the configured post-launch executable, if defined.
+        /// </summary>
+        /// <remarks>
+        /// This method launches an external program specified in the service options
+        /// after the wrapped process has successfully started.  
+        /// - If <see cref="_options"/> is <c>null</c> or no <c>PostLaunchExecutablePath</c> is set, the method does nothing.  
+        /// - Environment variables in arguments are expanded before execution.  
+        /// - The working directory defaults to the provided <c>PostLaunchWorkingDirectory</c>, 
+        ///   or falls back to the directory of the executable if not set.  
+        /// - The process is started in a fire-and-forget manner; no handle is kept or awaited.  
+        /// </remarks>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// Thrown if the executable cannot be started (e.g., file not found, access denied).
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if no file name is specified in <c>ProcessStartInfo</c>.
+        /// </exception>
+        private void StartPostLaunchProcess()
+        {
+            if (_options == null || string.IsNullOrWhiteSpace(_options.PostLaunchExecutablePath))
+                return;
+
+            try
+            {
+                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                    _options.PostLaunchExecutableArgs ?? string.Empty,
+                    new Dictionary<string, string>()
+                );
+
+                var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
+                    ? Path.GetDirectoryName(_options.PostLaunchExecutablePath)
+                    : _options.PostLaunchWorkingDirectory;
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = _options.PostLaunchExecutablePath,
+                    Arguments = args,
+                    WorkingDirectory = workingDir,
+                    UseShellExecute = true,
+                    CreateNoWindow = true
+                };
+
+                _logger?.Info($"Running post-launch program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+
+                // Fire-and-forget: start the process without disposing immediately
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Failed to run post-launch program: {ex.Message}", ex);
+            }
         }
 
         /// <summary>

@@ -110,7 +110,10 @@ namespace Servy.Services
             bool preLaunchIgnoreFailure,
             string failureProgramPath,
             string failureProgramWorkingDirectory,
-            string failureProgramArgs
+            string failureProgramArgs,
+            string postLaunchExePath,
+            string postLaunchWorkingDirectory,
+            string postLaunchArgs
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -156,7 +159,11 @@ namespace Servy.Services
                 PreLaunchStderrPath = preLaunchStderrPath,
                 PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : AppConfig.DefaultPreLaunchTimeoutSeconds,
                 PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : AppConfig.DefaultPreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = preLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
+
+                PostLaunchExecutablePath = postLaunchExePath,
+                PostLaunchStartupDirectory = postLaunchWorkingDirectory,
+                PostLaunchParameters = postLaunchArgs,
             };
 
             // Validate
@@ -226,7 +233,10 @@ namespace Servy.Services
                     preLaunchIgnoreFailure: preLaunchIgnoreFailure,
                     failureProgramPath: failureProgramPath,
                     failureProgramWorkingDirectory: failureProgramWorkingDirectory,
-                    failureProgramArgs: failureProgramArgs
+                    failureProgramArgs: failureProgramArgs,
+                    postLaunchExePath: postLaunchExePath,
+                    postLaunchWorkingDirectory: postLaunchWorkingDirectory,
+                    postLaunchArgs: postLaunchArgs
                 );
 
                 if (success)

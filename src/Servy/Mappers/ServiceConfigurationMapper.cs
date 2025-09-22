@@ -51,7 +51,10 @@ namespace Servy.Mappers
                 PreLaunchStderrPath = config.PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = ParseInt(config.PreLaunchTimeoutSeconds, 30),
                 PreLaunchRetryAttempts = ParseInt(config.PreLaunchRetryAttempts, 0),
-                PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
+                PostLaunchExecutablePath = config.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
+                PostLaunchParameters = config.PostLaunchParameters,
             };
         }
 
@@ -97,7 +100,10 @@ namespace Servy.Mappers
                 PreLaunchStderrPath = service.PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = service.PreLaunchTimeoutSeconds.ToString(),
                 PreLaunchRetryAttempts = service.PreLaunchRetryAttempts.ToString(),
-                PreLaunchIgnoreFailure = service.PreLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = service.PreLaunchIgnoreFailure,
+                PostLaunchExecutablePath = service.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
+                PostLaunchParameters = service.PostLaunchParameters,
             };
         }
 

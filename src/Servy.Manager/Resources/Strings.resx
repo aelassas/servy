@@ -390,4 +390,12 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified failure program startup directory is invalid.</value>
   </data>
 
+  <!--Post-Launch-->
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>The post-launch process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>The specified post-launch startup directory is invalid.</value>
+  </data>
+
 </root>

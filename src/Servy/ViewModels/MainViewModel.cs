@@ -424,6 +424,33 @@ namespace Servy.ViewModels
             set { _isManagerAppAvailable = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets post-launch executable path as a string.
+        /// </summary>
+        public string PostLaunchExecutablePath
+        {
+            get => _config.PostLaunchExecutablePath;
+            set { _config.PostLaunchExecutablePath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets post-launch startup directory as a string.
+        /// </summary>
+        public string PostLaunchStartupDirectory
+        {
+            get => _config.PostLaunchStartupDirectory;
+            set { _config.PostLaunchStartupDirectory = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets post-launch parameters as a string.
+        /// </summary>
+        public string PostLaunchParameters
+        {
+            get => _config.PostLaunchParameters;
+            set { _config.PostLaunchParameters = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -548,6 +575,16 @@ namespace Servy.ViewModels
         /// </summary>
         public IAsyncCommand ClearFormCommand { get; }
 
+        /// <summary>
+        /// Command to browse and select the post-launch executable process path.
+        /// </summary>
+        public ICommand BrowsePostLaunchProcessPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the post-launch startup directory.
+        /// </summary>
+        public ICommand BrowsePostLaunchStartupDirectoryCommand { get; }
+
         #endregion
 
         #region Constructors
@@ -624,6 +661,9 @@ namespace Servy.ViewModels
             BrowsePreLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreLaunchStartupDirectory());
             BrowsePreLaunchStdoutPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStdoutPath());
             BrowsePreLaunchStderrPathCommand = new RelayCommand<object>(_ => BrowsePreLaunchStderrPath());
+
+            BrowsePostLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePostLaunchProcessPath());
+            BrowsePostLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostLaunchStartupDirectory());
 
             OpenDocumentationCommand = new RelayCommand<object>(_ => OpenDocumentation());
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
@@ -781,6 +821,24 @@ namespace Servy.ViewModels
             if (!string.IsNullOrEmpty(path)) PreLaunchStderrPath = path;
         }
 
+        /// <summary>
+        /// Opens a dialog to browse for a post-launch executable file and sets <see cref="PostLaunchExecutablePath"/>.
+        /// </summary>
+        private void BrowsePostLaunchProcessPath()
+        {
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) PostLaunchExecutablePath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a folder and sets <see cref="PostLaunchStartupDirectory"/>.
+        /// </summary>
+        private void BrowsePostLaunchStartupDirectory()
+        {
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) PostLaunchStartupDirectory = folder;
+        }
+
         #endregion
 
         #region Service Command Handlers
@@ -824,7 +882,10 @@ namespace Servy.ViewModels
                 _config.PreLaunchIgnoreFailure,
                 _config.FailureProgramPath,
                 _config.FailureProgramStartupDirectory,
-                _config.FailureProgramParameters
+                _config.FailureProgramParameters,
+                _config.PostLaunchExecutablePath,
+                _config.PostLaunchStartupDirectory,
+                _config.PostLaunchParameters
                 );
         }
 
@@ -921,6 +982,10 @@ namespace Servy.ViewModels
             PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
             PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
             PreLaunchIgnoreFailure = false;
+
+            PostLaunchExecutablePath = string.Empty;
+            PostLaunchStartupDirectory = string.Empty;
+            PostLaunchParameters = string.Empty;
         }
 
         #endregion
@@ -1047,6 +1112,10 @@ namespace Servy.ViewModels
             PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
             PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts == null ? DefaultPreLaunchRetryAttempts.ToString() : dto.PreLaunchRetryAttempts.ToString();
             PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false;
+
+            PostLaunchExecutablePath = dto.PostLaunchExecutablePath;
+            PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory;
+            PostLaunchParameters = dto.PostLaunchParameters;
         }
 
         /// <summary>
@@ -1099,7 +1168,11 @@ namespace Servy.ViewModels
                 PreLaunchStderrPath = PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = int.TryParse(PreLaunchTimeoutSeconds, out var pt) ? pt : 30,
                 PreLaunchRetryAttempts = int.TryParse(PreLaunchRetryAttempts, out var pr) ? pr : 0,
-                PreLaunchIgnoreFailure = PreLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
+
+                PostLaunchExecutablePath = PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = PostLaunchStartupDirectory,
+                PostLaunchParameters = PostLaunchParameters,
             };
 
             return dto;

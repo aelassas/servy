@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -57,6 +59,27 @@ namespace Servy.Service.ProcessManagement
         /// Starts the process.
         /// </summary>
         void Start();
+
+        /// <summary>
+        /// Waits until the wrapped process is confirmed running within a given timeout.
+        /// </summary>
+        /// <param name="timeout">
+        /// The maximum time to wait for the process to be considered healthy.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A token that can be used to cancel the wait operation prematurely.
+        /// </param>
+        /// <returns>
+        /// A task that represents the asynchronous wait operation.  
+        /// The task result is <c>true</c> if the process is running before the timeout expires;  
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method does not perform application-level health checks.  
+        /// It only verifies that the process object is not <c>null</c> and has not exited.  
+        /// If the process fails to start or exits before the timeout, the result is <c>false</c>.
+        /// </remarks>
+        Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Immediately stops the associated process and optionally its child/descendent processes.

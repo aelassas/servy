@@ -429,4 +429,24 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified service is disabled.</value>
   </data>
 
+  <!--Post-Launch-->
+  <data name="Label_PostLaunchTab" xml:space="preserve">
+    <value>Post-Launch</value>
+  </data>
+
+  <data name="Info_PostLaunch" xml:space="preserve">
+    <value>Configure an optional script or executable to run after the process starts successfully.</value>
+  </data>
+
+  <data name="Info_PostLaunchStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the post-launch program.</value>
+  </data>
+
+  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
+    <value>The post-launch process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
+    <value>The specified post-launch startup directory is invalid.</value>
+  </data>
+
 </root>

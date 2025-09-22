@@ -56,6 +56,11 @@ namespace Servy.Service.CommandLine
                 FailureProgramPath = fullArgs.Length > 23 ? fullArgs[23] : string.Empty,
                 FailureProgramWorkingDirectory = fullArgs.Length > 24 ? fullArgs[24] : string.Empty,
                 FailureProgramArgs = fullArgs.Length > 25 ? fullArgs[25] : string.Empty,
+
+                // Post-Launch args
+                PostLaunchExecutablePath = fullArgs.Length > 26 ? fullArgs[26] : string.Empty,
+                PostLaunchWorkingDirectory = fullArgs.Length > 27 ? fullArgs[27] : string.Empty,
+                PostLaunchExecutableArgs = fullArgs.Length > 28 ? fullArgs[28] : string.Empty,
             };
         }
     }

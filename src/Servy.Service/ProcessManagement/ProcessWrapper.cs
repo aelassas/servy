@@ -1,6 +1,8 @@
 ﻿using Servy.Service.Helpers;
 using System;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -75,6 +77,27 @@ namespace Servy.Service.ProcessManagement
 
         /// <inheritdoc/>
         public void Start() => _process.Start();
+
+        /// <inheritdoc/>
+        public async Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            var start = DateTime.UtcNow;
+
+            while (DateTime.UtcNow - start < timeout)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (_process != null && !_process.HasExited)
+                {
+                    // Process exists and is running
+                    return true;
+                }
+
+                await Task.Delay(500, cancellationToken); // retry every half-second
+            }
+
+            return false; // process never reached "running" state within timeout
+        }
 
         /// <inheritdoc/>
         public void Kill(bool entireProcessTree = true)
