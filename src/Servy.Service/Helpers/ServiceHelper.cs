@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.ServiceProcess;
 
 namespace Servy.Service.Helpers
 {
@@ -236,6 +237,13 @@ namespace Servy.Service.Helpers
             {
                 logger?.Error($"Failed to restart computer: {ex.Message}");
             }
+        }
+
+        /// <inheritdoc />
+        public void RequestAdditionalTime(ServiceBase service, int milliseconds, ILogger logger)
+        {
+            service.RequestAdditionalTime(milliseconds);
+            logger?.Info($"Requested additional {milliseconds}ms for service operation.");
         }
 
         #endregion

@@ -132,13 +132,6 @@ namespace Servy.Service
         {
             try
             {
-                // Request 30 seconds for startup to accommodate slow process
-                // Only request additional time when running as a service
-                if (Environment.UserInteractive == false)
-                {
-                    RequestAdditionalTime(30 * 1000);
-                }
-
                 // Load and validate service startup options
                 var options = _serviceHelper.InitializeStartup(_logger);
                 if (options == null)
@@ -155,6 +148,9 @@ namespace Servy.Service
                 _serviceName = options.ServiceName;
                 _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
+
+                // Request 30 seconds for startup to accommodate slow process
+                _serviceHelper.RequestAdditionalTime(this, 30 * 1000, _logger);
 
                 // Set up attempts file
                 SetupAttemptsFile(options);
