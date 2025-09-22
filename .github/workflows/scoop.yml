@@ -238,6 +238,7 @@ jobs:
           git push origin "update-servy-$env:VERSION" --force
         
       - name: Check Chocolatey version
+        if: env.RUN_EXTRAS_PR == 'true'  
         shell: pwsh
         run: choco --version
         
