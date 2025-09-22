@@ -24,6 +24,16 @@ namespace Servy.Service
     public partial class Service : ServiceBase
     {
 
+        #region Constants
+
+        /// <summary>
+        /// Default timeout (in seconds) to wait for the process to start 
+        /// successfully before considering the startup as failed.
+        /// </summary>
+        private const int StartupTimeout = 30;
+
+        #endregion
+
         #region Private Fields
 
         private readonly IServiceHelper _serviceHelper;
@@ -53,7 +63,6 @@ namespace Servy.Service
         private string _restartAttemptsFile;
         private bool _preLaunchEnabled;
         private StartOptions _options;
-        private const int StartupTimeout = 10; // seconds
 
         #endregion
 
@@ -123,6 +132,9 @@ namespace Servy.Service
         {
             try
             {
+                // Request 30 seconds for startup to accommodate slow process
+                RequestAdditionalTime(30 * 1000);
+
                 // Load and validate service startup options
                 var options = _serviceHelper.InitializeStartup(_logger);
                 if (options == null)
