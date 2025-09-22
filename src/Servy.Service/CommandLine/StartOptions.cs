@@ -140,5 +140,20 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the command-line arguments to pass to the failure program.
         /// </summary>
         public string FailureProgramArgs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the full path to the post-launch executable to run.
+        /// </summary>
+        public string PostLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the post-launch process.
+        /// </summary>
+        public string PostLaunchWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line arguments to pass to the post-launch executable.
+        /// </summary>
+        public string PostLaunchExecutableArgs { get; set; }
     }
 }

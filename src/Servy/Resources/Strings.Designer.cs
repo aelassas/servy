@@ -178,6 +178,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run after the process starts successfully..
+        /// </summary>
+        public static string Info_PostLaunch {
+            get {
+                return ResourceManager.GetString("Info_PostLaunch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-launch program..
+        /// </summary>
+        public static string Info_PostLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_PostLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable &quot;Ignore Failure&quot;..
         /// </summary>
         public static string Info_PreLaunch {
@@ -332,20 +350,20 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Post-Launch.
+        /// </summary>
+        public static string Label_PostLaunchTab {
+            get {
+                return ResourceManager.GetString("Label_PostLaunchTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Ignore Failure.
         /// </summary>
         public static string Label_PreLaunchIgnoreFailure {
             get {
                 return ResourceManager.GetString("Label_PreLaunchIgnoreFailure", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Process Path.
-        /// </summary>
-        public static string Label_ProcessPathNotRequired {
-            get {
-                return ResourceManager.GetString("Label_ProcessPathNotRequired", resourceCulture);
             }
         }
         
@@ -391,6 +409,15 @@ namespace Servy.Resources {
         public static string Label_ProcessPath {
             get {
                 return ResourceManager.GetString("Label_ProcessPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Path.
+        /// </summary>
+        public static string Label_ProcessPathNotRequired {
+            get {
+                return ResourceManager.GetString("Label_ProcessPathNotRequired", resourceCulture);
             }
         }
         
@@ -733,6 +760,24 @@ namespace Servy.Resources {
         public static string Msg_InvalidPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The post-launch process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostLaunchPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostLaunchPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified post-launch startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostLaunchStartupDirectory", resourceCulture);
             }
         }
         

@@ -181,7 +181,11 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.FailureProgramPath,
                      service.FailureProgramStartupDirectory,
-                     service.FailureProgramParameters
+                     service.FailureProgramParameters,
+
+                     service.PostLaunchExecutablePath,
+                     service.PostLaunchStartupDirectory,
+                     service.PostLaunchParameters
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -266,7 +270,11 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.FailureProgramPath,
                      service.FailureProgramStartupDirectory,
-                     service.FailureProgramParameters
+                     service.FailureProgramParameters,
+
+                     service.PostLaunchExecutablePath,
+                     service.PostLaunchStartupDirectory,
+                     service.PostLaunchParameters
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -334,7 +342,10 @@ namespace Servy.Core.UnitTests.Domain
                     It.IsAny<bool>(),                    // preLaunchIgnoreFailure
                     null,                                // failureProgramPath
                     null,                                // failureProgramWorkingDirectory
-                    null                                 // failureProgramArgs
+                    null,                                // failureProgramArgs
+                    null,                                // postLaunchExePath
+                    null,                                // postLaunchWorkingDirectory
+                    null                                 // postLaunchArgs
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

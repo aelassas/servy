@@ -1,6 +1,4 @@
-﻿using Servy.Core.Config;
-
-namespace Servy.Core.DTOs
+﻿namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Data Transfer Object for persisting a Windows service configuration in SQLite.
@@ -177,6 +175,21 @@ namespace Servy.Core.DTOs
         /// </summary>
         public bool? PreLaunchIgnoreFailure { get; set; }
 
+        /// <summary>
+        /// Optional path to an executable that runs before the service starts.
+        /// </summary>
+        public string PostLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-launch executable.
+        /// </summary>
+        public string PostLaunchStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-launch executable.
+        /// </summary>
+        public string PostLaunchParameters { get; set; }
+
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => Id.HasValue;
@@ -211,6 +224,9 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePreLaunchTimeoutSeconds() => PreLaunchTimeoutSeconds.HasValue;
         public bool ShouldSerializePreLaunchRetryAttempts() => PreLaunchRetryAttempts.HasValue;
         public bool ShouldSerializePreLaunchIgnoreFailure() => PreLaunchIgnoreFailure.HasValue;
+        public bool ShouldSerializePostLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PostLaunchExecutablePath);
+        public bool ShouldSerializePostLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PostLaunchStartupDirectory);
+        public bool ShouldSerializePostLaunchParameters() => !string.IsNullOrWhiteSpace(PostLaunchParameters);
 
         #endregion
     }

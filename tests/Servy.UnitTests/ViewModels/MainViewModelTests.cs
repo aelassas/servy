@@ -100,6 +100,10 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.FailureProgramStartupDirectory = @"C:\failureProgramDir";
             _viewModel.FailureProgramParameters = "--failureProgramParam1 val1";
 
+            _viewModel.PostLaunchExecutablePath = @"C:\post-launch.exe";
+            _viewModel.PostLaunchStartupDirectory = @"C:\";
+            _viewModel.PostLaunchParameters = "--param1 val1";
+
             // Act
             _viewModel.InstallCommand.Execute(null);
 
@@ -140,7 +144,11 @@ namespace Servy.UnitTests.ViewModels
 
                  @"C:\failureProgram.exe",
                  @"C:\failureProgramDir",
-                 "--failureProgramParam1 val1"
+                 "--failureProgramParam1 val1",
+
+                 @"C:\post-launch.exe",
+                 @"C:\",
+                 "--param1 val1"
 
             ), Times.Once);
         }

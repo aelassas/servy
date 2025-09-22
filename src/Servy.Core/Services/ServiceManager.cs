@@ -215,7 +215,10 @@ namespace Servy.Core.Services
                 bool preLaunchIgnoreFailure = false,
                 string failureProgramPath = null,
                 string failureProgramWorkingDirectory = null,
-                string failureProgramArgs = null
+                string failureProgramArgs = null,
+                string postLaunchExePath = null,
+                string postLaunchWorkingDirectory = null,
+                string postLaunchArgs = null
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -256,7 +259,12 @@ namespace Servy.Core.Services
                 // Failure program
                 Helper.Quote(failureProgramPath ?? string.Empty),
                 Helper.Quote(failureProgramWorkingDirectory ?? string.Empty),
-                Helper.Quote(failureProgramArgs ?? string.Empty)
+                Helper.Quote(failureProgramArgs ?? string.Empty),
+
+                // Post-Launch
+                Helper.Quote(postLaunchExePath ?? string.Empty),
+                Helper.Quote(postLaunchWorkingDirectory ?? string.Empty),
+                Helper.Quote(postLaunchArgs ?? string.Empty)
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -322,7 +330,11 @@ namespace Servy.Core.Services
                     PreLaunchStderrPath = preLaunchStderrPath,
                     PreLaunchTimeoutSeconds = preLaunchTimeout,
                     PreLaunchRetryAttempts = preLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = preLaunchIgnoreFailure
+                    PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
+
+                    PostLaunchExecutablePath = postLaunchExePath,
+                    PostLaunchStartupDirectory = postLaunchWorkingDirectory,
+                    PostLaunchParameters = postLaunchArgs,
                 };
 
                 if (serviceHandle == IntPtr.Zero)

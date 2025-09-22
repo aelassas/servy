@@ -134,7 +134,6 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(envVarsErrorMessage);
 
             // PreLaunch
-
             if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!Helper.IsValidPath(opts.PreLaunchPath) || !File.Exists(opts.PreLaunchPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchPath);
 
@@ -167,6 +166,15 @@ namespace Servy.CLI.Validators
             if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && !int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
+            }
+
+            // Post-Launch
+            if (!string.IsNullOrWhiteSpace(opts.PostLaunchPath) && (!Helper.IsValidPath(opts.PostLaunchPath) || !File.Exists(opts.PostLaunchPath)))
+                return CommandResult.Fail(Strings.Msg_InvalidPostLaunchPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.PostLaunchStartupDir) && (!Helper.IsValidPath(opts.PostLaunchStartupDir) || !Directory.Exists(opts.PostLaunchStartupDir)))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPostLaunchStartupDirectory);
             }
 
             return CommandResult.Ok("Validation passed.");
