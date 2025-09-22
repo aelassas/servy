@@ -58,7 +58,7 @@
             <TabControl Grid.Row="0">
                 <!-- Main tab UI -->
                 <TabItem Header="{x:Static resx:Strings.Label_MainTab}">
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -156,7 +156,7 @@
 
                 <!-- Recovery Tab UI -->
                 <TabItem Header="{x:Static resx:Strings.Label_RecoveryTab}">
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -239,7 +239,7 @@
 
                 <!-- Advanced tab UI -->
                 <TabItem Header="{x:Static resx:Strings.Label_AdvancedTab}">
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
                             <!-- Env Label -->
                             <RowDefinition Height="Auto"/>
@@ -285,7 +285,7 @@
 
                 <!-- Log On tab UI -->
                 <TabItem Header="{x:Static resx:Strings.Label_LogOnTab}">
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
                             <!-- Run As Local System RadioButton -->
                             <RowDefinition Height="Auto"/>
@@ -349,7 +349,7 @@
 
                 <!-- Pre-Launch tab UI -->
                 <TabItem Header="{x:Static resx:Strings.Label_PreLaunchTab}" >
-                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="470">
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
