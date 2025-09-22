@@ -10,7 +10,7 @@
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
-* [ ] Add support for post-launch script execution after starting the service, with retries, timeout, and failure handling
+* [ ] Add support for post-launch script execution after starting the service
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
