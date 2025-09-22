@@ -4,6 +4,7 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System;
 using System.Collections.Generic;
+using System.ServiceProcess;
 
 namespace Servy.Service.Helpers
 {
@@ -94,5 +95,22 @@ namespace Servy.Service.Helpers
         /// </remarks>
         void RestartComputer(ILogger logger);
 
+        /// <summary>
+        /// Informs the Service Control Manager (SCM) that the service needs additional time to start,
+        /// stop, pause, or continue before the operation is considered failed.
+        /// </summary>
+        /// <param name="service">The service instance.</param>
+        /// <param name="milliseconds">
+        /// The number of milliseconds to add to the service timeout. This value extends the default 
+        /// SCM timeout for the current operation (e.g., OnStart or OnStop).
+        /// </param>
+        /// <param name="logger">Logger.</param>
+        /// <remarks>
+        /// Use this method in <see cref="OnStart"/>, <see cref="OnStop"/>, <see cref="OnPause"/>, 
+        /// or <see cref="OnContinue"/> when the operation may take longer than the default SCM timeout.
+        /// Calling this method has no effect if the service is not running under the SCM (for example, 
+        /// during unit tests or console execution).
+        /// </remarks>
+        void RequestAdditionalTime(ServiceBase service, int milliseconds, ILogger logger);
     }
 }
