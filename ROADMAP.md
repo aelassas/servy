@@ -4,7 +4,7 @@
 * [x] Logging stdout/stderr with size-based rotation
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
-* [x] CLI for full scripting and automated deployments
+* [x] CLI and PowerShell module for full scripting and automated deployments
 * [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
 * [x] Support environment variable expansion ([#6](https://github.com/aelassas/servy/issues/6))
 * [x] Support service dependencies
