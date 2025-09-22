@@ -182,5 +182,19 @@ namespace Servy.Models
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; } = false;
 
+        /// <summary>
+        /// Gets or sets the path to the post-launch executable process to run.
+        /// </summary>
+        public string PostLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the working directory for the post-launch executable.
+        /// </summary>
+        public string PostLaunchStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the command-line parameters for the post-launch executable.
+        /// </summary>
+        public string PostLaunchParameters { get; set; }
     }
 }

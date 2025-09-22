@@ -49,6 +49,9 @@ namespace Servy.Core.Services
         /// <param name="failureProgramPath">Failure program path.</param>
         /// <param name="failureProgramWorkingDirectory">Failure program working directory.</param>
         /// <param name="failureProgramArgs">Failure program parameters.</param>
+        /// <param name="postLaunchExePath">Post-launch script exe path.</param>
+        /// <param name="postLaunchWorkingDirectory">Post-launch working directory.</param>
+        /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -85,7 +88,10 @@ namespace Servy.Core.Services
             bool preLaunchIgnoreFailure = false,
             string? failureProgramPath = null,
             string? failureProgramWorkingDirectory = null,
-            string? failureProgramArgs = null
+            string? failureProgramArgs = null,
+            string? postLaunchExePath = null,
+            string? postLaunchWorkingDirectory = null,
+            string? postLaunchArgs = null
         );
 
         /// <summary>

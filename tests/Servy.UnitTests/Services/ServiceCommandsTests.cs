@@ -65,6 +65,10 @@ namespace Servy.UnitTests.Services
             var failureProgramDir = @"C:\failureProgramDir";
             var failureProgramArgs = "failureProgramArgs";
 
+            var postLaunchExe = @"C:\post-launch.exe";
+            var postLaunchDir = @"C:\postLaunchDir";
+            var postLaunchArgs = "postLaunchArgs";
+
             // Act
             _mockServiceCommands.Object.InstallService(
                 serviceName,
@@ -102,7 +106,11 @@ namespace Servy.UnitTests.Services
 
                 failureProgramExe,
                 failureProgramDir,
-                failureProgramArgs
+                failureProgramArgs,
+
+                postLaunchExe,
+                postLaunchDir,
+                postLaunchArgs
                 );
 
             // Assert
@@ -142,7 +150,11 @@ namespace Servy.UnitTests.Services
 
                 failureProgramExe,
                 failureProgramDir,
-                failureProgramArgs
+                failureProgramArgs,
+
+                postLaunchExe,
+                postLaunchDir,
+                postLaunchArgs
                 ), Times.Once);
         }
 

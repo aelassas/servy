@@ -69,6 +69,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Returns(Task.FromResult(true));
 
@@ -147,6 +150,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Returns(Task.FromResult(false));
 
@@ -210,6 +216,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<string>()
             )).Throws<UnauthorizedAccessException>();
 
@@ -271,6 +280,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<int>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>()

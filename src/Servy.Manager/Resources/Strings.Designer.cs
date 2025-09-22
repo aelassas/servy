@@ -646,6 +646,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The post-launch process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostLaunchPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostLaunchPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified post-launch startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostLaunchStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The pre-launch process path is invalid..
         /// </summary>
         public static string Msg_InvalidPreLaunchPath {

@@ -206,6 +206,21 @@ namespace Servy.Core.Domain
         /// </summary>
         public bool PreLaunchIgnoreFailure { get; set; } = false;
 
+        /// <summary>
+        /// Optional path to an executable that runs before the service starts.
+        /// </summary>
+        public string? PostLaunchExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-launch executable.
+        /// </summary>
+        public string? PostLaunchStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-launch executable.
+        /// </summary>
+        public string? PostLaunchParameters { get; set; }
+
         #endregion
 
         #region Public Methods
@@ -351,7 +366,11 @@ namespace Servy.Core.Domain
                 preLaunchIgnoreFailure: PreLaunchIgnoreFailure,
                 failureProgramPath: FailureProgramPath,
                 failureProgramWorkingDirectory: FailureProgramStartupDirectory,
-                failureProgramArgs: FailureProgramParameters
+                failureProgramArgs: FailureProgramParameters,
+
+                postLaunchExePath: PostLaunchExecutablePath,
+                postLaunchWorkingDirectory: PostLaunchStartupDirectory,
+                postLaunchArgs: PostLaunchParameters
             );
         }
 

@@ -46,6 +46,9 @@ namespace Servy.Services
         /// <param name="failureProgramPath">Failure program path.</param>
         /// <param name="failureProgramWorkingDirectory">Failure program working directory.</param>
         /// <param name="failureProgramArgs">Failure program parameters.</param>
+        /// <param name="postLaunchExePath">Post-launch script exe path.</param>
+        /// <param name="postLaunchWorkingDirectory">Post-launch working directory.</param>
+        /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -80,7 +83,10 @@ namespace Servy.Services
             bool preLaunchIgnoreFailure,
             string failureProgramPath,
             string failureProgramWorkingDirectory,
-            string failureProgramArgs
+            string failureProgramArgs,
+            string postLaunchExePath,
+            string postLaunchWorkingDirectory,
+            string postLaunchArgs
             );
 
         /// <summary>

@@ -361,6 +361,9 @@ namespace Servy.Core.UnitTests.Services
                 true,
                 @"C:\Apps\App\app.exe",
                 @"C:\Apps\App",
+                "--arg1 val1",
+                @"C:\Apps\App\app.exe",
+                @"C:\Apps\App",
                 "--arg1 val1"
                 );
 

@@ -177,6 +177,21 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
+            // Post-launch validation
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath) &&
+                (!CoreHelper.IsValidPath(dto.PostLaunchExecutablePath) || !File.Exists(dto.PostLaunchExecutablePath)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) &&
+                (!CoreHelper.IsValidPath(dto.PostLaunchStartupDirectory) || !Directory.Exists(dto.PostLaunchStartupDirectory)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchStartupDirectory, AppConfig.Caption);
+                return false;
+            }
+
             return true;
         }
     }

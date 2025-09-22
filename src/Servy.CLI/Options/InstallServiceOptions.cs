@@ -251,5 +251,26 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("preLaunchIgnoreFailure", HelpText = "Ignore failure and start service even if pre-launch executable fails.")]
         public bool PreLaunchIgnoreFailure { get; set; }
+
+        /// <summary>
+        /// Gets or sets the post-launch executable path.
+        /// Optional.
+        /// </summary>
+        [Option("postLaunchPath", HelpText = "The post-launch executable path. Configure an optional script or executable to run after the process starts successfully.")]
+        public string? PostLaunchPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the post-launch startup directory.
+        /// Optional. Defaults to the service working directory.
+        /// </summary>
+        [Option("postLaunchStartupDir", HelpText = "Specifies the directory in which the post-launch executable will start. Defaults to the directory of the post-launch program.")]
+        public string? PostLaunchStartupDir { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional command-line parameters for the process.
+        /// Optional.
+        /// </summary>
+        [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable.")]
+        public string? PostLaunchParameters { get; set; }
     }
 }

@@ -59,7 +59,8 @@ namespace Servy.Infrastructure.Data
                     EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
-                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters
+                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -67,7 +68,8 @@ namespace Servy.Infrastructure.Data
                     @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
-                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters
+                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters
                 );
                 SELECT last_insert_rowid();";
 
@@ -112,9 +114,14 @@ namespace Servy.Infrastructure.Data
                     PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
                     PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
                     PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,
+                    
                     FailureProgramPath = @FailureProgramPath,
                     FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
-                    FailureProgramParameters = @FailureProgramParameters
+                    FailureProgramParameters = @FailureProgramParameters,
+
+                    PostLaunchExecutablePath = @PostLaunchExecutablePath,
+                    PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
+                    PostLaunchParameters = @PostLaunchParameters
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);
@@ -405,7 +412,11 @@ namespace Servy.Infrastructure.Data
                 PreLaunchStderrPath = dto.PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? 30,
                 PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? 0,
-                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false
+                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false,
+
+                PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
+                PostLaunchParameters = dto.PostLaunchParameters,
             };
         }
 
@@ -453,7 +464,11 @@ namespace Servy.Infrastructure.Data
                 PreLaunchStderrPath = domain.PreLaunchStderrPath,
                 PreLaunchTimeoutSeconds = domain.PreLaunchTimeoutSeconds,
                 PreLaunchRetryAttempts = domain.PreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = domain.PreLaunchIgnoreFailure
+                PreLaunchIgnoreFailure = domain.PreLaunchIgnoreFailure,
+
+                PostLaunchExecutablePath = domain.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = domain.PostLaunchStartupDirectory,
+                PostLaunchParameters = domain.PostLaunchParameters,
             };
         }
 
