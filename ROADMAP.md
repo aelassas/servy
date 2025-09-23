@@ -14,7 +14,7 @@
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
-* [x] Add package manager support (WinGet, Chocolatey) ([#9](https://github.com/aelassas/servy/issues/9))
+* [x] Add package manager support (WinGet, Chocolatey, Scoop) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
 * [ ] Add `Monitoring` tab to monitor CPU, RAM and I/O usage with graphs
 * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
