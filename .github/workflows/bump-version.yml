@@ -35,16 +35,50 @@ jobs:
         env:
           MANUAL_TAG: ${{ github.event.inputs.tag }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
+          #     $tag = $env:MANUAL_TAG                       # Manual trigger input
+          # } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
+          #     $tag = $env:RELEASE_TAG                      # Release trigger
+          # } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+          #     $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
+          # } else {
+          #     Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
+          #     exit 1
+          # }
+          
           # Determine the tag to use
+          $tag = $null
+          
           if ($env:MANUAL_TAG -and $env:MANUAL_TAG -ne '') {
-              $tag = $env:MANUAL_TAG                       # Manual trigger input
-          } elseif ($env:RELEASE_TAG -and $env:RELEASE_TAG -ne '') {
-              $tag = $env:RELEASE_TAG                      # Release trigger
-          } elseif ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
-              $tag = $env:GITHUB_REF_NAME                  # Fallback for tag push
+              # Manual trigger input
+              Write-Host "Using manual tag: $env:MANUAL_TAG"
+              $tag = $env:MANUAL_TAG
           } else {
-              Write-Error "No tag provided. Set tag via workflow_dispatch input or trigger a release."
+              # Query GitHub API for latest release
+              Write-Host "Fetching latest release tag from GitHub API..."
+              $headers = @{ Authorization = "Bearer $env:GITHUB_TOKEN" }
+              $url = "https://api.github.com/repos/${{ github.repository }}/releases/latest"
+              try {
+                  $response = Invoke-RestMethod -Uri $url -Headers $headers
+                  if ($response.tag_name) {
+                      $tag = $response.tag_name
+                      Write-Host "Using latest release tag: $tag"
+                  }
+              }
+              catch {
+                  Write-Warning "Failed to fetch latest release: $_"
+              }
+          
+              if (-not $tag -and $env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
+                  Write-Host "Falling back to ref name: $env:GITHUB_REF_NAME"
+                  $tag = $env:GITHUB_REF_NAME
+              }
+          }
+          
+          if (-not $tag) {
+              Write-Error "No tag could be determined."
               exit 1
           }
 
