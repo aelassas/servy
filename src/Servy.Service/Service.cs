@@ -152,7 +152,7 @@ namespace Servy.Service
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Request 30 seconds for startup to accommodate slow process
-                _serviceHelper.RequestAdditionalTime(this, 30 * 1000, _logger);
+                //_serviceHelper.RequestAdditionalTime(this, 30 * 1000, _logger);
 
                 // Set up attempts file
                 SetupAttemptsFile(options);
