@@ -573,9 +573,20 @@ namespace Servy.Service
 
             Task.Run(async () =>
             {
-                if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), _cancellationSource.Token))
+                try
                 {
-                    StartPostLaunchProcess();
+                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), _cancellationSource.Token))
+                    {
+                        StartPostLaunchProcess();
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger?.Info("Post-launch action cancelled because service is stopping.");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
                 }
             }, _cancellationSource.Token);
         }
