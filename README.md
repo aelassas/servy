@@ -110,7 +110,7 @@ scoop install servy
 
 ## Roadmap
 
-For the full project roadmap, see [ROADMAP](ROADMAP.md).
+For the full project roadmap, see [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
