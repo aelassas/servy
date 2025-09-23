@@ -10,13 +10,13 @@
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
-* [ ] Add support for post-launch script execution after starting the service
+* [x] Add support for post-launch script execution after the process starts successfully
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
 * [x] Add package manager support (WinGet, Chocolatey) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
-* [ ] Add `Monitoring` tab to monitor CPU and RAM usage with graphs
+* [ ] Add `Monitoring` tab to monitor CPU, RAM and I/O usage with graphs
 * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
 * [ ] Add `Certificates` tab to manage service-specific certificates
 * [ ] Servy Manager App for managing services installed by Servy

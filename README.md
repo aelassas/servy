@@ -101,6 +101,7 @@ scoop install servy
 * Run services as Local System, local user, domain account, or DOMAIN\gMSA$ for Group Managed Service Accounts
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Run pre-launch script execution before starting the service, with retries, timeout, logging and failure handling
+* Run post-launch script execution automatically after the application starts successfully
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
@@ -110,7 +111,7 @@ scoop install servy
 
 ## Roadmap
 
-For the full project roadmap, see [ROADMAP](ROADMAP.md).
+For the full project roadmap, see [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
