@@ -58,23 +58,24 @@ namespace Servy.Service.ProcessManagement
         void Start();
 
         /// <summary>
-        /// Waits until the wrapped process is confirmed running within a given timeout.
+        /// Waits until the child process remains alive for the specified timeout,
+        /// which indicates that the process has started successfully and did not
+        /// exit prematurely.
         /// </summary>
         /// <param name="timeout">
-        /// The maximum time to wait for the process to be considered healthy.
+        /// The maximum time to wait for the process to remain running.
         /// </param>
         /// <param name="cancellationToken">
-        /// A token that can be used to cancel the wait operation prematurely.
+        /// An optional token to observe while waiting. If cancellation is requested,
+        /// the task is canceled.
         /// </param>
         /// <returns>
-        /// A task that represents the asynchronous wait operation.  
-        /// The task result is <c>true</c> if the process is running before the timeout expires;  
-        /// otherwise, <c>false</c>.
+        /// A task that resolves to <c>true</c> if the process is still running after
+        /// the timeout period; otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// This method does not perform application-level health checks.  
-        /// It only verifies that the process object is not <c>null</c> and has not exited.  
-        /// If the process fails to start or exits before the timeout, the result is <c>false</c>.
+        /// This method polls the process state every 500 milliseconds until the timeout
+        /// is reached. If the process exits during this time, the method returns <c>false</c>.
         /// </remarks>
         Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 

@@ -77,22 +77,26 @@ namespace Servy.Service.ProcessManagement
         /// <inheritdoc/>
         public async Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
+            if (_process == null)
+                return false; // process not even started
+
             var start = DateTime.UtcNow;
 
             while (DateTime.UtcNow - start < timeout)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                if (_process != null && !_process.HasExited)
+                if (_process.HasExited)
                 {
-                    // Process exists and is running
-                    return true;
+                    // process exited before becoming healthy
+                    return false;
                 }
 
-                await Task.Delay(500, cancellationToken); // retry every half-second
+                await Task.Delay(500, cancellationToken); // poll every 0.5s
             }
 
-            return false; // process never reached "running" state within timeout
+            // Only return true if process is still alive
+            return !_process.HasExited;
         }
 
         /// <inheritdoc/>

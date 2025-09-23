@@ -25,7 +25,7 @@ namespace Servy.Service
         /// Default timeout (in seconds) to wait for the process to start 
         /// successfully before considering the startup as failed.
         /// </summary>
-        private const int StartupTimeout = 30;
+        private const int StartupTimeout = 10;
 
         #endregion
 
@@ -58,6 +58,7 @@ namespace Servy.Service
         private string? _restartAttemptsFile;
         private bool _preLaunchEnabled = false;
         private StartOptions? _options;
+        private CancellationTokenSource? _cancellationSource;
 
         #endregion
 
@@ -568,13 +569,15 @@ namespace Servy.Service
             _childProcess.BeginErrorReadLine();
 
             // Fire and forget the post-launch script when process confirmed running
+            _cancellationSource = new CancellationTokenSource();
+
             Task.Run(async () =>
             {
-                if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout)))
+                if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), _cancellationSource.Token))
                 {
                     StartPostLaunchProcess();
                 }
-            });
+            }, _cancellationSource.Token);
         }
 
         /// <summary>
@@ -966,6 +969,8 @@ namespace Servy.Service
         /// </summary>
         protected override void OnStop()
         {
+            _cancellationSource?.Cancel();
+
             OnStoppedForTest?.Invoke();
 
             Cleanup();
