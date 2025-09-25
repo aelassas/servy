@@ -70,11 +70,7 @@ jobs:
               catch {
                   Write-Warning "Failed to fetch latest release: $_"
               }
-          
-              if (-not $tag -and $env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') {
-                  Write-Host "Falling back to ref name: $env:GITHUB_REF_NAME"
-                  $tag = $env:GITHUB_REF_NAME
-              }
+              
           }
           
           if (-not $tag) {
