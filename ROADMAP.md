@@ -31,5 +31,8 @@
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
-  * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
   * [ ] Add a health monitoring dashboard *(long-term)*
+
+ <!--
+   * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
+  -->
