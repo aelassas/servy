@@ -31,6 +31,7 @@
   * [ ] Add advanced scheduling and triggers (start service on event, time, or condition)
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
+  * [ ] Add PID column to services
   * [ ] Add a health monitoring dashboard *(long-term)*
 
  <!--
