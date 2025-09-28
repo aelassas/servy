@@ -4,6 +4,7 @@ using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Views;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
@@ -160,18 +161,21 @@ namespace Servy
                     }
 #else
                     // Copy *.dll from embedded resources
-                    CopyDllResource(asm, "Servy.Core");
-                    CopyDllResource(asm, "Dapper");
-                    CopyDllResource(asm, "Microsoft.Bcl.AsyncInterfaces");
-                    CopyDllResource(asm, "Newtonsoft.Json");
-                    CopyDllResource(asm, "Servy.Infrastructure");
-                    CopyDllResource(asm, "System.Data.SQLite");
-                    CopyDllResource(asm, "System.Runtime.CompilerServices.Unsafe");
-                    CopyDllResource(asm, "System.Threading.Tasks.Extensions");
+                    var dllResources = new List<DllResource>
+                    {
+                        new DllResource{ FileNameWithoutExtension = "Servy.Core"},
+                        new DllResource{ FileNameWithoutExtension = "Dapper"},
+                        new DllResource{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces"},
+                        new DllResource{ FileNameWithoutExtension = "Newtonsoft.Json"},
+                        new DllResource{ FileNameWithoutExtension = "Servy.Infrastructure"},
+                        new DllResource{ FileNameWithoutExtension = "System.Data.SQLite"},
+                        new DllResource{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe"},
+                        new DllResource{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions"},
+                        new DllResource{ FileNameWithoutExtension = "SQLite.Interop", Subfolder = "x64"},
+                        new DllResource{ FileNameWithoutExtension = "SQLite.Interop", Subfolder = "x86"},
+                    };
 
-                    // Copy SQLite interop dlls for x64 and x86
-                    CopyDllResource(asm, "SQLite.Interop", true, "x64");
-                    CopyDllResource(asm, "SQLite.Interop", true, "x86");
+                    CopyDllResources(asm, dllResources);
 #endif
 
                     stopwatch.Stop();
@@ -216,25 +220,29 @@ namespace Servy
         #region Helpers
 
         /// <summary>
-        /// Copies an embedded DLL resource from the specified assembly to the target directory.
+        /// Attempts to copy the specified embedded DLL resources from the given <see cref="Assembly"/>.  
+        /// Displays a message box if the operation fails.
         /// </summary>
-        /// <param name="asm">The assembly containing the embedded resource.</param>
-        /// <param name="dllFileNameWithoutExtension">The DLL file name without extension (e.g., "SQLite.Interop").</param>
-        /// <param name="stopServices">
-        /// Whether to stop running services before copying the resource. Default is <c>true</c>.
+        /// <param name="asm">
+        /// The <see cref="Assembly"/> that contains the embedded DLL resources.
         /// </param>
-        /// <param name="subfolder">
-        /// An optional subfolder within the resources namespace where the DLL is located. Default is <c>null</c>.
+        /// <param name="dllResources">
+        /// A list of <see cref="DllResource"/> objects representing the DLLs to copy.
+        /// </param>
+        /// <param name="stopServices">
+        /// Indicates whether running Servy services should be stopped before copying and restarted afterward.  
+        /// Default is <c>true</c>.
         /// </param>
         /// <remarks>
-        /// If the copy fails, a message box is shown on the UI thread.
+        /// This method wraps <see cref="ResourceHelper.CopyDLLResources"/> and provides  
+        /// user-facing error reporting via a message box if copying fails.
         /// </remarks>
-        private void CopyDllResource(Assembly asm, string dllFileNameWithoutExtension, bool stopServices = true, string subfolder = null)
+        private void CopyDllResources(Assembly asm, List<DllResource> dllResources, bool stopServices = true)
         {
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, dllFileNameWithoutExtension, "dll", stopServices, subfolder))
+            if (!ResourceHelper.CopyDLLResources(asm, ResourcesNamespace, dllResources, stopServices))
             {
                 Current.Dispatcher.Invoke(() =>
-                    MessageBox.Show($"Failed copying embedded resource: {dllFileNameWithoutExtension}.dll")
+                    MessageBox.Show($"Failed copying embedded DLL resources.")
                 );
             }
         }
