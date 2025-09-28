@@ -31,6 +31,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="pid">The process ID.</param>
         /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if unavailable.</returns>
+        [ExcludeFromCodeCoverage]
         public static double GetCPUUsage(int pid)
         {
             try
