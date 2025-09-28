@@ -83,7 +83,7 @@ namespace Servy.Core.Helpers
         /// <item><description>1.05 → "1.05%"</description></item>
         /// <item><description>1.23 → "1.23%"</description></item>
         /// <item><description>1.234 → "1.23%"</description></item>
-        /// <item><description>1.235 → "1.23%"</description></item>
+        /// <item><description>1.235 → "1.24%"</description></item>
         /// <item><description>1.236 → "1.24%"</description></item>
         /// </list>
         /// </returns>
