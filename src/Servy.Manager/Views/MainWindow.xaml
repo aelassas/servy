@@ -223,6 +223,7 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding UserSession}"
+                                                   ToolTip="{Binding UserSession}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
                                         />
@@ -267,10 +268,10 @@
                             </DataGridTemplateColumn>
 
                             <!-- Actions -->
-                            <DataGridTemplateColumn Width="200" CanUserResize="False" CanUserReorder="False">
+                            <DataGridTemplateColumn Width="160" CanUserResize="False" CanUserReorder="False">
                                 <!--Bulk actions-->
                                 <DataGridTemplateColumn.Header>
-                                    <Grid Width="186">
+                                    <Grid Width="146">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <!-- Start Selected -->
                                             <Button ToolTip="{x:Static resx:Strings.Button_StartSelected}" 
