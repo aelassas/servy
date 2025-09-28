@@ -18,6 +18,8 @@ namespace Servy.Manager.Models
         private string _userSession;
         private int? _pid;
         private bool _isPidEnabled;
+        private double? _cpuUsage;
+        private long? _ramUsage;
 
         /// <summary>
         /// Gets or sets the service name.
@@ -94,6 +96,24 @@ namespace Servy.Manager.Models
         {
             get => _isPidEnabled;
             set => SetProperty(ref _isPidEnabled, value);
+        }
+
+        /// <summary>
+        /// Gets or sets CPU usage in percentage.
+        /// </summary>
+        public double? CpuUsage
+        {
+            get => _cpuUsage;
+            set => SetProperty(ref _cpuUsage, value);
+        }
+
+        /// <summary>
+        /// Gets or sets RAM usage in bytes.
+        /// </summary>
+        public long? RamUsage
+        {
+            get => _ramUsage;
+            set => SetProperty(ref _ramUsage, value);
         }
 
         #region INotifyPropertyChanged

@@ -98,6 +98,8 @@ namespace Servy.Manager.ViewModels
         public bool IsConfigurationAppAvailable => Service.IsConfigurationAppAvailable;
         public int? Pid => Service.Pid;
         public bool IsPidEnabled => Service.IsPidEnabled;
+        public double? CpuUsage => Service.CpuUsage;
+        public long? RamUsage => Service.RamUsage;
 
         #endregion
 

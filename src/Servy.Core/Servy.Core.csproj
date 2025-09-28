@@ -95,6 +95,7 @@
     <Compile Include="Helpers\ISecurePassword.cs" />
     <Compile Include="Helpers\IXmlServiceSerializer.cs" />
     <Compile Include="Helpers\JsonServiceValidator.cs" />
+    <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
     <Compile Include="Helpers\SecurePassword.cs" />

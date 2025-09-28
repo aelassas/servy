@@ -25,6 +25,8 @@
         <managerConverters:StartupTypeConverter x:Key="StartupTypeConverter"/>
         <managerConverters:StatusConverter x:Key="StatusConverter"/>
         <managerConverters:PidConverter x:Key="PidConverter"/>
+        <managerConverters:CpuUsageConverter x:Key="CpuUsageConverter"/>
+        <managerConverters:RamUsageConverter x:Key="RamUsageConverter"/>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
     </Window.Resources>
@@ -233,6 +235,30 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Pid, Converter={StaticResource PidConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!--CPU-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_CPU}" MinWidth="60" CanUserReorder="False" SortMemberPath="CpuUsage">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CpuUsage, Converter={StaticResource CpuUsageConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!--RAM-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_RAM}" MinWidth="70" CanUserReorder="False" SortMemberPath="RamUsage">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding RamUsage, Converter={StaticResource RamUsageConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
                                         />

@@ -205,6 +205,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à CPU.
+        /// </summary>
+        public static string Column_CPU {
+            get {
+                return ResourceManager.GetString("Column_CPU", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Description.
         /// </summary>
         public static string Column_Description {
@@ -255,6 +264,15 @@ namespace Servy.Manager.Resources {
         public static string Column_Pid {
             get {
                 return ResourceManager.GetString("Column_Pid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à RAM.
+        /// </summary>
+        public static string Column_RAM {
+            get {
+                return ResourceManager.GetString("Column_RAM", resourceCulture);
             }
         }
         

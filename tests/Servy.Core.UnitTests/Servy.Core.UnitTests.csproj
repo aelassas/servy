@@ -126,6 +126,7 @@
     <Compile Include="Helpers\AppFoldersHelperTests.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariableParserTests.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidatorTests.cs" />
+    <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
     <Compile Include="Helpers\JsonServiceValidatorTests.cs" />

@@ -73,14 +73,14 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task<List<Service>> SearchServicesAsync(string searchText, CancellationToken cancellationToken = default)
         {
-            //await DummyHelper.InsertDummyServices("Data Source=Servy.db", 5);
+            var results = await _serviceRepository.SearchDomainServicesAsync(
+                _serviceManager, searchText ?? string.Empty, cancellationToken);
 
-            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, searchText ?? string.Empty, cancellationToken);
+            // Map all domain services to Service models in parallel
+            var tasks = results.Select(ServiceMapper.ToModelAsync);
+            var services = await Task.WhenAll(tasks);
 
-            // Materialize all Service models in memory immediately
-            var services = await Task.Run(() => results.Select(ServiceMapper.ToModel).ToList());
-
-            return services;
+            return services.ToList();
         }
 
         /// <inheritdoc />
