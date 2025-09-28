@@ -54,6 +54,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
     <Reference Include="System.Xml.Linq" />
@@ -105,6 +106,10 @@
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj">
+      <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
+      <Name>Servy.Infrastructure</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

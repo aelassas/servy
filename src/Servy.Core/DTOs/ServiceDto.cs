@@ -11,6 +11,11 @@
         public int? Id { get; set; }
 
         /// <summary>
+        /// Child Process PID.
+        /// </summary>
+        public int? Pid { get; set; }
+
+        /// <summary>
         /// The unique name of the service.
         /// </summary>
         public string Name { get; set; } = string.Empty;
@@ -193,6 +198,7 @@
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => Id.HasValue;
+        public bool ShouldSerializePid() => false;
         public bool ShouldSerializeDescription() => !string.IsNullOrWhiteSpace(Description);
         public bool ShouldSerializeStartupDirectory() => !string.IsNullOrWhiteSpace(StartupDirectory);
         public bool ShouldSerializeParameters() => !string.IsNullOrWhiteSpace(Parameters);

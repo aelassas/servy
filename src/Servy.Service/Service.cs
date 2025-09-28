@@ -1,7 +1,12 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
@@ -10,6 +15,7 @@ using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -65,6 +71,7 @@ namespace Servy.Service
         private bool _preLaunchEnabled;
         private StartOptions _options;
         private CancellationTokenSource _cancellationSource;
+        private IServiceRepository _serviceRepository;
 
         #endregion
 
@@ -79,7 +86,7 @@ namespace Servy.Service
         /// path validator and default factories for stream writer, timer, and process.
         /// </summary>
         public Service() : this(
-            new ServiceHelper(new CommandLineProvider()),
+            new Helpers.ServiceHelper(new CommandLineProvider()),
             new EventLogLogger(AppConfig.ServiceNameEventSource),
             new StreamWriterFactory(),
             new TimerFactory(),
@@ -87,6 +94,30 @@ namespace Servy.Service
             new PathValidator()
           )
         {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Service"/> class.
+        /// </summary>
+        public Service(
+            IServiceHelper serviceHelper,
+            ILogger logger,
+            IStreamWriterFactory streamWriterFactory,
+            ITimerFactory timerFactory,
+            IProcessFactory processFactory,
+            IPathValidator pathValidator,
+            IServiceRepository serviceRepository) // allow injection
+        {
+            ServiceName = AppConfig.ServiceNameEventSource;
+
+            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
+            _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
+            _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
+            _pathValidator = pathValidator;
+            _options = null;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         /// <summary>
@@ -116,6 +147,24 @@ namespace Servy.Service
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator;
             _options = null;
+
+            // Load configuration
+            var config = ConfigurationManager.AppSettings;
+
+            var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+            // Initialize database and helpers
+            var dbContext = new AppDbContext(connectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+            var dapperExecutor = new DapperExecutor(dbContext);
+            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+            var securePassword = new SecurePassword(protectedKeyProvider);
+            var xmlSerializer = new XmlServiceSerializer();
+
+            _serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
         }
 
         /// <summary>
@@ -210,6 +259,9 @@ namespace Servy.Service
         /// <returns>A sanitized string safe for use as a filename.</returns>
         private string MakeFilenameSafe(string name)
         {
+            if (string.IsNullOrEmpty(name))
+                return name;
+
             var invalidChars = Path.GetInvalidFileNameChars();
             foreach (var c in invalidChars)
             {
@@ -571,6 +623,9 @@ namespace Servy.Service
             _childProcess.Start();
             _logger?.Info($"Started child process with PID: {_childProcess.Id}");
 
+            // Persist PID
+            InsertPid(_childProcess.Id);
+
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
             _childProcess.BeginErrorReadLine();
@@ -768,6 +823,36 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Inserts PID in database.
+        /// </summary>
+        /// <param name="pid">PID.</param>
+        private void InsertPid(int? pid)
+        {
+            if (string.IsNullOrWhiteSpace(_serviceName))
+                return;
+
+            var serviceDto = _serviceRepository
+                .GetByNameAsync(_serviceName)
+                .ConfigureAwait(false).GetAwaiter().GetResult();
+
+            if (serviceDto != null)
+            {
+                serviceDto.Pid = pid;
+                var res = _serviceRepository
+                    .UpdateAsync(serviceDto)
+                    .ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>
+        /// Resets PID to null in database.
+        /// </summary>
+        private void ResetPid()
+        {
+            InsertPid(null);
+        }
+
+        /// <summary>
         /// Handles the event when the monitored child process exits.
         /// Logs the exit code and whether the process ended successfully or with an error.
         /// If recovery is disabled and the process exits with a non-zero code, stops the service.
@@ -784,6 +869,9 @@ namespace Servy.Service
             {
                 try
                 {
+                    // reset PID
+                    ResetPid();
+
                     var code = _childProcess.ExitCode;
                     if (code == 0)
                     {
@@ -1003,6 +1091,9 @@ namespace Servy.Service
         {
             if (_disposed)
                 return;
+
+            // reset PID
+            ResetPid();
 
             if (_childProcess != null)
             {

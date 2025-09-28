@@ -16,6 +16,8 @@ namespace Servy.Manager.Models
         private bool _isConfigurationAppAvailable;
         private ServiceStartType? _startupType;
         private string _userSession;
+        private int? _pid;
+        private bool _isPidEnabled;
 
         /// <summary>
         /// Gets or sets the service name.
@@ -74,6 +76,24 @@ namespace Servy.Manager.Models
         {
             get => _userSession;
             set => SetProperty(ref _userSession, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the PID.
+        /// </summary>
+        public int? Pid
+        {
+            get => _pid;
+            set => SetProperty(ref _pid, value);
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether PID is available.
+        /// </summary>
+        public bool IsPidEnabled
+        {
+            get => _isPidEnabled;
+            set => SetProperty(ref _isPidEnabled, value);
         }
 
         #region INotifyPropertyChanged

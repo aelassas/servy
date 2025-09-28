@@ -36,12 +36,6 @@ namespace Servy.Core.Config
         public static readonly string HandleExe = $"{HandleExeFileName}.exe";
 
         /// <summary>
-        /// The file name of the Servy.Core assembly (without extension).
-        /// Used when copying or loading the core library dynamically.
-        /// </summary>
-        public static readonly string ServyCoreDllName = "Servy.Core";
-
-        /// <summary>
         /// The base file name (without extension) of the Servy Service UI executable.
         /// </summary>
         public static readonly string ServyServiceUIFileName = "Servy.Service.Net48";
@@ -55,6 +49,11 @@ namespace Servy.Core.Config
         /// Servy Service Debug Folder.
         /// </summary>
         public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\Servy\bin\Debug\");
+
+        /// <summary>
+        /// Servy Service Debug Folder (Manager).
+        /// </summary>
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\Servy.Manager\bin\Debug\");
 
         /// <summary>
         /// Servy Configuration App Publish Path.

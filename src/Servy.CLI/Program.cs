@@ -117,11 +117,19 @@ namespace Servy.CLI
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                     }
 #else
-                    // Copy Servy.Core.dll from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyCoreDllName, "dll"))
-                    {
-                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyCoreDllName}.dll");
-                    }
+                    // Copy *.dll from embedded resources
+                    CopyDllResource(asm, "Servy.Core");
+                    CopyDllResource(asm, "Dapper");
+                    CopyDllResource(asm, "Microsoft.Bcl.AsyncInterfaces");
+                    CopyDllResource(asm, "Newtonsoft.Json");
+                    CopyDllResource(asm, "Servy.Infrastructure");
+                    CopyDllResource(asm, "System.Data.SQLite");
+                    CopyDllResource(asm, "System.Runtime.CompilerServices.Unsafe");
+                    CopyDllResource(asm, "System.Threading.Tasks.Extensions");
+
+                    // Copy SQLite interop dlls for x64 and x86
+                    CopyDllResource(asm, "SQLite.Interop", true, "x64");
+                    CopyDllResource(asm, "SQLite.Interop", true, "x86");
 #endif
                 }
 
@@ -168,5 +176,30 @@ namespace Servy.CLI
             }
         }
 
+        #region Helpers
+
+        /// <summary>
+        /// Copies an embedded DLL resource from the specified assembly to the target directory.
+        /// </summary>
+        /// <param name="asm">The assembly containing the embedded resource.</param>
+        /// <param name="dllFileNameWithoutExtension">The DLL file name without extension (e.g., "SQLite.Interop").</param>
+        /// <param name="stopServices">
+        /// Whether to stop running services before copying the resource. Default is <c>true</c>.
+        /// </param>
+        /// <param name="subfolder">
+        /// An optional subfolder within the resources namespace where the DLL is located. Default is <c>null</c>.
+        /// </param>
+        /// <remarks>
+        /// If the copy fails, a message box is shown on the UI thread.
+        /// </remarks>
+        private static void CopyDllResource(Assembly asm, string dllFileNameWithoutExtension, bool stopServices = true, string subfolder = null)
+        {
+            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, dllFileNameWithoutExtension, "dll", stopServices, subfolder))
+            {
+                Console.WriteLine($"Failed copying embedded resource: {dllFileNameWithoutExtension}.dll");
+            }
+        }
+
+        #endregion
     }
 }

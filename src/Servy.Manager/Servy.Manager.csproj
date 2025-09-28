@@ -93,6 +93,7 @@
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Converters\MessageConverter.cs" />
+    <Compile Include="Converters\PidConverter.cs" />
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
     <Compile Include="Validators\IServiceConfigurationValidator.cs" />
@@ -173,6 +174,15 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="Resources\x64\SQLite.Interop.dll" />
+    <EmbeddedResource Include="Resources\x86\SQLite.Interop.dll" />
+    <EmbeddedResource Include="Resources\Dapper.dll" />
+    <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />
+    <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
+    <EmbeddedResource Include="Resources\Servy.Infrastructure.dll" />
+    <EmbeddedResource Include="Resources\System.Data.SQLite.dll" />
+    <EmbeddedResource Include="Resources\System.Runtime.CompilerServices.Unsafe.dll" />
+    <EmbeddedResource Include="Resources\System.Threading.Tasks.Extensions.dll" />
     <Resource Include="Resources\Icons\Error.png" />
     <Resource Include="Resources\Icons\Info.png" />
     <Resource Include="Resources\Icons\Warning.png" />
@@ -196,6 +206,7 @@
       <Name>Servy.UI</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets" Condition="Exists('..\..\packages\Stub.System.Data.SQLite.Core.NetFramework.1.0.119.0\build\net46\Stub.System.Data.SQLite.Core.NetFramework.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

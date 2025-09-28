@@ -23,6 +23,7 @@ namespace Servy.Core.Mappers
             return new ServiceDto
             {
                 Id = id ?? 0, // 0 for insert, actual Id for update
+                Pid = service.Pid,
                 Name = service.Name,
                 Description = service.Description,
                 ExecutablePath = service.ExecutablePath,
@@ -74,6 +75,7 @@ namespace Servy.Core.Mappers
         {
             return new Service(serviceManager)
             {
+                Pid = dto.Pid,
                 Name = dto.Name,
                 Description = dto.Description,
                 ExecutablePath = dto.ExecutablePath,
