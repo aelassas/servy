@@ -276,7 +276,7 @@ namespace Servy.Manager.Services
 #if DEBUG
                 if (wrapperExeDir == null)
                 {
-                    wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceUIDebugFolder);
+                    wrapperExeDir = System.IO.Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
                 }
                 if (!Directory.Exists(wrapperExeDir))
                 {
@@ -500,6 +500,21 @@ namespace Servy.Manager.Services
             }
         }
 
+        ///<inheritdoc/>
+        public async Task CopyPid(Service service)
+        {
+            try
+            {
+                if (service.Pid == null) return;
+                Clipboard.SetText(service.Pid.ToString());
+                await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
+            }
+            catch (Exception ex)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                _logger.Warning($"Failed to copy PID to clipboard: {ex}");
+            }
+        }
 
         #region Helpers
 

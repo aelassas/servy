@@ -23,20 +23,27 @@ namespace Servy.Core.Helpers
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
+        /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true)
+        public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true, string subfolder = null)
         {
             try
             {
                 var targetFileName = fileName + "." + extension;
 #if DEBUG
                 var dir = Path.GetDirectoryName(assembly.Location);
-                var targetPath = Path.Combine(dir, targetFileName);
+                var targetPath = string.IsNullOrEmpty(subfolder)
+                    ? Path.Combine(dir, targetFileName)
+                    : Path.Combine(dir, subfolder, targetFileName);
 #else
-                var targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
+                var targetPath = string.IsNullOrEmpty(subfolder)
+                    ? Path.Combine(AppConfig.ProgramDataPath, targetFileName)
+                    : Path.Combine(AppConfig.ProgramDataPath, subfolder, targetFileName);
 #endif
 
-                var resourceName = resourceNamespace + "." + fileName + "." + extension;
+                var resourceName = string.IsNullOrEmpty(subfolder)
+                    ? $"{resourceNamespace}.{fileName}.{extension}"
+                    : $"{resourceNamespace}.{subfolder}.{fileName}.{extension}";
 
                 var shouldCopy = true;
                 if (File.Exists(targetPath))
@@ -75,6 +82,12 @@ namespace Servy.Core.Helpers
                     {
                         Debug.WriteLine("Embedded resource not found: " + resourceName);
                         return false;
+                    }
+
+                    var dirPath = Path.GetDirectoryName(targetPath);
+                    if (!Directory.Exists(dirPath))
+                    {
+                        Directory.CreateDirectory(dirPath);
                     }
 
                     using (resourceStream)

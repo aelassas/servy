@@ -425,5 +425,7 @@ setup/**/*.dll
 # tests
 coveragereport/
 
-# service
+# resources
 !/**/Resources/*.pdb
+!/**/Resources/x64
+!/**/Resources/x86

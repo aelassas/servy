@@ -92,5 +92,11 @@ namespace Servy.Manager.Services
         /// Imports service configurations from a JSON file.
         /// </summary>
         Task ImportJsonConfigAsync();
+
+        /// <summary>
+        /// Copies the PID of the specified service to the clipboard.
+        /// </summary>
+        /// <param name="service">The service to configure.</param>
+        Task CopyPid(Service service);
     }
 }

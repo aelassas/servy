@@ -35,6 +35,11 @@ namespace Servy.Core.Domain
         #region Properties
 
         /// <summary>
+        /// Gets or sets the child Process PID.
+        /// </summary>
+        public int? Pid { get; set; }
+
+        /// <summary>
         /// Gets or sets the unique name of the service.
         /// </summary>
         public string Name { get; set; } = string.Empty;

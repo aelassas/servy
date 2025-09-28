@@ -12,12 +12,6 @@ namespace Servy.Core.UnitTests.Config
         }
 
         [Fact]
-        public void ServyCoreDllName_ShouldBeCorrect()
-        {
-            Assert.Equal("Servy.Core", AppConfig.ServyCoreDllName);
-        }
-
-        [Fact]
         public void ServyServiceUIExe_ShouldEndWithExe()
         {
             Assert.EndsWith(".exe", AppConfig.ServyServiceUIExe);

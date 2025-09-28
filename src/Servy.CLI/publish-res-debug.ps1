@@ -22,6 +22,7 @@ $ServiceProject     = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.cspro
 $ResourcesFolder    = Join-Path $ScriptDir "..\Servy.CLI\Resources"
 $BuildConfiguration = "Debug"
 $BuildOutput        = Join-Path $ScriptDir "..\Servy.Service\bin\$BuildConfiguration"
+$resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
 
 # -------------------------------------------------------------------------------------------------
 # Step 1: Build the project in Debug mode
@@ -29,24 +30,38 @@ $BuildOutput        = Join-Path $ScriptDir "..\Servy.Service\bin\$BuildConfigura
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 msbuild $ServiceProject /t:Clean,Build /p:Configuration=$BuildConfiguration
 
-# -------------------------------------------------------------------------------------------------
-# Step 2: Files to copy (source → destination)
-# -------------------------------------------------------------------------------------------------
-$FilesToCopy = @(
+# ------------------------------------------------------------------------
+# 2. Define files to copy
+# ------------------------------------------------------------------------
+$filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
-    @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" }
-    @{ Source = "Servy.Core.dll";    Destination = "Servy.Core.dll" }
+    @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" },
+    @{ Source = "*.dll"; Destination = "*.dll" }
 )
 
-# -------------------------------------------------------------------------------------------------
-# Step 3: Copy files to Resources folder
-# -------------------------------------------------------------------------------------------------
-foreach ($file in $FilesToCopy) {
-    $SourcePath = Join-Path $BuildOutput $file.Source
-    $DestPath   = Join-Path $ResourcesFolder $file.Destination
-    Copy-Item -Path $SourcePath -Destination $DestPath -Force
-    Write-Host "Copied $($file.Source) → $($file.Destination)"
+# ------------------------------------------------------------------------
+# 3. Copy files to Resources folder
+# ------------------------------------------------------------------------
+foreach ($file in $filesToCopy) {
+    $sourcePath = Join-Path $buildOutput $file.Source
+
+    if ($file.Source -like "*.dll") {
+        Copy-Item -Path $sourcePath -Destination $resourcesFolder -Force
+        Write-Host "Copied $($file.Source) -> $resourcesFolder"
+    } else {
+        $destPath = Join-Path $resourcesFolder $file.Destination
+        Copy-Item -Path $sourcePath -Destination $destPath -Force
+        Write-Host "Copied $($file.Source) -> $($file.Destination)"
+    }
 }
+
+# Ensure destination folders exist
+New-Item -ItemType Directory -Force -Path "$resourcesFolder\x86" | Out-Null
+New-Item -ItemType Directory -Force -Path "$resourcesFolder\x64" | Out-Null
+
+# Copy x86/ x64/ folders
+Copy-Item -Path "$resourcesBuildOutput\x86\*" -Destination "$resourcesFolder\x86" -Force -Recurse
+Copy-Item -Path "$resourcesBuildOutput\x64\*" -Destination "$resourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
 # Step 4 - CopyServy.Infrastructure.pdb

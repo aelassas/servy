@@ -127,6 +127,17 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
 
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto
+                {
+                    Name = serviceName,
+                    Description = "desc",
+                    ExecutablePath = realExePath,
+                    Pid = 123,
+                    RunAsLocalSystem = true,
+                    UserAccount = null
+                });
+
             _mockWindowsServiceApi.Setup(x => x.CreateService(
                 scmHandle,
                 serviceName,
@@ -186,6 +197,7 @@ namespace Servy.Core.UnitTests.Services
                  );
 
             Assert.True(result);
+            _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

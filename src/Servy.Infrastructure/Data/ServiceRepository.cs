@@ -66,7 +66,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -75,7 +75,7 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid
                 );
                 SELECT last_insert_rowid();";
 
@@ -127,7 +127,9 @@ namespace Servy.Infrastructure.Data
 
                     PostLaunchExecutablePath = @PostLaunchExecutablePath,
                     PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
-                    PostLaunchParameters = @PostLaunchParameters
+                    PostLaunchParameters = @PostLaunchParameters,
+
+                    Pid = @Pid
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);

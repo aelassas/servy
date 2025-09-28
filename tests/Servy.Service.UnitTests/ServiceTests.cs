@@ -1,9 +1,10 @@
 ﻿using Moq;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.ProcessManagement;
 using Servy.Service.Helpers;
+using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
@@ -28,6 +29,7 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IStreamWriter> _mockStderrWriter;
         private readonly Mock<ITimer> _mockTimer;
         private readonly Mock<IProcessWrapper> _mockProcess;
+        private readonly Mock<IServiceRepository> _mockServiceRepository;
 
         public ServiceTests()
         {
@@ -59,13 +61,16 @@ namespace Servy.Service.UnitTests
             _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>()))
                 .Returns(_mockProcess.Object);
 
+            _mockServiceRepository = new Mock<IServiceRepository>();
+
             _service = new Service(
                 _mockServiceHelper.Object,
                 _mockLogger.Object,
                 _mockStreamWriterFactory.Object,
                 _mockTimerFactory.Object,
                 _mockProcessFactory.Object,
-                _mockPathValidator.Object
+                _mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
         }
 
@@ -191,7 +196,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -223,7 +229,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -254,7 +261,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
 
             var options = new StartOptions
@@ -309,7 +317,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
 
             var options = new StartOptions
@@ -352,7 +361,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                _mockServiceRepository.Object
             );
 
             var options = new StartOptions
