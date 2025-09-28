@@ -1,14 +1,48 @@
-﻿namespace Servy.Core.Helpers
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Servy.Core.Helpers
 {
+    /// <summary>
+    /// Represents an embedded DLL resource and its associated metadata 
+    /// used for copying from the assembly to the target directory.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
     public class DllResource
     {
+        /// <summary>
+        /// The default file extension for DLL resources.
+        /// </summary>
         public const string Extension = "dll";
+
+        /// <summary>
+        /// Gets or sets the DLL file name without extension.
+        /// </summary>
         public string FileNameWithoutExtension { get; set; }
+
+        /// <summary>
+        /// Gets or sets the optional subfolder where the DLL should be placed.
+        /// </summary>
         public string Subfolder { get; set; }
 
+        /// <summary>
+        /// Gets or sets the fully qualified embedded resource name inside the assembly.
+        /// </summary>
         public string ResourceName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the target DLL file name (with extension).
+        /// </summary>
         public string TagetFileName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the full target path where the DLL should be copied.
+        /// </summary>
         public string TagetPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the resource should be copied 
+        /// (true if the embedded resource is newer or the file is missing).
+        /// </summary>
         public bool ShouldCopy { get; set; }
     }
 }
