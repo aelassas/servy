@@ -78,21 +78,25 @@ namespace Servy.Core.Helpers
         /// A formatted string with a percent sign.
         /// Examples:
         /// <list type="bullet">
-        /// <item><description>1 → "1%"</description></item>
-        /// <item><description>1.1 → "1.10%"</description></item>
-        /// <item><description>1.05 → "1.05%"</description></item>
-        /// <item><description>1.23 → "1.23%"</description></item>
-        /// <item><description>1.234 → "1.23%"</description></item>
-        /// <item><description>1.235 → "1.24%"</description></item>
-        /// <item><description>1.236 → "1.24%"</description></item>
+        /// <item><description>0 → "0%"</description></item>
+        /// <item><description>0.03 → "0%"</description></item>
+        /// <item><description>1 → "1.0%"</description></item>
+        /// <item><description>1.04 → "1.0%"</description></item>
+        /// <item><description>1.05 → "1.1%"</description></item>
+        /// <item><description>1.06 → "1.1%"</description></item>
+        /// <item><description>1.1 → "1.1%"</description></item>
+        /// <item><description>1.49 → "1.4%"</description></item>
+        /// <item><description>1.51 → "1.5%"</description></item>
+        /// <item><description>1.57 → "1.5%"</description></item>
+        /// <item><description>1.636 → "1.6%"</description></item>
         /// </list>
         /// </returns>
         public static string FormatCPUUsage(double cpuUsage)
         {
-            double rounded = Math.Round(cpuUsage, 2, MidpointRounding.AwayFromZero);
-            string formatted = rounded % 1 == 0
-                ? rounded.ToString("0", CultureInfo.InvariantCulture)
-                : rounded.ToString("0.00", CultureInfo.InvariantCulture);
+            double rounded = Math.Round(cpuUsage, 1, MidpointRounding.AwayFromZero);
+            string formatted = rounded == 0
+                ? "0"
+                : rounded.ToString("0.0", CultureInfo.InvariantCulture);
 
             return $"{formatted}%";
         }
@@ -106,10 +110,10 @@ namespace Servy.Core.Helpers
         /// B, KB, MB, GB, or TB.
         /// Examples:
         /// <list type="bullet">
-        /// <item><description>512 → "512 B"</description></item>
-        /// <item><description>2048 → "2 KB"</description></item>
-        /// <item><description>1048576 → "1 MB"</description></item>
-        /// <item><description>1073741824 → "1 GB"</description></item>
+        /// <item><description>512 → "512.0 B"</description></item>
+        /// <item><description>2048 → "2.0 KB"</description></item>
+        /// <item><description>1048576 → "1.0 MB"</description></item>
+        /// <item><description>1073741824 → "1.0 GB"</description></item>
         /// </list>
         /// </returns>
         public static string FormatRAMUsage(long ramUsage)
@@ -122,23 +126,23 @@ namespace Servy.Core.Helpers
             string result;
             if (ramUsage < KB)
             {
-                result = $"{ramUsage} B";
+                result = $"{ramUsage.ToString("0.0", CultureInfo.InvariantCulture)} B";
             }
             else if (ramUsage < MB)
             {
-                result = $"{(ramUsage / KB).ToString("0.##", CultureInfo.InvariantCulture)} KB";
+                result = $"{(ramUsage / KB).ToString("0.0", CultureInfo.InvariantCulture)} KB";
             }
             else if (ramUsage < GB)
             {
-                result = $"{(ramUsage / MB).ToString("0.##", CultureInfo.InvariantCulture)} MB";
+                result = $"{(ramUsage / MB).ToString("0.0", CultureInfo.InvariantCulture)} MB";
             }
             else if (ramUsage < TB)
             {
-                result = $"{(ramUsage / GB).ToString("0.##", CultureInfo.InvariantCulture)} GB";
+                result = $"{(ramUsage / GB).ToString("0.0", CultureInfo.InvariantCulture)} GB";
             }
             else
             {
-                result = $"{(ramUsage / TB).ToString("0.##", CultureInfo.InvariantCulture)} TB";
+                result = $"{(ramUsage / TB).ToString("0.0", CultureInfo.InvariantCulture)} TB";
             }
 
             return result;
