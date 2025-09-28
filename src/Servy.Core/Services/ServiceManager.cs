@@ -342,8 +342,8 @@ namespace Servy.Core.Services
 
                 if (serviceHandle == IntPtr.Zero)
                 {
-                    int err = _win32ErrorProvider.GetLastWin32Error();
-                    if (err == 1073) // service already exists
+                    var isInstalled = IsServiceInstalled(serviceName);
+                    if (isInstalled)
                     {
                         var res = UpdateServiceConfig(
                             scmHandle: scmHandle,
@@ -359,8 +359,6 @@ namespace Servy.Core.Services
                         await _serviceRepository.UpsertAsync(dto);
                         return res;
                     }
-
-                    throw new Win32Exception(err, "Failed to create service.");
                 }
 
                 // Set description
