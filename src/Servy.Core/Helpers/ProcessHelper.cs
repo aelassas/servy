@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Threading;
 
 namespace Servy.Core.Helpers
 {
@@ -14,33 +14,58 @@ namespace Servy.Core.Helpers
     public static class ProcessHelper
     {
         /// <summary>
-        /// Gets the CPU usage of a process by its PID.
+        /// Stores the last CPU measurement for a process.
         /// </summary>
-        /// <param name="pid">The process identifier (PID).</param>
-        /// <returns>
-        /// The CPU usage in percentage (0–100+), rounded to two decimals.
-        /// Returns <c>0</c> if the process cannot be accessed.
-        /// </returns>
-        /// <remarks>
-        /// This method samples the <see cref="PerformanceCounter"/> twice with a short delay.
-        /// On multi-core systems, the result is normalized by <see cref="Environment.ProcessorCount"/>.
-        /// Windows-only.
-        /// </remarks>
-        [ExcludeFromCodeCoverage]
+        private class CpuSample
+        {
+            public DateTime LastTime;
+            public TimeSpan LastTotalTime;
+        }
+
+        /// <summary>
+        /// Holds previous CPU usage samples by process ID.
+        /// </summary>
+        private static readonly Dictionary<int, CpuSample> _prevCpuTimes = new Dictionary<int, CpuSample>();
+
+        /// <summary>
+        /// Gets the CPU usage percentage of a process over the interval since the last sample.
+        /// This method should be called repeatedly (e.g., by a background timer every 5 seconds).
+        /// </summary>
+        /// <param name="pid">The process ID.</param>
+        /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if unavailable.</returns>
         public static double GetCPUUsage(int pid)
         {
             try
             {
                 using (var process = Process.GetProcessById(pid))
-                using (var cpuCounter = new PerformanceCounter("Process", "% Processor Time", process.ProcessName, true))
                 {
-                    _ = cpuCounter.NextValue();
-                    Thread.Sleep(500); // sampling interval
-                    double value = cpuCounter.NextValue() / Environment.ProcessorCount;
-                    return Math.Round(value, 2, MidpointRounding.AwayFromZero);
+                    var now = DateTime.UtcNow;
+                    var totalTime = process.TotalProcessorTime;
+
+                    CpuSample prev;
+                    if (_prevCpuTimes.TryGetValue(pid, out prev) && prev != null)
+                    {
+                        var deltaTime = (now - prev.LastTime).TotalMilliseconds;
+                        var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
+
+                        if (deltaTime > 0)
+                        {
+                            double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
+                            _prevCpuTimes[pid] = new CpuSample { LastTime = now, LastTotalTime = totalTime };
+                            return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
+                        }
+                    }
+
+                    // First measurement or invalid delta → just store sample
+                    _prevCpuTimes[pid] = new CpuSample
+                    {
+                        LastTime = now,
+                        LastTotalTime = totalTime
+                    };
+                    return 0;
                 }
             }
-            catch (Exception ex) when (ex is ArgumentException || ex is Win32Exception || ex is InvalidOperationException)
+            catch
             {
                 return 0;
             }
@@ -61,10 +86,11 @@ namespace Servy.Core.Helpers
             {
                 using (var process = Process.GetProcessById(pid))
                 {
-                    return process.WorkingSet64;
+                    // Private bytes (close to Task Manager's "Memory" column)
+                    return process.PrivateMemorySize64;
                 }
             }
-            catch (Exception ex) when (ex is ArgumentException || ex is Win32Exception || ex is InvalidOperationException)
+            catch
             {
                 return 0;
             }
