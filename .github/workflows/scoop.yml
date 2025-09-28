@@ -90,7 +90,7 @@ jobs:
           # Load and update JSON
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-net8.0-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
           
           # Save formatted JSON
@@ -151,17 +151,20 @@ jobs:
               $jsonObj = [PSCustomObject]@{
                   version     = $env:VERSION
                   description = "Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters."
-                  notes       = "sercy-cli is available in PATH after installation. For Servy and Servy Manager, you need to open them from the Start Menu. For more info, visit https://servy-win.github.io"
                   homepage    = "https://servy-win.github.io"
                   license     = "MIT"
                   architecture = @{
                       '64bit' = @{
-                          url  = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+                          url  = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-net8.0-x64-installer.exe"
                           hash = $env:HASH
                       }
                   }
                   innosetup  = $true
                   bin        = "servy-cli.exe"
+                  shortcuts  = @(
+                      @('Servy.exe', 'Servy'),
+                      @('Servy.Manager.exe', 'Servy Manager')
+                  )
                   checkver   = @{
                       github = "https://github.com/aelassas/servy"
                   }
