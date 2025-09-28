@@ -36,7 +36,7 @@ OutputDir=.
 OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-frameworkdependent-installer
 SetupIconFile=..\src\Servy\servy.ico
 
-Compression=lzma
+Compression=lzma2
 LZMAAlgorithm=1
 LZMADictionarySize=65536
 ; LZMADictionarySize=131072
