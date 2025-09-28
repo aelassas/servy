@@ -474,7 +474,7 @@ namespace Servy.Service
 
                         if (!process.WaitForExit(effectiveTimeout))
                         {
-                            try { ProcessHelper.KillProcessTree(process); } catch { /* ignore */ }
+                            try { Helpers.ProcessHelper.KillProcessTree(process); } catch { /* ignore */ }
                             throw new System.TimeoutException($"Pre-launch process timed out after {effectiveTimeout / 1000} seconds.");
                         }
 
