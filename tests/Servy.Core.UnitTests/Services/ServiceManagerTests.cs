@@ -415,7 +415,8 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(IntPtr.Zero);
 
             // Simulate ERROR_SERVICE_EXISTS
-            _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1073);
+            //_mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1073);
+            _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
 
             // Setup OpenService for UpdateServiceConfig
             var serviceHandle = new IntPtr(456);
