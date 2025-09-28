@@ -17,7 +17,6 @@
 </p>
 
 # Servy
-[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
  
 ## .NET Framework 4.8 Version
 
