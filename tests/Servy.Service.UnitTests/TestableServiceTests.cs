@@ -1,9 +1,10 @@
 ﻿using Moq;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.ProcessManagement;
 using Servy.Service.Helpers;
+using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
@@ -25,12 +26,16 @@ namespace Servy.Service.UnitTests
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
             var pathValidator = new Mock<IPathValidator>();
+            var serviceRepository = new Mock<IServiceRepository>();
 
             mockHelper
                 .Setup(h => h.InitializeStartup(mockLogger.Object))
                 .Returns(expectedOptions);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
+            var service = new TestableService(mockHelper.Object, mockLogger.Object, 
+                streamWriterFactory.Object, timerFactory.Object, processFactory.Object, 
+                pathValidator.Object, serviceRepository.Object
+                );
 
             // Act
             service.TestOnStart((new string []{}));
@@ -50,12 +55,15 @@ namespace Servy.Service.UnitTests
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
             var pathValidator = new Mock<IPathValidator>();
+            var serviceRepository = new Mock<IServiceRepository>();
 
             mockHelper
                 .Setup(h => h.InitializeStartup(mockLogger.Object))
                 .Returns((StartOptions?)null);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
+            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,
+                timerFactory.Object, processFactory.Object, 
+                pathValidator.Object, serviceRepository.Object);
 
             // Act
             service.TestOnStart((new string []{}));
@@ -75,6 +83,7 @@ namespace Servy.Service.UnitTests
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
             var pathValidator = new Mock<IPathValidator>();
+            var serviceRepository = new Mock<IServiceRepository>();
 
             var exception = new InvalidOperationException("Test exception");
 
@@ -82,7 +91,10 @@ namespace Servy.Service.UnitTests
                 .Setup(h => h.InitializeStartup(mockLogger.Object))
                 .Throws(exception);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object, timerFactory.Object, processFactory.Object, pathValidator.Object);
+            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,
+                timerFactory.Object, processFactory.Object,
+                pathValidator.Object, serviceRepository.Object
+                );
 
             // Act
             service.TestOnStart((new string []{}));
@@ -104,6 +116,7 @@ namespace Servy.Service.UnitTests
             var mockTimerFactory = new Mock<ITimerFactory>();
             var mockProcessFactory = new Mock<IProcessFactory>();
             var mockPathValidator = new Mock<IPathValidator>();
+            var serviceRepository = new Mock<IServiceRepository>();
 
             var mockTimer = new Mock<ITimer>();
 
@@ -117,7 +130,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                serviceRepository.Object
             );
 
             var options = new StartOptions
@@ -154,6 +168,7 @@ namespace Servy.Service.UnitTests
             var mockTimerFactory = new Mock<ITimerFactory>();
             var mockProcessFactory = new Mock<IProcessFactory>();
             var mockPathValidator = new Mock<IPathValidator>();
+            var serviceRepository = new Mock<IServiceRepository>();
 
             var service = new TestableService(
                 mockHelper.Object,
@@ -161,7 +176,8 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object
+                mockPathValidator.Object,
+                serviceRepository.Object
             );
 
             var options = new StartOptions

@@ -862,6 +862,15 @@ namespace Servy.Manager.ViewModels
                 // Check if service is installed
                 service.IsInstalled = allServices.ContainsKey(service.Name);
 
+                // Update PID if necessary
+                var serviceDto = await _serviceRepository.GetByNameAsync(service.Name);
+
+                if (serviceDto != null && service.Pid != serviceDto.Pid)
+                {
+                    service.Pid = serviceDto.Pid;
+                    service.IsPidEnabled = service.Pid != null;
+                }
+
                 // Load startup type from repository if null
                 if (service.StartupType == null)
                 {

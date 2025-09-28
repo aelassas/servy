@@ -53,7 +53,7 @@ namespace Servy.CLI
                                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));
 
                 var config = new ConfigurationBuilder()
-                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true)
                     .Build();
 
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;

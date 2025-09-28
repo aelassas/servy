@@ -5,6 +5,7 @@ using Servy.Manager.Services;
 using Servy.UI.Commands;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
 {
@@ -43,6 +44,8 @@ namespace Servy.Manager.ViewModels
             RemoveCommand = new AsyncCommand(RemoveServiceAsync, CanExecuteServiceCommand);
             ExportXmlCommand = new AsyncCommand(ExportServiceToXmlAsync, CanExecuteServiceCommand);
             ExportJsonCommand = new AsyncCommand(ExportServiceToJsonAsync, CanExecuteServiceCommand);
+
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, CanExecuteServiceCommand);
         }
 
         #region Properties
@@ -91,6 +94,8 @@ namespace Servy.Manager.ViewModels
         public string UserSession => Service.UserSession;
         public bool IsInstalled => Service.IsInstalled;
         public bool IsConfigurationAppAvailable => Service.IsConfigurationAppAvailable;
+        public int? Pid => Service.Pid;
+        public bool IsPidEnabled => Service.IsPidEnabled;
 
         #endregion
 
@@ -191,6 +196,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IAsyncCommand ExportJsonCommand { get; }
 
+        /// <summary>
+        /// Command to copy PID to clipboard.
+        /// </summary>
+        public IAsyncCommand CopyPidCommand { get; }
+
         #endregion
 
         #region Command Handlers
@@ -221,6 +231,9 @@ namespace Servy.Manager.ViewModels
 
         private async Task ExportServiceToJsonAsync(object parameter) =>
             await ExecuteSafeAsync(() => _serviceCommands.ExportServiceToJsonAsync(Service));
+
+        private async Task CopyPidAsync(object parameter) =>
+            await ExecuteSafeAsync(() => _serviceCommands.CopyPid(Service));
 
         #endregion
 

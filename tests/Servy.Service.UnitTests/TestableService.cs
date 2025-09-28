@@ -9,6 +9,7 @@ using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Diagnostics;
 using System.Timers;
+using Servy.Core.Data;
 
 namespace Servy.Service.UnitTests
 {
@@ -23,8 +24,9 @@ namespace Servy.Service.UnitTests
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
-            IPathValidator pathValidator)
-            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator)
+            IPathValidator pathValidator,
+            IServiceRepository serviceRepository)
+            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
         {
         }
 

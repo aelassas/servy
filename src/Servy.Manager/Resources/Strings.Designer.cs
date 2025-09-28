@@ -70,6 +70,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy PID.
+        /// </summary>
+        public static string Button_CopyPid {
+            get {
+                return ResourceManager.GetString("Button_CopyPid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Export JSON.
         /// </summary>
         public static string Button_ExportJSON {
@@ -237,6 +246,15 @@ namespace Servy.Manager.Resources {
         public static string Column_Name {
             get {
                 return ResourceManager.GetString("Column_Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à PID.
+        /// </summary>
+        public static string Column_Pid {
+            get {
+                return ResourceManager.GetString("Column_Pid", resourceCulture);
             }
         }
         
@@ -795,6 +813,15 @@ namespace Servy.Manager.Resources {
         public static string Msg_OperationCompletedWithErrorsDetails {
             get {
                 return ResourceManager.GetString("Msg_OperationCompletedWithErrorsDetails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à PID copied to clipboard..
+        /// </summary>
+        public static string Msg_PidCopied {
+            get {
+                return ResourceManager.GetString("Msg_PidCopied", resourceCulture);
             }
         }
         

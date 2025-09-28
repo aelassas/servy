@@ -29,7 +29,9 @@ namespace Servy.Manager
                 Status = ServiceStatus.None,
                 UserSession = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetUserSessionDisplayName(service.UserAccount) ?? string.Empty,
                 IsInstalled = false,
-                IsConfigurationAppAvailable = app.IsConfigurationAppAvailable
+                IsConfigurationAppAvailable = app.IsConfigurationAppAvailable,
+                Pid = service.Pid,
+                IsPidEnabled = service.Pid != null,
             };
         }
 

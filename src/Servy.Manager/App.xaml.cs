@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
@@ -100,10 +101,12 @@ namespace Servy.Manager
 
             try
             {
-                // Load configuration from App.config
-                var config = ConfigurationManager.AppSettings;
+                // Load configuration from appsettings.json
+                var config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true)
+                    .Build();
 
-                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
                 RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var result)

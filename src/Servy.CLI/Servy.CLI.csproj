@@ -31,14 +31,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="appsettings.json" />
     <None Remove="Resources\handle64.exe" />
     <None Remove="Resources\Servy.Service.CLI.exe" />
     <None Remove="Resources\Servy.Service.CLI.pdb" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.json">
+    <Content Include="appsettings.cli.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="servy.ico" />

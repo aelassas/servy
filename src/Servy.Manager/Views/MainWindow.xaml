@@ -24,6 +24,7 @@
         <!-- Converters -->
         <managerConverters:StartupTypeConverter x:Key="StartupTypeConverter"/>
         <managerConverters:StatusConverter x:Key="StatusConverter"/>
+        <managerConverters:PidConverter x:Key="PidConverter"/>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
     </Window.Resources>
@@ -226,7 +227,19 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            
+
+                            <!--Pid-->
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Pid}" MinWidth="60" CanUserReorder="False" SortMemberPath="Pid">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Pid, Converter={StaticResource PidConverter}}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="5,0,0,0"
+                                        />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                             <!-- Actions -->
                             <DataGridTemplateColumn Width="200" CanUserResize="False" CanUserReorder="False">
                                 <!--Bulk actions-->
@@ -293,31 +306,36 @@
                                                     <ContextMenu>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Install}"
-                                                      Command="{Binding InstallCommand}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  Command="{Binding InstallCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}" 
-                                                      Command="{Binding UninstallCommand}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                      IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  Command="{Binding UninstallCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Remove}" 
-                                                      Command="{Binding RemoveCommand}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                      IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}" />
+                                                                  Command="{Binding RemoveCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}" />
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Config}" 
-                                                    Command="{Binding ConfigureCommand}"
-                                                    CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                    IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  Command="{Binding ConfigureCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}" 
-                                                    Command="{Binding ExportXmlCommand}"
-                                                    CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  Command="{Binding ExportXmlCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}" 
-                                                    Command="{Binding ExportJsonCommand}"
-                                                    CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  Command="{Binding ExportJsonCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+
+                                                        <MenuItem Header="{x:Static resx:Strings.Button_CopyPid}" 
+                                                                  Command="{Binding CopyPidCommand}"
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsPidEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
 
                                                     </ContextMenu>
                                                 </Button.ContextMenu>

@@ -289,7 +289,6 @@ namespace Servy.Core.Services
                     lpPassword: lpPassword
                 );
 
-
                 // Persist service in database
                 var dto = new ServiceDto
                 {
@@ -331,6 +330,10 @@ namespace Servy.Core.Services
                     PostLaunchStartupDirectory = postLaunchWorkingDirectory,
                     PostLaunchParameters = postLaunchArgs,
                 };
+
+                // Set PID
+                var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
+                dto.Pid = serviceDto?.Pid;
 
                 if (serviceHandle == IntPtr.Zero)
                 {

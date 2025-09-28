@@ -59,6 +59,16 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Release\net8.0-windows\win-x64\");
 
         /// <summary>
+        /// Servy Service Debug Folder (Manager).
+        /// </summary>
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net8.0-windows\win-x64\");
+
+        /// <summary>
+        /// Servy Service Release Folder (Manager).
+        /// </summary>
+        public static readonly string ServyServiceManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net8.0-windows\win-x64\");
+
+        /// <summary>
         /// Servy Configuration App Publish Path.
         /// </summary>
         public static readonly string ConfigrationAppPublishDebugPath = Path.Combine(ServyServiceUIReleaseFolder, "publish", "Servy.exe");

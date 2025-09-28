@@ -10,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using Xunit;
+using Servy.Core.Data;
 
 namespace Servy.Service.UnitTests
 {
@@ -21,7 +22,9 @@ namespace Servy.Service.UnitTests
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
             out Mock<ITimerFactory> mockTimerFactory,
             out Mock<IProcessFactory> mockProcessFactory,
-            out Mock<IPathValidator> mockPathValidator)
+            out Mock<IPathValidator> mockPathValidator,
+            out Mock<IServiceRepository> mockServiceRepository
+            )
         {
             mockLogger = new Mock<ILogger>();
             mockHelper = new Mock<IServiceHelper>();
@@ -29,6 +32,7 @@ namespace Servy.Service.UnitTests
             mockTimerFactory = new Mock<ITimerFactory>();
             mockProcessFactory = new Mock<IProcessFactory>();
             mockPathValidator = new Mock<IPathValidator>();
+            mockServiceRepository = new Mock<IServiceRepository>();
 
             mockPathValidator.Setup(p => p.IsValidPath(It.IsAny<string>())).Returns(true);
 
@@ -38,7 +42,9 @@ namespace Servy.Service.UnitTests
                 mockStreamWriterFactory.Object,
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
-                mockPathValidator.Object);
+                mockPathValidator.Object,
+                mockServiceRepository.Object
+                );
         }
 
         static DataReceivedEventArgs CreateDataReceivedEventArgs(string? data)
@@ -60,7 +66,8 @@ namespace Servy.Service.UnitTests
                 out var swFactory,
                 out var timerFactory,
                 out var processFactory,
-                out var pathValidator);
+                out var pathValidator, 
+                out var serviceRepository);
 
             var mockWriter = new Mock<IStreamWriter>();
             // Setup rotating writer factory to return this mock writer
@@ -105,7 +112,8 @@ namespace Servy.Service.UnitTests
                 out var swFactory,
                 out var timerFactory,
                 out var processFactory,
-                out var pathValidator);
+                out var pathValidator,
+                out var serviceRepository);
 
             var mockWriter = new Mock<IStreamWriter>();
             swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>())).Returns(mockWriter.Object);
@@ -147,7 +155,8 @@ namespace Servy.Service.UnitTests
                 out var swFactory,
                 out var timerFactory,
                 out var processFactory,
-                out var pathValidator);
+                out var pathValidator,
+                out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.Id).Returns(42);
@@ -171,7 +180,8 @@ namespace Servy.Service.UnitTests
              out var swFactory,
              out var timerFactory,
              out var processFactory,
-             out var pathValidator);
+             out var pathValidator,
+                out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Returns(42);
@@ -194,7 +204,8 @@ namespace Servy.Service.UnitTests
              out var swFactory,
              out var timerFactory,
              out var processFactory,
-             out var pathValidator);
+             out var pathValidator,
+                out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.ExitCode).Throws(new InvalidOperationException("boom"));
@@ -216,7 +227,8 @@ namespace Servy.Service.UnitTests
                 out var swFactory,
                 out var timerFactory,
                 out var processFactory,
-                out var pathValidator);
+                out var pathValidator,
+                out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.Id).Returns(42);

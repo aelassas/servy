@@ -69,7 +69,7 @@ public static class SQLiteDbInitializer
                       .Select(row => (string)row.name) // 'row' is dynamic
         );
 
-        // Use KeyValuePair instead of tuples for .NET Framework 4.8
+        // Use KeyValuePair instead of tuples
         var expectedColumns = new List<KeyValuePair<string, string>>
         {
             // Failure program columns
@@ -81,6 +81,9 @@ public static class SQLiteDbInitializer
             new KeyValuePair<string, string>("PostLaunchExecutablePath", "ALTER TABLE Services ADD COLUMN PostLaunchExecutablePath TEXT;"),
             new KeyValuePair<string, string>("PostLaunchStartupDirectory", "ALTER TABLE Services ADD COLUMN PostLaunchStartupDirectory TEXT;"),
             new KeyValuePair<string, string>("PostLaunchParameters", "ALTER TABLE Services ADD COLUMN PostLaunchParameters TEXT;"),
+
+            // PID
+            new KeyValuePair<string, string>("Pid", "ALTER TABLE Services ADD COLUMN Pid INTEGER;"),
         };
 
         foreach (var column in expectedColumns)

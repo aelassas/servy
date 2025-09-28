@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Views;
 using System.Configuration;
@@ -101,9 +102,12 @@ namespace Servy
 
             try
             {
-                // Load configuration from App.config
-                var config = ConfigurationManager.AppSettings;
-                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                // Load configuration from appsettings.json
+                var config = new ConfigurationBuilder()
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                    .Build();
+
+                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
