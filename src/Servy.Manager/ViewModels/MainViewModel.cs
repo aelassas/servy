@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -45,6 +46,8 @@ namespace Servy.Manager.ViewModels
         private string _footerText;
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
+        private readonly object _refreshLock = new object();
+        private bool _isRefreshing = false;
 
         #endregion
 
@@ -416,21 +419,36 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="sender">The <see cref="DispatcherTimer"/> that raised the event.</param>
         /// <param name="e">Event data associated with the tick.</param>
-        private async void RefreshTimer_Tick(object sender, EventArgs e)
+        private void RefreshTimer_Tick(object sender, EventArgs e)
         {
-            _refreshTimer.Stop(); // prevent overlapping ticks
-            try
+            // Prevent overlapping refreshes
+            lock (_refreshLock)
             {
-                if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
-                    return; // Exit if cancellation is requested
+                if (_isRefreshing) return;
+                _isRefreshing = true;
+            }
 
-                await RefreshAllServicesAsync();
-            }
-            finally
+            Task.Run(async () =>
             {
-                if (_refreshTimer != null) // make sure timer still exists
-                    _refreshTimer.Start();
-            }
+                try
+                {
+                    if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
+                        return;
+
+                    await RefreshAllServicesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning($"Failed background refresh: {ex}");
+                }
+                finally
+                {
+                    lock (_refreshLock)
+                    {
+                        _isRefreshing = false;
+                    }
+                }
+            });
         }
 
         #endregion
@@ -498,7 +516,7 @@ namespace Servy.Manager.ViewModels
                 }, DispatcherPriority.Background);
 
                 stopwatch.Stop();
-                FooterText = Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
+                FooterText = UI.Helpers.Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
 
                 // Setp 5: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
@@ -798,7 +816,7 @@ namespace Servy.Manager.ViewModels
         #region Helpers
 
         /// <summary>
-        /// Refresh all services description, status, startup type, user and installation state.
+        /// Refresh all services description, status, startup type, user and installation state without blocking the UI thread.
         /// </summary>
         private async Task RefreshAllServicesAsync()
         {
@@ -830,13 +848,13 @@ namespace Servy.Manager.ViewModels
                 await Task.WhenAll(tasks);
 
                 // Refresh UI only if not cancelled
-                //if (_cts != null && !_cts.IsCancellationRequested)
-                //{
-                //    await Application.Current.Dispatcher.InvokeAsync(() =>
-                //    {
-                //        ServicesView.Refresh();
-                //    }, DispatcherPriority.Background);
-                //}
+                if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        ServicesView.Refresh();
+                    }, DispatcherPriority.Background);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -849,7 +867,7 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Refresh service description, status, startup type, user and installation state.
+        /// Refresh service description, status, startup type, user and installation state. Heavy work runs off the UI thread.
         /// </summary>
         /// <param name="service">The service to refresh.</param>
         /// <param name="allServices">Dictionary of all installed services keyed by name.</param>
@@ -870,6 +888,17 @@ namespace Servy.Manager.ViewModels
                     service.Pid = serviceDto.Pid;
                     service.IsPidEnabled = service.Pid != null;
                 }
+
+                // Update CPU and RAM usage
+                double? cpuUsage = null;
+                long? ramUsage = null;
+                if (service.Pid.HasValue)
+                {
+                    cpuUsage = await Task.Run(() => ProcessHelper.GetCPUUsage(service.Pid.Value));
+                    ramUsage = await Task.Run(() => ProcessHelper.GetRAMUsage(service.Pid.Value));
+                }
+                service.CpuUsage = cpuUsage;
+                service.RamUsage = ramUsage;
 
                 // Load startup type from repository if null
                 if (service.StartupType == null)

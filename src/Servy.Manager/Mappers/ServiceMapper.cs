@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
 using System.Windows;
@@ -15,11 +16,19 @@ namespace Servy.Manager
         /// </summary>
         /// <param name="service">The domain service instance.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static Service ToModel(Core.Domain.Service service)
+        public static async Task<Service> ToModelAsync(Core.Domain.Service service)
         {
             if (service == null) return null;
 
             var app = (App)Application.Current;
+
+            double? cpuUsage = null;
+            long? ramUsage = null;
+            if (service.Pid.HasValue)
+            {
+                cpuUsage = await Task.Run(() => ProcessHelper.GetCPUUsage(service.Pid.Value));
+                ramUsage = await Task.Run(() => ProcessHelper.GetRAMUsage(service.Pid.Value));
+            }
 
             return new Service
             {
@@ -32,6 +41,8 @@ namespace Servy.Manager
                 IsConfigurationAppAvailable = app.IsConfigurationAppAvailable,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
+                CpuUsage = cpuUsage,
+                RamUsage = ramUsage,
             };
         }
 
