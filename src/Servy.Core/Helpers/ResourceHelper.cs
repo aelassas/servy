@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Servy.Core.Helpers
 {
@@ -117,47 +118,55 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Copies embedded DLL resources from the specified <see cref="Assembly"/> to the file system.  
-        /// If the target DLL files already exist, they are only overwritten if the embedded resource  
-        /// has a more recent last write time than the existing file. Optionally, running Servy services  
-        /// are stopped before copying and restarted afterward to prevent file lock issues.
+        /// Copies embedded resources (such as DLLs and EXEs) from the specified assembly to target paths.
         /// </summary>
         /// <param name="assembly">
-        /// The <see cref="Assembly"/> that contains the embedded DLL resources.
+        /// The <see cref="Assembly"/> that contains the embedded resources.
         /// </param>
         /// <param name="resourceNamespace">
-        /// The root namespace where the embedded DLL resources are located.
+        /// The root namespace under which the resources are embedded.
         /// </param>
-        /// <param name="dllResources">
-        /// A list of <see cref="DllResource"/> objects representing the DLLs to extract and copy.
-        /// Each entry will be updated with its resolved target path, file name, resource name, and copy status.
+        /// <param name="resourceItems">
+        /// A list of <see cref="ResourceItem"/> objects describing the resources to copy, including file names,
+        /// extensions, subfolders, and metadata used during copying.
         /// </param>
         /// <param name="stopServices">
-        /// Indicates whether running Servy services should be stopped before copying and restarted afterward.  
+        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
         /// Default is <c>true</c>.
         /// </param>
         /// <returns>
-        /// <c>true</c> if all DLL resources were successfully copied or no copy was needed;  
-        /// <c>false</c> if copying fails or an embedded resource cannot be found.
+        /// <c>true</c> if all resources were copied successfully or did not need copying; 
+        /// otherwise, <c>false</c>.
         /// </returns>
         /// <remarks>
-        /// - Existing files are compared against the embedded resource's last write time to determine if they should be replaced.  
-        /// - When <paramref name="stopServices"/> is <c>true</c>, all running Servy services are stopped before copying and restarted after.  
-        /// - Directory structures are created automatically if they do not exist.  
-        /// - Errors are logged via <see cref="Debug.WriteLine"/> but not thrown.  
+        /// <para>
+        /// This method performs the following steps:
+        /// </para>
+        /// <list type="number">
+        ///   <item><description>Determines the target file path for each resource.</description></item>
+        ///   <item><description>Checks if the target file already exists and whether it is up to date.</description></item>
+        ///   <item><description>Stops running Servy services if <paramref name="stopServices"/> is <c>true</c>.</description></item>
+        ///   <item><description>Kills processes using the target file if it is a DLL or EXE.</description></item>
+        ///   <item><description>Copies the embedded resource stream to the target path.</description></item>
+        ///   <item><description>Restarts previously stopped services.</description></item>
+        /// </list>
+        /// <para>
+        /// If any copy operation fails, the method logs the error and continues with remaining resources,
+        /// returning <c>false</c> at the end.
+        /// </para>
         /// </remarks>
-        public static bool CopyDLLResources(Assembly assembly, string resourceNamespace, List<DllResource> dllResources, bool stopServices = true)
+        public static bool CopyResources(Assembly assembly, string resourceNamespace, List<ResourceItem> resourceItems, bool stopServices = true)
         {
+            var res = true;
             try
             {
-                var extension = DllResource.Extension;
-
-                foreach (var dllResource in dllResources)
+                foreach (var resourceItem in resourceItems)
                 {
-                    var fileName = dllResource.FileNameWithoutExtension;
-                    var subfolder = dllResource.Subfolder;
-                    var targetFileName = dllResource.FileNameWithoutExtension + "." + extension;
-                    dllResource.TagetFileName = targetFileName;
+                    var fileName = resourceItem.FileNameWithoutExtension;
+                    var extension = resourceItem.Extension;
+                    var subfolder = resourceItem.Subfolder;
+                    var targetFileName = resourceItem.FileNameWithoutExtension + "." + extension;
+                    resourceItem.TagetFileName = targetFileName;
 
 #if DEBUG
                     var dir = Path.GetDirectoryName(assembly.Location);
@@ -170,24 +179,24 @@ namespace Servy.Core.Helpers
                         : Path.Combine(AppConfig.ProgramDataPath, subfolder, targetFileName);
 #endif
 
-                    dllResource.TagetPath = targetPath;
+                    resourceItem.TagetPath = targetPath;
 
                     var resourceName = string.IsNullOrEmpty(subfolder)
                         ? $"{resourceNamespace}.{fileName}.{extension}"
                         : $"{resourceNamespace}.{subfolder}.{fileName}.{extension}";
-                    dllResource.ResourceName = resourceName;
+                    resourceItem.ResourceName = resourceName;
 
-                    dllResource.ShouldCopy = !File.Exists(targetPath);
+                    resourceItem.ShouldCopy = !File.Exists(targetPath);
 
                     if (File.Exists(targetPath))
                     {
                         DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                         DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-                        dllResource.ShouldCopy = embeddedResourceTime > existingFileTime;
+                        resourceItem.ShouldCopy = embeddedResourceTime > existingFileTime;
                     }
                 }
 
-                if (dllResources.All(r => !r.ShouldCopy))
+                if (resourceItems.All(r => !r.ShouldCopy))
                     return true;
 
                 // Get running services
@@ -202,35 +211,56 @@ namespace Servy.Core.Helpers
                     if (stopServices)
                         ServiceHelper.StopServices(runningServices);
 
-                    //if (!ProcessKiller.KillProcessesUsingFile(targetPath))
-                    //    return false;
-
-
-                    foreach (var dllResource in dllResources.Where(r => r.ShouldCopy))
+                    foreach (var resourceItem in resourceItems.Where(r => r.ShouldCopy))
                     {
-                        Stream resourceStream = assembly.GetManifestResourceStream(dllResource.ResourceName);
-                        if (resourceStream == null)
+                        try
                         {
-                            Debug.WriteLine("Embedded resource not found: " + dllResource.ResourceName);
-                            return false;
-                        }
+                            var targetFileName = resourceItem.TagetFileName;
+                            var extension = resourceItem.Extension;
+                            var targetPath = resourceItem.TagetPath;
+                            var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
+                            var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
 
-                        var dirPath = Path.GetDirectoryName(dllResource.TagetPath);
-                        if (!Directory.Exists(dirPath))
-                        {
-                            Directory.CreateDirectory(dirPath);
-                        }
-
-                        using (resourceStream)
-                        {
-                            using (FileStream fileStream = new FileStream(dllResource.TagetPath, FileMode.Create, FileAccess.Write))
+                            if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                             {
-                                resourceStream.CopyTo(fileStream);
+                                res = false;
+                                continue;
+                            }
+
+                            //if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+                            //{
+                            //    res = false;
+                            //    continue;
+                            //}
+
+                            Stream resourceStream = assembly.GetManifestResourceStream(resourceItem.ResourceName);
+                            if (resourceStream == null)
+                            {
+                                Debug.WriteLine("Embedded resource not found: " + resourceItem.ResourceName);
+                                res = false;
+                                continue;
+                            }
+
+                            var dirPath = Path.GetDirectoryName(resourceItem.TagetPath);
+                            if (!Directory.Exists(dirPath))
+                            {
+                                Directory.CreateDirectory(dirPath);
+                            }
+
+                            using (resourceStream)
+                            {
+                                using (FileStream fileStream = new FileStream(resourceItem.TagetPath, FileMode.Create, FileAccess.Write))
+                                {
+                                    resourceStream.CopyTo(fileStream);
+                                }
                             }
                         }
+                        catch(Exception ex)
+                        {
+                            Debug.WriteLine("Failed to copy embedded resource " + resourceItem.FileNameWithoutExtension + ": " + ex);
+                            res = false;
+                        }
                     }
-
-
                 }
                 finally
                 {
@@ -239,14 +269,14 @@ namespace Servy.Core.Helpers
                         ServiceHelper.StartServices(runningServices);
                     }
                 }
-
-                return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Failed to copy embedded DLL resources: " + ex);
-                return false;
+                Debug.WriteLine("Failed to copy embedded resources: " + ex);
+                res= false;
             }
+
+            return res;
         }
 
 
