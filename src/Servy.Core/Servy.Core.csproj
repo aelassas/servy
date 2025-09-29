@@ -90,7 +90,7 @@
     <Compile Include="EnvironmentVariables\EnvironmentVariableParser.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidator.cs" />
     <Compile Include="Helpers\AppFoldersHelper.cs" />
-    <Compile Include="Helpers\DllResource.cs" />
+    <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
     <Compile Include="Helpers\ISecurePassword.cs" />

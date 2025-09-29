@@ -7,17 +7,17 @@ namespace Servy.Core.Helpers
     /// used for copying from the assembly to the target directory.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class DllResource
+    public class ResourceItem
     {
-        /// <summary>
-        /// The default file extension for DLL resources.
-        /// </summary>
-        public const string Extension = "dll";
-
         /// <summary>
         /// Gets or sets the DLL file name without extension.
         /// </summary>
         public string FileNameWithoutExtension { get; set; }
+
+        /// <summary>
+        /// Gets or sets the file extension of the resource.
+        /// </summary>
+        public string Extension { get; set; }
 
         /// <summary>
         /// Gets or sets the optional subfolder where the DLL should be placed.

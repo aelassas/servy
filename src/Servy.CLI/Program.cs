@@ -99,17 +99,17 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    // Copy service executable from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe"))
-                    {
-                        Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
-                    }
-
                     // Copy Sysinternals from embedded resources
                     if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
                     }
+
+                    // Copy service executable from embedded resources
+                    var resourceItems = new List<ResourceItem>
+                    {
+                        new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceCLIFileName, Extension= "exe"},
+                    };
 
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
@@ -119,22 +119,23 @@ namespace Servy.CLI
                     }
 #else
                     // Copy *.dll from embedded resources
-                    var dllResources = new List<DllResource>
+                    resourceItems.AddRange(new List<ResourceItem>
                     {
-                        new DllResource{ FileNameWithoutExtension = "Servy.Core"},
-                        new DllResource{ FileNameWithoutExtension = "Dapper"},
-                        new DllResource{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces"},
-                        new DllResource{ FileNameWithoutExtension = "Newtonsoft.Json"},
-                        new DllResource{ FileNameWithoutExtension = "Servy.Infrastructure"},
-                        new DllResource{ FileNameWithoutExtension = "System.Data.SQLite"},
-                        new DllResource{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe"},
-                        new DllResource{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions"},
-                        new DllResource{ FileNameWithoutExtension = "SQLite.Interop", Subfolder = "x64"},
-                        new DllResource{ FileNameWithoutExtension = "SQLite.Interop", Subfolder = "x86"},
-                    };
-
-                    CopyDllResources(asm, dllResources);
+                        new ResourceItem{ FileNameWithoutExtension = "Servy.Core", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "Dapper", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "Microsoft.Bcl.AsyncInterfaces", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "Newtonsoft.Json", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "Servy.Infrastructure", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "System.Data.SQLite", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll"},
+                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop",  Extension= "dll", Subfolder = "x64"},
+                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop", Extension= "dll", Subfolder = "x86"},
+                    });
 #endif
+
+                    // Copy embedded resources
+                    CopyResources(asm, resourceItems);
                 }
 
                 if (quiet)
@@ -182,29 +183,30 @@ namespace Servy.CLI
 
         #region Helpers
 
+
         /// <summary>
-        /// Attempts to copy the specified embedded DLL resources from the given <see cref="Assembly"/>.  
-        /// Displays a message box if the operation fails.
+        /// Copies the specified embedded resources from the given assembly and handles errors by 
+        /// showing a message box if the operation fails.
         /// </summary>
         /// <param name="asm">
-        /// The <see cref="Assembly"/> that contains the embedded DLL resources.
+        /// The <see cref="Assembly"/> that contains the embedded resources.
         /// </param>
         /// <param name="dllResources">
-        /// A list of <see cref="DllResource"/> objects representing the DLLs to copy.
+        /// A list of <see cref="ResourceItem"/> objects representing the resources to copy.
         /// </param>
         /// <param name="stopServices">
-        /// Indicates whether running Servy services should be stopped before copying and restarted afterward.  
+        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
         /// Default is <c>true</c>.
         /// </param>
         /// <remarks>
-        /// This method wraps <see cref="ResourceHelper.CopyDLLResources"/> and provides  
-        /// user-facing error reporting via a console if copying fails.
+        /// This method calls <see cref="ResourceHelper.CopyResources"/> to perform the actual copying.  
+        /// If the operation fails, the user is notified via a message box on the UI thread.
         /// </remarks>
-        private static void CopyDllResources(Assembly asm, List<DllResource> dllResources, bool stopServices = true)
+        private static void CopyResources(Assembly asm, List<ResourceItem> dllResources, bool stopServices = true)
         {
-            if (!ResourceHelper.CopyDLLResources(asm, ResourcesNamespace, dllResources, stopServices))
+            if (!ResourceHelper.CopyResources(asm, ResourcesNamespace, dllResources, stopServices))
             {
-                Console.WriteLine($"Failed copying embedded DLL resources.");
+                Console.WriteLine($"Failed copying embedded resources.");
             }
         }
 
