@@ -31,7 +31,9 @@
   * [x] Support service dependency management (start/stop order)
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Add a health monitoring dashboard *(long-term)*
-  * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
   * [x] Add PID column and copy PID action to services
   * [x] Add CPU and RAM monitoring in real time for services
- 
+
+<!--     
+  * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
+-->  
