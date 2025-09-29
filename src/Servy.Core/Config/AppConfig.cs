@@ -91,9 +91,9 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceCLIExe = $"{ServyServiceCLIFileName}.exe";
 
         /// <summary>
-        /// Default services refresh interval when not set in appsettings. Default is 5 seconds.
+        /// Default services refresh interval when not set in appsettings. Default is 4 seconds.
         /// </summary>
-        public static readonly int DefaultRefreshIntervalInSeconds = 5;
+        public static readonly int DefaultRefreshIntervalInSeconds = 4;
 
         /// <summary>
         /// Servy's official documentation link.
