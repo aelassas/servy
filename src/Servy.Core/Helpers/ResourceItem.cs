@@ -10,7 +10,7 @@ namespace Servy.Core.Helpers
     public class ResourceItem
     {
         /// <summary>
-        /// Gets or sets the DLL file name without extension.
+        /// Gets or sets the file name without extension.
         /// </summary>
         public string FileNameWithoutExtension { get; set; }
 
@@ -20,7 +20,7 @@ namespace Servy.Core.Helpers
         public string Extension { get; set; }
 
         /// <summary>
-        /// Gets or sets the optional subfolder where the DLL should be placed.
+        /// Gets or sets the optional subfolder where the file should be placed.
         /// </summary>
         public string Subfolder { get; set; }
 
@@ -30,12 +30,12 @@ namespace Servy.Core.Helpers
         public string ResourceName { get; set; }
 
         /// <summary>
-        /// Gets or sets the target DLL file name (with extension).
+        /// Gets or sets the target file name (with extension).
         /// </summary>
         public string TagetFileName { get; set; }
 
         /// <summary>
-        /// Gets or sets the full target path where the DLL should be copied.
+        /// Gets or sets the full target path where the file should be copied.
         /// </summary>
         public string TagetPath { get; set; }
 
