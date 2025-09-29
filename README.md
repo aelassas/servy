@@ -71,11 +71,10 @@ choco install -y servy
 scoop bucket add aelassas https://github.com/aelassas/scoop-bucket
 scoop install servy
 ```
-<!--
-> Servy may be flagged as a Potentially Unwanted Application (PUA) by Microsoft Defender because it manages Windows services. The installer performs only standard installation tasks and does not contain malware, adware, or unwanted software. It passes VirusTotal scans and is published in the Windows Package Manager (WinGet), Chocolatey and Scoop. This is a known false positive. You can safely allow the installation if downloaded from GitHub, WinGet, Chocolatey, or Scoop.
--->
 
+<!--
 > Servy has been reviewed by Microsoft Security Intelligence and is confirmed safe. It performs only standard installation tasks and does not contain malware, adware, or unwanted software. Servy passes VirusTotal scans and is published in the Windows Package Manager (WinGet), Chocolatey, and Scoop. You can safely install it from GitHub, WinGet, Chocolatey, or Scoop.
+-->
 
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
