@@ -105,7 +105,8 @@ scoop install servy
 ## Features
 
 * Clean, simple UI
-* Quickly monitor and manage all installed services in real-time with Servy Manager
+* Monitor and manage all installed services in real time with Servy Manager
+* Track CPU and RAM usage of installed services in real time
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
