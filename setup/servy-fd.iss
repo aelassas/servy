@@ -19,7 +19,7 @@
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}
+AppId={{8343B121-BE1C-463F-AA5B-FD237DD2F8D0}}
 SetupMutex=SetupMutex{#SetupSetting("AppId")}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
