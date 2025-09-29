@@ -33,5 +33,5 @@
   * [ ] Add a health monitoring dashboard *(long-term)*
   * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
   * [x] Add PID column and copy PID action to services
-  * [x] Add CPU and RAM usage columns to services
+  * [x] Add CPU and RAM tracking in real-time to services
  
