@@ -29,7 +29,7 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Gets the CPU usage percentage of a process over the interval since the last sample.
-        /// This method should be called repeatedly (e.g., by a background timer every 5 seconds).
+        /// This method should be called repeatedly (e.g., by a background timer every 4 seconds).
         /// </summary>
         /// <param name="pid">The process ID.</param>
         /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if unavailable.</returns>
@@ -58,11 +58,21 @@ namespace Servy.Core.Helpers
                     }
 
                     // First measurement or invalid delta → just store sample
-                    _prevCpuTimes[pid] = new CpuSample
+                    var sample = new CpuSample
                     {
                         LastTime = now,
                         LastTotalTime = totalTime
                     };
+
+                    if(_prevCpuTimes.ContainsKey(pid))
+                    {
+                        _prevCpuTimes[pid] = sample;
+                    }
+                    else
+                    {
+                        _prevCpuTimes.Add(pid, sample);
+                    }
+
                     return 0;
                 }
             }
