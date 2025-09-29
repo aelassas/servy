@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -23,18 +24,18 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Holds previous CPU usage samples by process ID.
+        /// Stores the last recorded CPU usage sample for each process ID.
         /// </summary>
-        private static readonly Dictionary<int, CpuSample> _prevCpuTimes = new Dictionary<int, CpuSample>();
+        private static readonly ConcurrentDictionary<int, CpuSample> _prevCpuTimes = new ConcurrentDictionary<int, CpuSample>();
 
         /// <summary>
         /// Gets the CPU usage percentage of a process over the interval since the last sample.
-        /// This method should be called repeatedly (e.g., by a background timer every 4 seconds).
+        /// Should be called repeatedly (e.g., by a background timer every 4 seconds).
         /// </summary>
         /// <param name="pid">The process ID.</param>
-        /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if unavailable.</returns>
+        /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if not available.</returns>
         [ExcludeFromCodeCoverage]
-        public static double GetCPUUsage(int pid)
+        public static double GetCpuUsage(int pid)
         {
             try
             {
@@ -64,19 +65,12 @@ namespace Servy.Core.Helpers
                         LastTotalTime = totalTime
                     };
 
-                    if(_prevCpuTimes.ContainsKey(pid))
-                    {
-                        _prevCpuTimes[pid] = sample;
-                    }
-                    else
-                    {
-                        _prevCpuTimes.Add(pid, sample);
-                    }
+                    _prevCpuTimes[pid] = sample;
 
                     return 0;
                 }
             }
-            catch
+            catch (Exception)
             {
                 return 0;
             }
@@ -91,7 +85,7 @@ namespace Servy.Core.Helpers
         /// Returns <c>0</c> if the process cannot be accessed.
         /// </returns>
         [ExcludeFromCodeCoverage]
-        public static long GetRAMUsage(int pid)
+        public static long GetRamUsage(int pid)
         {
             try
             {
@@ -101,7 +95,7 @@ namespace Servy.Core.Helpers
                     return process.PrivateMemorySize64;
                 }
             }
-            catch
+            catch (Exception)
             {
                 return 0;
             }
@@ -128,7 +122,7 @@ namespace Servy.Core.Helpers
         /// <item><description>1.636 → "1.6%"</description></item>
         /// </list>
         /// </returns>
-        public static string FormatCPUUsage(double cpuUsage)
+        public static string FormatCpuUsage(double cpuUsage)
         {
             double rounded = Math.Round(cpuUsage, 1, MidpointRounding.AwayFromZero);
             string formatted = rounded == 0
@@ -153,7 +147,7 @@ namespace Servy.Core.Helpers
         /// <item><description>1073741824 → "1.0 GB"</description></item>
         /// </list>
         /// </returns>
-        public static string FormatRAMUsage(long ramUsage)
+        public static string FormatRamUsage(long ramUsage)
         {
             const double KB = 1024.0;
             const double MB = KB * 1024.0;
