@@ -18,7 +18,7 @@
 * [ ] Add `Certificates` tab to manage service-specific certificates
 * [x] Add package manager support (WinGet, Chocolatey, Scoop) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
-* [ ] Servy Manager App for managing services installed by Servy
+* [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
   * [x] Start, stop, restart, and uninstall services
