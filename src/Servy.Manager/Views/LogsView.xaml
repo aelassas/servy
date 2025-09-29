@@ -71,6 +71,16 @@
           ScrollViewer.CanContentScroll="True"
           VirtualizingStackPanel.ScrollUnit="Pixel"
           >
+            <DataGrid.Resources>
+                <!-- Background of selected row -->
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
+
+                <!-- Text color when row is selected -->
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
+            </DataGrid.Resources>
+            
             <!-- Apply height to all rows -->
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
