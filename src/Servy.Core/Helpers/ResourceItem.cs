@@ -3,7 +3,7 @@
 namespace Servy.Core.Helpers
 {
     /// <summary>
-    /// Represents an embedded DLL resource and its associated metadata 
+    /// Represents an embedded resource and its associated metadata 
     /// used for copying from the assembly to the target directory.
     /// </summary>
     [ExcludeFromCodeCoverage]
