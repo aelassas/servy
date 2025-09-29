@@ -33,7 +33,7 @@ namespace Servy.Manager.Converters
             if (!cpuUsage.HasValue)
                 return UnknownCpuUsage;
 
-            return ProcessHelper.FormatCPUUsage(cpuUsage.Value);
+            return ProcessHelper.FormatCpuUsage(cpuUsage.Value);
         }
 
         /// <summary>

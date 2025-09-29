@@ -33,7 +33,7 @@ namespace Servy.Manager.Converters
             if (!ramUsage.HasValue)
                 return UnknownRamUsage;
 
-            return ProcessHelper.FormatRAMUsage(ramUsage.Value);
+            return ProcessHelper.FormatRamUsage(ramUsage.Value);
         }
 
         /// <summary>

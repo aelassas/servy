@@ -219,12 +219,16 @@ namespace Servy.Infrastructure.Data
             var sql = @"
                 SELECT *
                 FROM Services
-                WHERE LOWER(Name) LIKE @Pattern
-                    OR LOWER(Description) LIKE @Pattern
+                WHERE LOWER(Name) LIKE @Pattern ESCAPE '\'
+                    OR LOWER(Description) LIKE @Pattern ESCAPE '\'
                 ORDER BY Name ASC;";
 
-            var pattern = $"%{keyword?.Trim().ToLower()}%";
+            var escapedKeyword = keyword?.Trim().ToLower()
+                .Replace(@"\", @"\\")  // escape backslashes first
+                .Replace("%", @"\%")
+                .Replace("_", @"\_");
 
+            var pattern = $"%{escapedKeyword}%";
 
             var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
