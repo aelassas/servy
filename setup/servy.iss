@@ -15,6 +15,8 @@
 #define ManagerAppName "Servy Manager"
 #define ManagerAppExeName "Servy.Manager.exe"
 
+#define CliExeName "servy-cli.exe"
+
 [Setup]
 PrivilegesRequired=admin
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -75,7 +77,7 @@ Source: "..\src\Servy.Manager\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flag
 Source: "..\src\Servy.Manager\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
 
 ; cli
-Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"servy-cli.exe"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"{#CliExeName}"; Flags: ignoreversion
 ; Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src\Servy.CLI\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
@@ -118,8 +120,9 @@ begin
 end;
 
 [UninstallRun]
-Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
-Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
+Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
+Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\x86"
