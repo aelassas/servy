@@ -29,13 +29,15 @@
 -->
 
 <p align="center">
-  <img src="https://servy-win.github.io/servy.png?v=13" alt="Servy" />
+  <img src="https://servy-win.github.io/servy.png?v=13" alt="Servy">
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
-    <img src="https://img.shields.io/badge/Watch%20Demo-FF0033?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
+    <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube">
   </a>
 </p>
+
+
 
 # Servy
 <!--
