@@ -68,7 +68,7 @@ choco install -y servy
 
 **Scoop**
 ```
-scoop bucket add aelassas https://github.com/aelassas/scoop-bucket
+scoop bucket add extras
 scoop install servy
 ```
 
