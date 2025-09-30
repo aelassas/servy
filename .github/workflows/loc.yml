@@ -1,5 +1,8 @@
-on: [push]
 name: loc
+
+on: 
+  push:
+  workflow_dispatch:
 
 jobs:
   loc_job:
@@ -7,7 +10,7 @@ jobs:
     name: Run
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create the badge
         uses: shadowmoose/GHA-LoC-Badge@1.0.0
