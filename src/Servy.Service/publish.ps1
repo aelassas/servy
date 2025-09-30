@@ -57,7 +57,8 @@ Write-Host "Single File      : $SingleFile"
     /p:PublishSingleFile=$SingleFile `
     /p:IncludeAllContentForSelfExtract=true `
     /p:PublishTrimmed=false `
-    -o $PublishDir
+    -o $PublishDir `
+    /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet publish failed."

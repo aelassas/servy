@@ -37,7 +37,8 @@ dotnet publish $projectPath `
     -p:PublishTrimmed=false `
     -p:Version=$version `
     -f $tfm `
-    -o $publishDir
+    -o $publishDir `
+    /p:DeleteExistingFiles=true
 
 Write-Host "Publish completed for $projectName."
 

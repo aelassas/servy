@@ -50,7 +50,8 @@ Write-Host "Self-contained: true"
     --self-contained true `
     /p:PublishSingleFile=true `
     /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false
+    /p:PublishTrimmed=false `
+    /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet publish failed."

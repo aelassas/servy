@@ -67,7 +67,8 @@ Write-Host "Single File      : false"
     -p:ErrorOnDuplicatePublishOutputFiles=true `
     -p:GeneratePackageOnBuild=false `
     -p:UseAppHost=true `
-    -p:Clean=true
+    -p:Clean=true `
+    /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet publish failed."
