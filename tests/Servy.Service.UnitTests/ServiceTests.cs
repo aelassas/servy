@@ -137,11 +137,11 @@ namespace Servy.Service.UnitTests
 
             // Assert
             _mockLogger.Verify(l => l.Error(
-                It.Is<string>(s => s.Contains("Invalid stdout file path")),
+                It.Is<string>(s => s.Contains("Invalid log file path")),
                 It.IsAny<Exception>()
                 ), Times.Once);
             _mockLogger.Verify(l => l.Error(
-               It.Is<string>(s => s.Contains("Invalid stderr file path")),
+               It.Is<string>(s => s.Contains("Invalid log file path")),
                It.IsAny<Exception>()
              ), Times.Never);
         }
@@ -335,8 +335,8 @@ namespace Servy.Service.UnitTests
             // Assert
             mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>()), Times.Never);
 
-            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid stdout file path")), null), Times.Once);
-            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid stderr file path")), null), Times.Once);
+            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Once);
+            mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Once);
 
             // Cleanup helper override
             HelperOverride.IsValidPathOverride = null;
