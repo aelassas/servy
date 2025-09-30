@@ -532,29 +532,54 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Creates and assigns rotating stream writers for standard output and error
-        /// based on the given <see cref="StartOptions"/>.
-        /// Logs errors if paths are invalid.
+        /// Initializes the stdout and stderr log writers based on the provided start options.
         /// </summary>
-        /// <param name="options">The start options containing stdout and stderr paths.</param>
+        /// <param name="options">The start options containing paths and rotation settings for stdout and stderr.</param>
+        /// <remarks>
+        /// - If <see cref="StartOptions.StdOutPath"/> is valid, a <see cref="RotatingStreamWriter"/> is created for stdout.
+        /// - If <see cref="StartOptions.StdErrPath"/> is provided:
+        ///     - If it equals <see cref="StartOptions.StdOutPath"/> (case-insensitive), stderr shares the stdout writer.
+        ///     - Otherwise, a separate <see cref="RotatingStreamWriter"/> is created for stderr.
+        /// - If <see cref="StdErrPath"/> is null, empty, or whitespace, no stderr writer is created.
+        /// </remarks>
         private void HandleLogWriters(StartOptions options)
         {
-            if (!string.IsNullOrWhiteSpace(options.StdOutPath) && _pathValidator.IsValidPath(options.StdOutPath))
+            /// <summary>
+            /// Helper method to create a rotating writer if the path is valid.
+            /// Logs an error if the path is invalid or null/whitespace.
+            /// </summary>
+            /// <param name="path">The file path for the log writer.</param>
+            /// <returns>A <see cref="IStreamWriter"/> instance or null if the path is invalid.</returns>
+            IStreamWriter CreateWriter(string path)
             {
-                _stdoutWriter = _streamWriterFactory.Create(options.StdOutPath, options.RotationSizeInBytes);
-            }
-            else if (!string.IsNullOrWhiteSpace(options.StdOutPath))
-            {
-                _logger?.Error($"Invalid stdout file path: {options.StdOutPath}");
+                if (string.IsNullOrWhiteSpace(path))
+                    return null;
+
+                if (!_pathValidator.IsValidPath(path))
+                {
+                    _logger?.Error($"Invalid log file path: {path}");
+                    return null;
+                }
+
+                return _streamWriterFactory.Create(path, options.RotationSizeInBytes);
             }
 
-            if (!string.IsNullOrWhiteSpace(options.StdErrPath) && _pathValidator.IsValidPath(options.StdErrPath))
+            // Always create stdout writer if path is valid
+            _stdoutWriter = CreateWriter(options.StdOutPath);
+
+            // Only create stderr writer if a path is provided
+            if (!string.IsNullOrWhiteSpace(options.StdErrPath))
             {
-                _stderrWriter = _streamWriterFactory.Create(options.StdErrPath, options.RotationSizeInBytes);
-            }
-            else if (!string.IsNullOrWhiteSpace(options.StdErrPath))
-            {
-                _logger?.Error($"Invalid stderr file path: {options.StdErrPath}");
+                // If stderr path equals stdout path (explicitly), use the same writer
+                if (_stdoutWriter != null &&
+                    options.StdErrPath.Equals(options.StdOutPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    _stderrWriter = _stdoutWriter;
+                }
+                else
+                {
+                    _stderrWriter = CreateWriter(options.StdErrPath);
+                }
             }
         }
 
