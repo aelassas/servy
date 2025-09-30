@@ -13,4 +13,4 @@ jobs:
         with:
           identifier: aelassas.Servy
           token: ${{ secrets.WINGET_TOKEN }}
-          installers-regex: "servy-.*-net8.0-x64-installer\\.exe$"
+          installers-regex: "servy-.*-net[0-9]+\\.[0-9]+-x64-installer\\.exe$"
