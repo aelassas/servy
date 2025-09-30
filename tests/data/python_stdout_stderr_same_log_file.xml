@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>PyStdoutStderrSameLogFile</Name>
+  <Description>Write stdout and stderr logs to same file with rotation</Description>
+  <ExecutablePath>C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe</ExecutablePath>
+  <Parameters>-u "E:\dev\servy\src\tests\stdout-stderr.py"</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\python_stdout_stderr.txt</StdoutPath>
+  <StderrPath>E:\dev\servy\python_stdout_stderr.txt</StderrPath>
+  <EnableRotation>true</EnableRotation>
+  <RotationSize>3</RotationSize>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+</ServiceDto>
