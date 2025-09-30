@@ -12,6 +12,8 @@ Fix encoding:
 ```
 scoop update
 scoop bucket add aelassas https://github.com/aelassas/scoop-bucket
+scoop bucket add extras
+scoop search servy
 scoop install servy
 scoop uninstall servy
 ```
