@@ -15,6 +15,7 @@
 #define ManagerAppName "Servy Manager"
 #define ManagerAppExeName "Servy.Manager.exe"
 
+#define CliExeName "servy-cli.exe"
 
 [Setup]
 PrivilegesRequired=admin
@@ -67,7 +68,7 @@ Source: "..\src\Servy\bin\Release\net8.0-windows\win-x64\publish\{#MyAppExeName}
 ; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "servy-cli.exe"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\net8.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
@@ -115,8 +116,9 @@ begin
 end;
 
 [UninstallRun]
-Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
-Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopApp
+Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
+Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
 
 [UninstallDelete]
 ; Type: filesandordirs; Name: "{app}\taskschd"
