@@ -148,3 +148,12 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 ## License
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
+
+## Acknowledgements
+
+This project is supported by:
+
+<a href="https://www.jetbrains.com/community/opensource/">
+  <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.png"/>
+</a>
+
