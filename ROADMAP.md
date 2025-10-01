@@ -1,7 +1,8 @@
 ## Roadmap
 
-* [x] Windows Service creation via GUI (Servy Configuration App)
+* [x] Windows Service creation via GUI
 * [x] Logging stdout/stderr with size-based rotation
+* [x] Allow logging of stdout/stderr to the same file with size-based rotation ([#14](https://github.com/aelassas/servy/issues/14))
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
 * [x] CLI and PowerShell module for full scripting and automated deployments
@@ -9,6 +10,7 @@
 * [x] Support environment variable expansion ([#6](https://github.com/aelassas/servy/issues/6))
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
+* [x] Add support for DOMAIN\gMSA$ Group Managed Service Accounts
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
 * [x] Add support for post-launch script execution after the process starts successfully
 * [x] Service status query command in CLI
