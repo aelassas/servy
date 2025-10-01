@@ -12,7 +12,7 @@
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
-    <img src="https://img.shields.io/badge/Watch%20Demo-FF0033?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
+    <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
   </a>
 </p>
 
@@ -45,8 +45,8 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 ## Features
 
 * Clean, simple UI
-* Monitor and manage all installed services in real time with Servy Manager
-* Track CPU and RAM usage of installed services in real time
+* Monitor and manage all installed services with Servy Manager
+* Real-time CPU and RAM usage tracking for installed services
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
