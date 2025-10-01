@@ -98,8 +98,8 @@ scoop install servy
 ## Features
 
 * Clean, simple UI
-* Monitor and manage all installed services in real time with Servy Manager
-* Track CPU and RAM usage of installed services in real time
+* Monitor and manage all installed services with Servy Manager
+* Real-time CPU and RAM usage tracking for installed services
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
@@ -141,6 +141,6 @@ Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
 This project is supported by:
 
 <a href="https://www.jetbrains.com/community/opensource/">
-  <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.png"/>
+  <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg" width="52" height="52">
 </a>
 
