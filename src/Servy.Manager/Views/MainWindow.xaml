@@ -175,7 +175,7 @@
                             </DataGridTemplateColumn>
 
                             <!--Name-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" Width="2*" MinWidth="100" CanUserReorder="False" SortMemberPath="Name">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" MinWidth="100" CanUserReorder="False" SortMemberPath="Name">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Name}"
@@ -190,7 +190,7 @@
                             </DataGridTemplateColumn>
 
                             <!--Description-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" Width="3*" MinWidth="160" CanUserReorder="False" SortMemberPath="Description">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" Width="*" MinWidth="160" CanUserReorder="False" SortMemberPath="Description">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Description}"
@@ -205,7 +205,7 @@
                             </DataGridTemplateColumn>
 
                             <!--Status-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="Status">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}" MinWidth="80" CanUserReorder="False" SortMemberPath="Status">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Status, Converter={StaticResource StatusConverter}}"
@@ -217,7 +217,7 @@
                             </DataGridTemplateColumn>
 
                             <!--Startup Type-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="StartupType">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" MinWidth="80" CanUserReorder="False" SortMemberPath="StartupType">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}"
@@ -229,7 +229,7 @@
                             </DataGridTemplateColumn>
 
                             <!--User Session-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" Width="*" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding UserSession}"
