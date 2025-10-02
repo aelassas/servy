@@ -28,16 +28,15 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
 -->
 
+
 <p align="center">
-  <img src="https://servy-win.github.io/servy.webp?v=1" alt="Servy">
+  <img src="https://servy-win.github.io/servy-tiny.png?v=1" alt="Servy">
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
     <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube">
   </a>
 </p>
-
-
 
 # Servy
 <!--
