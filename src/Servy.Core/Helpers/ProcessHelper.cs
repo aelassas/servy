@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -17,6 +14,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Stores the last CPU measurement for a process.
         /// </summary>
+        [ExcludeFromCodeCoverage]
         private class CpuSample
         {
             public DateTime LastTime;
@@ -24,9 +22,18 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Stores the last recorded CPU usage sample for each process ID.
+        /// Provides a storage container for CPU usage samples.
+        /// This class holds the last recorded CPU usage values for each process ID
+        /// and is excluded from code coverage because it only acts as an internal cache.
         /// </summary>
-        private static readonly ConcurrentDictionary<int, CpuSample> _prevCpuTimes = new ConcurrentDictionary<int, CpuSample>();
+        [ExcludeFromCodeCoverage]
+        private static class CpuTimesStore
+        {
+            /// <summary>
+            /// Stores the last recorded CPU usage sample for each process ID.
+            /// </summary>
+            public static readonly ConcurrentDictionary<int, CpuSample> PrevCpuTimes = new ConcurrentDictionary<int, CpuSample>();
+        }
 
         /// <summary>
         /// Gets the CPU usage percentage of a process over the interval since the last sample.
@@ -45,7 +52,7 @@ namespace Servy.Core.Helpers
                     var totalTime = process.TotalProcessorTime;
 
                     CpuSample? prev;
-                    if (_prevCpuTimes.TryGetValue(pid, out prev) && prev != null)
+                    if (CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out prev) && prev != null)
                     {
                         var deltaTime = (now - prev.LastTime).TotalMilliseconds;
                         var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
@@ -53,7 +60,7 @@ namespace Servy.Core.Helpers
                         if (deltaTime > 0)
                         {
                             double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
-                            _prevCpuTimes[pid] = new CpuSample { LastTime = now, LastTotalTime = totalTime };
+                            CpuTimesStore.PrevCpuTimes[pid] = new CpuSample { LastTime = now, LastTotalTime = totalTime };
                             return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
                         }
                     }
@@ -65,7 +72,7 @@ namespace Servy.Core.Helpers
                         LastTotalTime = totalTime
                     };
 
-                    _prevCpuTimes[pid] = sample;
+                    CpuTimesStore.PrevCpuTimes[pid] = sample;
 
                     return 0;
                 }
