@@ -8,7 +8,7 @@
 -->
 
 <p align="center">
-  <img src="https://servy-win.github.io/servy.webp?v=1" alt="Servy">
+  <img src="https://servy-win.github.io/servy-tiny.png?v=1" alt="Servy">
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
