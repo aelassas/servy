@@ -16,8 +16,6 @@
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
-* [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
-* [ ] Add `Certificates` tab to manage service-specific certificates
 * [x] Add package manager support (WinGet, Chocolatey, Scoop) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
 * [x] Servy Manager App for managing services installed by Servy
@@ -37,5 +35,7 @@
   * [x] Add CPU and RAM monitoring in real time for services
 
 <!--     
+* [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
+* [ ] Add `Certificates` tab to manage service-specific certificates
   * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
 -->  
