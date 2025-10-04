@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
 # === CONFIGURATION ===
-$version      = "1.9"
+$version      = "2.0"
 $AppName      = "servy"
 $BuildConfig  = "Release"
 $Platform     = "x64"
