@@ -71,7 +71,7 @@ $cliExe      = Join-Path $CliDir     "bin\$buildConfiguration\$tfm\$runtime\publ
 $managerExe  = Join-Path $ManagerDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.Manager.exe"
 
 # Package folder
-$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64-portable"
+$packageFolder = Join-Path $ScriptDir "servy-$version-x64-portable"
 $outputZip     = "$packageFolder.zip"
 
 # Clean old artifacts

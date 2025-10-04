@@ -25,7 +25,7 @@ $packageName    = 'servy'
 $toolsDir       = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $installerType  = 'exe'
 # Use local file for testing
-$installerPath  = 'E:\dev\servy\src\setup\servy-1.0-net8.0-x64-installer.exe'
+$installerPath  = 'E:\dev\servy\src\setup\servy-1.9-x64-installer.exe'
 $silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
 
 Install-ChocolateyPackage $packageName $installerType $silentArgs $installerPath

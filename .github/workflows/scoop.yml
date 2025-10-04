@@ -56,15 +56,15 @@ jobs:
         run: |
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
           New-Item -ItemType Directory -Force -Path $InstallerDir
-          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe"
+          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
-          Invoke-WebRequest -Uri $url -OutFile "$InstallerDir\servy-${env:VERSION}-net8.0-x64-installer.exe"
+          Invoke-WebRequest -Uri $url -OutFile "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
 
       - name: Compute SHA256
         shell: pwsh
         run: |
           $InstallerDir = "$env:GITHUB_WORKSPACE\_installer"
-          $InstallerPath = "$InstallerDir\servy-${env:VERSION}-net8.0-x64-installer.exe"
+          $InstallerPath = "$InstallerDir\servy-${env:VERSION}-x64-installer.exe"
           $HASH = Get-FileHash $InstallerPath -Algorithm SHA256
           $LOWER = $HASH.Hash.ToLower()
           "HASH=$LOWER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -90,7 +90,7 @@ jobs:
           # Load and update JSON
           $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
           $jsonObj.version = $env:VERSION
-          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-net8.0-x64-installer.exe"
+          $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
           $jsonObj.architecture.'64bit'.hash = $env:HASH
           
           # Save formatted JSON
@@ -155,7 +155,7 @@ jobs:
                   license     = "MIT"
                   architecture = @{
                       '64bit' = @{
-                          url  = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-net8.0-x64-installer.exe"
+                          url  = "https://github.com/aelassas/servy/releases/download/v$($env:VERSION)/servy-$($env:VERSION)-x64-installer.exe"
                           hash = $env:HASH
                       }
                   }
@@ -171,7 +171,7 @@ jobs:
                   autoupdate = @{
                       architecture = @{
                           '64bit' = @{
-                              url = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-net8.0-x64-installer.exe"
+                              url = "https://github.com/aelassas/servy/releases/download/v`$version/servy-`$version-x64-installer.exe"
                           }
                       }
                   }
@@ -211,7 +211,7 @@ jobs:
               # Update existing manifest
               $jsonObj = Get-Content $manifestPath -Raw | ConvertFrom-Json
               $jsonObj.version = $env:VERSION
-              $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-net8.0-x64-installer.exe"
+              $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-x64-installer.exe"
               $jsonObj.architecture.'64bit'.hash = $env:HASH
               # $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
 

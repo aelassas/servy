@@ -35,7 +35,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE.txt
 OutputDir=.
-OutputBaseFilename=servy-{#MyAppVersion}-{#MyAppPlatform}-x64-installer
+OutputBaseFilename=servy-{#MyAppVersion}-x64-installer
 SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2

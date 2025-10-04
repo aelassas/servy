@@ -47,14 +47,14 @@ jobs:
       - name: Download installer
         shell: pwsh
         run: |
-          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-net8.0-x64-installer.exe"
+          $url = "https://github.com/aelassas/servy/releases/download/${env:TAG}/servy-${env:VERSION}-x64-installer.exe"
           Write-Host "Downloading Servy installer from $url"
-          Invoke-WebRequest -Uri $url -OutFile "servy-${env:VERSION}-net8.0-x64-installer.exe"
+          Invoke-WebRequest -Uri $url -OutFile "servy-${env:VERSION}-x64-installer.exe"
 
       - name: Compute SHA256
         shell: pwsh
         run: |
-          $HASH = Get-FileHash "servy-${env:VERSION}-net8.0-x64-installer.exe" -Algorithm SHA256
+          $HASH = Get-FileHash "servy-${env:VERSION}-x64-installer.exe" -Algorithm SHA256
           $UPPER = $HASH.Hash.ToUpper()
           "HASH=$UPPER" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
@@ -77,7 +77,7 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Build replacement strings
-          $urlReplacement = "`$url64 = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-net8.0-x64-installer.exe'"
+          $urlReplacement = "`$url64 = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-x64-installer.exe'"
           $checksumReplacement = "`$checksum64 = '$($env:HASH)'"
 
           Write-Host "URL: $urlReplacement"

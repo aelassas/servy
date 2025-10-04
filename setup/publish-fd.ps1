@@ -57,7 +57,7 @@ $cliBuildScript = Join-Path $ScriptDir "..\src\Servy.CLI\publish-fd.ps1"
 # -----------------------------
 # Step 4: Prepare ZIP package
 # -----------------------------
-$packageFolder = Join-Path $ScriptDir "servy-$version-$fm-x64-frameworkdependent"
+$packageFolder = Join-Path $ScriptDir "servy-$version-x64-frameworkdependent"
 $outputZip     = "$packageFolder.zip"
 
 # Cleanup old package
