@@ -33,7 +33,7 @@ namespace Servy.Service
             EnsureEventSourceExists(eventSource);
 
             // Copy service executable from embedded resources
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
+            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
             {
                 EventLog.WriteEntry(
                     eventSource,
@@ -45,7 +45,7 @@ namespace Servy.Service
 
 #if DEBUG
             // Copy debug symbols from embedded resources (only in debug builds)
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
+            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false))
             {
                 EventLog.WriteEntry(
                     eventSource,
