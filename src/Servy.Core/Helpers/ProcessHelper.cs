@@ -59,31 +59,42 @@ namespace Servy.Core.Helpers
                     var now = DateTime.UtcNow;
                     var totalTime = process.TotalProcessorTime;
 
-                    CpuSample prev;
-                    if (CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out prev) && prev != null)
+                    if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
                     {
-                        var deltaTime = (now - prev.LastTime).TotalMilliseconds;
-                        var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
-
-                        if (deltaTime > 0)
+                        // First measurement → just store sample
+                        CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
                         {
-                            double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
-                            CpuTimesStore.PrevCpuTimes[pid] = new CpuSample { LastTime = now, LastTotalTime = totalTime };
-                            return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
-                        }
+                            LastTime = now,
+                            LastTotalTime = totalTime
+                        };
+                        return 0;
                     }
 
-                    // First measurement or invalid delta → just store sample
-                    var sample = new CpuSample
+                    var deltaTime = (now - prev.LastTime).TotalMilliseconds;
+                    var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
+
+                    // Handle invalid or inconsistent samples
+                    if (deltaTime <= 0 || deltaCpu < 0)
+                        return 0;
+
+                    // Normalize CPU usage across all cores
+                    double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
+
+                    // Update stored sample
+                    CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
                     {
                         LastTime = now,
                         LastTotalTime = totalTime
                     };
 
-                    CpuTimesStore.PrevCpuTimes[pid] = sample;
-
-                    return 0;
+                    return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
                 }
+            }
+            catch (ArgumentException)
+            {
+                // Process no longer exists → remove stale entry
+                CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                return 0;
             }
             catch (Exception)
             {
