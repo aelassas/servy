@@ -17,7 +17,14 @@ namespace Servy.Core.Helpers
         [ExcludeFromCodeCoverage]
         private class CpuSample
         {
+            /// <summary>
+            /// The date and time of the last CPU measurement.
+            /// </summary>
             public DateTime LastTime;
+
+            /// <summary>
+            /// The total processor time used by the process at the last measurement.
+            /// </summary>
             public TimeSpan LastTotalTime;
         }
 
