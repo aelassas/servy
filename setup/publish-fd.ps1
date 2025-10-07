@@ -107,6 +107,8 @@ Get-ChildItem -Path $servyCliFolder -Recurse -Filter *.pdb | Remove-Item -Force
 $parentDir  = Split-Path $packageFolder -Parent
 $folderName = Split-Path $packageFolder -Leaf
 
+Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
+
 Push-Location $parentDir
 & 7z a -tzip "$outputZip" "$folderName" | Out-Null
 Pop-Location
