@@ -92,6 +92,13 @@ namespace Servy.Service.Helpers
                   $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n" +
+                  "---------------------------------\n" +
+
+                  // Post-Launch
+                  "--------Post-Launch args-------\n" +
+                  $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
+                  $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
+                  $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n" +
                   "---------------------------------\n"
               );
         }
