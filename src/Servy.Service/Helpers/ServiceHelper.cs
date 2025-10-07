@@ -95,7 +95,7 @@ namespace Servy.Service.Helpers
                   "---------------------------------\n" +
 
                   // Post-Launch
-                  "--------Post-Launch args-------\n" +
+                  "--------Post-Launch args------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
                   $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n" +
