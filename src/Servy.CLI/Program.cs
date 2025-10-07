@@ -54,11 +54,14 @@ namespace Servy.CLI
                                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));
 
                 // Load configuration from appsettings.json
-                var exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName);
-                var config = new ConfigurationBuilder()
-                    .SetBasePath(exePath!)
-                    .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true)
-                    .Build();
+                var builder = new ConfigurationBuilder();
+#if DEBUG
+                builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
+#else
+                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                       .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
+#endif
+                var config = builder.Build();
 
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
