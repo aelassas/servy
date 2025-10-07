@@ -10,6 +10,7 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using System.Diagnostics;
 using System.Reflection;
 using static Servy.CLI.Helpers.Helper;
 
@@ -52,7 +53,10 @@ namespace Servy.CLI
                 var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
                                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));
 
+                // Load configuration from appsettings.json
+                var exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName);
                 var config = new ConfigurationBuilder()
+                    .SetBasePath(exePath!)
                     .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true)
                     .Build();
 

@@ -102,7 +102,9 @@ namespace Servy.Manager
             try
             {
                 // Load configuration from appsettings.json
+                var exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName);
                 var config = new ConfigurationBuilder()
+                    .SetBasePath(exePath!)
                     .AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true)
                     .Build();
 
