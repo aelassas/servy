@@ -43,6 +43,12 @@ namespace Servy.Core.Helpers
                     : Path.Combine(AppConfig.ProgramDataPath, subfolder, targetFileName);
 #endif
 
+                var targetPathDir = Path.GetDirectoryName(targetPath);
+                if (!Directory.Exists(targetPathDir))
+                {
+                    Directory.CreateDirectory(targetPathDir);
+                }
+
                 var resourceName = string.IsNullOrEmpty(subfolder)
                     ? $"{resourceNamespace}.{fileName}.{extension}"
                     : $"{resourceNamespace}.{subfolder}.{fileName}.{extension}";
@@ -178,6 +184,12 @@ namespace Servy.Core.Helpers
                         ? Path.Combine(AppConfig.ProgramDataPath, targetFileName)
                         : Path.Combine(AppConfig.ProgramDataPath, subfolder, targetFileName);
 #endif
+
+                    var targetPathDir = Path.GetDirectoryName(targetPath);
+                    if (!Directory.Exists(targetPathDir))
+                    {
+                        Directory.CreateDirectory(targetPathDir);
+                    }
 
                     resourceItem.TagetPath = targetPath;
 
