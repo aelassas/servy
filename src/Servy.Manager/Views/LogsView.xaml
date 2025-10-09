@@ -70,6 +70,7 @@
             EnableColumnVirtualization="True"
             VirtualizingStackPanel.IsVirtualizing="True"
             VirtualizingStackPanel.VirtualizationMode="Recycling"
+            VirtualizingPanel.IsVirtualizingWhenGrouping="True"
             ScrollViewer.CanContentScroll="True"
             VirtualizingStackPanel.ScrollUnit="Pixel"
           >
