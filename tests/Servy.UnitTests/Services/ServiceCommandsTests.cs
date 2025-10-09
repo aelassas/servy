@@ -222,7 +222,7 @@ namespace Servy.UnitTests.Services
             );
 
             // Act
-            await serviceCommands.ExportXmlConfig();
+            await serviceCommands.ExportXmlConfig(string.Empty);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -249,7 +249,7 @@ namespace Servy.UnitTests.Services
             );
 
             // Act
-            await serviceCommands.ExportJsonConfig();
+            await serviceCommands.ExportJsonConfig(string.Empty);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
@@ -359,7 +359,7 @@ namespace Servy.UnitTests.Services
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
 
             // Act
-            _mockServiceCommands.Object.ExportJsonConfig();
+            _mockServiceCommands.Object.ExportJsonConfig(string.Empty);
 
             // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
