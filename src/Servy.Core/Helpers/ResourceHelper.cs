@@ -37,6 +37,12 @@ namespace Servy.Core.Helpers
                 var targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
 #endif
 
+                var targetPathDir = Path.GetDirectoryName(targetPath);
+                if (!Directory.Exists(targetPathDir))
+                {
+                    Directory.CreateDirectory(targetPathDir!);
+                }
+
                 var resourceName = resourceNamespace + "." + fileName + "." + extension;
 
                 var shouldCopy = true;

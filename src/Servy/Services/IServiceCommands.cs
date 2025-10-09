@@ -116,13 +116,14 @@ namespace Servy.Services
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.
         /// </summary>
-        /// <param name="modelToDtoMapper">MainViewModel to ServiceDto mapper.</param>
-        Task ExportXmlConfig();
+        /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        Task ExportXmlConfig(string confirmPassword);
 
         /// <summary>
         /// Exports the service configuration to an JSON file selected by the user.
         /// </summary>
-        Task ExportJsonConfig();
+        /// <param name="confirmPassword">The confirmation of the service account password.</param>
+        Task ExportJsonConfig(string confirmPassword);
 
         /// <summary>
         /// Opens a file dialog to select an XML configuration file for a service,

@@ -994,7 +994,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportXmlConfig(object parameter)
         {
-            await ServiceCommands.ExportXmlConfig();
+            await ServiceCommands.ExportXmlConfig(ConfirmPassword);
         }
 
         /// <summary>
@@ -1002,7 +1002,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportJsonConfig(object parameter)
         {
-            await ServiceCommands.ExportJsonConfig();
+            await ServiceCommands.ExportJsonConfig(ConfirmPassword);
         }
 
         /// <summary>

@@ -380,7 +380,7 @@ namespace Servy.Services
         }
 
         ///<inheritdoc/>
-        public async Task ExportXmlConfig()
+        public async Task ExportXmlConfig(string confirmPassword)
         {
             try
             {
@@ -394,7 +394,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword)))
                 {
                     return;
                 }
@@ -412,7 +412,7 @@ namespace Servy.Services
         }
 
         ///<inheritdoc/>
-        public async Task ExportJsonConfig()
+        public async Task ExportJsonConfig(string confirmPassword)
         {
             try
             {
@@ -426,7 +426,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false)))
+                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword)))
                 {
                     return;
                 }
