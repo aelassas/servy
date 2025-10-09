@@ -10,6 +10,10 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.ServiceProcess;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
 
 namespace Servy.Service.Helpers
 {
@@ -64,6 +68,7 @@ namespace Servy.Service.Helpers
 
             logger?.Info(
                   $"[Startup Parameters]\n" +
+                  "--------Main-------------------\n" +
                   $"- serviceName: {options.ServiceName}\n" +
                   $"- realExePath: {options.ExecutablePath}\n" +
                   $"- realArgs: {options.ExecutableArgs}\n" +
@@ -71,18 +76,21 @@ namespace Servy.Service.Helpers
                   $"- priority: {options.Priority}\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
                   $"- stderrFilePath: {options.StdErrPath}\n" +
-                  $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
+                  $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n\n" +
+
+                  "--------Recovery---------------\n" +
                   $"- heartbeatInterval: {options.HeartbeatInterval}\n" +
                   $"- maxFailedChecks: {options.MaxFailedChecks}\n" +
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n" +
-                  $"- failureProgramArgs: {options.FailureProgramArgs}\n" +
-                  $"- environmentVariables: {envVarsFormatted}" +
+                  $"- failureProgramArgs: {options.FailureProgramArgs}\n\n" +
 
-                  // Pre-Launch
-                  "\n--------Pre-Launch args--------\n" +
+                  "--------Advanced---------------\n" +
+                  $"- environmentVariables: {envVarsFormatted}\n\n" +
+
+                  "--------Pre-Launch args--------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
                   $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
@@ -91,15 +99,13 @@ namespace Servy.Service.Helpers
                   $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
-                  $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n" +
-                  "---------------------------------\n" +
+                  $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +
 
-                  // Post-Launch
-                  "--------Post-Launch args------\n" +
+                  "--------Post-Launch args-------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
-                  $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n" +
-                  "---------------------------------\n"
+                  $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n"
+              //"-------------------------------\n"
               );
         }
 
