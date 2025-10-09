@@ -147,7 +147,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public StartOptions? InitializeStartup(ILogger logger)
+        public StartOptions InitializeStartup(ILogger logger)
         {
             //var fullArgs = GetSanitizedArgs();
             var fullArgs = _commandLineProvider.GetArgs();
@@ -207,7 +207,7 @@ namespace Servy.Service.Helpers
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
-                var restarter = Path.Combine(dir!, "Servy.Restarter.exe");
+                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
 
                 if (!File.Exists(restarter))
                 {
