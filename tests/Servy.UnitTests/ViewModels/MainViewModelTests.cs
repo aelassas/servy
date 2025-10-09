@@ -261,13 +261,13 @@ namespace Servy.UnitTests.ViewModels
             var path = "export.xml";
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ExportXmlConfig());
+            _serviceCommandsMock.Setup(d => d.ExportXmlConfig(null));
 
             // Act
             await _viewModel.ExportXmlCommand.ExecuteAsync(null);
 
             // Assert
-            _serviceCommandsMock.Verify(m => m.ExportXmlConfig(), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportXmlConfig(null), Times.Once);
         }
 
         [Fact]
@@ -277,13 +277,13 @@ namespace Servy.UnitTests.ViewModels
             var path = "export.json";
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ExportJsonConfig());
+            _serviceCommandsMock.Setup(d => d.ExportJsonConfig(null));
 
             // Act
             await _viewModel.ExportJsonCommand.ExecuteAsync(null);
 
             // Assert
-            _serviceCommandsMock.Verify(m => m.ExportJsonConfig(), Times.Once);
+            _serviceCommandsMock.Verify(m => m.ExportJsonConfig(null), Times.Once);
         }
 
         [Fact]
