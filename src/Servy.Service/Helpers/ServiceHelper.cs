@@ -10,10 +10,6 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.ServiceProcess;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
 
 namespace Servy.Service.Helpers
 {
