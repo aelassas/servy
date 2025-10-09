@@ -14,7 +14,7 @@
         <!-- Converters -->
         <converters:MessageConverter x:Key="MessageConverter"/>
     </UserControl.Resources>
-    
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <!-- Filters -->
@@ -55,21 +55,23 @@
 
         <!-- Logs Grid -->
         <DataGrid 
-          x:Name="LogsDataGrid"  
-          Grid.Row="1"
-          ItemsSource="{Binding LogsView}"
-          SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
-          SelectionMode="Single"
-          Margin="0,0,0,10"
-          AutoGenerateColumns="False"
-          CanUserAddRows="False"
-          CanUserDeleteRows="False"
-          IsReadOnly="True"
-          EnableRowVirtualization="True"
-          VirtualizingStackPanel.IsVirtualizing="True"
-          VirtualizingStackPanel.VirtualizationMode="Recycling"
-          ScrollViewer.CanContentScroll="True"
-          VirtualizingStackPanel.ScrollUnit="Pixel"
+            x:Name="LogsDataGrid"  
+            Grid.Row="1"
+            ItemsSource="{Binding LogsView, IsAsync=True}"
+            SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
+            SelectionMode="Single"
+            Margin="0,0,0,10"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeRows="False"
+            IsReadOnly="True"
+            EnableRowVirtualization="True"
+            EnableColumnVirtualization="True"
+            VirtualizingStackPanel.IsVirtualizing="True"
+            VirtualizingStackPanel.VirtualizationMode="Recycling"
+            ScrollViewer.CanContentScroll="True"
+            VirtualizingStackPanel.ScrollUnit="Pixel"
           >
             <DataGrid.Resources>
                 <!-- Background of selected row -->
@@ -80,14 +82,14 @@
                 <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
                 <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
             </DataGrid.Resources>
-            
+
             <!-- Apply height to all rows -->
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Setter Property="Height" Value="26"/>
                 </Style>
             </DataGrid.RowStyle>
-            
+
             <DataGrid.Columns>
                 <!--Time-->
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Time}" Width="180" MinWidth="180" CanUserReorder="False" CanUserResize="False" SortMemberPath="Time">
@@ -97,7 +99,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
+
                 <!-- Level column with icon and text -->
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Level}" Width="120" MinWidth="120" CanUserReorder="False" CanUserResize="False" SortMemberPath="Level">
                     <DataGridTemplateColumn.CellTemplate>
@@ -110,7 +112,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100"/>-->
+                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100" CanUserReorder="False"  CanUserResize="False"/>-->
 
                 <!--Message-->
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*" MinWidth="300" CanUserReorder="False"  CanUserResize="False">
@@ -136,7 +138,7 @@
               Background="Gray"
               ShowsPreview="True"
               ResizeBehavior="PreviousAndNext"/>
-        
+
         <!-- Full Event Description (read-only, wrapped) -->
         <TextBox Grid.Row="3"
              Text="{Binding SelectedLogMessage}"
