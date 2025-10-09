@@ -55,21 +55,23 @@
 
         <!-- Logs Grid -->
         <DataGrid 
-          x:Name="LogsDataGrid"  
-          Grid.Row="1"
-          ItemsSource="{Binding LogsView}"
-          SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
-          SelectionMode="Single"
-          Margin="0,0,0,10"
-          AutoGenerateColumns="False"
-          CanUserAddRows="False"
-          CanUserDeleteRows="False"
-          IsReadOnly="True"
-          EnableRowVirtualization="True"
-          VirtualizingStackPanel.IsVirtualizing="True"
-          VirtualizingStackPanel.VirtualizationMode="Recycling"
-          ScrollViewer.CanContentScroll="True"
-          VirtualizingStackPanel.ScrollUnit="Pixel"
+            x:Name="LogsDataGrid"  
+            Grid.Row="1"
+            ItemsSource="{Binding LogsView, IsAsync=True}"
+            SelectedItem="{Binding SelectedLog, Mode=TwoWay}"
+            SelectionMode="Single"
+            Margin="0,0,0,10"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeRows="False"
+            IsReadOnly="True"
+            EnableRowVirtualization="True"
+            EnableColumnVirtualization="True"
+            VirtualizingStackPanel.IsVirtualizing="True"
+            VirtualizingStackPanel.VirtualizationMode="Recycling"
+            ScrollViewer.CanContentScroll="True"
+            VirtualizingStackPanel.ScrollUnit="Pixel"
           >
             <DataGrid.Resources>
                 <!-- Background of selected row -->
@@ -110,7 +112,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100"/>-->
+                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100" CanUserReorder="False"  CanUserResize="False"/>-->
 
                 <!--Message-->
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*" MinWidth="300" CanUserReorder="False"  CanUserResize="False">

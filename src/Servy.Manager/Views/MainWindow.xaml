@@ -103,19 +103,20 @@
                     <DataGrid 
                         x:Name="ServicesDataGrid"
                         Grid.Row="1"
-                        ItemsSource="{Binding ServicesView}"
+                        ItemsSource="{Binding ServicesView, IsAsync=True}"
                         VirtualizingStackPanel.IsVirtualizing="True"
                         VirtualizingStackPanel.VirtualizationMode="Recycling"
-                        VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                        ScrollViewer.CanContentScroll="True"
+                        VirtualizingStackPanel.ScrollUnit="Pixel"
                         EnableRowVirtualization="True"
                         EnableColumnVirtualization="True"
                         AutoGenerateColumns="False"
                         CanUserAddRows="False"
                         CanUserDeleteRows="False"
+                        CanUserResizeRows="False"
                         IsReadOnly="True"
                         SelectionUnit="FullRow"
                         SelectionMode="Extended"
-                        RowHeight="32"
                         >
                         <DataGrid.Resources>
                             <!-- Background of selected row -->
@@ -132,8 +133,12 @@
                                 <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
+                                <!-- Apply height to all rows -->
+                                <Setter Property="Height" Value="32"/>
+
                                 <!-- default background -->
                                 <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
