@@ -13,9 +13,9 @@
     <AssemblyDescription>Shared components, services and WPF utilities</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.UI</Product>
-    <Version>2.1.0</Version>
-    <FileVersion>2.1.0.0</FileVersion>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <Version>2.2.0</Version>
+    <FileVersion>2.2.0.0</FileVersion>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
