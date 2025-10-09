@@ -4,7 +4,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
-using Servy.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -997,7 +996,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportXmlConfig(object parameter)
         {
-            await ServiceCommands.ExportXmlConfig();
+            await ServiceCommands.ExportXmlConfig(ConfirmPassword);
         }
 
         /// <summary>
@@ -1005,7 +1004,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task ExportJsonConfig(object parameter)
         {
-            await ServiceCommands.ExportJsonConfig();
+            await ServiceCommands.ExportJsonConfig(ConfirmPassword);
         }
 
         /// <summary>
