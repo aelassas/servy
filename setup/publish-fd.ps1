@@ -109,6 +109,9 @@ $folderName = Split-Path $packageFolder -Leaf
 
 Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
 
+Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$packageFolder" -Force
+Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
+
 Push-Location $parentDir
 & 7z a -tzip "$outputZip" "$folderName" | Out-Null
 Pop-Location
