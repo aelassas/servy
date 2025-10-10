@@ -122,7 +122,12 @@ Remove-FileOrFolder -path $OutputZip
 
 # create zib bundle
 Write-Host "Creating zip package $OutputZip..."
+
 Copy-Item -Path "taskschd" -Destination "$PackageFolder" -Recurse -Force
+
+Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$PackageFolder" -Force
+Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$PackageFolder" -Force
+
 $ZipArgs = @("a", "-tzip", $OutputZip, "$PackageFolder\*")
 $Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
 if ($Process.ExitCode -ne 0) {
