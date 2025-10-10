@@ -143,10 +143,10 @@ namespace Servy.Service
             _options = null;
 
             // Load configuration from appsettings.json
-            var builder = new ConfigurationBuilder();
-            builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
-                   .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-            var config = builder.Build();
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
 
             var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
             var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
