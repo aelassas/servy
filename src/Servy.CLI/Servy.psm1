@@ -296,7 +296,9 @@ function Install-ServyService {
 
   $argsList = Add-Arg $argsList "--description" $Description
   $argsList = Add-Arg $argsList "--startupDir" $StartupDir
-  $argsList = Add-Arg $argsList "--params" $Params
+  if ($null -ne $Params -and $Params -ne "") {
+    $argsList += "--params=`"$Params`""
+  }
   $argsList = Add-Arg $argsList "--startupType" $StartupType
   $argsList = Add-Arg $argsList "--priority" $Priority
   $argsList = Add-Arg $argsList "--stdout" $Stdout
