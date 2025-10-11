@@ -40,6 +40,25 @@
 
 $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
 
+<#
+.SYNOPSIS
+    Checks if the Servy CLI executable exists at the configured path.
+
+.DESCRIPTION
+    This helper function validates that the Servy CLI is present at the path
+    specified by $script:ServyCliPath. If the file does not exist, it throws
+    an error. This prevents repeated boilerplate checks in every Servy function.
+
+.EXAMPLE
+    Test-ServyCliPath
+    # Throws an error if Servy CLI is not found, otherwise continues silently.
+#>
+function Test-ServyCliPath {
+    if (-not (Test-Path $script:ServyCliPath)) {
+        throw "Servy CLI not found at path: $script:ServyCliPath"
+    }
+}
+
 function Show-ServyVersion {
     <#
     .SYNOPSIS
@@ -59,13 +78,21 @@ function Show-ServyVersion {
     param(
         [switch] $Quiet
     )
+ 
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    $arguments = @("--version")
+    $argsList = @("--version")
 
-    if ($Quiet) { $arguments += "--quiet" }
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to get Servy CLI version: $_"
@@ -93,17 +120,70 @@ function Show-ServyHelp {
         [switch] $Quiet
     )
 
-    $arguments = @("--help")
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    if ($Quiet) { $arguments += "--quiet" }
+    $argsList = @("--help")
+
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to display Servy CLI help: $_"
         exit 1
     }
+}
+
+function Add-Arg {
+    <#
+    .SYNOPSIS
+        Adds a key-value argument to a list of command-line arguments.
+
+    .DESCRIPTION
+        This helper function appends a command-line argument in the form:
+            key="value"
+        to an existing array of arguments, but only if the value is not null or empty.
+        Useful for building CLI argument lists dynamically.
+
+    .PARAMETER list
+        The existing array of arguments to which the new argument will be added.
+
+    .PARAMETER key
+        The name of the argument or option (e.g., "--startupDir").
+
+    .PARAMETER value
+        The value associated with the argument. Only added if not null or empty.
+
+    .OUTPUTS
+        Returns the updated array of arguments including the new key-value pair.
+
+    .EXAMPLE
+        $argsList = @()
+        $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
+        # Result: $argsList = '--startupDir="C:\MyApp"'
+    #>
+
+    param(
+        $list,  # Existing argument list
+        $key,   # Argument key
+        $value  # Argument value
+    )
+
+    # Only add the argument if a non-empty value is provided
+    if ($null -ne $value -and $value -ne "") {
+        # Append the argument in the form key="value"
+        $list += "$key=`"$value`""
+    }
+
+    # Return the updated argument list
+    return $list
 }
 
 function Install-ServyService {
@@ -116,7 +196,7 @@ function Install-ServyService {
         executable. This function allows configuring service name, description, process path,
         startup directory, parameters, startup type, process priority, logging, health monitoring,
         recovery actions, environment variables, dependencies, service account credentials,
-        and optional pre-launch executables.
+        and optional pre-launch and post-launch executables.
 
     .PARAMETER Quiet
         Suppress spinner and run in non-interactive mode. Optional.
@@ -217,6 +297,15 @@ function Install-ServyService {
     .PARAMETER PreLaunchIgnoreFailure
         Switch to ignore pre-launch failure and start service anyway. Optional.
 
+    .PARAMETER PostLaunchPath
+        Path to a post-launch executable or script. Optional.
+
+    .PARAMETER PostLaunchStartupDir
+        Startup directory for the post-launch executable. Optional.
+
+    .PARAMETER PostLaunchParams
+        Additional parameters for the post-launch executable. Optional.
+
     .EXAMPLE
         Install-ServyService -Name "WexflowServer" `
             -Path "C:\Program Files\dotnet\dotnet.exe" `
@@ -255,13 +344,13 @@ function Install-ServyService {
     [string] $Stdout,
     [string] $Stderr,
     [switch] $EnableRotation,
-    [string] $RotationSize,
+    [int] $RotationSize,
     [switch] $EnableHealth,
-    [string] $HeartbeatInterval,
-    [string] $MaxFailedChecks,
+    [int] $HeartbeatInterval,
+    [int] $MaxFailedChecks,
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
-    [string] $MaxRestartAttempts,
+    [int] $MaxRestartAttempts,
     [string] $FailureProgramPath,
     [string] $FailureProgramStartupDir,
     [string] $FailureProgramParams,
@@ -277,17 +366,22 @@ function Install-ServyService {
     [string] $PreLaunchEnv,
     [string] $PreLaunchStdout,
     [string] $PreLaunchStderr,
-    [string] $PreLaunchTimeout,
-    [string] $PreLaunchRetryAttempts,
-    [switch] $PreLaunchIgnoreFailure
-  )
+    [int] $PreLaunchTimeout,
+    [int] $PreLaunchRetryAttempts,
+    [switch] $PreLaunchIgnoreFailure,
 
-  function Add-Arg {
-    param($list, $key, $value)
-    if ($null -ne $value -and $value -ne "") {
-      $list += @($key, "`"$value`"")
-    }
-    return $list
+    # Post-launch
+    [string] $PostLaunchPath,
+    [string] $PostLaunchStartupDir,
+    [string] $PostLaunchParams
+  )
+  
+  try {
+      Test-ServyCliPath
+  }
+  catch {
+      Write-Error $_
+      exit 1
   }
 
   $argsList = @("install", "-n", "`"$Name`"", "-p", "`"$Path`"")
@@ -296,9 +390,7 @@ function Install-ServyService {
 
   $argsList = Add-Arg $argsList "--description" $Description
   $argsList = Add-Arg $argsList "--startupDir" $StartupDir
-  if ($null -ne $Params -and $Params -ne "") {
-    $argsList += "--params=`"$Params`""
-  }
+  $argsList = Add-Arg $argsList "--params" $Params
   $argsList = Add-Arg $argsList "--startupType" $StartupType
   $argsList = Add-Arg $argsList "--priority" $Priority
   $argsList = Add-Arg $argsList "--stdout" $Stdout
@@ -327,6 +419,10 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--preLaunchTimeout" $PreLaunchTimeout
   $argsList = Add-Arg $argsList "--preLaunchRetryAttempts" $PreLaunchRetryAttempts
   if ($PreLaunchIgnoreFailure) { $argsList += "--preLaunchIgnoreFailure" }
+
+  $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
+  $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
+  $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
 
   try {
     & $script:ServyCliPath @argsList
@@ -361,16 +457,22 @@ function Uninstall-ServyService {
     [Parameter(Mandatory = $true)]
     [string]$Name
   )
-
-  $arguments = @(
-    "uninstall"
-    "-n", "`"$Name`""
-  )
-
-  if ($Quiet) { $arguments += "--quiet" }
-
+  
   try {
-    & $script:ServyCliPath @arguments
+      Test-ServyCliPath
+  }
+  catch {
+      Write-Error $_
+      exit 1
+  }
+
+  $argsList = @("uninstall")
+  $argsList = Add-Arg $argsList "--name" $Name
+
+  if ($Quiet) { $argsList += "--quiet" }
+  
+  try {
+    & $script:ServyCliPath @argsList
   }
   catch {
     Write-Error "Failed to uninstall service '$Name': $_"
@@ -403,15 +505,21 @@ function Start-ServyService {
     [string]$Name
   )
 
-  $arguments = @(
-    "start"
-    "-n", "`"$Name`""
-  )
+  try {
+      Test-ServyCliPath
+  }
+  catch {
+      Write-Error $_
+      exit 1
+  }
 
-  if ($Quiet) { $arguments += "--quiet" }
+  $argsList = @("start")
+  $argsList = Add-Arg $argsList "--name" $Name
+
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath @arguments
+    & $script:ServyCliPath @argsList
   }
   catch {
     Write-Error "Failed to start service '$Name': $_"
@@ -443,16 +551,22 @@ function Stop-ServyService {
         [Parameter(Mandatory = $true)]
         [string]$Name
     )
+    
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
+    
+    $argsList = @("stop")
+    $argsList = Add-Arg $argsList "--name" $Name
 
-    $arguments = @(
-        "stop"
-        "-n", "`"$Name`""
-    )
-
-    if ($Quiet) { $arguments += "--quiet" }
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to stop service '$Name': $_"
@@ -485,15 +599,21 @@ function Restart-ServyService {
         [string]$Name
     )
 
-    $arguments = @(
-        "restart"
-        "-n", "`"$Name`""
-    )
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    if ($Quiet) { $arguments += "--quiet" }
+    $argsList = @("restart")
+    $argsList = Add-Arg $argsList "--name" $Name
+
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to restart service '$Name': $_"
@@ -527,15 +647,21 @@ function Get-ServyServiceStatus {
         [string]$Name
     )
 
-    $arguments = @(
-        "status"
-        "-n", "`"$Name`""
-    )
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    if ($Quiet) { $arguments += "--quiet" }
+    $argsList = @("status")
+    $argsList = Add-Arg $argsList "--name" $Name
+
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to get status of service '$Name': $_"
@@ -581,17 +707,23 @@ function Export-ServyServiceConfig {
         [string]$Path
     )
 
-    $arguments = @(
-        "export"
-        "-n", "`"$Name`""
-        "-c", "`"$ConfigFileType`""
-        "-p", "`"$Path`""
-    )
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    if ($Quiet) { $arguments += "--quiet" }
+    $argsList = @("export")
+    $argsList = Add-Arg $argsList "--name" $Name
+    $argsList = Add-Arg $argsList "--config" $ConfigFileType
+    $argsList = Add-Arg $argsList "--path" $Path
+
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to export configuration for service '$Name': $_"
@@ -631,16 +763,22 @@ function Import-ServyServiceConfig {
         [string]$Path
     )
 
-    $arguments = @(
-        "import"
-        "-c", "`"$ConfigFileType`""
-        "-p", "`"$Path`""
-    )
+    try {
+        Test-ServyCliPath
+    }
+    catch {
+        Write-Error $_
+        exit 1
+    }
 
-    if ($Quiet) { $arguments += "--quiet" }
+    $argsList = @("import")
+    $argsList = Add-Arg $argsList "--config" $ConfigFileType
+    $argsList = Add-Arg $argsList "--path" $Path
+
+    if ($Quiet) { $argsList += "--quiet" }
 
     try {
-        & $script:ServyCliPath @arguments
+        & $script:ServyCliPath @argsList
     }
     catch {
         Write-Error "Failed to import configuration from '$Path': $_"
