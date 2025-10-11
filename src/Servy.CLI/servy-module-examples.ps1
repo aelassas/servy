@@ -18,17 +18,17 @@
 
 .EXAMPLE
   # Install a new Windows service
-  Install-ServyService -Name "WexflowServer" -Path "C:\Program Files\dotnet\dotnet.exe" -StartupType "Automatic"
+  Install-ServyService -Name "DummyService" -Path "C:\Program Files\dotnet\dotnet.exe" -StartupType "Automatic"
 
 .EXAMPLE
   # Export service configuration
-  Export-ServyServiceConfig -Name "WexflowServer" -ConfigFileType "xml" -Path "C:\WexflowServer.xml"
+  Export-ServyServiceConfig -Name "DummyService" -ConfigFileType "xml" -Path "C:\DummyService.xml"
 
 .EXAMPLE
   # Start, stop, and restart a service
-  Start-ServyService -Name "WexflowServer"
-  Stop-ServyService -Name "WexflowServer"
-  Restart-ServyService -Name "WexflowServer"
+  Start-ServyService -Name "DummyService"
+  Stop-ServyService -Name "DummyService"
+  Restart-ServyService -Name "DummyService"
 #>
 
 # ----------------------------------------------------------------
@@ -51,35 +51,44 @@ Show-ServyVersion -Quiet
 # ----------------------------------------------------------------
 Install-ServyService `
   -Quiet `
-  -Name "WexflowServer" `
-  -Description "Wexflow Workflow Engine" `
-  -Path "C:\Program Files\dotnet\dotnet.exe" `
-  -StartupDir "C:\Program Files\Wexflow Server\Wexflow.Server" `
-  -Params "Wexflow.Server.dll" `
-  -StartupType "Automatic" `
+  -Name "DummyService" `
+  -Description "Dummy Service" `
+  -Path "C:\Windows\System32\notepad.exe" `
+  -StartupDir "C:\Windows\Temp" `
+  -Params "--param 2000" `
+  -StartupType "Manual" `
   -EnableHealth `
   -HeartbeatInterval 5 `
   -MaxFailedChecks 1 `
   -MaxRestartAttempts 2 `
-  -RecoveryAction RestartService
+  -RecoveryAction RestartService `
+  -FailureProgramPath "C:\Windows\System32\cmd.exe" `
+  -FailureProgramStartupDir "C:\Windows\Temp" `
+  -FailureProgramParams "/c exit 0 --param 2001" `
+  -PreLaunchPath "C:\Windows\System32\cmd.exe" `
+  -PreLaunchStartupDir "C:\Windows\Temp" `
+  -PreLaunchParams "/c exit 0 --param 2002" `
+  -PostLaunchPath "C:\Windows\System32\cmd.exe" `
+  -PostLaunchStartupDir "C:\Windows\Temp" `
+  -PostLaunchParams "/c exit 0 --param 2003"
 
 # ----------------------------------------------------------------
 # Export the service configuration to a file (XML)
 # ----------------------------------------------------------------
 Export-ServyServiceConfig `
   -Quiet `
-  -Name "WexflowServer" `
+  -Name "DummyService" `
   -ConfigFileType "xml" `
-  -Path "C:\WexflowServer.xml"
+  -Path "C:\DummyService.xml"
 
 # ----------------------------------------------------------------
 # Export the service configuration to a file (JSON)
 # ----------------------------------------------------------------
 Export-ServyServiceConfig `
   -Quiet `
-  -Name "WexflowServer" `
+  -Name "DummyService" `
   -ConfigFileType "json" `
-  -Path "C:\WexflowServer.json"
+  -Path "C:\DummyService.json"
 
 # ----------------------------------------------------------------
 # Import previously exported service configurations
@@ -87,34 +96,34 @@ Export-ServyServiceConfig `
 Import-ServyServiceConfig `
   -Quiet `
   -ConfigFileType "xml" `
-  -Path "C:\WexflowServer.xml"
+  -Path "C:\DummyService.xml"
 
 Import-ServyServiceConfig `
   -Quiet `
   -ConfigFileType "json" `
-  -Path "C:\WexflowServer.json"
+  -Path "C:\DummyService.json"
 
 # ----------------------------------------------------------------
 # Start the service
 # ----------------------------------------------------------------
-Start-ServyService -Name "WexflowServer" -Quiet
+Start-ServyService -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
 # Get the current status of the service
 # ----------------------------------------------------------------
-Get-ServyServiceStatus -Name "WexflowServer" -Quiet
+Get-ServyServiceStatus -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
 # Stop the service
 # ----------------------------------------------------------------
-Stop-ServyService -Name "WexflowServer" -Quiet
+Stop-ServyService -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
 # Restart the service
 # ----------------------------------------------------------------
-Restart-ServyService -Name "WexflowServer" -Quiet
+Restart-ServyService -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
 # Uninstall the service
 # ----------------------------------------------------------------
-Uninstall-ServyService -Name "WexflowServer" -Quiet
+Uninstall-ServyService -Name "DummyService" -Quiet
