@@ -57,6 +57,11 @@ Install-ServyService `
   -StartupDir "C:\Windows\Temp" `
   -Params "--param 2000" `
   -StartupType "Manual" `
+  -Priority "BelowNormal" `
+  -EnableRotation `
+  -RotationSize 1 `
+  -Stdout "C:\Windows\Temp\dummy-stdout.log" `
+  -Stderr "C:\Windows\Temp\dummy-stderr.log" `
   -EnableHealth `
   -HeartbeatInterval 5 `
   -MaxFailedChecks 1 `
@@ -65,9 +70,15 @@ Install-ServyService `
   -FailureProgramPath "C:\Windows\System32\cmd.exe" `
   -FailureProgramStartupDir "C:\Windows\Temp" `
   -FailureProgramParams "/c exit 0 --param 2001" `
+  -Env "var1=val1; var2=val2;" `
   -PreLaunchPath "C:\Windows\System32\cmd.exe" `
   -PreLaunchStartupDir "C:\Windows\Temp" `
   -PreLaunchParams "/c exit 0 --param 2002" `
+  -PreLaunchEnv "preVar1=val1; preVar2=val2;" `
+  -PreLaunchStdout "C:\Windows\Temp\dummy-pre-stdout.log" `
+  -PreLaunchStderr "C:\Windows\Temp\dummy-pre-stderr.log" `
+  -PreLaunchTimeout 5 `
+  -PreLaunchRetryAttempts 1 `
   -PostLaunchPath "C:\Windows\System32\cmd.exe" `
   -PostLaunchStartupDir "C:\Windows\Temp" `
   -PostLaunchParams "/c exit 0 --param 2003"
