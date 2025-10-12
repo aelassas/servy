@@ -188,7 +188,6 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
         [InlineData("KEY=\"VALUE\\\\A\"", "VALUE\\A")]
         [InlineData("KEY=VALUE\\=\\;\\\"\\\\A", "VALUE=;\"\\A")]
         [InlineData("KEY=\"VALUE\\=\\;\\\"\\\\A\"", "VALUE=;\"\\A")]
-        [InlineData("KEY=VALUE\\=\\;\\\"\\\\A", "VALUE=;\"\\A")]
         [InlineData("KEY=\"VALUE\\=\\;\\\"\\\\\\\"\"", "VALUE=;\"\\\"")]
         public void Parse_Miscellaneous(string input, string value)
         {
