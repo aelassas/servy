@@ -175,5 +175,29 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Contains("no unescaped '='", ex.Message);
         }
 
+        [Theory]
+        [InlineData("KEY=VALUE", "VALUE")]
+        [InlineData("KEY=\"VALUE\"", "VALUE")]
+        [InlineData("KEY=\"VALUE\\\\\"", "VALUE\\")]
+        [InlineData("KEY=\"VALUE\\=\"", "VALUE=")]
+        [InlineData("KEY=\"VALUE\\;\"", "VALUE;")]
+        [InlineData("KEY=\"VALUE\\\"\"", "VALUE\"")]
+        [InlineData("KEY=\"VALUE\\=A\"", "VALUE=A")]
+        [InlineData("KEY=\"VALUE\\;A\"", "VALUE;A")]
+        [InlineData("KEY=\"VALUE\\\"A\"", "VALUE\"A")]
+        [InlineData("KEY=\"VALUE\\\\A\"", "VALUE\\A")]
+        [InlineData("KEY=VALUE\\=\\;\\\"\\\\A", "VALUE=;\"\\A")]
+        [InlineData("KEY=\"VALUE\\=\\;\\\"\\\\A\"", "VALUE=;\"\\A")]
+        [InlineData("KEY=VALUE\\=\\;\\\"\\\\A", "VALUE=;\"\\A")]
+        [InlineData("KEY=\"VALUE\\=\\;\\\"\\\\\\\"\"", "VALUE=;\"\\\"")]
+        public void Parse_Miscellaneous(string input, string value)
+        {
+            var result = EnvironmentVariableParser.Parse(input);
+
+            Assert.Single(result);
+            Assert.Equal("KEY", result[0].Name);
+            Assert.Equal(value, result[0].Value);
+        }
+
     }
 }
