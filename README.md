@@ -101,7 +101,7 @@ scoop install servy
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Environment variable expansion supported in both environment variables and process parameters
-* Run services as Local System, local user, domain account, or DOMAIN\gMSA$ for Group Managed Service Accounts
+* Run services as Local System, local user, domain account, or Group Managed Service Accounts
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
