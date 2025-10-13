@@ -18,7 +18,7 @@
 
 .EXAMPLE
   # Install a new Windows service
-  Install-ServyService -Name "MyService" -Path "C:\Services\MyService.exe" -StartupType "Automatic"
+  Install-ServyService -Name "MyService" -Path "C:\Apps\MyApp\MyApp.exe" -StartupType "Automatic"
 
 .EXAMPLE
   # Export service configuration
