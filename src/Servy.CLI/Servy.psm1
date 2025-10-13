@@ -313,9 +313,9 @@ function Install-ServyService {
     .EXAMPLE
         Install-ServyService -Name "MyService" `
             -Path "C:\Services\MyService.exe" `
-            -Description "Wexflow Workflow Engine" `
-            -StartupDir "C:\Program Files\Wexflow Server\Wexflow.Server" `
-            -Params "Wexflow.Server.dll" `
+            -Description "My Service" `
+            -StartupDir "C:\Services\MyService" `
+            -Params "--port 8000" `
             -StartupType "Automatic" `
             -Priority "Normal" `
             -Stdout "C:\Logs\MyService.out.log" `
@@ -708,7 +708,7 @@ function Export-ServyServiceConfig {
         The full path of the configuration file to export. (Required)
 
     .EXAMPLE
-        Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
+        Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\MyService.json"
         # Exports the configuration of 'MyService' to a JSON file at the specified path.
     #>
   param(
@@ -769,7 +769,7 @@ function Import-ServyServiceConfig {
         The full path of the configuration file to import. (Required)
 
     .EXAMPLE
-        Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
+        Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\MyService.json"
         # Imports the configuration file into Servy's database.
     #>
   param(

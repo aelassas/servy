@@ -18,17 +18,17 @@
 
 .EXAMPLE
   # Install a new Windows service
-  Install-ServyService -Name "DummyService" -Path "C:\Program Files\dotnet\dotnet.exe" -StartupType "Automatic"
+  Install-ServyService -Name "MyService" -Path "C:\Services\MyService.exe" -StartupType "Automatic"
 
 .EXAMPLE
   # Export service configuration
-  Export-ServyServiceConfig -Name "DummyService" -ConfigFileType "xml" -Path "C:\DummyService.xml"
+  Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
 
 .EXAMPLE
   # Start, stop, and restart a service
-  Start-ServyService -Name "DummyService"
-  Stop-ServyService -Name "DummyService"
-  Restart-ServyService -Name "DummyService"
+  Start-ServyService -Name "MyService"
+  Stop-ServyService -Name "MyService"
+  Restart-ServyService -Name "MyService"
 #>
 
 # ----------------------------------------------------------------
