@@ -31,11 +31,11 @@
 
 .EXAMPLE
   # Install a new service
-  Install-ServyService -Name "WexflowServer" -Path "C:\Program Files\dotnet\dotnet.exe" -StartupType "Automatic"
+  Install-ServyService -Name "MyService" -Path "C:\Services\MyService.exe" -StartupType "Automatic"
 
 .EXAMPLE
   # Export a service configuration to XML
-  Export-ServyServiceConfig -Name "WexflowServer" -ConfigFileType "xml" -Path "C:\WexflowServer.xml"
+  Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
 #>
 
 $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
@@ -312,15 +312,15 @@ function Install-ServyService {
         Additional parameters for the post-launch executable. Optional.
 
     .EXAMPLE
-        Install-ServyService -Name "WexflowServer" `
-            -Path "C:\Program Files\dotnet\dotnet.exe" `
+        Install-ServyService -Name "MyService" `
+            -Path "C:\Services\MyService.exe" `
             -Description "Wexflow Workflow Engine" `
             -StartupDir "C:\Program Files\Wexflow Server\Wexflow.Server" `
             -Params "Wexflow.Server.dll" `
             -StartupType "Automatic" `
             -Priority "Normal" `
-            -Stdout "C:\Logs\WexflowServer.out.log" `
-            -Stderr "C:\Logs\WexflowServer.err.log" `
+            -Stdout "C:\Logs\MyService.out.log" `
+            -Stderr "C:\Logs\MyService.err.log" `
             -EnableRotation `
             -RotationSize 10 `
             -EnableHealth `
@@ -457,7 +457,7 @@ function Uninstall-ServyService {
         The name of the service to uninstall.
 
     .EXAMPLE
-        Uninstall-Service -Name "WexflowServer"
+        Uninstall-Service -Name "MyService"
     #>
   
   param(
@@ -506,8 +506,8 @@ function Start-ServyService {
         The name of the service to start. (Required)
 
     .EXAMPLE
-        Start-ServyService -Name "WexflowServer"
-        # Starts the service named 'WexflowServer'.
+        Start-ServyService -Name "MyService"
+        # Starts the service named 'MyService'.
     #>
   param(
     [switch] $Quiet,
@@ -555,8 +555,8 @@ function Stop-ServyService {
         The name of the service to stop. (Required)
 
     .EXAMPLE
-        Stop-ServyService -Name "WexflowServer"
-        # Stops the service named 'WexflowServer'.
+        Stop-ServyService -Name "MyService"
+        # Stops the service named 'MyService'.
     #>
   param(
     [switch] $Quiet,
@@ -604,8 +604,8 @@ function Restart-ServyService {
         The name of the service to restart. (Required)
 
     .EXAMPLE
-        Restart-ServyService -Name "WexflowServer"
-        # Restarts the service named 'WexflowServer'.
+        Restart-ServyService -Name "MyService"
+        # Restarts the service named 'MyService'.
     #>
   param(
     [switch] $Quiet,
@@ -654,8 +654,8 @@ function Get-ServyServiceStatus {
         The name of the service to check. (Required)
 
     .EXAMPLE
-        Get-ServyServiceStatus -Name "WexflowServer"
-        # Retrieves the current status of the service named 'WexflowServer'.
+        Get-ServyServiceStatus -Name "MyService"
+        # Retrieves the current status of the service named 'MyService'.
     #>
   param(
     [switch] $Quiet,
@@ -709,8 +709,8 @@ function Export-ServyServiceConfig {
         The full path of the configuration file to export. (Required)
 
     .EXAMPLE
-        Export-ServyServiceConfig -Name "WexflowServer" -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
-        # Exports the configuration of 'WexflowServer' to a JSON file at the specified path.
+        Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
+        # Exports the configuration of 'MyService' to a JSON file at the specified path.
     #>
   param(
     [switch] $Quiet,
@@ -808,6 +808,7 @@ function Import-ServyServiceConfig {
   }
 }
 
+# Export all public functions of the Servy module
 Export-ModuleMember -Function Show-ServyVersion
 Export-ModuleMember -Function Show-ServyHelp
 Export-ModuleMember -Function Install-ServyService
