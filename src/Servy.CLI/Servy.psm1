@@ -132,7 +132,6 @@ function Show-ServyHelp {
   $argsList = [System.Collections.Generic.List[string]]::new()
   $argsList.Add("--help")
 
-
   if ($Quiet) { $argsList.Add("--quiet") }
 
   try {
