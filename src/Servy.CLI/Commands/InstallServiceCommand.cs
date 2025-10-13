@@ -111,10 +111,12 @@ namespace Servy.CLI.Commands
                     failureProgramPath: opts.FailureProgramPath,
                     failureProgramWorkingDirectory: opts.FailureProgramStartupDir,
                     failureProgramArgs: opts.FailureProgramParameters,
-
+                    // Post-Launch
                     postLaunchExePath: opts.PostLaunchPath,
                     postLaunchWorkingDirectory: opts.PostLaunchStartupDir,
-                    postLaunchArgs: opts.PostLaunchParameters
+                    postLaunchArgs: opts.PostLaunchParameters,
+                    // Debug Logs
+                    enableDebugLogs: opts.EnableDebugLogs
                 );
 
                 if (!success)

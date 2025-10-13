@@ -155,5 +155,12 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the command-line arguments to pass to the post-launch executable.
         /// </summary>
         public string PostLaunchExecutableArgs { get; set; }
+
+        /// <summary>
+        /// Whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        public bool EnableDebugLogs { get; set; } = false;
     }
 }

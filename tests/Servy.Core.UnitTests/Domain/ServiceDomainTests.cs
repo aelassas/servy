@@ -185,7 +185,9 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.PostLaunchExecutablePath,
                      service.PostLaunchStartupDirectory,
-                     service.PostLaunchParameters
+                     service.PostLaunchParameters,
+
+                     service.EnableDebugLogs
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -274,7 +276,9 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.PostLaunchExecutablePath,
                      service.PostLaunchStartupDirectory,
-                     service.PostLaunchParameters
+                     service.PostLaunchParameters,
+
+                     service.EnableDebugLogs
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -345,7 +349,8 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // failureProgramArgs
                     null,                                // postLaunchExePath
                     null,                                // postLaunchWorkingDirectory
-                    null                                 // postLaunchArgs
+                    null,                                // postLaunchArgs
+                    It.IsAny<bool>()                     // enableDebugLogs
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

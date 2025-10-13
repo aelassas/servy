@@ -195,6 +195,13 @@
         /// </summary>
         public string PostLaunchParameters { get; set; }
 
+        /// <summary>
+        /// Whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        public bool? EnableDebugLogs { get; set; }
+
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => Id.HasValue;
@@ -233,6 +240,7 @@
         public bool ShouldSerializePostLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PostLaunchExecutablePath);
         public bool ShouldSerializePostLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PostLaunchStartupDirectory);
         public bool ShouldSerializePostLaunchParameters() => !string.IsNullOrWhiteSpace(PostLaunchParameters);
+        public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
 
         #endregion
     }

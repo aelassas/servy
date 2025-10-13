@@ -81,7 +81,8 @@ Install-ServyService `
   -PreLaunchRetryAttempts 1 `
   -PostLaunchPath "C:\Windows\System32\cmd.exe" `
   -PostLaunchStartupDir "C:\Windows\Temp" `
-  -PostLaunchParams "/c exit 0 --param 2003"
+  -PostLaunchParams "/c exit 0 --param 2003" `
+  -EnableDebugLogs
 
 # ----------------------------------------------------------------
 # Export the service configuration to a file (XML)

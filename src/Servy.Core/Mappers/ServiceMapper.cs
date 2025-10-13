@@ -60,6 +60,7 @@ namespace Servy.Core.Mappers
                 PostLaunchExecutablePath = service.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
                 PostLaunchParameters = service.PostLaunchParameters,
+                EnableDebugLogs = service.EnableDebugLogs,
             };
         }
 
@@ -112,6 +113,7 @@ namespace Servy.Core.Mappers
                 PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                 PostLaunchParameters = dto.PostLaunchParameters,
+                EnableDebugLogs = dto.EnableDebugLogs ?? false,
             };
         }
     }

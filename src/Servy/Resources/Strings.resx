@@ -449,4 +449,11 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified post-launch startup directory is invalid.</value>
   </data>
 
+  <!--Debug-Logs-->
+  <data name="Label_EnableDebugLogs" xml:space="preserve">
+    <value>Enable Debug Logs</value>
+  </data>
+  <data name="Info_EnableDebugLogs" xml:space="preserve">
+    <value>When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information.</value>
+  </data>
 </root>

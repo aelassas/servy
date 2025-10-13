@@ -151,6 +151,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information..
+        /// </summary>
+        public static string Info_EnableDebugLogs {
+            get {
+                return ResourceManager.GetString("Info_EnableDebugLogs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos;, \&quot; to escape &apos;&quot;&apos;, \; to escape &apos;;&apos; and \\ to escape &apos;\&apos;. Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
         /// </summary>
         public static string Info_EnvironmentVariables {
@@ -265,6 +274,15 @@ namespace Servy.Resources {
         public static string Label_ConfirmPassword {
             get {
                 return ResourceManager.GetString("Label_ConfirmPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Debug Logs.
+        /// </summary>
+        public static string Label_EnableDebugLogs {
+            get {
+                return ResourceManager.GetString("Label_EnableDebugLogs", resourceCulture);
             }
         }
         

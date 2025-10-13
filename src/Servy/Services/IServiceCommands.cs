@@ -50,6 +50,7 @@ namespace Servy.Services
         /// <param name="postLaunchExePath">Post-launch script exe path.</param>
         /// <param name="postLaunchWorkingDirectory">Post-launch working directory.</param>
         /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
+        /// <param name="enableDebugLogs">Enable debug logs for the service wrapper.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -87,7 +88,8 @@ namespace Servy.Services
             string failureProgramArgs,
             string postLaunchExePath,
             string postLaunchWorkingDirectory,
-            string postLaunchArgs
+            string postLaunchArgs,
+            bool enableDebugLogs
             );
 
         /// <summary>

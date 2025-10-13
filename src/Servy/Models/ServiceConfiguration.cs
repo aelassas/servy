@@ -196,5 +196,13 @@ namespace Servy.Models
         /// Gets or sets the command-line parameters for the post-launch executable.
         /// </summary>
         public string PostLaunchParameters { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        public bool EnableDebugLogs { get; set; }
+
     }
 }

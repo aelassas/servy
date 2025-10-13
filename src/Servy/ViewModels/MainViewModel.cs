@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
+using Servy.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -450,6 +451,15 @@ namespace Servy.ViewModels
             set { _config.PostLaunchParameters = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether debug logs are enabled.
+        /// </summary>
+        public bool EnableDebugLogs
+        {
+            get => _config.EnableDebugLogs;
+            set { _config.EnableDebugLogs = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -884,7 +894,8 @@ namespace Servy.ViewModels
                 _config.FailureProgramParameters,
                 _config.PostLaunchExecutablePath,
                 _config.PostLaunchStartupDirectory,
-                _config.PostLaunchParameters
+                _config.PostLaunchParameters,
+                _config.EnableDebugLogs
                 );
         }
 
@@ -985,6 +996,8 @@ namespace Servy.ViewModels
             PostLaunchExecutablePath = string.Empty;
             PostLaunchStartupDirectory = string.Empty;
             PostLaunchParameters = string.Empty;
+
+            EnableDebugLogs = false;
         }
 
         #endregion
@@ -1115,6 +1128,8 @@ namespace Servy.ViewModels
             PostLaunchExecutablePath = dto.PostLaunchExecutablePath;
             PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory;
             PostLaunchParameters = dto.PostLaunchParameters;
+
+            EnableDebugLogs = dto.EnableDebugLogs ?? false;
         }
 
         /// <summary>
@@ -1172,6 +1187,8 @@ namespace Servy.ViewModels
                 PostLaunchExecutablePath = PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = PostLaunchStartupDirectory,
                 PostLaunchParameters = PostLaunchParameters,
+
+                EnableDebugLogs = EnableDebugLogs
             };
 
             return dto;
