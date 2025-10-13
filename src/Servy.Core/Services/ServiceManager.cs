@@ -218,7 +218,8 @@ namespace Servy.Core.Services
                 string failureProgramArgs = null,
                 string postLaunchExePath = null,
                 string postLaunchWorkingDirectory = null,
-                string postLaunchArgs = null
+                string postLaunchArgs = null,
+                bool enableDebugLogs = false
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -264,7 +265,10 @@ namespace Servy.Core.Services
                 // Post-Launch
                 Helper.Quote(postLaunchExePath ?? string.Empty),
                 Helper.Quote(postLaunchWorkingDirectory ?? string.Empty),
-                Helper.Quote(postLaunchArgs ?? string.Empty)
+                Helper.Quote(postLaunchArgs ?? string.Empty),
+
+                // Debug Logs
+                Helper.Quote(enableDebugLogs.ToString())
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -334,6 +338,8 @@ namespace Servy.Core.Services
                     PostLaunchExecutablePath = postLaunchExePath,
                     PostLaunchStartupDirectory = postLaunchWorkingDirectory,
                     PostLaunchParameters = postLaunchArgs,
+
+                    EnableDebugLogs = enableDebugLogs,
                 };
 
                 // Set PID

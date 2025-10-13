@@ -61,6 +61,9 @@ namespace Servy.Service.CommandLine
                 PostLaunchExecutablePath = fullArgs.Length > 26 ? fullArgs[26] : string.Empty,
                 PostLaunchWorkingDirectory = fullArgs.Length > 27 ? fullArgs[27] : string.Empty,
                 PostLaunchExecutableArgs = fullArgs.Length > 28 ? fullArgs[28] : string.Empty,
+
+                // Debug Logs
+                EnableDebugLogs = fullArgs.Length > 29 && bool.TryParse(fullArgs[29], out bool enableDebugLogs) && enableDebugLogs,
             };
         }
     }

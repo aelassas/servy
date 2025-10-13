@@ -272,5 +272,13 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("postLaunchParams", HelpText = "Additional parameters for the post-launch executable.")]
         public string PostLaunchParameters { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information.")]
+        public bool EnableDebugLogs { get; set; }
     }
 }

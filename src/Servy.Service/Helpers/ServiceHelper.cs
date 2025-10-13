@@ -71,7 +71,8 @@ namespace Servy.Service.Helpers
                   "--------Main-------------------\n" +
                   $"- serviceName: {options.ServiceName}\n" +
                   $"- realExePath: {options.ExecutablePath}\n" +
-                  $"- realArgs: {options.ExecutableArgs}\n" +
+                  // realArgs are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- realArgs: {options.ExecutableArgs}\n") +
                   $"- workingDir: {options.WorkingDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
@@ -85,16 +86,21 @@ namespace Servy.Service.Helpers
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
                   $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n" +
-                  $"- failureProgramArgs: {options.FailureProgramArgs}\n\n" +
+                  // failureProgramArgs are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- failureProgramArgs: {options.FailureProgramArgs}\n") +
+                  "\n" +
 
-                  "--------Advanced---------------\n" +
-                  $"- environmentVariables: {envVarsFormatted}\n\n" +
+                  GetDebugLog(options, "--------Advanced---------------\n") +
+                  // environmentVariables are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- environmentVariables: {envVarsFormatted}\n\n") +
 
                   "--------Pre-Launch args--------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
-                  $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
-                  $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n" +
+                  // preLaunchExecutableArgs are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n") +
+                  // preLaunchEnvironmentVariables are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n") +
                   $"- preLaunchStdOutPath: {options.PreLaunchStdOutPath}\n" +
                   $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
@@ -104,7 +110,8 @@ namespace Servy.Service.Helpers
                   "--------Post-Launch args-------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
-                  $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n"
+                  // postLaunchExecutableArgs are not logged to avoid exposing sensitive information
+                  GetDebugLog(options, $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n")
               //"-------------------------------\n"
               );
         }
@@ -275,6 +282,16 @@ namespace Servy.Service.Helpers
             return envVarsFormatted;
         }
 
+        /// <summary>
+        /// Returns the specified debug log message if debug logging is enabled; otherwise, returns an empty string.
+        /// </summary>
+        /// <param name="options">The start options that specify whether debug logging is enabled.</param>
+        /// <param name="message">The message to include in the debug log output.</param>
+        /// <returns>The debug message if <see cref="StartOptions.EnableDebugLogs"/> is true; otherwise, an empty string.</returns>
+        private static string GetDebugLog(StartOptions options, string message)
+        {
+            return options.EnableDebugLogs ? message : string.Empty;
+        }
 
         #endregion
 

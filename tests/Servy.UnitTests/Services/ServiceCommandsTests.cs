@@ -72,6 +72,7 @@ namespace Servy.UnitTests.Services
             var postLaunchExe = @"C:\post-launch.exe";
             var postLaunchDir = @"C:\postLaunchDir";
             var postLaunchArgs = "postLaunchArgs";
+            var enableDebugLogs = false;
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -114,7 +115,8 @@ namespace Servy.UnitTests.Services
 
                 postLaunchExe,
                 postLaunchDir,
-                postLaunchArgs
+                postLaunchArgs,
+                enableDebugLogs
                 );
 
             // Assert
@@ -158,7 +160,8 @@ namespace Servy.UnitTests.Services
 
                 postLaunchExe,
                 postLaunchDir,
-                postLaunchArgs
+                postLaunchArgs,
+                enableDebugLogs
                 ), Times.Once);
         }
 

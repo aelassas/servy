@@ -310,6 +310,11 @@ function Install-ServyService {
     .PARAMETER PostLaunchParams
         Additional parameters for the post-launch executable. Optional.
 
+    .PARAMETER EnableDebugLogs
+        Switch to enable debug logs. Optional.
+        When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        Not recommended for production environments, as these logs may contain sensitive information.
+        
     .EXAMPLE
         Install-ServyService -Name "MyService" `
             -Path "C:\Apps\MyApp\MyApp.exe" `
@@ -377,7 +382,10 @@ function Install-ServyService {
     # Post-launch
     [string] $PostLaunchPath,
     [string] $PostLaunchStartupDir,
-    [string] $PostLaunchParams
+    [string] $PostLaunchParams,
+
+    # Debug Logs
+    [switch] $EnableDebugLogs
   )
   
   try {
@@ -430,6 +438,8 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
   $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
   $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
+
+  if ($EnableDebugLogs) { $argsList.Add("--debug") }
 
   try {
     & $script:ServyCliPath $argsList.ToArray()

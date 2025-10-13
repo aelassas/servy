@@ -228,6 +228,13 @@ namespace Servy.Core.Domain
         /// </summary>
         public string PostLaunchParameters { get; set; }
 
+        /// <summary>
+        /// Whether debug logs are enabled.
+        /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
+        /// Not recommended for production environments, as these logs may contain sensitive information.
+        /// </summary>
+        public bool EnableDebugLogs { get; set; } = false;
+
         #endregion
 
         #region Public Methods
@@ -377,7 +384,9 @@ namespace Servy.Core.Domain
 
                 postLaunchExePath: PostLaunchExecutablePath,
                 postLaunchWorkingDirectory: PostLaunchStartupDirectory,
-                postLaunchArgs: PostLaunchParameters
+                postLaunchArgs: PostLaunchParameters,
+
+                enableDebugLogs: EnableDebugLogs
             );
         }
 
