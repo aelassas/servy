@@ -84,6 +84,9 @@ public static class SQLiteDbInitializer
 
             // PID
             new KeyValuePair<string, string>("Pid", "ALTER TABLE Services ADD COLUMN Pid INTEGER;"),
+
+            // Debug Logs
+            new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
         };
 
         foreach (var column in expectedColumns)

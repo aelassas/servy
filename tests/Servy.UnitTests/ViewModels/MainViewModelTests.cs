@@ -146,7 +146,8 @@ namespace Servy.UnitTests.ViewModels
 
                  @"C:\post-launch.exe",
                  @"C:\",
-                 "--param1 val1"
+                 "--param1 val1",
+                 false
 
             ), Times.Once);
         }

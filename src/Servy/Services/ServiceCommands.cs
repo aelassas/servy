@@ -110,7 +110,8 @@ namespace Servy.Services
             string failureProgramArgs,
             string postLaunchExePath,
             string postLaunchWorkingDirectory,
-            string postLaunchArgs
+            string postLaunchArgs,
+            bool enableDebugLogs
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -233,7 +234,8 @@ namespace Servy.Services
                     failureProgramArgs: failureProgramArgs,
                     postLaunchExePath: postLaunchExePath,
                     postLaunchWorkingDirectory: postLaunchWorkingDirectory,
-                    postLaunchArgs: postLaunchArgs
+                    postLaunchArgs: postLaunchArgs,
+                    enableDebugLogs: enableDebugLogs
                 );
 
                 if (success)

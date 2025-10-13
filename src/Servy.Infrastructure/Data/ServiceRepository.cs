@@ -60,7 +60,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -69,7 +69,7 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs
                 );
                 SELECT last_insert_rowid();";
 
@@ -123,7 +123,9 @@ namespace Servy.Infrastructure.Data
                     PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
                     PostLaunchParameters = @PostLaunchParameters,
 
-                    Pid = @Pid
+                    Pid = @Pid,
+
+                    EnableDebugLogs = @EnableDebugLogs
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);
@@ -423,6 +425,8 @@ namespace Servy.Infrastructure.Data
                 PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                 PostLaunchParameters = dto.PostLaunchParameters,
+
+                EnableDebugLogs = dto.EnableDebugLogs ?? false,
             };
         }
 
@@ -475,6 +479,8 @@ namespace Servy.Infrastructure.Data
                 PostLaunchExecutablePath = domain.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = domain.PostLaunchStartupDirectory,
                 PostLaunchParameters = domain.PostLaunchParameters,
+
+                EnableDebugLogs = domain.EnableDebugLogs,
             };
         }
 

@@ -72,7 +72,8 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()
+                It.IsAny<string>(),
+                It.IsAny<bool>()
             )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
@@ -153,7 +154,8 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()
+                It.IsAny<string>(),
+                It.IsAny<bool>()
             )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
@@ -219,7 +221,8 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()
+                It.IsAny<string>(),
+                It.IsAny<bool>()
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
@@ -285,7 +288,8 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.IsAny<string>()
+                It.IsAny<string>(),
+                It.IsAny<bool>()
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test
