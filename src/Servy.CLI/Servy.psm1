@@ -54,13 +54,13 @@ $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
     # Throws an error if Servy CLI is not found, otherwise continues silently.
 #>
 function Test-ServyCliPath {
-    if (-not (Test-Path $script:ServyCliPath)) {
-        throw "Servy CLI not found at path: $script:ServyCliPath"
-    }
+  if (-not (Test-Path $script:ServyCliPath)) {
+    throw "Servy CLI not found at path: $script:ServyCliPath"
+  }
 }
 
 function Show-ServyVersion {
-    <#
+  <#
     .SYNOPSIS
         Displays the version of the Servy CLI.
 
@@ -75,33 +75,34 @@ function Show-ServyVersion {
         Show-ServyVersion
         # Displays the current version of Servy CLI.
     #>
-    param(
-        [switch] $Quiet
-    )
+  param(
+    [switch] $Quiet
+  )
  
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("--version")
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("--version")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  if ($Quiet) { $argsList.Add("--quiet") }
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to get Servy CLI version: $_"
-        exit 1
-    }
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to get Servy CLI version: $_"
+    exit 1
+  }
 }
 
 function Show-ServyHelp {
-    <#
+  <#
     .SYNOPSIS
         Displays help information for the Servy CLI.
 
@@ -116,74 +117,78 @@ function Show-ServyHelp {
         Show-ServyHelp
         # Displays help for the Servy CLI.
     #>
-    param(
-        [switch] $Quiet
-    )
+  param(
+    [switch] $Quiet
+  )
 
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("--help")
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("--help")
 
-    if ($Quiet) { $argsList += "--quiet" }
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to display Servy CLI help: $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to display Servy CLI help: $_"
+    exit 1
+  }
 }
 
 function Add-Arg {
-    <#
-    .SYNOPSIS
-        Adds a key-value argument to a list of command-line arguments.
+  <#
+  .SYNOPSIS
+      Adds a key-value argument to a list of command-line arguments.
 
-    .DESCRIPTION
-        This helper function appends a command-line argument in the form:
-            key="value"
-        to an existing array of arguments, but only if the value is not null or empty.
-        Useful for building CLI argument lists dynamically.
+  .DESCRIPTION
+      This helper function appends a command-line argument in the form:
+          key="value"
+      to an existing .NET generic list of strings (`System.Collections.Generic.List[string]`),
+      but only if the value is not null or empty.
+      Useful for efficiently building CLI argument lists dynamically
+      without creating new array copies.
 
-    .PARAMETER list
-        The existing array of arguments to which the new argument will be added.
+  .PARAMETER list
+      The existing generic list of arguments (`System.Collections.Generic.List[string]`)
+      to which the new argument will be added.
 
-    .PARAMETER key
-        The name of the argument or option (e.g., "--startupDir").
+  .PARAMETER key
+      The name of the argument or option (e.g., "--startupDir").
 
-    .PARAMETER value
-        The value associated with the argument. Only added if not null or empty.
+  .PARAMETER value
+      The value associated with the argument. Only added if not null or empty.
 
-    .OUTPUTS
-        Returns the updated array of arguments including the new key-value pair.
+  .OUTPUTS
+      Returns the updated generic list of arguments including the new key-value pair.
 
-    .EXAMPLE
-        $argsList = @()
-        $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
-        # Result: $argsList = '--startupDir="C:\MyApp"'
-    #>
+  .EXAMPLE
+      $argsList = [System.Collections.Generic.List[string]]::new()
+      $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
+      # Result: $argsList contains '--startupDir="C:\MyApp"'
+  #>
+  param(
+    [System.Collections.Generic.List[string]] $list, # Existing argument list
+    [string] $key, # Argument key
+    [string] $value # Argument value
+  )
 
-    param(
-        $list,  # Existing argument list
-        $key,   # Argument key
-        $value  # Argument value
-    )
+  # Only add the argument if a non-empty value is provided
+  if ($null -ne $value -and $value -ne "") {
+    # Add the argument in the form key="value"
+    $list.Add("$key=`"$value`"")
+  }
 
-    # Only add the argument if a non-empty value is provided
-    if ($null -ne $value -and $value -ne "") {
-        # Append the argument in the form key="value"
-        $list += "$key=`"$value`""
-    }
-
-    # Return the updated argument list
-    return $list
+  # Return the same instance without PowerShell array coercion  
+  return ,$list  # the comma prevents unrolling / array coercion
 }
 
 function Install-ServyService {
@@ -377,17 +382,20 @@ function Install-ServyService {
   )
   
   try {
-      Test-ServyCliPath
+    Test-ServyCliPath
   }
   catch {
-      Write-Error $_
-      exit 1
+    Write-Error $_
+    exit 1
   }
 
-  $argsList = @("install", "-n", "`"$Name`"", "-p", "`"$Path`"")
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("install")
 
-  if ($Quiet) { $argsList += "--quiet" }
+  if ($Quiet) { $argsList.Add("--quiet") }
 
+  $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = Add-Arg $argsList "--path" $Path
   $argsList = Add-Arg $argsList "--description" $Description
   $argsList = Add-Arg $argsList "--startupDir" $StartupDir
   $argsList = Add-Arg $argsList "--params" $Params
@@ -395,9 +403,9 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--priority" $Priority
   $argsList = Add-Arg $argsList "--stdout" $Stdout
   $argsList = Add-Arg $argsList "--stderr" $Stderr
-  if ($EnableRotation) { $argsList += "--enableRotation" }
+  if ($EnableRotation) { $argsList.Add("--enableRotation") }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
-  if ($EnableHealth) { $argsList += "--enableHealth" }
+  if ($EnableHealth) { $argsList.Add("--enableHealth") }
   $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval
   $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks
   $argsList = Add-Arg $argsList "--recoveryAction" $RecoveryAction
@@ -418,14 +426,14 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--preLaunchStderr" $PreLaunchStderr
   $argsList = Add-Arg $argsList "--preLaunchTimeout" $PreLaunchTimeout
   $argsList = Add-Arg $argsList "--preLaunchRetryAttempts" $PreLaunchRetryAttempts
-  if ($PreLaunchIgnoreFailure) { $argsList += "--preLaunchIgnoreFailure" }
+  if ($PreLaunchIgnoreFailure) { $argsList.Add("--preLaunchIgnoreFailure") }
 
   $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
   $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
   $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
 
   try {
-    & $script:ServyCliPath @argsList
+    & $script:ServyCliPath $argsList.ToArray()
   }
   catch {
     Write-Error "Failed to install service '$Name': $_"
@@ -459,20 +467,22 @@ function Uninstall-ServyService {
   )
   
   try {
-      Test-ServyCliPath
+    Test-ServyCliPath
   }
   catch {
-      Write-Error $_
-      exit 1
+    Write-Error $_
+    exit 1
   }
 
-  $argsList = @("uninstall")
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("uninstall")
+
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
+  if ($Quiet) { $argsList.Add("--quiet") }
   
   try {
-    & $script:ServyCliPath @argsList
+    & $script:ServyCliPath $argsList.ToArray()
   }
   catch {
     Write-Error "Failed to uninstall service '$Name': $_"
@@ -506,20 +516,22 @@ function Start-ServyService {
   )
 
   try {
-      Test-ServyCliPath
+    Test-ServyCliPath
   }
   catch {
-      Write-Error $_
-      exit 1
+    Write-Error $_
+    exit 1
   }
 
-  $argsList = @("start")
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("start")
+
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
+  if ($Quiet) { $argsList.Add("--quiet") }
 
   try {
-    & $script:ServyCliPath @argsList
+    & $script:ServyCliPath $argsList.ToArray()
   }
   catch {
     Write-Error "Failed to start service '$Name': $_"
@@ -528,7 +540,7 @@ function Start-ServyService {
 }
 
 function Stop-ServyService {
-    <#
+  <#
     .SYNOPSIS
         Stops a Windows service using Servy.
 
@@ -546,36 +558,38 @@ function Stop-ServyService {
         Stop-ServyService -Name "WexflowServer"
         # Stops the service named 'WexflowServer'.
     #>
-    param(
-        [switch] $Quiet,
-        [Parameter(Mandatory = $true)]
-        [string]$Name
-    )
+  param(
+    [switch] $Quiet,
+    [Parameter(Mandatory = $true)]
+    [string]$Name
+  )
     
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
     
-    $argsList = @("stop")
-    $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("stop")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  $argsList = Add-Arg $argsList "--name" $Name
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to stop service '$Name': $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to stop service '$Name': $_"
+    exit 1
+  }
 }
 
 function Restart-ServyService {
-    <#
+  <#
     .SYNOPSIS
         Restarts a Windows service using Servy.
 
@@ -593,36 +607,38 @@ function Restart-ServyService {
         Restart-ServyService -Name "WexflowServer"
         # Restarts the service named 'WexflowServer'.
     #>
-    param(
-        [switch] $Quiet,
-        [Parameter(Mandatory = $true)]
-        [string]$Name
-    )
+  param(
+    [switch] $Quiet,
+    [Parameter(Mandatory = $true)]
+    [string]$Name
+  )
 
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("restart")
-    $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("restart")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  $argsList = Add-Arg $argsList "--name" $Name
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to restart service '$Name': $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to restart service '$Name': $_"
+    exit 1
+  }
 }
 
 function Get-ServyServiceStatus {
-    <#
+  <#
     .SYNOPSIS
         Retrieves the current status of a Windows service using Servy.
 
@@ -641,36 +657,38 @@ function Get-ServyServiceStatus {
         Get-ServyServiceStatus -Name "WexflowServer"
         # Retrieves the current status of the service named 'WexflowServer'.
     #>
-    param(
-        [switch] $Quiet,
-        [Parameter(Mandatory = $true)]
-        [string]$Name
-    )
+  param(
+    [switch] $Quiet,
+    [Parameter(Mandatory = $true)]
+    [string]$Name
+  )
 
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("status")
-    $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("status")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  $argsList = Add-Arg $argsList "--name" $Name
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to get status of service '$Name': $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to get status of service '$Name': $_"
+    exit 1
+  }
 }
 
 function Export-ServyServiceConfig {
-    <#
+  <#
     .SYNOPSIS
         Exports a Servy Windows service configuration to a file.
 
@@ -694,45 +712,47 @@ function Export-ServyServiceConfig {
         Export-ServyServiceConfig -Name "WexflowServer" -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
         # Exports the configuration of 'WexflowServer' to a JSON file at the specified path.
     #>
-    param(
-        [switch] $Quiet,
-        [Parameter(Mandatory = $true)]
-        [string]$Name,
+  param(
+    [switch] $Quiet,
+    [Parameter(Mandatory = $true)]
+    [string]$Name,
 
-        [Parameter(Mandatory = $true)]
-        [ValidateSet("xml","json")]
-        [string]$ConfigFileType,
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("xml", "json")]
+    [string]$ConfigFileType,
 
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
 
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("export")
-    $argsList = Add-Arg $argsList "--name" $Name
-    $argsList = Add-Arg $argsList "--config" $ConfigFileType
-    $argsList = Add-Arg $argsList "--path" $Path
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("export")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = Add-Arg $argsList "--config" $ConfigFileType
+  $argsList = Add-Arg $argsList "--path" $Path
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to export configuration for service '$Name': $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to export configuration for service '$Name': $_"
+    exit 1
+  }
 }
 
 function Import-ServyServiceConfig {
-    <#
+  <#
     .SYNOPSIS
         Imports a Windows service configuration into Servy's database.
 
@@ -753,37 +773,39 @@ function Import-ServyServiceConfig {
         Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\Wexflow.json"
         # Imports the configuration file into Servy's database.
     #>
-    param(
-        [switch] $Quiet,
-        [Parameter(Mandatory = $true)]
-        [ValidateSet("xml","json")]
-        [string]$ConfigFileType,
+  param(
+    [switch] $Quiet,
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("xml", "json")]
+    [string]$ConfigFileType,
 
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
+    [Parameter(Mandatory = $true)]
+    [string]$Path
+  )
 
-    try {
-        Test-ServyCliPath
-    }
-    catch {
-        Write-Error $_
-        exit 1
-    }
+  try {
+    Test-ServyCliPath
+  }
+  catch {
+    Write-Error $_
+    exit 1
+  }
 
-    $argsList = @("import")
-    $argsList = Add-Arg $argsList "--config" $ConfigFileType
-    $argsList = Add-Arg $argsList "--path" $Path
+  $argsList = [System.Collections.Generic.List[string]]::new()
+  $argsList.Add("import")
 
-    if ($Quiet) { $argsList += "--quiet" }
+  $argsList = Add-Arg $argsList "--config" $ConfigFileType
+  $argsList = Add-Arg $argsList "--path" $Path
 
-    try {
-        & $script:ServyCliPath @argsList
-    }
-    catch {
-        Write-Error "Failed to import configuration from '$Path': $_"
-        exit 1
-    }
+  if ($Quiet) { $argsList.Add("--quiet") }
+
+  try {
+    & $script:ServyCliPath $argsList.ToArray()
+  }
+  catch {
+    Write-Error "Failed to import configuration from '$Path': $_"
+    exit 1
+  }
 }
 
 Export-ModuleMember -Function Show-ServyVersion
