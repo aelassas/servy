@@ -31,7 +31,7 @@
 
 .EXAMPLE
   # Install a new service
-  Install-ServyService -Name "MyService" -Path "C:\Services\MyService.exe" -StartupType "Automatic"
+  Install-ServyService -Name "MyService" -Path "C:\Apps\MyApp\MyApp.exe" -StartupType "Automatic"
 
 .EXAMPLE
   # Export a service configuration to XML
@@ -312,9 +312,9 @@ function Install-ServyService {
 
     .EXAMPLE
         Install-ServyService -Name "MyService" `
-            -Path "C:\Services\MyService.exe" `
+            -Path "C:\Apps\MyApp\MyApp.exe" `
             -Description "My Service" `
-            -StartupDir "C:\Services\MyService" `
+            -StartupDir "C:\Apps\MyApp" `
             -Params "--port 8000" `
             -StartupType "Automatic" `
             -Priority "Normal" `
