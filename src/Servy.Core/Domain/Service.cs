@@ -15,7 +15,7 @@ namespace Servy.Core.Domain
     {
         #region Private Fields
 
-        private IServiceManager _serviceManager;
+        private readonly IServiceManager _serviceManager;
 
         #endregion
 

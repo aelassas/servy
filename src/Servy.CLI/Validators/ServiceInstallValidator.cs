@@ -68,10 +68,11 @@ namespace Servy.CLI.Validators
             if (!ValidateEnumOption<ProcessPriority>(opts.ProcessPriority))
                 return CommandResult.Fail(Strings.Msg_InvalidProcessPriority);
 
-            if (opts.EnableRotation)
+            if (opts.EnableRotation
+                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < MinRotationSize)
+                )
             {
-                if (!int.TryParse(opts.RotationSize, out var rotation) || rotation < MinRotationSize)
-                    return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
+                return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
             }
 
             if (opts.EnableHealthMonitoring)

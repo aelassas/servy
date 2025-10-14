@@ -9,12 +9,20 @@ namespace Servy.Service.ProcessManagement
     /// <summary>
     /// Wraps a <see cref="System.Diagnostics.Process"/> to allow abstraction and easier testing.
     /// </summary>
-    public class ProcessWrapper : IProcessWrapper
+    public class ProcessWrapper : IProcessWrapper, IDisposable
     {
         private readonly Process _process;
+        private bool _disposed;
 
         /// <inheritdoc/>
-        public IntPtr ProcessHandle => _process.Handle;
+        public IntPtr ProcessHandle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Handle;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
@@ -76,13 +84,16 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public void Start() => _process.Start();
+        public void Start()
+        {
+            ThrowIfDisposed();
+            _process.Start();
+        }
 
         /// <inheritdoc/>
         public async Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            if (_process == null)
-                return false; // process not even started
+            ThrowIfDisposed();
 
             var start = DateTime.UtcNow;
 
@@ -91,47 +102,91 @@ namespace Servy.Service.ProcessManagement
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (_process.HasExited)
-                {
-                    // process exited before becoming healthy
                     return false;
-                }
 
-                await Task.Delay(500, cancellationToken); // poll every 0.5s
+                await Task.Delay(500, cancellationToken);
             }
 
-            // Only return true if process is still alive
             return !_process.HasExited;
         }
 
         /// <inheritdoc/>
         public void Kill(bool entireProcessTree = true)
         {
+            ThrowIfDisposed();
+
             if (entireProcessTree)
-            {
                 ProcessHelper.KillProcessTree(_process);
-            }
             else
-            {
                 _process.Kill();
-            }
         }
 
         /// <inheritdoc/>
-        public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
+        public bool WaitForExit(int milliseconds)
+        {
+            ThrowIfDisposed();
+            return _process.WaitForExit(milliseconds);
+        }
 
         /// <inheritdoc/>
-        public void WaitForExit() => _process.WaitForExit();
+        public void WaitForExit()
+        {
+            ThrowIfDisposed();
+            _process.WaitForExit();
+        }
 
         /// <inheritdoc/>
-        public bool CloseMainWindow() => _process.CloseMainWindow();
+        public bool CloseMainWindow()
+        {
+            ThrowIfDisposed();
+            return _process.CloseMainWindow();
+        }
 
         /// <inheritdoc/>
-        public void BeginOutputReadLine() => _process.BeginOutputReadLine();
+        public void BeginOutputReadLine()
+        {
+            ThrowIfDisposed();
+            _process.BeginOutputReadLine();
+        }
 
         /// <inheritdoc/>
-        public void BeginErrorReadLine() => _process.BeginErrorReadLine();
+        public void BeginErrorReadLine()
+        {
+            ThrowIfDisposed();
+            _process.BeginErrorReadLine();
+        }
 
         /// <inheritdoc/>
-        public void Dispose() => _process.Dispose();
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected dispose pattern implementation.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                _process.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
+        /// </summary>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ProcessWrapper));
+        }
     }
 }
