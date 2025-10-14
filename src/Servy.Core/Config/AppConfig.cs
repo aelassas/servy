@@ -157,32 +157,32 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default log rotation size in Megabytes (MB). Default is 10 MB.
         /// </summary>
-        public static readonly int DefaultRotationSize = 10;
+        public const int DefaultRotationSize = 10;
 
         /// <summary>
         /// Default heartbeat interval in seconds. Default is 30 seconds.
         /// </summary>
-        public static readonly int DefaultHeartbeatInterval = 30;
+        public const int DefaultHeartbeatInterval = 30;
 
         /// <summary>
         /// Default maximum number of failed health checks before triggering an action. Default is 3 attempts.
         /// </summary>
-        public static readonly int DefaultMaxFailedChecks = 3;
+        public const int DefaultMaxFailedChecks = 3;
 
         /// <summary>
         /// Default maximum number of restart attempts after a service failure. Default is 3 attempts.
         /// </summary>
-        public static readonly int DefaultMaxRestartAttempts = 3;
+        public const int DefaultMaxRestartAttempts = 3;
 
         /// <summary>
         /// Default timeout in seconds before considering a pre-launch task as failed. Default is 30 seconds.
         /// </summary>
-        public static readonly int DefaultPreLaunchTimeoutSeconds = 30;
+        public const int DefaultPreLaunchTimeoutSeconds = 30;
 
         /// <summary>
         /// Default number of retry attempts for pre-launch tasks. Default is 0 attempts.
         /// </summary>
-        public static readonly int DefaultPreLaunchRetryAttempts = 0;
+        public const int DefaultPreLaunchRetryAttempts = 0;
 
         #endregion
 

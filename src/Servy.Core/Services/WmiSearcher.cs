@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Management;
-using System.Threading;
 
 namespace Servy.Core.Services
 {
@@ -13,15 +11,15 @@ namespace Servy.Core.Services
     {
         /// <inheritdoc />
         /// <remarks>
-        /// The <paramref name="cancellationToken"/> is checked on each <see cref="ManagementObject"/> returned,
+        /// The <paramref name="cancellationToken"/> is checked on each <see cref="ManagementBaseObject"/> returned,
         /// allowing cooperative cancellation while iterating the results.
         /// </remarks>
-        public IEnumerable<ManagementObject> Get(string query, CancellationToken cancellationToken = default)
+        public IEnumerable<ManagementBaseObject> Get(string query, CancellationToken cancellationToken = default)
         {
             using (var searcher = new ManagementObjectSearcher(query))
             using (var results = searcher.Get())
             {
-                foreach (ManagementObject obj in results)
+                foreach (var obj in results)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
