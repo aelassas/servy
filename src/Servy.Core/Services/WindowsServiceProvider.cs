@@ -30,7 +30,7 @@ namespace Servy.Core.Services
         {
             using (var searcher = new ManagementObjectSearcher(wmiQuery))
             {
-                foreach (ManagementObject obj in searcher.Get())
+                foreach (var obj in searcher.Get())
                 {
                     yield return obj;
                 }

@@ -31,17 +31,14 @@ namespace Servy.Validators
 
         #endregion
 
-        private readonly IServiceManager _serviceManager;
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
         /// Creates a new service configuration validator.
         /// </summary>
-        /// <param name="serviceManager">Service manager.</param>
         /// <param name="messageBoxService">MessageBox service.</param>
-        public ServiceConfigurationValidator(IServiceManager serviceManager, IMessageBoxService messageBoxService)
+        public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
         {
-            _serviceManager = serviceManager;
             _messageBoxService = messageBoxService;
         }
 

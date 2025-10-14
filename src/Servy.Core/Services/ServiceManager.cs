@@ -184,7 +184,7 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         public async Task<bool> InstallService(
-               string serviceName,
+                string serviceName,
                 string description,
                 string wrapperExePath,
                 string realExePath,
@@ -581,12 +581,9 @@ namespace Servy.Core.Services
         {
             string account = null;
 
-            foreach (ManagementObject service in _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
-            {
-                account = service["StartName"]?.ToString();
-                break;
-            }
-
+            var services = _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+            var service = services.FirstOrDefault();
+            account = service?["StartName"]?.ToString();
 
             return account;
         }
@@ -599,7 +596,7 @@ namespace Servy.Core.Services
             // WMI query to get essential service properties
             const string query = "SELECT Name, State, StartMode, StartName, Description FROM Win32_Service";
 
-            foreach (ManagementObject service in _searcher.Get(query))
+            foreach (var service in _searcher.Get(query))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 

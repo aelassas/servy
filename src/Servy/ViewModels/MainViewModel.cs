@@ -702,9 +702,7 @@ namespace Servy.ViewModels
                 serviceManager,
                 new MessageBoxService(),
                 new FileDialogService(),
-                new ServiceConfigurationValidator(
-                 serviceManager,
-                new MessageBoxService())
+                new ServiceConfigurationValidator(new MessageBoxService())
             );
         }
 
