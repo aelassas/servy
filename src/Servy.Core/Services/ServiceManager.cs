@@ -216,7 +216,7 @@ namespace Servy.Core.Services
                 string? postLaunchWorkingDirectory = null,
                 string? postLaunchArgs = null,
                 bool enableDebugLogs = false
-            )  // NOSONAR
+            )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
