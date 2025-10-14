@@ -536,21 +536,23 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
 
-            string startMode = null;
-
-            foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
-            {
-                startMode = service["StartMode"]?.ToString() ?? string.Empty;
-                break;
-            }
+            var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+            var service = services.Cast<ManagementObject>().FirstOrDefault();
+            var startMode = service?["StartMode"]?.ToString() ?? string.Empty;
 
             if (string.Equals(startMode, "Auto", StringComparison.OrdinalIgnoreCase))
                 startMode = "Automatic";
 
             if (!string.IsNullOrEmpty(startMode))
             {
-                try { return (ServiceStartType)Enum.Parse(typeof(ServiceStartType), startMode, true); }
-                catch (ArgumentException) { return null; }
+                try
+                {
+                    return (ServiceStartType)Enum.Parse(typeof(ServiceStartType), startMode, true);
+                }
+                catch (ArgumentException)
+                {
+                    return null;
+                }
             }
 
             return null;
@@ -561,18 +563,17 @@ namespace Servy.Core.Services
         {
             try
             {
-                foreach (ManagementObject service in _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken))
-                {
-                    return service["Description"]?.ToString() ?? null;
-                }
+                var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+                var service = services.Cast<ManagementObject>().FirstOrDefault();
+                return service?["Description"]?.ToString();
             }
             catch
             {
                 // Log or handle error
             }
+
             return null;
         }
-
 
         /// <inheritdoc />
         public string GetServiceUser(string serviceName, CancellationToken cancellationToken = default)

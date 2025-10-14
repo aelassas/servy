@@ -1074,6 +1074,20 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public void GetServiceStartupType_ReturnsNull_WhenServiceNull()
+        {
+            // Arrange
+            _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Enumerable.Empty<ManagementObject>());
+
+            // Act
+            var result = _serviceManager.GetServiceStartupType("Unknown");
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
         public void GetServiceStartupType_ReturnsNull_WhenNull()
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();

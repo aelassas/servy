@@ -26,35 +26,36 @@ namespace Servy.CLI.Helpers
         {
             var spinnerChars = new[] { '|', '/', '-', '\\' };
             var spinnerIndex = 0;
-            var cts = new CancellationTokenSource();
-
-            // Task that shows spinner
-            var spinnerTask = Task.Run(async () =>
+            using (var cts = new CancellationTokenSource())
             {
-                while (!cts.Token.IsCancellationRequested)
+                // Task that shows spinner
+                var spinnerTask = Task.Run(async () =>
                 {
-                    Console.Write($"\r{message} {spinnerChars[spinnerIndex++ % spinnerChars.Length]}");
-                    try
+                    while (!cts.Token.IsCancellationRequested)
                     {
-                        await Task.Delay(100, cts.Token);
+                        Console.Write($"\r{message} {spinnerChars[spinnerIndex++ % spinnerChars.Length]}");
+                        try
+                        {
+                            await Task.Delay(100, cts.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Ignore, happens when cancellation is requested
+                        }
                     }
-                    catch (OperationCanceledException)
-                    {
-                        // Ignore, happens when cancellation is requested
-                    }
-                }
-            });
+                });
 
-            try
-            {
-                action();  // synchronous work
-            }
-            finally
-            {
-                // Stop spinner
-                cts.Cancel();
-                await spinnerTask; // ensure spinner exits
-                Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r"); // clear line
+                try
+                {
+                    action();  // synchronous work
+                }
+                finally
+                {
+                    // Stop spinner
+                    cts.Cancel();
+                    await spinnerTask.ConfigureAwait(false); // ensure spinner exits
+                    Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r"); // clear line
+                }
             }
         }
     }

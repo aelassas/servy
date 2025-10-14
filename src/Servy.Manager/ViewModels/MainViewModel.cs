@@ -827,7 +827,10 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
+                var cts = _cancellationTokenSource;
+                var token = cts?.Token ?? CancellationToken.None;
+
+                token.ThrowIfCancellationRequested();
 
                 // Take snapshot of services
                 var snapshot = _services.Select(r => r.Service).ToList();
@@ -996,7 +999,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refreshes the services list by re-running the search.
         /// </summary>
-        public async void Resfresh()
+        public async Task Resfresh()
         {
             await SearchServicesAsync(null);
         }
