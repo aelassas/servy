@@ -75,30 +75,27 @@ namespace Servy.Infrastructure.Data
 
             // Use KeyValuePair instead of tuples
             var expectedColumns = new List<KeyValuePair<string, string>>
-        {
-            // Failure program columns
-            new KeyValuePair<string, string>("FailureProgramPath", "ALTER TABLE Services ADD COLUMN FailureProgramPath TEXT;"),
-            new KeyValuePair<string, string>("FailureProgramStartupDirectory", "ALTER TABLE Services ADD COLUMN FailureProgramStartupDirectory TEXT;"),
-            new KeyValuePair<string, string>("FailureProgramParameters", "ALTER TABLE Services ADD COLUMN FailureProgramParameters TEXT;"),
-
-            // Post-launch script columns
-            new KeyValuePair<string, string>("PostLaunchExecutablePath", "ALTER TABLE Services ADD COLUMN PostLaunchExecutablePath TEXT;"),
-            new KeyValuePair<string, string>("PostLaunchStartupDirectory", "ALTER TABLE Services ADD COLUMN PostLaunchStartupDirectory TEXT;"),
-            new KeyValuePair<string, string>("PostLaunchParameters", "ALTER TABLE Services ADD COLUMN PostLaunchParameters TEXT;"),
-
-            // PID
-            new KeyValuePair<string, string>("Pid", "ALTER TABLE Services ADD COLUMN Pid INTEGER;"),
-
-            // Debug Logs
-            new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
-        };
-
-            foreach (var column in expectedColumns)
             {
-                if (!existingColumns.Contains(column.Key))
-                {
-                    connection.Execute(column.Value);
-                }
+                // Failure program columns
+                new KeyValuePair<string, string>("FailureProgramPath", "ALTER TABLE Services ADD COLUMN FailureProgramPath TEXT;"),
+                new KeyValuePair<string, string>("FailureProgramStartupDirectory", "ALTER TABLE Services ADD COLUMN FailureProgramStartupDirectory TEXT;"),
+                new KeyValuePair<string, string>("FailureProgramParameters", "ALTER TABLE Services ADD COLUMN FailureProgramParameters TEXT;"),
+
+                // Post-launch script columns
+                new KeyValuePair<string, string>("PostLaunchExecutablePath", "ALTER TABLE Services ADD COLUMN PostLaunchExecutablePath TEXT;"),
+                new KeyValuePair<string, string>("PostLaunchStartupDirectory", "ALTER TABLE Services ADD COLUMN PostLaunchStartupDirectory TEXT;"),
+                new KeyValuePair<string, string>("PostLaunchParameters", "ALTER TABLE Services ADD COLUMN PostLaunchParameters TEXT;"),
+
+                // PID
+                new KeyValuePair<string, string>("Pid", "ALTER TABLE Services ADD COLUMN Pid INTEGER;"),
+
+                // Debug Logs
+                new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
+            };
+
+            foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))
+            {
+                connection.Execute(column.Value);
             }
         }
     }

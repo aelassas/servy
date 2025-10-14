@@ -9,7 +9,7 @@ namespace Servy.Service.ProcessManagement
     /// <summary>
     /// Wraps a <see cref="System.Diagnostics.Process"/> to allow abstraction and easier testing.
     /// </summary>
-    public class ProcessWrapper : IProcessWrapper, IDisposable
+    public class ProcessWrapper : IProcessWrapper
     {
         private readonly Process _process;
         private bool _disposed;
