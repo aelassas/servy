@@ -12,6 +12,9 @@ using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Reflection;
 using static Servy.CLI.Helpers.Helper;
+#if !DEBUG
+using System.Diagnostics;
+#endif
 
 namespace Servy.CLI
 {

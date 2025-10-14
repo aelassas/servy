@@ -861,7 +861,7 @@ namespace Servy.Service
             if (serviceDto != null)
             {
                 serviceDto.Pid = pid;
-                var res = _serviceRepository
+                _ = _serviceRepository
                     .UpdateAsync(serviceDto)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
             }

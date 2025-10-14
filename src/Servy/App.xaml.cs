@@ -2,7 +2,6 @@
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Views;
-using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;

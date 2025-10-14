@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
-using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using Servy.Manager.Views;
-using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
