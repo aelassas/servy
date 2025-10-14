@@ -57,7 +57,7 @@ namespace Servy.Manager.UnitTests.Services
                 _loggerMock.Object,
                 _fileDialogServiceMock.Object,
                 name => _removedServiceName = name,
-                () => _refreshCalled = true,
+                () => Task.Run(() => _refreshCalled = true),
                 _serviceConfigurationValidatorMock.Object
             );
         }

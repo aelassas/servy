@@ -2,19 +2,21 @@
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
-/// <summary>
-/// Provides helper methods to initialize the SQLite database schema for Servy.
-/// </summary>
-[ExcludeFromCodeCoverage]
-public static class SQLiteDbInitializer
+namespace Servy.Infrastructure.Data
 {
     /// <summary>
-    /// Creates or updates the <c>Services</c> table and necessary indexes.
+    /// Provides helper methods to initialize the SQLite database schema for Servy.
     /// </summary>
-    /// <param name="connection">An open database connection to execute commands on.</param>
-    public static void Initialize(IDbConnection connection)
+    [ExcludeFromCodeCoverage]
+    public static class SQLiteDbInitializer
     {
-        var createTableSql = @"
+        /// <summary>
+        /// Creates or updates the <c>Services</c> table and necessary indexes.
+        /// </summary>
+        /// <param name="connection">An open database connection to execute commands on.</param>
+        public static void Initialize(IDbConnection connection)
+        {
+            var createTableSql = @"
             CREATE TABLE IF NOT EXISTS Services (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Name TEXT NOT NULL,
@@ -49,28 +51,28 @@ public static class SQLiteDbInitializer
                 PreLaunchIgnoreFailure INTEGER NOT NULL
             );";
 
-        connection.Execute(createTableSql);
+            connection.Execute(createTableSql);
 
-        var createIndexSql = "CREATE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
-        connection.Execute(createIndexSql);
+            var createIndexSql = "CREATE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
+            connection.Execute(createIndexSql);
 
-        EnsureColumns(connection);
-    }
+            EnsureColumns(connection);
+        }
 
-    /// <summary>
-    /// Ensures that all expected columns exist in the Services table.
-    /// Adds missing columns for backward compatibility.
-    /// </summary>
-    private static void EnsureColumns(IDbConnection connection)
-    {
-        // Use dynamic since PRAGMA returns multiple columns
-        var existingColumns = new HashSet<string>(
-            connection.Query("PRAGMA table_info(Services);")
-                      .Select(row => (string)row.name) // 'row' is dynamic
-        );
+        /// <summary>
+        /// Ensures that all expected columns exist in the Services table.
+        /// Adds missing columns for backward compatibility.
+        /// </summary>
+        private static void EnsureColumns(IDbConnection connection)
+        {
+            // Use dynamic since PRAGMA returns multiple columns
+            var existingColumns = new HashSet<string>(
+                connection.Query("PRAGMA table_info(Services);")
+                          .Select(row => (string)row.name) // 'row' is dynamic
+            );
 
-        // Use KeyValuePair instead of tuples
-        var expectedColumns = new List<KeyValuePair<string, string>>
+            // Use KeyValuePair instead of tuples
+            var expectedColumns = new List<KeyValuePair<string, string>>
         {
             // Failure program columns
             new KeyValuePair<string, string>("FailureProgramPath", "ALTER TABLE Services ADD COLUMN FailureProgramPath TEXT;"),
@@ -89,11 +91,12 @@ public static class SQLiteDbInitializer
             new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
         };
 
-        foreach (var column in expectedColumns)
-        {
-            if (!existingColumns.Contains(column.Key))
+            foreach (var column in expectedColumns)
             {
-                connection.Execute(column.Value);
+                if (!existingColumns.Contains(column.Key))
+                {
+                    connection.Execute(column.Value);
+                }
             }
         }
     }

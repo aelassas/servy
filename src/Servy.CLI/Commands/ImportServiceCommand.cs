@@ -46,7 +46,7 @@ namespace Servy.CLI.Commands
                     switch (configFileType)
                     {
                         case ConfigFileType.Xml:
-                            var xml = File.ReadAllText(opts.Path);
+                            var xml = await File.ReadAllTextAsync(opts.Path);
                             string? xmlErrorMsg;
                             var xmlValid = XmlServiceValidator.TryValidate(xml, out xmlErrorMsg);
                             if (!xmlValid)
@@ -54,7 +54,7 @@ namespace Servy.CLI.Commands
                             await _serviceRepository.ImportXML(xml);
                             return CommandResult.Ok($"XML configuration saved successfully.");
                         case ConfigFileType.Json:
-                            var json = File.ReadAllText(opts.Path);
+                            var json = await File.ReadAllTextAsync(opts.Path);
                             string? jsonErrorMsg;
                             var jsonValid = JsonServiceValidator.TryValidate(json, out jsonErrorMsg);
                             if (!jsonValid)
