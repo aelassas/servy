@@ -7,7 +7,7 @@ namespace Servy.Core.ServiceDependencies
     /// Provides methods to parse and format Windows service dependency strings
     /// for use with Windows Service APIs that require double-null-terminated dependency lists.
     /// </summary>
-    public class ServiceDependenciesParser
+    public static class ServiceDependenciesParser
     {
         /// <summary>
         /// Represents the MULTI_SZ value that indicates a service has no dependencies.

@@ -126,10 +126,9 @@ namespace Servy.Manager.Views
         /// </summary>
         private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter && DataContext is MainViewModel vm)
+            if (e.Key == Key.Enter && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
             {
-                if (vm.SearchCommand.CanExecute(null))
-                    await vm.SearchCommand.ExecuteAsync(null);
+                await vm.SearchCommand.ExecuteAsync(null);
             }
         }
 
@@ -175,28 +174,22 @@ namespace Servy.Manager.Views
         {
             if (e.Key == Key.F5)
             {
-                if (MainTab.IsSelected)
+                if (MainTab.IsSelected && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
                 {
-                    if (DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
-                        await vm.SearchCommand.ExecuteAsync(null);
+                    await vm.SearchCommand.ExecuteAsync(null);
                 }
-                else if (LogsTab.IsSelected)
+                else if (LogsTab.IsSelected && LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel lvm && lvm.SearchCommand.CanExecute(null))
                 {
-                    if (LogsTab.Content is LogsView logsView && logsView.DataContext is LogsViewModel vm && vm.SearchCommand.CanExecute(null))
-                        await vm.SearchCommand.ExecuteAsync(null);
+                    await lvm.SearchCommand.ExecuteAsync(null);
                 }
-
             }
 
-            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && MainTab.IsSelected)
             {
-                if (MainTab.IsSelected)
-                {
-                    ServicesDataGrid.Focus();
-                    ServicesDataGrid.SelectAll();
+                ServicesDataGrid.Focus();
+                ServicesDataGrid.SelectAll();
 
-                    e.Handled = true;
-                }
+                e.Handled = true;
             }
         }
 
@@ -355,15 +348,12 @@ namespace Servy.Manager.Views
         /// <param name="e">Mouse button event arguments.</param>
         private void CheckBoxCell_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is DataGridCell cell && cell.DataContext is ServiceRowViewModel vm)
+            // Only toggle for the first column, which contains the checkbox
+            if (sender is DataGridCell cell && cell.DataContext is ServiceRowViewModel vm && cell.Column.DisplayIndex == 0)
             {
-                // Only toggle for the first column, which contains the checkbox
-                if (cell.Column.DisplayIndex == 0)
-                {
-                    vm.IsChecked = !vm.IsChecked;
-                    if (vm.IsChecked) vm.IsSelected = false;
-                    e.Handled = true;
-                }
+                vm.IsChecked = !vm.IsChecked;
+                if (vm.IsChecked) vm.IsSelected = false;
+                e.Handled = true;
             }
         }
 
@@ -394,12 +384,9 @@ namespace Servy.Manager.Views
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
         {
             // Check if the click was outside the DataGrid
-            if (e.OriginalSource is DependencyObject source)
+            if (e.OriginalSource is DependencyObject source && !IsDescendantOf(source, ServicesDataGrid))
             {
-                if (!IsDescendantOf(source, ServicesDataGrid))
-                {
-                    ServicesDataGrid.SelectedItems.Clear();
-                }
+                ServicesDataGrid.SelectedItems.Clear();
             }
         }
 

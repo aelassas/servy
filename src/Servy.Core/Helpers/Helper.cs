@@ -3,7 +3,10 @@ using System.IO;
 
 namespace Servy.Core.Helpers
 {
-    public class Helper
+    /// <summary>
+    /// Provides general helper methods.
+    /// </summary>
+    public static class Helper
     {
         /// <summary>
         /// Checks if the provided path is valid.
