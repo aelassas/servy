@@ -15,22 +15,19 @@ namespace Servy.CLI.Commands
     {
         private readonly IServiceManager _serviceManager;
         private readonly IServiceInstallValidator _validator;
-        private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InstallServiceCommand"/> class.
         /// </summary>
         /// <param name="serviceManager">Service manager to perform service operations.</param>
         /// <param name="validator">Validator for installation options.</param>
-        /// <param name="serviceRepository">The repository for managing service data persistence.</param>
         /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="serviceManager"/>, <paramref name="validator"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
+        /// Thrown when <paramref name="serviceManager"/> or <paramref name="validator"/> is <c>null</c>.
         /// </exception>
-        public InstallServiceCommand(IServiceManager serviceManager, IServiceInstallValidator validator, IServiceRepository serviceRepository)
+        public InstallServiceCommand(IServiceManager serviceManager, IServiceInstallValidator validator)
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         /// <summary>

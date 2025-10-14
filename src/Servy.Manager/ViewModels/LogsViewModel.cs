@@ -262,9 +262,7 @@ namespace Servy.Manager.ViewModels
         /// Gets the list of all available log levels for filtering.
         /// Used to populate a dropdown in the UI.
         /// </summary>
-        public List<EventLogLevel> LogLevels => Enum.GetValues(typeof(EventLogLevel))
-                                                    .Cast<EventLogLevel>()
-                                                    .ToList();
+        public List<EventLogLevel> LogLevels => GetLogLevels();
 
         #endregion
 
@@ -394,6 +392,14 @@ namespace Servy.Manager.ViewModels
                 SelectedLog = model;
             }
         }
+
+        /// <summary>
+        /// Gets the list of all available log levels for filtering.
+        /// </summary>
+        /// <returns></returns>
+        private List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
+                                                    .Cast<EventLogLevel>()
+                                                    .ToList();
 
         #endregion
 

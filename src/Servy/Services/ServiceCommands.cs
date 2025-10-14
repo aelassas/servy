@@ -456,7 +456,7 @@ namespace Servy.Services
                     return;
                 }
 
-                var xml = File.ReadAllText(path);
+                var xml = await File.ReadAllTextAsync(path);
                 if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
                 {
                     await _messageBoxService.ShowErrorAsync(errorMsg, Caption);
@@ -518,7 +518,7 @@ namespace Servy.Services
                     return;
                 }
 
-                var json = File.ReadAllText(path);
+                var json = await File.ReadAllTextAsync(path);
                 if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
                 {
                     await _messageBoxService.ShowErrorAsync(errorMsg, Caption);

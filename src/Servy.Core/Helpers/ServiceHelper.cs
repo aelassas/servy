@@ -146,7 +146,7 @@ namespace Servy.Core.Helpers
                            "SELECT Name, PathName FROM Win32_Service WHERE State = 'Running'"))
                 using (var services = searcher.Get())
                 {
-                    foreach (ManagementObject service in services)
+                    foreach (var service in services)
                     {
                         var pathName = service["PathName"]?.ToString();
                         if (string.IsNullOrWhiteSpace(pathName))
@@ -192,9 +192,6 @@ namespace Servy.Core.Helpers
 
             return result;
         }
-
-
-
 
         #endregion
 

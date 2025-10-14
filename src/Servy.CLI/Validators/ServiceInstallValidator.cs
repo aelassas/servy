@@ -21,17 +21,6 @@ namespace Servy.CLI.Validators
         private const int MinPreLaunchTimeoutSeconds = 5;
         private const int MinPreLaunchRetryAttempts = 0;
 
-        private readonly IServiceManager _serviceManager;
-
-        /// <summary>
-        /// Creates a new service validator. 
-        /// </summary>
-        /// <param name="serviceManager">Service manager.</param>
-        public ServiceInstallValidator(IServiceManager serviceManager)
-        {
-            _serviceManager = serviceManager;
-        }
-
         /// <summary>
         /// Validates the install service options.
         /// </summary>

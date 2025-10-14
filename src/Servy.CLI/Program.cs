@@ -83,9 +83,9 @@ namespace Servy.CLI
                     new WmiSearcher()
                     );
 
-                var installValidator = new ServiceInstallValidator(serviceManager);
+                var installValidator = new ServiceInstallValidator();
 
-                var installCommand = new InstallServiceCommand(serviceManager, installValidator, serviceRepository);
+                var installCommand = new InstallServiceCommand(serviceManager, installValidator);
                 var startCommand = new StartServiceCommand(serviceManager);
                 var stopCommand = new StopServiceCommand(serviceManager);
                 var restartCommand = new RestartServiceCommand(serviceManager);
