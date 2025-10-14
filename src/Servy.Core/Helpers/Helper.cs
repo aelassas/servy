@@ -40,7 +40,7 @@ namespace Servy.Core.Helpers
                 }
 
                 // Try to normalize the path (throws if invalid)
-                string fullPath = Path.GetFullPath(path);
+                _ = Path.GetFullPath(path);
 
                 return true;
             }

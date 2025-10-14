@@ -6,7 +6,7 @@ namespace Servy.Core.Services
 {
     /// <inheritdoc cref="IServiceControllerWrapper"/>
     [ExcludeFromCodeCoverage]
-    public class ServiceControllerWrapper : IServiceControllerWrapper, IDisposable
+    public class ServiceControllerWrapper : IServiceControllerWrapper
     {
         private readonly ServiceController _controller;
         private bool _disposed;
