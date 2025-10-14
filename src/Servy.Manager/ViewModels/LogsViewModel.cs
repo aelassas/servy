@@ -397,7 +397,7 @@ namespace Servy.Manager.ViewModels
         /// Gets the list of all available log levels for filtering.
         /// </summary>
         /// <returns></returns>
-        private List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
+        private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
                                                     .Cast<EventLogLevel>()
                                                     .ToList();
 
