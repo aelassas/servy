@@ -10,7 +10,6 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
-using System.Diagnostics;
 using System.Reflection;
 using static Servy.CLI.Helpers.Helper;
 
@@ -21,7 +20,7 @@ namespace Servy.CLI
     /// Responsible for parsing command-line arguments and executing
     /// corresponding service management commands.
     /// </summary>
-    public class Program
+    public static class Program
     {
         /// <summary>
         /// The base namespace where embedded resource files are located.
@@ -35,7 +34,7 @@ namespace Servy.CLI
         /// </summary>
         /// <param name="args">An array of command-line arguments.</param>
         /// <returns>Returns 0 on success; non-zero on error.</returns>
-        static async Task<int> Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             try
             {
@@ -45,10 +44,7 @@ namespace Servy.CLI
                     args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
                 }
 
-                if (args.Length > 0)
-                {
-                    args[0] = args[0].ToLowerInvariant();
-                }
+                args[0] = args[0].ToLowerInvariant();
 
                 var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
                                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));

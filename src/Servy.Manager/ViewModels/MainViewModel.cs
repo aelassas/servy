@@ -38,7 +38,7 @@ namespace Servy.Manager.ViewModels
         private readonly IHelpService _helpService;
         private CancellationTokenSource _cancellationTokenSource;
         private DispatcherTimer _refreshTimer;
-        private ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
+        private readonly ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
@@ -486,7 +486,7 @@ namespace Servy.Manager.ViewModels
                 var sw = Stopwatch.StartNew();
                 var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, _cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 sw.Stop();
-                Debug.WriteLine($"Created {results.Count()} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
+                Debug.WriteLine($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
                 // Step 4: fetch data & build VMs off UI thread
                 sw = Stopwatch.StartNew();
@@ -917,23 +917,20 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // If installed, populate info from dictionary
-                if (service.IsInstalled && allServices.TryGetValue(service.Name, out var info))
+                if (service.IsInstalled && allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
-                    if (info != null)
-                    {
-                        if (service.Status != info.Status)
-                            service.Status = info.Status;
+                    if (service.Status != info.Status)
+                        service.Status = info.Status;
 
-                        if (service.StartupType != info.StartupType)
-                            service.StartupType = info.StartupType;
+                    if (service.StartupType != info.StartupType)
+                        service.StartupType = info.StartupType;
 
-                        var user = string.IsNullOrEmpty(info.UserSession) ? AppConfig.LocalSystem : info.UserSession;
-                        if (service.UserSession != user)
-                            service.UserSession = ServiceMapper.GetUserSessionDisplayName(user);
+                    var user = string.IsNullOrEmpty(info.UserSession) ? AppConfig.LocalSystem : info.UserSession;
+                    if (service.UserSession != user)
+                        service.UserSession = ServiceMapper.GetUserSessionDisplayName(user);
 
-                        if (service.Description != info.Description)
-                            service.Description = info.Description;
-                    }
+                    if (service.Description != info.Description)
+                        service.Description = info.Description;
                 }
 
                 // Repository update if needed

@@ -65,7 +65,7 @@ namespace Servy.Service
         private bool _preLaunchEnabled = false;
         private StartOptions? _options;
         private CancellationTokenSource? _cancellationSource;
-        private IServiceRepository _serviceRepository;
+        private readonly IServiceRepository _serviceRepository;
 
         #endregion
 
@@ -1170,7 +1170,7 @@ namespace Servy.Service
                     _childProcess = null;
                 }
 
-                GC.SuppressFinalize(this);
+                //GC.SuppressFinalize(this);
             }
 
             _disposed = true;

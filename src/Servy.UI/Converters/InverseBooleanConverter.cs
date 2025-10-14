@@ -34,9 +34,20 @@ namespace Servy.UI.Converters
         /// <returns>The inverted boolean value if <paramref name="value"/> is a bool; otherwise <c>true</c>.</returns>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool b)
-                return !b;
-            return true;
+            // Ensure value is treated as boolean
+            bool b;
+            try
+            {
+                b = System.Convert.ToBoolean(value, culture);
+            }
+            catch
+            {
+                // fallback for non-boolean input
+                b = false;
+            }
+
+            // Return the inverse
+            return !b;
         }
     }
 }

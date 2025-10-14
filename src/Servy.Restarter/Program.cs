@@ -9,7 +9,7 @@ namespace Servy.Restarter
     /// <summary>
     /// Program entry point for the service restarter console app.
     /// </summary>
-    public class Program
+    public static class Program
     {
         /// <summary>
         /// Main method. Expects a single argument: the service name to restart.

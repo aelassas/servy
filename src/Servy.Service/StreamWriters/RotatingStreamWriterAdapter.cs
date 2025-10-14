@@ -4,10 +4,12 @@ namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Adapter class that wraps a <see cref="RotatingStreamWriter"/> to implement <see cref="IStreamWriter"/>.
+    /// Implements the full Dispose pattern.
     /// </summary>
-    public class RotatingStreamWriterAdapter : IStreamWriter
+    public class RotatingStreamWriterAdapter : IStreamWriter, IDisposable
     {
-        private readonly RotatingStreamWriter _inner;
+        private RotatingStreamWriter? _inner;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriterAdapter"/> class.
@@ -20,9 +22,44 @@ namespace Servy.Service.StreamWriters
         }
 
         /// <inheritdoc/>
-        public void WriteLine(string line) => _inner.WriteLine(line);
+        public void WriteLine(string line)
+        {
+            ThrowIfDisposed();
+            _inner!.WriteLine(line);
+        }
 
         /// <inheritdoc/>
-        public void Dispose() => _inner.Dispose();
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected dispose pattern implementation.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if called from finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                // Dispose managed resources
+                _inner?.Dispose();
+                _inner = null;
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has been disposed.
+        /// </summary>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(RotatingStreamWriterAdapter));
+        }
     }
 }

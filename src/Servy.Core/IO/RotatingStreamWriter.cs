@@ -7,6 +7,7 @@
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {
+        private bool _disposed;
         private readonly FileInfo _file;
         private StreamWriter? _writer;
         private readonly long _rotationSize;
@@ -141,22 +142,38 @@
         }
 
         /// <summary>
-        /// Disposes the current stream writer and releases resources.
+        /// Public dispose method that clients call.
         /// </summary>
         public void Dispose()
         {
-            lock (_lock)
-            {
-                if (_writer != null)
-                {
-                    _writer.Flush();
-                    _writer.Close();
-                    _writer.Dispose();
-                    _writer = null;
-                }
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
-                GC.SuppressFinalize(this);
+        /// <summary>
+        /// Protected virtual dispose method following the standard pattern.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                lock (_lock)
+                {
+                    if (_writer != null)
+                    {
+                        _writer.Flush();
+                        _writer.Close();
+                        _writer.Dispose();
+                        _writer = null;
+                    }
+                }
             }
+
+            _disposed = true;
         }
 
     }

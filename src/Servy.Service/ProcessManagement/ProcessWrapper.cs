@@ -5,12 +5,20 @@ namespace Servy.Service.ProcessManagement
     /// <summary>
     /// Wraps a <see cref="System.Diagnostics.Process"/> to allow abstraction and easier testing.
     /// </summary>
-    public class ProcessWrapper : IProcessWrapper
+    public class ProcessWrapper : IProcessWrapper, IDisposable
     {
         private readonly Process _process;
+        private bool _disposed;
 
         /// <inheritdoc/>
-        public IntPtr ProcessHandle => _process.Handle;
+        public IntPtr ProcessHandle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Handle;
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
@@ -43,42 +51,96 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public int Id => _process.Id;
+        public int Id
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Id;
+            }
+        }
 
         /// <inheritdoc/>
-        public bool HasExited => _process.HasExited;
+        public bool HasExited
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.HasExited;
+            }
+        }
 
         /// <inheritdoc/>
-        public IntPtr Handle => _process.Handle;
+        public IntPtr Handle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Handle;
+            }
+        }
 
         /// <inheritdoc/>
-        public int ExitCode => _process.ExitCode;
+        public int ExitCode
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.ExitCode;
+            }
+        }
 
         /// <inheritdoc/>
-        public IntPtr MainWindowHandle => _process.MainWindowHandle;
+        public IntPtr MainWindowHandle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.MainWindowHandle;
+            }
+        }
 
         /// <inheritdoc/>
         public bool EnableRaisingEvents
         {
-            get => _process.EnableRaisingEvents;
-            set => _process.EnableRaisingEvents = value;
+            get
+            {
+                ThrowIfDisposed();
+                return _process.EnableRaisingEvents;
+            }
+            set
+            {
+                ThrowIfDisposed();
+                _process.EnableRaisingEvents = value;
+            }
         }
 
         /// <inheritdoc/>
         public ProcessPriorityClass PriorityClass
         {
-            get => _process.PriorityClass;
-            set => _process.PriorityClass = value;
+            get
+            {
+                ThrowIfDisposed();
+                return _process.PriorityClass;
+            }
+            set
+            {
+                ThrowIfDisposed();
+                _process.PriorityClass = value;
+            }
         }
 
         /// <inheritdoc/>
-        public void Start() => _process.Start();
+        public void Start()
+        {
+            ThrowIfDisposed();
+            _process.Start();
+        }
 
         /// <inheritdoc/>
         public async Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
-            if (_process == null)
-                return false; // process not even started
+            ThrowIfDisposed();
 
             var start = DateTime.UtcNow;
 
@@ -87,37 +149,89 @@ namespace Servy.Service.ProcessManagement
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (_process.HasExited)
-                {
-                    // process exited before becoming healthy
-                    return false;
-                }
+                    return false; // process exited before becoming healthy
 
-                await Task.Delay(500, cancellationToken); // poll every 0.5s
+                await Task.Delay(500, cancellationToken);
             }
 
-            // Only return true if process is still alive
             return !_process.HasExited;
         }
 
         /// <inheritdoc/>
-        public void Kill(bool entireProcessTree = true) => _process.Kill(entireProcessTree);
+        public void Kill(bool entireProcessTree = true)
+        {
+            ThrowIfDisposed();
+            _process.Kill(entireProcessTree);
+        }
 
         /// <inheritdoc/>
-        public bool WaitForExit(int milliseconds) => _process.WaitForExit(milliseconds);
+        public bool WaitForExit(int milliseconds)
+        {
+            ThrowIfDisposed();
+            return _process.WaitForExit(milliseconds);
+        }
 
         /// <inheritdoc/>
-        public void WaitForExit() => _process.WaitForExit();
+        public void WaitForExit()
+        {
+            ThrowIfDisposed();
+            _process.WaitForExit();
+        }
 
         /// <inheritdoc/>
-        public bool CloseMainWindow() => _process.CloseMainWindow();
+        public bool CloseMainWindow()
+        {
+            ThrowIfDisposed();
+            return _process.CloseMainWindow();
+        }
 
         /// <inheritdoc/>
-        public void BeginOutputReadLine() => _process.BeginOutputReadLine();
+        public void BeginOutputReadLine()
+        {
+            ThrowIfDisposed();
+            _process.BeginOutputReadLine();
+        }
 
         /// <inheritdoc/>
-        public void BeginErrorReadLine() => _process.BeginErrorReadLine();
+        public void BeginErrorReadLine()
+        {
+            ThrowIfDisposed();
+            _process.BeginErrorReadLine();
+        }
 
         /// <inheritdoc/>
-        public void Dispose() => _process.Dispose();
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases unmanaged and optionally managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// True if called from <see cref="Dispose()"/>; false if called from a finalizer.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                _process.Dispose();
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
+        /// </summary>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(ProcessWrapper));
+        }
     }
 }

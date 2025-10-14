@@ -35,7 +35,7 @@ namespace Servy.Manager.ViewModels
         private DateTime? _toDateMinDate;
         private string _keyword = string.Empty;
         private CancellationTokenSource _cancellationTokenSource;
-        private ObservableCollection<LogEntryModel> _logs = new ObservableCollection<LogEntryModel>();
+        private readonly ObservableCollection<LogEntryModel> _logs = new ObservableCollection<LogEntryModel>();
         private string _selectedLogMessage;
         private string _footerText;
 

@@ -1,9 +1,5 @@
-﻿using Servy.Core.Config;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Reflection;
 
 namespace Servy.Core.Helpers
@@ -13,7 +9,7 @@ namespace Servy.Core.Helpers
     /// from the assembly, such as the Servy service executable and related files.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class ResourceHelper
+    public static class ResourceHelper
     {
         /// <summary>
         /// Copies an embedded resource from the assembly to disk, stopping and restarting services if necessary.
