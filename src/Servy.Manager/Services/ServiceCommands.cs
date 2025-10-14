@@ -36,7 +36,7 @@ namespace Servy.Manager.Services
         private readonly IFileDialogService _fileDialogService;
         private readonly ILogger _logger;
         private readonly Action<string> _removeServiceCallback;
-        private readonly Action _refreshCallback;
+        private readonly Func<Task> _refreshCallback;
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace Servy.Manager.Services
             ILogger logger,
             IFileDialogService fileDialogService,
             Action<string> removeServiceCallback,
-            Action refreshCallback,
+            Func<Task> refreshCallback,
             IServiceConfigurationValidator serviceConfigurationValidator
         )
         {
@@ -241,8 +241,9 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                string serviceName = service?.Name ?? "<unknown>";
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to configure {service.Name}: {ex}");
+                _logger.Warning($"Failed to configure {serviceName}: {ex}");
             }
         }
 

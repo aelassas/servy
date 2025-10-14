@@ -57,7 +57,7 @@ namespace Servy.Manager.UnitTests.Services
                 _loggerMock.Object,
                 _fileDialogServiceMock.Object,
                 name => _removedServiceName = name,
-                () => _refreshCalled = true,
+                () => Task.Run(() => _refreshCalled = true),
                 _serviceConfigurationValidatorMock.Object
             );
         }
@@ -123,7 +123,7 @@ namespace Servy.Manager.UnitTests.Services
         {
             // Arrange
             var sut = CreateServiceCommands();
-            var dto = new ServiceDto { Name = "MyService", ExecutablePath= @"C:\myApp.exe" };
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\myApp.exe" };
             var json = JsonConvert.SerializeObject(dto);
 
             var tempFile = Path.GetTempFileName();

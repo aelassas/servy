@@ -106,7 +106,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .ReturnsAsync(entries);
 
                 var vm = CreateViewModel();
-                bool scrollRaised = false;
+                var scrollRaised = false;
                 vm.ScrollLogsToTopRequested += () => scrollRaised = true;
 
                 // Act
@@ -161,7 +161,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: false);
         }
 
-
         [Fact]
         public void Cleanup_ShouldCancelAndDisposeToken()
         {
@@ -171,6 +170,9 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             // After cleanup, a second call should not throw
             vm.Cleanup();
+
+            var exception = Record.Exception(() => vm.Cleanup());
+            Assert.Null(exception);
         }
     }
 }
