@@ -1,10 +1,10 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage)](https://codecov.io/gh/aelassas/servy)
+[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
 [![winget](https://github.com/aelassas/servy/actions/workflows/winget.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/winget.yml)
 [![choco](https://github.com/aelassas/servy/actions/workflows/choco.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/choco.yml)
 [![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
-
 
 <!--
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) 
@@ -20,6 +20,7 @@
 [![scoop](https://github.com/aelassas/servy/actions/workflows/scoop.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/scoop.yml)
 [![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
+[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
 
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/aelassas/servy)](https://github.com/aelassas/servy/releases/latest)
