@@ -21,7 +21,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
             _mockRepository = new Mock<IServiceRepository>();
-            _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object, _mockRepository.Object);
+            _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
         }
 
         [Fact]
