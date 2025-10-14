@@ -656,13 +656,14 @@ namespace Servy.Service
             _childProcess.BeginErrorReadLine();
 
             // Fire and forget the post-launch script when process confirmed running
-            _cancellationSource = new CancellationTokenSource();
+            var cts = new CancellationTokenSource();
+            _cancellationSource = cts;
 
             Task.Run(async () =>
             {
                 try
                 {
-                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), _cancellationSource.Token))
+                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), cts.Token))
                     {
                         StartPostLaunchProcess();
                     }
@@ -675,7 +676,7 @@ namespace Servy.Service
                 {
                     _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
                 }
-            }, _cancellationSource.Token);
+            }, cts.Token);
         }
 
         /// <summary>
@@ -1098,7 +1099,17 @@ namespace Servy.Service
         /// </summary>
         protected override void OnStop()
         {
-            _cancellationSource?.Cancel();
+            try
+            {
+                // Cancel running post-launch tasks
+                _cancellationSource?.Cancel();
+            }
+            finally
+            {
+                // Dispose to release resources
+                _cancellationSource?.Dispose();
+                _cancellationSource = null;
+            }
 
             OnStoppedForTest?.Invoke();
 
