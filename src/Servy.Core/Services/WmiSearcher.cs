@@ -13,10 +13,10 @@ namespace Servy.Core.Services
     {
         /// <inheritdoc />
         /// <remarks>
-        /// The <paramref name="cancellationToken"/> is checked on each <see cref="ManagementObject"/> returned,
+        /// The <paramref name="cancellationToken"/> is checked on each <see cref="ManagementBaseObject"/> returned,
         /// allowing cooperative cancellation while iterating the results.
         /// </remarks>
-        public IEnumerable<ManagementObject> Get(string query, CancellationToken cancellationToken = default)
+        public IEnumerable<ManagementBaseObject> Get(string query, CancellationToken cancellationToken = default)
         {
             using (var searcher = new ManagementObjectSearcher(query))
             using (var results = searcher.Get())

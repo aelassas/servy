@@ -65,7 +65,7 @@ namespace Servy.Core.Helpers
                     $"SELECT ProcessId, ParentProcessId FROM Win32_Process WHERE ParentProcessId={parentPid.ToString(CultureInfo.InvariantCulture)}"
                 ))
                 {
-                    foreach (ManagementObject obj in searcher.Get())
+                    foreach (var obj in searcher.Get())
                     {
                         int childPid = Convert.ToInt32(obj["ProcessId"]);
 
