@@ -187,7 +187,6 @@ namespace Servy.Services
                 var maxFailedChecksValue = int.Parse(maxFailedChecks);
                 var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
-                var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
                 var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
                 var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
                 var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
@@ -480,8 +479,6 @@ namespace Servy.Services
                     return;
                 }
 
-                string normalizedServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
-
                 List<string> serviceDependenciesErrors;
                 if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
                 {
@@ -541,8 +538,6 @@ namespace Servy.Services
                     return;
                 }
 
-                string normalizedServiceDependencies = StringHelper.NormalizeString(dto.ServiceDependencies);
-
                 List<string> serviceDependenciesErrors;
                 if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
                 {
@@ -572,7 +567,6 @@ namespace Servy.Services
         public async Task OpenManager()
         {
             var app = (App)Application.Current;
-            var managerAppPath = app.ManagerAppPublishPath;
 
             if (string.IsNullOrWhiteSpace(app.ManagerAppPublishPath) || !File.Exists(app.ManagerAppPublishPath))
             {

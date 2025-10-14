@@ -100,7 +100,7 @@ namespace Servy.CLI.Validators
             {
                 try
                 {
-                    bool isGmsa = opts.User.EndsWith("$");
+                    bool isGmsa = opts.User.EndsWith('$');
 
                     if (!isGmsa)
                     {

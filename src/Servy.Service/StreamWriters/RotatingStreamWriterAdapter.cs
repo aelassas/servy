@@ -6,7 +6,7 @@ namespace Servy.Service.StreamWriters
     /// Adapter class that wraps a <see cref="RotatingStreamWriter"/> to implement <see cref="IStreamWriter"/>.
     /// Implements the full Dispose pattern.
     /// </summary>
-    public class RotatingStreamWriterAdapter : IStreamWriter, IDisposable
+    public class RotatingStreamWriterAdapter : IStreamWriter
     {
         private RotatingStreamWriter? _inner;
         private bool _disposed;

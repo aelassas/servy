@@ -15,7 +15,7 @@ namespace Servy.Core.Helpers
         /// Stores the last CPU measurement for a process.
         /// </summary>
         [ExcludeFromCodeCoverage]
-        private class CpuSample
+        private sealed class CpuSample
         {
             /// <summary>
             /// The date and time of the last CPU measurement.

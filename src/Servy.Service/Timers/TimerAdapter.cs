@@ -8,7 +8,7 @@ namespace Servy.Service.Timers
     /// Adapter for <see cref="Timer"/>, implementing the <see cref="ITimer"/> interface.
     /// Wraps the <see cref="Timer"/> class to provide a testable abstraction.
     /// </summary>
-    public class TimerAdapter : ITimer, IDisposable
+    public class TimerAdapter : ITimer
     {
         private Timer? _timer;
         private bool _disposed;

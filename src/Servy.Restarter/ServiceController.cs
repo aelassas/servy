@@ -5,7 +5,7 @@ namespace Servy.Restarter
     /// <summary>
     /// Concrete implementation of <see cref="IServiceController"/> that wraps <see cref="System.ServiceProcess.ServiceController"/>.
     /// </summary>
-    public class ServiceController : IServiceController, IDisposable
+    public class ServiceController : IServiceController
     {
         private readonly System.ServiceProcess.ServiceController _controller;
         private bool _disposed;

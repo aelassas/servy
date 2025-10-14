@@ -153,7 +153,7 @@ namespace Servy.Validators
             {
                 try
                 {
-                    bool isGmsa = dto.UserAccount.EndsWith("$");
+                    bool isGmsa = dto.UserAccount.EndsWith('$');
 
                     if (!isGmsa)
                     {
