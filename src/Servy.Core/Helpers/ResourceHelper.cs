@@ -5,6 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+#if !DEBUG
+using Servy.Core.Config;
+#endif
 
 namespace Servy.Core.Helpers
 {
