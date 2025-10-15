@@ -30,8 +30,8 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Constructor_CreatesDirectoryIfNotExists()
         {
-            string newDir = Path.Combine(_testDir, "newfolder");
-            string newFile = Path.Combine(newDir, "file.log");
+            var newDir = Path.Combine(_testDir, "newfolder");
+            var newFile = Path.Combine(newDir, "file.log");
 
             Assert.False(Directory.Exists(newDir));
 
@@ -47,7 +47,7 @@ namespace Servy.Core.UnitTests.IO
         public void Constructor_NoParentDirectory_DoesNotThrow()
         {
             // Arrange
-            string newFile = "file.log";
+            var newFile = "file.log";
 
             // Act
             var exception = Record.Exception(() =>
@@ -62,21 +62,21 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void GenerateUniqueFileName_FileDoesNotExist_ReturnsOriginalPath()
         {
-            string path = Path.Combine(_testDir, "log.txt");
-            string result = InvokeGenerateUniqueFileName(path);
+            var path = Path.Combine(_testDir, "log.txt");
+            var result = InvokeGenerateUniqueFileName(path);
             Assert.Equal(path, result);
         }
 
         [Fact]
         public void GenerateUniqueFileName_FileExists_AppendsNumber()
         {
-            string path = Path.Combine(_testDir, "log.txt");
+            var path = Path.Combine(_testDir, "log.txt");
             File.WriteAllText(path, "dummy"); // create first file
 
-            string first = InvokeGenerateUniqueFileName(path);
+            var first = InvokeGenerateUniqueFileName(path);
             File.WriteAllText(first, "dummy"); // create second file
 
-            string second = InvokeGenerateUniqueFileName(path);
+            var second = InvokeGenerateUniqueFileName(path);
 
             Assert.Equal(Path.Combine(_testDir, "log(2).txt"), second);
         }
@@ -84,7 +84,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Rotate_CreatesRotatedFileAndNewWriter()
         {
-            string filePath = Path.Combine(_testDir, "rotate.txt");
+            var filePath = Path.Combine(_testDir, "rotate.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, 5))
             {
@@ -110,7 +110,7 @@ namespace Servy.Core.UnitTests.IO
             Assert.NotNull(latestRotatedFile); // make sure rotation happened
 
             // Read content of the latest rotated file
-            string content = File.ReadAllText(latestRotatedFile.FullName);
+            var content = File.ReadAllText(latestRotatedFile.FullName);
 
             // Assert that it contains "more"
             Assert.Contains("more", content);
@@ -119,7 +119,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Flush_WhenWriterIsNotNull_CallsUnderlyingFlush()
         {
-            string filePath = Path.Combine(_testDir, "test.txt");
+            var filePath = Path.Combine(_testDir, "test.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, 10))
             {
@@ -130,7 +130,7 @@ namespace Servy.Core.UnitTests.IO
             }
 
             // Check that content is actually written to file
-            string content = File.ReadAllText(filePath);
+            var content = File.ReadAllText(filePath);
             Assert.Equal("hello\r\n", content);
         }
 
@@ -150,7 +150,7 @@ namespace Servy.Core.UnitTests.IO
         private string InvokeGenerateUniqueFileName(string path)
         {
             var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                BindingFlags.NonPublic | BindingFlags.Static);
             return (string)method.Invoke(null, new object[] { path });
         }
 
@@ -162,6 +162,10 @@ namespace Servy.Core.UnitTests.IO
             writer.WriteLine("Test line");
             writer.Dispose();
 
+            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
+
+            // Try dispose again to cover all branches of Dispose method
+            writer.Dispose();
             Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
         }
 
@@ -176,13 +180,13 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = new RotatingStreamWriter(_logFilePath, 1000))
             {
 
-                string basePath = Path.Combine(_testDir, "file.log");
+                var basePath = Path.Combine(_testDir, "file.log");
 
                 File.WriteAllText(basePath, "test");
                 File.WriteAllText(Path.Combine(_testDir, "file(1).log"), "test");
                 File.WriteAllText(Path.Combine(_testDir, "file(2).log"), "test");
 
-                string uniqueName = (string)methodInfo.Invoke(writer, new object[] { basePath });
+                var uniqueName = (string)methodInfo.Invoke(writer, new object[] { basePath });
 
                 Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
             }
@@ -191,7 +195,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void WriteLine_DoesNotRotate_WhenRotationSizeZero()
         {
-            string filePath = Path.Combine(_testDir, "zero.txt");
+            var filePath = Path.Combine(_testDir, "zero.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, 0))
             {
@@ -209,7 +213,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void WriteLine_DoesNotRotate_WhenFileSmallerThanRotationSize()
         {
-            string filePath = Path.Combine(_testDir, "small.txt");
+            var filePath = Path.Combine(_testDir, "small.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, 1024)) // 1 KB
             {
@@ -227,7 +231,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void WriteLine_Rotates_WhenFileExceedsRotationSize()
         {
-            string filePath = Path.Combine(_testDir, "rotate.txt");
+            var filePath = Path.Combine(_testDir, "rotate.txt");
 
             using (var writer = new RotatingStreamWriter(filePath, 5)) // tiny size
             {
