@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.DTOs
+﻿using Newtonsoft.Json;
+
+namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Data Transfer Object for persisting a Windows service configuration in SQLite.
@@ -8,11 +10,13 @@
         /// <summary>
         /// Primary key of the service record.
         /// </summary>
+        [JsonIgnore]
         public int? Id { get; set; }
 
         /// <summary>
         /// Child Process PID.
         /// </summary>
+        [JsonIgnore]
         public int? Pid { get; set; }
 
         /// <summary>
@@ -204,7 +208,7 @@
 
         #region ShouldSerialize Methods
 
-        public bool ShouldSerializeId() => Id.HasValue;
+        public bool ShouldSerializeId() => false;
         public bool ShouldSerializePid() => false;
         public bool ShouldSerializeDescription() => !string.IsNullOrWhiteSpace(Description);
         public bool ShouldSerializeStartupDirectory() => !string.IsNullOrWhiteSpace(StartupDirectory);
