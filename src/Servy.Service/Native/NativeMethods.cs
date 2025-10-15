@@ -29,7 +29,7 @@ namespace Servy.Service.Native
         /// <param name="cbJobObjectInfoLength">Size of the structure pointed to by lpJobObjectInfo, in bytes.</param>
         /// <returns>True if successful; otherwise false.</returns>
         [DllImport("kernel32.dll")]
-        public static extern bool SetInformationJobObject(IntPtr hJob, JOBOBJECTINFOCLASS infoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
+        public static extern bool SetInformationJobObject(IntPtr hJob, JobObjectInfoClass infoClass, IntPtr lpJobObjectInfo, uint cbJobObjectInfoLength);
 
         /// <summary>
         /// Assigns a process to an existing job object.
@@ -51,7 +51,7 @@ namespace Servy.Service.Native
         /// <summary>
         /// Specifies the type of job object information to query or set.
         /// </summary>
-        public enum JOBOBJECTINFOCLASS
+        public enum JobObjectInfoClass
         {
             /// <summary>
             /// Extended limit information for the job object.
@@ -63,7 +63,7 @@ namespace Servy.Service.Native
         /// Flags that control the behavior of a job object’s limits.
         /// </summary>
         [Flags]
-        public enum LimitFlags : uint
+        public enum Limit : uint
         {
             /// <summary>
             /// When this flag is set, all processes associated with the job are terminated when the last handle to the job is closed.
@@ -76,17 +76,17 @@ namespace Servy.Service.Native
         /// Combines basic limits, IO accounting, and memory limits.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        public struct JobobjectExtendedLimitInformation
         {
             /// <summary>
             /// Basic limit information for the job.
             /// </summary>
-            public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+            public JobobjectBasicLimitInformation BasicLimitInformation;
 
             /// <summary>
             /// IO accounting information for the job.
             /// </summary>
-            public IO_COUNTERS IoInfo;
+            public IoCounters IoInfo;
 
             /// <summary>
             /// Maximum amount of memory the job's processes can commit.
@@ -113,7 +113,7 @@ namespace Servy.Service.Native
         /// Contains basic limit information for a job object.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct JOBOBJECT_BASIC_LIMIT_INFORMATION
+        public struct JobobjectBasicLimitInformation
         {
             /// <summary>
             /// Per-process user-mode execution time limit, in 100-nanosecond ticks.
@@ -128,7 +128,7 @@ namespace Servy.Service.Native
             /// <summary>
             /// Flags that control the job limits.
             /// </summary>
-            public LimitFlags LimitFlags;
+            public Limit LimitFlags;
 
             /// <summary>
             /// Minimum working set size, in bytes.
@@ -165,7 +165,7 @@ namespace Servy.Service.Native
         /// Contains IO accounting information for a job object.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct IO_COUNTERS
+        public struct IoCounters
         {
             /// <summary>
             /// Number of read operations performed.

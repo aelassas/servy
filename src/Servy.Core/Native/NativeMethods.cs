@@ -18,7 +18,7 @@ namespace Servy.Core.Native
         /// Describes a Windows service description string used in service configuration.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct SERVICE_DESCRIPTION
+        public struct ServiceDescription
         {
             /// <summary>
             /// A pointer to a Unicode string containing the service description.
@@ -48,7 +48,7 @@ namespace Servy.Core.Native
         /// Represents the current status of a Windows service.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct SERVICE_STATUS
+        public struct ServiceStatus
         {
             public int dwServiceType;
             public int dwCurrentState;
@@ -110,7 +110,7 @@ namespace Servy.Core.Native
         /// Sends a control code to a service.
         /// </summary>
         [DllImport("advapi32.dll", SetLastError = true)]
-        public static extern bool ControlService(IntPtr hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
+        public static extern bool ControlService(IntPtr hService, int dwControl, ref ServiceStatus lpServiceStatus);
 
         /// <summary>
         /// Changes the configuration parameters of a service.
@@ -136,7 +136,7 @@ namespace Servy.Core.Native
         public static extern bool ChangeServiceConfig2(
               IntPtr hService,
               int dwInfoLevel,
-              ref SERVICE_DESCRIPTION lpInfo);
+              ref ServiceDescription lpInfo);
 
         /// <summary>
         /// Attempts to log a user on to the local computer using the specified credentials.

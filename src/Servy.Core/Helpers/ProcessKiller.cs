@@ -1,10 +1,7 @@
 ﻿using Servy.Core.Config;
-using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 
@@ -22,7 +19,7 @@ namespace Servy.Core.Helpers
         /// Represents the basic information of a process used for querying the parent PID via Win32 API.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        internal struct PROCESS_BASIC_INFORMATION
+        internal struct ProcessBasicInformation
         {
             public IntPtr Reserved1;
             public IntPtr PebBaseAddress;
@@ -36,7 +33,7 @@ namespace Servy.Core.Helpers
         private static extern int NtQueryInformationProcess(
             IntPtr processHandle,
             int processInformationClass,
-            ref PROCESS_BASIC_INFORMATION processInformation,
+            ref ProcessBasicInformation processInformation,
             uint processInformationLength,
             out uint returnLength
         );
@@ -199,7 +196,7 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                PROCESS_BASIC_INFORMATION pbi = new PROCESS_BASIC_INFORMATION();
+                ProcessBasicInformation pbi = new ProcessBasicInformation();
                 uint retLen;
                 int status = NtQueryInformationProcess(process.Handle, 0, ref pbi, (uint)Marshal.SizeOf(pbi), out retLen);
 
