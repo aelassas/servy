@@ -64,7 +64,7 @@ namespace Servy.Service.Native
         /// Flags that control the behavior of a job object’s limits.
         /// </summary>
         [Flags]
-        public enum Limit : uint
+        public enum JobLimits : uint
         {
             /// <summary>
             /// When this flag is set, all processes associated with the job are terminated when the last handle to the job is closed.
@@ -129,7 +129,7 @@ namespace Servy.Service.Native
             /// <summary>
             /// Flags that control the job limits.
             /// </summary>
-            public Limit LimitFlags;
+            public JobLimits LimitFlags;
 
             /// <summary>
             /// Minimum working set size, in bytes.
