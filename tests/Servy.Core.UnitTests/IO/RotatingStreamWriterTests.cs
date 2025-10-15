@@ -1,11 +1,5 @@
 ﻿using Servy.Core.IO;
-using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Core.UnitTests.IO
 {
@@ -164,6 +158,10 @@ namespace Servy.Core.UnitTests.IO
             writer.WriteLine("Test line");
             writer.Dispose();
 
+            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
+
+            // Try dispose again to cover all branches of Dispose method
+            writer.Dispose();
             Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
         }
 
