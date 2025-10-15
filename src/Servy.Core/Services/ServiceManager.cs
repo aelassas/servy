@@ -164,7 +164,7 @@ namespace Servy.Core.Services
             if (string.IsNullOrEmpty(description))
                 return;
 
-            var desc = new SERVICE_DESCRIPTION
+            var desc = new ServiceDescription
             {
                 lpDescription = Marshal.StringToHGlobalUni(description)
             };
@@ -414,7 +414,7 @@ namespace Servy.Core.Services
                         null);
 
                     // Try to stop service
-                    var status = new SERVICE_STATUS();
+                    var status = new Native.NativeMethods.ServiceStatus();
                     _windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
                     // Wait for service to actually stop (up to 60 seconds)
@@ -602,31 +602,31 @@ namespace Servy.Core.Services
 
                 // Map WMI State to ServiceStatus enum
                 var stateObj = service["State"];
-                ServiceStatus status = ServiceStatus.None;
+                var status = Enums.ServiceStatus.None;
                 if (stateObj != null)
                 {
                     switch (stateObj.ToString().ToLowerInvariant())
                     {
                         case "running":
-                            status = ServiceStatus.Running;
+                            status = Enums.ServiceStatus.Running;
                             break;
                         case "stopped":
-                            status = ServiceStatus.Stopped;
+                            status = Enums.ServiceStatus.Stopped;
                             break;
                         case "paused":
-                            status = ServiceStatus.Paused;
+                            status = Enums.ServiceStatus.Paused;
                             break;
                         case "start pending":
-                            status = ServiceStatus.StartPending;
+                            status = Enums.ServiceStatus.StartPending;
                             break;
                         case "stop pending":
-                            status = ServiceStatus.StopPending;
+                            status = Enums.ServiceStatus.StopPending;
                             break;
                         case "pause pending":
-                            status = ServiceStatus.PausePending;
+                            status = Enums.ServiceStatus.PausePending;
                             break;
                         case "continue pending":
-                            status = ServiceStatus.ContinuePending;
+                            status = Enums.ServiceStatus.ContinuePending;
                             break;
                     }
                 }

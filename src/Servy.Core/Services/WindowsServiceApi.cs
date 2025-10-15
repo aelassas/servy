@@ -60,7 +60,7 @@ namespace Servy.Core.Services
             => NativeMethods.CloseServiceHandle(hSCObject);
 
         /// <inheritdoc />
-        public bool ControlService(IntPtr hService, int dwControl, ref SERVICE_STATUS lpServiceStatus)
+        public bool ControlService(IntPtr hService, int dwControl, ref ServiceStatus lpServiceStatus)
             => NativeMethods.ControlService(hService, dwControl, ref lpServiceStatus);
 
         /// <inheritdoc />
@@ -90,7 +90,7 @@ namespace Servy.Core.Services
                 lpDisplayName);
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref SERVICE_DESCRIPTION lpInfo)
+        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDescription lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
