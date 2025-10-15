@@ -141,14 +141,11 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT Id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            var cmd = new CommandDefinition(sql, new { Name = service.Name.Trim() }, cancellationToken: cancellationToken);
-
-            var exists = await _dapper.QuerySingleOrDefaultAsync<int>(cmd);
-
-            if (exists > 0)
+            var serviceDto = await GetByNameAsync(service.Name.Trim());
+            if (serviceDto != null)
             {
-                service.Id = exists;
+                service.Id = serviceDto.Id;
+                service.Pid = serviceDto.Pid;
                 return await UpdateAsync(service);
             }
 
