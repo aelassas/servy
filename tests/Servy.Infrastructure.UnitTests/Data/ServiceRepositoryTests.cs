@@ -91,7 +91,8 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task UpsertAsync_ExistingService_Updates()
         {
             var dto = new ServiceDto { Name = "S1" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(5);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+                .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1", Pid = 123 });
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
@@ -100,13 +101,22 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             Assert.Equal(1, rows);
             Assert.Equal(5, dto.Id);
+            Assert.Equal(123, dto.Pid);
+
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+                .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1"});
+            rows = await repo.UpsertAsync(dto);
+
+            Assert.Equal(1, rows);
+            Assert.Equal(5, dto.Id);
+            Assert.Null(dto.Pid);
         }
 
         [Fact]
         public async Task UpsertAsync_NewService_Adds()
         {
             var dto = new ServiceDto { Name = "NewService" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto?>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto?)null);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(7);
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
@@ -124,7 +134,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
 
             // Service does not exist
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
+            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto?>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto?)null);
 
             // AddAsync returns 7
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
