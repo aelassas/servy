@@ -77,7 +77,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
@@ -157,7 +157,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
@@ -230,7 +230,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
@@ -340,7 +340,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
@@ -389,7 +389,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Verify(x => x.OpenSCManager(null, null, It.IsAny<uint>()), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(serviceHandle), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.CloseServiceHandle(scmHandle), Times.Once);
         }
@@ -446,7 +446,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
@@ -521,7 +521,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
@@ -569,7 +569,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                 serviceHandle,
                 It.IsAny<int>(),
-                ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+                ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
@@ -614,13 +614,13 @@ namespace Servy.Core.UnitTests.Services
             var serviceHandle = new IntPtr(456);
 
             // Should not call ChangeServiceConfig2 if description is null or empty
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
             _serviceManager.SetServiceDescription(serviceHandle, null);
             _serviceManager.SetServiceDescription(serviceHandle, "");
 
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny), Times.Never);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny), Times.Never);
         }
 
         [Fact]
@@ -629,7 +629,7 @@ namespace Servy.Core.UnitTests.Services
             var serviceHandle = new IntPtr(456);
             var description = "desc";
 
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_DESCRIPTION>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(false);
 
             Assert.Throws<Win32Exception>(() => _serviceManager.SetServiceDescription(serviceHandle, description));
@@ -689,7 +689,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -761,7 +761,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -837,7 +837,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<SERVICE_STATUS>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -1216,16 +1216,16 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Theory]
-        [InlineData("Running", ServiceStatus.Running)]
-        [InlineData("Stopped", ServiceStatus.Stopped)]
-        [InlineData("Paused", ServiceStatus.Paused)]
-        [InlineData("Start Pending", ServiceStatus.StartPending)]
-        [InlineData("Stop Pending", ServiceStatus.StopPending)]
-        [InlineData("Pause Pending", ServiceStatus.PausePending)]
-        [InlineData("Continue Pending", ServiceStatus.ContinuePending)]
-        [InlineData(null, ServiceStatus.None)]
-        [InlineData("UnknownState", ServiceStatus.None)]
-        public void GetAllServices_ShouldMapStateCorrectly(string wmiState, ServiceStatus expectedStatus)
+        [InlineData("Running", Enums.ServiceStatus.Running)]
+        [InlineData("Stopped", Enums.ServiceStatus.Stopped)]
+        [InlineData("Paused", Enums.ServiceStatus.Paused)]
+        [InlineData("Start Pending", Enums.ServiceStatus.StartPending)]
+        [InlineData("Stop Pending", Enums.ServiceStatus.StopPending)]
+        [InlineData("Pause Pending", Enums.ServiceStatus.PausePending)]
+        [InlineData("Continue Pending", Enums.ServiceStatus.ContinuePending)]
+        [InlineData(null, Enums.ServiceStatus.None)]
+        [InlineData("UnknownState", Enums.ServiceStatus.None)]
+        public void GetAllServices_ShouldMapStateCorrectly(string wmiState, Enums.ServiceStatus expectedStatus)
         {
             var mo = new ManagementClass("Win32_Service").CreateInstance();
             mo["State"] = wmiState;
@@ -1284,7 +1284,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetAllServices();
 
             var service = Assert.Single(result);
-            Assert.Equal(ServiceStatus.None, service.Status);
+            Assert.Equal(Enums.ServiceStatus.None, service.Status);
             Assert.Equal(ServiceStartType.Automatic, service.StartupType);
             Assert.Equal("LocalSystem", service.UserSession);
             Assert.Equal(string.Empty, service.Description);
@@ -1316,12 +1316,12 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(2, result.Count);
 
             Assert.Equal("svc1", result[0].Name);
-            Assert.Equal(ServiceStatus.Running, result[0].Status);
+            Assert.Equal(Enums.ServiceStatus.Running, result[0].Status);
             Assert.Equal(ServiceStartType.Manual, result[0].StartupType);
             Assert.Equal("User1", result[0].UserSession);
 
             Assert.Equal("svc2", result[1].Name);
-            Assert.Equal(ServiceStatus.Stopped, result[1].Status);
+            Assert.Equal(Enums.ServiceStatus.Stopped, result[1].Status);
             Assert.Equal(ServiceStartType.Disabled, result[1].StartupType);
             Assert.Equal("User2", result[1].UserSession);
         }
@@ -1362,19 +1362,19 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(3, services.Count);
 
             var nullStateService = services.First(s => s.Name == "NullStateService");
-            Assert.Equal(ServiceStatus.None, nullStateService.Status);       // branch with stateObj null
+            Assert.Equal(Enums.ServiceStatus.None, nullStateService.Status);       // branch with stateObj null
             Assert.Equal(ServiceStartType.Automatic, nullStateService.StartupType);
             Assert.Equal("LocalSystem", nullStateService.UserSession);
             Assert.Equal(string.Empty, nullStateService.Description);
 
             var runningService = services.First(s => s.Name == "RunningService");
-            Assert.Equal(ServiceStatus.Running, runningService.Status);
+            Assert.Equal(Enums.ServiceStatus.Running, runningService.Status);
             Assert.Equal(ServiceStartType.Manual, runningService.StartupType);
             Assert.Equal("User1", runningService.UserSession);
             Assert.Equal("Running Service", runningService.Description);
 
             var stoppedService = services.First(s => s.Name == "StoppedService");
-            Assert.Equal(ServiceStatus.Stopped, stoppedService.Status);
+            Assert.Equal(Enums.ServiceStatus.Stopped, stoppedService.Status);
             Assert.Equal(ServiceStartType.Disabled, stoppedService.StartupType);
             Assert.Equal("User2", stoppedService.UserSession);
             Assert.Equal("Stopped Service", stoppedService.Description);

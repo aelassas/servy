@@ -83,7 +83,7 @@ namespace Servy.Core.Services
         /// <param name="dwControl">The control code to send.</param>
         /// <param name="lpServiceStatus">Receives the latest status information about the service.</param>
         /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
-        bool ControlService(IntPtr hService, int dwControl, ref SERVICE_STATUS lpServiceStatus);
+        bool ControlService(IntPtr hService, int dwControl, ref ServiceStatus lpServiceStatus);
 
         /// <summary>
         /// Changes the configuration parameters of a service.
@@ -124,7 +124,7 @@ namespace Servy.Core.Services
         bool ChangeServiceConfig2(
             IntPtr hService,
             int dwInfoLevel,
-            ref SERVICE_DESCRIPTION lpInfo
+            ref ServiceDescription lpInfo
         );
 
         /// <summary>
