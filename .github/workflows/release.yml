@@ -1,16 +1,16 @@
 ﻿# ==============================================================
-#  Release All Workflow
+#  Release Workflow
 # --------------------------------------------------------------
 #  Purpose:
 #    This workflow provides a unified "release" badge
 #    that reflects the combined status of the following workflows:
 #      - winget.yml       → Publishes the WinGet manifest
 #      - choco.yml        → Publishes the Chocolatey package
-#      - bump-version.yml → Bumps version and creates release tags
+#      - bump-version.yml → Bumps version
 #
 #  Behavior:
 #    • Automatically runs after any of the above workflows complete.
-#    • Checks their latest runs on the main branch.
+#    • Checks their latest runs.
 #    • Fails if any of them failed, were skipped, or did not run.
 #    • Can also be triggered manually from the GitHub Actions tab.
 #
