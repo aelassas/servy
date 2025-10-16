@@ -32,6 +32,7 @@
 
 <p align="center">
   <img src="https://servy-win.github.io/servy-tiny.png?v=1" alt="Servy">
+  ⭐ Don't forget to star us on GitHub — it costs nothing but means a lot and helps the project grow!
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
