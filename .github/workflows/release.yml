@@ -50,7 +50,6 @@ jobs:
                 repo: context.repo.repo,
                 workflow_id: `${wf}.yml`,
                 per_page: 1,
-                branch: "main"
               });
               
               const run = runs.data.workflow_runs[0];
