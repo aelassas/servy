@@ -1,21 +1,19 @@
 $ErrorActionPreference = 'Stop'
 
-$packageName    = 'servy'
-$toolsDir       = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$installerType  = 'exe'
-$url64 = 'https://github.com/aelassas/servy/releases/download/v2.3/servy-2.3-x64-installer.exe'
-$checksum64 = '35CC536F575CE4DFE9993B919BB04E6832CDECCD59AFAB6B2A8EA696DC533A80'
-$checksumType64 = 'sha256'
-$silentArgs     = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES'
+$packageName   = 'servy'
+$installerType = 'exe'
+$url64         = 'https://github.com/aelassas/servy/releases/download/v2.3/servy-2.3-x64-installer.exe'
+$checksum64    = '35CC536F575CE4DFE9993B919BB04E6832CDECCD59AFAB6B2A8EA696DC533A80'
+$checksumType  = 'sha256'
+$silentArgs    = '/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP- /CLOSEAPPLICATIONS /NOCANCEL'
 
-# Use splatting for better readability
-$installParams = @{
-    PackageName  = $packageName
-    FileType     = $installerType
-    SilentArgs   = $silentArgs
-    Url          = $url64
-    Checksum     = $checksum64
-    ChecksumType = $checksumType64
+$installArgs = @{
+    PackageName     = $packageName
+    FileType        = $installerType
+    SilentArgs      = $silentArgs
+    Url64bit        = $url64
+    Checksum64      = $checksum64
+    ChecksumType64  = $checksumType
 }
 
-Install-ChocolateyPackage @installParams
+Install-ChocolateyPackage @installArgs

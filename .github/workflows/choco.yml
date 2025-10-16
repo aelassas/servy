@@ -77,8 +77,8 @@ jobs:
           $content = Get-Content $file -Raw
 
           # Build replacement strings
-          $urlReplacement = "`$url64 = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-x64-installer.exe'"
-          $checksumReplacement = "`$checksum64 = '$($env:HASH)'"
+          $urlReplacement = "`$url64         = 'https://github.com/aelassas/servy/releases/download/$($env:TAG)/servy-$($env:VERSION)-x64-installer.exe'"
+          $checksumReplacement = "`$checksum64    = '$($env:HASH)'"
 
           Write-Host "URL: $urlReplacement"
           Write-Host "HASH: $checksumReplacement"
