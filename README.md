@@ -1,10 +1,8 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage)](https://codecov.io/gh/aelassas/servy)
-[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
-[![winget](https://github.com/aelassas/servy/actions/workflows/winget.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/winget.yml)
-[![choco](https://github.com/aelassas/servy/actions/workflows/choco.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/choco.yml)
-[![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
+[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
+
 
 <!--
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml) 
@@ -15,12 +13,14 @@
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage)](https://codecov.io/gh/aelassas/servy)
 [![coveralls](https://coveralls.io/repos/github/aelassas/servy/badge.svg?branch=main)](https://coveralls.io/github/aelassas/servy?branch=main)
 
+[![scoop](https://github.com/aelassas/servy/actions/workflows/scoop.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/scoop.yml)
+[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
+
+[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
 [![winget](https://github.com/aelassas/servy/actions/workflows/winget.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/winget.yml)
 [![choco](https://github.com/aelassas/servy/actions/workflows/choco.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/choco.yml)
-[![scoop](https://github.com/aelassas/servy/actions/workflows/scoop.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/scoop.yml)
 [![bump-version](https://github.com/aelassas/servy/actions/workflows/bump-version.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/bump-version.yml)
-[![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
-[![sonar](https://img.shields.io/sonar/quality_gate/aelassas_servy?server=https%3A%2F%2Fsonarcloud.io&label=sonar)](https://sonarcloud.io/summary/new_code?id=aelassas_servy)
+[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 
 [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases)
 [![GitHub Release](https://img.shields.io/github/v/release/aelassas/servy)](https://github.com/aelassas/servy/releases/latest)
