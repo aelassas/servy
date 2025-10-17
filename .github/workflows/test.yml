@@ -1,4 +1,13 @@
-﻿name: test
+﻿# ===========================================
+# GitHub Actions Workflow — Test
+# -------------------------------------------
+# Runs unit tests for all Servy projects on push
+# to the main branch. Generates code coverage for
+# core components, merges Cobertura reports, and
+# uploads results to Codecov and Coveralls.
+# ===========================================
+
+name: test
 
 on:
   push:

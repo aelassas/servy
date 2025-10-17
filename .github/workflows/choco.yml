@@ -1,3 +1,14 @@
+# ===========================================
+# GitHub Actions Workflow — Choco
+# -------------------------------------------
+# Packages and publishes the Servy installer to
+# Chocolatey when a new GitHub release is published
+# or when manually triggered. It downloads the latest
+# installer, computes the SHA256 checksum, updates
+# nuspec and install scripts, commits the changes,
+# and pushes the package to Chocolatey.
+# ===========================================
+
 name: choco
 
 on:

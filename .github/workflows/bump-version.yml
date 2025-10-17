@@ -1,3 +1,13 @@
+# ===========================================
+# GitHub Actions Workflow — Bump Version
+# -------------------------------------------
+# Automatically bumps the Servy version number
+# after a completed "choco" workflow.
+# It determines the next semantic version, updates
+# version files on both main and net48 branches,
+# and commits the changes back to the repository.
+# ===========================================
+
 name: bump-version
 
 on:

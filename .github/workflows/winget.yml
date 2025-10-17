@@ -1,3 +1,10 @@
+# ===========================================
+# GitHub Actions Workflow — WinGet
+# -------------------------------------------
+# Publishes the latest Servy release to WinGet
+# when a new release is published.
+# ===========================================
+
 name: winget
 
 on:

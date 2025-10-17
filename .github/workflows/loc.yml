@@ -1,3 +1,12 @@
+# ===========================================
+# GitHub Actions Workflow — LOC
+# -------------------------------------------
+# Calculates the total lines of code (LoC) in
+# the repository and generates a badge. The badge
+# is then deployed to the "loc" branch for use in
+# documentation or the project README.
+# ===========================================
+
 name: loc
 
 on: 
