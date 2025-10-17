@@ -1,3 +1,11 @@
+# ===========================================
+# GitHub Actions Workflow — Test (net48)
+# -------------------------------------------
+# Builds the Servy solution targeting .NET Framework 4.8,
+# runs all unit tests, collects coverage for core components,
+# normalizes paths, and uploads coverage to Codecov and Coveralls.
+# ===========================================
+
 name: test
 
 on:
