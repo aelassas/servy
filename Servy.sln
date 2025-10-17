@@ -41,6 +41,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Restarter.UnitTests", "tests\Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj", "{05CEF054-B8AC-4088-9117-B8F6A508E85C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{8E91D1D2-8183-4A34-922F-5F702720EBD6}"
+	ProjectSection(SolutionItems) = preProject
+		.github\azure-pipelines.yml = .github\azure-pipelines.yml
+		.github\FUNDING.yml = .github\FUNDING.yml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"
 	ProjectSection(SolutionItems) = preProject
