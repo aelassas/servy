@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — LOC
+# GitHub Actions Workflow â€” LOC
 # -------------------------------------------
 # Calculates the total lines of code (LoC) in
 # the repository and generates a badge. The badge
@@ -26,11 +26,11 @@ jobs:
         id: badge
         with:
           debug: true
-          directory: ./
+          directory: ./src
           badge_label: lines of code
           badge_color: green
           badge: ./output/badge.svg
-          ignore: '.gitignore|README.md|LICENSE.txt|.github|setup|*.exe|*.ico|*.ps1|*.psm1|*.bat|package-lock.json|node_modules'
+          ignore: '.gitignore|*.txt|.github|setup|tests|*.exe|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml'
 
       - name: Print the output
         run: |
@@ -45,3 +45,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Summary
+        run: |
+          echo "LOC Badge Generated: ${{ steps.badge.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+          
