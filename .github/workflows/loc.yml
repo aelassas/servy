@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Create the badge
-        uses: shadowmoose/GHA-LoC-Badge@1.0.0
+        uses: shadowmoose/GHA-LoC-Badge@master
         id: badge
         with:
           debug: true
