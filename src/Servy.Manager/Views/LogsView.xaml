@@ -113,7 +113,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
-                <!--<DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="100" CanUserReorder="False"  CanUserResize="False"/>-->
+                <DataGridTextColumn Header="{x:Static resx:Strings.Column_EventId}" Binding="{Binding EventId}" Width="60" CanUserReorder="False"  CanUserResize="False"/>
 
                 <!--Message-->
                 <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Message}" Width="*" MinWidth="300" CanUserReorder="False"  CanUserResize="False">

@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Servy.Core.Logging
 {
     /// <summary>
-    /// Logs messages to the Windows Event Log.
+    /// Logs messages to the Windows Event Log with Event IDs.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public class EventLogLogger : ILogger
@@ -13,6 +13,11 @@ namespace Servy.Core.Logging
 
         ///<inheritdoc/>
         public string? Prefix { get; set; }
+
+        // Default Event IDs per level
+        private const int InfoEventId = 1000;
+        private const int WarningEventId = 2000;
+        private const int ErrorEventId = 3000;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source.
@@ -32,22 +37,22 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
-        public  void Info(string message)
+        public void Info(string message)
         {
-            _eventLog.WriteEntry(Format(message), EventLogEntryType.Information);
+            _eventLog.WriteEntry(Format(message), EventLogEntryType.Information, InfoEventId);
         }
 
         /// <inheritdoc/>
-        public  void Warning(string message)
+        public void Warning(string message)
         {
-            _eventLog.WriteEntry(Format(message), EventLogEntryType.Warning);
+            _eventLog.WriteEntry(Format(message), EventLogEntryType.Warning, WarningEventId);
         }
 
         /// <inheritdoc/>
         public void Error(string message, Exception? ex = null)
         {
             var fullMessage = ex != null ? $"{message}\n{ex}" : message;
-            _eventLog.WriteEntry(Format(fullMessage), EventLogEntryType.Error);
+            _eventLog.WriteEntry(Format(fullMessage), EventLogEntryType.Error, ErrorEventId);
         }
 
         #region Private Helpers
