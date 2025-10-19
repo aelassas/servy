@@ -538,7 +538,7 @@ namespace Servy.Core.Services
                 throw new ArgumentNullException(nameof(serviceName));
 
             var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
-            var service = services.Cast<ManagementObject>().FirstOrDefault();
+            var service = services.FirstOrDefault();
             var startMode = service?["StartMode"]?.ToString() ?? string.Empty;
 
             if (string.Equals(startMode, "Auto", StringComparison.OrdinalIgnoreCase))
@@ -565,7 +565,7 @@ namespace Servy.Core.Services
             try
             {
                 var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
-                var service = services.Cast<ManagementObject>().FirstOrDefault();
+                var service = services.FirstOrDefault();
                 return service?["Description"]?.ToString();
             }
             catch
