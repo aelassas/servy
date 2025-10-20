@@ -30,7 +30,7 @@ jobs:
           badge_label: lines of code
           badge_color: green
           badge: ./output/badge.svg
-          ignore: '.gitignore|*.txt|.github|setup|tests|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.resx|*.manifest|*.json|*.xaml|*.png'
+          ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
       - name: Print the output
         run: |
