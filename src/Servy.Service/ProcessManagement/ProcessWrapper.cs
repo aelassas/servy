@@ -327,7 +327,7 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public void Kill(bool entireProcessTree = true)
+        public void Kill(bool entireProcessTree = false)
         {
             ThrowIfDisposed();
 
