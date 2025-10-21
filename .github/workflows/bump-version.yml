@@ -118,12 +118,15 @@ jobs:
         run: |
           git checkout main
 
+          git fetch origin main
+          git reset --hard origin/main  # reset local main to match remote
+
           # Run your PowerShell script to update version numbers
           ./bump-version.ps1 -Version $env:NEXT_VERSION
 
           # Configure Git for automated commit
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Only commit if there are changes to avoid empty commits
           if (git diff --quiet) {
@@ -140,13 +143,14 @@ jobs:
         run: |
           git fetch origin net48
           git checkout net48
+          git reset --hard origin/net48  # reset local net48 to match remote
 
           # Run version bump script
           ./bump-version.ps1 -Version $env:NEXT_VERSION
 
           # Configure Git
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Commit only if there are changes
           if (git diff --quiet) {
