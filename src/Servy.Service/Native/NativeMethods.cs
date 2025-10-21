@@ -183,15 +183,15 @@ namespace Servy.Service.Native
         [DllImport("ntdll.dll")]
         internal static extern int NtQueryInformationProcess(
             IntPtr processHandle,
-            PROCESSINFOCLASS processInformationClass,
-            out PROCESS_BASIC_INFORMATION processInformation,
+            ProcessInfoClass processInformationClass,
+            out ProcessBasicInformation processInformation,
             int processInformationLength,
             IntPtr returnLength = default);
 
         /// <summary>
         /// Process information classes for NtQueryInformationProcess.
         /// </summary>
-        internal enum PROCESSINFOCLASS
+        internal enum ProcessInfoClass
         {
             ProcessBasicInformation = 0,
         }
@@ -200,7 +200,7 @@ namespace Servy.Service.Native
         /// Process basic information structure.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        internal unsafe struct PROCESS_BASIC_INFORMATION
+        internal unsafe struct ProcessBasicInformation
         {
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
             private readonly IntPtr Reserved1;
