@@ -1,8 +1,13 @@
-﻿using Servy.Service.Helpers;
+﻿using Servy.Core.Logging;
+using Servy.Service.Helpers;
+using Servy.Service.Native;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using static Servy.Service.Native.NativeMethods;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -12,6 +17,7 @@ namespace Servy.Service.ProcessManagement
     public class ProcessWrapper : IProcessWrapper
     {
         private readonly Process _process;
+        private readonly ILogger _logger;
         private bool _disposed;
 
         /// <inheritdoc/>
@@ -28,10 +34,14 @@ namespace Servy.Service.ProcessManagement
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
         /// </summary>
         /// <param name="psi">The process start information.</param>
-        public ProcessWrapper(ProcessStartInfo psi)
+        /// <param name="logger">The logger.</param>
+        public ProcessWrapper(ProcessStartInfo psi, ILogger logger)
         {
             _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+            _logger = logger;
         }
+
+        #region Properties and Events
 
         /// <inheritdoc/>
         public event DataReceivedEventHandler OutputDataReceived
@@ -55,33 +65,86 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public int Id => _process.Id;
+        public int Id
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Id;
+            }
+        }
 
         /// <inheritdoc/>
-        public bool HasExited => _process.HasExited;
+        public bool HasExited
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.HasExited;
+            }
+        }
 
         /// <inheritdoc/>
-        public IntPtr Handle => _process.Handle;
+        public IntPtr Handle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.Handle;
+            }
+        }
 
         /// <inheritdoc/>
-        public int ExitCode => _process.ExitCode;
+        public int ExitCode
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.ExitCode;
+            }
+        }
 
         /// <inheritdoc/>
-        public IntPtr MainWindowHandle => _process.MainWindowHandle;
+        public IntPtr MainWindowHandle
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.MainWindowHandle;
+            }
+        }
 
         /// <inheritdoc/>
         public bool EnableRaisingEvents
         {
-            get => _process.EnableRaisingEvents;
-            set => _process.EnableRaisingEvents = value;
+            get
+            {
+                ThrowIfDisposed();
+                return _process.EnableRaisingEvents;
+            }
+            set
+            {
+                ThrowIfDisposed();
+                _process.EnableRaisingEvents = value;
+            }
         }
 
         /// <inheritdoc/>
         public ProcessPriorityClass PriorityClass
         {
-            get => _process.PriorityClass;
-            set => _process.PriorityClass = value;
+            get
+            {
+                ThrowIfDisposed();
+                return _process.PriorityClass;
+            }
+            set
+            {
+                ThrowIfDisposed();
+                _process.PriorityClass = value;
+            }
         }
+
+        #endregion
 
         /// <inheritdoc/>
         public void Start()
@@ -102,7 +165,7 @@ namespace Servy.Service.ProcessManagement
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (_process.HasExited)
-                    return false;
+                    return false; // process exited before becoming healthy
 
                 await Task.Delay(500, cancellationToken);
             }
@@ -111,14 +174,174 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
+        public bool? Stop(int timeoutMs)
+        {
+            ThrowIfDisposed();
+
+            if (_process.HasExited)
+            {
+                return null;
+            }
+
+            bool? sent = SendCtrlC(_process);
+            if (!sent.HasValue)
+            {
+                return null;
+            }
+
+            if (!sent.Value)
+            {
+                try
+                {
+                    sent = _process.CloseMainWindow();
+                }
+                catch (InvalidOperationException)
+                {
+                    return null;
+                }
+            }
+
+            if (sent.Value && _process.WaitForExit(timeoutMs))
+            {
+                return true;
+            }
+
+            // Force kill
+            _logger?.Info("Graceful shutdown not supported. Forcing kill.");
+
+            try
+            {
+                ProcessHelper.KillProcessTree(_process); // kill tree
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"Kill failed: {ex.Message}");
+            }
+
+            if (_process.WaitForExit(timeoutMs))
+            {
+                _logger?.Info("Process exited after forced kill.");
+            }
+            else
+            {
+                _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds after forced kill.");
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Stops the specified process.
+        /// </summary>
+        /// <param name="process">Process.</param>
+        /// <param name="timeoutMs">Timeout in Milliseconds.</param>
+        private void StopPrivate(Process process, int timeoutMs)
+        {
+            _logger?.Info($"Stopping process '{process.Format()}'...");
+
+            if (process.HasExited)
+            {
+                goto Exited;
+            }
+
+            bool? sent = SendCtrlC(process);
+            if (!sent.HasValue)
+            {
+                goto Exited;
+            }
+
+            if (!sent.Value)
+            {
+                try
+                {
+                    sent = process.CloseMainWindow();
+                }
+                catch (InvalidOperationException)
+                {
+                    goto Exited;
+                }
+            }
+
+            if (sent.Value)
+            {
+                if (process.WaitForExit(timeoutMs))
+                {
+                    _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
+                    return;
+                }
+            }
+
+            _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
+            try
+            {
+                ProcessHelper.KillProcessTree(process); // kill tree
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warning($"Kill failed: {ex.Message}");
+            }
+
+            _logger?.Info($"Process '{process.Format()}' terminated.");
+            return;
+
+        Exited:
+            _logger?.Info($"Process '{process.Format()}' has already exited.");
+        }
+
+        /// <summary>
+        /// Stops the specified process and all its descendant processes.
+        /// </summary>
+        /// <param name="process">Process.</param>
+        /// <param name="timeoutMs">Timeout in Milliseconds.</param>
+        private void StopTree(Process process, int timeoutMs)
+        {
+            StopPrivate(process, timeoutMs);
+
+            foreach (var child in process.GetChildren())
+            {
+                using (child.Process)
+                using (child.Handle)
+                {
+                    StopTree(child.Process, timeoutMs);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void StopDescendants(int timeoutMs)
+        {
+            ThrowIfDisposed();
+
+            foreach (var child in _process.GetChildren())
+            {
+                using (child.Process)
+                using (child.Handle)
+                {
+                    StopTree(child.Process, timeoutMs);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public string Format()
+        {
+            ThrowIfDisposed();
+            return _process.Format();
+        }
+
+        /// <inheritdoc/>
         public void Kill(bool entireProcessTree = true)
         {
             ThrowIfDisposed();
 
             if (entireProcessTree)
+            {
                 ProcessHelper.KillProcessTree(_process);
+            }
             else
+            {
                 _process.Kill();
+            }
         }
 
         /// <inheritdoc/>
@@ -164,9 +387,11 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
-        /// Protected dispose pattern implementation.
+        /// Releases unmanaged and optionally managed resources.
         /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if called from a finalizer.</param>
+        /// <param name="disposing">
+        /// True if called from <see cref="Dispose()"/>; false if called from a finalizer.
+        /// </param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -187,6 +412,52 @@ namespace Servy.Service.ProcessManagement
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(ProcessWrapper));
+        }
+
+        /// <summary>
+        /// Sends a CTRL+C signal to the specified process.
+        /// </summary>
+        /// <param name="process"></param>
+        /// <returns></returns>
+        private bool? SendCtrlC(Process process)
+        {
+            // Save current stdout/stderr
+            IntPtr originalOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr originalErr = GetStdHandle(STD_ERROR_HANDLE);
+
+            if (!AttachConsole(process.Id))
+            {
+                int error = Marshal.GetLastWin32Error();
+                switch (error)
+                {
+                    // The process does not have a console.
+                    case Errors.ERROR_INVALID_HANDLE:
+                        _logger?.Warning("Sending Ctrl+C: The child process does not have a console.");
+                        return false;
+
+                    // The process has exited.
+                    case Errors.ERROR_INVALID_PARAMETER:
+                        return null;
+
+                    // The calling process is already attached to a console.
+                    case Errors.ERROR_ACCESS_DENIED:
+                    default:
+                        _logger?.Warning("Sending Ctrl+C: Failed to attach to console. " + new Win32Exception(error).Message);
+                        return false;
+                }
+            }
+
+            // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
+            // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
+            _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
+            _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
+
+            bool succeeded = FreeConsole();
+            Debug.Assert(succeeded);
+            SetStdHandle(STD_OUTPUT_HANDLE, originalOut);
+            SetStdHandle(STD_ERROR_HANDLE, originalErr);
+
+            return true;
         }
     }
 }
