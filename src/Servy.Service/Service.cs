@@ -25,6 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
+using Servy.Service.Native;
 
 namespace Servy.Service
 {
@@ -183,6 +184,14 @@ namespace Servy.Service
         {
             try
             {
+                //bool succeeded = NativeMethods.FreeConsole();
+                //Debug.Assert(succeeded);
+                //succeeded = NativeMethods.SetConsoleCtrlHandler(null, true);
+                //Debug.Assert(succeeded);
+
+                _ = NativeMethods.FreeConsole();
+                _ = NativeMethods.SetConsoleCtrlHandler(null, true);
+
                 // Load and validate service startup options
                 var options = _serviceHelper.InitializeStartup(_logger);
                 if (options == null)
@@ -602,8 +611,15 @@ namespace Servy.Service
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables to pass to the process.</param>
-        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
+        /// <param name="test">If true, suppresses debug assertions for testing purposes.</param>
+        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables, bool test = false)
         {
+            bool succeeded = NativeMethods.AllocConsole(); // inherited
+            if (!test) Debug.Assert(succeeded);
+            succeeded = NativeMethods.SetConsoleCtrlHandler(null, false); // inherited
+            if (!test) Debug.Assert(succeeded);
+            succeeded = NativeMethods.SetConsoleOutputCP(NativeMethods.CP_UTF8);
+            if (!test) Debug.Assert(succeeded);
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(environmentVariables);
 
             foreach (var kvp in expandedEnv)
@@ -636,7 +652,7 @@ namespace Servy.Service
                 psi.EnvironmentVariables[envVar.Key] = envVar.Value;
             }
 
-            _childProcess = _processFactory.Create(psi);
+            _childProcess = _processFactory.Create(psi, _logger);
 
             // Enable events and attach output/error handlers
             _childProcess.EnableRaisingEvents = true;
@@ -645,8 +661,18 @@ namespace Servy.Service
             _childProcess.Exited += OnProcessExited;
 
             // Start the process
-            _childProcess.Start();
-            _logger?.Info($"Started child process with PID: {_childProcess.Id}");
+            try
+            {
+                _childProcess.Start();
+                _logger?.Info($"Started child process with PID: {_childProcess.Id}");
+            }
+            finally
+            {
+                succeeded = NativeMethods.FreeConsole();
+                Debug.Assert(succeeded);
+                succeeded = NativeMethods.SetConsoleCtrlHandler(null, true);
+                Debug.Assert(succeeded);
+            }
 
             // Persist PID
             InsertPid(_childProcess.Id);
@@ -1179,37 +1205,36 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Attempts to gracefully stop the process by sending a close message to its main window.
-        /// If that fails or the process has no main window, forcibly kills the process.
+        /// Attempts to gracefully stop the process by sending Ctrl+C.
+        /// If that fails or the process has no console, forcibly kills the process.
         /// Waits up to the specified timeout for the process to exit.
         /// </summary>
         /// <param name="process">Process to stop.</param>
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 30_000)
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 10_000)
         {
             try
             {
                 if (process == null || process.HasExited) return;
 
-                bool closedGracefully = false;
+                bool? result = process.Stop(timeoutMs);
+                string message;
 
-                // Only GUI processes have a main window to close
-                if (process.MainWindowHandle != IntPtr.Zero)
+                if (result == true)
                 {
-                    closedGracefully = process.CloseMainWindow();
+                    message = $"Child process '{process.Format()}' canceled with code {process.ExitCode}.";
+                }
+                else if (result == false)
+                {
+                    message = $"Child process '{process.Format()}' terminated.";
+                }
+                else // result == null
+                {
+                    message = $"Child process '{process.Format()}' finished with code '{process.ExitCode}'.";
                 }
 
-                if (!closedGracefully)
-                {
-                    // Either no GUI window or close failed — kill forcibly
-                    _logger?.Info("Graceful shutdown not supported. Forcing kill.");
-                    process.Kill();
-                }
-
-                if (!process.WaitForExit(timeoutMs))
-                {
-                    _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds.");
-                }
+                _logger?.Info(message);
+                process.StopDescendants(timeoutMs);
             }
             catch (Exception ex)
             {

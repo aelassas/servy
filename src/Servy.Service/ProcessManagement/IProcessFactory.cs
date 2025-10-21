@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Servy.Core.Logging;
+using System.Diagnostics;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -11,7 +12,8 @@ namespace Servy.Service.ProcessManagement
         /// Creates a new <see cref="IProcessWrapper"/> instance using the specified <see cref="ProcessStartInfo"/>.
         /// </summary>
         /// <param name="startInfo">The process start information.</param>
+        /// <param name="logger">The logger.</param>
         /// <returns>A new <see cref="IProcessWrapper"/> wrapping the created process.</returns>
-        IProcessWrapper Create(ProcessStartInfo startInfo);
+        IProcessWrapper Create(ProcessStartInfo startInfo, ILogger logger);
     }
 }

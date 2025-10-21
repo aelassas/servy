@@ -33,7 +33,7 @@ jobs:
         run: nuget restore Servy.sln
 
       - name: Build solution
-        run: msbuild Servy.sln /p:Configuration=Debug
+        run: msbuild Servy.sln /p:Configuration=Debug /p:AllowUnsafeBlocks=true
 
       - name: Install Coverlet global tool
         run: dotnet tool install --global coverlet.console

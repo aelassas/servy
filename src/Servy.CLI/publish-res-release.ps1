@@ -36,7 +36,7 @@ $resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildC
 # Step 1 - Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
-msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform
+msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform /p:AllowUnsafeBlocks=true
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy

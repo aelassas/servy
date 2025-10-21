@@ -32,4 +32,4 @@ jobs:
         run: nuget restore Servy.sln
 
       - name: Build solution (Release)
-        run: msbuild Servy.sln /p:Configuration=Release
+        run: msbuild Servy.sln /p:Configuration=Release /p:AllowUnsafeBlocks=true

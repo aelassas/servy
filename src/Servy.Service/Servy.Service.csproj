@@ -19,9 +19,10 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -71,9 +72,12 @@
     <Compile Include="CommandLine\ICommandLineProvider.cs" />
     <Compile Include="Helpers\EnvironmentVariableHelper.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
+    <Compile Include="Native\Errors.cs" />
+    <Compile Include="Native\Handle.cs" />
     <Compile Include="ProcessManagement\IProcessFactory.cs" />
     <Compile Include="ProcessManagement\IProcessWrapper.cs" />
     <Compile Include="Helpers\IServiceHelper.cs" />
+    <Compile Include="ProcessManagement\ProcessExtensions.cs" />
     <Compile Include="StreamWriters\IStreamWriter.cs" />
     <Compile Include="StreamWriters\IStreamWriterFactory.cs" />
     <Compile Include="Timers\ITimer.cs" />

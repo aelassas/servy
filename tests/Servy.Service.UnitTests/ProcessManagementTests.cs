@@ -62,7 +62,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.Id).Returns(123);
             mockProcess.Setup(p => p.Start());
 
-            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>())).Returns(mockProcess.Object);
+            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<ILogger>())).Returns(mockProcess.Object);
 
             service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>());
 
@@ -85,42 +85,12 @@ namespace Servy.Service.UnitTests
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(false);
-            mockProcess.Setup(p => p.MainWindowHandle).Returns(new IntPtr(123456));
-            mockProcess.Setup(p => p.CloseMainWindow()).Returns(true);
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Returns(true);
             mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
-            mockProcess.Verify(p => p.CloseMainWindow(), Times.Once);
-            mockProcess.Verify(p => p.WaitForExit(It.IsAny<int>()), Times.Once);
-            mockProcess.Verify(p => p.Kill(It.IsAny<bool>()), Times.Never);
-
-            logger.Verify(l => l.Warning(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public void SafeKillProcess_ForcesKillIfGracefulFails()
-        {
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator,
-                out var serviceRepository);
-
-            var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.HasExited).Returns(false);
-            mockProcess.Setup(p => p.MainWindowHandle).Returns(new IntPtr(123456));
-            mockProcess.Setup(p => p.CloseMainWindow()).Returns(false);
-            mockProcess.Setup(p => p.Kill(It.IsAny<bool>()));
-            mockProcess.Setup(p => p.WaitForExit(It.IsAny<int>())).Returns(true);
-
-            service.InvokeSafeKillProcess(mockProcess.Object);
-
-            mockProcess.Verify(p => p.CloseMainWindow(), Times.Once);
-            mockProcess.Verify(p => p.Kill(It.IsAny<bool>()), Times.Once);
+            mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
 
             logger.Verify(l => l.Info(It.IsAny<string>()), Times.Once);
         }
@@ -138,9 +108,7 @@ namespace Servy.Service.UnitTests
                 out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.HasExited).Returns(false);
-            mockProcess.Setup(p => p.MainWindowHandle).Returns(new IntPtr(123456));
-            mockProcess.Setup(p => p.CloseMainWindow()).Throws(new Exception("Exception during CloseMainWindow"));
+            mockProcess.Setup(p => p.HasExited).Throws(new Exception("Boom!"));
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 

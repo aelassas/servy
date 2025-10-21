@@ -141,7 +141,7 @@ namespace Servy.Service.UnitTests
             else
             {
                 var method = typeof(Service).GetMethod("StartProcess", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                method.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables });
+                method.Invoke(this, new object[] { exePath, args, workingDir, environmentVariables, true });
             }
         }
 
