@@ -186,10 +186,10 @@ namespace Servy.Service.Helpers
 
                 if (process != null && !process.HasExited)
                 {
-                    process.Kill();
-                    if (!process.WaitForExit(20_000))
+                    process.Kill(true);
+                    if (!process.WaitForExit(10_000))
                     {
-                        logger?.Warning("Process did not exit within 20 seconds; continuing with restart.");
+                        logger?.Warning("Process did not exit within 10 seconds; continuing with restart.");
                     }
                 }
 

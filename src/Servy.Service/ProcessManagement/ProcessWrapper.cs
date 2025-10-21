@@ -419,8 +419,8 @@ namespace Servy.Service.ProcessManagement
         private bool? SendCtrlC(Process process)
         {
             // Save current stdout/stderr
-            IntPtr originalOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            IntPtr originalErr = GetStdHandle(STD_ERROR_HANDLE);
+            //IntPtr originalOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            //IntPtr originalErr = GetStdHandle(STD_ERROR_HANDLE);
 
             if (!AttachConsole(process.Id))
             {
@@ -450,8 +450,8 @@ namespace Servy.Service.ProcessManagement
 
             bool succeeded = FreeConsole();
             Debug.Assert(succeeded);
-            SetStdHandle(STD_OUTPUT_HANDLE, originalOut);
-            SetStdHandle(STD_ERROR_HANDLE, originalErr);
+            //SetStdHandle(STD_OUTPUT_HANDLE, originalOut);
+            //SetStdHandle(STD_ERROR_HANDLE, originalErr);
 
             return true;
         }
