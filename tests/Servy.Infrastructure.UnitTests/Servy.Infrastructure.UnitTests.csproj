@@ -16,9 +16,9 @@
     <AssemblyDescription>Servy.Infrastructure unit tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Infrastructure.UnitTests</Product>
-    <Version>2.4.0</Version>
-    <FileVersion>2.4.0.0</FileVersion>
-    <AssemblyVersion>2.4.0.0</AssemblyVersion>
+    <Version>2.5.0</Version>
+    <FileVersion>2.5.0.0</FileVersion>
+    <AssemblyVersion>2.5.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
