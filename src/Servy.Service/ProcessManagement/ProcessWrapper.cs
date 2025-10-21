@@ -262,13 +262,10 @@ namespace Servy.Service.ProcessManagement
                 }
             }
 
-            if (sent.Value)
+            if (sent.Value && process.WaitForExit(timeoutMs))
             {
-                if (process.WaitForExit(timeoutMs))
-                {
-                    _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
-                    return;
-                }
+                _logger?.Info($"Process '{process.Format()}' canceled with code {process.ExitCode}.");
+                return;
             }
 
             _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
@@ -440,7 +437,6 @@ namespace Servy.Service.ProcessManagement
                         return null;
 
                     // The calling process is already attached to a console.
-                    case Errors.ERROR_ACCESS_DENIED:
                     default:
                         _logger?.Warning("Sending Ctrl+C: Failed to attach to console. " + new Win32Exception(error).Message);
                         return false;

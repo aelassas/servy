@@ -62,9 +62,9 @@ namespace Servy.Service.ProcessManagement
 
                 if (NativeMethods.NtQueryInformationProcess(
                     handle,
-                    NativeMethods.PROCESSINFOCLASS.ProcessBasicInformation,
+                    NativeMethods.ProcessInfoClass.ProcessBasicInformation,
                     out var information,
-                    sizeof(NativeMethods.PROCESS_BASIC_INFORMATION)) != 0)
+                    sizeof(NativeMethods.ProcessBasicInformation)) != 0)
                 {
                     goto Next;
                 }
