@@ -173,7 +173,7 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>, bool> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
@@ -193,7 +193,7 @@ namespace Servy.Service.Helpers
                     }
                 }
 
-                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables, false);
+                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
 
                 logger?.Info("Process restarted.");
             }

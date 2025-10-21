@@ -104,7 +104,7 @@ namespace Servy.Service.UnitTests
             logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains($"Health check failed ("))), Times.AtLeastOnce);
             helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
-                It.IsAny<Action<string, string, string, List<EnvironmentVariable>, bool>>(),
+                It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -136,7 +136,7 @@ namespace Servy.Service.UnitTests
             helper.Setup(h =>
                 h.RestartProcess(
                     It.IsAny<IProcessWrapper>(),
-                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>, bool>>(),
+                    It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),
@@ -173,7 +173,7 @@ namespace Servy.Service.UnitTests
                     case RecoveryAction.RestartProcess:
                         helper.Verify(h => h.RestartProcess(
                             It.IsAny<IProcessWrapper>(),
-                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>, bool>>(),
+                            It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<string>(),
