@@ -448,8 +448,7 @@ namespace Servy.Service.ProcessManagement
             _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
             _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
 
-            bool succeeded = FreeConsole();
-            Debug.Assert(succeeded);
+            _ = FreeConsole();
             //SetStdHandle(STD_OUTPUT_HANDLE, originalOut);
             //SetStdHandle(STD_ERROR_HANDLE, originalErr);
 
