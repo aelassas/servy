@@ -181,11 +181,6 @@ namespace Servy.Service
         {
             try
             {
-                //bool succeeded = NativeMethods.FreeConsole();
-                //Debug.Assert(succeeded);
-                //succeeded = NativeMethods.SetConsoleCtrlHandler(null, true);
-                //Debug.Assert(succeeded);
-
                 _ = NativeMethods.FreeConsole();
                 _ = NativeMethods.SetConsoleCtrlHandler(null, true);
 
@@ -607,15 +602,11 @@ namespace Servy.Service
         /// <param name="realArgs">The arguments to pass to the executable.</param>
         /// <param name="workingDir">The working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables to pass to the process.</param>
-        /// <param name="test">If true, suppresses debug assertions for testing purposes.</param>
-        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables, bool test = false)
+        private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
-            bool succeeded = NativeMethods.AllocConsole(); // inherited
-            if (!test) Debug.Assert(succeeded);
-            succeeded = NativeMethods.SetConsoleCtrlHandler(null, false); // inherited
-            if (!test) Debug.Assert(succeeded);
-            succeeded = NativeMethods.SetConsoleOutputCP(NativeMethods.CP_UTF8);
-            if (!test) Debug.Assert(succeeded);
+            _ = NativeMethods.AllocConsole(); // inherited
+            _ = NativeMethods.SetConsoleCtrlHandler(null, false); // inherited
+            _ = NativeMethods.SetConsoleOutputCP(NativeMethods.CP_UTF8);
 
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(environmentVariables);
 
@@ -665,10 +656,8 @@ namespace Servy.Service
             }
             finally
             {
-                succeeded = NativeMethods.FreeConsole();
-                Debug.Assert(succeeded);
-                succeeded = NativeMethods.SetConsoleCtrlHandler(null, true);
-                Debug.Assert(succeeded);
+                _ = NativeMethods.FreeConsole();
+                _ = NativeMethods.SetConsoleCtrlHandler(null, true);
             }
 
             // Persist PID
