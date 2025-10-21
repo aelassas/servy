@@ -2,7 +2,7 @@
  * Small Node.js utility to test environment variables in Servy.
  * 
  * Usage example:
- * .\servy-cli.exe install --name "ServyEnvTest" --path "C:\Program Files\nodejs\node.exe" --params "C:\path\to\nodejs-app-env-vars\index.js" --env "var1=val1;var2=val2;"
+ * .\\servy-cli.exe install --name "ServyEnvTest" --path "C:\\Program Files\\nodejs\\node.exe" --params "C:\\path\\to\\nodejs-app-env-vars\\index.js" --env "var1=val1;var2=val2;"
  * 
  * This script writes all environment variables except those in baselineEnvKeys to 'output.txt' in the script directory,
  * and logs them to the console.
@@ -26,7 +26,7 @@ fs.writeFileSync(filePath, "", "utf8")
 
 for (const [key, val] of Object.entries(process.env)) {
   if (!baselineEnvKeys.has(key)) {
-    const line = `${key}=${val}\n`
+    const line = `${key}=${val}\\n`
     // Append each line to the file
     fs.appendFileSync(filePath, line, "utf8")
     console.log(line.trim()) // optional: print to console
@@ -51,11 +51,35 @@ process.stderr.write('boo!')
 // // allow the child process to keep running after parent exits
 // child.unref()
 
-// // keep Node alive until key press
-// process.stdin.setRawMode(true)
-// process.stdin.resume()
-// process.stdin.on('data', () => {
-//   console.log('Exiting...')
-//   child.kill() // kill the child process
-//   process.exit(0)
+const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'])
+child.unref()
+
+// const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe',
+//   ['-u', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'], {
+//   detached: true,
+//   stdio: 'inherit',
 // })
+
+// spawn('cmd.exe', ['/c', 'start', 'C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'], {
+//   detached: false,
+//   stdio: 'pipe',
+// });
+
+// const child = spawn('powershell.exe', [
+//   '-NoExit', '-Command',
+//   'Add-Type -Name Native -Namespace Win32 -MemberDefinition \'[DllImport("kernel32.dll")] public static extern bool AllocConsole();\'',
+//   '; [Win32.Native]::AllocConsole(); Start-Process C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -NoNewWindow -ArgumentList "-u C:\\dev\\servy\\src\\tests\\ctrlc.py" -Wait'
+// ], {
+//   detached: true,
+//   stdio: 'inherit'
+// });
+
+
+// // keep Node alive until key press
+process.stdin.setRawMode(true)
+process.stdin.resume()
+process.stdin.on('data', () => {
+  console.log('Exiting...')
+  // child.kill() // kill the child process
+  process.exit(0)
+})
