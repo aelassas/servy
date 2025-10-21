@@ -56,7 +56,7 @@ namespace Servy.Service.UnitTests
             _mockTimerFactory.Setup(f => f.Create(It.IsAny<double>()))
                 .Returns(_mockTimer.Object);
 
-            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>()))
+            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<ILogger>()))
                 .Returns(_mockProcess.Object);
 
             _mockServiceRepository = new Mock<IServiceRepository>();

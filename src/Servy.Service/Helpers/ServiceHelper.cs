@@ -169,7 +169,7 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>, bool> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,
@@ -183,13 +183,13 @@ namespace Servy.Service.Helpers
                 if (process != null && !process.HasExited)
                 {
                     process.Kill();
-                    if (!process.WaitForExit(30_000))
+                    if (!process.WaitForExit(20_000))
                     {
-                        logger?.Warning("Process did not exit within 30 seconds; continuing with restart.");
+                        logger?.Warning("Process did not exit within 20 seconds; continuing with restart.");
                     }
                 }
 
-                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
+                startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables, false);
 
                 logger?.Info("Process restarted.");
             }

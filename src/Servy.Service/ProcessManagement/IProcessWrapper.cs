@@ -80,6 +80,24 @@ namespace Servy.Service.ProcessManagement
         Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Stops the associated process.
+        /// </summary>
+        /// <param name="timeoutMs">The timeout in milliseconds to wait for the process to stop.</param>
+        bool? Stop(int timeoutMs);
+
+        /// <summary>
+        /// Stops all descendant processes of the associated process.
+        /// </summary>
+        /// <param name="timeoutMs">The timeout in milliseconds to wait for the descendant processes to stop.</param>
+        void StopDescendants(int timeoutMs);
+
+        /// <summary>
+        /// Formats the process information as a string.
+        /// </summary>
+        /// <returns></returns>
+        string Format();
+
+        /// <summary>
         /// Immediately stops the associated process and optionally its child/descendent processes.
         /// </summary>
         /// <param name="entireProcessTree">Kill entire process tree.</param>

@@ -67,7 +67,7 @@ namespace Servy.Service.Helpers
         /// <param name="logger">Logger instance.</param>
         void RestartProcess(
             IProcessWrapper process,
-            Action<string, string, string, List<EnvironmentVariable>> startProcess,
+            Action<string, string, string, List<EnvironmentVariable>, bool> startProcess,
             string realExePath,
             string realArgs,
             string workingDir,

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Servy.Core.Logging;
+using System.Diagnostics;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -8,9 +9,9 @@ namespace Servy.Service.ProcessManagement
     public class ProcessFactory : IProcessFactory
     {
         /// <inheritdoc/>
-        public IProcessWrapper Create(ProcessStartInfo startInfo)
+        public IProcessWrapper Create(ProcessStartInfo startInfo, ILogger logger)
         {
-            return new ProcessWrapper(startInfo);
+            return new ProcessWrapper(startInfo, logger);
         }
     }
 }
