@@ -271,7 +271,7 @@ namespace Servy.Service.ProcessManagement
             _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
             try
             {
-                process.Kill();
+                ProcessHelper.KillProcessTree(process);
             }
             catch (Exception ex)
             {

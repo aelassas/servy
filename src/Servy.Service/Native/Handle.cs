@@ -13,7 +13,7 @@ namespace Servy.Service.Native
     /// defined in <see cref="NativeMethods"/> when disposed.
     /// </remarks>
     [StructLayout(LayoutKind.Sequential)]
-    internal readonly struct Handle : IDisposable
+    public readonly struct Handle : IDisposable
     {
         /// <summary>
         /// The underlying native handle.
