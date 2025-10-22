@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Service.Native;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -28,12 +29,15 @@ namespace Servy.Service
         /// </summary>
         static void Main()
         {
+            _ = NativeMethods.FreeConsole();
+            _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
+
+            // Copy service executable from embedded resources
             var asm = Assembly.GetExecutingAssembly();
             string eventSource = AppConfig.ServiceNameEventSource;
 
             EnsureEventSourceExists(eventSource);
 
-            // Copy service executable from embedded resources
             if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
             {
                 EventLog.WriteEntry(

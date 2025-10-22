@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace Servy.Service.Native
 {
-    internal static class NativeMethods
+    public static class NativeMethods
     {
         /// <summary>
         /// Creates or opens a job object.
@@ -50,12 +50,17 @@ namespace Servy.Service.Native
         public static extern bool CloseHandle(IntPtr hObject);
 
         /// <summary>
+        /// Constant used to indicate that the current process should attach to the parent process's console.
+        /// </summary>
+        public static int ATTACH_PARENT_PROCESS = -1;
+
+        /// <summary>
         /// Attaches the calling process to the console of the specified process.
         /// </summary>
         /// <param name="processId"></param>
         /// <returns></returns>
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool AttachConsole(int processId);
+        public static extern bool AttachConsole(int processId);
 
         /// <summary>
         /// The UTF-8 code page identifier.
@@ -63,7 +68,7 @@ namespace Servy.Service.Native
         /// <remarks>
         /// This constant corresponds to the Windows code page 65001 (<c>CP_UTF8</c>).
         /// </remarks>
-        internal const uint CP_UTF8 = 65001;
+        public const uint CP_UTF8 = 65001;
 
         /// <summary>
         /// Allocates a new console for the calling process.
@@ -77,7 +82,7 @@ namespace Servy.Service.Native
         /// See <see href="https://learn.microsoft.com/windows/console/allocconsole">AllocConsole (MSDN)</see>.
         /// </remarks>
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool AllocConsole();
+        public static extern bool AllocConsole();
 
         /// <summary>
         /// Sets the output code page used by the console associated with the calling process.
@@ -91,7 +96,7 @@ namespace Servy.Service.Native
         /// See <see href="https://learn.microsoft.com/windows/console/setconsoleoutputcp">SetConsoleOutputCP (MSDN)</see>.
         /// </remarks>
         [DllImport("kernel32.dll")]
-        internal static extern bool SetConsoleOutputCP(uint codePageID);
+        public static extern bool SetConsoleOutputCP(uint codePageID);
 
         /// <summary>
         /// Adds or removes an application-defined handler function from the list of handler functions
@@ -116,7 +121,7 @@ namespace Servy.Service.Native
         /// <see href="https://learn.microsoft.com/windows/console/setconsolectrlhandler">SetConsoleCtrlHandler (MSDN)</see>.
         /// </remarks>
         [DllImport("kernel32.dll")]
-        internal static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine handlerRoutine, bool add);
+        public static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandlerRoutine handlerRoutine, bool add);
 
         /// <summary>
         /// Represents the method that handles console control events received by the process.
@@ -126,7 +131,7 @@ namespace Servy.Service.Native
         /// <see langword="true"/> if the handler processed the event and should prevent further handlers from being called;  
         /// otherwise, <see langword="false"/>.
         /// </returns>
-        internal delegate bool ConsoleCtrlHandlerRoutine(CtrlEvents ctrlType);
+        public delegate bool ConsoleCtrlHandlerRoutine(CtrlEvents ctrlType);
 
         /// <summary>
         /// Generates a console control event.
@@ -135,20 +140,20 @@ namespace Servy.Service.Native
         /// <param name="processGroupId"></param>
         /// <returns></returns>
         [DllImport("kernel32.dll")]
-        internal static extern bool GenerateConsoleCtrlEvent(CtrlEvents ctrlEvent, uint processGroupId);
+        public static extern bool GenerateConsoleCtrlEvent(CtrlEvents ctrlEvent, uint processGroupId);
 
         /// <summary>
         /// Frees the console associated with the calling process.
         /// </summary>
         /// <returns></returns>
         [DllImport("kernel32.dll")]
-        internal static extern bool FreeConsole();
+        public static extern bool FreeConsole();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr GetStdHandle(int nStdHandle);
+        public static extern IntPtr GetStdHandle(int nStdHandle);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool SetStdHandle(int nStdHandle, IntPtr handle);
+        public static extern bool SetStdHandle(int nStdHandle, IntPtr handle);
 
         public const int STD_OUTPUT_HANDLE = -11;
         public const int STD_ERROR_HANDLE = -12;
@@ -161,12 +166,12 @@ namespace Servy.Service.Native
         /// <param name="processId"></param>
         /// <returns></returns>
         [DllImport("kernel32.dll")]
-        internal static extern Handle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
+        public static extern Handle OpenProcess(ProcessAccess desiredAccess, bool inheritHandle, int processId);
 
         /// <summary>
         /// Process access rights.
         /// </summary>
-        internal enum ProcessAccess : uint
+        public enum ProcessAccess : uint
         {
             QueryInformation = 0x0400,
         }
@@ -181,7 +186,7 @@ namespace Servy.Service.Native
         /// <param name="returnLength"></param>
         /// <returns></returns>
         [DllImport("ntdll.dll")]
-        internal static extern int NtQueryInformationProcess(
+        public static extern int NtQueryInformationProcess(
             IntPtr processHandle,
             ProcessInfoClass processInformationClass,
             out ProcessBasicInformation processInformation,
@@ -191,7 +196,7 @@ namespace Servy.Service.Native
         /// <summary>
         /// Process information classes for NtQueryInformationProcess.
         /// </summary>
-        internal enum ProcessInfoClass
+        public enum ProcessInfoClass
         {
             ProcessBasicInformation = 0,
         }
@@ -200,22 +205,22 @@ namespace Servy.Service.Native
         /// Process basic information structure.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        internal unsafe struct ProcessBasicInformation
+        public unsafe struct ProcessBasicInformation
         {
 #pragma warning disable SA1306 // Field names should begin with lower-case letter
             private readonly IntPtr Reserved1;
             private readonly IntPtr PebBaseAddress;
             private readonly IntPtr Reserved2_1;
             private readonly IntPtr Reserved2_2;
-            internal readonly IntPtr UniqueProcessId;
-            internal readonly IntPtr InheritedFromUniqueProcessId;
+            public readonly IntPtr UniqueProcessId;
+            public readonly IntPtr InheritedFromUniqueProcessId;
 #pragma warning restore SA1306 // Field names should begin with lower-case letter
         }
 
         /// <summary>
         /// Control events for console processes.
         /// </summary>
-        internal enum CtrlEvents : uint
+        public enum CtrlEvents : uint
         {
             CTRL_C_EVENT = 0,
             CTRL_BREAK_EVENT = 1,
