@@ -23,6 +23,8 @@ namespace ConsoleApp
             {
                 Console.WriteLine("Ctrl+C detected. Exiting...");
                 File.AppendAllText(LogFile, $"[{DateTime.Now}] Ctrl+C received.{Environment.NewLine}");
+                Thread.Sleep(1000); // Give some time for logging
+                Console.WriteLine("boo!");
                 e.Cancel = true;
                 QuitEvent.Set();
             };

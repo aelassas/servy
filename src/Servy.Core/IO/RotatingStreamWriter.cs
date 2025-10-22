@@ -40,7 +40,10 @@
         /// <returns>A new <see cref="StreamWriter"/> instance.</returns>
         private StreamWriter CreateWriter()
         {
-            return new StreamWriter(_file.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
+            return new StreamWriter(
+                _file.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
+                )
             {
                 AutoFlush = true
             };
