@@ -1,6 +1,7 @@
 ﻿using Servy.Service.Native;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Management;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -33,55 +34,130 @@ namespace Servy.Service.ProcessManagement
         /// <returns>Children.</returns>
         internal static unsafe List<(Process Process, Handle Handle)> GetChildren(this Process process)
         {
-            var startTime = process.StartTime;
-            int processId = process.Id;
-
             var children = new List<(Process Process, Handle Handle)>();
+            int parentPid = process.Id;
+            DateTime parentStartTime;
+
+            try
+            {
+                parentStartTime = process.StartTime;
+            }
+            catch (Exception ex)
+            {
+                // Could not get start time, return empty
+                Debug.WriteLine($"Failed to get StartTime of parent PID {parentPid}: {ex.Message}");
+                return children;
+            }
 
             foreach (var other in Process.GetProcesses())
             {
-                var handle = NativeMethods.OpenProcess(NativeMethods.ProcessAccess.QueryInformation, false, other.Id);
-                if (handle == IntPtr.Zero)
-                {
-                    goto Next;
-                }
-
+                Handle handle = new Handle(IntPtr.Zero);
                 try
                 {
-                    if (other.StartTime <= startTime)
+                    handle = NativeMethods.OpenProcess(
+                        NativeMethods.ProcessAccess.QueryInformation,
+                        false,
+                        other.Id
+                    );
+
+                    if (handle == IntPtr.Zero)
+                        continue;
+
+                    // Skip processes that started before parent
+                    try
                     {
-                        goto Next;
+                        if (other.StartTime <= parentStartTime)
+                            continue;
+                    }
+                    catch
+                    {
+                        // Process may have exited, ignore
+                        continue;
+                    }
+
+                    if (NativeMethods.NtQueryInformationProcess(
+                        handle,
+                        NativeMethods.ProcessInfoClass.ProcessBasicInformation,
+                        out var info,
+                        sizeof(NativeMethods.ProcessBasicInformation)) != 0)
+                    {
+                        continue;
+                    }
+
+                    if ((int)info.InheritedFromUniqueProcessId == parentPid)
+                    {
+                        children.Add((other, handle));
+                        continue;
                     }
                 }
-                catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
+                catch
                 {
-                    goto Next;
+                    // Ignore inaccessible processes
+                    other.Dispose();
+                    handle.Dispose();
                 }
-
-                if (NativeMethods.NtQueryInformationProcess(
-                    handle,
-                    NativeMethods.ProcessInfoClass.ProcessBasicInformation,
-                    out var information,
-                    sizeof(NativeMethods.ProcessBasicInformation)) != 0)
+                finally
                 {
-                    goto Next;
+                    // Dispose only if not already added to children
+                    if (!children.Exists(c => c.Process.Id == other.Id))
+                    {
+                        other.Dispose();
+                        handle.Dispose();
+                    }
                 }
-
-                if ((int)information.InheritedFromUniqueProcessId == processId)
-                {
-                    // debug
-                    Debug.WriteLine($"Found child process '{other.Format()}'.");
-                    children.Add((other, handle));
-                    continue;
-                }
-
-            Next:
-                other.Dispose();
-                handle.Dispose();
             }
 
             return children;
         }
 
+        /// <summary>
+        /// Retrieves the child processes of the specified <see cref="Process"/> using WMI (Windows Management Instrumentation).
+        /// </summary>
+        /// <param name="process">The parent <see cref="Process"/> whose child processes are to be retrieved.</param>
+        /// <returns>
+        /// A <see cref="List{Process}"/> containing all currently running child processes of the specified parent process. 
+        /// Processes that have exited during the query are ignored.
+        /// </returns>
+        /// <remarks>
+        /// This method uses WMI to query the <c>Win32_Process</c> class and filter by <c>ParentProcessId</c>. 
+        /// It is more robust than querying native process handles because it can detect detached or GUI processes.
+        /// </remarks>
+        internal static List<Process> GetChildrenWmi(this Process process)
+        {
+            var children = new List<Process>();
+            int parentPid = process.Id;
+
+            try
+            {
+                string query = $"SELECT ProcessId FROM Win32_Process WHERE ParentProcessId={parentPid}";
+                using (var searcher = new ManagementObjectSearcher(query))
+                using (var results = searcher.Get())
+                {
+                    foreach (ManagementObject mo in results)
+                    {
+                        try
+                        {
+                            var pidObj = mo["ProcessId"];
+                            if (pidObj == null)
+                                continue;
+
+                            int pid = Convert.ToInt32(pidObj);
+                            var child = Process.GetProcessById(pid);
+                            children.Add(child);
+                        }
+                        catch
+                        {
+                            // Process may have exited, ignore
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"WMI GetChildren failed for PID {parentPid}: {ex.Message}");
+            }
+
+            return children;
+        }
     }
 }

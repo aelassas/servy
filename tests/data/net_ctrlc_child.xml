@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-16"?>
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <Name>PythonCtrlCChild</Name>
-  <Description>PythonCtrlCChild</Description>
-  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
-  <Parameters>E:\dev\servy\src\tests\nodejs-app-env-vars\index.js</Parameters>
+  <Name>NetCtrlCChild</Name>
+  <Description>NetCtrlCChild</Description>
+  <ExecutablePath>E:\dev\servy\src\tests\ConsoleApp\ConsoleApp\bin\Debug\ConsoleApp.exe</ExecutablePath>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\net_ctrlc.txt</StdoutPath>
+  <StderrPath>E:\dev\servy\net_ctrlc.txt</StderrPath>
   <EnableRotation>false</EnableRotation>
   <RotationSize>10</RotationSize>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>

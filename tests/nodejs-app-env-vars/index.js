@@ -51,31 +51,10 @@ process.stderr.write('boo!')
 // // allow the child process to keep running after parent exits
 // child.unref()
 
-const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'])
-child.unref()
+// const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'E:\\dev\\servy\\src\\tests\\ctrlc.py'])
+// child.unref()
 
-// const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe',
-//   ['-u', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'], {
-//   detached: true,
-//   stdio: 'inherit',
-// })
-
-// spawn('cmd.exe', ['/c', 'start', 'C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', 'C:\\dev\\servy\\src\\tests\\ctrlc.py'], {
-//   detached: false,
-//   stdio: 'pipe',
-// });
-
-// const child = spawn('powershell.exe', [
-//   '-NoExit', '-Command',
-//   'Add-Type -Name Native -Namespace Win32 -MemberDefinition \'[DllImport("kernel32.dll")] public static extern bool AllocConsole();\'',
-//   '; [Win32.Native]::AllocConsole(); Start-Process C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -NoNewWindow -ArgumentList "-u C:\\dev\\servy\\src\\tests\\ctrlc.py" -Wait'
-// ], {
-//   detached: true,
-//   stdio: 'inherit'
-// });
-
-
-// // keep Node alive until key press
+// keep Node alive until key press
 process.stdin.setRawMode(true)
 process.stdin.resume()
 process.stdin.on('data', () => {
