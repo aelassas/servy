@@ -211,7 +211,7 @@ namespace Servy.Service.ProcessManagement
 
             try
             {
-                ProcessHelper.KillProcessTree(_process); // kill tree
+                ProcessHelper.KillProcessTree(_process);
             }
             catch (Exception ex)
             {
@@ -271,7 +271,7 @@ namespace Servy.Service.ProcessManagement
             _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
             try
             {
-                ProcessHelper.KillProcessTree(process); // kill tree
+                process.Kill();
             }
             catch (Exception ex)
             {
@@ -330,14 +330,22 @@ namespace Servy.Service.ProcessManagement
         public void Kill(bool entireProcessTree = false)
         {
             ThrowIfDisposed();
+            try
+            {
+                if (_process.HasExited) return;
 
-            if (entireProcessTree)
-            {
-                ProcessHelper.KillProcessTree(_process);
+                if (entireProcessTree)
+                {
+                    ProcessHelper.KillProcessTree(_process);
+                }
+                else
+                {
+                    _process.Kill();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _process.Kill();
+                _logger?.Warning($"Kill failed: {ex.Message}");
             }
         }
 
@@ -345,6 +353,7 @@ namespace Servy.Service.ProcessManagement
         public bool WaitForExit(int milliseconds)
         {
             ThrowIfDisposed();
+            if (_process.HasExited) return true;
             return _process.WaitForExit(milliseconds);
         }
 
@@ -352,6 +361,7 @@ namespace Servy.Service.ProcessManagement
         public void WaitForExit()
         {
             ThrowIfDisposed();
+            if (_process.HasExited) return;
             _process.WaitForExit();
         }
 
@@ -429,7 +439,7 @@ namespace Servy.Service.ProcessManagement
                 {
                     // The process does not have a console.
                     case Errors.ERROR_INVALID_HANDLE:
-                        _logger?.Warning("Sending Ctrl+C: The child process does not have a console.");
+                        _logger?.Warning($"Sending Ctrl+C: The child process '{process.Format()}' does not have a console.");
                         return false;
 
                     // The process has exited.
@@ -438,7 +448,7 @@ namespace Servy.Service.ProcessManagement
 
                     // The calling process is already attached to a console.
                     default:
-                        _logger?.Warning("Sending Ctrl+C: Failed to attach to console. " + new Win32Exception(error).Message);
+                        _logger?.Warning($"Sending Ctrl+C: Failed to attach the child process '{process.Format()}' to console: {new Win32Exception(error).Message}");
                         return false;
                 }
             }

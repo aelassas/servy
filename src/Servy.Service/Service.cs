@@ -686,7 +686,8 @@ namespace Servy.Service
                 }
                 catch (OperationCanceledException)
                 {
-                    _logger?.Info("Post-launch action cancelled because service is stopping.");
+                    if (!string.IsNullOrWhiteSpace(_options?.PostLaunchExecutablePath))
+                        _logger?.Info("Post-launch action cancelled because service is stopping.");
                 }
                 catch (Exception ex)
                 {
