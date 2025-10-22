@@ -268,7 +268,7 @@ namespace Servy.Service.ProcessManagement
             _logger?.Info($"Graceful shutdown not supported. Forcing kill: {process.Format()}");
             try
             {
-                process.Kill();
+                process.Kill(true);
             }
             catch (Exception ex)
             {
@@ -417,10 +417,6 @@ namespace Servy.Service.ProcessManagement
         /// <returns></returns>
         private bool? SendCtrlC(Process process)
         {
-            // Save current stdout/stderr
-            //IntPtr originalOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            //IntPtr originalErr = GetStdHandle(STD_ERROR_HANDLE);
-
             if (!AttachConsole(process.Id))
             {
                 int error = Marshal.GetLastWin32Error();
@@ -448,8 +444,6 @@ namespace Servy.Service.ProcessManagement
             _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
 
             _ = FreeConsole();
-            //SetStdHandle(STD_OUTPUT_HANDLE, originalOut);
-            //SetStdHandle(STD_ERROR_HANDLE, originalErr);
 
             return true;
         }

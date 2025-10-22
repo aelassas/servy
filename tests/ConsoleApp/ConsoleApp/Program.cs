@@ -17,7 +17,7 @@ namespace ConsoleApp
         static void Main(string[] args)
         {
             // Ensure this app has its own console
-            AllocConsole();
+            //AllocConsole();
 
             Console.CancelKeyPress += (sender, e) =>
             {

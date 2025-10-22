@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Service.Native;
 using System.Diagnostics;
 using System.Reflection;
 using System.ServiceProcess;
@@ -25,14 +26,17 @@ namespace Servy.Service
         /// Main entry point of the Servy Windows service application.
         /// Extracts required embedded resources and starts the service host.
         /// </summary>
-        static void Main()
+        internal static void Main(string[] args)
         {
+            _ = NativeMethods.FreeConsole();
+            _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
+
+            // Copy service executable from embedded resources
             var asm = Assembly.GetExecutingAssembly();
             string eventSource = AppConfig.ServiceNameEventSource;
 
             EnsureEventSourceExists(eventSource);
 
-            // Copy service executable from embedded resources
             if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
             {
                 EventLog.WriteEntry(
