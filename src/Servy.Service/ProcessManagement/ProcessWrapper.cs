@@ -215,11 +215,7 @@ namespace Servy.Service.ProcessManagement
                 _logger?.Warning($"Kill failed: {ex.Message}");
             }
 
-            if (_process.WaitForExit(timeoutMs))
-            {
-                _logger?.Info("Process exited after forced kill.");
-            }
-            else
+            if (!_process.WaitForExit(timeoutMs))
             {
                 _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds after forced kill.");
             }
@@ -424,7 +420,7 @@ namespace Servy.Service.ProcessManagement
                 {
                     // The process does not have a console.
                     case Errors.ERROR_INVALID_HANDLE:
-                        _logger?.Warning($"Sending Ctrl+C: The child process '{process.Format()}' does not have a console.");
+                        //_logger?.Info($"Sending Ctrl+C: The child process '{process.Format()}' does not have a console.");
                         return false;
 
                     // The process has exited.
