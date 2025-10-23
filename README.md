@@ -105,6 +105,7 @@ scoop install servy
 * Environment variable expansion supported in both environment variables and process parameters
 * Run services as Local System, local user, domain account, or Group Managed Service Account
 * Redirect stdout/stderr to log files with automatic size-based rotation
+* Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive.
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
