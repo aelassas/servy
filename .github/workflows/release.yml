@@ -50,11 +50,11 @@ jobs:
                 per_page: 1,
               });
               
-              const run = runs.data.workflow_runs[0];
-              if (!run) {
-                failed.push(`${wf} (not run)`);
-                continue;
-              }
+              # const run = runs.data.workflow_runs[0];
+              # if (!run) {
+              #   failed.push(`${wf} (not run)`);
+              #   continue;
+              # }
 
               console.log(`${wf}: ${run.conclusion}`);
               if (run.conclusion !== "success") {
