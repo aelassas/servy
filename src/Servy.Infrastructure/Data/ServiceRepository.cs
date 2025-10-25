@@ -226,7 +226,7 @@ namespace Servy.Infrastructure.Data
                 FROM Services
                 WHERE LOWER(Name) LIKE @Pattern ESCAPE '\'
                     OR LOWER(Description) LIKE @Pattern ESCAPE '\'
-                ORDER BY Name ASC;";
+                ORDER BY LOWER(Name) COLLATE NOCASE ASC;";
 
             var escapedKeyword = keyword?.Trim().ToLower()
                 .Replace(@"\", @"\\")  // escape backslashes first
