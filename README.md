@@ -21,7 +21,7 @@
  
 ## .NET Framework 4.8 Version
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a modern, full-featured alternative to NSSM, WinSW, AlwaysUp, and FireDaemon.
+Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a modern, full-featured alternative to NSSM and WinSW.
 
 This .NET Framework 4.8 version is designed for compatibility with older Windows operating systems, from Windows 7 SP1 to Windows 11 and Windows Server.
 
