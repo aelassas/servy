@@ -4,6 +4,7 @@ using Servy.Service.Native;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,6 +142,30 @@ namespace Servy.Service.ProcessManagement
             {
                 ThrowIfDisposed();
                 _process.PriorityClass = value;
+            }
+        }
+
+        /// <summary>
+        /// Standard output stream of the process.
+        /// </summary>
+        public StreamReader StandardOutput
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StandardOutput;
+            }
+        }
+
+        /// <summary>
+        /// Standard error stream of the process.
+        /// </summary>
+        public StreamReader StandardError
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StandardError;
             }
         }
 

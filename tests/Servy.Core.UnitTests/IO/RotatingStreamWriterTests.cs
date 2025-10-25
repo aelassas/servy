@@ -90,7 +90,7 @@ namespace Servy.Core.UnitTests.IO
             {
                 // Write something to trigger rotation
                 writer.WriteLine("more"); // small write
-                writer.WriteLine("12345"); // triggers rotation
+                writer.Write("12345"); // triggers rotation
 
                 // Original file still exists (new empty log)
                 Assert.True(File.Exists(filePath));

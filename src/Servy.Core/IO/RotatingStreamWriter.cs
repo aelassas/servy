@@ -62,13 +62,33 @@ namespace Servy.Core.IO
             {
                 _writer.WriteLine(line);
                 _writer.Flush();
+                CheckRotation();
 
-                _file.Refresh();
-                if (_rotationSize > 0 && _file.Length >= _rotationSize)
-                {
-                    Rotate();
-                }
+            }
+        }
 
+        /// <summary>
+        /// Writes text to the log file without adding a newline, checking for rotation.
+        /// </summary>
+        public void Write(string text)
+        {
+            lock (_lock)
+            {
+                _writer.Write(text);
+                _writer.Flush();
+                CheckRotation();
+            }
+        }
+
+        /// <summary>
+        /// Checks if the file exceeds rotation size and rotates if necessary.
+        /// </summary>
+        private void CheckRotation()
+        {
+            _file.Refresh();
+            if (_rotationSize > 0 && _file.Length >= _rotationSize)
+            {
+                Rotate();
             }
         }
 
