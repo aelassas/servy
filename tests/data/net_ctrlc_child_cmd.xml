@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>NetCtrlCChild</Name>
+  <Description>NetCtrlCChild</Description>
+  <ExecutablePath>C:\Windows\System32\cmd.exe</ExecutablePath>
+  <Parameters>/c chcp 65001 &gt;NUL &amp;&amp; "E:\dev\servy\src\tests\ConsoleApp\ConsoleApp\bin\Debug\ConsoleApp.exe"</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\net_ctrlc.txt</StdoutPath>
+  <StderrPath>E:\dev\servy\net_ctrlc.txt</StderrPath>
+  <EnableRotation>false</EnableRotation>
+  <RotationSize>10</RotationSize>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <EnvironmentVariables>DOTNET_ENCODING__UTF8=1;DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION=true</EnvironmentVariables>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <EnableDebugLogs>false</EnableDebugLogs>
+</ServiceDto>
