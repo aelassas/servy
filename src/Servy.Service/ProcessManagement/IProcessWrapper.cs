@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,6 +55,16 @@ namespace Servy.Service.ProcessManagement
         /// Gets or sets a value indicating whether the <see cref="Exited"/> event should be raised when the process terminates.
         /// </summary>
         bool EnableRaisingEvents { get; set; }
+
+        /// <summary>
+        /// Standard output stream of the process.
+        /// </summary>
+        StreamReader StandardOutput { get; }
+
+        /// <summary>
+        /// Standard error stream of the process.
+        /// </summary>
+        StreamReader StandardError { get; }
 
         /// <summary>
         /// Starts the process.
