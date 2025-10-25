@@ -15,7 +15,7 @@ LicenseUrl: https://github.com/aelassas/servy#MIT-1-ov-file
 Copyright: Copyright (c) 2025 Akram El Assas
 ShortDescription: Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, pre-launch scripts and parameters.
 Description: |-
-  Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM, WinSW and FireDaemon.
+  Servy lets you run any app as a native Windows service with full control over working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch scripts and parameters. An open-source alternative to NSSM and WinSW.
 
   Features
   - Clean, simple UI
@@ -43,7 +43,6 @@ Moniker: servy
 Tags:
 - background-service
 - dotnet
-- firedaemon
 - nssm
 - service-wrapper
 - windows-service
