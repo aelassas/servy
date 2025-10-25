@@ -53,6 +53,16 @@ namespace Servy.Service.ProcessManagement
         bool EnableRaisingEvents { get; set; }
 
         /// <summary>
+        /// Standard output stream of the process.
+        /// </summary>
+        StreamReader StandardOutput { get; }
+
+        /// <summary>
+        /// Standard error stream of the process.
+        /// </summary>
+        StreamReader StandardError { get; }
+
+        /// <summary>
         /// Starts the process.
         /// </summary>
         void Start();

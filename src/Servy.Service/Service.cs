@@ -427,7 +427,7 @@ namespace Servy.Service
 
                     LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
 
-                    var startInfo = new ProcessStartInfo
+                    var psi = new ProcessStartInfo
                     {
                         FileName = options.PreLaunchExecutablePath,
                         Arguments = args,
@@ -437,21 +437,27 @@ namespace Servy.Service
                         UseShellExecute = false,
                         RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
                         RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
+                        StandardOutputEncoding = Encoding.UTF8,
+                        StandardErrorEncoding = Encoding.UTF8,
                         CreateNoWindow = true
                     };
 
                     // Apply environment variables
                     foreach (var envVar in expandedEnv)
                     {
-                        startInfo.Environment[envVar.Key] = envVar.Value ?? string.Empty;
+                        psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
                     }
 
-                    using (var process = new Process { StartInfo = startInfo })
-                    {
-                        StringBuilder stdoutBuffer = new();
-                        StringBuilder stderrBuffer = new();
+                    // Ensure UTF-8 encoding and buffered mode for python
+                    EnsurePythonUTF8EncodingAndBufferedMode(psi);
+                    EnsureJavaUTF8Encoding(psi);
 
-                        if (startInfo.RedirectStandardOutput)
+                    using (var process = new Process { StartInfo = psi })
+                    {
+                        var stdoutBuffer = new StringBuilder();
+                        var stderrBuffer = new StringBuilder();
+
+                        if (psi.RedirectStandardOutput)
                         {
                             process.OutputDataReceived += (_, e) =>
                             {
@@ -459,7 +465,7 @@ namespace Servy.Service
                                     stdoutBuffer.AppendLine(e.Data);
                             };
                         }
-                        if (startInfo.RedirectStandardError)
+                        if (psi.RedirectStandardError)
                         {
                             process.ErrorDataReceived += (_, e) =>
                             {
@@ -470,8 +476,8 @@ namespace Servy.Service
 
                         process.Start();
 
-                        if (startInfo.RedirectStandardOutput) process.BeginOutputReadLine();
-                        if (startInfo.RedirectStandardError) process.BeginErrorReadLine();
+                        if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
+                        if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
                         if (!process.WaitForExit(effectiveTimeout))
                         {
@@ -482,14 +488,16 @@ namespace Servy.Service
                         // Ensure all async reads are finished
                         process.WaitForExit();
 
+                        var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
+
                         // Save logs if paths are set
                         if (!string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath))
                         {
-                            File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString());
+                            File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString(), encoding);
                         }
                         if (!string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath))
                         {
-                            File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString());
+                            File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString(), encoding);
                         }
 
                         if (process.ExitCode == 0)
@@ -642,6 +650,10 @@ namespace Servy.Service
                 psi.EnvironmentVariables[envVar.Key] = envVar.Value;
             }
 
+            // Ensure UTF-8 encoding and buffered mode for python
+            EnsurePythonUTF8EncodingAndBufferedMode(psi);
+            EnsureJavaUTF8Encoding(psi);
+
             _childProcess = _processFactory.Create(psi, _logger);
 
             // Enable events and attach output/error handlers
@@ -692,6 +704,50 @@ namespace Servy.Service
                     _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
                 }
             }, cts.Token);
+        }
+
+        /// <summary>
+        /// Ensures that Python processes use UTF-8 encoding for standard I/O and operate in unbuffered mode.
+        /// </summary>
+        /// <param name="psi">The <see cref="ProcessStartInfo"/> used to start the Python process.</param>
+        /// <remarks>
+        /// This method detects Python executables or scripts and configures the following environment variables:
+        /// <list type="bullet">
+        /// <item><description><c>PYTHONLEGACYWINDOWSSTDIO=0</c> — Enables wide-character I/O APIs.</description></item>
+        /// <item><description><c>PYTHONIOENCODING=utf-8</c> — Forces UTF-8 for <c>stdout</c> and <c>stderr</c>.</description></item>
+        /// <item><description><c>PYTHONUTF8=1</c> — Enables UTF-8 mode globally (Python 3.7+).</description></item>
+        /// <item><description><c>PYTHONUNBUFFERED=1</c> — Disables I/O buffering to ensure real-time output.</description></item>
+        /// </list>
+        /// </remarks>
+        private void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)
+        {
+            if (psi.FileName.Contains("python", StringComparison.OrdinalIgnoreCase) ||
+                psi.Arguments.Contains(".py", StringComparison.OrdinalIgnoreCase))
+            {
+                psi.EnvironmentVariables["PYTHONLEGACYWINDOWSSTDIO"] = "0";
+                psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
+                psi.EnvironmentVariables["PYTHONUTF8"] = "1";
+                psi.EnvironmentVariables["PYTHONUNBUFFERED"] = "1";
+            }
+        }
+
+        /// <summary>
+        /// Ensures that Java processes use UTF-8 as the default file encoding.
+        /// </summary>
+        /// <param name="psi">The <see cref="ProcessStartInfo"/> used to start the Java process.</param>
+        /// <remarks>
+        /// This method checks if the Java process already specifies a <c>-Dfile.encoding</c> option.
+        /// If not, it prepends <c>-Dfile.encoding=UTF-8</c> to the argument list to enforce UTF-8 encoding.
+        /// </remarks>
+        private void EnsureJavaUTF8Encoding(ProcessStartInfo psi)
+        {
+            if ((psi.FileName.Contains("java", StringComparison.OrdinalIgnoreCase) ||
+                 psi.Arguments.Contains(".java", StringComparison.OrdinalIgnoreCase)
+                )
+                && !psi.Arguments.Contains("-Dfile.encoding", StringComparison.OrdinalIgnoreCase))
+            {
+                psi.Arguments = $"-Dfile.encoding=UTF-8 {psi.Arguments}".Trim();
+            }
         }
 
         /// <summary>

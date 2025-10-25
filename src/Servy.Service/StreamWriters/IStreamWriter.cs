@@ -10,5 +10,10 @@
         /// </summary>
         /// <param name="line">The text line to write.</param>
         void WriteLine(string line);
+
+        /// <summary>
+        /// Writes text to the stream without adding a newline.
+        /// </summary>
+        void Write(string text);
     }
 }

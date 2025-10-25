@@ -141,6 +141,30 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
+        /// <summary>
+        /// Standard output stream of the process.
+        /// </summary>
+        public StreamReader StandardOutput
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StandardOutput;
+            }
+        }
+
+        /// <summary>
+        /// Standard error stream of the process.
+        /// </summary>
+        public StreamReader StandardError
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StandardError;
+            }
+        }
+
         #endregion
 
         /// <inheritdoc/>
