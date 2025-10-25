@@ -22,9 +22,9 @@
     <AssemblyDescription>A tool to restart a Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Restarter</Product>
-    <Version>2.6.0</Version>
-    <FileVersion>2.6.0.0</FileVersion>
-    <AssemblyVersion>2.6.0.0</AssemblyVersion>
+    <Version>2.7.0</Version>
+    <FileVersion>2.7.0.0</FileVersion>
+    <AssemblyVersion>2.7.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
