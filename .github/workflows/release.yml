@@ -49,6 +49,8 @@ jobs:
                 workflow_id: `${wf}.yml`,
                 per_page: 1,
               });
+              
+              const run = runs.data.workflow_runs[0];
 
               console.log(`${wf}: ${run.conclusion}`);
               if (run.conclusion !== "success") {
