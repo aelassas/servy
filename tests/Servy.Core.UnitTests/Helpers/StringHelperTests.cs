@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Helpers;
+using System.Reflection;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -36,17 +37,57 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void FormatEnvirnomentVariables_ShouldFormatParsedVariables()
+        public void Escape_NullInput_ReturnsEmptyString_UsingReflection()
         {
             // Arrange
-            var rawVars = "VAR1=val1;VAR2=val2";
+            var type = typeof(StringHelper);
+            var method = type.GetMethod("Escape", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.NotNull(method);
+
+            // Act
+            var result = method.Invoke(null, new object[] { null! }) as string;
+
+            // Assert
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void FormatEnvirnomentVariables_ShouldEscapeSpecialCharactersCorrectly()
+        {
+            // Arrange
+            // Each variable tests one or more escape sequences:
+            // - VAR1: normal, no escaping
+            // - VAR2: '=' in value
+            // - VAR3: ';' in value
+            // - VAR4: '"' in value
+            // - VAR5: '\' in value
+            // - VAR6: combinations of multiple escaped chars
+            var rawVars = string.Join(";", new[]
+            {
+                "VAR1=val1",
+                @"VAR2=a\=b",
+                @"VAR3=x\;y",
+                @"VAR4=hello \""world\""",
+                "VAR5=C:\\path\\to\\file",
+                "VAR6=combo\\=\\;\\\"end\\\""
+            });
 
             // Act
             var result = StringHelper.FormatEnvirnomentVariables(rawVars);
 
             // Assert
-            var expected = "VAR1=val1" + Environment.NewLine + "VAR2=val2";
+            var expected = string.Join(Environment.NewLine, new[]
+            {
+                "VAR1=val1",
+                @"VAR2=a\=b",
+                @"VAR3=x\;y",
+                @"VAR4=hello \""world\""",
+                @"VAR5=C:\\path\\to\\file",
+                "VAR6=combo\\=\\;\\\"end\\\""
+            });
+
             Assert.Equal(expected, result);
         }
+
     }
 }

@@ -15,7 +15,7 @@
   <MaxFailedChecks>3</MaxFailedChecks>
   <RecoveryAction>1</RecoveryAction>
   <MaxRestartAttempts>3</MaxRestartAttempts>
-  <EnvironmentVariables>var1=val1;var2=val2\=\;\"\\aa;var3=val3</EnvironmentVariables>
+  <EnvironmentVariables>var1=val1;var2=val2\=\;\"\\aa;var3=val3;VAR5=C:\path\to\file</EnvironmentVariables>
   <RunAsLocalSystem>true</RunAsLocalSystem>
   <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
   <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
