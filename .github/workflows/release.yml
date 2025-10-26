@@ -64,9 +64,6 @@ jobs:
               } else {
                 console.log(`${wf} (no runs)`);
               }
-
-              // wait briefly before next check
-              await new Promise(r => setTimeout(r, 10000));
             }
 
             if (failed.length > 0) {
