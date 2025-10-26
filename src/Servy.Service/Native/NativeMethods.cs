@@ -52,7 +52,7 @@ namespace Servy.Service.Native
         /// <summary>
         /// Constant used to indicate that the current process should attach to the parent process's console.
         /// </summary>
-        public static int ATTACH_PARENT_PROCESS = -1;
+        public const int ATTACH_PARENT_PROCESS = -1;
 
         /// <summary>
         /// Attaches the calling process to the console of the specified process.
