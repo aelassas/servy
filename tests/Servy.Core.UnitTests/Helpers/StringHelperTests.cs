@@ -69,7 +69,8 @@ namespace Servy.Core.UnitTests.Helpers
                 @"VAR3=x\;y",
                 @"VAR4=hello \""world\""",
                 "VAR5=C:\\path\\to\\file",
-                "VAR6=combo\\=\\;\\\"end\\\""
+                "VAR6=combo\\=\\;\\\"end\\\"",
+                @"VAR7\=a=b\=c",
             });
 
             // Act
@@ -83,7 +84,8 @@ namespace Servy.Core.UnitTests.Helpers
                 @"VAR3=x\;y",
                 @"VAR4=hello \""world\""",
                 @"VAR5=C:\\path\\to\\file",
-                "VAR6=combo\\=\\;\\\"end\\\""
+                "VAR6=combo\\=\\;\\\"end\\\"",
+                @"VAR7\=a=b\=c",
             });
 
             Assert.Equal(expected, result);
