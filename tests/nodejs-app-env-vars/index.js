@@ -22,19 +22,25 @@ const __dirname = path.dirname(__filename)
 const filePath = path.resolve(__dirname, "output.txt")
 
 // Clear the file first (overwrite with empty string)
-fs.writeFileSync(filePath, "", "utf8")
+fs.appendFileSync(filePath, '', "utf8")
+
+// Append the current timestamp
+fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")
+
+process.stdout.write('abcd&é секунды 同时也感觉没有想象的那么好用 — äöü ß ñ © ™ 🌍\n')
 
 for (const [key, val] of Object.entries(process.env)) {
   if (!baselineEnvKeys.has(key)) {
-    const line = `${key}=${val}\\n`
+    const line = `${key}=${val}\n`
     // Append each line to the file
     fs.appendFileSync(filePath, line, "utf8")
     console.log(line.trim()) // optional: print to console
   }
 }
+fs.appendFileSync(filePath, '\n', "utf8")
 // process.exit(1)
 
-fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
+// fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
 
 // simulate some work
 // await new Promise((res) => setTimeout(res, 6 * 1000))
