@@ -94,7 +94,6 @@ namespace Servy.Service.ProcessManagement
                 {
                     // Ignore inaccessible processes
                     other.Dispose();
-                    handle.Dispose();
                 }
                 finally
                 {
@@ -133,7 +132,7 @@ namespace Servy.Service.ProcessManagement
                 using (var searcher = new ManagementObjectSearcher(query))
                 using (var results = searcher.Get())
                 {
-                    foreach (ManagementObject mo in results)
+                    foreach (var mo in results)
                     {
                         try
                         {

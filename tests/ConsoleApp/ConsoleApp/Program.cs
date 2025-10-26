@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace ConsoleApp
 {
-    internal class Program
+    public static class Program
     {
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool AllocConsole();
@@ -14,7 +14,7 @@ namespace ConsoleApp
         private static readonly string LogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "output.txt");
         private static readonly ManualResetEvent QuitEvent = new ManualResetEvent(false);
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             // Ensure this app has its own console
             //AllocConsole();
