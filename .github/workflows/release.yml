@@ -31,6 +31,10 @@ on:
     types: [completed]
   workflow_dispatch:  # Manual trigger
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   check-release-workflows:
     runs-on: ubuntu-latest
@@ -52,14 +56,21 @@ jobs:
               
               const run = runs.data.workflow_runs[0];
 
-              console.log(`${wf}: ${run.conclusion}`);
-              if (run.conclusion !== "success") {
-                failed.push(wf);
+              if (run) {
+                console.log(`${wf}: ${run.conclusion}`);
+                if (run.conclusion !== "success") {
+                  failed.push(wf);
+                }
+              } else {
+                console.log(`${wf} (no runs)`);
               }
+
+              // wait briefly before next check
+              await new Promise(r => setTimeout(r, 10000));
             }
 
             if (failed.length > 0) {
-              core.setFailed(`Some workflows failed or skipped: ${failed.join(", ")}`);
+              core.setFailed(`Some workflows failed: ${failed.join(", ")}`);
             } else {
               console.log("All release workflows succeeded!");
             }
