@@ -1,4 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using System.Text;
 
 namespace Servy.Core.Helpers
 {
@@ -40,7 +41,9 @@ namespace Servy.Core.Helpers
         /// <returns>A string where each environment variable is on a separate line.</returns>
         public static string FormatEnvirnomentVariables(string vars)
         {
-            var normalizedEnvVars = EnvironmentVariableParser.Parse(vars).Select(v => $"{v.Name}={v.Value}");
+            var normalizedEnvVars = EnvironmentVariableParser.Parse(vars)
+                .Select(v => $"{Escape(v.Name)}={Escape(v.Value)}");
+
             return string.Join(Environment.NewLine, normalizedEnvVars);
         }
 
@@ -52,6 +55,41 @@ namespace Servy.Core.Helpers
         public static string? FormatServiceDependencies(string deps)
         {
             return deps?.Replace(";", Environment.NewLine);
+        }
+
+        /// <summary>
+        /// Escapes special characters in environment variable keys/values.
+        /// </summary>
+        private static string Escape(string value)
+        {
+            if (value == null)
+                return string.Empty;
+
+            var sb = new StringBuilder(value.Length);
+
+            foreach (var ch in value)
+            {
+                switch (ch)
+                {
+                    case '\\':
+                        sb.Append(@"\\");
+                        break;
+                    case '=':
+                        sb.Append(@"\=");
+                        break;
+                    case ';':
+                        sb.Append(@"\;");
+                        break;
+                    case '"':
+                        sb.Append("\\\"");
+                        break;
+                    default:
+                        sb.Append(ch);
+                        break;
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }
