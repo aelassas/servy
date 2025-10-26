@@ -1,0 +1,23 @@
+{
+  "Name": "ServyNodeJSApp",
+  "Description": "ServyNodeJSApp",
+  "ExecutablePath": "C:\\Program Files\\nodejs\\node.exe",
+  "Parameters": "C:\\dev\\servy\\src\\tests\\nodejs-app-env-vars\\index.js",
+  "StartupType": 2,
+  "Priority": 2,
+  "StdoutPath": "C:\\dev\\servy\\nodeapp.log",
+  "StderrPath": "C:\\dev\\servy\\nodeapp.log",
+  "EnableRotation": false,
+  "RotationSize": 10,
+  "EnableHealthMonitoring": false,
+  "HeartbeatInterval": 30,
+  "MaxFailedChecks": 3,
+  "RecoveryAction": 1,
+  "MaxRestartAttempts": 3,
+  "EnvironmentVariables": "var1=val1;var2=val2\\=\\;\\\"\\\\aa;var3=val3",
+  "RunAsLocalSystem": true,
+  "PreLaunchTimeoutSeconds": 30,
+  "PreLaunchRetryAttempts": 0,
+  "PreLaunchIgnoreFailure": false,
+  "EnableDebugLogs": false
+}
