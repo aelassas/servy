@@ -32,10 +32,10 @@ dotnet publish $projectPath `
     -c $configuration `
     -r $runtime `
     --self-contained true `
-    -p:PublishSingleFile=true `
-    -p:IncludeAllContentForSelfExtract=true `
-    -p:PublishTrimmed=false `
-    -p:Version=$version `
+    /p:PublishSingleFile=true `
+    /p:IncludeAllContentForSelfExtract=true `
+    /p:PublishTrimmed=false `
+    /p:Version=$version `
     -f $tfm `
     -o $publishDir `
     /p:DeleteExistingFiles=true
