@@ -44,7 +44,8 @@ jobs:
         with:
           script: |
             const workflows = ["winget", "choco", "scoop", "bump-version"];
-            let failed = [];
+            const failed = [];
+            const pending = [];
 
             for (const wf of workflows) {
               const runs = await github.rest.actions.listWorkflowRuns({
@@ -53,12 +54,13 @@ jobs:
                 workflow_id: `${wf}.yml`,
                 per_page: 1,
               });
-              
-              const run = runs.data.workflow_runs[0];
 
+              const run = runs.data.workflow_runs[0];
               if (run) {
                 console.log(`${wf}: ${run.conclusion}`);
-                if (run.conclusion !== "success") {
+                if (run.conclusion === null) {
+                  pending.push(wf);
+                } else if (run.conclusion !== "success") {
                   failed.push(wf);
                 }
               } else {
@@ -68,6 +70,8 @@ jobs:
 
             if (failed.length > 0) {
               core.setFailed(`Some workflows failed: ${failed.join(", ")}`);
+            } else if (pending.length > 0) {
+              core.warning(`Some workflows are still running: ${pending.join(", ")}`);
             } else {
               console.log("All release workflows succeeded!");
             }
