@@ -44,7 +44,8 @@ fs.appendFileSync(filePath, '\n', "utf8")
 
 // simulate some work
 // await new Promise((res) => setTimeout(res, 6 * 1000))
-process.stderr.write('boo!')
+process.stdout.write('stdout boo!\n')
+process.stderr.write('stderr boo!\n')
 
 // process.exit(0)
 
@@ -60,11 +61,29 @@ process.stderr.write('boo!')
 // const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'E:\\dev\\servy\\src\\tests\\ctrlc.py'])
 // child.unref()
 
+
+// Handle Ctrl+C (SIGINT) and other termination signals
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
+  process.once(signal, () => {
+    const msg = `Received ${signal} — shutting down gracefully...\n`
+    process.stdout.write(msg)
+    fs.appendFileSync(filePath, msg, "utf8")
+    // Perform cleanup here (e.g., close DB connections, stop servers, etc.)
+    process.exit(0)
+  })
+}
+
+// Simulate long-running app:
+process.stdout.write('App is running. Press Ctrl+C to stop.')
+setInterval(() => { }, 1000)
+
+
 // keep Node alive until key press
-process.stdin.setRawMode(true)
-process.stdin.resume()
-process.stdin.on('data', () => {
-  console.log('Exiting...')
-  // child.kill() // kill the child process
-  process.exit(0)
-})
+// process.stdin.setRawMode(true)
+// process.stdin.resume()
+// process.stdin.on('data', () => {
+//   process.stdout.write('Exiting...\n')
+//   console.log('Exiting...')
+//   // child.kill() // kill the child process
+//   process.exit(0)
+// })
