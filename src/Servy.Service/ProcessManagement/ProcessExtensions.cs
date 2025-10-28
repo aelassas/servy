@@ -1,7 +1,6 @@
 ﻿using Servy.Service.Native;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Management;
 
@@ -10,14 +9,14 @@ namespace Servy.Service.ProcessManagement
     /// <summary>
     /// Format extensions for processes.
     /// </summary>
-    internal static class ProcessExtensions
+    public static class ProcessExtensions
     {
         /// <summary>
         /// Formats the process as "ProcessName (Id)".
         /// </summary>
         /// <param name="process">Process.</param>
         /// <returns>Process info.</returns>
-        internal static string Format(this Process process)
+        public static string Format(this Process process)
         {
             try
             {
@@ -34,7 +33,7 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <param name="process">Process.</param>
         /// <returns>Children.</returns>
-        internal static unsafe List<(Process Process, Handle Handle)> GetChildren(this Process process)
+        public static unsafe List<(Process Process, Handle Handle)> GetChildren(this Process process)
         {
             var children = new List<(Process Process, Handle Handle)>();
             int parentPid = process.Id;
@@ -123,7 +122,7 @@ namespace Servy.Service.ProcessManagement
         /// This method uses WMI to query the <c>Win32_Process</c> class and filter by <c>ParentProcessId</c>. 
         /// It is more robust than querying native process handles because it can detect detached or GUI processes.
         /// </remarks>
-        internal static List<Process> GetChildrenWmi(this Process process)
+        public static List<Process> GetChildrenWmi(this Process process)
         {
             var children = new List<Process>();
             int parentPid = process.Id;
