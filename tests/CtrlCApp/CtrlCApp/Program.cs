@@ -2,11 +2,11 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using static CtrlCApp.Native.NativeMethods;
-
 
 _ = NativeMethods.FreeConsole();
 _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
@@ -41,26 +41,31 @@ EnsurePythonUTF8EncodingAndBufferedMode(psi);
 var _childProcess = new Process { StartInfo = psi };
 _childProcess.EnableRaisingEvents = true;
 
+// Helper to safely log asynchronously from event handlers
+async Task LogAsync(string message) => await File.AppendAllTextAsync(log, message + "\n");
+
 _childProcess.OutputDataReceived += (sender, e) =>
 {
-    if (e.Data != null) File.AppendAllText(log, $"stdout: {e.Data}\n");
+    if (e.Data != null)
+        _ = LogAsync($"stdout: {e.Data}");
 };
 
 _childProcess.ErrorDataReceived += (sender, e) =>
 {
-    if (e.Data != null) File.AppendAllText(log, $"stderr: {e.Data}\n");
+    if (e.Data != null)
+        _ = LogAsync($"stderr: {e.Data}");
 };
 
 _childProcess.Exited += (sender, e) =>
 {
-    File.AppendAllText(log, $"child process exited with code: {_childProcess.ExitCode}\n");
+    _ = LogAsync($"child process exited with code: {_childProcess.ExitCode}");
 };
 
 try
 {
     _childProcess.Start();
 
-    File.AppendAllText(log, $"Started child process with PID: {_childProcess.Id}\n");
+    await LogAsync($"Started child process with PID: {_childProcess.Id}");
 }
 finally
 {
@@ -75,10 +80,10 @@ _childProcess.BeginErrorReadLine();
 await Task.Delay(2000);
 
 // Send Ctrl+C
-SendCtrlC(_childProcess);
+await SendCtrlCAsync(_childProcess);
 
 await _childProcess.WaitForExitAsync();
-File.AppendAllText(log, "Parent exiting...\n");
+await LogAsync("Parent exiting...");
 
 static void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)
 {
@@ -92,33 +97,31 @@ static void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)
     }
 }
 
-static bool? SendCtrlC(Process process)
+static async Task<bool?> SendCtrlCAsync(Process process)
 {
+    const string log = @"E:\dev\servy\python_ctrlc.txt";
+
     if (!AttachConsole(process.Id))
     {
         int error = Marshal.GetLastWin32Error();
         switch (error)
         {
-            // The process does not have a console.
             case Errors.ERROR_INVALID_HANDLE:
-                File.AppendAllText(log, $"Sending Ctrl+C: The child process does not have a console.\n");
+                await File.AppendAllTextAsync(log, $"Sending Ctrl+C: The child process does not have a console.\n");
                 return false;
 
-            // The process has exited.
             case Errors.ERROR_INVALID_PARAMETER:
                 return null;
 
-            // The calling process is already attached to a console.
             default:
-                File.AppendAllText(log, $"Sending Ctrl+C: Failed to attach the child process to console: {new Win32Exception(error).Message}\n");
+                await File.AppendAllTextAsync(log, $"Sending Ctrl+C: Failed to attach the child process to console: {new Win32Exception(error).Message}\n");
                 return false;
         }
     }
 
-    // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
-    // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
+    await Task.Delay(100); // ensure console attached before sending
     _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
-    File.AppendAllText(log, $"Sent Ctrl+C to process.\n");
+    await File.AppendAllTextAsync(log, $"Sent Ctrl+C to process.\n");
 
     _ = FreeConsole();
 
