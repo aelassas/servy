@@ -647,7 +647,7 @@ namespace Servy.Service
 
             foreach (var envVar in expandedEnv)
             {
-                psi.EnvironmentVariables[envVar.Key] = envVar.Value;
+                psi.Environment[envVar.Key] = envVar.Value;
             }
 
             // Ensure UTF-8 encoding and buffered mode for python
@@ -724,10 +724,10 @@ namespace Servy.Service
             if (psi.FileName.Contains("python", StringComparison.OrdinalIgnoreCase) ||
                 psi.Arguments.Contains(".py", StringComparison.OrdinalIgnoreCase))
             {
-                psi.EnvironmentVariables["PYTHONLEGACYWINDOWSSTDIO"] = "0";
-                psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
-                psi.EnvironmentVariables["PYTHONUTF8"] = "1";
-                psi.EnvironmentVariables["PYTHONUNBUFFERED"] = "1";
+                psi.Environment["PYTHONLEGACYWINDOWSSTDIO"] = "0";
+                psi.Environment["PYTHONIOENCODING"] = "utf-8";
+                psi.Environment["PYTHONUTF8"] = "1";
+                psi.Environment["PYTHONUNBUFFERED"] = "1";
             }
         }
 
