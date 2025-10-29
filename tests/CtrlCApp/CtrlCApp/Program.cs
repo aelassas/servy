@@ -32,8 +32,7 @@ var psi = new ProcessStartInfo
     RedirectStandardError = true,
     StandardOutputEncoding = Encoding.UTF8,
     StandardErrorEncoding = Encoding.UTF8,
-    CreateNoWindow = true, // must be false to allow Ctrl+C
-    WindowStyle = ProcessWindowStyle.Hidden,
+    CreateNoWindow = true, 
 };
 
 EnsurePythonUTF8EncodingAndBufferedMode(psi);
@@ -99,8 +98,6 @@ static void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)
 
 static async Task<bool?> SendCtrlCAsync(Process process)
 {
-    const string log = @"E:\dev\servy\python_ctrlc.txt";
-
     if (!AttachConsole(process.Id))
     {
         int error = Marshal.GetLastWin32Error();
@@ -119,8 +116,7 @@ static async Task<bool?> SendCtrlCAsync(Process process)
         }
     }
 
-    await Task.Delay(100); // ensure console attached before sending
-    _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
+    _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);    
     await File.AppendAllTextAsync(log, $"Sent Ctrl+C to process.\n");
 
     _ = FreeConsole();
