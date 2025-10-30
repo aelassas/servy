@@ -1211,6 +1211,11 @@ namespace Servy.Service
 
             try
             {
+                if (_childProcess != null)
+                {
+                    _childProcess.Exited -= OnProcessExited;
+                }
+
                 // Attempt to stop child process gracefully or kill forcibly
                 SafeKillProcess(_childProcess);
 
@@ -1219,7 +1224,6 @@ namespace Servy.Service
                     // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
                     _childProcess.OutputDataReceived -= OnOutputDataReceived;
                     _childProcess.ErrorDataReceived -= OnErrorDataReceived;
-                    _childProcess.Exited -= OnProcessExited;
                 }
 
                 try
