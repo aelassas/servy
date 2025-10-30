@@ -1204,31 +1204,31 @@ namespace Servy.Service
             // reset PID
             ResetPid();
 
-            if (_childProcess != null)
-            {
-                // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
-                _childProcess.OutputDataReceived -= OnOutputDataReceived;
-                _childProcess.ErrorDataReceived -= OnErrorDataReceived;
-                _childProcess.Exited -= OnProcessExited!;
-            }
-
-            try
-            {
-                // Dispose output writers for stdout and stderr streams
-                _stdoutWriter?.Dispose();
-                _stderrWriter?.Dispose();
-                _stdoutWriter = null;
-                _stderrWriter = null;
-            }
-            catch (Exception ex)
-            {
-                _logger?.Warning($"Failed to dispose output writers: {ex.Message}");
-            }
-
             try
             {
                 // Attempt to stop child process gracefully or kill forcibly
                 SafeKillProcess(_childProcess!);
+
+                if (_childProcess != null)
+                {
+                    // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
+                    _childProcess.OutputDataReceived -= OnOutputDataReceived;
+                    _childProcess.ErrorDataReceived -= OnErrorDataReceived;
+                    _childProcess.Exited -= OnProcessExited!;
+                }
+
+                try
+                {
+                    // Dispose output writers for stdout and stderr streams
+                    _stdoutWriter?.Dispose();
+                    _stderrWriter?.Dispose();
+                    _stdoutWriter = null;
+                    _stderrWriter = null;
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warning($"Failed to dispose output writers: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {

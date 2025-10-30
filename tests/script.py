@@ -10,7 +10,7 @@ import os
 
 LOG_DIR = r"C:\test\logs"
 os.makedirs(LOG_DIR, exist_ok=True)
-LOG_FILE = os.path.join(LOG_DIR, "test.log")
+LOG_FILE = os.path.join(LOG_DIR, "test_pre.log")
 
 logging.basicConfig(
     level=logging.INFO,
