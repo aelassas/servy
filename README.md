@@ -57,6 +57,10 @@ If you've ever struggled with the limitations of the built-in `sc` tool or found
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot without having to rewrite them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
+## Why?
+
+See the [project manifest](MANIFEST.md).
+
 ## Getting Started
 You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
 
@@ -117,7 +121,7 @@ scoop install servy
 
 ## Roadmap
 
-For the full project roadmap, see [ROADMAP.md](ROADMAP.md).
+See the [project roadmap](ROADMAP.md).
 
 ## Support & Contributing
 
