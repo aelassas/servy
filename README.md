@@ -100,6 +100,8 @@ scoop install servy
 
 ## Features
 
+When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro — all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
+
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM usage tracking for installed services
