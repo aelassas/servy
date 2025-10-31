@@ -121,6 +121,9 @@ jobs:
           git fetch origin main
           git reset --hard origin/main  # reset local main to match remote
 
+          # Ensure PowerShell scripts have execution permissions
+          git update-index --chmod=+x ./bump-version.ps1
+
           # Run your PowerShell script to update version numbers
           ./bump-version.ps1 -Version $env:NEXT_VERSION
 
@@ -132,7 +135,7 @@ jobs:
           if (git diff --quiet) {
               Write-Host "No changes detected, skipping commit."
           } else {
-              git add .
+              git add --all
               git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               git push origin main
           }
@@ -141,9 +144,12 @@ jobs:
       - name: Bump version on net48 branch
         shell: pwsh
         run: |
-          git fetch origin net48
+          git fetch origin net48:net48
           git checkout net48
           git reset --hard origin/net48  # reset local net48 to match remote
+
+          # Ensure PowerShell scripts have execution permissions
+          git update-index --chmod=+x ./bump-version.ps1
 
           # Run version bump script
           ./bump-version.ps1 -Version $env:NEXT_VERSION
@@ -156,7 +162,7 @@ jobs:
           if (git diff --quiet) {
               Write-Host "No changes detected on net48 branch, skipping commit."
           } else {
-              git add .
+              git add --all
               git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               git push origin net48
           }
