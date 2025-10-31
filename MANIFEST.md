@@ -16,7 +16,7 @@ The result is **Servy**, a tool that lets you run any app as a native Windows se
 
 ## Points of Interest
 
-While building Servy, I spent quite a bit of time working directly with the Win32 API to handle various system-level operations such as managing processes, checking service states, and dealing with permissions. It was challenging at first, but it gave me a deeper understanding of how Windows manages background applications under the hood.
+While building Servy, I spent quite a bit of time working directly with the Win32 API to handle various system-level operations such as managing processes, installing services, checking service states, and dealing with permissions. It was challenging at first, but it gave me a deeper understanding of how Windows manages background applications under the hood.
 
 Publishing Servy on GitHub has been a huge help in improving the tool. It allowed me to find and fix bugs more quickly and also add new features that users requested, like the ability to expand environment variables. Most of the bugs were straightforward to reproduce and fix, but there was one particularly tricky issue. When stopping a service, sending a Ctrl+C signal to the child process caused the stdout and stderr pipes to be lost, which took some time and careful debugging to resolve. After a lot of effort, I was able to fix all the reported bugs and implement all the requested features, making Servy more stable, reliable, and user-friendly. Sharing the project on GitHub also made it easier to get feedback and suggestions, which helped guide development and prioritize improvements.
 
