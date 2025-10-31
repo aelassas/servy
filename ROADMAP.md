@@ -19,6 +19,7 @@
 * [x] Add package manager support (WinGet, Chocolatey, Scoop) ([#9](https://github.com/aelassas/servy/issues/9))
 * [x] Add support for script or executable to run when the process fails to start
 * [x] Add Event ID to Info, Warning, and Error service logs
+* [x] Support using the same file for stdout and stderr ([#14](https://github.com/aelassas/servy/issues/14))
 * [x] Support Ctrl+C for command-line apps ([#20](https://github.com/aelassas/servy/issues/20))
 * [ ] Upgrade to .NET 10 (LTS)
 * [x] Servy Manager App for managing services installed by Servy
