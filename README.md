@@ -151,5 +151,5 @@ A huge thanks to JetBrains for providing an open-source license for their tools.
 </a>
 
 
-I'd also like to thank everyone who tested Servy, reported issues, and suggested improvements on GitHub. Your feedback and contributions helped shape the project and made it better with every release.
+I'd also like to thank everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions helped shape the project and made it better with every release.
 
