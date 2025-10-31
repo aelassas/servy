@@ -57,6 +57,10 @@ If you've ever struggled with the limitations of the built-in `sc` tool or found
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot without having to rewrite them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
+## Why?
+
+See the [project manifest](MANIFEST.md).
+
 ## Getting Started
 You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
 
@@ -96,6 +100,8 @@ scoop install servy
 
 ## Features
 
+When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro — all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
+
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM usage tracking for installed services
@@ -117,7 +123,7 @@ scoop install servy
 
 ## Roadmap
 
-For the full project roadmap, see [ROADMAP.md](ROADMAP.md).
+See the [project roadmap](ROADMAP.md).
 
 ## Support & Contributing
 
@@ -136,10 +142,14 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
 
-## Acknowledgements
+## Acknowledgments
 
-This project is supported by:
+A huge thanks to JetBrains for providing an open-source license for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
 
 <a href="https://www.jetbrains.com/community/opensource/">
   <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="52" height="52">
 </a>
+
+
+I'd also like to thank everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions helped shape the project and made it better with every release.
+
