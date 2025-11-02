@@ -153,7 +153,7 @@ namespace Servy.Core.Native
         /// This method is a P/Invoke wrapper for the Windows API <c>LogonUserW</c> function from advapi32.dll.
         /// </remarks>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool LogonUser(
+        internal static extern bool LogonUser(
             string lpszUsername,
             string lpszDomain,
             string lpszPassword,
@@ -171,38 +171,51 @@ namespace Servy.Core.Native
         /// This method is a P/Invoke wrapper for the Windows API <c>CloseHandle</c> function from kernel32.dll.
         /// </remarks>
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-        private static extern bool CloseHandle(IntPtr handle);
+        internal static extern bool CloseHandle(IntPtr handle);
 
         /// <summary>
         /// Logon type for interactive logon (user can log on at the computer's console).
         /// </summary>
-        private const int LOGON32_LOGON_INTERACTIVE = 2;
+        internal const int LOGON32_LOGON_INTERACTIVE = 2;
+
+        /// <summary>
+        /// Logon type for network login. Logs on the user for network access (no profile loaded).
+        /// </summary>
+        internal const int LOGON32_LOGON_NETWORK = 3;
 
         /// <summary>
         /// The default logon provider.
         /// </summary>
-        private const int LOGON32_PROVIDER_DEFAULT = 0;
+        internal const int LOGON32_PROVIDER_DEFAULT = 0;
 
         /// <summary>
-        /// Validates a given Windows username and password by attempting a logon.
+        /// Validates Windows credentials by attempting a logon using the specified username and password.
         /// </summary>
         /// <param name="username">
-        /// The username in the format <c>DOMAIN\Username</c>, <c>.\Username</c> for local accounts, 
-        /// or just <c>Username</c> for local accounts without a domain prefix.
+        /// The username in one of the following formats:
+        /// <list type="bullet">
+        /// <item><description><c>DOMAIN\Username</c> for domain accounts</description></item>
+        /// <item><description><c>.\Username</c> for local accounts on the current machine</description></item>
+        /// <item><description><c>Username</c> for local accounts without a domain prefix</description></item>
+        /// </list>
         /// </param>
         /// <param name="password">
-        /// The password associated with the specified username. Can be <c>null</c> or empty if the account has no password.
+        /// The password associated with the specified username. 
+        /// Can be <c>null</c> or empty if the account has no password.
         /// </param>
         /// <exception cref="ArgumentException">
-        /// Thrown when the username is null, empty or invalid.
+        /// Thrown when the username is null, empty, or not in a valid format.
+        /// </exception>
+        /// <exception cref="UnauthorizedAccessException">
+        /// Thrown if the provided credentials are invalid or the account cannot log on.
         /// </exception>
         /// <exception cref="Win32Exception">
-        /// Thrown if the credentials are invalid or the account cannot log on interactively.
+        /// Thrown for other system-related logon errors.
         /// </exception>
         /// <remarks>
-        /// This method uses the Windows API <c>LogonUser</c> function to verify that the provided credentials 
-        /// are valid for interactive logon. It does not check whether the account has the 
-        /// "Log on as a service" right, which may be required to run a service.
+        /// This method uses the Windows API function <c>LogonUser</c> to verify that the provided credentials 
+        /// are valid for a network logon. It does not check whether the account has the 
+        /// "Log on as a service" right, which may be required for running a Windows service.
         /// </remarks>
         public static void ValidateCredentials(string username, string password)
         {
@@ -213,7 +226,8 @@ namespace Servy.Core.Native
             // Matches:
             // - DOMAIN\User (domain and username separated by \)
             // - .\User (local machine)
-            const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
+            //const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
+            const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+$";
 
             if (!Regex.IsMatch(username, pattern))
                 throw new ArgumentException("Username format is invalid. Expected .\\Username or DOMAIN\\Username.");
@@ -221,32 +235,51 @@ namespace Servy.Core.Native
             // Split DOMAIN\user or .\user into domain and username parts
             string domain = null;
             string user = username;
+
             if (username.Contains("\\"))
             {
                 var parts = username.Split('\\');
-                domain = parts[0];
+                domain = string.IsNullOrWhiteSpace(parts[0]) ? null : parts[0];
                 user = parts[1];
             }
 
-            IntPtr token;
-            bool success = LogonUser(
+            var token = IntPtr.Zero;
+
+            try
+            {
+                var success = LogonUser(
                 user,
                 domain,
                 password,
-                LOGON32_LOGON_INTERACTIVE, // Verify interactive logon works
+                LOGON32_LOGON_NETWORK, // Verify network logon works
                 LOGON32_PROVIDER_DEFAULT,
                 out token
             );
 
-            if (!success)
-            {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, "Invalid username or password.");
-            }
+                if (!success)
+                {
+                    var error = Marshal.GetLastWin32Error();
 
-            // Clean up the logon token
-            CloseHandle(token);
+                    // Common error codes for clarity
+                    switch (error)
+                    {
+                        case 1326:
+                            throw new UnauthorizedAccessException("Invalid username or password.");
+                        case 1327:
+                            throw new UnauthorizedAccessException("Account restrictions prevent logon.");
+                        default:
+                            throw new Win32Exception(error, $"Logon failed with error code {error}.");
+                    }
+                }
+            }
+            finally
+            {
+                // Always close the logon token handle
+                if (token != IntPtr.Zero)
+                    CloseHandle(token);
+            }
         }
+
     }
 }
 
