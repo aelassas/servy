@@ -195,12 +195,13 @@ namespace Servy.Core.Native
         /// <list type="bullet">
         /// <item><description><c>DOMAIN\Username</c> for domain accounts</description></item>
         /// <item><description><c>.\Username</c> for local accounts on the current machine</description></item>
-        /// <item><description><c>Username</c> for local accounts without a domain prefix</description></item>
+        /// <item><description><c>DOMAIN\gMSA$</c> for gMSA accounts</description></item>
         /// </list>
         /// </param>
         /// <param name="password">
         /// The password associated with the specified username. 
         /// Can be <c>null</c> or empty if the account has no password.
+        /// Password is ignored for gMSA.
         /// </param>
         /// <exception cref="ArgumentException">
         /// Thrown when the username is null, empty, or not in a valid format.
@@ -226,7 +227,8 @@ namespace Servy.Core.Native
             // - DOMAIN\User (domain and username separated by \)
             // - .\User (local machine)
             //const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
-            const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+$";
+            const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+\$?$";
+            var isGMSA = username.EndsWith("$");
 
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
             if (!Regex.IsMatch(username, pattern))
@@ -236,18 +238,24 @@ namespace Servy.Core.Native
 
             // Split DOMAIN\user or .\user into domain and username parts
             string? domain = null;
-            string user = username;
+            string? user = username;
 
             if (username.Contains("\\"))
             {
                 var parts = username.Split('\\');
                 domain = parts[0];
-                user = parts[1];
+                user = parts[1]?.Trim();
 
-                if (string.IsNullOrWhiteSpace(user))
+                if (string.IsNullOrWhiteSpace(user?.TrimEnd('$')))
                 {
                     throw new ArgumentException(invalidMsg);
                 }
+            }
+
+            if (isGMSA)
+            {
+                // For gMSA, skip password validation
+                return;
             }
 
             var token = IntPtr.Zero;
