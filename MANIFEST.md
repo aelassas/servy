@@ -6,11 +6,11 @@ sc.exe only works with applications that are specifically designed to run as Win
 
 After running into these issues too many times, I decided to build my own tool.
 
-**The goals:**
+**The goals**
 
 I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app—Node.js, Python, .NET, scripts, and more. It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, CPU and RAM monitoring, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 to Windows 11, including Server editions.
 
-**The result:**
+**The result**
 
 The result is **Servy**, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. Servy is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
