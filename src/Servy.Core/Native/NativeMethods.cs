@@ -229,8 +229,11 @@ namespace Servy.Core.Native
             //const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
             const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+$";
 
+            const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
             if (!Regex.IsMatch(username, pattern))
-                throw new ArgumentException("Username format is invalid. Expected .\\Username or DOMAIN\\Username.");
+            {
+                throw new ArgumentException(invalidMsg);
+            }
 
             // Split DOMAIN\user or .\user into domain and username parts
             string domain = null;
@@ -239,8 +242,13 @@ namespace Servy.Core.Native
             if (username.Contains("\\"))
             {
                 var parts = username.Split('\\');
-                domain = string.IsNullOrWhiteSpace(parts[0]) ? null : parts[0];
+                domain = parts[0];
                 user = parts[1];
+
+                if (string.IsNullOrWhiteSpace(user))
+                {
+                    throw new ArgumentException(invalidMsg);
+                }
             }
 
             var token = IntPtr.Zero;
@@ -276,7 +284,9 @@ namespace Servy.Core.Native
             {
                 // Always close the logon token handle
                 if (token != IntPtr.Zero)
+                {
                     CloseHandle(token);
+                }
             }
         }
 
