@@ -102,16 +102,7 @@ namespace Servy.CLI.Validators
             {
                 try
                 {
-                    bool isGmsa = opts.User.EndsWith("$");
-
-                    if (!isGmsa)
-                    {
-                        NativeMethods.ValidateCredentials(opts.User, opts.Password);
-                    }
-                    else
-                    {
-                        // For gMSA, skip password validation
-                    }
+                    NativeMethods.ValidateCredentials(opts.User, opts.Password);
                 }
                 catch (Exception ex)
                 {
