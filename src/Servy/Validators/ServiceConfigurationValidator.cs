@@ -155,23 +155,14 @@ namespace Servy.Validators
             {
                 try
                 {
-                    bool isGmsa = dto.UserAccount.EndsWith("$");
-
-                    if (!isGmsa)
+                    // Only validate passwords for normal accounts
+                    if (!string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
                     {
-                        // Only validate passwords for normal accounts
-                        if (!string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
-                        {
-                            await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
-                            return false;
-                        }
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
+                        return false;
+                    }
 
-                        NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
-                    }
-                    else
-                    {
-                        // For gMSA, skip password validation
-                    }
+                    NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
                 }
                 catch (Exception ex)
                 {

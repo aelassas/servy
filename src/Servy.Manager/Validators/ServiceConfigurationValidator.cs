@@ -1,10 +1,12 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.UI.Services;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using CoreHelper = Servy.Core.Helpers.Helper;
@@ -114,6 +116,19 @@ namespace Servy.Manager.Helpers
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramStartupDirectory, AppConfig.Caption);
                 return false;
+            }
+
+            if (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
+            {
+                try
+                {
+                    NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
+                }
+                catch (Exception ex)
+                {
+                    await _messageBoxService.ShowErrorAsync(ex.Message, AppConfig.Caption);
+                    return false;
+                }
             }
 
             string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
