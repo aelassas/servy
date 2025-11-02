@@ -219,7 +219,7 @@ namespace Servy.Core.Native
         public static void ValidateCredentials(string username, string? password)
         {
             if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("Username cannot be null or empty.");
+                throw new ArgumentException("Username cannot be empty.");
 
             // Regex pattern:
             // Matches:
