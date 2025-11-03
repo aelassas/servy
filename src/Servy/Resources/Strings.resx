@@ -124,6 +124,9 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic (default)</value>
   </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>Automatic (delayed start)</value>
+  </data>
   <data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>
   </data>

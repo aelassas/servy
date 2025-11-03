@@ -53,7 +53,7 @@ namespace Servy.CLI.Options
         /// <item><description>Disabled - Service is disabled and cannot be started.</description></item>
         /// </list>
         /// </summary>
-        [Option("startupType", HelpText = "Service startup type. Options: Automatic, Manual, Disabled.")]
+        [Option("startupType", HelpText = "Service startup type. Options: Automatic, AutomaticDelayedStart, Manual, Disabled.")]
         public string ServiceStartType { get; set; }
 
         /// <summary>

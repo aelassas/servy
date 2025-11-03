@@ -1153,6 +1153,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Automatic (delayed start).
+        /// </summary>
+        public static string StartupType_AutomaticDelayedStart {
+            get {
+                return ResourceManager.GetString("StartupType_AutomaticDelayedStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Disabled.
         /// </summary>
         public static string StartupType_Disabled {

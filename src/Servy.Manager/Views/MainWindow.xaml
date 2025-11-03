@@ -223,7 +223,7 @@
                             </DataGridTemplateColumn>
 
                             <!--Startup Type-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" MinWidth="80" CanUserReorder="False" SortMemberPath="StartupType">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" MinWidth="120" CanUserReorder="False" SortMemberPath="StartupType">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}"

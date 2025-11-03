@@ -39,7 +39,7 @@
     <value>The specified startup directory is invalid.</value>
   </data>
   <data name="Msg_InvalidStartupType" xml:space="preserve">
-    <value>The specified startup type is invalid. Options: Automatic, Manual, Disabled.</value>
+    <value>The specified startup type is invalid. Options: Automatic, AutomaticDelayedStart, Manual, Disabled.</value>
   </data>
   <data name="Msg_InvalidProcessPriority" xml:space="preserve">
     <value>The specified process priority is invalid. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime.</value>
