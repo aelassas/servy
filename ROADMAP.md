@@ -21,6 +21,7 @@
 * [x] Add Event ID to Info, Warning, and Error service logs
 * [x] Support using the same file for stdout and stderr ([#14](https://github.com/aelassas/servy/issues/14))
 * [x] Support Ctrl+C for command-line apps ([#20](https://github.com/aelassas/servy/issues/20))
+* [ ] Add support for automatic delayed start service startup type
 * [ ] Upgrade to .NET 10 LTS
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
