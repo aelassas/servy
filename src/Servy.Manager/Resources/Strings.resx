@@ -202,6 +202,9 @@ Copyright © 2025 Akram El Assas. All rights reserved.
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
   </data>
+  <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
+    <value>Automatic (delayed)</value>
+  </data>
   <data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>
   </data>
@@ -416,4 +419,5 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Column_RAM" xml:space="preserve">
     <value>RAM</value>
   </data>
+
 </root>

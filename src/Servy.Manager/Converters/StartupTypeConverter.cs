@@ -28,6 +28,8 @@ namespace Servy.Manager.Converters
                 {
                     case ServiceStartType.Automatic:
                         return Strings.StartupType_Automatic;
+                    case ServiceStartType.AutomaticDelayedStart:
+                        return Strings.StartupType_AutomaticDelayedStart;
                     case ServiceStartType.Manual:
                         return Strings.StartupType_Manual;
                     case ServiceStartType.Disabled:
@@ -55,6 +57,8 @@ namespace Servy.Manager.Converters
             {
                 if (str == Strings.StartupType_Automatic)
                     return ServiceStartType.Automatic;
+                if (str == Strings.StartupType_AutomaticDelayedStart)
+                    return ServiceStartType.AutomaticDelayedStart;
                 if (str == Strings.StartupType_Manual)
                     return ServiceStartType.Manual;
                 if (str == Strings.StartupType_Disabled)
