@@ -310,7 +310,7 @@ namespace Servy.Core.Native
             // - .\User (local machine)
             //const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
             const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+\$?$";
-            var isGMSA = username.EndsWith("$");
+            var isGMSA = username.EndsWith('$');
 
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
             if (!Regex.IsMatch(username, pattern))
