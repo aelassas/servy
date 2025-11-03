@@ -26,6 +26,29 @@ namespace Servy.Core.Native
             public IntPtr lpDescription;
         }
 
+        /// <summary>
+        /// Contains configuration information for a service's delayed auto-start setting.
+        /// </summary>
+        /// <remarks>
+        /// This structure is used with the <c>ChangeServiceConfig2</c> function when the
+        /// <c>dwInfoLevel</c> parameter is set to <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c>.
+        /// It allows marking an auto-start service to start automatically after a delay,
+        /// improving system boot performance.
+        /// </remarks>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ServiceDelayedAutoStartInfo
+        {
+            /// <summary>
+            /// Indicates whether the service should use delayed auto-start.
+            /// </summary>
+            /// <value>
+            /// <see langword="true"/> to enable delayed auto-start;
+            /// <see langword="false"/> to disable it.
+            /// </value>
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool fDelayedAutostart;
+        }
+
         /// <summary>Access right to all control manager operations.</summary>
         public const int SC_MANAGER_ALL_ACCESS = 0xF003F;
 
@@ -45,6 +68,12 @@ namespace Servy.Core.Native
         public const int SERVICE_CONTROL_STOP = 0x00000001;
 
         /// <summary>
+        /// Configuration level identifier for setting or querying delayed auto-start behavior
+        /// via the <c>ChangeServiceConfig2</c> or <c>QueryServiceConfig2</c> functions.
+        /// </summary>
+        public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 0x00000003;
+
+        /// <summary>
         /// Represents the current status of a Windows service.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
@@ -58,6 +87,50 @@ namespace Servy.Core.Native
             public int dwCheckPoint;
             public int dwWaitHint;
         }
+
+        /// <summary>
+        /// Retrieves optional configuration information for a specified service.
+        /// </summary>
+        /// <param name="hService">
+        /// A handle to the service. This handle is obtained by calling <see cref="OpenService"/> 
+        /// or <see cref="CreateService"/> and must have the <c>SERVICE_QUERY_CONFIG</c> access right.
+        /// </param>
+        /// <param name="dwInfoLevel">
+        /// The configuration information level.  
+        /// Use <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c> to retrieve delayed auto-start information.
+        /// </param>
+        /// <param name="lpBuffer">
+        /// A reference to a buffer that receives the configuration information structure, 
+        /// such as <see cref="ServiceDelayedAutoStartInfo"/>.
+        /// </param>
+        /// <param name="cbBufSize">
+        /// The size of the buffer pointed to by <paramref name="lpBuffer"/>, in bytes.
+        /// </param>
+        /// <param name="pcbBytesNeeded">
+        /// On output, receives the number of bytes required if the buffer is too small.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.  
+        /// Call <see cref="Marshal.GetLastWin32Error"/> to obtain the error code.
+        /// </returns>
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded);
+
+        /// <summary>
+        /// Grants the right to enumerate all services in the specified service control manager (SCM) database.
+        /// </summary>
+        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
+
+        /// <summary>
+        /// Grants the right to query the configuration of a service.
+        /// Required for calls to functions such as <see cref="QueryServiceConfig"/> or <see cref="QueryServiceConfig2"/>.
+        /// </summary>
+        public const uint SERVICE_QUERY_CONFIG = 0x0001;
 
         /// <summary>
         /// Opens a connection to the service control manager.
@@ -137,6 +210,15 @@ namespace Servy.Core.Native
               IntPtr hService,
               int dwInfoLevel,
               ref ServiceDescription lpInfo);
+
+        /// <summary>
+        /// Changes the optional configuration parameters of a service (e.g. DelayedAutostart).
+        /// </summary>
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern bool ChangeServiceConfig2(
+              IntPtr hService,
+              int dwInfoLevel,
+              ref ServiceDelayedAutoStartInfo lpInfo);
 
         /// <summary>
         /// Attempts to log a user on to the local computer using the specified credentials.

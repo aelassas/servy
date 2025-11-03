@@ -126,6 +126,70 @@ namespace Servy.Core.Services
         );
 
         /// <summary>
+        /// Changes the optional configuration parameters of an existing Windows service.
+        /// </summary>
+        /// <param name="hService">
+        /// A handle to the service whose configuration is to be changed.  
+        /// The handle must have the <c>SERVICE_CHANGE_CONFIG</c> access right.
+        /// </param>
+        /// <param name="dwInfoLevel">
+        /// The configuration information level to be set.  
+        /// For delayed auto-start configuration, use <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c>.
+        /// </param>
+        /// <param name="lpInfo">
+        /// A reference to a structure that contains the configuration data to be applied.  
+        /// For delayed auto-start, this is a <see cref="ServiceDelayedAutoStartInfo"/> structure.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.  
+        /// Call <see cref="Marshal.GetLastWin32Error"/> to obtain the error code.
+        /// </returns>
+        /// <remarks>
+        /// This function wraps the Windows API <c>ChangeServiceConfig2</c> function from <c>advapi32.dll</c>.  
+        /// It allows updating optional service settings such as delayed auto-start behavior or failure actions.
+        /// </remarks>
+        bool ChangeServiceConfig2(
+            IntPtr hService,
+            int dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpInfo);
+
+        /// <summary>
+        /// Retrieves optional configuration information for a specified Windows service.
+        /// </summary>
+        /// <param name="hService">
+        /// A handle to the service. This handle must have the <c>SERVICE_QUERY_CONFIG</c> access right.
+        /// </param>
+        /// <param name="dwInfoLevel">
+        /// The configuration information level to query.  
+        /// Use <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c> to query delayed auto-start information.
+        /// </param>
+        /// <param name="lpBuffer">
+        /// A reference to a structure that receives the configuration information.  
+        /// For delayed auto-start, this is a <see cref="ServiceDelayedAutoStartInfo"/> structure.
+        /// </param>
+        /// <param name="cbBufSize">
+        /// The size, in bytes, of the buffer pointed to by <paramref name="lpBuffer"/>.
+        /// </param>
+        /// <param name="pcbBytesNeeded">
+        /// On output, receives the number of bytes required if the buffer is too small.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.  
+        /// Use <see cref="Marshal.GetLastWin32Error"/> to obtain extended error information on failure.
+        /// </returns>
+        /// <remarks>
+        /// This method wraps the native <c>QueryServiceConfig2</c> function from <c>advapi32.dll</c>.  
+        /// It is commonly used to query optional service settings, such as whether a service is 
+        /// configured for delayed auto-start.
+        /// </remarks>
+        bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded);
+
+        /// <summary>
         /// Gets all installed Windows services on the system.
         /// </summary>
         /// <returns>An enumerable of <see cref="ServiceController"/> representing installed services.</returns>

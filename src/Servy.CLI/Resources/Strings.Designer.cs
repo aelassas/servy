@@ -241,7 +241,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified startup type is invalid. Options: Automatic, Manual, Disabled..
+        ///   Recherche une chaîne localisée semblable à The specified startup type is invalid. Options: Automatic, AutomaticDelayedStart, Manual, Disabled..
         /// </summary>
         public static string Msg_InvalidStartupType {
             get {

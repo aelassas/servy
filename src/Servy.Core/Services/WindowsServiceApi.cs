@@ -91,6 +91,19 @@ namespace Servy.Core.Services
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
+        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
+            => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
+
+        /// <inheritdoc/>
+        public bool QueryServiceConfig2(
+         IntPtr hService,
+         uint dwInfoLevel,
+         ref ServiceDelayedAutoStartInfo lpBuffer,
+         int cbBufSize,
+         ref int pcbBytesNeeded)
+            => NativeMethods.QueryServiceConfig2(hService, dwInfoLevel, ref lpBuffer, cbBufSize, ref pcbBytesNeeded);
+
+        /// <inheritdoc />
         public IEnumerable<WindowsServiceInfo> GetServices()
         {
             return ServiceController.GetServices()

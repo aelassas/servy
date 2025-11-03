@@ -3,9 +3,10 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
+using System.Collections.Concurrent;
 using System.ComponentModel;
-using System.Management;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
@@ -124,7 +125,7 @@ namespace Servy.Core.Services
                 var result = _windowsServiceApi.ChangeServiceConfig(
                         hService: serviceHandle,
                         dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                        dwStartType: (uint)startType,
+                        dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
                         dwErrorControl: SERVICE_ERROR_NORMAL,
                         lpBinaryPathName: binPath,
                         lpLoadOrderGroup: null,
@@ -173,6 +174,44 @@ namespace Servy.Core.Services
             Marshal.FreeHGlobal(desc.lpDescription);
         }
 
+        /// <summary>
+        /// Enables or disables the delayed auto-start setting for a Windows service.
+        /// </summary>
+        /// <param name="serviceHandle">
+        /// A handle to the service whose configuration is to be changed.  
+        /// The handle must have the <c>SERVICE_CHANGE_CONFIG</c> access right.
+        /// </param>
+        /// <param name="delayedAutostart">
+        /// <see langword="true"/> to enable delayed auto-start;  
+        /// <see langword="false"/> to disable it.
+        /// </param>
+        /// <returns>
+        /// <see langword="true"/> if the configuration change succeeds; otherwise, <see langword="false"/>.  
+        /// Call <see cref="Marshal.GetLastWin32Error"/> to retrieve extended error information.
+        /// </returns>
+        /// <remarks>
+        /// This method wraps the native <c>ChangeServiceConfig2</c> function with the 
+        /// <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c> information level.  
+        /// It can be used only for services whose start type is set to <c>Automatic</c>.
+        /// </remarks>
+        private bool ChangeServiceConfig2(
+            IntPtr serviceHandle,
+            bool delayedAutostart
+            )
+        {
+            var delayedInfo = new ServiceDelayedAutoStartInfo
+            {
+                fDelayedAutostart = delayedAutostart,
+            };
+
+            var success = _windowsServiceApi.ChangeServiceConfig2(
+                serviceHandle,
+                SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref delayedInfo
+            );
+            return success;
+        }
+
         #endregion
 
         #region IServiceManager Implementation
@@ -193,7 +232,7 @@ namespace Servy.Core.Services
                 ulong rotationSizeInBytes = AppConfig.DefaultRotationSize * 1024 * 1024,
                 bool enableHealthMonitoring = false,
                 int heartbeatInterval = AppConfig.DefaultHeartbeatInterval,
-                int maxFailedChecks= AppConfig.DefaultMaxFailedChecks,
+                int maxFailedChecks = AppConfig.DefaultMaxFailedChecks,
                 RecoveryAction recoveryAction = RecoveryAction.None,
                 int maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts,
                 string? environmentVariables = null,
@@ -284,7 +323,7 @@ namespace Servy.Core.Services
                     lpDisplayName: serviceName,
                     dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
                     dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                    dwStartType: (uint)startType,
+                    dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
                     dwErrorControl: SERVICE_ERROR_NORMAL,
                     lpBinaryPathName: binPath,
                     lpLoadOrderGroup: null,
@@ -342,12 +381,23 @@ namespace Servy.Core.Services
                 var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
                 dto.Pid = serviceDto?.Pid;
 
+                // Set delayed auto-start if necessary
+                if (serviceHandle != IntPtr.Zero && startType == ServiceStartType.AutomaticDelayedStart)
+                {
+                    var success = ChangeServiceConfig2(serviceHandle, true);
+
+                    if (!success)
+                    {
+                        return false;
+                    }
+                }
+
                 if (serviceHandle == IntPtr.Zero)
                 {
                     var isInstalled = IsServiceInstalled(serviceName);
                     if (isInstalled)
                     {
-                        var res = UpdateServiceConfig(
+                        _ = UpdateServiceConfig(
                             scmHandle: scmHandle,
                             serviceName: serviceName,
                             description: description,
@@ -358,8 +408,33 @@ namespace Servy.Core.Services
                             lpDependencies: lpDependencies
                         );
 
+                        // Set delayed auto-start if necessary
+                        if (startType == ServiceStartType.AutomaticDelayedStart || startType == ServiceStartType.Automatic)
+                        {
+                            IntPtr existingServiceHandle = _windowsServiceApi.OpenService(
+                                scmHandle,
+                                serviceName,
+                                SERVICE_CHANGE_CONFIG
+                            );
+
+                            try
+                            {
+                                var delayedAutostart = startType == ServiceStartType.AutomaticDelayedStart;
+                                var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+
+                                if (!success)
+                                {
+                                    return false;
+                                }
+                            }
+                            finally
+                            {
+                                _windowsServiceApi.CloseServiceHandle(existingServiceHandle);
+                            }
+                        }
+
                         await _serviceRepository.UpsertAsync(dto);
-                        return res;
+                        return true;
                     }
                 }
 
@@ -409,7 +484,7 @@ namespace Servy.Core.Services
                         null);
 
                     // Try to stop service
-                    var status = new Native.NativeMethods.ServiceStatus();
+                    var status = new NativeMethods.ServiceStatus();
                     _windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
                     // Wait for service to actually stop (up to 60 seconds)
@@ -586,80 +661,108 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
         {
-            var services = new List<ServiceInfo>();
-
-            // WMI query to get essential service properties
+            var results = new ConcurrentBag<ServiceInfo>();
             const string query = "SELECT Name, State, StartMode, StartName, Description FROM Win32_Service";
 
-            foreach (var service in _searcher.Get(query))
+            var wmiResults = _searcher.Get(query).ToList();
+
+            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
+            if (scmHandle == IntPtr.Zero)
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
+
+            int delayedStructSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
+
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // Map WMI State to ServiceStatus enum
-                var stateObj = service["State"];
-                var status = Enums.ServiceStatus.None;
-                if (stateObj != null)
+                Parallel.ForEach(wmiResults, new ParallelOptions
                 {
-                    switch (stateObj.ToString()!.ToLowerInvariant())
+                    CancellationToken = cancellationToken,
+                    MaxDegreeOfParallelism = Environment.ProcessorCount
+                },
+                service =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    string name = (service["Name"] as string) ?? string.Empty;
+                    string description = (service["Description"] as string) ?? string.Empty;
+                    string user = (service["StartName"] as string) ?? "LocalSystem";
+                    string startMode = ((service["StartMode"] as string) ?? string.Empty).ToLowerInvariant();
+                    string stateStr = ((service["State"] as string) ?? string.Empty).ToLowerInvariant();
+
+                    // Map service state
+                    Enums.ServiceStatus status;
+                    switch (stateStr)
                     {
-                        case "running":
-                            status = Enums.ServiceStatus.Running;
-                            break;
-                        case "stopped":
-                            status = Enums.ServiceStatus.Stopped;
-                            break;
-                        case "paused":
-                            status = Enums.ServiceStatus.Paused;
-                            break;
-                        case "start pending":
-                            status = Enums.ServiceStatus.StartPending;
-                            break;
-                        case "stop pending":
-                            status = Enums.ServiceStatus.StopPending;
-                            break;
-                        case "pause pending":
-                            status = Enums.ServiceStatus.PausePending;
-                            break;
-                        case "continue pending":
-                            status = Enums.ServiceStatus.ContinuePending;
-                            break;
+                        case "running": status = Enums.ServiceStatus.Running; break;
+                        case "stopped": status = Enums.ServiceStatus.Stopped; break;
+                        case "paused": status = Enums.ServiceStatus.Paused; break;
+                        case "start pending": status = Enums.ServiceStatus.StartPending; break;
+                        case "stop pending": status = Enums.ServiceStatus.StopPending; break;
+                        case "pause pending": status = Enums.ServiceStatus.PausePending; break;
+                        case "continue pending": status = Enums.ServiceStatus.ContinuePending; break;
+                        default: status = Enums.ServiceStatus.None; break;
                     }
-                }
 
-                // Map WMI StartMode to ServiceStartType enum
-                var startMode = (service["StartMode"]?.ToString() ?? string.Empty).ToLowerInvariant();
-                ServiceStartType startupType = ServiceStartType.Automatic; // default
-                switch (startMode)
-                {
-                    case "auto":
-                    case "automatic":
-                        startupType = ServiceStartType.Automatic;
-                        break;
-                    case "manual":
-                        startupType = ServiceStartType.Manual;
-                        break;
-                    case "disabled":
-                        startupType = ServiceStartType.Disabled;
-                        break;
-                }
+                    // Map service start mode
+                    ServiceStartType startupType;
+                    switch (startMode)
+                    {
+                        case "auto":
+                        case "automatic": startupType = ServiceStartType.Automatic; break;
+                        case "manual": startupType = ServiceStartType.Manual; break;
+                        case "disabled": startupType = ServiceStartType.Disabled; break;
+                        default: startupType = ServiceStartType.Automatic; break;
+                    }
 
-                // Get user and description
-                var user = service["StartName"]?.ToString() ?? "LocalSystem";
-                var description = service["Description"]?.ToString() ?? string.Empty;
-                var name = service["Name"]?.ToString() ?? string.Empty;
+                    // Check delayed auto-start if Automatic
+                    if (startupType == ServiceStartType.Automatic)
+                    {
+                        IntPtr svcHandle = _windowsServiceApi.OpenService(scmHandle, name, SERVICE_QUERY_CONFIG);
+                        if (svcHandle != IntPtr.Zero)
+                        {
+                            try
+                            {
+                                var info = new ServiceDelayedAutoStartInfo();
+                                int bytesNeeded = 0;
 
-                services.Add(new ServiceInfo
-                {
-                    Name = name,
-                    Status = status,
-                    StartupType = startupType,
-                    UserSession = user,
-                    Description = description
+                                var ok = _windowsServiceApi.QueryServiceConfig2(
+                                    svcHandle,
+                                    SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                                    ref info,
+                                    delayedStructSize,
+                                    ref bytesNeeded);
+
+                                if (ok && info.fDelayedAutostart)
+                                {
+                                    startupType = ServiceStartType.AutomaticDelayedStart;
+                                }
+                            }
+                            finally
+                            {
+                                _windowsServiceApi.CloseServiceHandle(svcHandle);
+                            }
+                        }
+                    }
+
+                    results.Add(new ServiceInfo
+                    {
+                        Name = name,
+                        Status = status,
+                        StartupType = startupType,
+                        UserSession = user,
+                        Description = description,
+                    });
                 });
             }
+            finally
+            {
+                if (scmHandle != IntPtr.Zero)
+                    _windowsServiceApi.CloseServiceHandle(scmHandle);
+            }
 
-            return services;
+            return results.OrderBy(s => s.Name).ToList();
         }
+
 
     }
 

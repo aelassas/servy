@@ -221,7 +221,7 @@ function Install-ServyService {
         Additional parameters for the service process. Optional.
 
     .PARAMETER StartupType
-        Startup type of the service. Options: Automatic, Manual, Disabled. Optional.
+        Startup type of the service. Options: Automatic, AutomaticDelayedStart, Manual, Disabled. Optional.
 
     .PARAMETER Priority
         Process priority. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime. Optional.

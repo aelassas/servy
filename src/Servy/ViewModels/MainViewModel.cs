@@ -4,7 +4,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Services;
-using Servy.Helpers;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -141,6 +140,7 @@ namespace Servy.ViewModels
         public List<StartupTypeItem> StartupTypes { get; } = new List<StartupTypeItem>
         {
             new StartupTypeItem { StartupType = ServiceStartType.Automatic, DisplayName = Strings.StartupType_Automatic },
+            new StartupTypeItem { StartupType = ServiceStartType.AutomaticDelayedStart, DisplayName = Strings.StartupType_AutomaticDelayedStart },
             new StartupTypeItem { StartupType = ServiceStartType.Manual, DisplayName = Strings.StartupType_Manual },
             new StartupTypeItem { StartupType = ServiceStartType.Disabled, DisplayName = Strings.StartupType_Disabled },
         };
