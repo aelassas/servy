@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 
 namespace Servy.Core.Helpers
 {
@@ -92,14 +93,47 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
-            // Escape internal quotes and trim end '\'
-            //string escaped = input.Replace("\"", "\\\"").TrimEnd('\\');
-            string escaped = input.Replace("\"", "\"\"").TrimEnd('\\');
+            if (input.Contains('\0'))
+            {
+                // Replace actual null chars with literal "\0" sequence to keep argument safe
+                input = input.Replace("\0", "\\0");
+            }
 
-            // Wrap in quotes
-            escaped = $"\"{escaped}\"";
+            var sb = new StringBuilder();
+            sb.Append('"');
 
-            return escaped;
+            int backslashCount = 0;
+            foreach (char c in input)
+            {
+                if (c == '\\')
+                {
+                    backslashCount++;
+                }
+                else if (c == '"')
+                {
+                    // Escape all backslashes before a quote
+                    sb.Append('\\', backslashCount * 2 + 1);
+                    sb.Append('"');
+                    backslashCount = 0;
+                }
+                else
+                {
+                    // Normal character — just flush any backslashes
+                    if (backslashCount > 0)
+                    {
+                        sb.Append('\\', backslashCount);
+                        backslashCount = 0;
+                    }
+                    sb.Append(c);
+                }
+            }
+
+            // Escape trailing backslashes before closing quote
+            if (backslashCount > 0)
+                sb.Append('\\', backslashCount * 2);
+
+            sb.Append('"');
+            return sb.ToString();
         }
 
         /// <summary>

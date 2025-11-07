@@ -97,22 +97,19 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData(null, "\"\"")]
-        [InlineData("", "\"\"")]
-        [InlineData("abc", "\"abc\"")]
-        //[InlineData("\"abc\"", "\"\\\"abc\\\"\"")]
-        //[InlineData("\"abc\\\"", "\"\\\"abc\\\\\"\"")]
-        [InlineData("\"abc\"", "\"\"\"abc\"\"\"")]
-        [InlineData("\"abc\\\"", "\"\"\"abc\\\"\"\"")]
-        [InlineData("abc\\", "\"abc\"")]
-        //[InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
-        [InlineData("\"abc\\\\\"", "\"\"\"abc\\\\\"\"\"")]
-        public void Quote_Input_ReturnsExpected(string? input, string expected)
+        [InlineData(null, "\"\"")]                  // null input
+        [InlineData("", "\"\"")]                    // empty string
+        [InlineData("   ", "\"\"")]                 // whitespace only
+        [InlineData("abc", "\"abc\"")]             // simple string, no escaping
+        [InlineData(@"C:\Path", @"""C:\Path""")]   // normal backslashes
+        [InlineData(@"C:\Path\", @"""C:\Path\\""")] // trailing backslash (doubles before closing quote)
+        [InlineData(@"C:\Path""File", @"""C:\Path\""File""")] // quote in the middle
+        [InlineData(@"\\""", @"""\\\\\""""")] // backslash directly before a quote
+        [InlineData(@"Mixed\Path""End\", @"""Mixed\Path\""End\\""")] // mix of both
+        [InlineData("abc\0def", @"""abc\0def""")] // contains a null character → replaced with literal "\0"
+        public void Quote_ShouldEscapeCorrectly(string? input, string expected)
         {
-            // Act
             var result = Helper.Quote(input);
-
-            // Assert
             Assert.Equal(expected, result);
         }
 
