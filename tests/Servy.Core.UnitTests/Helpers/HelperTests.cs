@@ -103,8 +103,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, "\"\"")]                  // null input
         [InlineData("", "\"\"")]                    // empty string
         [InlineData("   ", "\"\"")]                 // whitespace only
-        [InlineData("abc", "\"abc\"")]             // simple string, no escaping
-        [InlineData(@"C:\Path", @"""C:\Path""")]   // normal backslashes
+        [InlineData("abc", "\"abc\"")]              // simple string, no escaping
+        [InlineData(@"ab\""c", @"""ab\\\""c""")]    // simple string, escaping
+        [InlineData(@"C:\Path", @"""C:\Path""")]    // normal backslashes
         [InlineData(@"C:\Path\", @"""C:\Path\\""")] // trailing backslash (doubles before closing quote)
         [InlineData(@"C:\Path""File", @"""C:\Path\""File""")] // quote in the middle
         [InlineData(@"\\""", @"""\\\\\""""")] // backslash directly before a quote

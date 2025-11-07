@@ -86,10 +86,23 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Quotes a string.
+        /// Quotes and escapes a string for safe use as a Windows process argument.
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <param name="input">The string to quote. Can be <c>null</c> or empty.</param>
+        /// <returns>
+        /// A properly quoted string where:
+        /// <list type="bullet">
+        ///   <item>All double quotes are escaped with a backslash.</item>
+        ///   <item>All backslashes preceding a quote or the end of the string are doubled.</item>
+        ///   <item>Trailing backslashes are doubled to avoid truncation.</item>
+        ///   <item>Any null characters (<c>\0</c>) are replaced with the literal sequence <c>\\0</c> for safety.</item>
+        /// </list>
+        /// For example, <c>C:\Path\"File</c> becomes <c>"C:\Path\\\"File"</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method ensures that strings passed to <see cref="System.Diagnostics.Process"/>
+        /// or Windows services are interpreted correctly by the command-line parser.
+        /// </remarks>
         public static string Quote(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
