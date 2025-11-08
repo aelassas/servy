@@ -27,6 +27,9 @@ fs.appendFileSync(filePath, '', "utf8")
 // Append the current timestamp
 fs.appendFileSync(filePath, (new Date()).toISOString() + '\n', "utf8")
 
+const [node, _, ...args] = process.argv
+fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
+
 process.stdout.write('abcd&é секунды 同时也感觉没有想象的那么好用 — äöü ß ñ © ™ 🌍\n')
 
 for (const [key, val] of Object.entries(process.env)) {

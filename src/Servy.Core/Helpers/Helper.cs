@@ -106,6 +106,27 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(input))
                 return "\"\"";
 
+            return $"\"{EscapeArgs(input)}\"";
+        }
+
+        /// <summary>
+        /// Escapes special characters in a command-line argument without surrounding quotes.
+        /// </summary>
+        /// <param name="input">The argument string to escape. May be <see langword="null"/> or empty.</param>
+        /// <returns>
+        /// The escaped string, safe for inclusion inside a quoted command-line argument.
+        /// If <paramref name="input"/> is <see langword="null"/> or whitespace, returns an empty string.
+        /// </returns>
+        /// <remarks>
+        /// - Escapes all backslashes preceding a quote.  
+        /// - Doubles trailing backslashes before the closing quote.  
+        /// - Replaces any null characters (<c>\0</c>) with the literal sequence <c>\\0</c>.
+        /// </remarks>
+        public static string EscapeArgs(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
             if (input.Contains('\0'))
             {
                 // Replace actual null chars with literal "\0" sequence to keep argument safe
@@ -113,7 +134,6 @@ namespace Servy.Core.Helpers
             }
 
             var sb = new StringBuilder();
-            sb.Append('"');
 
             int backslashCount = 0;
             foreach (char c in input)
@@ -145,7 +165,57 @@ namespace Servy.Core.Helpers
             if (backslashCount > 0)
                 sb.Append('\\', backslashCount * 2);
 
-            sb.Append('"');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Escapes only backslashes that appear immediately before double quotes.
+        /// </summary>
+        /// <param name="input">The input string to escape.</param>
+        /// <returns>The escaped string.</returns>
+        public static string EscapeBackslashes(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return string.Empty;
+
+            if (input.Contains('\0'))
+            {
+                // Replace actual null chars with literal "\0" sequence to keep argument safe
+                input = input.Replace("\0", "\\0");
+            }
+
+            var sb = new StringBuilder();
+            int backslashCount = 0;
+
+            foreach (char c in input)
+            {
+                if (c == '\\')
+                {
+                    backslashCount++;
+                }
+                else if (c == '"')
+                {
+                    // Double only the backslashes that come right before a quote
+                    sb.Append('\\', backslashCount * 2);
+                    sb.Append('"');
+                    backslashCount = 0;
+                }
+                else
+                {
+                    // Write any previous backslashes as-is
+                    if (backslashCount > 0)
+                    {
+                        sb.Append('\\', backslashCount);
+                        backslashCount = 0;
+                    }
+                    sb.Append(c);
+                }
+            }
+
+            // Flush any remaining backslashes unchanged
+            if (backslashCount > 0)
+                sb.Append('\\', backslashCount);
+
             return sb.ToString();
         }
 
