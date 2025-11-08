@@ -113,7 +113,52 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("abc\0def", @"""abc\0def""")] // contains a null character → replaced with literal "\0"
         public void Quote_ShouldEscapeCorrectly(string input, string expected)
         {
+            // Act
             var result = Helper.Quote(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData(null, "")]                  // null input
+        [InlineData("", "")]                    // empty string
+        [InlineData("   ", "")]                 // whitespace only
+        [InlineData("abc", "abc")]              // simple string, no escaping
+        [InlineData(@"ab\""c", @"ab\\\""c")]    // simple string, escaping
+        [InlineData(@"C:\Path", @"C:\Path")]    // normal backslashes
+        [InlineData(@"C:\Path\", @"C:\Path\\")] // trailing backslash (doubles before closing quote)
+        [InlineData(@"C:\Path""File", @"C:\Path\""File")] // quote in the middle
+        [InlineData(@"\\""", @"\\\\\""")] // backslash directly before a quote
+        [InlineData(@"Mixed\Path""End\", @"Mixed\Path\""End\\")] // mix of both
+        [InlineData("abc\0def", @"abc\0def")] // contains a null character → replaced with literal "\0"
+        public void EscapeArgs_ShouldEscapeCorrectly(string input, string expected)
+        {
+            // Act
+            var result = Helper.EscapeArgs(input);
+
+            // Assert
+            Assert.Equal(expected, result);
+        }
+
+        [Theory]
+        [InlineData(null, "")]                           // Null input
+        [InlineData("", "")]                             // Empty string
+        [InlineData("   ", "")]                          // Whitespace only
+        [InlineData("abc", "abc")]                       // Simple text, nothing to escape
+        [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes — unchanged
+        [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote — doubled
+        [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash — unchanged
+        [InlineData(@"\""", @"\\""")]                    // Single backslash + quote — doubled before quote
+        [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
+        [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
+        [InlineData("abc\0def", @"abc\0def")]           // Contains null char → replaced with literal "\0"
+        public void EscapeBackslashes_ShouldEscapeCorrectly(string input, string expected)
+        {
+            // Act
+            var result = Helper.EscapeBackslashes(input);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
