@@ -154,7 +154,7 @@ namespace Servy.Validators
                 try
                 {
                     // Only validate passwords for normal accounts
-                    if (!string.Equals(dto.Password ?? "", confirmPassword, StringComparison.Ordinal))
+                    if (!string.Equals(dto.Password ?? "", confirmPassword ?? "", StringComparison.Ordinal))
                     {
                         await _messageBoxService.ShowErrorAsync(Strings.Msg_PasswordsDontMatch, AppConfig.Caption);
                         return false;
