@@ -309,8 +309,7 @@ namespace Servy.Core.Native
             // Matches:
             // - DOMAIN\User (domain and username separated by \)
             // - .\User (local machine)
-            //const string pattern = @"^(([\w\.-]+|\.))\\([\w\.-]+)$";
-            const string pattern = @"^(?:[\w\.-]+|\.)\\[\w\s\.@!-]+\$?$";
+            const string pattern = @"^(?:[\w\s\.-]+|\.)\\[\w\s\.@!-]+\$?$";
             var isGMSA = username.EndsWith("$");
 
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
@@ -333,6 +332,12 @@ namespace Servy.Core.Native
                 {
                     throw new ArgumentException(invalidMsg);
                 }
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                // For empty passwords, skip password validation
+                return;
             }
 
             if (isGMSA)
