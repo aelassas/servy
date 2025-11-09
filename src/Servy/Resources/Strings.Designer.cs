@@ -251,6 +251,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Make sure to grant read and write access on C:\ProgramData\Servy to NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or whichever account runs the service..
+        /// </summary>
+        public static string Info_UserAccountRights {
+            get {
+                return ResourceManager.GetString("Info_UserAccountRights", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Advanced.
         /// </summary>
         public static string Label_AdvancedTab {
