@@ -128,7 +128,7 @@ namespace Servy.CLI.Options
         /// <item><description>RestartComputer - Restart the computer.</description></item>
         /// </list>
         /// </summary>
-        [Option("recoveryAction", HelpText = "Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer.")]
+        [Option("recoveryAction", HelpText = "Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\\NetworkService, NT AUTHORITY\\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.")]
         public string? RecoveryAction { get; set; }
 
         /// <summary>
