@@ -251,7 +251,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Make sure to grant full access on C:\ProgramData\Servy to NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or whichever account runs the service..
+        ///   Recherche une chaîne localisée semblable à Make sure to grant full access on %ProgramData%\Servy to NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or whichever account runs the service..
         /// </summary>
         public static string Info_UserAccountRights {
             get {
