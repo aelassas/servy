@@ -7,6 +7,8 @@ namespace Servy.Restarter
     /// </summary>
     public class ServiceRestarter : IServiceRestarter
     {
+        private const int RestartTimeoutSeconds = 120;
+
         private readonly Func<string, IServiceController> _controllerFactory;
 
         /// <summary>
@@ -29,11 +31,11 @@ namespace Servy.Restarter
                 if (controller.Status != ServiceControllerStatus.Stopped)
                 {
                     controller.Stop();
-                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(60));
+                    controller.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(RestartTimeoutSeconds));
                 }
 
                 controller.Start();
-                controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(60));
+                controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(RestartTimeoutSeconds));
             }
         }
     }

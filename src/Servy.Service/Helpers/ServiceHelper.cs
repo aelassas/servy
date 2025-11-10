@@ -230,9 +230,9 @@ namespace Servy.Service.Helpers
                         return;
                     }
 
-                    if (!process.WaitForExit(60_000))
+                    if (!process.WaitForExit(240_000))
                     {
-                        logger?.Error("Servy.Restarter.exe did not exit within 60 seconds.");
+                        logger?.Error("Servy.Restarter.exe did not exit within 4 minutes.");
                         return;
                     }
                 }
