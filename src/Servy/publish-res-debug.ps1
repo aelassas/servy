@@ -21,7 +21,7 @@ $runtime            = "win-x64"
 $selfContained      = $true
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (publish resources first)
+# Step 0: Run publish-res-debug.ps1 (publish resources first)
 # ---------------------------------------------------------------------------------
 $PublishResScript = Join-Path $serviceDir "publish-res-debug.ps1"
 

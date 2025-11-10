@@ -1,4 +1,7 @@
-﻿/// <summary>
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
+
+/// <summary>
 /// A simple console application to restart a Windows service.
 /// </summary>
 /// <remarks>
@@ -22,14 +25,17 @@ namespace Servy.Restarter
 
             var serviceName = args[0];
             IServiceRestarter restarter = new ServiceRestarter();
+            ILogger logger = new EventLogLogger(AppConfig.ServiceNameEventSource) { Prefix = serviceName };
 
             try
             {
                 restarter.RestartService(serviceName);
+                Environment.Exit(0);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error restarting service '{serviceName}': {ex.Message}");
+                logger.Error($"Error restarting service: {ex.Message}");
+                Environment.Exit(1);
             }
         }
     }

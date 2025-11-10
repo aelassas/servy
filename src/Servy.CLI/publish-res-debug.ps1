@@ -21,7 +21,7 @@ $runtime            = "win-x64"
 $selfContained      = $true
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (publish resources first)
+# Step 0: Run publish-res-debug.ps1 (publish resources first)
 # ---------------------------------------------------------------------------------
 $PublishResScript = Join-Path $serviceDir "publish-res-debug.ps1"
 
@@ -30,13 +30,13 @@ if (-not (Test-Path $PublishResScript)) {
     exit 1
 }
 
-Write-Host "=== Running publish-res-release.ps1 ==="
+Write-Host "=== Running publish-res-debug.ps1 ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
+    Write-Error "publish-res-debug.ps1 failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
+Write-Host "=== Completed publish-res-debug.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project

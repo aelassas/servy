@@ -44,14 +44,17 @@ Write-Host "Configuration: Release"
 Write-Host "Runtime: win-x64"
 Write-Host "Self-contained: true"
 
+& dotnet clean $ProjectPath -c Release
+
 & dotnet publish $ProjectPath `
     -c Release `
     -r win-x64 `
     --self-contained true `
+    --force `
+    /p:DeleteExistingFiles=true `
     /p:PublishSingleFile=true `
     /p:IncludeAllContentForSelfExtract=true `
     /p:PublishTrimmed=false `
-    /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet publish failed."

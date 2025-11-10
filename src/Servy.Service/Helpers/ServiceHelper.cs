@@ -216,13 +216,27 @@ namespace Servy.Service.Helpers
                     return;
                 }
 
-                Process.Start(new ProcessStartInfo
+                using (var process = Process.Start(new ProcessStartInfo
                 {
                     FileName = restarter,
                     Arguments = serviceName,
                     CreateNoWindow = true,
                     UseShellExecute = false
-                });
+                }))
+                {
+                    if (process == null)
+                    {
+                        logger?.Error("Failed to start Servy.Restarter.exe.");
+                        return;
+                    }
+
+                    process.WaitForExit();
+
+                    if (process.ExitCode != 0)
+                    {
+                        logger?.Error($"Servy.Restarter.exe exited with code {process.ExitCode}.");
+                    }
+                }
             }
             catch (Exception ex)
             {
