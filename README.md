@@ -52,7 +52,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Environment variable expansion supported in both environment variables and process parameters
-* Run services as Local System, Local Service, Network Service, local user, domain account, or Group Managed Service Account
+* Run services as Local System, Local Service, Network Service, local user, domain account, or gMSA
 * Redirect stdout/stderr to log files with automatic size-based rotation
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
