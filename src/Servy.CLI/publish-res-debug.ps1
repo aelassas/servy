@@ -28,6 +28,8 @@ $resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildC
 # Step 1: Build the project in Debug mode
 # -------------------------------------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
+$serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
+& $serviceProjectPublishRes
 msbuild $ServiceProject /t:Clean,Build /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true
 
 # ------------------------------------------------------------------------

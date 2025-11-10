@@ -27,5 +27,5 @@ Write-Host "Finished publish-res-release.ps1. Continuing with main build..."
 
 # Step 1: Clean and build the CLI project
 Write-Host "Building Servy.CLI project in $buildConfiguration mode..."
-msbuild $ProjectPath /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform
+msbuild $ProjectPath /t:Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
 Write-Host "Build completed."

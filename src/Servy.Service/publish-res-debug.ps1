@@ -1,8 +1,8 @@
 # ======================================================================
-# publish-res-release.ps1
+# publish-res-debug.ps1
 # ----------------------------------------------------------------------
 # Purpose:
-#   Builds Servy.Restarter in Release mode (.NET Framework 4.8) and copies
+#   Builds Servy.Restarter in Debug mode (.NET Framework 4.8) and copies
 #   the required binaries into the Servy.Service\Resources folder with the
 #   appropriate naming conventions.
 #
@@ -11,7 +11,7 @@
 #   - Script should be run from PowerShell (x64).
 #
 # Notes:
-#   - This script is intended for preparing the CLI resources for release.
+#   - This script is intended for preparing the CLI resources for debug.
 #   - Adjust file paths if the project structure changes.
 # ======================================================================
 
@@ -27,11 +27,11 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 $serviceProject      = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj"
 $resourcesFolder     = Join-Path $ScriptDir "..\Servy.Service\Resources"
-$buildConfiguration  = "Release"
+$buildConfiguration  = "Debug"
 $buildOutput         = Join-Path $ScriptDir "..\Servy.Restarter\bin\$buildConfiguration"
 
 # ----------------------------------------------------------------------
-# Step 1 - Build Servy.Restarter in Release mode
+# Step 1 - Build Servy.Restarter in Debug mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
 msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
