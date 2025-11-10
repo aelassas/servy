@@ -28,10 +28,12 @@ namespace Servy.Restarter
             try
             {
                 restarter.RestartService(serviceName);
+                Environment.Exit(0);
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error restarting service '{serviceName}': {ex.Message}");
+                Environment.Exit(1);
             }
         }
     }

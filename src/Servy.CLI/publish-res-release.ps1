@@ -36,6 +36,8 @@ $resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildC
 # Step 1 - Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
+$serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
+& $serviceProjectPublishRes
 msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform /p:AllowUnsafeBlocks=true
 
 # ------------------------------------------------------------------------
