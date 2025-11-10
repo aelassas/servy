@@ -34,7 +34,7 @@ namespace Servy.Restarter
             }
             catch (Exception ex)
             {
-                logger.Error($"Error restarting service: {ex.Message}");
+                logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}");
                 Environment.Exit(1);
             }
         }
