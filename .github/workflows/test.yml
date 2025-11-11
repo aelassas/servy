@@ -156,7 +156,7 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          working-directory: ${{ github.workspace }}
+          base-path: ${{ github.workspace }}
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
           fail-on-error: false
