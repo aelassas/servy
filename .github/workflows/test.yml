@@ -30,14 +30,9 @@ jobs:
       - name: Install .NET 10 SDK
         shell: powershell
         run: |
-          # Install latest .NET SDK locally
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
           ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
-
-          # Prepend the new dotnet to PATH for all subsequent steps
-          $dotnetPath = "$env:RUNNER_TEMP\dotnet"
-          Write-Host "##[add-path]$dotnetPath"
-          $env:PATH = "$dotnetPath;$env:PATH"
+          "$env:RUNNER_TEMP\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Check .NET version
         run: dotnet --version
@@ -80,16 +75,9 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Install reportgenerator locally into a temp folder
-          $toolPath = "$env:RUNNER_TEMP\tools"
-          dotnet tool install --tool-path $toolPath dotnet-reportgenerator-globaltool --version 5.*
-
-          # Make sure the executable path is correct
-          $reportGeneratorExe = Join-Path $toolPath "reportgenerator.exe"
-          if (-Not (Test-Path $reportGeneratorExe)) { Write-Error "reportgenerator.exe not found"; exit 1 }
-
-          # Merge coverage files
-          & $reportGeneratorExe -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+          $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
+          & $dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+          & $dotnet reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
 
           # Normalize filename paths
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
