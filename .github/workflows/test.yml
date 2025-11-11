@@ -75,21 +75,18 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Path to the .NET 10 SDK installed in the workflow
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
-
-          # Use a temporary folder for local tools
           $toolsDir = "$env:RUNNER_TEMP\tools"
           if (-Not (Test-Path $toolsDir)) { New-Item -ItemType Directory -Path $toolsDir | Out-Null }
 
-          # Create a local tool manifest
+          # Create a local tool manifest in the tools folder
           & $dotnet new tool-manifest --force --output $toolsDir
 
-          # Install reportgenerator into the local manifest
+          # Install reportgenerator locally in the tools folder
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.* --tool-path $toolsDir
 
-          # Run reportgenerator using dotnet to ensure it uses .NET 10
-          & $dotnet tool run --tool-path $toolsDir reportgenerator `
+          # Run reportgenerator using the local installation
+          & $dotnet "$toolsDir\reportgenerator.exe" `
               -reports:$($coverageFiles -join ";") `
               -targetdir:$fixedDir `
               -reporttypes:Cobertura
@@ -109,6 +106,7 @@ jobs:
 
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
+
 
       - name: Upload coverage to Codecov
         id: codecov
