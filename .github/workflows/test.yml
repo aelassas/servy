@@ -69,13 +69,13 @@ jobs:
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
         run: |
-          $fixedDir = "TestResults\fixed"
+          $fixedDir = "TestResults/fixed"
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
 
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Path to local .NET SDK
+          # Path to local .NET 10 SDK
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
 
           # Create a temp folder for local tools
@@ -89,13 +89,9 @@ jobs:
           # Install reportgenerator as a local tool
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
 
-          # Prepare reportgenerator arguments
-          $reportArgs = @()
-          foreach ($file in $coverageFiles) {
-              $reportArgs += "-reports:`"$($file.FullName.Replace('\','/'))`""
-          }
-          $reportArgs += "-targetdir:`"$fixedDir`""
-          $reportArgs += "-reporttypes:Cobertura"
+          # Prepare reportgenerator arguments (all reports in a single string)
+          $allReports = ($coverageFiles | ForEach-Object { $_.FullName.Replace('\','/') }) -join ";"
+          $reportArgs = "-reports:`"$allReports`" -targetdir:`"$fixedDir`" -reporttypes:Cobertura"
 
           # Run reportgenerator via dotnet CLI from local manifest
           & $dotnet tool run reportgenerator -- $reportArgs
@@ -103,10 +99,10 @@ jobs:
           Set-Location $env:GITHUB_WORKSPACE
 
           # Normalize filename paths
-          $mergedFile = Join-Path $fixedDir "Cobertura.xml"
-          if (-Not (Test-Path $mergedFile)) { Write-Error "Cobertura.xml not found"; exit 1 }
+          $mergedFile = Get-ChildItem -Path $fixedDir -Filter "Cobertura.xml" | Select-Object -First 1
+          if (-Not $mergedFile) { Write-Error "Cobertura.xml not found"; exit 1 }
 
-          $content = Get-Content $mergedFile -Raw
+          $content = Get-Content $mergedFile.FullName -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
@@ -117,7 +113,6 @@ jobs:
 
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
-
 
       - name: Upload coverage to Codecov
         id: codecov
