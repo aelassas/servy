@@ -108,7 +108,13 @@ jobs:
               }
           })
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
-          $content | Set-Content $normalizedFile
+          $content | Out-File -FilePath $normalizedFile -Encoding utf8
+
+          Write-Host $content
+
+          if (-Not (Test-Path $normalizedFile)) { Write-Error "$normalizedFile not found"; exit 1 }
+
+          Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" | Where-Object { $_.FullName -ne $normalizedFile } | Remove-Item
 
       - name: Upload coverage to Codecov
         id: codecov
@@ -120,6 +126,7 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
+          disable_glob: true
           commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
