@@ -75,17 +75,18 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Install reportgenerator locally using the same .NET SDK we installed
-          $dotnetPath = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
-          & $dotnetPath tool install --tool-path "$env:RUNNER_TEMP\tools" dotnet-reportgenerator-globaltool --version 5.*
+          # Install reportgenerator locally into a temp folder
+          $toolPath = "$env:RUNNER_TEMP\tools"
+          dotnet tool install --tool-path $toolPath dotnet-reportgenerator-globaltool --version 5.*
 
-          # Merge coverage files using the correct dotnet runtime
-          & $dotnetPath "$env:RUNNER_TEMP\tools\reportgenerator.dll" `
-            -reports:$($coverageFiles -join ";") `
-            -targetdir:$fixedDir `
-            -reporttypes:Cobertura
+          # Make sure the executable path is correct
+          $reportGeneratorExe = Join-Path $toolPath "reportgenerator.exe"
+          if (-Not (Test-Path $reportGeneratorExe)) { Write-Error "reportgenerator.exe not found"; exit 1 }
 
-          # Normalize filename paths for both Core and Infrastructure
+          # Merge coverage files
+          & $reportGeneratorExe -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+
+          # Normalize filename paths
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
           if (-Not (Test-Path $mergedFile)) { Write-Error "Cobertura.xml not found"; exit 1 }
 
@@ -105,6 +106,7 @@ jobs:
           })
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
+
 
       - name: Upload coverage to Codecov
         id: codecov
