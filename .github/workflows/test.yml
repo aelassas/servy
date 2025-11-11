@@ -27,7 +27,7 @@ jobs:
       - name: Ensure base commit is available
         run: git fetch origin main --depth=1
 
-      - name: Install .NET 10 SDK
+      - name: Install the latest .NET SDK
         shell: powershell
         run: |
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
@@ -75,21 +75,24 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
+          # Path to local .NET 10 SDK
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
-          $toolsDir = "$env:RUNNER_TEMP\tools"
-          if (-Not (Test-Path $toolsDir)) { New-Item -ItemType Directory -Path $toolsDir | Out-Null }
 
-          # Create a local tool manifest in the tools folder
-          & $dotnet new tool-manifest --force --output $toolsDir
+          # Create a temp folder for local tools
+          $localTools = "$env:RUNNER_TEMP\localtools"
+          if (-Not (Test-Path $localTools)) { New-Item -ItemType Directory -Path $localTools | Out-Null }
 
-          # Install reportgenerator locally in the tools folder
-          & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.* --tool-path $toolsDir
+          # Initialize a temporary local tool manifest
+          & $dotnet new tool-manifest --force --output $localTools
+          Set-Location $localTools
 
-          # Run reportgenerator using the local installation
-          & $dotnet "$toolsDir\reportgenerator.exe" `
-              -reports:$($coverageFiles -join ";") `
-              -targetdir:$fixedDir `
-              -reporttypes:Cobertura
+          # Install reportgenerator as a local tool
+          & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
+
+          # Run reportgenerator via dotnet CLI from local manifest
+          & $dotnet tool run reportgenerator -- -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+
+          Set-Location $env:GITHUB_WORKSPACE
 
           # Normalize filename paths
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
@@ -106,7 +109,6 @@ jobs:
 
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
-
 
       - name: Upload coverage to Codecov
         id: codecov

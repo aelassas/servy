@@ -25,7 +25,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Install .NET 10 SDK
+      - name: Install the latest .NET SDK
         shell: powershell
         run: |
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
