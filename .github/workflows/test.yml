@@ -95,18 +95,21 @@ jobs:
           # Normalize filename paths for both Core and Infrastructure
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
           $content = Get-Content $mergedFile -Raw
-
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
-              if ($origPath -match 'src/Servy\.Core/(.*)') { return "filename=`"src/Servy.Core/$($matches[1])`"" }
-              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') { return "filename=`"src/Servy.Infrastructure/$($matches[1])`"" }
-              else { return "filename=`"$origPath`"" }
+              if ($origPath -match 'src/Servy\.Core/(.*)') {
+                  return "filename=`"src/Servy.Core/$($matches[1])`""
+              }
+              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') {
+                  return "filename=`"src/Servy.Infrastructure/$($matches[1])`""
+              }
+              else {
+                  return "filename=`"$origPath`""
+              }
           })
-
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
-
 
       - name: Upload coverage to Codecov
         id: codecov
