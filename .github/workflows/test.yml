@@ -75,17 +75,24 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
+          # Path to the .NET 10 SDK installed in the workflow
           $dotnet = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
 
-          # Install the reportgenerator global tool using the .NET 10 SDK
-          & $dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.*
+          # Use a temporary folder for local tools
+          $toolsDir = "$env:RUNNER_TEMP\tools"
+          if (-Not (Test-Path $toolsDir)) { New-Item -ItemType Directory -Path $toolsDir | Out-Null }
 
-          # Add the global tools folder to PATH so reportgenerator can be found
-          $toolsPath = "$env:USERPROFILE\.dotnet\tools"
-          echo $toolsPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+          # Create a local tool manifest
+          & $dotnet new tool-manifest --force --output $toolsDir
 
-          # Run reportgenerator using the installed tool
-          & "$toolsPath\reportgenerator.exe" -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+          # Install reportgenerator into the local manifest
+          & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.* --tool-path $toolsDir
+
+          # Run reportgenerator using dotnet to ensure it uses .NET 10
+          & $dotnet tool run --tool-path $toolsDir reportgenerator `
+              -reports:$($coverageFiles -join ";") `
+              -targetdir:$fixedDir `
+              -reporttypes:Cobertura
 
           # Normalize filename paths
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
@@ -95,16 +102,11 @@ jobs:
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
-              if ($origPath -match 'src/Servy\.Core/(.*)') {
-                  return "filename=`"src/Servy.Core/$($matches[1])`""
-              }
-              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') {
-                  return "filename=`"src/Servy.Infrastructure/$($matches[1])`""
-              }
-              else {
-                  return "filename=`"$origPath`""
-              }
+              if ($origPath -match 'src/Servy\.Core/(.*)') { return "filename=`"src/Servy.Core/$($matches[1])`"" }
+              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') { return "filename=`"src/Servy.Infrastructure/$($matches[1])`"" }
+              else { return "filename=`"$origPath`"" }
           })
+
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Set-Content $normalizedFile
 
