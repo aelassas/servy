@@ -3,7 +3,7 @@
 # Builds WPF and CLI apps, creates Inno Setup installer, and packages a ZIP.
 
 param(
-    [string]$fm     = "net8.0",    
+    [string]$fm     = "net10.0",    
     [string]$version = "1.0.0",
     [switch]$pause
 )

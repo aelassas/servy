@@ -6,7 +6,7 @@
 #  3. 7-Zip installed and 7z in PATH
 
 param(
-    [string]$fm     = "net8.0",    
+    [string]$fm     = "net10.0",    
     [string]$version = "3.3"
 )
 

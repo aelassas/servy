@@ -1103,7 +1103,7 @@ namespace Servy.Manager.Resources {
         ///
         ///Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
         ///
-        ///Built with .NET 8.0
+        ///Built with .NET 10.0
         ///
         ///Copyright © 2025 Akram El Assas. All rights reserved.
         ///  .

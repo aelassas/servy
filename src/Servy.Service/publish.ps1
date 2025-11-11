@@ -4,7 +4,7 @@
 #   - msbuild in PATH (if needed for other steps)
 
 param(
-    [string]$tfm     = "net8.0-windows",
+    [string]$tfm     = "net10.0-windows",
     [switch]$pause
 )
 

@@ -2,7 +2,7 @@
 # Build script for Servy self-contained installer and ZIP package
 
 param(
-    [string]$fm     = "net8.0",
+    [string]$fm     = "net10.0",
     [string]$version = "1.0.0",
     [switch]$pause
 )

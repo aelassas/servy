@@ -4,7 +4,7 @@
 
 param(
     [string]$version = "1.0.0",
-    [string]$tfm     = "net8.0-windows",
+    [string]$tfm     = "net10.0-windows",
     [string]$runtime = "win-x64",
     [string]$configuration = "Release",
     [switch]$pause

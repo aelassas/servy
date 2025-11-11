@@ -1205,7 +1205,7 @@ namespace Servy.Resources {
         ///
         ///Easily monitor service health, configure startup options, and automate recovery actions.
         ///
-        ///Built with .NET 8.0
+        ///Built with .NET 10.0
         ///
         ///Copyright © 2025 Akram El Assas. All rights reserved.
         ///  .

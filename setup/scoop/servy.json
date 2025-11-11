@@ -27,7 +27,7 @@
     "autoupdate": {
         "architecture": {
             "64bit": {
-                "url": "https://github.com/aelassas/servy/releases/download/v$version/servy-$version-net8.0-x64-installer.exe"
+                "url": "https://github.com/aelassas/servy/releases/download/v$version/servy-$version-net10.0-x64-installer.exe"
             }
         }
     }

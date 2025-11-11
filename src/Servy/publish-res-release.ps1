@@ -1,6 +1,6 @@
 param(
-    # Target framework (default: net8.0-windows)
-    [string]$tfm = "net8.0-windows"
+    # Target framework (default: net10.0-windows)
+    [string]$tfm = "net10.0-windows"
 )
 
 $ErrorActionPreference = "Stop"

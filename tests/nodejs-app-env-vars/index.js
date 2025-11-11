@@ -83,8 +83,8 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
 }
 
 // Simulate long-running app:
-process.stdout.write('App is running. Press Ctrl+C to stop.')
-setInterval(() => { }, 1000)
+// process.stdout.write('App is running. Press Ctrl+C to stop.')
+// setInterval(() => { }, 1000)
 
 
 // keep Node alive until key press

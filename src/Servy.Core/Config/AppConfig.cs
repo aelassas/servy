@@ -51,22 +51,22 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Service Debug Folder.
         /// </summary>
-        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Debug\net8.0-windows\win-x64\");
+        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Debug\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Service Release Folder.
         /// </summary>
-        public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Release\net8.0-windows\win-x64\");
+        public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net8.0-windows\win-x64\");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Service Release Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net8.0-windows\win-x64\");
+        public static readonly string ServyServiceManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Configuration App Publish Path.
@@ -81,7 +81,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net8.0-windows\win-x64\");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Manager App Publish Path.
