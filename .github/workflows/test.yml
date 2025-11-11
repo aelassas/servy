@@ -31,7 +31,7 @@ jobs:
         shell: powershell
         run: |
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-          ./dotnet-install.ps1 -Version 10.0.x -InstallDir "$env:RUNNER_TEMP\dotnet"
+          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
           "$env:RUNNER_TEMP\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Check .NET version
