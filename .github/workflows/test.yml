@@ -89,24 +89,13 @@ jobs:
           # Install reportgenerator as a local tool
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
 
-          # Prepare reportgenerator arguments
-          $reportArgs = @()
-          foreach ($file in $coverageFiles) {
-              $reportArgs += "-reports:`"$($file.FullName.Replace('\','/'))`""
-          }
-          $reportArgs += "-targetdir:`"$fixedDir`""
-          $reportArgs += "-reporttypes:Cobertura"
-
           # Run reportgenerator via dotnet CLI from local manifest
-          & $dotnet tool run reportgenerator -- $reportArgs
+          & $dotnet tool run reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
 
-          Set-Location $env:GITHUB_WORKSPACE
+          # Normalize filename paths for both Core and Infrastructure
+          $mergedFile = Join-Path $fixedDir "Cobertura.xml"
+          $content = Get-Content $mergedFile -Raw
 
-          # Normalize filename paths
-          $mergedFile = Get-ChildItem -Path $fixedDir -Filter "Cobertura.xml" | Select-Object -First 1
-          if (-Not $mergedFile) { Write-Error "Cobertura.xml not found"; exit 1 }
-
-          $content = Get-Content $mergedFile.FullName -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
