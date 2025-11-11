@@ -75,14 +75,20 @@ jobs:
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
           if ($coverageFiles.Count -eq 0) { Write-Error "No coverage files found"; exit 1 }
 
-          # Install reportgenerator locally to work with the latest .NET SDK
-          dotnet tool install --tool-path "$env:RUNNER_TEMP\tools" dotnet-reportgenerator-globaltool --version 5.*
+          # Install reportgenerator locally using the same .NET SDK we installed
+          $dotnetPath = "$env:RUNNER_TEMP\dotnet\dotnet.exe"
+          & $dotnetPath tool install --tool-path "$env:RUNNER_TEMP\tools" dotnet-reportgenerator-globaltool --version 5.*
 
-          # Merge coverage files using reportgenerator
-          & "$env:RUNNER_TEMP\tools\reportgenerator.exe" -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+          # Merge coverage files using the correct dotnet runtime
+          & $dotnetPath "$env:RUNNER_TEMP\tools\reportgenerator.dll" `
+            -reports:$($coverageFiles -join ";") `
+            -targetdir:$fixedDir `
+            -reporttypes:Cobertura
 
           # Normalize filename paths for both Core and Infrastructure
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
+          if (-Not (Test-Path $mergedFile)) { Write-Error "Cobertura.xml not found"; exit 1 }
+
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
