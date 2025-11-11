@@ -86,10 +86,14 @@ jobs:
           & $dotnet new tool-manifest --force --output $localTools
 
           # Install reportgenerator as a local tool
+          Push-Location $localTools
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
+          Pop-Location
 
           # Run reportgenerator via dotnet CLI from local manifest
+          Push-Location $localTools
           & $dotnet tool run reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
+          Pop-Location
 
           # Normalize filename paths for both Core and Infrastructure
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
