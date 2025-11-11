@@ -84,7 +84,6 @@ jobs:
 
           # Initialize a temporary local tool manifest
           & $dotnet new tool-manifest --force --output $localTools
-          Set-Location $localTools
 
           # Install reportgenerator as a local tool
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
