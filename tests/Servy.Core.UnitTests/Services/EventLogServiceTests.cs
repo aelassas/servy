@@ -112,6 +112,21 @@ namespace Servy.Core.UnitTests.Services
             Assert.Contains("servy", entry.Message);
         }
 
+        [Fact]
+        public async Task Search_MultipleEntries()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var fakeEvt1 = CreateFakeEvent(5, 2, DateTime.UtcNow, "[service] servy failed");
+            var fakeEvt2 = CreateFakeEvent(6, 2, DateTime.UtcNow.AddHours(-1), "[service] servy failed");
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                      .Returns(new[] { fakeEvt1, fakeEvt2 });
+
+            var service = CreateService(mockReader);
+
+            var result = await service.SearchAsync(null, null, null, string.Empty);
+
+            Assert.Equal(2, result.Count());
+        }
 
         [Fact]
         public async Task Search_WithKeyword_EmptyResult()
