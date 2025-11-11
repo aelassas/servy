@@ -127,7 +127,6 @@ jobs:
           name: codecov-coverage-report
           fail_ci_if_error: false
           verbose: false
-          disable_glob: true
           commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
@@ -160,7 +159,7 @@ jobs:
           file: TestResults/fixed/coverage.cobertura.xml
           format: cobertura
           fail-on-error: false
-          debug: true
+          debug: false
         env:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
