@@ -69,7 +69,8 @@ jobs:
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
         run: |
-          $fixedDir = "TestResults\fixed"
+          $workspace = $env:GITHUB_WORKSPACE
+          $fixedDir = Join-Path $workspace "TestResults\fixed"
           if (-Not (Test-Path $fixedDir)) { New-Item -ItemType Directory -Path $fixedDir | Out-Null }
 
           $coverageFiles = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml"
@@ -88,10 +89,8 @@ jobs:
           # Install reportgenerator as a local tool
           Push-Location $localTools
           & $dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
-          Pop-Location
 
           # Run reportgenerator via dotnet CLI from local manifest
-          Push-Location $localTools
           & $dotnet tool run reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
           Pop-Location
 
