@@ -30,9 +30,14 @@ jobs:
       - name: Install .NET 10 SDK
         shell: powershell
         run: |
+          # Install latest .NET SDK locally
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
           ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
-          "$env:RUNNER_TEMP\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          # Prepend the new dotnet to PATH for all subsequent steps
+          $dotnetPath = "$env:RUNNER_TEMP\dotnet"
+          Write-Host "##[add-path]$dotnetPath"
+          $env:PATH = "$dotnetPath;$env:PATH"
 
       - name: Check .NET version
         run: dotnet --version
