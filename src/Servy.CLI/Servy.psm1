@@ -183,7 +183,7 @@ function Add-Arg {
   # Only add the argument if a non-empty value is provided
   if ($null -ne $value -and $value -ne "") {
     # Add the argument in the form key="value"
-    $list.Add("$key=`"$value`"")
+    $list.Add("$key=$value")
   }
 
   # Return the same instance without PowerShell array coercion  
@@ -353,13 +353,13 @@ function Install-ServyService {
     [string] $Stdout,
     [string] $Stderr,
     [switch] $EnableRotation,
-    [int] $RotationSize,
+    [string] $RotationSize,
     [switch] $EnableHealth,
-    [int] $HeartbeatInterval,
-    [int] $MaxFailedChecks,
+    [string] $HeartbeatInterval,
+    [string] $MaxFailedChecks,
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
-    [int] $MaxRestartAttempts,
+    [string] $MaxRestartAttempts,
     [string] $FailureProgramPath,
     [string] $FailureProgramStartupDir,
     [string] $FailureProgramParams,
@@ -375,8 +375,8 @@ function Install-ServyService {
     [string] $PreLaunchEnv,
     [string] $PreLaunchStdout,
     [string] $PreLaunchStderr,
-    [int] $PreLaunchTimeout,
-    [int] $PreLaunchRetryAttempts,
+    [string] $PreLaunchTimeout,
+    [string] $PreLaunchRetryAttempts,
     [switch] $PreLaunchIgnoreFailure,
 
     # Post-launch
