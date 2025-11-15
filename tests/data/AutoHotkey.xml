@@ -3,7 +3,7 @@
   <Name>AutoHotkeyService</Name>
   <Description>AutoHotkeyService</Description>
   <ExecutablePath>C:\Program Files\AutoHotkey\v2\AutoHotkey.exe</ExecutablePath>
-  <Parameters>E:\dev\AutoHotkey\service.ahk</Parameters>
+  <Parameters>E:\dev\AutoHotkey\AutoHotkey.ahk</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
   <EnableRotation>false</EnableRotation>
