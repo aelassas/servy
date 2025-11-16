@@ -420,6 +420,7 @@ FodyWeavers.xsd
 # setup
 setup/**/*.exe
 setup/**/*.zip
+setup/**/*.7z
 setup/**/*.dll
 
 # tests

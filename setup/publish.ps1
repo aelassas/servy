@@ -39,7 +39,7 @@ Set-Location $ScriptDir
 $PackageFolder      = "$AppName-$version-$Framework-$Platform-portable"
 $AppPackageFolder   = ""
 $CliPackageFolder   = ""
-$OutputZip          = "$PackageFolder.zip"
+$OutputZip          = "$PackageFolder.7z"
 
 # ========================
 # Functions
@@ -128,8 +128,20 @@ Copy-Item -Path "taskschd" -Destination "$PackageFolder" -Recurse -Force
 Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$PackageFolder" -Force
 Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$PackageFolder" -Force
 
-$ZipArgs = @("a", "-tzip", $OutputZip, "$PackageFolder\*")
+$ZipArgs = @(
+    "a",
+    "-t7z",
+    "-m0=lzma2",
+    "-mx=9",
+    "-mfb=273",
+    "-md=64m",
+    "-ms=on",
+    $OutputZip,
+    "$PackageFolder"
+)
+
 $Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
+
 if ($Process.ExitCode -ne 0) {
     Write-Error "ERROR: 7z compression failed."
     exit 1
