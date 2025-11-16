@@ -39,11 +39,11 @@ OutputBaseFilename=servy-{#MyAppVersion}-x64-installer
 SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2
-; LZMAAlgorithm=1
+LZMAAlgorithm=1
 LZMADictionarySize=65536
 ; LZMADictionarySize=98304
 ; LZMADictionarySize=131072
-; LZMANumFastBytes=273
+LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
 

@@ -36,4 +36,8 @@
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.NETCore.App" />
+  </ItemGroup>
+  
 </Project>
