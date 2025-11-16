@@ -9,7 +9,7 @@
 
 <p align="center">
   <img src="https://servy-win.github.io/servy-tiny.png?v=2" alt="Servy">
-  ⭐ Don't forget to give us a star on GitHub — it costs nothing but means a lot and helps the project grow!
+  ⭐ Don't forget to give us a star on GitHub - it costs nothing but means a lot and helps the project grow!
 </p>
 <p align="center">
   <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
@@ -43,7 +43,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## Features
 
-When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro — all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
+When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
 
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
