@@ -8,7 +8,7 @@ After running into these issues too many times, I decided to build my own tool.
 
 **The goals**
 
-I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app: Node.js, Python, .NET, scripts, and more. It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, CPU and RAM monitoring, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 to Windows 11, including Server editions.
+I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app (Node.js, Python, .NET, scripts, and more). It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, CPU and RAM monitoring, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 to Windows 11, including Server editions.
 
 **The result**
 
