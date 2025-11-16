@@ -17,6 +17,7 @@ if (-not $tfm) {
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 $innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$SevenZipExe        = "7z"          # Assumes 7-Zip is in PATH
 
 # Directories
 $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -72,7 +73,7 @@ $managerExe  = Join-Path $ManagerDir "bin\$buildConfiguration\$tfm\$runtime\publ
 
 # Package folder
 $packageFolder = Join-Path $ScriptDir "servy-$version-x64-portable"
-$outputZip     = "$packageFolder.zip"
+$outputZip     = "$packageFolder.7z"
 
 # Clean old artifacts
 Remove-FileOrFolder -path $outputZip
@@ -96,9 +97,24 @@ Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
 Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$packageFolder" -Force
 Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
 
-Push-Location $parentDir
-& 7z a -tzip "$outputZip" "$folderName" | Out-Null
-Pop-Location
+$ZipArgs = @(
+    "a",
+    "-t7z",
+    "-m0=lzma2",
+    "-mx=9",
+    "-mfb=273",
+    "-md=64m",
+    "-ms=on",
+    $outputZip,
+    "$packageFolder"
+)
+
+$Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
+
+if ($Process.ExitCode -ne 0) {
+    Write-Error "ERROR: 7z compression failed."
+    exit 1
+}
 
 # Remove temp folder
 Remove-FileOrFolder -path $packageFolder
