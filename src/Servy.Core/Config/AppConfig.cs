@@ -13,7 +13,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy's current version.
         /// </summary>
-        public static readonly string Version = "3.5";
+        public static readonly string Version = "3.6";
 
         /// <summary>
         /// The name of the Windows service and the associated Event Log source.
