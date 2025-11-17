@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Updates .NET runtime target version across all projects.
+Updates .NET runtime target version across scripts, AppConfig, and project files.
 
 .DESCRIPTION
 This script recursively updates `netX.Y` target framework versions 
@@ -19,11 +19,17 @@ The .NET runtime version (e.g. "10.0").
 Shows what would change without writing to disk.
 
 .EXAMPLE
-./update-runtime.ps1 -Version 12.0
+./update-runtime.ps1 -Version 10.0
 
 .EXAMPLE
-./update-runtime.ps1 -Version 12.0 -DryRun
+./update-runtime.ps1 10.0
+
+.EXAMPLE
+./update-runtime.ps1 -Version 10.0 -DryRun
 Shows all changes without modifying files.
+
+.EXAMPLE
+./update-runtime.ps1 10.0 -DryRun
 
 .NOTES
 This script modifies files in-place unless -DryRun is used.
@@ -91,8 +97,8 @@ function Update-Files {
             }
 
             # --- Count matches ---
-            $matches = [regex]::Matches($content, $Pattern)
-            $matchCount = $matches.Count
+            $regexMatches  = [regex]::Matches($content, $Pattern)
+            $matchCount = $regexMatches.Count
 
             if ($matchCount -gt 0) {
                 $global:FilesModified++
