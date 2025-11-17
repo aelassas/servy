@@ -1,8 +1,8 @@
 ## Why Servy?
 
-Whenever I needed to run an app as a Windows service, I usually relied on tools like sc.exe, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
+Whenever I needed to run an app as a Windows service, I usually relied on tools like `sc`, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
 
-sc.exe only works with applications that are specifically designed to run as Windows services. It also always defaults to `C:\Windows\System32` as the working directory, which can break apps that rely on relative paths or local configuration files. NSSM is lightweight, but it doesn't offer monitoring, health checks, pre-launch and post-launch hooks, or a fully-featured user interface. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and also lacks a proper UI.
+`sc` only works with applications that are specifically designed to run as Windows services. It also always defaults to `C:\Windows\System32` as the working directory, which can break apps that rely on relative paths or local configuration files. NSSM is lightweight, but it doesn't offer monitoring, health checks, pre-launch and post-launch hooks, or a fully-featured user interface. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
 
 After running into these issues too many times, I decided to build my own tool.
 
@@ -15,6 +15,8 @@ I wanted a solution that was easy to use, with a clean desktop app, but also scr
 The result is **Servy**, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. Servy is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
+
+Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 ## Points of Interest
 
