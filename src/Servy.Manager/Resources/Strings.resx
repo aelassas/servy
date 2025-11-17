@@ -52,9 +52,9 @@ Servy Manager {0}
 
 Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
 
-Built with .NET 10.0
+Built with {1}
 
-Copyright © 2025 Akram El Assas. All rights reserved.
+Copyright © {2} Akram El Assas. All rights reserved.
   </value>
 </data>
   
