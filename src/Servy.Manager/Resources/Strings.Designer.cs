@@ -1101,12 +1101,14 @@ namespace Servy.Manager.Resources {
         ///   Recherche une chaîne localisée semblable à 
         ///Servy Manager {0}
         ///
-        ///Servy Manager is a lightweight tool that allows you to manage Windows services installed by Servy.
+        ///Servy Manager provides a clean and simple interface for managing Windows services created with Servy. Start, stop, configure, and monitor services with ease.
         ///
         ///Built with {1}
         ///
+        ///Licensed under the MIT License.
+        ///
         ///Copyright © {2} Akram El Assas. All rights reserved.
-        ///  .
+        ///    .
         /// </summary>
         public static string Text_About {
             get {
