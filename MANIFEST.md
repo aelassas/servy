@@ -1,8 +1,8 @@
 ## Why Servy?
 
-Whenever I needed to run an app as a Windows service, I usually relied on tools like `sc`, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
+Whenever I needed to run an app as a Windows service, I usually relied on tools like `sc.exe`, NSSM, or WinSW. They get the job done, but in real projects, their limitations quickly became frustrating.
 
-`sc` only works with applications that are specifically designed to run as Windows services. It also always defaults to `C:\Windows\System32` as the working directory, which can break apps that rely on relative paths or local configuration files. NSSM is lightweight, but it doesn't offer monitoring, health checks, pre-launch and post-launch hooks, or a fully-featured user interface. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
+`sc.exe` only works with applications that are specifically designed to run as Windows services. It also always defaults to `C:\Windows\System32` as the working directory, which can break apps that rely on relative paths or local configuration files. NSSM is lightweight, but it doesn't offer monitoring, health checks, pre-launch and post-launch hooks, or a fully-featured user interface. WinSW is configurable, but it's XML-based, not very user-friendly for quick setups, and does not provide a UI.
 
 After running into these issues too many times, I decided to build my own tool.
 
