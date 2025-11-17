@@ -1201,14 +1201,16 @@ namespace Servy.Resources {
         ///   Recherche une chaîne localisée semblable à 
         ///Servy {0}
         ///
-        ///Servy is a lightweight tool that allows you to run and manage any application as a Windows service.
+        ///Servy lets you run any application as a native Windows service, with full control over its working directory, startup behavior, logging, health checks, and recovery options.
         ///
-        ///Easily monitor service health, configure startup options, and automate recovery actions.
+        ///It includes a desktop app, a CLI, and a PowerShell module, letting you manage services manually or automate everything in scripts and CI/CD pipelines.
         ///
         ///Built with {1}
         ///
+        ///Licensed under the MIT License.
+        ///
         ///Copyright © {2} Akram El Assas. All rights reserved.
-        ///  .
+        ///    .
         /// </summary>
         public static string Text_About {
             get {
