@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Helpers;
 using System;
 using System.IO;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -175,5 +176,19 @@ namespace Servy.Core.UnitTests.Helpers
             var result = Helper.ParseVersion(version);
             Assert.Equal(expected, result);
         }
+
+        [Theory]
+        [InlineData(null, "Unknown")]
+        [InlineData("", "Unknown")]
+        [InlineData("   ", "Unknown")]
+        [InlineData(".NETFramework,Version=v4.8", ".NET Framework 4.8")]
+        [InlineData(".NETFramework,Version=unknown", ".NET Framework unknown")]
+        [InlineData("SomeOtherFramework", "SomeOtherFramework")]
+        public void ParseFrameworkName_CoversAllBranches(string input, string expected)
+        {
+            string result = Helper.ParseFrameworkName(input);
+            Assert.Equal(expected, result);
+        }
     }
+
 }

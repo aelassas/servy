@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 # Path to MSBuild.exe for Visual Studio 2022 Community Edition
-$msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+$msbuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
 
 # Directories
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -52,7 +52,7 @@ foreach ($proj in $testProjects) {
     Write-Host "Running tests for $($projName)..."
 
     coverlet "$dllPath" `
-      --target "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+      --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
       --targetargs "$dllPath --ResultsDirectory:$testResultsDir" `
       --output (Join-Path $testResultsDir "$projName.coverage.xml") `
       --format "cobertura"

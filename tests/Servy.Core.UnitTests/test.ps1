@@ -3,8 +3,8 @@
 # Also install ReportGenerator:
 # dotnet tool install --global dotnet-reportgenerator-globaltool
 
-# Path to MSBuild.exe for Visual Studio 2022 Community Edition
-$msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+# Path to MSBuild.exe for Visual Studio 2026 Community Edition
+$msbuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
 
 # Build the Servy.Core.UnitTests.csproj in Debug mode using MSBuild
 & $msbuildPath "tests\Servy.Core.UnitTests\Servy.Core.UnitTests.csproj" /p:Configuration=Debug /verbosity:minimal
@@ -22,7 +22,7 @@ if (Test-Path coveragereport) {
 
 # Run tests with coverage collection using coverlet
 coverlet.exe "bin\Debug\Servy.Core.UnitTests.dll" `
-  --target "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+  --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
   --targetargs "bin\Debug\Servy.Core.UnitTests.dll" `
   --output "coverage.xml" `
   --format "cobertura"
