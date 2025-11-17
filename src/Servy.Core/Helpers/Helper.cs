@@ -261,6 +261,16 @@ namespace Servy.Core.Helpers
             return ParseFrameworkName(attr.FrameworkName);
         }
 
+        /// <summary>
+        /// Converts a target framework string into a friendly display name.
+        /// </summary>
+        /// <param name="name">The target framework string, e.g., ".NETFramework,Version=v4.8".</param>
+        /// <returns>
+        /// A human-readable framework name, such as ".NET Framework 4.8",
+        /// or "Unknown" if the input is null, empty, or whitespace.
+        /// If the version cannot be determined, returns ".NET Framework unknown".
+        /// Otherwise, returns the input string as-is.
+        /// </returns>
         internal static string ParseFrameworkName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
