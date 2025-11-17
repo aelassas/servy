@@ -182,7 +182,7 @@ function Add-Arg {
 
   # Only add the argument if a non-empty value is provided
   if ($null -ne $value -and $value -ne "") {
-    # Add the argument in the form key="value"
+    # Add the argument in the form key=value
     $list.Add("$key=$value")
   }
 
