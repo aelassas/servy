@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -1066,7 +1067,12 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task OpenAboutDialog(object parameter)
         {
-            await _helpService.OpenAboutDialog(string.Format(Strings.Text_About, Core.Config.AppConfig.Version), AppConfig.Caption);
+            await _helpService.OpenAboutDialog(
+                string.Format(Strings.Text_About,
+                Core.Config.AppConfig.Version,
+                RuntimeInformation.FrameworkDescription,
+                DateTime.Now.Year),
+                AppConfig.Caption);
         }
 
         #endregion
