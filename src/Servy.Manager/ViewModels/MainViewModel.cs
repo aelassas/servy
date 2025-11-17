@@ -9,7 +9,6 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
-using Servy.UI.Helpers;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
@@ -773,11 +772,11 @@ namespace Servy.Manager.ViewModels
         private async Task OpenAboutDialog(object parameter)
         {
             await _helpService.OpenAboutDialog(
-                string.Format(Strings.Text_About,
-                Core.Config.AppConfig.Version,
-                RuntimeInformation.FrameworkDescription,
-                DateTime.Now.Year),
-                AppConfig.Caption);
+               string.Format(Strings.Text_About,
+               Core.Config.AppConfig.Version,
+               Helper.GetBuiltWithFramework(),
+               DateTime.Now.Year),
+               AppConfig.Caption);
         }
 
         #endregion

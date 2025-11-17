@@ -1,6 +1,10 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace Servy.Core.Helpers
@@ -235,6 +239,45 @@ namespace Servy.Core.Helpers
             var major = parts[0];
             var minor = parts[1];
             return double.TryParse($"{major}.{minor}", NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result) ? result : 0;
+        }
+
+        /// <summary>
+        /// Returns the target framework the assembly was built with, e.g., ".NET Framework 4.8".
+        /// </summary>
+        /// <param name="assembly">Executing assembly.</param>
+        /// <returns>
+        /// A friendly string such as ".NET Framework 4.8", or "Unknown" if the metadata is missing.
+        /// </returns>
+        [ExcludeFromCodeCoverage]
+        public static string GetBuiltWithFramework(Assembly assembly = null)
+        {
+            if (assembly == null)
+                assembly = Assembly.GetExecutingAssembly();
+
+            var attr = assembly.GetCustomAttribute<TargetFrameworkAttribute>();
+            if (attr == null || string.IsNullOrWhiteSpace(attr.FrameworkName))
+                return "Unknown";
+
+            return ParseFrameworkName(attr.FrameworkName);
+        }
+
+        internal static string ParseFrameworkName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "Unknown";
+
+            if (name.StartsWith(".NETFramework", StringComparison.OrdinalIgnoreCase))
+            {
+                int vIndex = name.IndexOf("Version=v", StringComparison.OrdinalIgnoreCase);
+                if (vIndex >= 0)
+                {
+                    string version = name.Substring(vIndex + "Version=v".Length);
+                    return $".NET Framework {version}";
+                }
+                return ".NET Framework unknown";
+            }
+
+            return name; // fallback
         }
     }
 }

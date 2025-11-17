@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -1070,7 +1069,7 @@ namespace Servy.ViewModels
             await _helpService.OpenAboutDialog(
                 string.Format(Strings.Text_About,
                 Core.Config.AppConfig.Version,
-                RuntimeInformation.FrameworkDescription,
+                Helper.GetBuiltWithFramework(),
                 DateTime.Now.Year),
                 AppConfig.Caption);
         }
