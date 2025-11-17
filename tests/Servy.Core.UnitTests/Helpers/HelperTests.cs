@@ -241,8 +241,8 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void FormatsPlainNetTfm()
         {
-            var result = Run("net10.0");
-            Assert.Equal(".NET 10.0", result);
+            var result = Run("net8.0");
+            Assert.Equal(".NET 8.0", result);
         }
 
         [Fact]
