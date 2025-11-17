@@ -5,9 +5,6 @@
 #ifndef MyAppVersion
   #define MyAppVersion "1.0"  ; default if not provided
 #endif
-#ifndef MyAppPlatform
-  #define MyAppPlatform "net10.0"  ; default if not provided
-#endif
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
 #define MyAppExeName "Servy.exe"

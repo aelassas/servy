@@ -3,7 +3,7 @@
 
 param(
     [string]$fm     = "net10.0",
-    [string]$version = "1.0.0",
+    [string]$version = "1.0",
     [switch]$pause
 )
 
@@ -59,7 +59,7 @@ Write-Host "Building Servy.Manager app..."
 # Step 2: Build Installer
 # ========================
 Write-Host "Building installer from $issFile..."
-& $innoCompiler $issFile /DMyAppVersion=$version /DMyAppPlatform=$fm
+& $innoCompiler $issFile /DMyAppVersion=$version
 
 # ========================
 # Step 3: Build Self-Contained ZIP

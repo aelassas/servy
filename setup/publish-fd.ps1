@@ -4,7 +4,7 @@
 
 param(
     [string]$fm     = "net10.0",    
-    [string]$version = "1.0.0",
+    [string]$version = "1.0",
     [switch]$pause
 )
 
@@ -14,6 +14,7 @@ $tfm = "$fm-windows"
 # Configuration
 # -----------------------------
 $innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$SevenZipExe        = "7z"          # Assumes 7-Zip is in PATH
 $issFile            = ".\servy-fd.iss"
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
@@ -52,13 +53,13 @@ $cliBuildScript = Join-Path $ScriptDir "..\src\Servy.CLI\publish-fd.ps1"
 # -----------------------------
 # Step 3: Build installer (Inno Setup)
 # -----------------------------
-& $innoCompiler $issFile /DMyAppVersion=$version  /DMyAppPlatform=$fm
+& $innoCompiler $issFile /DMyAppVersion=$version
 
 # -----------------------------
 # Step 4: Prepare ZIP package
 # -----------------------------
 $packageFolder = Join-Path $ScriptDir "servy-$version-x64-frameworkdependent"
-$outputZip     = "$packageFolder.zip"
+$outputZip     = "$packageFolder.7z"
 
 # Cleanup old package
 Remove-FileOrFolder -path $packageFolder
@@ -77,6 +78,7 @@ $servyManagerFolder = Join-Path $packageFolder "servy-manager"
 
 New-Item -ItemType Directory -Path $servyAppFolder -Force | Out-Null
 New-Item -ItemType Directory -Path $servyCliFolder -Force | Out-Null
+New-Item -ItemType Directory -Path $servyManagerFolder -Force | Out-Null
 
 # Copy published files
 Copy-Item "$servyPublish\*" $servyAppFolder -Recurse -Force
@@ -112,9 +114,24 @@ Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
 Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$packageFolder" -Force
 Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
 
-Push-Location $parentDir
-& 7z a -tzip "$outputZip" "$folderName" | Out-Null
-Pop-Location
+$ZipArgs = @(
+    "a",
+    "-t7z",
+    "-m0=lzma2",
+    "-mx=9",
+    "-mfb=273",
+    "-md=64m",
+    "-ms=on",
+    $outputZip,
+    "$packageFolder"
+)
+
+$Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
+
+if ($Process.ExitCode -ne 0) {
+    Write-Error "ERROR: 7z compression failed."
+    exit 1
+}
 
 # Cleanup temporary folder
 Remove-FileOrFolder -path $packageFolder
