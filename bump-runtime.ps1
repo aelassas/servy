@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-Updates .NET runtime target version across multiple project files.
+Updates .NET runtime target version across all projects.
 
 .DESCRIPTION
 This script recursively updates `netX.Y` target framework versions 
@@ -19,10 +19,10 @@ The .NET runtime version (e.g. "10.0").
 Shows what would change without writing to disk.
 
 .EXAMPLE
-./update-runtime.ps1 -Version 10.0
+./update-runtime.ps1 -Version 12.0
 
 .EXAMPLE
-./update-runtime.ps1 -Version 10.0 -DryRun
+./update-runtime.ps1 -Version 12.0 -DryRun
 Shows all changes without modifying files.
 
 .NOTES
@@ -41,7 +41,7 @@ param(
 # -----------------------------
 # Variables
 # -----------------------------
-$CurrentVersionRegex = "\\net\d+\.\d+"
+$CurrentVersionRegex = "net\d+\.\d+"
 $NetVersion = "net$Version"
 $BaseDir = $PSScriptRoot
 
@@ -78,9 +78,19 @@ function Update-Files {
         $global:TotalFilesScanned++
 
         try {
-            $content = Get-Content -Path $path -Raw
+            # --- Detect encoding ---
+            $stream = [System.IO.File]::Open($path, 'Open', 'Read')
+            try {
+                $reader = New-Object System.IO.StreamReader($stream, $true)
+                $content = $reader.ReadToEnd()
+                $encoding = $reader.CurrentEncoding
+            }
+            finally {
+                $reader.Close()
+                $stream.Close()
+            }
 
-            # Count matches BEFORE replacement
+            # --- Count matches ---
             $matches = [regex]::Matches($content, $Pattern)
             $matchCount = $matches.Count
 
@@ -92,12 +102,16 @@ function Update-Files {
                     Write-Host "DRY-RUN: Would update $path ($matchCount replacements)"
                 } else {
                     $newContent = [regex]::Replace($content, $Pattern, $Replacement)
-                    Set-Content -Path $path -Value $newContent -Encoding UTF8
-                    Write-Host "Updated $path ($matchCount replacements)"
+
+                    # Write using SAME encoding
+                    $bytes = $encoding.GetBytes($newContent)
+                    [System.IO.File]::WriteAllBytes($path, $bytes)
+
+                    Write-Host "UPDATED: $path ($matchCount replacements)"
                 }
             }
             else {
-                Write-Host "No change: $path"
+                Write-Host "NO-CHANGE: $path"
             }
         }
         catch {
