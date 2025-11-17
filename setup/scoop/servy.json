@@ -5,7 +5,7 @@
     "license": "MIT",
     "architecture": {
         "64bit": {
-            "url": "https://github.com/aelassas/servy/releases/download/v2.3/servy-3.5-x64-installer.exe",
+            "url": "https://github.com/aelassas/servy/releases/download/v3.5/servy-3.5-x64-installer.exe",
             "hash": "13dca3d8b4dc8b9737b0fe16bce18cd9c7318d590a6ec39b5c63993948682705"
         }
     },
