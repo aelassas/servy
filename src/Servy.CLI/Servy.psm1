@@ -150,7 +150,7 @@ function Add-Arg {
 
   .DESCRIPTION
       This helper function appends a command-line argument in the form:
-          key="value"
+          key=value
       to an existing .NET generic list of strings (`System.Collections.Generic.List[string]`),
       but only if the value is not null or empty.
       Useful for efficiently building CLI argument lists dynamically
