@@ -9,7 +9,6 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
-using Servy.UI.Helpers;
 using Servy.UI.Services;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -770,7 +769,7 @@ namespace Servy.Manager.ViewModels
             await _helpService.OpenAboutDialog(
                string.Format(Strings.Text_About,
                Core.Config.AppConfig.Version,
-               RuntimeInformation.FrameworkDescription,
+               Helper.GetBuiltWithFramework(),
                DateTime.Now.Year),
                AppConfig.Caption);
         }

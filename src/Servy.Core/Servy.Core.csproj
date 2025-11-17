@@ -29,4 +29,11 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuiltWithFramework</_Parameter1>
+      <_Parameter2>$(TargetFramework)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

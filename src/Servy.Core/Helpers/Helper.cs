@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Reflection;
 using System.Text;
 
 namespace Servy.Core.Helpers
@@ -234,5 +235,44 @@ namespace Servy.Core.Helpers
             var minor = parts[1];
             return double.TryParse($"{major}.{minor}", NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result) ? result : 0;
         }
+
+        /// <summary>
+        /// Returns the .NET framework Servy was built with,
+        /// using the "BuiltWithFramework" assembly metadata attribute.
+        /// </summary>
+        /// <param name="assembly">Executing assembly.</param>
+        /// <returns>
+        /// A friendly string such as ".NET 8.0", or "Unknown" if the metadata is missing.
+        /// </returns>
+        public static string GetBuiltWithFramework(Assembly? assembly = null)
+        {
+            assembly ??= Assembly.GetExecutingAssembly();
+
+            var attr = assembly
+                .GetCustomAttributes<AssemblyMetadataAttribute>()
+                .FirstOrDefault(a => a.Key == "BuiltWithFramework");
+
+            if (attr == null)
+                return "Unknown";
+
+            var tfm = attr.Value;
+
+            // TFM can be null
+            if (string.IsNullOrWhiteSpace(tfm))
+                return "Unknown";
+
+            // Normalize: remove platform suffix (e.g. "net8.0-windows" -> "net8.0")
+            var dashIndex = tfm.IndexOf('-');
+            if (dashIndex > 0)
+                tfm = tfm.Substring(0, dashIndex);
+
+            // Convert "net8.0" to ".NET 8.0"
+            if (tfm.StartsWith("net") && tfm.Length > 3)
+                return $".NET {tfm.Substring(3)}";
+
+            // Fallback: return raw value
+            return tfm;
+        }
+
     }
 }

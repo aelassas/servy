@@ -1,4 +1,6 @@
 ﻿using Servy.Core.Helpers;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -171,6 +173,93 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var result = Helper.ParseVersion(version);
             Assert.Equal(expected, result);
+        }
+
+        private string Run(string? tfm)
+        {
+            // Create a dynamic assembly so we can attach fake attributes
+            var assemblyName = new AssemblyName("TestAsm_" + Guid.NewGuid());
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+
+            var attrBuilder = tfm == null
+                ? null
+                : new CustomAttributeBuilder(
+                    typeof(AssemblyMetadataAttribute).GetConstructor(new[] { typeof(string), typeof(string) })!,
+                    new object[] { "BuiltWithFramework", tfm });
+
+            if (attrBuilder != null)
+                assemblyBuilder.SetCustomAttribute(attrBuilder);
+
+            // Override GetExecutingAssembly() by running inside the dynamic assembly
+            return InvokeInAssembly(assemblyBuilder);
+        }
+
+        private string InvokeInAssembly(Assembly assembly)
+        {
+            // Get the static class type
+            var type = typeof(Helper);
+
+            // Get the public static method
+            var method = type.GetMethod("GetBuiltWithFramework", BindingFlags.Static | BindingFlags.Public);
+            if (method == null) throw new InvalidOperationException("Method not found");
+
+            // Invoke it with the assembly parameter
+            return (string)method.Invoke(null, new object?[] { assembly })!;
+        }
+
+
+        [Fact]
+        public void ReturnsUnknown_WhenAttributeMissing()
+        {
+            var result = Run(null);
+            Assert.Equal("Unknown", result);
+        }
+
+        [Fact]
+        public void ReturnsUnknown_WhenTfmIsNull()
+        {
+            var result = Run((string?)null);
+            Assert.Equal("Unknown", result);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void ReturnsUnknown_WhenTfmEmptyOrWhitespace(string tfm)
+        {
+            var result = Run(tfm);
+            Assert.Equal("Unknown", result);
+        }
+
+        [Fact]
+        public void RemovesPlatformSuffix_AndFormatsCorrectly()
+        {
+            var result = Run("net8.0-windows");
+            Assert.Equal(".NET 8.0", result);
+        }
+
+        [Fact]
+        public void FormatsPlainNetTfm()
+        {
+            var result = Run("net10.0");
+            Assert.Equal(".NET 10.0", result);
+        }
+
+        [Fact]
+        public void ReturnsRawValue_WhenNotNetTfm()
+        {
+            var result = Run("random");
+            Assert.Equal("random", result);
+        }
+
+        [Fact]
+        public void GetBuiltWithFramework_DefaultsToExecutingAssembly()
+        {
+            // Call without passing an assembly
+            string result = Helper.GetBuiltWithFramework();
+
+            // It should return something based on the current executing assembly
+            Assert.NotNull(result);
         }
     }
 }

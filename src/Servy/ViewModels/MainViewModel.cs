@@ -1067,7 +1067,7 @@ namespace Servy.ViewModels
             await _helpService.OpenAboutDialog(
                 string.Format(Strings.Text_About, 
                 Core.Config.AppConfig.Version, 
-                RuntimeInformation.FrameworkDescription,
+                Helper.GetBuiltWithFramework(),
                 DateTime.Now.Year), 
                 AppConfig.Caption);
         }
