@@ -18,6 +18,10 @@ namespace Servy.Core.Services
             => NativeMethods.OpenSCManager(machineName, databaseName, dwAccess);
 
         /// <inheritdoc />
+        public void Ensure(string accountName)
+            => LogonAsServiceGrant.Ensure(accountName);
+
+        /// <inheritdoc />
         public IntPtr CreateService(
             IntPtr hSCManager,
             string lpServiceName,
