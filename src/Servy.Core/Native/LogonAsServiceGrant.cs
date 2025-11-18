@@ -71,10 +71,10 @@ namespace Servy.Core.Native
 
             try
             {
-                var oa = new LSA_OBJECT_ATTRIBUTES();
+                var oa = new LsaObjectAttributes();
                 int status = LsaOpenPolicy(IntPtr.Zero, ref oa, PolicyAccess.POLICY_LOOKUP_NAMES, out policy);
                 if (status != 0)
-                    throw new Exception($"LsaOpenPolicy failed: 0x{status:X}");
+                    throw new InvalidOperationException($"LsaOpenPolicy failed: 0x{status:X}");
 
                 uint rightsCount = 0;
                 byte[] sidBytes = new byte[sid.BinaryLength];
@@ -87,13 +87,13 @@ namespace Servy.Core.Native
                     return false;
 
                 if (status != 0)
-                    throw new Exception($"LsaEnumerateAccountRights failed: 0x{status:X}");
+                    throw new InvalidOperationException($"LsaEnumerateAccountRights failed: 0x{status:X}");
 
-                int structSize = Marshal.SizeOf(typeof(LSA_UNICODE_STRING));
+                int structSize = Marshal.SizeOf(typeof(LsaUnicodeString));
                 for (int i = 0; i < rightsCount; i++)
                 {
                     IntPtr itemPtr = IntPtr.Add(rightsPtr, i * structSize);
-                    var lus = Marshal.PtrToStructure<LSA_UNICODE_STRING>(itemPtr);
+                    var lus = Marshal.PtrToStructure<LsaUnicodeString>(itemPtr);
 
                     if (lus.Buffer == IntPtr.Zero || lus.Length == 0)
                         continue;
@@ -128,13 +128,13 @@ namespace Servy.Core.Native
 
             try
             {
-                var oa = new LSA_OBJECT_ATTRIBUTES();
+                var oa = new LsaObjectAttributes();
                 int status = LsaOpenPolicy(IntPtr.Zero, ref oa, PolicyAccess.POLICY_ALL_ACCESS, out policy);
                 if (status != 0)
-                    throw new Exception($"LsaOpenPolicy failed: 0x{status:X}");
+                    throw new InvalidOperationException($"LsaOpenPolicy failed: 0x{status:X}");
 
                 buffer = Marshal.StringToHGlobalUni(SE_SERVICE_LOGON_NAME);
-                var lus = new LSA_UNICODE_STRING
+                var lus = new LsaUnicodeString
                 {
                     Length = (ushort)(SE_SERVICE_LOGON_NAME.Length * 2),
                     MaximumLength = (ushort)((SE_SERVICE_LOGON_NAME.Length * 2) + 2),
@@ -144,7 +144,7 @@ namespace Servy.Core.Native
 
                 status = LsaAddAccountRights(policy, sid.GetBinaryForm(), rights, 1);
                 if (status != 0)
-                    throw new Exception($"LsaAddAccountRights failed: 0x{status:X}");
+                    throw new InvalidOperationException($"LsaAddAccountRights failed: 0x{status:X}");
             }
             finally
             {
@@ -166,13 +166,13 @@ namespace Servy.Core.Native
         #region Interop
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct LSA_UNICODE_STRING
+        private struct LsaUnicodeString
         {
             public ushort Length;
             public ushort MaximumLength;
             public IntPtr Buffer;
 
-            public LSA_UNICODE_STRING(string s)
+            public LsaUnicodeString(string s)
             {
                 Length = (ushort)(s.Length * 2);
                 MaximumLength = (ushort)(Length + 2);
@@ -181,7 +181,7 @@ namespace Servy.Core.Native
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct LSA_OBJECT_ATTRIBUTES
+        private struct LsaObjectAttributes
         {
             public int Length;
             public IntPtr RootDir;
@@ -200,7 +200,7 @@ namespace Servy.Core.Native
         [DllImport("advapi32.dll")]
         private static extern int LsaOpenPolicy(
             IntPtr systemName,
-            ref LSA_OBJECT_ATTRIBUTES objectAttributes,
+            ref LsaObjectAttributes objectAttributes,
             uint desiredAccess,
             out IntPtr policyHandle);
 
@@ -208,7 +208,7 @@ namespace Servy.Core.Native
         private static extern int LsaAddAccountRights(
             IntPtr policyHandle,
             byte[] accountSid,
-            LSA_UNICODE_STRING[] userRights,
+            LsaUnicodeString[] userRights,
             int count);
 
         [DllImport("advapi32.dll")]
