@@ -330,8 +330,14 @@ namespace Servy.Core.Services
                 string? lpServiceStartName = string.IsNullOrWhiteSpace(username) ? LocalSystemAccount : username;
                 string? lpPassword = string.IsNullOrEmpty(password) ? null : password;
 
-                //  Ensures the specified account has the "Log on as a service" right for non gMSA$ accounts
-                if (!lpServiceStartName.Equals(LocalSystemAccount) && !lpServiceStartName.EndsWith('$'))
+                // Grant "Log on as a service" only for regular user accounts (local or Active Directory).
+                // Skip LocalSystem (already has rights) and gMSA accounts (managed by Active Directory policies).
+                bool isLocalSystem = lpServiceStartName.Equals(LocalSystemAccount, StringComparison.OrdinalIgnoreCase);
+                bool isGmsa = lpServiceStartName.EndsWith('$');
+
+                // For normal user accounts (local or AD) that are not gMSA or LocalSystem,
+                // explicitly ensure they have the "Log on as a service" right locally.
+                if (!isLocalSystem && !isGmsa)
                 {
                     _windowsServiceApi.Ensure(lpServiceStartName);
                 }
