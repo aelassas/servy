@@ -64,6 +64,7 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
+            _viewModel.ServiceDisplayName = "TestServiceDisplayName";
             _viewModel.ServiceDescription = "Desc";
             _viewModel.ProcessPath = "C:\\test.exe";
             _viewModel.StartupDirectory = "C:\\";
@@ -149,8 +150,8 @@ namespace Servy.UnitTests.ViewModels
                  @"C:\post-launch.exe",
                  @"C:\",
                  "--param1 val1",
-                 false
-
+                 false,
+                 "TestServiceDisplayName"
             ), Times.Once);
         }
 

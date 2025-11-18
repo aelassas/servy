@@ -20,6 +20,7 @@ namespace Servy.Mappers
             return new Service(serviceManager)
             {
                 Name = config.Name,
+                DisplayName = config.DisplayName,
                 Description = config.Description,
                 ExecutablePath = config.ExecutablePath,
                 StartupDirectory = config.StartupDirectory,

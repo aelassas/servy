@@ -33,6 +33,7 @@ namespace Servy.UnitTests.Services
         {
             // Arrange
             var serviceName = "TestService";
+            var serviceDisplayName = "TestService";
             var serviceDescription = "Test Service Description";
             var processPath = @"C:\path\to\exe.exe";
             var startupDirectory = @"C:\path\to";
@@ -116,7 +117,9 @@ namespace Servy.UnitTests.Services
                 postLaunchExe,
                 postLaunchDir,
                 postLaunchArgs,
-                enableDebugLogs
+                enableDebugLogs,
+
+                serviceDisplayName
                 );
 
             // Assert
@@ -161,7 +164,9 @@ namespace Servy.UnitTests.Services
                 postLaunchExe,
                 postLaunchDir,
                 postLaunchArgs,
-                enableDebugLogs
+                enableDebugLogs,
+
+                serviceDisplayName
                 ), Times.Once);
         }
 
