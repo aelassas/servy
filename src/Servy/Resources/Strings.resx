@@ -103,7 +103,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Display Name</value>
   </data>
   <data name="Info_ServiceDisplayName" xml:space="preserve">
-    <value>Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead. The Display Name can be changed later.</value>
+    <value>Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead.</value>
   </data>
   <data name="Label_ServiceDescription" xml:space="preserve">
     <value>Service Description</value>
@@ -218,7 +218,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Info_RecoveryAction" xml:space="preserve">
     <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.</value>
-  </data>  
+  </data>
   <data name="Label_MaxRestartAttempts" xml:space="preserve">
     <value>Max Restart Attempts</value>
   </data>
