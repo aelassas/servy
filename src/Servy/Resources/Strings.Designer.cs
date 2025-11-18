@@ -251,7 +251,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead. The Display Name can be changed later..
+        ///   Recherche une chaîne localisée semblable à Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead..
         /// </summary>
         public static string Info_ServiceDisplayName {
             get {

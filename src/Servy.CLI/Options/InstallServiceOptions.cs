@@ -19,7 +19,7 @@ namespace Servy.CLI.Options
         /// <summary>
         /// Gets or sets the service display name.
         /// </summary>
-        [Option("displayName", HelpText = "The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead. The Display Name can be changed later.")]
+        [Option("displayName", HelpText = "The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead.")]
         public string ServiceDisplayName { get; set; }
 
         /// <summary>
