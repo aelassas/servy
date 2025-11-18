@@ -21,6 +21,18 @@ namespace Servy.Core.Services
         IntPtr OpenSCManager(string machineName, string databaseName, uint dwAccess);
 
         /// <summary>
+        /// Ensures the specified account has the "Log on as a service" right.
+        /// </summary>
+        /// <param name="accountName">
+        /// The account to grant the right to. Can be a domain account (DOMAIN\user),
+        /// or a local account (.\user or MACHINE_NAME\user).
+        /// </param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown if the account cannot be resolved to a SID.
+        /// </exception>
+        void Ensure(string accountName);
+
+        /// <summary>
         /// Creates a service object and adds it to the specified service control manager database.
         /// </summary>
         /// <param name="hSCManager">Handle to the service control manager.</param>

@@ -53,6 +53,9 @@ namespace Servy.CLI
                 var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));
 
+                // Ensure event source exists
+                Core.Helpers.Helper.EnsureEventSourceExists();
+
                 var config = ConfigurationManager.AppSettings;
 
                 var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;

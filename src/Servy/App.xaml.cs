@@ -107,6 +107,9 @@ namespace Servy
 
             try
             {
+                // Ensure event source exists
+                Helper.EnsureEventSourceExists();
+
                 // Load configuration from App.config
                 var config = ConfigurationManager.AppSettings;
                 ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
