@@ -208,6 +208,11 @@ function Install-ServyService {
     .PARAMETER Name
         The unique name of the service to install. (Required)
 
+    .PARAMETER DisplayName
+        The display name of the service to install. Optional.
+        The human-readable name shown in the Windows Services console (services.msc). 
+        If left empty, the service name will be used instead. The Display Name can be changed later.
+
     .PARAMETER Path
         Path to the executable process to run as the service. (Required)
 
@@ -339,6 +344,8 @@ function Install-ServyService {
     [Parameter(Mandatory = $true)]
     [string] $Name,
 
+    [string] $DisplayName,
+
     [string] $Description,
 
     [Parameter(Mandatory = $true)]
@@ -402,6 +409,7 @@ function Install-ServyService {
   if ($Quiet) { $argsList.Add("--quiet") }
 
   $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = Add-Arg $argsList "--displayName" $DisplayName
   $argsList = Add-Arg $argsList "--path" $Path
   $argsList = Add-Arg $argsList "--description" $Description
   $argsList = Add-Arg $argsList "--startupDir" $StartupDir

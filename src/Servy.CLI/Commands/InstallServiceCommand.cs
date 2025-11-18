@@ -110,7 +110,9 @@ namespace Servy.CLI.Commands
                     postLaunchWorkingDirectory:opts.PostLaunchStartupDir,
                     postLaunchArgs: opts.PostLaunchParameters,
                     // Debug Logs
-                    enableDebugLogs:opts.EnableDebugLogs
+                    enableDebugLogs:opts.EnableDebugLogs,
+                    // Display name
+                    displayName: opts.ServiceDisplayName
                 );
 
                 if (!success)

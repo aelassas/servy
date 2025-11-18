@@ -96,7 +96,8 @@ namespace Servy.Core.Services
         /// <param name="startType">The service startup type.</param>
         /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
         /// <param name="password">Service account password.</param>
-        /// <param name="lpDependencies">Service dependencies</param>
+        /// <param name="lpDependencies">Service dependencies.</param>
+        /// <param name="displayName">Service display name.</param>
         /// <returns>
         /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
         /// </returns>
@@ -109,7 +110,8 @@ namespace Servy.Core.Services
             ServiceStartType startType,
             string? username,
             string? password,
-            string? lpDependencies
+            string? lpDependencies,
+            string? displayName
             )
         {
             IntPtr serviceHandle = _windowsServiceApi.OpenService(
@@ -119,6 +121,11 @@ namespace Servy.Core.Services
 
             if (serviceHandle == IntPtr.Zero)
                 throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                displayName = serviceName;
+            }
 
             try
             {
@@ -133,7 +140,7 @@ namespace Servy.Core.Services
                         lpDependencies: lpDependencies,
                         lpServiceStartName: username,
                         lpPassword: password,
-                        lpDisplayName: null
+                        lpDisplayName: displayName
                         );
 
                 if (!result)
@@ -254,7 +261,8 @@ namespace Servy.Core.Services
                 string? postLaunchExePath = null,
                 string? postLaunchWorkingDirectory = null,
                 string? postLaunchArgs = null,
-                bool enableDebugLogs = false
+                bool enableDebugLogs = false,
+                string? displayName = null
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -310,6 +318,11 @@ namespace Servy.Core.Services
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                displayName = serviceName;
+            }
+
             IntPtr serviceHandle = IntPtr.Zero;
             try
             {
@@ -320,7 +333,7 @@ namespace Servy.Core.Services
                 serviceHandle = _windowsServiceApi.CreateService(
                     hSCManager: scmHandle,
                     lpServiceName: serviceName,
-                    lpDisplayName: serviceName,
+                    lpDisplayName: displayName,
                     dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
                     dwServiceType: SERVICE_WIN32_OWN_PROCESS,
                     dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
@@ -337,6 +350,7 @@ namespace Servy.Core.Services
                 var dto = new ServiceDto
                 {
                     Name = serviceName,
+                    DisplayName = displayName,
                     Description = description,
                     ExecutablePath = realExePath,
                     StartupDirectory = workingDirectory,
@@ -405,7 +419,8 @@ namespace Servy.Core.Services
                             startType: startType,
                             username: lpServiceStartName,
                             password: lpPassword,
-                            lpDependencies: lpDependencies
+                            lpDependencies: lpDependencies,
+                            displayName: displayName
                         );
 
                         // Set delayed auto-start if necessary

@@ -95,9 +95,15 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Pre-Launch</value>
   </data>
 
-  <!-- Labels -->
+  <!-- Labels / Info -->
   <data name="Label_ServiceName" xml:space="preserve">
     <value>Service Name *</value>
+  </data>
+  <data name="Label_ServiceDisplayName" xml:space="preserve">
+    <value>Display Name</value>
+  </data>
+  <data name="Info_ServiceDisplayName" xml:space="preserve">
+    <value>Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead. The Display Name can be changed later.</value>
   </data>
   <data name="Label_ServiceDescription" xml:space="preserve">
     <value>Service Description</value>

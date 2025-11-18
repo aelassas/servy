@@ -118,6 +118,7 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
+                DisplayName = "TestService",
                 Description = "My Test Service",
                 ExecutablePath = "C:\\real.exe",
                 StartupDirectory = @"C:\MyApp",
@@ -187,7 +188,8 @@ namespace Servy.Core.UnitTests.Domain
                      service.PostLaunchStartupDirectory,
                      service.PostLaunchParameters,
 
-                     service.EnableDebugLogs
+                     service.EnableDebugLogs,
+                     service.DisplayName
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -208,6 +210,7 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
+                DisplayName = "TestService",
                 Description = null,
                 ExecutablePath = @"C:\real.exe",
                 StartupDirectory = null,
@@ -278,7 +281,8 @@ namespace Servy.Core.UnitTests.Domain
                      service.PostLaunchStartupDirectory,
                      service.PostLaunchParameters,
 
-                     service.EnableDebugLogs
+                     service.EnableDebugLogs,
+                     service.DisplayName
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -299,6 +303,7 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
+                DisplayName = "TestService",
                 Description = null,
                 ExecutablePath = null!, // forces Path.GetDirectoryName(null) => null
                 StartupDirectory = null,
@@ -350,7 +355,8 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // postLaunchExePath
                     null,                                // postLaunchWorkingDirectory
                     null,                                // postLaunchArgs
-                    It.IsAny<bool>()                     // enableDebugLogs
+                    It.IsAny<bool>(),                    // enableDebugLogs
+                    service.DisplayName                  // displayName
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

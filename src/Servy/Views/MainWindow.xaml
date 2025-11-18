@@ -73,6 +73,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>                            
                         </Grid.RowDefinitions>
 
@@ -86,32 +88,41 @@
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceName}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ServiceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
+                        <!-- Service Display Name -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDisplayName}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ServiceDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                            Text="{x:Static resx:Strings.Info_ServiceDisplayName}" 
+                            FontStyle="Normal" 
+                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                            TextWrapping="Wrap"/>
+                        
                         <!-- Service Description -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDescription}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ServiceDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDescription}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ServiceDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
                         <!-- Process Path -->
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ProcessPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="2" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseProcessPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ProcessPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="4" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseProcessPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Startup Directory -->
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding StartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="3" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStartupDirectoryCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding StartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="5" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStartupDirectoryCommand}" Margin="5,5,0,5"/>
 
                         <!-- Process Parameters -->
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_ProcessParameters}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                              TextWrapping="Wrap"/>
 
                         <!-- Startup Type -->
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupType}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="6" 
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupType}" Margin="0,5,10,5"/>
+                        <ComboBox Grid.Row="8" 
                                   Grid.Column="1"
                                   ItemsSource="{Binding StartupTypes}"
                                   DisplayMemberPath="DisplayName"
@@ -121,8 +132,8 @@
                                   Grid.ColumnSpan="2" />
 
                         <!-- Process Priority -->
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPriority}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="7" Grid.Column="1"
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPriority}" Margin="0,5,10,5"/>
+                        <ComboBox Grid.Row="9" Grid.Column="1"
                                   ItemsSource="{Binding ProcessPriorities}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedProcessPriority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -131,33 +142,33 @@
                                   Grid.ColumnSpan="2" />
 
                         <!-- Stdout Path -->
-                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding StdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="8" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStdoutPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding StdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="10" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStdoutPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Stderr Path -->
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding StderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="9" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStderrPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding StderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="11" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStderrPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Enable Rotation -->
-                        <CheckBox Grid.Row="10" Grid.Column="1"
+                        <CheckBox Grid.Row="12" Grid.Column="1"
                                   Content="{x:Static resx:Strings.Label_EnableRotation}"
                                   IsChecked="{Binding EnableRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   Margin="0,5" />
 
                         <!-- Rotation Size -->
-                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_RotationSize}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableRotation}" />
-                        <TextBlock Grid.Row="11" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="13" Grid.Column="0" Text="{x:Static resx:Strings.Label_RotationSize}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableRotation}" />
+                        <TextBlock Grid.Row="13" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
 
                         <!-- Enable Debug Logs -->
-                        <CheckBox Grid.Row="12" Grid.Column="1"
+                        <CheckBox Grid.Row="14" Grid.Column="1"
                            Content="{x:Static resx:Strings.Label_EnableDebugLogs}"
                            IsChecked="{Binding EnableDebugLogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            Margin="0,5" />
-                        <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
                            Text="{x:Static resx:Strings.Info_EnableDebugLogs}" 
                            FontStyle="Normal" 
                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"

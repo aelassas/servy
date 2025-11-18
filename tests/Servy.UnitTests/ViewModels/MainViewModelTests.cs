@@ -32,8 +32,8 @@ namespace Servy.UnitTests.ViewModels
             _serviceRepository = new Mock<IServiceRepository>();
             _helpService = new Mock<IHelpService>();
             _viewModel = new MainViewModel(_dialogServiceMock.Object,
-                _serviceCommandsMock.Object, 
-                _messageBoxService.Object, 
+                _serviceCommandsMock.Object,
+                _messageBoxService.Object,
                 _serviceRepository.Object,
                 _helpService.Object
                 );
@@ -62,6 +62,7 @@ namespace Servy.UnitTests.ViewModels
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
+            _viewModel.ServiceDisplayName = "TestServiceDisplayName";
             _viewModel.ServiceDescription = "Desc";
             _viewModel.ProcessPath = "C:\\test.exe";
             _viewModel.StartupDirectory = "C:\\";
@@ -147,8 +148,8 @@ namespace Servy.UnitTests.ViewModels
                  @"C:\post-launch.exe",
                  @"C:\",
                  "--param1 val1",
-                 false
-
+                 false,
+                 "TestServiceDisplayName"
             ), Times.Once);
         }
 

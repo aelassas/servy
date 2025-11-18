@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-16"?>
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>notepad</Name>
+  <DisplayName>notepad_dn</DisplayName>
   <Description>notepad</Description>
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
   <StartupType>2</StartupType>

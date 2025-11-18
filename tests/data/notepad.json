@@ -1,0 +1,20 @@
+{
+  "Name": "notepad",
+  "DisplayName": "notepad_dn",
+  "Description": "notepad",
+  "ExecutablePath": "C:\\Windows\\System32\\notepad.exe",
+  "StartupType": 2,
+  "Priority": 2,
+  "EnableRotation": false,
+  "RotationSize": 10,
+  "EnableHealthMonitoring": false,
+  "HeartbeatInterval": 30,
+  "MaxFailedChecks": 3,
+  "RecoveryAction": 1,
+  "MaxRestartAttempts": 3,
+  "RunAsLocalSystem": true,
+  "PreLaunchTimeoutSeconds": 30,
+  "PreLaunchRetryAttempts": 0,
+  "PreLaunchIgnoreFailure": false,
+  "EnableDebugLogs": false
+}

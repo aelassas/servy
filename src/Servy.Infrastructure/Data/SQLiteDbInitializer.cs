@@ -89,6 +89,9 @@ namespace Servy.Infrastructure.Data
 
                 // Debug Logs
                 new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
+
+                // DisplayName
+                new KeyValuePair<string, string>("DisplayName", "ALTER TABLE Services ADD COLUMN DisplayName TEXT;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))
