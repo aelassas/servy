@@ -111,7 +111,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(@"C:\Path""File", @"""C:\Path\""File""")] // quote in the middle
         [InlineData(@"\\""", @"""\\\\\""""")] // backslash directly before a quote
         [InlineData(@"Mixed\Path""End\", @"""Mixed\Path\""End\\""")] // mix of both
-        [InlineData("abc\0def", @"""abc\0def""")] // contains a null character → replaced with literal "\0"
+        [InlineData("abc\0def", @"""abc\0def""")] // contains a null character -> replaced with literal "\0"
         public void Quote_ShouldEscapeCorrectly(string input, string expected)
         {
             // Act
@@ -132,7 +132,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(@"C:\Path""File", @"C:\Path\""File")] // quote in the middle
         [InlineData(@"\\""", @"\\\\\""")] // backslash directly before a quote
         [InlineData(@"Mixed\Path""End\", @"Mixed\Path\""End\\")] // mix of both
-        [InlineData("abc\0def", @"abc\0def")] // contains a null character → replaced with literal "\0"
+        [InlineData("abc\0def", @"abc\0def")] // contains a null character -> replaced with literal "\0"
         public void EscapeArgs_ShouldEscapeCorrectly(string input, string expected)
         {
             // Act
@@ -153,7 +153,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(@"\""", @"\\""")]                    // Single backslash + quote — doubled before quote
         [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
-        [InlineData("abc\0def", @"abc\0def")]           // Contains null char → replaced with literal "\0"
+        [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"
         public void EscapeBackslashes_ShouldEscapeCorrectly(string input, string expected)
         {
             // Act

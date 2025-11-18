@@ -61,7 +61,7 @@ namespace Servy.Core.Helpers
 
                     if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
                     {
-                        // First measurement → just store sample
+                        // First measurement -> just store sample
                         CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
                         {
                             LastTime = now,
@@ -92,7 +92,7 @@ namespace Servy.Core.Helpers
             }
             catch (ArgumentException)
             {
-                // Process no longer exists → remove stale entry
+                // Process no longer exists -> remove stale entry
                 CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
                 return 0;
             }
@@ -135,17 +135,17 @@ namespace Servy.Core.Helpers
         /// A formatted string with a percent sign.
         /// Examples:
         /// <list type="bullet">
-        /// <item><description>0 → "0%"</description></item>
-        /// <item><description>0.03 → "0%"</description></item>
-        /// <item><description>1 → "1.0%"</description></item>
-        /// <item><description>1.04 → "1.0%"</description></item>
-        /// <item><description>1.05 → "1.1%"</description></item>
-        /// <item><description>1.06 → "1.1%"</description></item>
-        /// <item><description>1.1 → "1.1%"</description></item>
-        /// <item><description>1.49 → "1.4%"</description></item>
-        /// <item><description>1.51 → "1.5%"</description></item>
-        /// <item><description>1.57 → "1.5%"</description></item>
-        /// <item><description>1.636 → "1.6%"</description></item>
+        /// <item><description>0 -> "0%"</description></item>
+        /// <item><description>0.03 -> "0%"</description></item>
+        /// <item><description>1 -> "1.0%"</description></item>
+        /// <item><description>1.04 -> "1.0%"</description></item>
+        /// <item><description>1.05 -> "1.1%"</description></item>
+        /// <item><description>1.06 -> "1.1%"</description></item>
+        /// <item><description>1.1 -> "1.1%"</description></item>
+        /// <item><description>1.49 -> "1.4%"</description></item>
+        /// <item><description>1.51 -> "1.5%"</description></item>
+        /// <item><description>1.57 -> "1.5%"</description></item>
+        /// <item><description>1.636 -> "1.6%"</description></item>
         /// </list>
         /// </returns>
         public static string FormatCpuUsage(double cpuUsage)
@@ -169,10 +169,10 @@ namespace Servy.Core.Helpers
         /// B, KB, MB, GB, or TB.
         /// Examples:
         /// <list type="bullet">
-        /// <item><description>512 → "512.0 B"</description></item>
-        /// <item><description>2048 → "2.0 KB"</description></item>
-        /// <item><description>1048576 → "1.0 MB"</description></item>
-        /// <item><description>1073741824 → "1.0 GB"</description></item>
+        /// <item><description>512 -> "512.0 B"</description></item>
+        /// <item><description>2048 -> "2.0 KB"</description></item>
+        /// <item><description>1048576 -> "1.0 MB"</description></item>
+        /// <item><description>1073741824 -> "1.0 GB"</description></item>
         /// </list>
         /// </returns>
         public static string FormatRamUsage(long ramUsage)
