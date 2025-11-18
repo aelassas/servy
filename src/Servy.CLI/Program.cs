@@ -52,6 +52,9 @@ namespace Servy.CLI
                 var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
                                  a.Equals("-q", StringComparison.OrdinalIgnoreCase));
 
+                // Ensure event source exists
+                Core.Helpers.Helper.EnsureEventSourceExists();
+
                 // Load configuration from appsettings.json
                 var builder = new ConfigurationBuilder();
 #if DEBUG

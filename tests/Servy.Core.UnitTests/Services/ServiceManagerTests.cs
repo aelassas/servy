@@ -639,6 +639,7 @@ namespace Servy.Core.UnitTests.Services
             var scmHandle = new IntPtr(123);
             var serviceName = "TestService";
             var description = "Test Description";
+            var gMSA = @"TEST\gMSA$";
 
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
@@ -656,7 +657,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 IntPtr.Zero,
                 ServiceDependenciesParser.NoDependencies,
-                ServiceManager.LocalSystemAccount,
+                gMSA,
                 null))
                 .Returns(serviceHandle);
 
@@ -696,7 +697,7 @@ namespace Servy.Core.UnitTests.Services
                 0,
                 string.Empty,
                 null,
-                null,
+                gMSA,
                 null,
 
                 "pre-launch.exe",
@@ -712,7 +713,7 @@ namespace Servy.Core.UnitTests.Services
 
             Assert.True(result);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, gMSA, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny), Times.Once);
         }
 

@@ -35,7 +35,8 @@ namespace Servy.Service
             var asm = Assembly.GetExecutingAssembly();
             string eventSource = AppConfig.ServiceNameEventSource;
 
-            EnsureEventSourceExists(eventSource);
+            // Ensure event source exists
+            Helper.EnsureEventSourceExists();
 
             if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
             {
@@ -66,16 +67,5 @@ namespace Servy.Service
             ServiceBase.Run(servicesToRun);
         }
 
-        /// <summary>
-        /// Ensures the event source exists for writing to the Windows Event Log.
-        /// Creates it if it does not exist.
-        /// </summary>
-        private static void EnsureEventSourceExists(string source)
-        {
-            if (!EventLog.SourceExists(source))
-            {
-                EventLog.CreateEventSource(source, "Application");
-            }
-        }
     }
 }

@@ -1,4 +1,7 @@
-﻿using System.Globalization;
+﻿using Servy.Core.Config;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 
@@ -272,6 +275,35 @@ namespace Servy.Core.Helpers
 
             // Fallback: return raw value
             return tfm;
+        }
+
+        /// <summary>
+        /// Ensures that the Event Log source for the service exists.
+        /// If the source does not exist, it is created under the Application log.
+        /// </summary>
+        /// <remarks>
+        /// This must be run with administrator privileges. 
+        /// Event Log sources are machine-wide and typically only need to be created once per machine.
+        /// </remarks>
+        [ExcludeFromCodeCoverage]
+        public static void EnsureEventSourceExists()
+        {
+            string sourceName = AppConfig.ServiceNameEventSource;
+            string logName = "Application";
+
+            try
+            {
+                // Check if the source already exists
+                if (!EventLog.SourceExists(sourceName))
+                {
+                    EventLog.CreateEventSource(sourceName, logName);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to ensure Event Log source '{sourceName}' on log '{logName}'.", ex);
+            }
         }
 
     }

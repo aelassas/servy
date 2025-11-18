@@ -330,6 +330,12 @@ namespace Servy.Core.Services
                 string? lpServiceStartName = string.IsNullOrWhiteSpace(username) ? LocalSystemAccount : username;
                 string? lpPassword = string.IsNullOrEmpty(password) ? null : password;
 
+                //  Ensures the specified account has the "Log on as a service" right for non gMSA$ accounts
+                if (!lpServiceStartName.Equals(LocalSystemAccount) && !lpServiceStartName.EndsWith('$'))
+                {
+                    _windowsServiceApi.Ensure(lpServiceStartName);
+                }
+
                 serviceHandle = _windowsServiceApi.CreateService(
                     hSCManager: scmHandle,
                     lpServiceName: serviceName,

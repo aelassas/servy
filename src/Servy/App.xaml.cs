@@ -101,6 +101,9 @@ namespace Servy
 
             try
             {
+                // Ensure event source exists
+                Helper.EnsureEventSourceExists();
+
                 // Load configuration from appsettings.json
                 var builder = new ConfigurationBuilder();
 #if DEBUG
@@ -175,7 +178,6 @@ namespace Servy
                     }
 
                 });
-
 
                 var mainWindow = new MainWindow();
                 mainWindow.Show();

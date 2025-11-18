@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 
 /// <summary>
@@ -29,6 +30,9 @@ namespace Servy.Restarter
 
             try
             {
+                // Ensure event source exists
+                Helper.EnsureEventSourceExists();
+
                 restarter.RestartService(serviceName);
                 Environment.Exit(0);
             }
