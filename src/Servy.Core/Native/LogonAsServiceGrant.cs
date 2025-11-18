@@ -66,6 +66,7 @@ namespace Servy.Core.Native
         /// <returns>True if the account has the right; otherwise false.</returns>
         private static bool HasLogonAsService(SecurityIdentifier sid)
         {
+            IntPtr sidPtr = IntPtr.Zero;
             IntPtr policy = IntPtr.Zero;
             IntPtr rightsPtr = IntPtr.Zero;
 
@@ -77,10 +78,14 @@ namespace Servy.Core.Native
                     throw new InvalidOperationException($"LsaOpenPolicy failed: 0x{status:X}");
 
                 uint rightsCount = 0;
-                byte[] sidBytes = new byte[sid.BinaryLength];
-                sid.GetBinaryForm(sidBytes, 0);
 
-                status = LsaEnumerateAccountRights(policy, sidBytes, out rightsPtr, out rightsCount);
+                byte[] sidBytes = sid.GetBinaryForm();
+
+                // Allocate unmanaged memory for SID
+                sidPtr = Marshal.AllocHGlobal(sidBytes.Length);
+                Marshal.Copy(sidBytes, 0, sidPtr, sidBytes.Length);
+
+                status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out rightsCount);
 
                 // STATUS_OBJECT_NAME_NOT_FOUND → the account has *no* rights at all
                 if (status == unchecked((int)0xC0000034))
@@ -107,6 +112,8 @@ namespace Servy.Core.Native
             }
             finally
             {
+                if (sidPtr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(sidPtr);
                 if (rightsPtr != IntPtr.Zero)
                     LsaFreeMemory(rightsPtr);
                 if (policy != IntPtr.Zero)
@@ -123,6 +130,7 @@ namespace Servy.Core.Native
         /// <param name="sid">The security identifier of the account.</param>
         private static void GrantLogonAsService(SecurityIdentifier sid)
         {
+            IntPtr sidPtr = IntPtr.Zero;
             IntPtr policy = IntPtr.Zero;
             IntPtr buffer = IntPtr.Zero;
 
@@ -142,12 +150,19 @@ namespace Servy.Core.Native
                 };
                 var rights = new[] { lus };
 
-                status = LsaAddAccountRights(policy, sid.GetBinaryForm(), rights, 1);
+                byte[] sidBytes = sid.GetBinaryForm();
+
+                // Allocate unmanaged memory for SID
+                sidPtr = Marshal.AllocHGlobal(sidBytes.Length);
+                Marshal.Copy(sidBytes, 0, sidPtr, sidBytes.Length);
+
+                status = LsaAddAccountRights(policy, sidPtr, rights, 1);
                 if (status != 0)
                     throw new InvalidOperationException($"LsaAddAccountRights failed: 0x{status:X}");
             }
             finally
             {
+                if (sidPtr != IntPtr.Zero) Marshal.FreeHGlobal(sidPtr);
                 if (buffer != IntPtr.Zero) Marshal.FreeHGlobal(buffer);
                 if (policy != IntPtr.Zero) LsaClose(policy);
             }
@@ -207,14 +222,14 @@ namespace Servy.Core.Native
         [DllImport("advapi32.dll")]
         private static extern int LsaAddAccountRights(
             IntPtr policyHandle,
-            byte[] accountSid,
+            IntPtr accountSid,
             LsaUnicodeString[] userRights,
             int count);
 
         [DllImport("advapi32.dll")]
         private static extern int LsaEnumerateAccountRights(
             IntPtr policyHandle,
-            byte[] accountSid,
+            IntPtr accountSid,
             out IntPtr userRights,
             out uint countOfRights);
 
