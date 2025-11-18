@@ -231,7 +231,7 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = new RotatingStreamWriter(filePath, 5)) // tiny size
             {
-                writer.WriteLine("12345"); // exactly 5 bytes → triggers rotation
+                writer.WriteLine("12345"); // exactly 5 bytes -> triggers rotation
                 writer.Flush();
 
                 writer.WriteLine("more"); // write to new file

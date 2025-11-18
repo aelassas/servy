@@ -11,7 +11,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(1.04, "1.0%")]   // two decimals
         [InlineData(1.05, "1.1%")]   // two decimals
         [InlineData(1.06, "1.1%")]   // two decimals
-        [InlineData(1.1, "1.1%")]    // one decimal → force two decimals
+        [InlineData(1.1, "1.1%")]    // one decimal -> force two decimals
         [InlineData(1.23, "1.2%")]   // two decimals
         [InlineData(1.34, "1.3%")]   // rounding down
         [InlineData(1.35, "1.4%")]   // rounding up

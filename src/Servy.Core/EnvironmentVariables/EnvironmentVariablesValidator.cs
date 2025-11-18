@@ -92,7 +92,7 @@ namespace Servy.Core.EnvironmentVariables
                         j--;
                     }
 
-                    // If even number of backslashes → delimiter is unescaped
+                    // If even number of backslashes -> delimiter is unescaped
                     if (backslashCount % 2 == 0)
                     {
                         segments.Add(sb.ToString());
@@ -167,7 +167,7 @@ namespace Servy.Core.EnvironmentVariables
                         j--;
                     }
 
-                    // If even number of backslashes → char is unescaped
+                    // If even number of backslashes -> char is unescaped
                     if (backslashCount % 2 == 0)
                     {
                         return i;
