@@ -441,7 +441,7 @@ namespace Servy.Core.UnitTests.Services
                 ServiceDependenciesParser.NoDependencies,
                 ServiceManager.LocalSystemAccount,
                 null,
-                null))
+                It.IsAny<string>()))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
@@ -486,13 +486,14 @@ namespace Servy.Core.UnitTests.Services
                 "pre-launch-stderr.log",
                 30,
                 0,
-                true
+                true,
+                serviceName
                 );
 
             Assert.True(result);
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, It.IsAny<string>()), Times.Once);
 
             result = await _serviceManager.InstallService(
                 serviceName,
@@ -525,24 +526,11 @@ namespace Servy.Core.UnitTests.Services
                 "pre-launch-stderr.log",
                 30,
                 0,
-                true
+                true,
+                serviceName
                 );
 
             Assert.True(result);
-
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig(
-               serviceHandle,
-               It.IsAny<uint>(),
-               It.IsAny<uint>(),
-               It.IsAny<uint>(),
-               It.IsAny<string>(),
-               null,
-               IntPtr.Zero,
-               ServiceDependenciesParser.NoDependencies,
-               ServiceManager.LocalSystemAccount,
-               null,
-               null))
-               .Returns(false);
         }
 
         [Fact]
@@ -591,7 +579,7 @@ namespace Servy.Core.UnitTests.Services
                 ServiceDependenciesParser.NoDependencies,
                 ServiceManager.LocalSystemAccount,
                 null,
-                null))
+                It.IsAny<string>()))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
@@ -642,7 +630,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.False(result);
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -834,7 +822,7 @@ namespace Servy.Core.UnitTests.Services
                 null,
                 null,
                 null,
-                null))
+                It.IsAny<string>()))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
@@ -853,7 +841,22 @@ namespace Servy.Core.UnitTests.Services
                 ServiceStartType.Automatic,
                 null,
                 null,
+                null,
                 null
+                );
+
+            Assert.True(result);
+
+            result = _serviceManager.UpdateServiceConfig(
+                scmHandle,
+                serviceName,
+                description,
+                binPath,
+                ServiceStartType.Automatic,
+                null,
+                null,
+                null,
+                serviceName
                 );
 
             Assert.True(result);
@@ -902,6 +905,7 @@ namespace Servy.Core.UnitTests.Services
                     ServiceStartType.Automatic,
                     null,
                     null,
+                    null,
                     null
                     )
             );
@@ -920,6 +924,7 @@ namespace Servy.Core.UnitTests.Services
                     description,
                     binPath,
                     ServiceStartType.Automatic,
+                    null,
                     null,
                     null,
                     null

@@ -114,7 +114,8 @@ namespace Servy.Services
             string postLaunchExePath,
             string postLaunchWorkingDirectory,
             string postLaunchArgs,
-            bool enableDebugLogs
+            bool enableDebugLogs,
+            string displayName
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -129,6 +130,7 @@ namespace Servy.Services
             var dto = new ServiceDto
             {
                 Name = serviceName,
+                DisplayName = displayName,
                 Description = serviceDescription,
                 ExecutablePath = processPath,
                 StartupDirectory = startupDirectory,
@@ -237,7 +239,8 @@ namespace Servy.Services
                     postLaunchExePath: postLaunchExePath,
                     postLaunchWorkingDirectory: postLaunchWorkingDirectory,
                     postLaunchArgs: postLaunchArgs,
-                    enableDebugLogs: enableDebugLogs
+                    enableDebugLogs: enableDebugLogs,
+                    displayName: displayName
                 );
 
                 if (success)

@@ -66,7 +66,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -75,7 +75,7 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName
                 );
                 SELECT last_insert_rowid();";
 
@@ -131,7 +131,9 @@ namespace Servy.Infrastructure.Data
 
                     Pid = @Pid,
 
-                    EnableDebugLogs = @EnableDebugLogs
+                    EnableDebugLogs = @EnableDebugLogs,
+
+                    DisplayName = @DisplayName
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);
@@ -430,6 +432,8 @@ namespace Servy.Infrastructure.Data
                 PostLaunchParameters = dto.PostLaunchParameters,
 
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
+
+                DisplayName = dto.DisplayName,
             };
         }
 
@@ -484,6 +488,8 @@ namespace Servy.Infrastructure.Data
                 PostLaunchParameters = domain.PostLaunchParameters,
 
                 EnableDebugLogs = domain.EnableDebugLogs,
+
+                DisplayName = domain.DisplayName,
             };
         }
 

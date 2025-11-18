@@ -45,6 +45,15 @@ namespace Servy.Core.Domain
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
+        /// The **Display Name** of the service, shown in the Windows Services management console (<c>services.msc</c>).
+        /// </summary>
+        /// <remarks>
+        /// This name is human-readable, often includes prefixes for grouping, and can be changed 
+        /// after the service has been installed.
+        /// </remarks>
+        public string DisplayName { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets an optional description of the service.
         /// </summary>
         public string Description { get; set; }
@@ -386,7 +395,9 @@ namespace Servy.Core.Domain
                 postLaunchWorkingDirectory: PostLaunchStartupDirectory,
                 postLaunchArgs: PostLaunchParameters,
 
-                enableDebugLogs: EnableDebugLogs
+                enableDebugLogs: EnableDebugLogs,
+
+                displayName: DisplayName
             );
         }
 

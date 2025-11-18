@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -78,6 +79,22 @@ namespace Servy.ViewModels
                 if (_config.Name != value)
                 {
                     _config.Name = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the display name of the Windows service. 
+        /// </summary>
+        public string ServiceDisplayName
+        {
+            get => _config.DisplayName;
+            set
+            {
+                if (_config.DisplayName != value)
+                {
+                    _config.DisplayName = value;
                     OnPropertyChanged();
                 }
             }
@@ -893,7 +910,8 @@ namespace Servy.ViewModels
                 _config.PostLaunchExecutablePath,
                 _config.PostLaunchStartupDirectory,
                 _config.PostLaunchParameters,
-                _config.EnableDebugLogs
+                _config.EnableDebugLogs,
+                _config.DisplayName
                 );
         }
 
@@ -954,6 +972,7 @@ namespace Servy.ViewModels
 
             // Clear all fields
             ServiceName = string.Empty;
+            ServiceDisplayName = string.Empty;
             ServiceDescription = string.Empty;
             ProcessPath = string.Empty;
             StartupDirectory = string.Empty;
@@ -1094,6 +1113,7 @@ namespace Servy.ViewModels
         public void BindServiceDtoToModel(ServiceDto dto)
         {
             ServiceName = dto.Name;
+            ServiceDisplayName = dto.DisplayName;
             ServiceDescription = dto.Description;
             ProcessPath = dto.ExecutablePath;
             StartupDirectory = dto.StartupDirectory;
@@ -1154,6 +1174,7 @@ namespace Servy.ViewModels
             var dto = new ServiceDto
             {
                 Name = ServiceName,
+                DisplayName = ServiceDisplayName,
                 Description = ServiceDescription,
                 ExecutablePath = ProcessPath,
                 StartupDirectory = StartupDirectory,

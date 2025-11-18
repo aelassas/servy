@@ -251,6 +251,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead. The Display Name can be changed later..
+        /// </summary>
+        public static string Info_ServiceDisplayName {
+            get {
+                return ResourceManager.GetString("Info_ServiceDisplayName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$ for Group Managed Service Accounts)..
         /// </summary>
         public static string Info_UserAccount {
@@ -544,6 +553,15 @@ namespace Servy.Resources {
         public static string Label_ServiceDescription {
             get {
                 return ResourceManager.GetString("Label_ServiceDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Display Name.
+        /// </summary>
+        public static string Label_ServiceDisplayName {
+            get {
+                return ResourceManager.GetString("Label_ServiceDisplayName", resourceCulture);
             }
         }
         
