@@ -87,7 +87,7 @@ namespace Servy.Core.Native
 
                 status = LsaEnumerateAccountRights(policy, sidPtr, out rightsPtr, out rightsCount);
 
-                // STATUS_OBJECT_NAME_NOT_FOUND → the account has *no* rights at all
+                // STATUS_OBJECT_NAME_NOT_FOUND -> the account has *no* rights at all
                 if (status == unchecked((int)0xC0000034))
                     return false;
 

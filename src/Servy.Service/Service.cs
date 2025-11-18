@@ -1095,7 +1095,7 @@ namespace Servy.Service
                                     $"Maximum restart attempts reached ({_maxRestartAttempts}). Recovery actions stopped."
                                 );
 
-                                // No more retries → reset counter so next session starts fresh
+                                // No more retries -> reset counter so next session starts fresh
                                 SaveRestartAttempts(0);
 
                                 RunFailureProgram();

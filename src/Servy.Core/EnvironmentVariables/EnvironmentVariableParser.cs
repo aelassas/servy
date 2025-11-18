@@ -91,7 +91,7 @@ namespace Servy.Core.EnvironmentVariables
 
                     if (backslashCount % 2 == 0)
                     {
-                        // unescaped delimiter → split here
+                        // unescaped delimiter -> split here
                         segments.Add(sb.ToString());
                         sb.Clear();
                         continue;
@@ -126,8 +126,8 @@ namespace Servy.Core.EnvironmentVariables
                         j--;
                     }
 
-                    // If even number of backslashes before char → char is unescaped
-                    // If odd number of backslashes before char → char is escaped
+                    // If even number of backslashes before char -> char is unescaped
+                    // If odd number of backslashes before char -> char is escaped
                     if (backslashCount % 2 == 0)
                     {
                         return i; // unescaped char found
