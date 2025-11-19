@@ -22,9 +22,9 @@
     <AssemblyDescription>Servy Command Line Interface</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.CLI</Product>
-    <Version>3.7.0</Version>
-    <FileVersion>3.7.0.0</FileVersion>
-    <AssemblyVersion>3.7.0.0</AssemblyVersion>
+    <Version>3.8.0</Version>
+    <FileVersion>3.8.0.0</FileVersion>
+    <AssemblyVersion>3.8.0.0</AssemblyVersion>
     <Copyright>Copyright © 2025 Akram El Assas. All rights reserved.</Copyright>
     <ApplicationIcon>servy.ico</ApplicationIcon>
     <ApplicationManifest></ApplicationManifest>
