@@ -111,12 +111,9 @@ namespace Servy.Core.Native
             }
             finally
             {
-                if (sidPtr != IntPtr.Zero)
-                    Marshal.FreeHGlobal(sidPtr);
-                if (rightsPtr != IntPtr.Zero)
-                    LsaFreeMemory(rightsPtr);
-                if (policy != IntPtr.Zero)
-                    LsaClose(policy);
+                if (sidPtr != IntPtr.Zero) Marshal.FreeHGlobal(sidPtr);
+                if (rightsPtr != IntPtr.Zero) LsaFreeMemory(rightsPtr);
+                if (policy != IntPtr.Zero) LsaClose(policy);
             }
         }
 
