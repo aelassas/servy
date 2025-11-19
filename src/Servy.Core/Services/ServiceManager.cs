@@ -342,6 +342,7 @@ namespace Servy.Core.Services
                     _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
                 }
 
+                // Create the service if it does not exist
                 serviceHandle = _windowsServiceApi.CreateService(
                     hSCManager: scmHandle,
                     lpServiceName: serviceName,
@@ -423,6 +424,7 @@ namespace Servy.Core.Services
                     var isInstalled = IsServiceInstalled(serviceName);
                     if (isInstalled)
                     {
+                        // Service exists - update its configuration
                         _ = UpdateServiceConfig(
                             scmHandle: scmHandle,
                             serviceName: serviceName,
