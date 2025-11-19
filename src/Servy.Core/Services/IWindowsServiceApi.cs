@@ -30,7 +30,7 @@ namespace Servy.Core.Services
         /// <exception cref="InvalidOperationException">
         /// Thrown if the account cannot be resolved to a SID.
         /// </exception>
-        void Ensure(string accountName);
+        void EnsureLogOnAsServiceRight(string accountName);
 
         /// <summary>
         /// Creates a service object and adds it to the specified service control manager database.
