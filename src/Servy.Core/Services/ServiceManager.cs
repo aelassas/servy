@@ -339,7 +339,7 @@ namespace Servy.Core.Services
                 // explicitly ensure they have the "Log on as a service" right locally.
                 if (!isLocalSystem && !isGmsa)
                 {
-                    _windowsServiceApi.Ensure(lpServiceStartName);
+                    _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
                 }
 
                 serviceHandle = _windowsServiceApi.CreateService(

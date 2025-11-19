@@ -15,7 +15,7 @@ namespace Servy.Core.Services
             => NativeMethods.OpenSCManager(machineName, databaseName, dwAccess);
 
         /// <inheritdoc />
-        public void Ensure(string accountName)
+        public void EnsureLogOnAsServiceRight(string accountName)
             => LogonAsServiceGrant.Ensure(accountName);
 
         /// <inheritdoc />
