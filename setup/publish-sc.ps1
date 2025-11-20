@@ -25,6 +25,7 @@ $RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
 $ServyDir           = Join-Path $RootDir "src\Servy"
 $CliDir             = Join-Path $RootDir "src\Servy.CLI"
 $ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
+$SignPath           = Join-Path $RootDir "setup\signpath.ps1" | Resolve-Path
 
 # Inno Setup file
 $issFile            = Join-Path $ScriptDir "servy.iss"
@@ -62,7 +63,13 @@ Write-Host "Building installer from $issFile..."
 & $innoCompiler $issFile /DMyAppVersion=$version
 
 # ========================
-# Step 3: Build Self-Contained ZIP
+# Step 3: Sign Installer if signing is enabled
+# ========================
+$InstallerPath = Join-Path $RootDir "setup\servy-$version-x64-installer.exe"
+& $SignPath $InstallerPath
+
+# ========================
+# Step 4: Build Self-Contained ZIP
 # ========================
 Write-Host "Building self-contained ZIP..."
 
@@ -123,7 +130,7 @@ Write-Host "Self-contained ZIP build complete."
 Write-Host "Installer build finished."
 
 # ========================
-# Step 4: Pause if requested
+# Step 5: Pause if requested
 # ========================
 if ($pause) {
     Write-Host "Press any key to exit..."

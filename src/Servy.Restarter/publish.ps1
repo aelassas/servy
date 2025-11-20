@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 # Project and directories
 $projectName = "Servy.Restarter"
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$signPath           = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$signPath    = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 $projectPath = Join-Path $scriptDir "$projectName.csproj"
 
 $basePath      = Join-Path $scriptDir "..\Servy.Restarter\bin\$buildConfiguration\$tfm\$runtime"
