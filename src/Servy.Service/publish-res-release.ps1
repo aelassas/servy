@@ -29,6 +29,8 @@ $serviceProject      = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.
 $resourcesFolder     = Join-Path $ScriptDir "..\Servy.Service\Resources"
 $buildConfiguration  = "Release"
 $buildOutput         = Join-Path $ScriptDir "..\Servy.Restarter\bin\$buildConfiguration"
+$signPath            = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+
 
 # ----------------------------------------------------------------------
 # Step 1 - Build Servy.Restarter in Release mode
@@ -37,7 +39,13 @@ Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
 msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
 
 # ----------------------------------------------------------------------
-# Step 2 - Files to copy (with renamed outputs where applicable)
+# Step 2 - Sign the published executable if signing is enabled
+# ----------------------------------------------------------------------
+$exePath = Join-Path $buildOutput "Servy.Restarter.exe"
+& $signPath $exePath
+
+# ----------------------------------------------------------------------
+# Step 3 - Files to copy (with renamed outputs where applicable)
 # ----------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Restarter.exe"; Destination = "Servy.Restarter.exe" },
@@ -48,7 +56,7 @@ $filesToCopy = @(
 )
 
 # ----------------------------------------------------------------------
-# Step 3 - Copy the files into the Resources folder
+# Step 4 - Copy the files into the Resources folder
 # ----------------------------------------------------------------------
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
@@ -59,7 +67,7 @@ foreach ($file in $filesToCopy) {
 }
 
 # ----------------------------------------------------------------------
-# Step 4 - Copy Servy.Infrastructure.pdb
+# Step 5 - Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
 $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
