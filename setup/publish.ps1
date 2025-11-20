@@ -33,6 +33,7 @@ $ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
 $BuildOutputDir     = Join-Path $ServyDir "bin\$Platform\$BuildConfig"
 $CliBuildOutputDir  = Join-Path $CliDir "bin\$Platform\$BuildConfig"
 $ManagerBuildOutputDir  = Join-Path $ManagerDir "bin\$Platform\$BuildConfig"
+$SignPath               = Join-Path $RootDir "setup\signpath.ps1" | Resolve-Path
 Set-Location $ScriptDir
 
 # Package folder structure
@@ -71,6 +72,10 @@ Write-Host "Building Servy Manager..."
 # === BUILD INSTALLER ===
 Write-Host "Building installer from $issFile..."
 & "$innoCompiler" (Join-Path $ScriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$Framework
+
+# === SIGN INSTALLER ===
+$InstallerPath = Join-Path $RootDir "setup\servy-$version-net48-x64-installer"
+& $SignPath $InstallerPath
 
 # === PREPARE PACKAGE FILES ===
 Write-Host "Preparing package files..."
