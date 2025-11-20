@@ -13,8 +13,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
-$serviceProject     = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj"
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy.Service\Resources"
+$restarterDir     = Join-Path $ScriptDir "..\Servy.Restarter" | Resolve-Path
+$resourcesFolder    = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 $selfContained      = $true
@@ -22,32 +22,20 @@ $selfContained      = $true
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Restarter project
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $serviceProject)) {
-    Write-Error "Project file not found: $serviceProject"
+$PublishRestarterScript = Join-Path $restarterDir "publish.ps1"
+
+if (-not (Test-Path $PublishRestarterScript)) {
+    Write-Error "Project file not found: $PublishRestarterScript"
     exit 1
 }
 
-Write-Host "=== Publishing Servy.Restarter ==="
-Write-Host "Target Framework : $tfm"
-Write-Host "Configuration    : $buildConfiguration"
-Write-Host "Runtime          : $runtime"
-Write-Host "Self-contained   : $selfContained"
-Write-Host "Single File      : true"
-
-dotnet publish $serviceProject `
-    -c $buildConfiguration `
-    -r $runtime `
-    --self-contained $selfContained `
-    /p:TargetFramework=$tfm `
-    /p:PublishSingleFile=true `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
-    /p:DeleteExistingFiles=true
-
+Write-Host "=== [restarter] Running publish.ps1 ==="
+& $PublishRestarterScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
+    Write-Error "[restarter] publish.ps1 failed."
     exit $LASTEXITCODE
 }
+Write-Host "=== [restarter] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Locate publish and build output folders
@@ -64,8 +52,14 @@ if (-not (Test-Path $resourcesFolder)) {
 }
 
 # ---------------------------------------------------------------------------------
-# Step 4: Copy artifacts (renaming as needed)
+# Step 5: Copy artifacts (renaming as needed)
 # ---------------------------------------------------------------------------------
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Signing Servy.Restarter.exe failed."
+    exit $LASTEXITCODE
+}
+
 Copy-Item -Path (Join-Path $publishFolder "Servy.Restarter.exe") `
           -Destination (Join-Path $resourcesFolder "Servy.Restarter.exe") -Force
 
@@ -76,7 +70,7 @@ Copy-Item -Path (Join-Path $buildFolder "Servy.Core.pdb") `
           -Destination (Join-Path $resourcesFolder "Servy.Core.pdb") -Force
 #>
 # ----------------------------------------------------------------------
-# Step 5 - CopyServy.Infrastructure.pdb
+# Step 6 - CopyServy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
 $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"

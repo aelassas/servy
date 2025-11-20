@@ -15,10 +15,14 @@ $ErrorActionPreference = "Stop"
 # Project and directories
 $projectName = "Servy.Restarter"
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$signPath           = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 $projectPath = Join-Path $scriptDir "$projectName.csproj"
 
+$basePath      = Join-Path $scriptDir "..\Servy.Restarter\bin\$buildConfiguration\$tfm\$runtime"
+$publishFolder = Join-Path $basePath "publish"
+
 # Publish output folder
-$publishDir = Join-Path $ScriptDir "bin\$configuration\$tfm\$runtime\publish"
+$publishDir = Join-Path $scriptDir "bin\$configuration\$tfm\$runtime\publish"
 
 # Step 0: Clean previous publish folder
 if (Test-Path $publishDir) {
@@ -39,6 +43,10 @@ dotnet publish $projectPath `
     -f $tfm `
     -o $publishDir `
     /p:DeleteExistingFiles=true
+
+# Step 2: Sign the published executable if signing is enabled
+$exePath = Join-Path $publishFolder "Servy.Restarter.exe"
+& $signPath $exePath
 
 Write-Host "Publish completed for $projectName."
 

@@ -428,3 +428,7 @@ coveragereport/
 
 # service
 !/**/Resources/*.pdb
+
+# signpath
+.signpath
+.signpath*

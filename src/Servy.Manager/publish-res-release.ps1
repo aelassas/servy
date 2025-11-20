@@ -13,60 +13,30 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Paths and build settings
 # ---------------------------------------------------------------------------------
-$serviceDir         = Join-Path $ScriptDir  "..\Servy.Service"
-$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj"
-$resourcesFolder    = Join-Path $ScriptDir  "..\Servy.Manager\Resources"
+$serviceDir         = Join-Path $ScriptDir  "..\Servy.Service" | Resolve-Path
+$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj" | Resolve-Path
+$resourcesFolder    = Join-Path $ScriptDir  "..\Servy.Manager\Resources" | Resolve-Path
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 $selfContained      = $true
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (publish resources first)
-# ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $serviceDir "publish-res-release.ps1"
-
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
-    exit 1
-}
-
-Write-Host "=== Running publish-res-release.ps1 ==="
-& $PublishResScript -tfm $tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
-    exit $LASTEXITCODE
-}
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
-
-# ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $serviceProject)) {
-    Write-Error "Project file not found: $serviceProject"
+$PublishServiceScript = Join-Path $serviceDir "publish.ps1"
+
+if (-not (Test-Path $PublishServiceScript)) {
+    Write-Error "Required script not found: $PublishServiceScript"
     exit 1
 }
 
-Write-Host "=== Publishing Servy.Service ==="
-Write-Host "Target Framework : $tfm"
-Write-Host "Configuration    : $buildConfiguration"
-Write-Host "Runtime          : $runtime"
-Write-Host "Self-contained   : $selfContained"
-Write-Host "Single File      : true"
-
-dotnet publish $serviceProject `
-    -c $buildConfiguration `
-    -r $runtime `
-    --self-contained $selfContained `
-    /p:TargetFramework=$tfm `
-    /p:PublishSingleFile=true `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
-    /p:DeleteExistingFiles=true
-
+Write-Host "=== [service] Running publish.ps1 ==="
+& $PublishServiceScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
+    Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE
 }
+Write-Host "=== [service] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Prepare publish and build folder paths

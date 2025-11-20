@@ -13,14 +13,15 @@ $ErrorActionPreference = "Stop"
 # ---------------------------------------------------------------------------------
 # Step 0: Setup variables
 # ---------------------------------------------------------------------------------
-$AppName    = "Servy.Service"
-$Runtime    = "win-x64"
+# Script directory
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+$signPath      = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$AppName       = "Servy.Service"
+$Runtime       = "win-x64"
 $SelfContained = $true
 $SingleFile    = $true
 $Configuration = "Release"
-
-# Script directory
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Project path (relative to script location)
 $ProjectPath = Join-Path $ScriptDir "$AppName.csproj"
@@ -29,14 +30,32 @@ $ProjectPath = Join-Path $ScriptDir "$AppName.csproj"
 $PublishDir = Join-Path $ScriptDir "bin\$Configuration\$tfm\$Runtime\publish"
 
 # ---------------------------------------------------------------------------------
-# Step 1: Clean previous build artifacts
+# Step 1: Run publish-res-release.ps1 (publish resources first)
+# ---------------------------------------------------------------------------------
+$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+
+if (-not (Test-Path $PublishResScript)) {
+    Write-Error "Required script not found: $PublishResScript"
+    exit 1
+}
+
+Write-Host "=== Running publish-res-release.ps1 ==="
+& $PublishResScript -tfm $tfm
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "publish-res-release.ps1 failed."
+    exit $LASTEXITCODE
+}
+Write-Host "=== Completed publish-res-release.ps1 ===`n"
+
+# ---------------------------------------------------------------------------------
+# Step 2: Clean previous build artifacts
 # ---------------------------------------------------------------------------------
 if (Test-Path $PublishDir) {
     Remove-Item $PublishDir -Recurse -Force
 }
 
 # ---------------------------------------------------------------------------------
-# Step 2: Build and publish
+# Step 3: Build and publish
 # ---------------------------------------------------------------------------------
 if (-not (Test-Path $ProjectPath)) {
     Write-Error "Project file not found: $ProjectPath"
@@ -65,11 +84,22 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-Write-Host "=== $AppName published successfully to $PublishDir ==="
+# ---------------------------------------------------------------------------------
+# Step 4: Sign the published executable if signing is enabled
+# ---------------------------------------------------------------------------------
+$exePath = Join-Path $PublishDir "Servy.Service.exe"
+& $signPath $exePath
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Signing Servy.Service.exe failed."
+    exit $LASTEXITCODE
+}
 
 # ---------------------------------------------------------------------------------
-# Step 3: Pause (optional)
+# Step 5: Pause (optional)
 # ---------------------------------------------------------------------------------
 if ($pause) {
     Pause
 }
+
+Write-Host "=== $AppName published successfully to $PublishDir ==="
