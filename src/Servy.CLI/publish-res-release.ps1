@@ -25,23 +25,30 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$serviceProject      = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder     = Join-Path $ScriptDir "..\Servy.CLI\Resources"
-$buildConfiguration  = "Release"
-$platform            = "x64"
-$buildOutput         = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
-$resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
+$serviceProject        = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
+$resourcesFolder       = Join-Path $ScriptDir "..\Servy.CLI\Resources"
+$buildConfiguration    = "Release"
+$platform              = "x64"
+$buildOutput           = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
+$resourcesBuildOutput  = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
+$signPath              = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ----------------------------------------------------------------------
-# Step 1 - Build Servy.Service in Release mode
+# 1. Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
 $serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
 & $serviceProjectPublishRes
 msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:Platform=$platform /p:AllowUnsafeBlocks=true
 
+# ----------------------------------------------------------------------
+# 2. Sign the published executable if signing is enabled
+# ----------------------------------------------------------------------
+$exePath = Join-Path $buildOutput "Servy.Service.exe"
+& $signPath $exePath
+
 # ------------------------------------------------------------------------
-# 2. Define files to copy
+# 3. Define files to copy
 # ------------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
@@ -50,7 +57,7 @@ $filesToCopy = @(
 )
 
 # ------------------------------------------------------------------------
-# 3. Copy files to Resources folder
+# 4. Copy files to Resources folder
 # ------------------------------------------------------------------------
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
@@ -74,7 +81,7 @@ Copy-Item -Path "$resourcesBuildOutput\x86\*" -Destination "$resourcesFolder\x86
 Copy-Item -Path "$resourcesBuildOutput\x64\*" -Destination "$resourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
-# Step 4 - CopyServy.Infrastructure.pdb
+# 5. CopyServy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
 $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"

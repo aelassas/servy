@@ -10,11 +10,15 @@
 # ------------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
-$buildConfiguration    = "Release"
-$platform              = "x64"
 
 # Determine script directory
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir             = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Configuration
+$buildConfiguration    = "Release"
+$platform              = "x64"
+$signPath              = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$publishFolder         = Join-Path $ScriptDir "bin\$platform\$buildConfiguration"
 
 # Project path
 $ProjectPath = Join-Path $ScriptDir "Servy.CLI.csproj"
@@ -29,3 +33,7 @@ Write-Host "Finished publish-res-release.ps1. Continuing with main build..."
 Write-Host "Building Servy.CLI project in $buildConfiguration mode..."
 msbuild $ProjectPath /t:Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
 Write-Host "Build completed."
+
+# Step 2: Sign the published executable if signing is enabled
+$exePath = Join-Path $publishFolder "Servy.CLI.exe"
+& $signPath $exePath

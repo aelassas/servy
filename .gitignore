@@ -430,3 +430,7 @@ coveragereport/
 !/**/Resources/*.pdb
 !/**/Resources/x64
 !/**/Resources/x86
+
+# signpath
+.signpath
+.signpath*
