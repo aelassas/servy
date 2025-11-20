@@ -145,9 +145,9 @@ Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
 
 ## Acknowledgments
 
-A huge thanks to JetBrains for providing an open-source license for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
+A huge thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
 
-<a href="https://www.jetbrains.com/community/opensource/">
+<a href="https://www.jetbrains.com/">
   <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="52" height="52">
 </a>
 
