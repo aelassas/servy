@@ -1,19 +1,32 @@
-# ======================================================================
-# publish-res-release.ps1
-# ----------------------------------------------------------------------
-# Purpose:
-#   Builds Servy.Service in Release mode (.NET Framework 4.8) and copies
-#   the required binaries into the Servy.CLI\Resources folder with the
-#   appropriate naming conventions.
-#
-# Requirements:
-#   - Ensure msbuild is available in PATH.
-#   - Script should be run from PowerShell (x64).
-#
-# Notes:
-#   - This script is intended for preparing the CLI resources for release.
-#   - Adjust file paths if the project structure changes.
-# ======================================================================
+<#
+.SYNOPSIS
+Builds Servy.Service in Release mode (.NET Framework 4.8) and copies required binaries into the Servy.CLI\Resources folder.
+
+.DESCRIPTION
+This script performs the following steps:
+1. Builds Servy.CLI to ensure all x86 and x64 resources exist.
+2. Builds Servy.Service in Release mode.
+3. Copies the resulting executables, PDBs, and DLLs into the CLI Resources folder.
+4. Ensures x86 and x64 subfolders exist and copies platform-specific outputs.
+5. Optionally builds and copies Servy.Infrastructure.pdb (commented by default).
+
+.PARAMETER BuildConfiguration
+Specifies the build configuration. Default is "Release".
+
+.REQUIREMENTS
+- MSBuild must be installed and available in PATH.
+- The project structure must match the folder layout assumed in the script.
+- Script should be run in PowerShell x64.
+
+.NOTES
+- Intended for preparing release-ready resources for the CLI.
+- Adjust file paths if project structure changes.
+- Author: Akram El Assas
+
+.EXAMPLE
+.\publish-res-release.ps1
+Builds Servy.Service in Release mode and copies outputs to Servy.CLI\Resources.
+#>
 
 $ErrorActionPreference = "Stop"
 
@@ -25,30 +38,26 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$serviceProject        = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder       = Join-Path $ScriptDir "..\Servy.CLI\Resources"
+$CliProject            = Join-Path $ScriptDir "..\Servy.CLI\Servy.CLI.csproj" | Resolve-Path
+$servicePublishScript  = Join-Path $ScriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
+$resourcesFolder       = Join-Path $ScriptDir "..\Servy.CLI\Resources" | Resolve-Path
 $buildConfiguration    = "Release"
 $platform              = "x64"
 $buildOutput           = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
 $resourcesBuildOutput  = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
-$signPath              = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+
+# ------------------------------------------------------------------------
+# Step 0: Build Servy to ensure x86 and x64 resources exist
+# ------------------------------------------------------------------------
+& msbuild $CliProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
 
 # ----------------------------------------------------------------------
 # 1. Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
-Write-Host "Building Servy.Service in $buildConfiguration mode..."
-$serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
-& $serviceProjectPublishRes
-msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform /p:AllowUnsafeBlocks=true
-
-# ----------------------------------------------------------------------
-# 2. Sign the published executable if signing is enabled
-# ----------------------------------------------------------------------
-$exePath = Join-Path $buildOutput "Servy.Service.exe"
-& $signPath $exePath
+& $servicePublishScript -BuildConfiguration $buildConfiguration
 
 # ------------------------------------------------------------------------
-# 3. Define files to copy
+# 2. Define files to copy
 # ------------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
@@ -57,7 +66,7 @@ $filesToCopy = @(
 )
 
 # ------------------------------------------------------------------------
-# 4. Copy files to Resources folder
+# 3. Copy files to Resources folder
 # ------------------------------------------------------------------------
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
@@ -81,14 +90,14 @@ Copy-Item -Path "$resourcesBuildOutput\x86\*" -Destination "$resourcesFolder\x86
 Copy-Item -Path "$resourcesBuildOutput\x64\*" -Destination "$resourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
-# 5. CopyServy.Infrastructure.pdb
+# 5. Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
 $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+& msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"

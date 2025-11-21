@@ -1,19 +1,29 @@
-# ======================================================================
-# publish-res-release.ps1
-# ----------------------------------------------------------------------
-# Purpose:
-#   Builds Servy.Restarter in Release mode (.NET Framework 4.8) and copies
-#   the required binaries into the Servy.Service\Resources folder with the
-#   appropriate naming conventions.
-#
-# Requirements:
-#   - Ensure msbuild is available in PATH.
-#   - Script should be run from PowerShell (x64).
-#
-# Notes:
-#   - This script is intended for preparing the CLI resources for release.
-#   - Adjust file paths if the project structure changes.
-# ======================================================================
+<#
+.SYNOPSIS
+    Builds Servy.Restarter (.NET Framework 4.8, Release) and copies its output
+    into the Servy.Service Resources folder for use at runtime.
+
+.DESCRIPTION
+    This script performs the Release build of Servy.Restarter using MSBuild
+    and prepares the binaries needed by Servy.Service. The generated
+    artifacts (EXE, PDB, optional dependencies) are copied into the
+    Resources folder with the correct naming conventions. The EXE is
+    signed via SignPath if signing is enabled.
+
+    It is part of the Servy release pipeline and ensures that the Restarter
+    executable shipped with Servy.Service is always up to date.
+
+.REQUIREMENTS
+    - MSBuild must be installed and available in PATH.
+    - Script must be run under PowerShell (x64 recommended).
+    - Servy.Restarter targets .NET Framework 4.8, so the .NET 4.8 Developer Pack
+      must be installed.
+
+.NOTES
+    Author : Akram El Assas
+    Project: Servy
+    Script : publish-res-release.ps1
+#>
 
 $ErrorActionPreference = "Stop"
 
@@ -25,27 +35,19 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$serviceProject      = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj"
-$resourcesFolder     = Join-Path $ScriptDir "..\Servy.Service\Resources"
-$buildConfiguration  = "Release"
-$buildOutput         = Join-Path $ScriptDir "..\Servy.Restarter\bin\$buildConfiguration"
-$signPath            = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-
-
-# ----------------------------------------------------------------------
-# Step 1 - Build Servy.Restarter in Release mode
-# ----------------------------------------------------------------------
-Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
-msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+$restarterPublishScript = Join-Path $ScriptDir "..\Servy.Restarter\publish.ps1" | Resolve-Path
+$resourcesFolder        = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
+$buildConfiguration     = "Release"
+$platform               = "x64"
+$buildOutput            = Join-Path $ScriptDir "..\Servy.Restarter\bin\$platform\$buildConfiguration" | Resolve-Path
 
 # ----------------------------------------------------------------------
-# Step 2 - Sign the published executable if signing is enabled
+# Step 1: Build Servy.Restarter in Release mode
 # ----------------------------------------------------------------------
-$exePath = Join-Path $buildOutput "Servy.Restarter.exe"
-& $signPath $exePath
+& $restarterPublishScript -BuildConfiguration $buildConfiguration
 
 # ----------------------------------------------------------------------
-# Step 3 - Files to copy (with renamed outputs where applicable)
+# Step 2: Files to copy (with renamed outputs where applicable)
 # ----------------------------------------------------------------------
 $filesToCopy = @(
     @{ Source = "Servy.Restarter.exe"; Destination = "Servy.Restarter.exe" },
@@ -56,7 +58,7 @@ $filesToCopy = @(
 )
 
 # ----------------------------------------------------------------------
-# Step 4 - Copy the files into the Resources folder
+# Step 3: Copy the files into the Resources folder
 # ----------------------------------------------------------------------
 foreach ($file in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $file.Source
@@ -67,14 +69,14 @@ foreach ($file in $filesToCopy) {
 }
 
 # ----------------------------------------------------------------------
-# Step 5 - Copy Servy.Infrastructure.pdb
+# Step 4: Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
 $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+& msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"

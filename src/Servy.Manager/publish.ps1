@@ -1,10 +1,44 @@
-# publish.ps1
-# build script for Servy WPF app
-# ------------------------------------------------------------
-# This script:
-# 1. Runs the resource publishing script (publish-res-release.ps1)
-# 2. Builds the Servy project in Release mode using MSBuild
-# ------------------------------------------------------------
+<#
+.SYNOPSIS
+Builds and publishes the Servy WPF application and optionally signs the output executable.
+
+.DESCRIPTION
+This script performs the following steps:
+1. Runs the resource publishing script (publish-res-release.ps1 or publish-res-debug.ps1 depending on configuration).
+2. Builds the Servy.Manager project using MSBuild in the specified configuration and platform.
+3. Signs the resulting executable using SignPath if signing is enabled.
+
+.PARAMETER BuildConfiguration
+Specifies the build configuration for the project. Default is "Release".
+Common values: "Release" or "Debug".
+
+.PARAMETER Pause
+Optional switch to pause the script at the end of execution.
+
+.REQUIREMENTS
+- MSBuild must be installed and available in PATH.
+- publish-res-release.ps1 and publish-res-debug.ps1 must exist in the same directory as this script.
+- SignPath.ps1 must exist under ..\..\setup\.
+- Script should be executed from PowerShell (x64).
+
+.NOTES
+- The output executable is located under bin\x64\<BuildConfiguration>\Servy.Manager.exe.
+- Adjust file paths if the project structure changes.
+- Author: Akram El Assas
+
+.EXAMPLE
+.\publish.ps1
+Builds Servy.Manager in Release mode, runs the resource publishing script, and signs the output.
+
+.EXAMPLE
+.\publish.ps1 -BuildConfiguration Debug -Pause
+Builds Servy.Manager in Debug mode, publishes resources, signs the output, and pauses before exiting.
+#>
+
+param(
+	[string]$BuildConfiguration = "Release",
+    [switch]$Pause
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -12,25 +46,37 @@ $ErrorActionPreference = "Stop"
 $ScriptDir             = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Configuration
-$buildConfiguration    = "Release"
 $platform              = "x64"
 $signPath              = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$publishFolder         = Join-Path $ScriptDir "bin\$platform\$buildConfiguration"
+$publishFolder         = Join-Path $ScriptDir "bin\$platform\$BuildConfiguration"
 
 # Paths
 $ProjectPath = Join-Path $ScriptDir "Servy.Manager.csproj"
-$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
 
 # Step 1: Run publish-res-release.ps1
-Write-Host "Running publish-res-release.ps1..."
-& $PublishResScript
-Write-Host "Finished publish-res-release.ps1."
+$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+
+if (-not (Test-Path $PublishResScript)) {
+    Write-Error "Required script not found: $PublishResScript"
+    exit 1
+}
+
+Write-Host "=== Running $publishResScriptName ==="
+& $PublishResScript -tfm $tfm
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "$publishResScriptName failed."
+    exit $LASTEXITCODE
+}
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # Step 2: Build project with MSBuild
-Write-Host "Building Servy.Manager project in $buildConfiguration mode..."
-& msbuild $ProjectPath /t:Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
+Write-Host "Building Servy.Manager project in $BuildConfiguration mode..."
+& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
 Write-Host "Build completed."
 
 # Step 3: Sign the published executable if signing is enabled
-$exePath = Join-Path $publishFolder "Servy.Manager.exe"
+$exePath = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
 & $signPath $exePath
+
+if ($Pause) { Pause }
