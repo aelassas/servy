@@ -36,7 +36,7 @@ $signPath            = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve
 # Step 1 - Build Servy.Restarter in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
-& msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 # ----------------------------------------------------------------------
 # Step 2 - Sign the published executable if signing is enabled
