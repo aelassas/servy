@@ -1,31 +1,53 @@
-# publish-res-debug.ps1 - Build Servy.Service in Debug mode and copy resources
-# ---------------------------------------------------------------------------
-# This script builds the Servy.Service project in Debug mode (net48 target)
-# and copies the resulting executable and PDB files to the Resources folder.
-#
-# Requirements:
-# - msbuild must be available in PATH
-#
-# Steps:
-# 1. Build Servy.Service in Debug configuration
-# 2. Copy build artifacts to the Resources folder with proper naming
-# ---------------------------------------------------------------------------
+<#
+.SYNOPSIS
+Builds the Servy.Service project in Debug mode (.NET Framework 4.8) and copies the binaries to the Resources folder.
+
+.DESCRIPTION
+This script performs the following steps:
+1. Builds the main Servy project to ensure all dependencies exist.
+2. Builds Servy.Service in Debug configuration.
+3. Copies the resulting executable, PDBs, and DLLs into the Servy\Resources folder.
+4. Ensures x86 and x64 subfolders exist and copies platform-specific outputs.
+5. Optionally builds and copies Servy.Infrastructure.pdb (commented by default).
+
+.PARAMETER BuildConfiguration
+Specifies the build configuration. Default is "Debug".
+
+.REQUIREMENTS
+- MSBuild must be installed and available in PATH.
+- The project structure must match the folder layout assumed in the script.
+
+.NOTES
+- The script is intended to prepare debug-ready resources for development or testing.
+- Author: Akram El Assas
+- Adjust paths if project structure changes.
+
+.EXAMPLE
+.\publish-res-debug.ps1
+Builds Servy.Service in Debug mode and copies outputs to the Resources folder.
+#>
 
 $ErrorActionPreference = "Stop"
 
 # --- Paths ---
-$ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
-$serviceProject     = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj"
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy\Resources"
-$buildConfiguration = "Debug"
-$buildOutput        = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
+$ScriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ServyProject         = Join-Path $ScriptDir "..\Servy\Servy.csproj" | Resolve-Path
+$servicePublishScript = Join-Path $ScriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
+$resourcesFolder      = Join-Path $ScriptDir "..\Servy\Resources" | Resolve-Path
+$buildConfiguration   = "Debug"
+$platform             = "x64"
+$buildOutput          = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration"
 $resourcesBuildOutput = Join-Path $ScriptDir "..\Servy\bin\$platform\$buildConfiguration"
 
-# --- Step 1: Build the project ---
-Write-Host "Building Servy.Service in $buildConfiguration mode..."
-$serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
-& $serviceProjectPublishRes
-msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:AllowUnsafeBlocks=true
+# ------------------------------------------------------------------------
+# 0. Build Servy to ensure x86 and x64 resources exist
+# ------------------------------------------------------------------------
+& msbuild $ServyProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
+
+# ------------------------------------------------------------------------
+# 1. Build the project
+# ------------------------------------------------------------------------
+& $servicePublishScript -BuildConfiguration $buildConfiguration
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy
@@ -68,7 +90,7 @@ $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infra
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+& msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
