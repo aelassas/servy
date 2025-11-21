@@ -18,9 +18,9 @@ $Platform     = "x64"
 $Framework    = "net48"
 
 # Tools
-$innoCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$issFile      = "servy.iss"   # Inno Setup script filename
-$SevenZipExe  = "7z"          # Assumes 7-Zip is in PATH
+$innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$issFile            = "servy.iss"   # Inno Setup script filename
+$SevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
 
 # === PATH RESOLUTION ===
 
