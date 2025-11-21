@@ -1,4 +1,34 @@
+<#
+.SYNOPSIS
+    Monitors Servy error events in the Windows Application log and sends notification emails.
+
+.DESCRIPTION
+    This script performs the following:
+      1. Filters the Windows Application event log for errors related to 'Servy'.
+      2. Retrieves the most recent error.
+      3. Parses the error message to extract the service name and log text.
+      4. Sends a notification email to the administrator with the details.
+
+.PARAMETER None
+    No parameters are required. All settings (SMTP, recipient, etc.) are configured inside the script.
+
+.NOTES
+    Author : Akram El Assas
+    Project: Servy
+    Requirements:
+      - PowerShell 5.1+ (or Core)
+      - Access to Application event log
+      - SMTP server credentials configured in the script
+
+.EXAMPLE
+    .\ServyErrorNotifier.ps1
+    Sends an email for the latest Servy error event in the Application log.
+
+#>
+
+# -------------------------------
 # Email notification function
+# -------------------------------
 function Send-NotificationEmail {
     [cmdletbinding()]
     Param (
@@ -20,14 +50,15 @@ function Send-NotificationEmail {
     Send-MailMessage -From $from -To $to -Subject $Subject -Body $Body -SmtpServer $smtpServer -Port $smtpPort -Credential $cred -UseSsl
 }
 
-# Filter hash table for Get-WinEvent
+# -------------------------------
+# Get the latest Servy error event
+# -------------------------------
 $filter = @{
     LogName = 'Application'
     ProviderName = 'Servy'
     Level = 2  # Error
 }
 
-# Get the latest Servy error
 $lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
 
 if ($lastError) {

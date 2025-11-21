@@ -1,4 +1,31 @@
+<#
+.SYNOPSIS
+    Displays Windows toast notifications for the latest Servy error events.
+
+.DESCRIPTION
+    This script:
+      1. Filters the Windows Application event log for errors related to 'Servy'.
+      2. Retrieves the most recent error.
+      3. Parses the error message to extract the service name and log text.
+      4. Shows a Windows toast notification with the error details.
+
+.NOTES
+    Author : Akram El Assas
+    Project: Servy
+    Requirements:
+      - PowerShell 5.1+ (or PowerShell Core)
+      - Access to the Windows Application event log
+      - Running on Windows 10 or later for toast notifications
+
+.EXAMPLE
+    .\ServyToastNotifier.ps1
+    Displays a toast notification for the latest Servy error event.
+
+#>
+
+# -------------------------------
 # Function to show toast notification
+# -------------------------------
 function Show-Notification {
     [cmdletbinding()]
     Param (
@@ -25,14 +52,15 @@ function Show-Notification {
     $Notifier.Show($Toast);
 }
 
-# Filter hash table for Get-WinEvent
+# -------------------------------
+# Get latest Servy error event
+# -------------------------------
 $filter = @{
     LogName = 'Application'
     ProviderName = 'Servy'
     Level = 2  # Error
 }
 
-# Get the latest Servy error
 $lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
 
 if ($lastError) {
