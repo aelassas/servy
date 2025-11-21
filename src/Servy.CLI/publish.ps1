@@ -79,4 +79,7 @@ Write-Host "Build completed."
 $exePath = Join-Path $publishFolder "Servy.CLI.exe" | Resolve-Path
 & $signPath $exePath
 
-if ($Pause) { Pause }
+if ($Pause) { 
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
