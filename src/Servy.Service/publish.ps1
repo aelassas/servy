@@ -132,8 +132,9 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------------
 # Step 5: Pause (optional)
 # ---------------------------------------------------------------------------------
-if ($pause) {
-    Pause
+if ($pause) { 
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 Write-Host "=== $AppName published successfully to $PublishDir ==="

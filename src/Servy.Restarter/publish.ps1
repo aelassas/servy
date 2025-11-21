@@ -79,4 +79,7 @@ $exePath = Join-Path $publishFolder "Servy.Restarter.exe" | Resolve-Path
 
 Write-Host "Publish completed for $projectName."
 
-if ($pause) { Pause }
+if ($pause) { 
+    Write-Host "`nPress any key to exit..."
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
