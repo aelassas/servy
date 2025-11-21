@@ -1,8 +1,40 @@
+<#
+.SYNOPSIS
+    Builds the Servy self-contained installer and portable ZIP package.
+
+.DESCRIPTION
+    This script compiles all Servy applications (WPF, CLI, Manager) as self-contained,
+    builds the Inno Setup installer, signs the generated installer (if signing is enabled),
+    and generates a portable 7z package containing the published executables.
+
+.PARAMETER fm
+    Target framework moniker (TFM), e.g., "net10.0".
+
+.PARAMETER version
+    Application version used for installer and ZIP output file names.
+
+.PARAMETER pause
+    Optional switch that pauses the script before exiting. Useful when double-clicking.
+
+.NOTES
+    Requirements:
+      - msbuild must be available in PATH
+      - Inno Setup (ISCC.exe) must be installed
+      - 7-Zip installed and "7z" available in PATH
+      - SignPath script configured in setup/signpath.ps1
+
+.EXAMPLE
+    ./publish-sc.ps1 -fm "net10.0" -version "3.8"
+
+.EXAMPLE
+    ./publish-sc.ps1 -version "3.8" -pause
+#>
+
 # publish-sc.ps1
 # Build script for Servy self-contained installer and ZIP package
 
 param(
-    [string]$fm     = "net10.0",
+    [string]$fm      = "net10.0",
     [string]$version = "1.0",
     [switch]$pause
 )

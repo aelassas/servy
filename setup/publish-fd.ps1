@@ -1,9 +1,40 @@
+<#
+.SYNOPSIS
+    Builds the framework-dependent Servy installer and ZIP package.
+
+.DESCRIPTION
+    This script compiles the Servy WPF, CLI, and Manager applications in
+    framework-dependent mode, builds the Inno Setup installer, and creates a
+    compressed 7z package containing all published framework-dependent builds.
+
+.PARAMETER fm
+    Target framework moniker (TFM), e.g., "net10.0".
+
+.PARAMETER version
+    Application version used for installer and ZIP output file names.
+
+.PARAMETER pause
+    Optional switch that pauses the script before exiting. Useful for double-click usage.
+
+.NOTES
+    Requirements:
+      - msbuild must be available in PATH
+      - Inno Setup (ISCC.exe) installed
+      - 7-Zip installed ("7z" available in PATH)
+
+.EXAMPLE
+    ./publish-fd.ps1 -fm "net10.0" -version "3.8"
+
+.EXAMPLE
+    ./publish-fd.ps1 -version "3.8" -pause
+#>
+
 # publish-fd.ps1
 # Framework-dependent setup build script for Servy
 # Builds WPF and CLI apps, creates Inno Setup installer, and packages a ZIP.
 
 param(
-    [string]$fm     = "net10.0",    
+    [string]$fm      = "net10.0",    
     [string]$version = "1.0",
     [switch]$pause
 )

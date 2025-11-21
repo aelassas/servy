@@ -1,12 +1,55 @@
+<#
+.SYNOPSIS
+    Builds and publishes the Servy.CLI application (Release, self-contained) and 
+    optionally signs the output executable using SignPath.
+
+.DESCRIPTION
+    This script performs the following steps:
+      1. Runs publish-res-release.ps1 to ensure shared resources are generated.
+      2. Builds and publishes Servy.CLI as a self-contained, single-file executable 
+         for win-x64.
+      3. Signs the generated executable via the SignPath signing pipeline.
+      4. Emits standard build/progress messages used across Servy build tooling.
+
+    This is used as part of the Release build pipeline to produce final CLI artifacts.
+
+.PARAMETER tfm
+    Target Framework Moniker to publish for.
+    Default: net10.0-windows.
+
+.PARAMETER buildConfiguration
+    Build configuration to use.
+    Default: Release.
+
+.PARAMETER runtime
+    Target runtime identifier (RID) for publishing.
+    Default: win-x64.
+
+.EXAMPLE
+    ./publish.ps1
+    Runs the script using the default TFM (net10.0-windows).
+
+.EXAMPLE
+    ./publish.ps1 -tfm net9.0-windows
+    Publishes the CLI for .NET 9.
+
+.NOTES
+    Author : Akram El Assas
+    Project: Servy
+    Requirements:
+        - .NET SDK installed
+        - SignPath setup
+        - Valid folder structure
+#>
+
 param(
     # Target framework (default: net10.0-windows)
-    [string]$tfm = "net10.0-windows"
+    [string]$tfm                = "net10.0-windows",
+    [string]$buildConfiguration = "Release",
+    [string]$runtime            = "win-x64"
 )
 
 $ErrorActionPreference = "Stop"
-
-$buildConfiguration = "Release"
-$runtime            = "win-x64"
 
 # ---------------------------------------------------------------------------------
 # Script directory (so it works regardless of the current working directory)
@@ -21,20 +64,21 @@ $SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (publish resources first)
 # ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $publishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running publish-res-release.ps1 ==="
+Write-Host "=== Running $publishResScriptName ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.CLI.csproj (Self-contained, win-x64)
@@ -76,7 +120,7 @@ if ($LASTEXITCODE -ne 0) {
 $basePath      = Join-Path $ScriptDir "..\Servy.CLI\bin\$buildConfiguration\$tfm\$runtime"
 $publishFolder = Join-Path $basePath "publish"
 $exePath       = Join-Path $publishFolder "Servy.CLI.exe"
-& $signPath $exePath
+& $SignPath $exePath
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Signing Servy.CLI.exe failed."

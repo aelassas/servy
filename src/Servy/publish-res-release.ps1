@@ -1,3 +1,33 @@
+<#
+.SYNOPSIS
+Publishes Servy.Service and copies its build artifacts into the Servy Resources folder.
+
+.DESCRIPTION
+This script:
+1. Runs the publish.ps1 script inside the Servy.Service project.
+2. Locates the produced build/publish output folders.
+3. Copies the generated single-file executable and PDB files into the main
+   Servy Resources directory so they can be embedded in Servy builds.
+
+Primarily used as part of the full release pipeline.
+
+.PARAMETER tfm
+Target framework moniker for the publish step. Default: net10.0-windows.
+
+.EXAMPLE
+./publish-res-release.ps1
+Runs with default target framework.
+
+.EXAMPLE
+./publish-res-release.ps1 -tfm net9.0-windows
+Publishes the service using .NET 9.
+
+.NOTES
+Author : Akram El Assas
+Project: Servy
+This script requires dotnet SDK, PowerShell 5+ or 7+, and correct folder structure.
+#>
+
 param(
     # Target framework (default: net10.0-windows)
     [string]$tfm = "net10.0-windows"
@@ -31,7 +61,7 @@ if (-not (Test-Path $PublishServiceScript)) {
 }
 
 Write-Host "=== [service] Running publish.ps1 ==="
-& $PublishServiceScript -tfm $tfm
+& $PublishServiceScript -tfm $tfm -configuration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE

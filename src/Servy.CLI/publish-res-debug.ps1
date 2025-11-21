@@ -1,3 +1,31 @@
+<#
+.SYNOPSIS
+    Publishes Servy.Service and copies its build artifacts into the Servy.CLI Resources folder for debug builds.
+
+.DESCRIPTION
+    This script builds the Servy.Service project targeting the specified framework
+    in Debug configuration. It produces a self-contained single-file executable
+    and copies the resulting executable and PDB files into the Servy.CLI Resources
+    folder, renaming them as needed. Optional core and infrastructure PDBs can also
+    be copied if required.
+
+.PARAMETER tfm
+    The target framework to build against. Default is "net10.0-windows".
+
+.NOTES
+    - Requires .NET SDK installed and 'dotnet' available in PATH.
+    - Can be run from any working directory; paths are resolved relative to the script location.
+    - Produces output in 'Servy.Service\bin\Debug\<tfm>\win-x64\publish'.
+
+.EXAMPLE
+    PS> .\publish-res-debug.ps1
+    Publishes Servy.Service in Debug mode using the default target framework and copies artifacts to the CLI resources folder.
+
+.EXAMPLE
+    PS> .\publish-res-debug.ps1 -tfm net10.0-windows
+    Publishes Servy.Service targeting .NET 10 and copies the artifacts.
+#>
+
 param(
     # Target framework for build (default: net10.0-windows)
     [string]$tfm = "net10.0-windows"
@@ -21,52 +49,22 @@ $runtime            = "win-x64"
 $selfContained      = $true
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-debug.ps1 (publish resources first)
-# ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $serviceDir "publish-res-debug.ps1"
-
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
-    exit 1
-}
-
-Write-Host "=== Running publish-res-debug.ps1 ==="
-& $PublishResScript -tfm $tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-debug.ps1 failed."
-    exit $LASTEXITCODE
-}
-Write-Host "=== Completed publish-res-debug.ps1 ===`n"
-
-# ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $serviceProject)) {
-    Write-Error "Project file not found: $serviceProject"
+$PublishServiceScript = Join-Path $serviceDir "publish.ps1"
+
+if (-not (Test-Path $PublishServiceScript)) {
+    Write-Error "Required script not found: $PublishServiceScript"
     exit 1
 }
 
-Write-Host "=== Publishing Servy.Service ==="
-Write-Host "Target Framework : $tfm"
-Write-Host "Configuration    : $buildConfiguration"
-Write-Host "Runtime          : $runtime"
-Write-Host "Self-contained   : $selfContained"
-Write-Host "Single File      : true"
-
-dotnet publish $serviceProject `
-    -c $buildConfiguration `
-    -r $runtime `
-    --self-contained $selfContained `
-    /p:TargetFramework=$tfm `
-    /p:PublishSingleFile=true `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
-    /p:DeleteExistingFiles=true
-
+Write-Host "=== [service] Running publish.ps1 ==="
+& $PublishServiceScript -tfm $tfm -configuration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
+    Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE
 }
+Write-Host "=== [service] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Locate publish and build output folders

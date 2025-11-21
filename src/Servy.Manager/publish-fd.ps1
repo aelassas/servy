@@ -1,3 +1,23 @@
+<#
+.SYNOPSIS
+    Builds and publishes Servy.Manager as a framework-dependent application.
+
+.DESCRIPTION
+    This script runs the resource publishing step via publish-res-release.ps1,
+    then cleans and publishes Servy.Manager.csproj as a framework-dependent
+   , non-self-contained, multi-file executable for the specified target framework.
+
+.PARAMETER tfm
+    Target framework to build (default: net10.0-windows).
+
+.EXAMPLE
+    .\publish.ps1
+    Publishes Servy.Manager in Release mode for net10.0-windows.
+
+.NOTES
+    Author: Akram El Assas
+#>
+
 param(
     # Target framework (default: net10.0-windows)
     [string]$tfm = "net10.0-windows"
@@ -13,20 +33,21 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (resource publishing step)
 # ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $publishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running publish-res-release.ps1 ==="
+Write-Host "=== Running $publishResScriptName ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Clean and publish Servy.Manager.csproj (Framework-dependent, win-x64)

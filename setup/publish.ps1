@@ -1,12 +1,40 @@
+<#
+.SYNOPSIS
+    Main build script for generating Servy installers (self-contained and optional framework-dependent).
+
+.DESCRIPTION
+    This script orchestrates the build process for Servy by invoking the internal
+    publish scripts:
+        - publish-sc.ps1   (self-contained bundle)
+        - publish-fd.ps1   (framework-dependent bundle, currently optional)
+
+    It ensures the build environment is prepared and passes versioning and
+    framework parameters to child scripts.
+
+.REQUIREMENTS
+    1. MSBuild must be available in PATH.
+    2. Inno Setup (ISCC.exe) installed and accessible.
+    3. 7-Zip installed with `7z` available in PATH.
+
+.PARAMETER fm
+    The target framework moniker (TFM).
+
+.PARAMETER version
+    The Servy version being packaged.
+
+.EXAMPLE
+    PS> .\publish.ps1 -fm "net10.0" -version "3.8"
+
+.NOTES
+    This script can be run from any working directory. It calculates elapsed time
+    and pauses at the end to allow double-click usage from Explorer.
+#>
+
 # publish.ps1
 # Main setup bundle script for building both self-contained and framework-dependent installers
-# Requirements:
-#  1. Add msbuild to PATH
-#  2. Inno Setup installed (ISCC.exe path updated if different)
-#  3. 7-Zip installed and 7z in PATH
 
 param(
-    [string]$fm     = "net10.0",    
+    [string]$fm      = "net10.0",    
     [string]$version = "3.8"
 )
 

@@ -1,6 +1,35 @@
-# publish-restarter-sc.ps1
-# Self-contained publish script for Servy.Restarter
-# Requirements: .NET SDK installed and accessible from PATH
+<#
+.SYNOPSIS
+    Publishes the Servy.Restarter project as a self-contained, single-file executable.
+
+.DESCRIPTION
+    This script builds the Servy.Restarter project with the specified target framework, runtime,
+    configuration, and version. It publishes a self-contained single-file executable and optionally
+    signs it using SignPath. Previous publish folders are cleaned automatically.
+
+.PARAMETER version
+    Version to assign to the published assembly. Default is "1.0.0".
+
+.PARAMETER tfm
+    Target framework to build against. Default is "net10.0-windows".
+
+.PARAMETER runtime
+    Runtime identifier (RID) for the published executable. Default is "win-x64".
+
+.PARAMETER configuration
+    Build configuration, e.g., Release or Debug. Default is "Release".
+
+.PARAMETER pause
+    If specified, pauses the script at the end for review.
+
+.EXAMPLE
+    .\publish.ps1
+    Publishes Servy.Restarter with default parameters.
+
+.EXAMPLE
+    .\publish.ps1 -tfm net10.0-windows -version 2.1.0 -pause
+    Publishes Servy.Restarter targeting .NET 10, version 2.1.0, and pauses at the end.
+#>
 
 param(
     [string]$version = "1.0.0",

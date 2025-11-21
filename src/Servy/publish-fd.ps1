@@ -1,3 +1,31 @@
+<#
+.SYNOPSIS
+Builds Servy for release as a framework-dependent Windows x64 executable.
+
+.DESCRIPTION
+This script:
+1. Runs publish-res-release.ps1 to generate embedded resources.
+2. Cleans old publish output.
+3. Publishes Servy.csproj as a framework-dependent app for win-x64.
+4. Produces a non-self-contained build suitable for distribution.
+
+.PARAMETER tfm
+Specifies the target framework. Default is "net10.0-windows".
+
+.EXAMPLE
+./publish-release.ps1
+Publishes using the default target framework.
+
+.EXAMPLE
+./publish-release.ps1 -tfm net9.0-windows
+Publishes using .NET 9 target framework.
+
+.NOTES
+Author: Akram El Assas
+Project: Servy
+This script must be run from PowerShell 5+ or PowerShell 7+.
+#>
+
 param(
     # Target framework (default: net10.0-windows)
     [string]$tfm = "net10.0-windows"
@@ -13,20 +41,21 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (resource publishing step)
 # ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $publishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running publish-res-release.ps1 ==="
+Write-Host "=== Running $publishResScriptName ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Clean and publish Servy.csproj (Framework-dependent, win-x64)

@@ -1,3 +1,31 @@
+<#
+.SYNOPSIS
+    Publishes Servy.Service and copies its build artifacts into the Servy.CLI Resources folder.
+
+.DESCRIPTION
+    This script publishes the Servy.Service project (self-contained) for Windows
+    targeting the specified framework. After publishing, it copies the resulting
+    executable and PDB files into the Servy.CLI Resources folder, renaming them
+    as needed. Optional infrastructure and core PDBs can also be copied.
+
+.PARAMETER tfm
+    The target framework to build against. Default is "net10.0-windows".
+
+.NOTES
+    - Requires .NET SDK installed and 'dotnet' available in PATH.
+    - Can be run from any working directory; all paths are resolved relative to the script location.
+    - Produces output in 'Servy.Service\bin\Release\<tfm>\win-x64\publish'.
+    - Self-contained single-file executable is produced for Servy.Service.
+
+.EXAMPLE
+    PS> .\publish-res-release.ps1
+    Publishes Servy.Service using the default target framework and copies the artifacts to the CLI resources folder.
+
+.EXAMPLE
+    PS> .\publish-res-release.ps1 -tfm net10.0-windows
+    Publishes Servy.Service targeting .NET 10 and copies the artifacts.
+#>
+
 param(
     # Target framework for build (default: net10.0-windows)
     [string]$tfm = "net10.0-windows"
@@ -31,7 +59,7 @@ if (-not (Test-Path $PublishServiceScript)) {
 }
 
 Write-Host "=== [service] Running publish.ps1 ==="
-& $PublishServiceScript -tfm $tfm
+& $PublishServiceScript -tfm $tfm -configuration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE

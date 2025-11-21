@@ -1,12 +1,44 @@
+<#
+.SYNOPSIS
+    Publishes the Servy WPF application as a self-contained executable and signs it.
+
+.DESCRIPTION
+    This script performs the following steps:
+      1. Runs the resource publishing script (`publish-res-release.ps1`)
+      2. Builds and publishes `Servy.csproj` as a self-contained win-x64 executable
+      3. Signs the published executable using SignPath (if enabled)
+
+.PARAMETER tfm
+    Target Framework Moniker (default: "net10.0-windows").
+
+.PARAMETER buildConfiguration
+    Build configuration to use (default: "Release").
+
+.PARAMETER runtime
+    Target runtime identifier (RID) for publishing (default: "win-x64").
+
+.NOTES
+    Requirements:
+      - dotnet SDK installed
+      - msbuild available in PATH
+      - The SignPath script (signpath.ps1) must exist in ../../setup/
+
+.EXAMPLE
+    ./publish.ps1
+    Publishes using default parameters.
+
+.EXAMPLE
+    ./publish.ps1 -tfm "net8.0-windows" -buildConfiguration "Debug" -runtime "win-x64"
+#>
+
 param(
     # Target framework (default: net10.0-windows)
-    [string]$tfm = "net10.0-windows"
+    [string]$tfm                = "net10.0-windows",
+    [string]$buildConfiguration = "Release",
+    [string]$runtime            = "win-x64"
 )
 
 $ErrorActionPreference = "Stop"
-
-$buildConfiguration = "Release"
-$runtime            = "win-x64"
 
 # ---------------------------------------------------------------------------------
 # Script directory (so we can run from anywhere)
@@ -21,20 +53,21 @@ $SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (Resource publishing step)
 # ---------------------------------------------------------------------------------
-$PublishResScript = Join-Path $ScriptDir "publish-res-release.ps1"
+$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $publishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running publish-res-release.ps1 ==="
+Write-Host "=== Running $publishResScriptName ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "publish-res-release.ps1 failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed publish-res-release.ps1 ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.csproj (Self-contained, win-x64)
@@ -75,7 +108,7 @@ if ($LASTEXITCODE -ne 0) {
 $basePath      = Join-Path $ScriptDir "..\Servy\bin\$buildConfiguration\$tfm\$runtime"
 $publishFolder = Join-Path $basePath "publish"
 $exePath       = Join-Path $publishFolder "Servy.exe"
-& $signPath $exePath
+& $SignPath $exePath
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Signing Servy.exe failed."
