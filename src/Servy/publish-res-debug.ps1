@@ -25,7 +25,7 @@ $resourcesBuildOutput = Join-Path $ScriptDir "..\Servy\bin\$platform\$buildConfi
 Write-Host "Building Servy.Service in $buildConfiguration mode..."
 $serviceProjectPublishRes     = Join-Path $ScriptDir "..\Servy.Service\publish-res-release.ps1"
 & $serviceProjectPublishRes
-msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration /p:AllowUnsafeBlocks=true
+msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:AllowUnsafeBlocks=true
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy
@@ -68,7 +68,7 @@ $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infra
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"

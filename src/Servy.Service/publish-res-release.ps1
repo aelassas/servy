@@ -36,7 +36,7 @@ $signPath            = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve
 # Step 1 - Build Servy.Restarter in Release mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
-msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+& msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 # ----------------------------------------------------------------------
 # Step 2 - Sign the published executable if signing is enabled
@@ -74,7 +74,7 @@ $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infra
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"

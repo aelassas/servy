@@ -34,7 +34,7 @@ $buildOutput         = Join-Path $ScriptDir "..\Servy.Restarter\bin\$buildConfig
 # Step 1 - Build Servy.Restarter in Debug mode
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $buildConfiguration mode..."
-msbuild $serviceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 # ----------------------------------------------------------------------
 # Step 2 - Files to copy (with renamed outputs where applicable)
@@ -66,7 +66,7 @@ $infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infra
 $infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
 $infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-msbuild $infraServiceProject /t:Clean,Build /p:Configuration=$buildConfiguration
+msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
