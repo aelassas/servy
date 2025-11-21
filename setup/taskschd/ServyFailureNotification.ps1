@@ -18,7 +18,7 @@
       - Running on Windows 10 or later for toast notifications
 
 .EXAMPLE
-    .\ServyToastNotifier.ps1
+    .\ServyFailureNotification.ps1
     Displays a toast notification for the latest Servy error event.
 
 #>

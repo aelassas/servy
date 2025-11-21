@@ -21,7 +21,7 @@
       - SMTP server credentials configured in the script
 
 .EXAMPLE
-    .\ServyErrorNotifier.ps1
+    .\ServyFailureEmail.ps1
     Sends an email for the latest Servy error event in the Application log.
 
 #>
