@@ -1,4 +1,29 @@
-# tests/test.ps1
+<#
+.SYNOPSIS
+    Runs unit tests for Servy projects and generates code coverage reports.
+
+.DESCRIPTION
+    This script performs the following tasks:
+    1. Cleans up previous test results and coverage reports.
+    2. Runs unit tests for specified test projects using 'dotnet test'.
+    3. Collects code coverage in Cobertura format.
+    4. Generates an aggregated HTML coverage report using ReportGenerator.
+
+.PARAMETER None
+    No parameters are required; the script is self-contained.
+
+.REQUIREMENTS
+    - .NET SDK installed and accessible in PATH.
+    - ReportGenerator tool installed and available in PATH.
+
+.EXAMPLE
+    ./test.ps1
+    Runs all unit tests and generates the coverage report.
+
+.NOTES
+    Author: Akram El Assas
+#>
+
 $ErrorActionPreference = "Stop"
 
 # Directories
