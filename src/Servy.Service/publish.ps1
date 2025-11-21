@@ -21,8 +21,7 @@
     Switch to pause execution at the end of the script.
 
 .REQUIREMENTS
-    - .NET SDK installed and accessible in PATH.
-    - msbuild in PATH (if required for other steps).
+    - .NET SDK must be installed
     - SignPath.ps1 script available in ..\..\setup\ for signing.
 
 .EXAMPLE

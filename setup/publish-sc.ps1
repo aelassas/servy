@@ -18,9 +18,9 @@
 
 .NOTES
     Requirements:
-      - msbuild must be available in PATH
+      - .NET SDK must be installed
       - Inno Setup (ISCC.exe) must be installed
-      - 7-Zip installed and "7z" available in PATH
+      - 7-Zip (7z.exe) must be installed
       - SignPath script configured in setup/signpath.ps1
 
 .EXAMPLE
@@ -49,7 +49,7 @@ if (-not $tfm) {
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 $innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$SevenZipExe        = "7z"          # Assumes 7-Zip is in PATH
+$SevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
 
 # Directories
 $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path

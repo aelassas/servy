@@ -19,8 +19,7 @@
 
 .NOTES
     Requirements:
-      - dotnet SDK installed
-      - msbuild available in PATH
+      - .NET SDK must be installed
       - The SignPath script (signpath.ps1) must exist in ../../setup/
 
 .EXAMPLE
