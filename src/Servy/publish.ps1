@@ -50,7 +50,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (Resource publishing step)
+# Step 0: Publish resources
 # ---------------------------------------------------------------------------------
 $publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
 $PublishResScript = Join-Path $ScriptDir $publishResScriptName
@@ -71,7 +71,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.csproj (Self-contained, win-x64)
 # ---------------------------------------------------------------------------------
-$ProjectPath = Join-Path $ScriptDir "Servy.csproj"
+$ProjectPath = Join-Path $ScriptDir "Servy.csproj" | Resolve-Path
 
 if (-not (Test-Path $ProjectPath)) {
     Write-Error "Project file not found: $ProjectPath"

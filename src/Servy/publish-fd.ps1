@@ -60,7 +60,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ---------------------------------------------------------------------------------
 # Step 1: Clean and publish Servy.csproj (Framework-dependent, win-x64)
 # ---------------------------------------------------------------------------------
-$ProjectPath   = Join-Path $ScriptDir "Servy.csproj"
+$ProjectPath   = Join-Path $ScriptDir "Servy.csproj" | Resolve-Path
 $PublishFolder = Join-Path $ScriptDir "bin\Release\$tfm\win-x64\publish"
 
 if (-not (Test-Path $ProjectPath)) {

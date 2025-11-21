@@ -41,7 +41,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
 $restarterDir       = Join-Path $ScriptDir "..\Servy.Restarter" | Resolve-Path
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy.Service\Resources"
+$resourcesFolder    = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
 $buildConfiguration = "Debug"
 $runtime            = "win-x64"
 $selfContained      = $true

@@ -41,9 +41,9 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
-$serviceDir         = Join-Path $ScriptDir "..\Servy.Service"
-$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj"
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy.CLI\Resources"
+$serviceDir         = Join-Path $ScriptDir "..\Servy.Service" | Resolve-Path
+$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj" | Resolve-Path
+$resourcesFolder    = Join-Path $ScriptDir "..\Servy.CLI\Resources" | Resolve-Path
 $buildConfiguration = "Debug"
 $runtime            = "win-x64"
 $selfContained      = $true

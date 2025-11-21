@@ -57,13 +57,13 @@ $SelfContained = $true
 $SingleFile    = $true
 
 # Project path (relative to script location)
-$ProjectPath = Join-Path $ScriptDir "$AppName.csproj"
+$ProjectPath = Join-Path $ScriptDir "$AppName.csproj" | Resolve-Path
 
 # Output folder
 $PublishDir = Join-Path $ScriptDir "bin\$configuration\$tfm\$runtime\publish"
 
 # ---------------------------------------------------------------------------------
-# Step 1: Run publish-res-release.ps1 (publish resources first)
+# Step 1:Publish resources first
 # ---------------------------------------------------------------------------------
 $publishResScriptName = if ($configuration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
 $PublishResScript = Join-Path $ScriptDir $publishResScriptName
@@ -121,7 +121,7 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------------
 # Step 4: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
-$exePath = Join-Path $PublishDir "Servy.Service.exe"
+$exePath = Join-Path $PublishDir "Servy.Service.exe" | Resolve-Path
 & $signPath $exePath
 
 if ($LASTEXITCODE -ne 0) {

@@ -45,7 +45,7 @@ $ErrorActionPreference = "Stop"
 $projectName = "Servy.Restarter"
 $scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
 $signPath    = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$projectPath = Join-Path $scriptDir "$projectName.csproj"
+$projectPath = Join-Path $scriptDir "$projectName.csproj" | Resolve-Path
 
 $basePath      = Join-Path $scriptDir "..\Servy.Restarter\bin\$buildConfiguration\$tfm\$runtime"
 $publishFolder = Join-Path $basePath "publish"
@@ -74,7 +74,7 @@ dotnet publish $projectPath `
     /p:DeleteExistingFiles=true
 
 # Step 2: Sign the published executable if signing is enabled
-$exePath = Join-Path $publishFolder "Servy.Restarter.exe"
+$exePath = Join-Path $publishFolder "Servy.Restarter.exe" | Resolve-Path
 & $signPath $exePath
 
 Write-Host "Publish completed for $projectName."

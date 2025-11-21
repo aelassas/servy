@@ -62,7 +62,7 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (publish resources first)
+# Step 0: Publish resources
 # ---------------------------------------------------------------------------------
 $publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
 $PublishResScript = Join-Path $ScriptDir $publishResScriptName
@@ -83,7 +83,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.CLI.csproj (Self-contained, win-x64)
 # ---------------------------------------------------------------------------------
-$ProjectPath = Join-Path $ScriptDir "Servy.CLI.csproj"
+$ProjectPath = Join-Path $ScriptDir "Servy.CLI.csproj" | Resolve-Path
 
 if (-not (Test-Path $ProjectPath)) {
     Write-Error "Project file not found: $ProjectPath"
@@ -119,7 +119,7 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------------
 $basePath      = Join-Path $ScriptDir "..\Servy.CLI\bin\$buildConfiguration\$tfm\$runtime"
 $publishFolder = Join-Path $basePath "publish"
-$exePath       = Join-Path $publishFolder "Servy.CLI.exe"
+$exePath       = Join-Path $publishFolder "Servy.CLI.exe" | Resolve-Path
 & $SignPath $exePath
 
 if ($LASTEXITCODE -ne 0) {
