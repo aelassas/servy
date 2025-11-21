@@ -136,7 +136,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="test.ps1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Servy.Core\Servy.Core.csproj">
