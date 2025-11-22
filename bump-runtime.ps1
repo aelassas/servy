@@ -80,48 +80,48 @@ function Update-Files {
     )
 
     foreach ($file in $Files) {
-        $path = $file.FullName
+        $Path = $file.FullName
         $global:TotalFilesScanned++
 
         try {
             # --- Detect encoding ---
-            $stream = [System.IO.File]::Open($path, 'Open', 'Read')
+            $Stream = [System.IO.File]::Open($Path, 'Open', 'Read')
             try {
-                $reader = New-Object System.IO.StreamReader($stream, $true)
-                $content = $reader.ReadToEnd()
-                $encoding = $reader.CurrentEncoding
+                $Reader = New-Object System.IO.StreamReader($Stream, $true)
+                $Content = $Reader.ReadToEnd()
+                $Encoding = $Reader.CurrentEncoding
             }
             finally {
-                $reader.Close()
-                $stream.Close()
+                $Reader.Close()
+                $Stream.Close()
             }
 
             # --- Count matches ---
-            $regexMatches  = [regex]::Matches($content, $Pattern)
-            $matchCount = $regexMatches.Count
+            $RegexMatches  = [regex]::Matches($Content, $Pattern)
+            $MatchCount = $RegexMatches.Count
 
-            if ($matchCount -gt 0) {
+            if ($MatchCount -gt 0) {
                 $global:FilesModified++
-                $global:TotalReplacements += $matchCount
+                $global:TotalReplacements += $MatchCount
 
                 if ($DryRun) {
-                    Write-Host "DRY-RUN: Would update $path ($matchCount replacements)"
+                    Write-Host "DRY-RUN: Would update $Path ($MatchCount replacements)"
                 } else {
-                    $newContent = [regex]::Replace($content, $Pattern, $Replacement)
+                    $NewContent = [regex]::Replace($Content, $Pattern, $Replacement)
 
                     # Write using SAME encoding
-                    $bytes = $encoding.GetBytes($newContent)
-                    [System.IO.File]::WriteAllBytes($path, $bytes)
+                    $Bytes = $Encoding.GetBytes($NewContent)
+                    [System.IO.File]::WriteAllBytes($Path, $Bytes)
 
-                    Write-Host "UPDATED: $path ($matchCount replacements)"
+                    Write-Host "UPDATED: $Path ($MatchCount replacements)"
                 }
             }
             else {
-                Write-Host "NO-CHANGE: $path"
+                Write-Host "NO-CHANGE: $Path"
             }
         }
         catch {
-            Write-Error "Failed to update file: $path. $_"
+            Write-Error "Failed to update file: $Path. $_"
             exit 1
         }
     }
@@ -130,14 +130,14 @@ function Update-Files {
 # -----------------------------
 # Process files
 # -----------------------------
-$ps1Files    = Get-ChildItem -Path $BaseDir -Recurse -Filter *.ps1
-$issFiles    = Get-ChildItem -Path $BaseDir -Recurse -Filter *.iss
-$csprojFiles = Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj
+$Ps1Files      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.ps1
+$IssFiles      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.iss
+$CsprojFiles   = Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj
 $AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
 
-Update-Files -Files $ps1Files    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files $issFiles    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files $csprojFiles -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
+Update-Files -Files $Ps1Files    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
+Update-Files -Files $IssFiles    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
+Update-Files -Files $CsprojFiles -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
 
 if (Test-Path $AppConfigPath) {
     Update-Files -Files (Get-Item $AppConfigPath) -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun

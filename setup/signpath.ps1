@@ -132,8 +132,8 @@ $RequestStream = $UploadRequest.GetRequestStream()
 
 $BufferSize = 4MB
 $Buffer = New-Object byte[] $BufferSize
-while (($read = $FileStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
-    $RequestStream.Write($Buffer, 0, $read)
+while (($Read = $FileStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+    $RequestStream.Write($Buffer, 0, $Read)
 }
 
 $RequestStream.Close()
@@ -192,8 +192,8 @@ $DownloadStream = $DownloadResp.GetResponseStream()
 $FileOut = [System.IO.File]::Open($signedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
 
 $Buffer = New-Object byte[] 4MB
-while (($read = $DownloadStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
-    $FileOut.Write($Buffer, 0, $read)
+while (($Read = $DownloadStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+    $FileOut.Write($Buffer, 0, $Read)
 }
 
 $FileOut.Close()

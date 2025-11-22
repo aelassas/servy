@@ -19,8 +19,8 @@ Target framework moniker for the publish step. Default: net10.0-windows.
 Runs with default target framework.
 
 .EXAMPLE
-./publish-res-release.ps1 -Tfm net9.0-windows
-Publishes the service using .NET 9.
+./publish-res-release.ps1 -Tfm net10.0-windows
+Publishes the service using .NET target framework.
 
 .NOTES
 Author : Akram El Assas

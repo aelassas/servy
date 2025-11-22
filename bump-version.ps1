@@ -50,13 +50,13 @@ $BaseDir = $PSScriptRoot
 $PublishPath = Join-Path $BaseDir "setup\publish.ps1"
 if (-Not (Test-Path $PublishPath)) { Write-Error "File not found: $PublishPath"; exit 1 }
 
-$content = [System.IO.File]::ReadAllText($PublishPath)
-$content = [regex]::Replace(
-    $content,
+$Content = [System.IO.File]::ReadAllText($PublishPath)
+$Content = [regex]::Replace(
+    $Content,
     '(\[string\]\$Version\s*=\s*")[^"]*(")',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($PublishPath, $content)
+[System.IO.File]::WriteAllText($PublishPath, $Content)
 Write-Host "Updated $PublishPath"
 
 # -----------------------------
@@ -65,13 +65,13 @@ Write-Host "Updated $PublishPath"
 $AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
 if (-Not (Test-Path $AppConfigPath)) { Write-Error "File not found: $AppConfigPath"; exit 1 }
 
-$content = [System.IO.File]::ReadAllText($AppConfigPath)
-$content = [regex]::Replace(
-    $content,
+$Content = [System.IO.File]::ReadAllText($AppConfigPath)
+$Content = [regex]::Replace(
+    $Content,
     '(public static readonly string Version\s*=\s*")[^"]*(";)',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($AppConfigPath, $content)
+[System.IO.File]::WriteAllText($AppConfigPath, $Content)
 Write-Host "Updated $AppConfigPath"
 
 # -----------------------------
@@ -79,30 +79,30 @@ Write-Host "Updated $AppConfigPath"
 # -----------------------------
 Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj | ForEach-Object {
     $csproj = $_.FullName
-    $content = [System.IO.File]::ReadAllText($csproj)
+    $Content = [System.IO.File]::ReadAllText($csproj)
 
     # Update <Version>
-    $content = [regex]::Replace(
-        $content,
+    $Content = [regex]::Replace(
+        $Content,
         '(<Version>)[^<]*(</Version>)',
         { param($m) "$($m.Groups[1].Value)$FullVersion$($m.Groups[2].Value)" }
     )
 
     # Update <FileVersion>
-    $content = [regex]::Replace(
-        $content,
+    $Content = [regex]::Replace(
+        $Content,
         '(<FileVersion>)[^<]*(</FileVersion>)',
         { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
     )
 
     # Update <AssemblyVersion>
-    $content = [regex]::Replace(
-        $content,
+    $Content = [regex]::Replace(
+        $Content,
         '(<AssemblyVersion>)[^<]*(</AssemblyVersion>)',
         { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
     )
 
-    [System.IO.File]::WriteAllText($csproj, $content)
+    [System.IO.File]::WriteAllText($csproj, $Content)
     Write-Host "Updated $csproj"
 }
 

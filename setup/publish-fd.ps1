@@ -59,10 +59,10 @@ $ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
 
 # Helper function: Remove file or folder if it exists
 function Remove-FileOrFolder {
-    param ([string]$path)
-    if (Test-Path $path) {
-        Write-Host "Removing: $path"
-        Remove-Item -Recurse -Force $path
+    param ([string]$Path)
+    if (Test-Path $Path) {
+        Write-Host "Removing: $Path"
+        Remove-Item -Recurse -Force $Path
     }
 }
 

@@ -30,8 +30,8 @@
     Runs the script using the default TFM (net10.0-windows).
 
 .EXAMPLE
-    ./publish.ps1 -Tfm net9.0-windows
-    Publishes the CLI for .NET 9.
+    ./publish.ps1 -Tfm net10.0-windows
+    Publishes the CLI for .NET target framework.
 
 .NOTES
     Author : Akram El Assas

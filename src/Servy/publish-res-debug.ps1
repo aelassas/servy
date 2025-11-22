@@ -20,8 +20,8 @@ Target framework moniker. Default: net10.0-windows.
 Runs using the default TFM and publishes Debug artifacts.
 
 .EXAMPLE
-./publish-res-debug.ps1 -Tfm net9.0-windows
-Publishes Servy.Service with .NET 9.
+./publish-res-debug.ps1 -Tfm net10.0-windows
+Publishes Servy.Service with .NET target framework.
 
 .NOTES
 Author : Akram El Assas

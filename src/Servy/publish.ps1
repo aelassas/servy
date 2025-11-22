@@ -27,7 +27,7 @@
     Publishes using default parameters.
 
 .EXAMPLE
-    ./publish.ps1 -Tfm "net8.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
+    ./publish.ps1 -Tfm "net10.0-windows" -BuildConfiguration "Debug" -Runtime "win-x64"
 #>
 
 param(

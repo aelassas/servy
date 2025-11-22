@@ -17,8 +17,8 @@ Specifies the target framework. Default is "net10.0-windows".
 Publishes using the default target framework.
 
 .EXAMPLE
-./publish-release.ps1 -Tfm net9.0-windows
-Publishes using .NET 9 target framework.
+./publish-release.ps1 -Tfm net10.0-windows
+Publishes using .NET target framework.
 
 .NOTES
 Author: Akram El Assas
