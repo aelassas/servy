@@ -8,16 +8,16 @@
     publish-res script to include necessary resources and optionally signs the
     resulting executable using SignPath.
 
-.PARAMETER tfm
+.PARAMETER Tfm
     Target framework for the build (default: net10.0-windows).
 
-.PARAMETER runtime
+.PARAMETER Runtime
     Runtime identifier for the build (default: win-x64).
 
-.PARAMETER configuration
+.PARAMETER Configuration
     Build configuration: Debug or Release (default: Release).
 
-.PARAMETER pause
+.PARAMETER Pause
     Switch to pause execution at the end of the script.
 
 .REQUIREMENTS
@@ -30,17 +30,17 @@
 
 .EXAMPLE
     # Build Servy.Service in Debug mode and pause after completion
-    .\publish.ps1 -configuration Debug -pause
+    .\publish.ps1 -Configuration Debug -Pause
 
 .NOTES
     Author: Akram El Assas
 #>
 
 param(
-    [string]$tfm           = "net10.0-windows",
-    [string]$runtime       = "win-x64",
-    [string]$configuration = "Release",
-    [switch]$pause
+    [string]$Tfm           = "net10.0-windows",
+    [string]$Runtime       = "win-x64",
+    [string]$Configuration = "Release",
+    [switch]$Pause
 )
 
 $ErrorActionPreference = "Stop"
@@ -51,7 +51,7 @@ $ErrorActionPreference = "Stop"
 # Script directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$signPath      = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$SignPath      = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 $AppName       = "Servy.Service"
 $SelfContained = $true
 $SingleFile    = $true
@@ -60,26 +60,26 @@ $SingleFile    = $true
 $ProjectPath = Join-Path $ScriptDir "$AppName.csproj" | Resolve-Path
 
 # Output folder
-$PublishDir = Join-Path $ScriptDir "bin\$configuration\$tfm\$runtime\publish"
+$PublishDir = Join-Path $ScriptDir "bin\$Configuration\$Tfm\$Runtime\publish"
 
 # ---------------------------------------------------------------------------------
 # Step 1:Publish resources first
 # ---------------------------------------------------------------------------------
-$publishResScriptName = if ($configuration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+$PublishResScriptName = if ($Configuration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running $publishResScriptName ==="
-& $PublishResScript -tfm $tfm -runtime $runtime -configuration $configuration
+Write-Host "=== Running $PublishResScriptName ==="
+& $PublishResScript -Tfm $Tfm -Runtime $Runtime -Configuration $Configuration
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
+    Write-Error "$PublishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $publishResScriptName ===`n"
+Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Clean previous build artifacts
@@ -97,15 +97,15 @@ if (-not (Test-Path $ProjectPath)) {
 }
 
 Write-Host "=== Publishing $AppName ==="
-Write-Host "Target Framework : $tfm"
-Write-Host "Configuration    : $configuration"
-Write-Host "Runtime          : $runtime"
+Write-Host "Target Framework : $Tfm"
+Write-Host "Configuration    : $Configuration"
+Write-Host "Runtime          : $Runtime"
 Write-Host "Self-contained   : $SelfContained"
 Write-Host "Single File      : $SingleFile"
 
 & dotnet publish $ProjectPath `
-    -c $configuration `
-    -r $runtime `
+    -c $Configuration `
+    -r $Runtime `
     --self-contained:$SelfContained `
     /p:PublishSingleFile=$SingleFile `
     /p:IncludeAllContentForSelfExtract=true `
@@ -121,18 +121,20 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------------
 # Step 4: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
-$exePath = Join-Path $PublishDir "Servy.Service.exe" | Resolve-Path
-& $signPath $exePath
+if ($Configuration -eq "Release") {
+    $ExePath = Join-Path $PublishDir "Servy.Service.exe" | Resolve-Path
+    & $SignPath $ExePath
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Signing Servy.Service.exe failed."
-    exit $LASTEXITCODE
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Signing Servy.Service.exe failed."
+        exit $LASTEXITCODE
+    }
 }
 
 # ---------------------------------------------------------------------------------
 # Step 5: Pause (optional)
 # ---------------------------------------------------------------------------------
-if ($pause) { 
+if ($Pause) { 
     Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

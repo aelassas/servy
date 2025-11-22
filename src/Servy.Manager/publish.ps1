@@ -10,15 +10,15 @@
          target framework and runtime.
       3. Optionally signs the resulting executable using SignPath.
 
-.PARAMETER tfm
+.PARAMETER Tfm
     Target framework for the build.
     Default: net10.0-windows.
 
-.PARAMETER buildConfiguration
+.PARAMETER BuildConfiguration
     Build configuration to use.
     Default: Release.
 
-.PARAMETER runtime
+.PARAMETER Runtime
     Target runtime identifier (RID) for publishing.
     Default: win-x64.
 
@@ -36,9 +36,9 @@
 
 param(
     # Target framework (default: net10.0-windows)
-    [string]$tfm                = "net10.0-windows",
-    [string]$buildConfiguration = "Release",
-    [string]$runtime            = "win-x64"
+    [string]$Tfm                = "net10.0-windows",
+    [string]$BuildConfiguration = "Release",
+    [string]$Runtime            = "win-x64"
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,21 +56,21 @@ $SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 # ---------------------------------------------------------------------------------
 # Step 0: Publish resources
 # ---------------------------------------------------------------------------------
-$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running $publishResScriptName ==="
-& $PublishResScript -tfm $tfm
+Write-Host "=== Running $PublishResScriptName ==="
+& $PublishResScript -Tfm $Tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
+    Write-Error "$PublishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $publishResScriptName ===`n"
+Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.Manager.csproj (Self-contained, win-x64)
@@ -83,16 +83,16 @@ if (-not (Test-Path $ProjectPath)) {
 }
 
 Write-Host "=== Publishing Servy.Manager.csproj ==="
-Write-Host "Target Framework: $tfm"
-Write-Host "Configuration: $buildConfiguration"
-Write-Host "Runtime: $runtime"
+Write-Host "Target Framework: $Tfm"
+Write-Host "Configuration: $BuildConfiguration"
+Write-Host "Runtime: $Runtime"
 Write-Host "Self-contained: true"
 
-& dotnet clean $ProjectPath -c $buildConfiguration
+& dotnet clean $ProjectPath -c $BuildConfiguration
 
 & dotnet publish $ProjectPath `
-    -c $buildConfiguration `
-    -r $runtime `
+    -c $BuildConfiguration `
+    -r $Runtime `
     --self-contained true `
     --force `
     /p:DeleteExistingFiles=true `
@@ -108,14 +108,16 @@ if ($LASTEXITCODE -ne 0) {
 # ---------------------------------------------------------------------------------
 # Step 2: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
-$basePath      = Join-Path $ScriptDir "..\Servy.Manager\bin\$buildConfiguration\$tfm\$runtime"
-$publishFolder = Join-Path $basePath "publish"
-$exePath       = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
-& $SignPath $exePath
+if ($BuildConfiguration -eq "Release") {
+    $BasePath      = Join-Path $ScriptDir "..\Servy.Manager\bin\$BuildConfiguration\$Tfm\$Runtime"
+    $PublishFolder = Join-Path $BasePath "publish"
+    $ExePath       = Join-Path $PublishFolder "Servy.Manager.exe" | Resolve-Path
+    & $SignPath $ExePath
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Signing Servy.Manager.exe failed."
-    exit $LASTEXITCODE
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Signing Servy.Manager.exe failed."
+        exit $LASTEXITCODE
+    }
 }
 
 Write-Host "=== Servy.Manager.csproj published successfully ==="

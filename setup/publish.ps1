@@ -16,10 +16,10 @@
     2. Inno Setup (ISCC.exe) installed and accessible.
     3. 7-Zip installed with `7z` available in PATH.
 
-.PARAMETER fm
+.PARAMETER Fm
     The target framework moniker (TFM).
 
-.PARAMETER version
+.PARAMETER Version
     The Servy version being packaged.
 
 .EXAMPLE
@@ -34,11 +34,11 @@
 # Main setup bundle script for building both self-contained and framework-dependent installers
 
 param(
-    [string]$fm      = "net10.0",    
-    [string]$version = "3.8"
+    [string]$Fm      = "net10.0",    
+    [string]$Version = "3.8"
 )
 
-$tfm = "$fm-windows"
+$Tfm = "$Fm-windows"
 
 $ErrorActionPreference = "Stop"
 
@@ -71,15 +71,15 @@ function Invoke-Script {
 
 # Build self-contained installer
 Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
-    version = $version
-    fm      = $fm
+    Version = $Version
+    Fm      = $Fm
 }
 
 <#
 # Build framework-dependent installer
 Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
-    version = $version
-    fm      = $fm
+    Version = $Version
+    Fm      = $Fm
 }
 #>
 

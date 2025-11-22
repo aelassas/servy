@@ -29,6 +29,7 @@ Updates all relevant files to version 4.0.
 
 param(
     [Parameter(Mandatory = $true, Position = 0)]
+    [ValidatePattern("^\d+\.\d+$")]
     [string]$Version
 )
 
@@ -52,7 +53,7 @@ if (-Not (Test-Path $PublishPath)) { Write-Error "File not found: $PublishPath";
 $content = [System.IO.File]::ReadAllText($PublishPath)
 $content = [regex]::Replace(
     $content,
-    '(\[string\]\$version\s*=\s*")[^"]*(")',
+    '(\[string\]\$Version\s*=\s*")[^"]*(")',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
 [System.IO.File]::WriteAllText($PublishPath, $content)

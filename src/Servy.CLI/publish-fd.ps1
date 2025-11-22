@@ -22,13 +22,14 @@ NOTES
     Publishes Servy.CLI using the default target framework (net10.0-windows).
 
 .EXAMPLE
-    PS> .\publish-fd.ps1 -tfm net10-windows
+    PS> .\publish-fd.ps1 -Tfm net10-windows
     Publishes Servy.CLI targeting .NET 10.
 #>
 
 param(
     # Target framework (default: net10.0-windows)
-    [string]$tfm = "net10.0-windows"
+    [string]$Tfm                = "net10.0-windows",
+    [string]$BuildConfiguration = "Release"
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,27 +42,27 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (publish resources first)
 # ---------------------------------------------------------------------------------
-$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running $publishResScriptName ==="
-& $PublishResScript -tfm $tfm
+Write-Host "=== Running $PublishResScriptName ==="
+& $PublishResScript -Tfm $Tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
+    Write-Error "$PublishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $publishResScriptName ===`n"
+Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Clean and publish Servy.CLI.csproj (Framework-dependent, win-x64)
 # ---------------------------------------------------------------------------------
 $ProjectPath   = Join-Path $ScriptDir "Servy.CLI.csproj" | Resolve-Path
-$PublishFolder = Join-Path $ScriptDir "bin\Release\$tfm\win-x64\publish"
+$PublishFolder = Join-Path $ScriptDir "bin\Release\$Tfm\win-x64\publish"
 
 if (-not (Test-Path $ProjectPath)) {
     Write-Error "Project file not found: $ProjectPath"
@@ -75,7 +76,7 @@ if (Test-Path $PublishFolder) {
 }
 
 Write-Host "=== Publishing Servy.CLI.csproj ==="
-Write-Host "Target Framework : $tfm"
+Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : Release"
 Write-Host "Runtime          : win-x64"
 Write-Host "Self-contained   : false"

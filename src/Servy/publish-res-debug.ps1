@@ -12,7 +12,7 @@ This script:
 
 Used as part of the Debug build workflow for local development.
 
-.PARAMETER tfm
+.PARAMETER Tfm
 Target framework moniker. Default: net10.0-windows.
 
 .EXAMPLE
@@ -20,7 +20,7 @@ Target framework moniker. Default: net10.0-windows.
 Runs using the default TFM and publishes Debug artifacts.
 
 .EXAMPLE
-./publish-res-debug.ps1 -tfm net9.0-windows
+./publish-res-debug.ps1 -Tfm net9.0-windows
 Publishes Servy.Service with .NET 9.
 
 .NOTES
@@ -31,7 +31,7 @@ Requires: .NET SDK, correct folder structure
 
 param(
     # Target framework (default: net10.0-windows)
-    [string]$tfm = "net10.0-windows"
+    [string]$Tfm = "net10.0-windows"
 )
 
 $ErrorActionPreference = "Stop"
@@ -44,17 +44,17 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ---------------------------------------------------------------------------------
 # Paths and build settings
 # ---------------------------------------------------------------------------------
-$serviceDir         = Join-Path $ScriptDir  "..\Servy.Service" | Resolve-Path
-$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj" | Resolve-Path
-$resourcesFolder    = Join-Path $ScriptDir "..\Servy\Resources" | Resolve-Path
-$buildConfiguration = "Debug"
-$runtime            = "win-x64"
-$selfContained      = $true
+$ServiceDir         = Join-Path $ScriptDir  "..\Servy.Service" | Resolve-Path
+$ServiceProject     = Join-Path $ServiceDir "Servy.Service.csproj" | Resolve-Path
+$ResourcesFolder    = Join-Path $ScriptDir "..\Servy\Resources" | Resolve-Path
+$BuildConfiguration = "Debug"
+$Runtime            = "win-x64"
+$SelfContained      = $true
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project
 # ---------------------------------------------------------------------------------
-$PublishServiceScript = Join-Path $serviceDir "publish.ps1"
+$PublishServiceScript = Join-Path $ServiceDir "publish.ps1"
 
 if (-not (Test-Path $PublishServiceScript)) {
     Write-Error "Required script not found: $PublishServiceScript"
@@ -62,7 +62,7 @@ if (-not (Test-Path $PublishServiceScript)) {
 }
 
 Write-Host "=== [service] Running publish.ps1 ==="
-& $PublishServiceScript -tfm $tfm -configuration $buildConfiguration
+& $PublishServiceScript -Tfm $Tfm -Configuration $BuildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE
@@ -72,42 +72,42 @@ Write-Host "=== [service] Completed publish.ps1 ===`n"
 # ---------------------------------------------------------------------------------
 # Step 2: Prepare publish and build folder paths
 # ---------------------------------------------------------------------------------
-$basePath      = Join-Path $ScriptDir "..\Servy.Service\bin\$buildConfiguration\$tfm\$runtime"
-$publishFolder = Join-Path $basePath "publish"
-$buildFolder   = $basePath
+$BasePath      = Join-Path $ScriptDir "..\Servy.Service\bin\$BuildConfiguration\$Tfm\$Runtime"
+$PublishFolder = Join-Path $BasePath "publish"
+$BuildFolder   = $BasePath
 
 # ---------------------------------------------------------------------------------
 # Step 3: Copy artifacts to Resources folder
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $resourcesFolder)) {
-    New-Item -ItemType Directory -Path $resourcesFolder | Out-Null
+if (-not (Test-Path $ResourcesFolder)) {
+    New-Item -ItemType Directory -Path $ResourcesFolder | Out-Null
 }
 
 # Copy single-file executable
-Copy-Item -Path (Join-Path $publishFolder "Servy.Service.exe") `
-          -Destination (Join-Path $resourcesFolder "Servy.Service.exe") -Force
+Copy-Item -Path (Join-Path $PublishFolder "Servy.Service.exe") `
+          -Destination (Join-Path $ResourcesFolder "Servy.Service.exe") -Force
 
 # Copy PDB files
-Copy-Item -Path (Join-Path $buildFolder "Servy.Service.pdb") `
-          -Destination (Join-Path $resourcesFolder "Servy.Service.pdb") -Force
+Copy-Item -Path (Join-Path $BuildFolder "Servy.Service.pdb") `
+          -Destination (Join-Path $ResourcesFolder "Servy.Service.pdb") -Force
 <#
-Copy-Item -Path (Join-Path $buildFolder "Servy.Core.pdb") `
-          -Destination (Join-Path $resourcesFolder "Servy.Core.pdb") -Force
+Copy-Item -Path (Join-Path $BuildFolder "Servy.Core.pdb") `
+          -Destination (Join-Path $ResourcesFolder "Servy.Core.pdb") -Force
 #>
 
 # ----------------------------------------------------------------------
 # Step 4 - CopyServy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
-$infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\$tfm\$runtime\Servy.Infrastructure.pdb"
-$infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
+$InfraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$InfraSourcePath     = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$BuildConfiguration\$Tfm\$Runtime\Servy.Infrastructure.pdb"
+$InfraDestPath       = Join-Path $ResourcesFolder "Servy.Infrastructure.pdb"
 
-dotnet publish $infraServiceProject `
-    -c $buildConfiguration `
-    -r $runtime `
+dotnet publish $InfraServiceProject `
+    -c $BuildConfiguration `
+    -r $Runtime `
     --self-contained false `
-    /p:TargetFramework=$tfm `
+    /p:TargetFramework=$Tfm `
     /p:PublishSingleFile=false `
     /p:IncludeAllContentForSelfExtract=false `
     /p:PublishTrimmed=false
@@ -117,10 +117,11 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-Copy-Item -Path $infraSourcePath  -Destination $infraDestPath -Force
+Copy-Item -Path $InfraSourcePath  -Destination $InfraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
 #>
+
 # ---------------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------------
-Write-Host "=== $buildConfiguration build ($tfm) published successfully to Resources ==="
+Write-Host "=== $BuildConfiguration build ($Tfm) published successfully to Resources ==="

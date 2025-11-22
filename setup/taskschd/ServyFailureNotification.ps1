@@ -55,25 +55,25 @@ function Show-Notification {
 # -------------------------------
 # Get latest Servy error event
 # -------------------------------
-$filter = @{
+$Filter = @{
     LogName = 'Application'
     ProviderName = 'Servy'
     Level = 2  # Error
 }
 
-$lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
+$LastError = Get-WinEvent -FilterHashtable $Filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
 
-if ($lastError) {
-    $message = $lastError.Message
-    if ($message -match "^\[(.+?)\]\s*(.+)$") {
-        $serviceName = $matches[1]
-        $logText = $matches[2]
+if ($LastError) {
+    $Message = $LastError.Message
+    if ($Message -match "^\[(.+?)\]\s*(.+)$") {
+        $ServiceName = $matches[1]
+        $LogText = $matches[2]
     } else {
-        $serviceName = "Unknown Service"
-        $logText = $message
+        $ServiceName = "Unknown Service"
+        $LogText = $Message
     }
 
-    Show-Notification -ToastTitle "Servy - $serviceName" -ToastText $logText
+    Show-Notification -ToastTitle "Servy - $ServiceName" -ToastText $LogText
 } else {
     Write-Host "No Servy error events found."
 }

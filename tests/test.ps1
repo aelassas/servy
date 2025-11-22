@@ -27,47 +27,47 @@
 $ErrorActionPreference = "Stop"
 
 # Directories
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$testResultsDir = Join-Path -Path $scriptDir -ChildPath "TestResults"
-$coverageReportDir = Join-Path -Path $scriptDir -ChildPath "coveragereport"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
+$CoverageReportDir = Join-Path -Path $ScriptDir -ChildPath "coveragereport"
 
 # Cleanup previous results
-if (Test-Path $testResultsDir) {
+if (Test-Path $TestResultsDir) {
     Write-Host "Cleaning up previous test results..."
-    Remove-Item -Path $testResultsDir -Recurse -Force
+    Remove-Item -Path $TestResultsDir -Recurse -Force
 }
 
-if (Test-Path $coverageReportDir) {
+if (Test-Path $CoverageReportDir) {
     Write-Host "Cleaning up previous coverage report..."
-    Remove-Item -Path $coverageReportDir -Recurse -Force
+    Remove-Item -Path $CoverageReportDir -Recurse -Force
 }
 
 # Explicit test projects
-$testProjects = @(
-    Join-Path $scriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
-    Join-Path $scriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
+$TestProjects = @(
+    Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
 )
 
 # Run tests and collect coverage for each project
-foreach ($proj in $testProjects) {
-    if (-not (Test-Path $proj)) {
-        Write-Error "Test project not found: $proj"
+foreach ($Proj in $TestProjects) {
+    if (-not (Test-Path $Proj)) {
+        Write-Error "Test project not found: $Proj"
         exit 1
     }
 
-    Write-Host "Running tests for $($proj)..."
-    dotnet test $proj `
+    Write-Host "Running tests for $($Proj)..."
+    dotnet test $Proj `
         --collect:"XPlat Code Coverage" `
-        --results-directory $testResultsDir `
+        --results-directory $TestResultsDir `
         -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 }
 
 # Generate a global coverage report
-$coverageFiles = Join-Path -Path $testResultsDir -ChildPath "**/*.cobertura.xml"
+$CoverageFiles = Join-Path -Path $TestResultsDir -ChildPath "**/*.cobertura.xml"
 Write-Host "Generating global coverage report..."
 reportgenerator `
-    -reports:$coverageFiles `
-    -targetdir:$coverageReportDir `
+    -reports:$CoverageFiles `
+    -targetdir:$CoverageReportDir `
     -reporttypes:Html
 
-Write-Host "Coverage report generated at $coverageReportDir"
+Write-Host "Coverage report generated at $CoverageReportDir"

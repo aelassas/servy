@@ -7,13 +7,13 @@
     framework-dependent mode, builds the Inno Setup installer, and creates a
     compressed 7z package containing all published framework-dependent builds.
 
-.PARAMETER fm
+.PARAMETER Fm
     Target framework moniker (TFM), e.g., "net10.0".
 
-.PARAMETER version
+.PARAMETER Version
     Application version used for installer and ZIP output file names.
 
-.PARAMETER pause
+.PARAMETER Pause
     Optional switch that pauses the script before exiting. Useful for double-click usage.
 
 .NOTES
@@ -26,7 +26,7 @@
     ./publish-fd.ps1 -fm "net10.0" -version "3.8"
 
 .EXAMPLE
-    ./publish-fd.ps1 -version "3.8" -pause
+    ./publish-fd.ps1 -version "3.8" -Pause
 #>
 
 # publish-fd.ps1
@@ -34,12 +34,12 @@
 # Builds WPF and CLI apps, creates Inno Setup installer, and packages a ZIP.
 
 param(
-    [string]$fm      = "net10.0",    
-    [string]$version = "1.0",
-    [switch]$pause
+    [string]$Fm      = "net10.0",    
+    [string]$Version = "1.0",
+    [switch]$Pause
 )
 
-$tfm = "$fm-windows"
+$Tfm = "$Fm-windows"
 
 # -----------------------------
 # Configuration
@@ -47,8 +47,8 @@ $tfm = "$fm-windows"
 $innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 $SevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
 $issFile            = ".\servy-fd.iss"
-$buildConfiguration = "Release"
-$runtime            = "win-x64"
+$BuildConfiguration = "Release"
+$Runtime            = "win-x64"
 
 # Directories
 $ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -70,26 +70,26 @@ function Remove-FileOrFolder {
 # Step 1: Build Servy WPF Apps
 # -----------------------------
 $wpfBuildScript = Join-Path $ScriptDir "..\src\Servy\publish-fd.ps1"
-& $wpfBuildScript -tfm $tfm
+& $wpfBuildScript -Tfm $Tfm
 
 $managerBuildScript = Join-Path $ScriptDir "..\src\Servy.Manager\publish-fd.ps1"
-& $managerBuildScript  -tfm $tfm
+& $managerBuildScript  -Tfm $Tfm
 
 # -----------------------------
 # Step 2: Build Servy CLI App
 # -----------------------------
 $cliBuildScript = Join-Path $ScriptDir "..\src\Servy.CLI\publish-fd.ps1"
-& $cliBuildScript -tfm $tfm
+& $cliBuildScript -Tfm $Tfm
 
 # -----------------------------
 # Step 3: Build installer (Inno Setup)
 # -----------------------------
-& $innoCompiler $issFile /DMyAppVersion=$version
+& $innoCompiler $issFile /DMyAppVersion=$Version
 
 # -----------------------------
 # Step 4: Prepare ZIP package
 # -----------------------------
-$packageFolder = Join-Path $ScriptDir "servy-$version-x64-frameworkdependent"
+$packageFolder = Join-Path $ScriptDir "servy-$Version-x64-frameworkdependent"
 $outputZip     = "$packageFolder.7z"
 
 # Cleanup old package
@@ -99,9 +99,9 @@ Remove-FileOrFolder -path $outputZip
 # Create package folders
 New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
-$servyPublish = Join-Path $ServyDir "bin\$buildConfiguration\$tfm\$runtime\publish"
-$cliPublish   = Join-Path $CliDir "bin\$buildConfiguration\$tfm\$runtime\publish"
-$managerPublish   = Join-Path $ManagerDir "bin\$buildConfiguration\$tfm\$runtime\publish"
+$servyPublish = Join-Path $ServyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
+$cliPublish   = Join-Path $CliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
+$managerPublish   = Join-Path $ManagerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
 
 $servyAppFolder = Join-Path $packageFolder "servy-app"
 $servyCliFolder = Join-Path $packageFolder "servy-cli"
@@ -173,7 +173,7 @@ Write-Host "Installer build finished."
 # -----------------------------
 # Optional pause when double-clicked
 # -----------------------------
-if ($pause) {
+if ($Pause) {
     Write-Host "Press any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

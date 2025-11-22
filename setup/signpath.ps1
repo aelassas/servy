@@ -26,29 +26,29 @@ param(
 # ----------------------------------------------------------
 # LOCATE CONFIG FILE
 # ----------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$configCandidates = @(
-    (Join-Path $scriptDir ".signpath"),
-    (Join-Path $scriptDir ".signpath.env"),
+$ConfigCandidates = @(
+    (Join-Path $ScriptDir ".signpath"),
+    (Join-Path $ScriptDir ".signpath.env"),
     ".signpath",
     ".signpath.env"
 )
 
-$configPath = $configCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+$ConfigPath = $ConfigCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-if (-not $configPath) {
+if (-not $ConfigPath) {
     Write-Host ".signpath not found. Skipping signing."
     exit 0
 }
 
-Write-Host "Loading config from $configPath"
+Write-Host "Loading config from $ConfigPath"
 
 # ----------------------------------------------------------
 # LOAD CONFIG
 # ----------------------------------------------------------
 $Config = @{}
-Get-Content $configPath | ForEach-Object {
+Get-Content $ConfigPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
@@ -61,7 +61,7 @@ Get-Content $configPath | ForEach-Object {
 # ----------------------------------------------------------
 $SignFlag = $Config["SIGN"]
 if ($SignFlag -ine "true") {
-    Write-Host "SIGN is not true in $configPath. Skipping signing."
+    Write-Host "SIGN is not true in $ConfigPath. Skipping signing."
     exit 0
 }
 
@@ -93,66 +93,66 @@ Write-Host "Submitting signing job for $FileName..."
 # ----------------------------------------------------------
 # CREATE SIGNING JOB
 # ----------------------------------------------------------
-$createJobUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/projects/$ProjectSlug/signing-jobs"
-$createBody = @{ workflow = $WorkflowSlug } | ConvertTo-Json
+$CreateJobUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/projects/$ProjectSlug/signing-jobs"
+$CreateBody = @{ workflow = $WorkflowSlug } | ConvertTo-Json
 
-$createRequest = [System.Net.WebRequest]::Create($createJobUrl)
-$createRequest.Method = "POST"
-$createRequest.ContentType = "application/json"
-$createRequest.Headers["Authorization"] = "Bearer $ApiToken"
+$CreateRequest = [System.Net.WebRequest]::Create($CreateJobUrl)
+$CreateRequest.Method = "POST"
+$CreateRequest.ContentType = "application/json"
+$CreateRequest.Headers["Authorization"] = "Bearer $ApiToken"
 
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($createBody)
-$createRequest.ContentLength = $bytes.Length
-$stream = $createRequest.GetRequestStream()
-$stream.Write($bytes, 0, $bytes.Length)
-$stream.Close()
+$Bytes = [System.Text.Encoding]::UTF8.GetBytes($CreateBody)
+$CreateRequest.ContentLength = $Bytes.Length
+$Stream = $CreateRequest.GetRequestStream()
+$Stream.Write($Bytes, 0, $Bytes.Length)
+$Stream.Close()
 
-$response = $createRequest.GetResponse()
-$respStream = $response.GetResponseStream()
-$reader = New-Object System.IO.StreamReader($respStream)
-$jobResult = $reader.ReadToEnd() | ConvertFrom-Json
-$reader.Close()
-$response.Close()
+$Response = $CreateRequest.GetResponse()
+$RespStream = $Response.GetResponseStream()
+$Reader = New-Object System.IO.StreamReader($RespStream)
+$JobResult = $Reader.ReadToEnd() | ConvertFrom-Json
+$Reader.Close()
+$Response.Close()
 
-$JobId = $jobResult.signingJobId
+$JobId = $JobResult.signingJobId
 
 # ----------------------------------------------------------
 # UPLOAD ARTIFACT (streamed)
 # ----------------------------------------------------------
 Write-Host "Uploading artifact..."
-$uploadUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/artifacts/original-file"
-$uploadRequest = [System.Net.WebRequest]::Create($uploadUrl)
-$uploadRequest.Method = "PUT"
-$uploadRequest.Headers["Authorization"] = "Bearer $ApiToken"
-$uploadRequest.ContentType = "application/octet-stream"
+$UploadUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/artifacts/original-file"
+$UploadRequest = [System.Net.WebRequest]::Create($UploadUrl)
+$UploadRequest.Method = "PUT"
+$UploadRequest.Headers["Authorization"] = "Bearer $ApiToken"
+$UploadRequest.ContentType = "application/octet-stream"
 
-$fileStream = [System.IO.File]::OpenRead($FilePath)
-$uploadRequest.ContentLength = $fileStream.Length
-$requestStream = $uploadRequest.GetRequestStream()
+$FileStream = [System.IO.File]::OpenRead($FilePath)
+$UploadRequest.ContentLength = $FileStream.Length
+$RequestStream = $UploadRequest.GetRequestStream()
 
-$bufferSize = 4MB
-$buffer = New-Object byte[] $bufferSize
-while (($read = $fileStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
-    $requestStream.Write($buffer, 0, $read)
+$BufferSize = 4MB
+$Buffer = New-Object byte[] $BufferSize
+while (($read = $FileStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+    $RequestStream.Write($Buffer, 0, $read)
 }
 
-$requestStream.Close()
-$fileStream.Close()
+$RequestStream.Close()
+$FileStream.Close()
 
-$uploadResponse = $uploadRequest.GetResponse()
-$uploadResponse.Close()
+$UploadResponse = $UploadRequest.GetResponse()
+$UploadResponse.Close()
 
 # ----------------------------------------------------------
 # START WORKFLOW
 # ----------------------------------------------------------
 Write-Host "Starting signing job..."
-$startUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/start"
-$startReq = [System.Net.WebRequest]::Create($startUrl)
-$startReq.Method = "POST"
-$startReq.Headers["Authorization"] = "Bearer $ApiToken"
-$startReq.ContentLength = 0
-$startResp = $startReq.GetResponse()
-$startResp.Close()
+$StartUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/start"
+$StartReq = [System.Net.WebRequest]::Create($StartUrl)
+$StartReq.Method = "POST"
+$StartReq.Headers["Authorization"] = "Bearer $ApiToken"
+$StartReq.ContentLength = 0
+$StartResp = $StartReq.GetResponse()
+$StartResp.Close()
 
 # ----------------------------------------------------------
 # POLL FOR STATUS
@@ -160,18 +160,18 @@ $startResp.Close()
 Write-Host "Waiting for signing to complete..."
 while ($true) {
     Start-Sleep -Seconds 5
-    $statusUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId"
-    $statusReq = [System.Net.WebRequest]::Create($statusUrl)
-    $statusReq.Method = "GET"
-    $statusReq.Headers["Authorization"] = "Bearer $ApiToken"
-    $statusResp = $statusReq.GetResponse()
-    $statusReader = New-Object System.IO.StreamReader($statusResp.GetResponseStream())
-    $statusJson = $statusReader.ReadToEnd() | ConvertFrom-Json
-    $statusReader.Close()
-    $statusResp.Close()
+    $StatusUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId"
+    $StatusReq = [System.Net.WebRequest]::Create($StatusUrl)
+    $StatusReq.Method = "GET"
+    $StatusReq.Headers["Authorization"] = "Bearer $ApiToken"
+    $StatusResp = $StatusReq.GetResponse()
+    $StatusReader = New-Object System.IO.StreamReader($StatusResp.GetResponseStream())
+    $StatusJson = $StatusReader.ReadToEnd() | ConvertFrom-Json
+    $StatusReader.Close()
+    $StatusResp.Close()
 
-    Write-Host "Status: $($statusJson.status)"
-    switch ($statusJson.status) {
+    Write-Host "Status: $($StatusJson.status)"
+    switch ($StatusJson.status) {
         "Succeeded" { break }
         "Failed"    { Write-Error "SignPath signing failed."; exit 2 }
         "Rejected"  { Write-Error "SignPath workflow rejected the file."; exit 3 }
@@ -183,22 +183,22 @@ while ($true) {
 # ----------------------------------------------------------
 $signedPath = "$FilePath.signed"
 Write-Host "Downloading signed file..."
-$downloadUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/artifacts/signed-file"
-$downloadReq = [System.Net.WebRequest]::Create($downloadUrl)
-$downloadReq.Method = "GET"
-$downloadReq.Headers["Authorization"] = "Bearer $ApiToken"
-$downloadResp = $downloadReq.GetResponse()
-$downloadStream = $downloadResp.GetResponseStream()
-$fileOut = [System.IO.File]::Open($signedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+$DownloadUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/artifacts/signed-file"
+$DownloadReq = [System.Net.WebRequest]::Create($DownloadUrl)
+$DownloadReq.Method = "GET"
+$DownloadReq.Headers["Authorization"] = "Bearer $ApiToken"
+$DownloadResp = $DownloadReq.GetResponse()
+$DownloadStream = $DownloadResp.GetResponseStream()
+$FileOut = [System.IO.File]::Open($signedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
 
-$buffer = New-Object byte[] 4MB
-while (($read = $downloadStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
-    $fileOut.Write($buffer, 0, $read)
+$Buffer = New-Object byte[] 4MB
+while (($read = $DownloadStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
+    $FileOut.Write($Buffer, 0, $read)
 }
 
-$fileOut.Close()
-$downloadStream.Close()
-$downloadResp.Close()
+$FileOut.Close()
+$DownloadStream.Close()
+$DownloadResp.Close()
 
 # ----------------------------------------------------------
 # REPLACE ORIGINAL FILE
