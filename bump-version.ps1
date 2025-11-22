@@ -1,5 +1,31 @@
-﻿param(
+﻿<#
+.SYNOPSIS
+    Updates the Servy version across all project files.
+
+.DESCRIPTION
+    This script updates version numbers in several Servy files based on a provided
+    short version (e.g. 1.4). It expands the version into full semantic versions
+    and rewrites:
+      - setup\publish.ps1
+      - src\Servy.Core\Config\AppConfig.cs
+      - All AssemblyInfo.cs files under the project tree
+
+.PARAMETER Version
+    The short version number in the format X.Y (e.g. 1.4). This is expanded into
+    full versions such as 1.4.0 and 1.4.0.0 for file and assembly metadata.
+
+.EXAMPLE
+    ./Update-Version.ps1 1.4
+    Updates all version references to 1.4 / 1.4.0 / 1.4.0.0 depending on the file.
+
+.NOTES
+    Author: Akram El Assas
+    Project: Servy
+#>
+
+param(
     [Parameter(Mandatory = $true, Position = 0)]
+    [ValidatePattern("^\d+\.\d+$")]
     [string]$Version
 )
 
