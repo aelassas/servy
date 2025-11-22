@@ -59,7 +59,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 
 ## Why?
 
-See the [project manifest](MANIFEST.md).
+See the [project notes](NOTES.md).
 
 ## Getting Started
 You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
