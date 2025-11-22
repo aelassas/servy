@@ -35,27 +35,27 @@ $ErrorActionPreference = "Stop"
 # -------------------------------------------------------------------------------------------------
 $ScriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CliProject           = Join-Path $ScriptDir "..\Servy.CLI\Servy.CLI.csproj" | Resolve-Path
-$servicePublishScript = Join-Path $ScriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
+$ServicePublishScript = Join-Path $ScriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
 $ResourcesFolder      = Join-Path $ScriptDir "..\Servy.CLI\Resources" | Resolve-Path
 $BuildConfiguration   = "Debug"
-$platform             = "x64"
+$Platform             = "x64"
 $BuildOutput          = Join-Path $ScriptDir "..\Servy.Service\bin\$BuildConfiguration"
-$resourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
+$ResourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$Platform\$BuildConfiguration"
 
 # ------------------------------------------------------------------------
 # Step 0: Build Servy to ensure x86 and x64 resources exist
 # ------------------------------------------------------------------------
-& msbuild $CliProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
+& msbuild $CliProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
 
 # -------------------------------------------------------------------------------------------------
 # Step 1: Build the project in Debug mode
 # -------------------------------------------------------------------------------------------------
-& $servicePublishScript -BuildConfiguration $buildConfiguration
+& $ServicePublishScript -BuildConfiguration $BuildConfiguration
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy
 # ------------------------------------------------------------------------
-$filesToCopy = @(
+$FilesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
     @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" },
     @{ Source = "*.dll"; Destination = "*.dll" }
@@ -64,38 +64,38 @@ $filesToCopy = @(
 # ------------------------------------------------------------------------
 # 3. Copy files to Resources folder
 # ------------------------------------------------------------------------
-foreach ($file in $filesToCopy) {
-    $sourcePath = Join-Path $buildOutput $file.Source
+foreach ($File in $FilesToCopy) {
+    $SourcePath = Join-Path $BuildOutput $File.Source
 
-    if ($file.Source -like "*.dll") {
-        Copy-Item -Path $sourcePath -Destination $resourcesFolder -Force
-        Write-Host "Copied $($file.Source) -> $resourcesFolder"
+    if ($File.Source -like "*.dll") {
+        Copy-Item -Path $SourcePath -Destination $ResourcesFolder -Force
+        Write-Host "Copied $($File.Source) -> $ResourcesFolder"
     } else {
-        $destPath = Join-Path $resourcesFolder $file.Destination
-        Copy-Item -Path $sourcePath -Destination $destPath -Force
-        Write-Host "Copied $($file.Source) -> $($file.Destination)"
+        $DestPath = Join-Path $ResourcesFolder $File.Destination
+        Copy-Item -Path $SourcePath -Destination $DestPath -Force
+        Write-Host "Copied $($File.Source) -> $($File.Destination)"
     }
 }
 
 # Ensure destination folders exist
-New-Item -ItemType Directory -Force -Path "$resourcesFolder\x86" | Out-Null
-New-Item -ItemType Directory -Force -Path "$resourcesFolder\x64" | Out-Null
+New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x86" | Out-Null
+New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x64" | Out-Null
 
 # Copy x86/ x64/ folders
-Copy-Item -Path "$resourcesBuildOutput\x86\*" -Destination "$resourcesFolder\x86" -Force -Recurse
-Copy-Item -Path "$resourcesBuildOutput\x64\*" -Destination "$resourcesFolder\x64" -Force -Recurse
+Copy-Item -Path "$ResourcesBuildOutput\x86\*" -Destination "$ResourcesFolder\x86" -Force -Recurse
+Copy-Item -Path "$ResourcesBuildOutput\x64\*" -Destination "$ResourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
 # Step 4 - Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
-$infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
-$infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
+$InfraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$InfraSourcePath     = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$BuildConfiguration\Servy.Infrastructure.pdb"
+$InfraDestPath       = Join-Path $ResourcesFolder "Servy.Infrastructure.pdb"
 
-& msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+& msbuild $InfraServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration
 
-Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
+Copy-Item -Path $InfraSourcePath -Destination $InfraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
 #>
 

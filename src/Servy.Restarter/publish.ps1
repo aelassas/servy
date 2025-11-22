@@ -49,21 +49,21 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 $RestarterProject = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj" | Resolve-Path
 $BuildOutput      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$BuildConfiguration"
-$signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$platform         = "x64"
+$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$Platform         = "x64"
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $BuildConfiguration mode..."
-& msbuild $RestarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
+& msbuild $RestarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
 
 # ----------------------------------------------------------------------
 # Step 2: Sign the executable only in Release mode
 # ----------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $exePath = Join-Path $BuildOutput "Servy.Restarter.exe" | Resolve-Path
-    & $signPath $exePath
+    $ExePath = Join-Path $BuildOutput "Servy.Restarter.exe" | Resolve-Path
+    & $SignPath $ExePath
 }
 
 Write-Host "Build completed for Servy.Restarter in $BuildConfiguration mode."

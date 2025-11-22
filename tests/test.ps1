@@ -1,69 +1,95 @@
+<#
+.SYNOPSIS
+Runs Servy.Core and Servy.Infrastructure unit tests, collects coverage with Coverlet, and generates an HTML coverage report.
+
+.DESCRIPTION
+This script:
+1. Cleans previous test and coverage output.
+2. Builds the Servy.Core.UnitTests and Servy.Infrastructure.UnitTests projects in Debug mode.
+3. Executes their tests using vstest.console.exe through Coverlet.
+4. Produces Cobertura-format coverage reports for each project.
+5. Generates a combined HTML coverage report using ReportGenerator.
+
+.PARAMETER MsbuildPath
+The path to MSBuild.exe. Defaults to the Visual Studio 2022 Community Edition location.
+
+.NOTES
+- Requires Coverlet and ReportGenerator to be installed and available in PATH.
+- Must be run in PowerShell (x64).
+- Paths to MSBuild and vstest.console.exe may need to be adjusted for your environment.
+
+.EXAMPLE
+PS> .\test.ps1
+Runs tests for Servy.Core and Servy.Infrastructure, collects coverage, and generates an HTML report.
+
+#>
+
 # tests/test.ps1
 $ErrorActionPreference = "Stop"
 
 # Path to MSBuild.exe for Visual Studio 2022 Community Edition
-$msbuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
+$MsbuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
 
 # Directories
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$testResultsDir = Join-Path -Path $scriptDir -ChildPath "TestResults"
-$coverageReportDir = Join-Path -Path $scriptDir -ChildPath "coveragereport"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
+$CoverageReportDir = Join-Path -Path $ScriptDir -ChildPath "coveragereport"
 
 # Cleanup previous results
-if (Test-Path $testResultsDir) {
+if (Test-Path $TestResultsDir) {
     Write-Host "Cleaning up previous test results..."
-    Remove-Item -Path $testResultsDir -Recurse -Force
+    Remove-Item -Path $TestResultsDir -Recurse -Force
 }
-New-Item -ItemType Directory -Path $testResultsDir | Out-Null
+New-Item -ItemType Directory -Path $TestResultsDir | Out-Null
 
-if (Test-Path $coverageReportDir) {
+if (Test-Path $CoverageReportDir) {
     Write-Host "Cleaning up previous coverage report..."
-    Remove-Item -Path $coverageReportDir -Recurse -Force
+    Remove-Item -Path $CoverageReportDir -Recurse -Force
 }
-New-Item -ItemType Directory -Path $coverageReportDir | Out-Null
+New-Item -ItemType Directory -Path $CoverageReportDir | Out-Null
 
 # Explicit test projects
-$testProjects = @(
-    Join-Path $scriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
-    Join-Path $scriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
+$TestProjects = @(
+    Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
 )
 
 # Run tests and collect coverage for each project
-foreach ($proj in $testProjects) {
-    if (-not (Test-Path $proj)) {
-        Write-Error "Test project not found: $proj"
+foreach ($Proj in $TestProjects) {
+    if (-not (Test-Path $Proj)) {
+        Write-Error "Test project not found: $Proj"
         exit 1
     }
 
     # Build the test project in Debug mode
-    Write-Host "Building $($proj)..."
-    & $msbuildPath $proj /p:Configuration=Debug /verbosity:minimal
+    Write-Host "Building $($Proj)..."
+    & $MsbuildPath $Proj /p:Configuration=Debug /verbosity:minimal
 
     # Get project name without extension
-    $projName = [System.IO.Path]::GetFileNameWithoutExtension($proj)
-    $projDir = Split-Path $proj -Parent
-    $dllPath = Join-Path $projDir "bin\Debug\$projName.dll"
+    $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
+    $ProjDir = Split-Path $Proj -Parent
+    $DllPath = Join-Path $ProjDir "bin\Debug\$ProjName.dll"
 
-    if (-not (Test-Path $dllPath)) {
-        Write-Error "Could not find built DLL: $dllPath"
+    if (-not (Test-Path $DllPath)) {
+        Write-Error "Could not find built DLL: $DllPath"
         exit 1
     }
 
-    Write-Host "Running tests for $($projName)..."
+    Write-Host "Running tests for $($ProjName)..."
 
-    coverlet "$dllPath" `
+    coverlet "$DllPath" `
       --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-      --targetargs "$dllPath --ResultsDirectory:$testResultsDir" `
-      --output (Join-Path $testResultsDir "$projName.coverage.xml") `
+      --targetargs "$DllPath --ResultsDirectory:$TestResultsDir" `
+      --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
       --format "cobertura"
 }
 
 # Generate a global coverage report
-$coverageFiles = Join-Path $testResultsDir "*.coverage.xml"
+$coverageFiles = Join-Path $TestResultsDir "*.coverage.xml"
 Write-Host "Generating global coverage report..."
 reportgenerator `
     -reports:$coverageFiles `
-    -targetdir:$coverageReportDir `
+    -targetdir:$CoverageReportDir `
     -reporttypes:Html
 
-Write-Host "Coverage report generated at $coverageReportDir"
+Write-Host "Coverage report generated at $CoverageReportDir"

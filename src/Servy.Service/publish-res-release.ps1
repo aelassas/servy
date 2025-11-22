@@ -35,21 +35,21 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$restarterPublishScript = Join-Path $ScriptDir "..\Servy.Restarter\publish.ps1" | Resolve-Path
-$resourcesFolder        = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
-$buildConfiguration     = "Release"
-$platform               = "x64"
-$buildOutput            = Join-Path $ScriptDir "..\Servy.Restarter\bin\$platform\$buildConfiguration" | Resolve-Path
+$RestarterPublishScript = Join-Path $ScriptDir "..\Servy.Restarter\publish.ps1" | Resolve-Path
+$ResourcesFolder        = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
+$BuildConfiguration     = "Release"
+$Platform               = "x64"
+$BuildOutput            = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Platform\$BuildConfiguration" | Resolve-Path
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter in Release mode
 # ----------------------------------------------------------------------
-& $restarterPublishScript -BuildConfiguration $buildConfiguration
+& $RestarterPublishScript -BuildConfiguration $BuildConfiguration
 
 # ----------------------------------------------------------------------
 # Step 2: Files to copy (with renamed outputs where applicable)
 # ----------------------------------------------------------------------
-$filesToCopy = @(
+$FilesToCopy = @(
     @{ Source = "Servy.Restarter.exe"; Destination = "Servy.Restarter.exe" },
     @{ Source = "Servy.Restarter.pdb"; Destination = "Servy.Restarter.pdb" }
     #@{ Source = "Dapper.dll";          Destination = "Dapper.dll" }
@@ -60,27 +60,27 @@ $filesToCopy = @(
 # ----------------------------------------------------------------------
 # Step 3: Copy the files into the Resources folder
 # ----------------------------------------------------------------------
-foreach ($file in $filesToCopy) {
-    $sourcePath = Join-Path $buildOutput $file.Source
-    $destPath   = Join-Path $resourcesFolder $file.Destination
+foreach ($File in $FilesToCopy) {
+    $SourcePath = Join-Path $BuildOutput $File.Source
+    $DestPath   = Join-Path $ResourcesFolder $File.Destination
 
-    Copy-Item -Path $sourcePath -Destination $destPath -Force
-    Write-Host "Copied $($file.Source) -> $($file.Destination)"
+    Copy-Item -Path $SourcePath -Destination $DestPath -Force
+    Write-Host "Copied $($File.Source) -> $($File.Destination)"
 }
 
 # ----------------------------------------------------------------------
 # Step 4: Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
-$infraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$infraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
-$infraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
+$InfraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$InfraSourcePath     = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$BuildConfiguration\Servy.Infrastructure.pdb"
+$InfraDestPath       = Join-Path $ResourcesFolder "Servy.Infrastructure.pdb"
 
-& msbuild $infraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
+& msbuild $InfraServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration
 
-Copy-Item -Path $infraSourcePath -Destination $infraDestPath -Force
+Copy-Item -Path $InfraSourcePath -Destination $InfraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
 #>
 
 
-Write-Host "$buildConfiguration build published successfully to Resources."
+Write-Host "$BuildConfiguration build published successfully to Resources."
