@@ -37,17 +37,17 @@ function Send-NotificationEmail {
     )
 
     # Configure your SMTP settings
-    $SmtpServer = "smtp.example.com"
+    $SmtpServer = "smtp-relay.brevo.com"
     $SmtpPort   = 587
-    $SmtpUser   = "username@example.com"
-    $SmtpPass   = "password"
-    $From       = "ServyNotifications@example.com"
-    $To         = "admin@example.com"
+    $SmtpUser   = "8657f6001@smtp-brevo.com"
+    $SmtpPass   = "6dvb5SLK7RzaWsj9"
+    $From       = "akram.elassas@gmail.com"
+    $To         = "akram.elassas@gmail.com"
 
     $SecurePass = ConvertTo-SecureString $SmtpPass -AsPlainText -Force
     $Cred = New-Object System.Management.Automation.PSCredential ($SmtpUser, $SecurePass)
 
-    Send-MailMessage -From $From -To $To -Subject $Subject -Body $Body -SmtpServer $SmtpServer -Port $SmtpPort -Credential $Cred -UseSsl
+    Send-MailMessage -From $From -To $To -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $SmtpServer -Port $SmtpPort -Credential $Cred -UseSsl
 }
 
 # -------------------------------
@@ -68,13 +68,14 @@ if ($LastError) {
         $LogText = $matches[2]
     } else {
         $ServiceName = "Unknown Service"
-        $Subject = $Message
+        $LogText = $Message
     }
 
     $Subject = "Servy - $ServiceName Failure"
     $Body    = "A failure has been detected in service '$ServiceName'." + [Environment]::NewLine + "Details: $LogText"
+    $HtmlBody = $Body -replace "`r?`n", "<br>"
 
-    Send-NotificationEmail -Subject $Subject -Body $Body
+    Send-NotificationEmail -Subject $Subject -Body $HtmlBody
 } else {
     Write-Host "No Servy error events found."
 }
