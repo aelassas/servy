@@ -47,12 +47,12 @@ $OutputZip          = "$PackageFolder.7z"
 # ========================
 function Remove-FileOrFolder {
     param (
-        [string]$path
+        [string]$Path
     )
-    if (Test-Path $path) {
-        Write-Host "Removing: $path"
-        Remove-Item -Recurse -Force $path
-        Write-Host "Removed: $path"
+    if (Test-Path $Path) {
+        Write-Host "Removing: $Path"
+        Remove-Item -Recurse -Force $Path
+        Write-Host "Removed: $Path"
     }
 }
 
