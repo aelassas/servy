@@ -48,41 +48,41 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
 $ServiceProject   = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj" | Resolve-Path
-$platform         = "x64"
-$BuildOutput      = Join-Path $ScriptDir "..\Servy.Service\bin\$platform\$BuildConfiguration"
-$signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$Platform         = "x64"
+$BuildOutput      = Join-Path $ScriptDir "..\Servy.Service\bin\$Platform\$BuildConfiguration"
+$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish resources first
 # ---------------------------------------------------------------------------------
-$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running $publishResScriptName ==="
+Write-Host "=== Running $PublishResScriptName ==="
 & $PublishResScript
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
+    Write-Error "$PublishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $publishResScriptName ===`n"
+Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # ----------------------------------------------------------------------
 # Step 2: Build Servy.Service
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
-& msbuild $ServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
+& msbuild $ServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
 
 # ----------------------------------------------------------------------
 # Step 3: Sign the executable only in Release mode
 # ----------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $exePath = Join-Path $BuildOutput "Servy.Service.exe" | Resolve-Path
-    & $signPath $exePath
+    $ExePath = Join-Path $BuildOutput "Servy.Service.exe" | Resolve-Path
+    & $SignPath $ExePath
 }
 
 Write-Host "Build completed for Servy.Service in $BuildConfiguration mode."

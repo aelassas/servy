@@ -44,38 +44,38 @@ $ErrorActionPreference = "Stop"
 $ScriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Configuration
-$platform             = "x64"
-$signPath             = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$publishFolder        = Join-Path $ScriptDir "bin\$platform\$BuildConfiguration"
+$Platform             = "x64"
+$SignPath             = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$PublishFolder        = Join-Path $ScriptDir "bin\$Platform\$BuildConfiguration"
 
 # Paths
 $ProjectPath = Join-Path $ScriptDir "Servy.csproj"
 
 # Step 1: Run publish-res-release.ps1
-$publishResScriptName = if ($buildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $publishResScriptName
+$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
 
 if (-not (Test-Path $PublishResScript)) {
     Write-Error "Required script not found: $PublishResScript"
     exit 1
 }
 
-Write-Host "=== Running $publishResScriptName ==="
+Write-Host "=== Running $PublishResScriptName ==="
 & $PublishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
+    Write-Error "$PublishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $publishResScriptName ===`n"
+Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # Step 2: Build project with MSBuild
 Write-Host "Building Servy project in $BuildConfiguration mode..."
-& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$platform
+& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
 Write-Host "Build completed."
 
 # Step 3: Sign the published executable if signing is enabled
-$exePath = Join-Path $publishFolder "Servy.exe" | Resolve-Path
-& $signPath $exePath
+$ExePath = Join-Path $PublishFolder "Servy.exe" | Resolve-Path
+& $SignPath $ExePath
 
 if ($Pause) { 
     Write-Host "`nPress any key to exit..."
