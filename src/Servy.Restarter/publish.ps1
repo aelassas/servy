@@ -64,6 +64,11 @@ Write-Host "Building Servy.Restarter in $BuildConfiguration mode..."
 if ($BuildConfiguration -eq "Release") {
     $ExePath = Join-Path $BuildOutput "Servy.Restarter.exe" | Resolve-Path
     & $SignPath $ExePath
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Signing Servy.Restarter.exe failed."
+        exit $LASTEXITCODE
+    }
 }
 
 Write-Host "Build completed for Servy.Restarter in $BuildConfiguration mode."
