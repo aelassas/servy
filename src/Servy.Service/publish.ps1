@@ -83,6 +83,11 @@ Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 if ($BuildConfiguration -eq "Release") {
     $ExePath = Join-Path $BuildOutput "Servy.Service.exe" | Resolve-Path
     & $SignPath $ExePath
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Signing Servy.CLI.exe failed."
+        exit $LASTEXITCODE
+    }
 }
 
 Write-Host "Build completed for Servy.Service in $BuildConfiguration mode."

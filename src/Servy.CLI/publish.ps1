@@ -76,8 +76,15 @@ Write-Host "Building Servy.CLI project in $BuildConfiguration mode..."
 Write-Host "Build completed."
 
 # Step 2: Sign the published executable if signing is enabled
-$ExePath = Join-Path $PublishFolder "Servy.CLI.exe" | Resolve-Path
-& $SignPath $ExePath
+if ($BuildConfiguration -eq "Release") {
+    $ExePath = Join-Path $PublishFolder "Servy.CLI.exe" | Resolve-Path
+    & $SignPath $ExePath
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Signing Servy.CLI.exe failed."
+        exit $LASTEXITCODE
+    }
+}
 
 if ($Pause) { 
     Write-Host "`nPress any key to exit..."
