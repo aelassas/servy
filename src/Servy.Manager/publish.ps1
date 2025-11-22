@@ -81,7 +81,7 @@ if ($BuildConfiguration -eq "Release") {
     & $SignPath $ExePath
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Signing Servy.CLI.exe failed."
+        Write-Error "Signing Servy.Manager.exe failed."
         exit $LASTEXITCODE
     }
 }
