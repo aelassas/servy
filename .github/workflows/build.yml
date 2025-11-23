@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — Build (net48)
+# GitHub Actions Workflow - Build (net48)
 # -------------------------------------------
 # Builds the Servy solution targeting .NET Framework 4.8
 # on push or pull request to the net48 branch. Includes

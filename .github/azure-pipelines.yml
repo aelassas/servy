@@ -1,5 +1,5 @@
 # ===========================================
-# Azure DevOps Pipeline — .NET
+# Azure DevOps Pipeline - .NET
 # -------------------------------------------
 # Builds and runs tests for .NET solutions. 
 # Includes NuGet restore and Visual Studio build steps.
