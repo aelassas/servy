@@ -57,9 +57,16 @@ If you've ever struggled with the built-in `sc.exe` tool or found NSSM lacking i
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
-## Why?
+## Who Is It For?
 
-See the [project notes](NOTES.md).
+- **Developers** running background workers, APIs, or job schedulers  
+- **System Administrators** who need persistent GUI or CLI apps  
+- **DevOps Engineers** automating scripts or deployments that must survive reboots  
+- **Self-Hosters** keeping local services and tools running as daemons  
+- **Teams** migrating from NSSM or WinSW to something modern and full-featured  
+- **Anyone** who needs applications to start automatically on boot even before logon  
+
+Curious about the philosophy behind Servy? Read the [project notes](NOTES.md).
 
 ## Getting Started
 You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
