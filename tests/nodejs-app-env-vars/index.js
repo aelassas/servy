@@ -36,7 +36,7 @@ fs.appendFileSync(filePath, args.join(' ') + '\n', "utf8")
 //   i++
 // }
 
-process.stdout.write('abcd&é секунды 同时也感觉没有想象的那么好用 — äöü ß ñ © ™ 🌍\n')
+process.stdout.write('abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍\n')
 
 for (const [key, val] of Object.entries(process.env)) {
   if (!baselineEnvKeys.has(key)) {
@@ -74,7 +74,7 @@ process.stderr.write('stderr boo!\n')
 // Handle Ctrl+C (SIGINT) and other termination signals
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
   process.once(signal, () => {
-    const msg = `Received ${signal} — shutting down gracefully...\n`
+    const msg = `Received ${signal} - shutting down gracefully...\n`
     process.stdout.write(msg)
     fs.appendFileSync(filePath, msg, "utf8")
     // Perform cleanup here (e.g., close DB connections, stop servers, etc.)

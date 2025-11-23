@@ -25,7 +25,7 @@ def main():
     logging.info("Service started")
     try:
         current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
-        logging.info(f"{current_datetime} > abcd&é секунды 同时也感觉没有想象的那么好用 — äöü ß ñ © ™ 🌍")
+        logging.info(f"{current_datetime} > abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
     except Exception as e:
         logging.exception(f"Error in loop: {e}")
 

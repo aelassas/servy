@@ -1,5 +1,5 @@
 ﻿# ===========================================
-# GitHub Actions Workflow — Test
+# GitHub Actions Workflow - Test
 # -------------------------------------------
 # Runs unit tests for all Servy projects on push
 # to the main branch. Generates code coverage for

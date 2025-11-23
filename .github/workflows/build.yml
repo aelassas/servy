@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — Build
+# GitHub Actions Workflow - Build
 # -------------------------------------------
 # Builds the Servy .NET solution on Windows
 # whenever code is pushed or a pull request is

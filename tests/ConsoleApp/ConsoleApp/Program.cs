@@ -19,7 +19,7 @@ namespace ConsoleApp
             // Ensure this app has its own console
             //AllocConsole();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.WriteLine("abcd&é секунды 同时也感觉没有想象的那么好用 — äöü ß ñ © ™ 🌍");
+            Console.WriteLine("abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍");
 
             Console.CancelKeyPress += (sender, e) =>
             {

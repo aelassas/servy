@@ -1,5 +1,5 @@
 # ===========================================
-# GitHub Actions Workflow — LOC
+# GitHub Actions Workflow - LOC
 # -------------------------------------------
 # Calculates the total lines of code (LoC) in
 # the repository and generates a badge. The badge
