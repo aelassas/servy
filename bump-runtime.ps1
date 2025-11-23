@@ -53,7 +53,7 @@ $BaseDir = $PSScriptRoot
 
 Write-Host "Updating .NET runtime to $NetVersion..." -ForegroundColor Cyan
 if ($DryRun) {
-    Write-Host "(Dry Run Mode — no files will be modified)" -ForegroundColor Yellow
+    Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow
 }
 
 # Statistics counters

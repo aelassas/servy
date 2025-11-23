@@ -145,10 +145,10 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("", "")]                             // Empty string
         [InlineData("   ", "")]                          // Whitespace only
         [InlineData("abc", "abc")]                       // Simple text, nothing to escape
-        [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes — unchanged
-        [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote — doubled
-        [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash — unchanged
-        [InlineData(@"\""", @"\\""")]                    // Single backslash + quote — doubled before quote
+        [InlineData(@"C:\Path", @"C:\Path")]             // Backslashes not before quotes - unchanged
+        [InlineData(@"C:\Path\""File", @"C:\Path\\""File")] // Backslash immediately before quote - doubled
+        [InlineData(@"NoQuotesHere\", @"NoQuotesHere\")] // Trailing backslash - unchanged
+        [InlineData(@"\""", @"\\""")]                    // Single backslash + quote - doubled before quote
         [InlineData(@"\\\""", @"\\\\\\""")]              // Multiple backslashes before quote
         [InlineData(@"Mix\ed\\\""Case", @"Mix\ed\\\\\\""Case")] // Mixed case: normal + before quote
         [InlineData("abc\0def", @"abc\0def")]           // Contains null char -> replaced with literal "\0"

@@ -713,10 +713,10 @@ namespace Servy.Service
         /// <remarks>
         /// This method detects Python executables or scripts and configures the following environment variables:
         /// <list type="bullet">
-        /// <item><description><c>PYTHONLEGACYWINDOWSSTDIO=0</c> — Enables wide-character I/O APIs.</description></item>
-        /// <item><description><c>PYTHONIOENCODING=utf-8</c> — Forces UTF-8 for <c>stdout</c> and <c>stderr</c>.</description></item>
-        /// <item><description><c>PYTHONUTF8=1</c> — Enables UTF-8 mode globally (Python 3.7+).</description></item>
-        /// <item><description><c>PYTHONUNBUFFERED=1</c> — Disables I/O buffering to ensure real-time output.</description></item>
+        /// <item><description><c>PYTHONLEGACYWINDOWSSTDIO=0</c> - Enables wide-character I/O APIs.</description></item>
+        /// <item><description><c>PYTHONIOENCODING=utf-8</c> - Forces UTF-8 for <c>stdout</c> and <c>stderr</c>.</description></item>
+        /// <item><description><c>PYTHONUTF8=1</c> - Enables UTF-8 mode globally (Python 3.7+).</description></item>
+        /// <item><description><c>PYTHONUNBUFFERED=1</c> - Disables I/O buffering to ensure real-time output.</description></item>
         /// </list>
         /// </remarks>
         private void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)

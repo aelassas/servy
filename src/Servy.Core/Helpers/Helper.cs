@@ -155,7 +155,7 @@ namespace Servy.Core.Helpers
                 }
                 else
                 {
-                    // Normal character — just flush any backslashes
+                    // Normal character - just flush any backslashes
                     if (backslashCount > 0)
                     {
                         sb.Append('\\', backslashCount);
