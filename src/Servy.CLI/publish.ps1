@@ -72,7 +72,7 @@ Write-Host "=== Completed $PublishResScriptName ===`n"
 
 # Step 1: Clean and build the CLI project
 Write-Host "Building Servy.CLI project in $BuildConfiguration mode..."
-& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
+& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
 Write-Host "Build completed."
 
 # Step 2: Sign the published executable if signing is enabled

@@ -56,7 +56,7 @@ $Platform         = "x64"
 # Step 1: Build Servy.Restarter
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $BuildConfiguration mode..."
-& msbuild $RestarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
+& msbuild $RestarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
 
 # ----------------------------------------------------------------------
 # Step 2: Sign the executable only in Release mode
