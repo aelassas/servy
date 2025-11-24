@@ -41,13 +41,6 @@
 </p>
 
 # Servy
-<!--
-[![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases)
--->
-
-<!--
-[![](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://github.com/aelassas/servy/releases) [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/aelassas/servy/pulls)
--->
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
@@ -100,9 +93,9 @@ scoop install servy
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
-<!--
+
 When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
--->
+
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM usage tracking for installed services
@@ -147,10 +140,10 @@ Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt)
 
 A huge thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
 
-<a href="https://www.jetbrains.com/">
-  <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="52" height="52">
-</a>
-
-<!--
 I'd also like to thank everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions helped shape the project and made it better with every release.
--->
+
+<p>
+  <a href="https://www.jetbrains.com/">
+    <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="52" height="52">
+  </a>
+</p>
