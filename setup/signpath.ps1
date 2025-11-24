@@ -181,7 +181,7 @@ while ($true) {
 # ----------------------------------------------------------
 # DOWNLOAD SIGNED FILE (streamed)
 # ----------------------------------------------------------
-$signedPath = "$FilePath.signed"
+$SignedPath = "$FilePath.signed"
 Write-Host "Downloading signed file..."
 $DownloadUrl = "$SignPathBaseUrl/api/v1/$OrganizationId/signing-jobs/$JobId/artifacts/signed-file"
 $DownloadReq = [System.Net.WebRequest]::Create($DownloadUrl)
@@ -189,7 +189,7 @@ $DownloadReq.Method = "GET"
 $DownloadReq.Headers["Authorization"] = "Bearer $ApiToken"
 $DownloadResp = $DownloadReq.GetResponse()
 $DownloadStream = $DownloadResp.GetResponseStream()
-$FileOut = [System.IO.File]::Open($signedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
+$FileOut = [System.IO.File]::Open($SignedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
 
 $Buffer = New-Object byte[] 4MB
 while (($Read = $DownloadStream.Read($Buffer, 0, $Buffer.Length)) -gt 0) {
@@ -204,8 +204,7 @@ $DownloadResp.Close()
 # REPLACE ORIGINAL FILE
 # ----------------------------------------------------------
 Write-Host "Replacing original file..."
-Move-Item -Force -Path $signedPath -Destination $FilePath
+Move-Item -Force -Path $SignedPath -Destination $FilePath
 
 Write-Host "Signing complete: $FilePath"
 exit 0
-cd ..
