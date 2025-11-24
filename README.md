@@ -100,9 +100,9 @@ scoop install servy
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
-
+<!--
 When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
-
+-->
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM usage tracking for installed services
@@ -151,6 +151,6 @@ A huge thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-
   <img alt="JetBrains" src="https://aelassas.github.io/content/jetbrains.svg?v=3" width="52" height="52">
 </a>
 
-
+<!--
 I'd also like to thank everyone who tested Servy, reported issues, and suggested improvements on GitHub and Reddit. Your feedback and contributions helped shape the project and made it better with every release.
-
+-->
