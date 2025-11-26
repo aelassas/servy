@@ -77,7 +77,7 @@ jobs:
 
           $content = $content -replace '<version>.*?</version>', "<version>${env:VERSION}.0</version>"
           $content = $content -replace '(?s)<releaseNotes>.*?</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>"
-          $content = $content -replace '<iconUrl>.*?</iconUrl>', "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v${env:VERSION}/src/Servy/servy.png</iconUrl>"
+          $content = $content -replace '<iconUrl>.*?</iconUrl>', "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v${env:VERSION}/src/Servy/servy.ico</iconUrl>"
 
           # Write without adding extra newline
           [System.IO.File]::WriteAllText($file, $content)
