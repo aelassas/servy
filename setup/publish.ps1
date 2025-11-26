@@ -42,51 +42,80 @@ $Tfm = "$Fm-windows"
 
 $ErrorActionPreference = "Stop"
 
-# Record start time
-$startTime = Get-Date
+$ScriptHadError = $false
 
-# Script directory (so we can run from anywhere)
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+try {
+    # Record start time
+    $StartTime = Get-Date
 
-function Invoke-Script {
-    param(
-        [string]$ScriptPath,
-        [hashtable]$Params
-    )
+    # Script directory (so we can run from anywhere)
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-    $FullPath = Join-Path $ScriptDir $ScriptPath
+    function Invoke-Script {
+        param(
+            [string]$ScriptPath,
+            [hashtable]$Params
+        )
 
-    if (-not (Test-Path $FullPath)) {
-        Write-Error "Script not found: $FullPath"
-        exit 1
+        $FullPath = Join-Path $ScriptDir $ScriptPath
+
+        if (-not (Test-Path $FullPath)) {
+            Write-Error "Script not found: $FullPath"
+            exit 1
+        }
+
+        Write-Host "`n=== Running: $FullPath ==="
+        & $FullPath @Params
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Script failed: $FullPath"
+            exit $LASTEXITCODE
+        }
     }
 
-    Write-Host "`n=== Running: $FullPath ==="
-    & $FullPath @Params
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Script failed: $FullPath"
-        exit $LASTEXITCODE
+    # Build self-contained installer
+    Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
+        Version = $Version
+        Fm      = $Fm
     }
+
+    <#
+    # Build framework-dependent installer
+    Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
+        Version = $Version
+        Fm      = $Fm
+    }
+    #>
+
+    # Calculate and display elapsed time
+    $elapsed = (Get-Date) - $StartTime
+    Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
 }
-
-# Build self-contained installer
-Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
-    Version = $Version
-    Fm      = $Fm
+catch {
+    $ScriptHadError = $true
+    Write-Host "`nERROR OCCURRED:" -ForegroundColor Red
+    Write-Host $_
 }
+finally {
+    # Pause by default (for double-click usage)
+    if ($ScriptHadError) {
+        Write-Host "`nBuild failed. Press any key to exit..."
+    }
+    else {
+        Write-Host "`nPress any key to exit..."
+    }
 
-<#
-# Build framework-dependent installer
-Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
-    Version = $Version
-    Fm      = $Fm
+    try {
+        if ($Host.Name -eq 'ConsoleHost' -or $Host.Name -like '*Console*') {
+            [void][System.Console]::ReadKey($true)
+        }
+        else {
+            try {
+                $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
+            }
+            catch {
+                Read-Host | Out-Null
+            }
+        }
+    }
+    catch { }
 }
-#>
-
-# Calculate and display elapsed time
-$elapsed = (Get-Date) - $startTime
-Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
-
-# Pause by default (for double-click usage)
-Write-Host "`nPress any key to exit..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
