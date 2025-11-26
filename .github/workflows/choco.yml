@@ -115,17 +115,15 @@ jobs:
         shell: pwsh
         run: choco --version
 
-      - name: Set Chocolatey API key
-        shell: pwsh
-        env:
-          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-        run: |
-          choco apikey --key="$env:CHOCOLATEY_API_KEY" --source="https://push.chocolatey.org/"
-
       - name: Pack Chocolatey package
         shell: pwsh
         run: choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
 
       - name: Push Chocolatey package
         shell: pwsh
-        run: choco push setup/choco/servy/servy.$env:VERSION.0.nupkg --source https://push.chocolatey.org/
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        run: |
+          choco push "setup/choco/servy/servy.$env:VERSION.0.nupkg" `
+            --source "https://community.chocolatey.org/api/v2/package" `
+            --api-key $env:CHOCOLATEY_API_KEY
