@@ -437,10 +437,18 @@ namespace Servy.Service
                         UseShellExecute = false,
                         RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
                         RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
-                        StandardOutputEncoding = Encoding.UTF8,
-                        StandardErrorEncoding = Encoding.UTF8,
                         CreateNoWindow = true
                     };
+
+                    if (psi.RedirectStandardOutput)
+                    {
+                        psi.StandardOutputEncoding = Encoding.UTF8;
+                    }
+
+                    if (psi.RedirectStandardError)
+                    {
+                        psi.StandardErrorEncoding = Encoding.UTF8;
+                    }
 
                     // Apply environment variables
                     foreach (var envVar in expandedEnv)

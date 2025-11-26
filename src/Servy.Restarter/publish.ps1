@@ -67,7 +67,7 @@ dotnet publish $ProjectPath `
     --self-contained true `
     /p:PublishSingleFile=true `
     /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
+    /p:PublishTrimmed=true `
     /p:Version=$Version `
     -f $Tfm `
     -o $PublishDir `

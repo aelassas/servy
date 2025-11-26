@@ -13,12 +13,15 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishTrimmed>false</PublishTrimmed>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <InvariantGlobalization>false</InvariantGlobalization>
     <StripSymbols>true</StripSymbols>
 
     <ApplicationIcon>servy.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
 
   <PropertyGroup>

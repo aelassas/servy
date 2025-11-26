@@ -109,7 +109,7 @@ Write-Host "Single File      : $SingleFile"
     --self-contained:$SelfContained `
     /p:PublishSingleFile=$SingleFile `
     /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
+    /p:PublishTrimmed=true `
     -o $PublishDir `
     /p:DeleteExistingFiles=true
 

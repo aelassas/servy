@@ -151,7 +151,7 @@ $ZipArgs = @(
     "-m0=lzma2",
     "-mx=9",
     "-mfb=273",
-    "-md=64m",
+    "-md=132m",
     "-ms=on",
     $outputZip,
     "$packageFolder"

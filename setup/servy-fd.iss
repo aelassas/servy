@@ -37,8 +37,8 @@ SetupIconFile=..\src\Servy\servy.ico
 
 Compression=lzma2
 LZMAAlgorithm=1
-LZMADictionarySize=65536
-; LZMADictionarySize=131072
+; LZMADictionarySize=65536
+LZMADictionarySize=131072
 LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes

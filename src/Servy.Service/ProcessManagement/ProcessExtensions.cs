@@ -1,6 +1,5 @@
 ﻿using Servy.Service.Native;
 using System.Diagnostics;
-using System.Management;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -108,54 +107,5 @@ namespace Servy.Service.ProcessManagement
             return children;
         }
 
-        /// <summary>
-        /// Retrieves the child processes of the specified <see cref="Process"/> using WMI (Windows Management Instrumentation).
-        /// </summary>
-        /// <param name="process">The parent <see cref="Process"/> whose child processes are to be retrieved.</param>
-        /// <returns>
-        /// A <see cref="List{Process}"/> containing all currently running child processes of the specified parent process. 
-        /// Processes that have exited during the query are ignored.
-        /// </returns>
-        /// <remarks>
-        /// This method uses WMI to query the <c>Win32_Process</c> class and filter by <c>ParentProcessId</c>. 
-        /// It is more robust than querying native process handles because it can detect detached or GUI processes.
-        /// </remarks>
-        public static List<Process> GetChildrenWmi(this Process process)
-        {
-            var children = new List<Process>();
-            int parentPid = process.Id;
-
-            try
-            {
-                string query = $"SELECT ProcessId FROM Win32_Process WHERE ParentProcessId={parentPid}";
-                using (var searcher = new ManagementObjectSearcher(query))
-                using (var results = searcher.Get())
-                {
-                    foreach (var mo in results)
-                    {
-                        try
-                        {
-                            var pidObj = mo["ProcessId"];
-                            if (pidObj == null)
-                                continue;
-
-                            int pid = Convert.ToInt32(pidObj);
-                            var child = Process.GetProcessById(pid);
-                            children.Add(child);
-                        }
-                        catch
-                        {
-                            // Process may have exited, ignore
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"WMI GetChildren failed for PID {parentPid}: {ex.Message}");
-            }
-
-            return children;
-        }
     }
 }
