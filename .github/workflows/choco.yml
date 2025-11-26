@@ -75,8 +75,9 @@ jobs:
           $file = "setup/choco/servy/servy.nuspec"
           $content = Get-Content $file -Raw
 
-          $content = $content -replace '<version>.*</version>', "<version>${env:VERSION}.0</version>"
-          $content = $content -replace '<releaseNotes>.*</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>"
+          $content = $content -replace '<version>.*?</version>', "<version>${env:VERSION}.0</version>"
+          $content = $content -replace '<releaseNotes>.*?</releaseNotes>', "<releaseNotes>Release for version ${env:VERSION}.0. See https://github.com/aelassas/servy/releases/tag/v${env:VERSION}</releaseNotes>"
+          $content = $content -replace '<iconUrl>.*?</iconUrl>', "<iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v${env:VERSION}/src/Servy/servy.ico</iconUrl>"
 
           # Write without adding extra newline
           [System.IO.File]::WriteAllText($file, $content)
@@ -119,11 +120,11 @@ jobs:
         shell: pwsh
         run: choco pack setup/choco/servy/servy.nuspec --out setup/choco/servy
 
-      - name: Push Chocolatey package
-        shell: pwsh
-        env:
-          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
-        run: |
-          choco push "setup/choco/servy/servy.$env:VERSION.0.nupkg" `
-            --source "https://community.chocolatey.org/api/v2/package" `
-            --api-key $env:CHOCOLATEY_API_KEY
+      # - name: Push Chocolatey package
+      #   shell: pwsh
+      #   env:
+      #     CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+      #   run: |
+      #     choco push "setup/choco/servy/servy.$env:VERSION.0.nupkg" `
+      #       --source "https://community.chocolatey.org/api/v2/package" `
+      #       --api-key $env:CHOCOLATEY_API_KEY
