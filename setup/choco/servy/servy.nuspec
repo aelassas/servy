@@ -7,7 +7,7 @@
     <authors>Akram El Assas</authors>
     <owners>Akram El Assas</owners>
     <projectUrl>https://github.com/aelassas/servy</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/aelassas/servy/refs/heads/main/src/Servy/servy.ico</iconUrl>
+    <icon>tools/servy.ico</icon>
     <licenseUrl>https://github.com/aelassas/servy/blob/main/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
