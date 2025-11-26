@@ -7,7 +7,7 @@
     <authors>Akram El Assas</authors>
     <owners>Akram El Assas</owners>
     <projectUrl>https://github.com/aelassas/servy</projectUrl>
-    <iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v3.8/src/Servy/servy.ico</iconUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v3.8/src/Servy/servy.png</iconUrl>
     <licenseUrl>https://github.com/aelassas/servy/blob/main/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
@@ -20,11 +20,6 @@
       Service.
       It is a modern, lightweight, and open alternative to NSSM and WinSW.
     </description>
-    <releaseNotes>
-      Initial release of Servy.
-      Installer is unsigned and may trigger a SmartScreen prompt.
-      This is a known behavior for Inno Setup-based installers.
-      See: https://jrsoftware.org/isinfo.php
-    </releaseNotes>
+    <releaseNotes>Release for version 3.8.0. See https://github.com/aelassas/servy/releases/tag/v3.8</releaseNotes>
   </metadata>
 </package>
