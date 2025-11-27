@@ -142,7 +142,7 @@ try {
         "-m0=lzma2",
         "-mx=9",
         "-mfb=273",
-        "-md=64m",
+        "-md=32m",
         "-ms=on",
         $OutputZip,
         "$PackageFolder"
