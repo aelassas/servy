@@ -19,5 +19,5 @@ jobs:
         uses: vedantmgoyal9/winget-releaser@main
         with:
           identifier: aelassas.Servy
-          token: ${{ secrets.WINGET_ALT_TOKEN }}
+          token: ${{ secrets.WINGET_TOKEN }}
           installers-regex: "servy-\\d+\\.\\d+(-net([0-9]+)(\\.[0-9]+)+)?-x64-installer\\.exe$"
