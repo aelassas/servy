@@ -97,7 +97,7 @@ Write-Host "Building installer from $issFile..."
 # ========================
 # Step 3: Sign Installer if signing is enabled
 # ========================
-$InstallerPath = Join-Path $RootDir "setup\servy-$Version-x64-installer.exe"
+$InstallerPath = Join-Path $RootDir "setup\servy-$Version-x64-installer.exe" | Resolve-Path
 & $SignPath $InstallerPath
 
 # ========================
