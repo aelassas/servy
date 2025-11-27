@@ -113,6 +113,12 @@ try {
         InputArtifactPath  = $FilePath
         WaitForCompletion  = $true
         OutputArtifactPath = "$FilePath.signed"
+        Origin = @{
+            RepositoryData = @{
+                SourceControlManagementType = "git"
+                Url = "https://github.com/aelassas/servy.git"
+            }
+        }
     }
 
     if ($ArtifactConfigurationSlug) {
