@@ -47,10 +47,10 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$RestarterProject = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj" | Resolve-Path
-$BuildOutput      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$BuildConfiguration"
-$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 $Platform         = "x64"
+$RestarterProject = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj" | Resolve-Path
+$BuildOutput      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Platform\$BuildConfiguration"
+$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter
