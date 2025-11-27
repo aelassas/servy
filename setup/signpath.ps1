@@ -105,7 +105,7 @@ Write-Host "Submitting signing job for $FileName..."
 # SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
 try {
-    $commonParams = @{
+    $CommonParams = @{
         OrganizationId     = $OrganizationId
         ApiToken           = $ApiToken
         ProjectSlug        = $ProjectSlug
@@ -116,7 +116,7 @@ try {
     }
 
     if ($ArtifactConfigurationSlug) {
-        $commonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
+        $CommonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
     }
 
     $SigningRequestId = Submit-SigningRequest @commonParams
