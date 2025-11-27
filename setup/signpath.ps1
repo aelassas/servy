@@ -70,13 +70,13 @@ Write-Host "SIGN=true detected. Proceeding with code signing."
 # ----------------------------------------------------------
 # EXTRACT REQUIRED FIELDS
 # ----------------------------------------------------------
-$ApiToken        = $Config["API_TOKEN"]
-$OrganizationId  = $Config["ORGANIZATION_ID"]
-$ProjectSlug     = $Config["PROJECT_SLUG"]
-$SigningPolicy   = $Config["SIGNING_POLICY_SLUG"]
-$ArtifactConfig  = $Config["ARTIFACT_CONFIGURATION_SLUG"]  # Optional
+$ApiToken                   = $Config["API_TOKEN"]
+$OrganizationId             = $Config["ORGANIZATION_ID"]
+$ProjectSlug                = $Config["PROJECT_SLUG"]
+$SigningPolicySlug          = $Config["SIGNING_POLICY_SLUG"]
+$ArtifactConfigurationSlug  = $Config["ARTIFACT_CONFIGURATION_SLUG"]  # Optional
 
-if (!$ApiToken -or !$OrganizationId -or !$ProjectSlug -or !$SigningPolicy) {
+if (!$ApiToken -or !$OrganizationId -or !$ProjectSlug -or !$SigningPolicySlug) {
     Write-Error "Missing required SignPath configuration values."
     exit 1
 }
@@ -97,8 +97,8 @@ try {
         -OrganizationId $OrganizationId `
         -ApiToken $ApiToken `
         -ProjectSlug $ProjectSlug `
-        -SigningPolicySlug $SigningPolicy `
-        -ArtifactConfigurationSlug $ArtifactConfig `
+        -SigningPolicySlug $SigningPolicySlug `
+        -ArtifactConfigurationSlug $ArtifactConfigurationSlug `
         -InputArtifactPath $FilePath `
         -WaitForCompletion `
         -OutputArtifactPath "$FilePath.signed"
