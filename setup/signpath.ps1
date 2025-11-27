@@ -119,7 +119,7 @@ try {
         $CommonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
     }
 
-    $SigningRequestId = Submit-SigningRequest @commonParams
+    $SigningRequestId = Submit-SigningRequest @CommonParams
 
     Write-Host "Signing request completed: $SigningRequestId"
 }
