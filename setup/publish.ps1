@@ -77,7 +77,7 @@ try {
     & "$innoCompiler" (Join-Path $ScriptDir $issFile) /DMyAppVersion=$Version /DMyAppPlatform=$Framework
 
     # === SIGN INSTALLER ===
-    $InstallerPath = Join-Path $RootDir "setup\servy-$Version-net48-x64-installer"
+    $InstallerPath = Join-Path $RootDir "setup\servy-$Version-net48-x64-installer.exe" | Resolve-Path
     & $SignPath $InstallerPath
 
     # === PREPARE PACKAGE FILES ===
