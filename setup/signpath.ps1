@@ -1,13 +1,22 @@
 <#
 .SYNOPSIS
     Sign a file using SignPath if SIGN=true is set in the .signpath config file.
+
 .DESCRIPTION
+    The script will perform signing ONLY when:
+        - A .signpath or .signpath.env file exists
+        - The file contains SIGN=true
     Reads configuration from .signpath or .signpath.env in the script folder.
     Uses the official SignPath PowerShell module to submit a signing request,
     wait for completion, and download the signed artifact.
+    
     Requires the SignPath PowerShell module to be installed: Install-Module -Name SignPath
+
 .PARAMETER FilePath
     Path to the file you want signed.
+
+.EXAMPLE
+    PS> .\signpath.ps1 "C:\build\Servy.Manager.exe"
 #>
 
 param(
@@ -38,7 +47,7 @@ Write-Host "Loading config from $ConfigPath"
 # ----------------------------------------------------------
 # LOAD CONFIG
 # ----------------------------------------------------------
-$Config = @{ }
+$Config = @{}
 Get-Content $ConfigPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
@@ -64,8 +73,13 @@ Write-Host "SIGN=true detected. Proceeding with code signing."
 $ApiToken        = $Config["API_TOKEN"]
 $OrganizationId  = $Config["ORGANIZATION_ID"]
 $ProjectSlug     = $Config["PROJECT_SLUG"]
-$SigningPolicy   = $Config["WORKFLOW_SLUG"]  # Map workflow slug to SigningPolicySlug
+$SigningPolicy   = $Config["SIGNING_POLICY_SLUG"]
 $ArtifactConfig  = $Config["ARTIFACT_CONFIGURATION_SLUG"]  # Optional
+
+if (!$ApiToken -or !$OrganizationId -or !$ProjectSlug -or !$SigningPolicy) {
+    Write-Error "Missing required SignPath configuration values."
+    exit 1
+}
 
 if (-not (Test-Path $FilePath)) {
     Write-Error "File not found: $FilePath"
