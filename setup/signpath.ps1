@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
     Sign a file using SignPath if SIGN=true is set in the .signpath config file.
+
 .DESCRIPTION
     The script will perform signing ONLY when:
         - A .signpath or .signpath.env file exists
@@ -8,9 +9,12 @@
     Reads configuration from .signpath or .signpath.env in the script folder.
     Uses the official SignPath PowerShell module to submit a signing request,
     wait for completion, and download the signed artifact.
+    
     Requires the SignPath PowerShell module to be installed: Install-Module -Name SignPath
+
 .PARAMETER FilePath
     Path to the file you want signed.
+
 .EXAMPLE
     PS> .\signpath.ps1 "C:\build\Servy.Manager.exe"
 #>
