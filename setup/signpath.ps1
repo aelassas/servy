@@ -1,19 +1,23 @@
 <#
 .SYNOPSIS
-    Sign a file using SignPath if SIGN=true is set in the .signpath config file.
+    Signs a file using SignPath when SIGN=true is set in a .signpath configuration file.
 
 .DESCRIPTION
-    The script will perform signing ONLY when:
-        - A .signpath or .signpath.env file exists
+    This script performs code signing only when:
+        - A .signpath or .signpath.env file exists, and
         - The file contains SIGN=true
-    Reads configuration from .signpath or .signpath.env in the script folder.
-    Uses the official SignPath PowerShell module to submit a signing request,
-    wait for completion, and download the signed artifact.
-    
-    Requires the SignPath PowerShell module to be installed: Install-Module -Name SignPath
+
+    It uses the official SignPath PowerShell module to:
+        - Submit a signing request
+        - Wait for completion
+        - Download the signed artifact
+        - Replace the original file with the signed version
+
+    Requires:
+        Install-Module -Name SignPath
 
 .PARAMETER FilePath
-    Path to the file you want signed.
+    Path to the file that should be signed.
 
 .EXAMPLE
     PS> .\signpath.ps1 "C:\build\Servy.Manager.exe"
@@ -23,6 +27,14 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$FilePath
 )
+
+# ----------------------------------------------------------
+# ENSURE SIGNPATH MODULE EXISTS
+# ----------------------------------------------------------
+if (-not (Get-Module -ListAvailable -Name SignPath)) {
+    Write-Error "SignPath PowerShell module is not installed. Install it with: Install-Module -Name SignPath"
+    exit 1
+}
 
 # ----------------------------------------------------------
 # LOCATE CONFIG FILE
@@ -52,7 +64,7 @@ Get-Content $ConfigPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
-        $Config[$matches[1].Trim()] = $matches[2].Trim()
+        $Config[$matches[1].Trim().ToUpper()] = $matches[2].Trim()
     }
 }
 
@@ -70,11 +82,11 @@ Write-Host "SIGN=true detected. Proceeding with code signing."
 # ----------------------------------------------------------
 # EXTRACT REQUIRED FIELDS
 # ----------------------------------------------------------
-$ApiToken                   = $Config["API_TOKEN"]
-$OrganizationId             = $Config["ORGANIZATION_ID"]
-$ProjectSlug                = $Config["PROJECT_SLUG"]
-$SigningPolicySlug          = $Config["SIGNING_POLICY_SLUG"]
-$ArtifactConfigurationSlug  = $Config["ARTIFACT_CONFIGURATION_SLUG"]  # Optional
+$ApiToken                  = $Config["API_TOKEN"]
+$OrganizationId            = $Config["ORGANIZATION_ID"]
+$ProjectSlug               = $Config["PROJECT_SLUG"]
+$SigningPolicySlug         = $Config["SIGNING_POLICY_SLUG"]
+$ArtifactConfigurationSlug = $Config["ARTIFACT_CONFIGURATION_SLUG"]  # optional
 
 if (!$ApiToken -or !$OrganizationId -or !$ProjectSlug -or !$SigningPolicySlug) {
     Write-Error "Missing required SignPath configuration values."
@@ -90,18 +102,24 @@ $FileName = Split-Path $FilePath -Leaf
 Write-Host "Submitting signing job for $FileName..."
 
 # ----------------------------------------------------------
-# SUBMIT SIGNING REQUEST (with module)
+# SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
 try {
-    $SigningRequestId = Submit-SigningRequest `
-        -OrganizationId $OrganizationId `
-        -ApiToken $ApiToken `
-        -ProjectSlug $ProjectSlug `
-        -SigningPolicySlug $SigningPolicySlug `
-        -ArtifactConfigurationSlug $ArtifactConfigurationSlug `
-        -InputArtifactPath $FilePath `
-        -WaitForCompletion `
-        -OutputArtifactPath "$FilePath.signed"
+    $commonParams = @{
+        OrganizationId     = $OrganizationId
+        ApiToken           = $ApiToken
+        ProjectSlug        = $ProjectSlug
+        SigningPolicySlug  = $SigningPolicySlug
+        InputArtifactPath  = $FilePath
+        WaitForCompletion  = $true
+        OutputArtifactPath = "$FilePath.signed"
+    }
+
+    if ($ArtifactConfigurationSlug) {
+        $commonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
+    }
+
+    $SigningRequestId = Submit-SigningRequest @commonParams
 
     Write-Host "Signing request completed: $SigningRequestId"
 }
@@ -111,8 +129,15 @@ catch {
 }
 
 # ----------------------------------------------------------
-# REPLACE ORIGINAL FILE
+# REPLACE ORIGINAL FILE WITH SIGNED VERSION
 # ----------------------------------------------------------
-Move-Item -Force -Path "$FilePath.signed" -Destination $FilePath
-Write-Host "Signing complete: $FilePath"
+try {
+    Move-Item -Force -Path "$FilePath.signed" -Destination $FilePath
+    Write-Host "Signing complete: $FilePath"
+}
+catch {
+    Write-Error "Failed to replace the original file: $_"
+    exit 1
+}
+
 exit 0
