@@ -17,10 +17,18 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <StripSymbols>true</StripSymbols>
 
+    <IsTrimmable>true</IsTrimmable>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>partial</TrimMode>
+    <_AggressiveAttributeTrimming>true</_AggressiveAttributeTrimming>
+    <DebuggerSupport>false</DebuggerSupport>
     <PublishReadyToRun>false</PublishReadyToRun>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="linker.xml" />
+  </ItemGroup>
 
   <PropertyGroup>
     <AssemblyTitle>Servy.Restarter</AssemblyTitle>

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<linker>
+  <assembly fullname="Servy.CLI" preserve="all" />
+
+  <assembly fullname="Servy.Core">
+    <type fullname="Servy.Core.DTOs.*" preserve="all" />
+  </assembly>
+
+  <assembly fullname="System.Management" preserve="all" />
+
+  <assembly fullname="Newtonsoft.Json" preserve="all" />
+
+  <assembly fullname="System.Xml.XmlSerializer" preserve="all" />
+
+  <assembly fullname="Dapper" preserve="all" />
+
+  <assembly fullname="CommandLine" preserve="all" />
+
+  <assembly fullname="System.Data.SQLite" preserve="all" />
+
+  <assembly fullname="System.CodeDom" preserve="all" />
+
+</linker>

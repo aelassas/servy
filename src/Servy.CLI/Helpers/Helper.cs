@@ -1,6 +1,6 @@
 ﻿using CommandLine;
 using Servy.CLI.Models;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Servy.CLI.Helpers
@@ -26,6 +26,7 @@ namespace Servy.CLI.Helpers
         /// Gets all verb names defined by <see cref="VerbAttribute"/> on all types in the current assembly.
         /// </summary>
         /// <returns>An array of verb names.</returns>
+        [RequiresUnreferencedCode("Reflection is used to load types from the assembly.")]
         public static string[] GetVerbs()
         {
             var verbs = Assembly.GetExecutingAssembly()
