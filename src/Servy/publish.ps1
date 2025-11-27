@@ -89,12 +89,8 @@ Write-Host "Self-contained: true"
 & dotnet publish $ProjectPath `
     -c $BuildConfiguration `
     -r $Runtime `
-    --self-contained true `
     --force `
-    /p:DeleteExistingFiles=true `
-    /p:PublishSingleFile=true `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
+    /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "dotnet publish failed."

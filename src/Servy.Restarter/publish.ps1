@@ -64,13 +64,9 @@ Write-Host "Publishing $ProjectName..."
 dotnet publish $ProjectPath `
     -c $Configuration `
     -r $Runtime `
-    --self-contained true `
-    /p:PublishSingleFile=true `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=true `
-    /p:Version=$Version `
     -f $Tfm `
     -o $PublishDir `
+    --force `
     /p:DeleteExistingFiles=true
 
 # Step 2: Sign the published executable if signing is enabled

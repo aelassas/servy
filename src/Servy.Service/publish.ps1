@@ -53,8 +53,6 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $SignPath      = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 $AppName       = "Servy.Service"
-$SelfContained = $true
-$SingleFile    = $true
 
 # Project path (relative to script location)
 $ProjectPath = Join-Path $ScriptDir "$AppName.csproj" | Resolve-Path
@@ -100,17 +98,12 @@ Write-Host "=== Publishing $AppName ==="
 Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : $Configuration"
 Write-Host "Runtime          : $Runtime"
-Write-Host "Self-contained   : $SelfContained"
-Write-Host "Single File      : $SingleFile"
 
 & dotnet publish $ProjectPath `
     -c $Configuration `
     -r $Runtime `
-    --self-contained:$SelfContained `
-    /p:PublishSingleFile=$SingleFile `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=true `
     -o $PublishDir `
+    --force `
     /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
