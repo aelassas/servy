@@ -128,14 +128,6 @@ try {
         InputArtifactPath  = $FilePath
         WaitForCompletion  = $true
         OutputArtifactPath = $SignedPath
-        Origin = @{
-            RepositoryData = @{
-                SourceControlManagementType = "git"
-                Url = "https://github.com/aelassas/servy.git"
-                CommitId   = (git rev-parse HEAD)
-                BranchName = (git rev-parse --abbrev-ref HEAD)
-            }
-        }
     }
 
 <#
