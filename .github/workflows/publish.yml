@@ -2,11 +2,6 @@ name: publish
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version number (e.g., 4.0)'
-        required: true
-        type: string
 
 jobs:
   build-and-sign:
@@ -25,15 +20,24 @@ jobs:
           fetch-depth: 0  # Required for provenance
 
       # -----------------------------------------------------
-      # VALIDATE VERSION INPUT
+      # EXTRACT VERSION FROM setup/publish.ps1
       # -----------------------------------------------------
-      - name: Validate version input
+      - name: Get version from publish.ps1
         shell: pwsh
+        id: get_version
         run: |
-          if (${{ github.event.inputs.version }} -notmatch '^\d+\.\d+$') {
-              throw "Invalid version format: ${{ github.event.inputs.version }}. Must match d+.d+"
+          $publishFile = "src/setup/publish.ps1"
+          if (-not (Test-Path $publishFile)) {
+              throw "Cannot find $publishFile"
           }
-          Write-Host "Using version $(${{ github.event.inputs.version }})"
+          $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
+          if (-not $versionLine) {
+              throw "Cannot find version assignment in $publishFile"
+          }
+          $matches = [regex]::Match($versionLine, '^\s*\$Version\s*=\s*"(.*)"')
+          $version = $matches.Groups[1].Value
+          Write-Host "Version found: $version"
+          echo "::set-output name=version::$version"
 
       # -----------------------------------------------------
       # CREATE setup/.signpath FILE
@@ -82,7 +86,7 @@ jobs:
       - name: Build Servy (NET48)
         shell: pwsh
         run: |
-          $env:VERSION = "${{ github.event.inputs.version }}"
+          $env:VERSION = "${{ steps.get_version.outputs.version }}"
           powershell -ExecutionPolicy Bypass -File src/setup/publish.ps1
 
       # -----------------------------------------------------
@@ -92,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: servy-installer-signed
-          path: setup/servy-${{ github.event.inputs.version }}-net48-x64-installer.exe
+          path: setup/servy-${{ steps.get_version.outputs.version }}-net48-x64-installer.exe
 
       # -----------------------------------------------------
       # UPLOAD PORTABLE 7Z PACKAGE
@@ -101,4 +105,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: servy-portable-7z
-          path: setup/servy-${{ github.event.inputs.version }}-net48-x64-portable.7z
+          path: setup/servy-${{ steps.get_version.outputs.version }}-net48-x64-portable.7z
