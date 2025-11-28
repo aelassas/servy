@@ -127,11 +127,13 @@ try {
         OutputArtifactPath = $SignedPath
     }
 
-    $RepoUrl = "https://github.com/aelassas/servy.git"
-    $CommitId = & git rev-parse HEAD 2>$null
-    $BranchName = & git rev-parse --abbrev-ref HEAD 2>$null
+    $RepoUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+    $CommitId = $env:GITHUB_SHA
+    $BranchName = $env:GITHUB_REF_NAME
 
+    # Check if environment variables are available (they should be in GitHub Actions)
     if ($CommitId -and $BranchName) {
+        # SignPath expects a complex object structure for the Origin parameter
         $CommonParams.Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
@@ -140,7 +142,10 @@ try {
                 BranchName                  = $BranchName
             }
         }
-        Write-Host "Setting origin info: Repo=$RepoUrl, Commit=$CommitId, Branch=$BranchName"
+        Write-Host "Setting origin info (from env vars): Repo=$RepoUrl, Commit=$CommitId, Branch=$BranchName"
+    }
+    else {
+        Write-Warning "Could not retrieve Git origin information from GitHub environment variables."
     }
 
     if ($ArtifactConfigurationSlug) {
