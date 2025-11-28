@@ -32,8 +32,20 @@ param(
 # ENSURE SIGNPATH MODULE EXISTS
 # ----------------------------------------------------------
 if (-not (Get-Module -ListAvailable -Name SignPath)) {
-    Write-Error "Installing SignPath PowerShell module..."
-    Install-Module -Name SignPath
+
+    Write-Host "SignPath module not found. Installing..."
+    
+    # Install in CurrentUser scope to avoid requiring admin
+    Install-Module -Name SignPath -Scope CurrentUser -Force -Repository PSGallery
+
+    # Import the module to make it available in this session
+    Import-Module SignPath -Force
+
+    Write-Host "SignPath module installed and imported."
+} else {
+    # Module exists; import it anyway to ensure availability
+    Import-Module SignPath -Force
+    Write-Host "SignPath module already installed."
 }
 
 # ----------------------------------------------------------
