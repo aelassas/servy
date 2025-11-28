@@ -86,11 +86,17 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Get-Module -ListAvailable -Name SignPath)) {
-              Install-Module -Name SignPath -Scope CurrentUser -Force -AllowClobber
+              Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+              Install-Module -Name SignPath -Force -Scope AllUsers
               Write-Host "SignPath module installed."
           } else {
               Write-Host "SignPath module already installed."
           }
+
+      - name: Verify SignPath module
+        shell: pwsh
+        run: |
+          Get-Module -ListAvailable SignPath
 
       # -----------------------------------------------------
       # RUN BUILD SCRIPT
