@@ -31,12 +31,11 @@ jobs:
               throw "Cannot find $publishFile"
           }
           $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\[string\]\$Version\s*=\s*"(.*)"' }
-          if (-not $versionLine) {
-              throw "Cannot find version assignment in $publishFile"
+
+          if ($versionLine -match '^\s*\[string\]\$Version\s*=\s*"(.*)"') {
+              $version = $matches[1]
+              Write-Host "Version found: $version"
           }
-          $matches = [regex]::Match($versionLine, '^\s*\$Version\s*=\s*"(.*)"')
-          $version = $matches.Groups[1].Value
-          Write-Host "Version found: $version"
 
           # proper output export
           "version=$version" >> $env:GITHUB_OUTPUT
