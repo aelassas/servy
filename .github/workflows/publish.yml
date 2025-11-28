@@ -63,5 +63,52 @@ jobs:
       # -----------------------------------------------------
       # INSTALL BUILD DEPENDENCIES
       # -----------------------------------------------------
+      - name: Install the latest .NET SDK
+        shell: powershell
+        run: |
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
+          "$env:RUNNER_TEMP\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-# TODO finish the rest of the publish workflow
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Install Inno Setup 6.6.1
+        shell: pwsh
+        run: |
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
+          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe"
+          Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+
+      - name: Install 7-Zip
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile "7zip.exe"
+          Start-Process "7zip.exe" -ArgumentList "/S" -Wait
+
+      # -----------------------------------------------------
+      # RUN BUILD SCRIPT
+      # -----------------------------------------------------
+      - name: Build Servy (main)
+        shell: pwsh
+        run: |
+          $env:VERSION = "${{ steps.get_version.outputs.version }}"
+          powershell -ExecutionPolicy Bypass -File setup/publish.ps1
+
+      # -----------------------------------------------------
+      # UPLOAD SIGNED INSTALLER
+      # -----------------------------------------------------
+      - name: Upload signed installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: servy-installer-signed
+          path: setup/servy-${{ steps.get_version.outputs.version }}-x64-installer.exe
+
+      # -----------------------------------------------------
+      # UPLOAD PORTABLE 7Z PACKAGE
+      # -----------------------------------------------------
+      - name: Upload portable 7z package
+        uses: actions/upload-artifact@v4
+        with:
+          name: servy-portable-7z
+          path: setup/servy-${{ steps.get_version.outputs.version }}-x64-portable.7z
