@@ -1,0 +1,38 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 4.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-sign:
+    runs-on: windows-latest
+
+    env:
+      ROOT_DIR: ${{ github.workspace }}
+
+    steps:
+      # -----------------------------------------------------
+      # CHECKOUT
+      # -----------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for provenance
+
+      # -----------------------------------------------------
+      # VALIDATE VERSION INPUT
+      # -----------------------------------------------------
+      - name: Validate version input
+        shell: pwsh
+        run: |
+          if (${{ github.event.inputs.version }} -notmatch '^\d+\.\d+$') {
+              throw "Invalid version format: ${{ github.event.inputs.version }}. Must match d+.d+"
+          }
+          Write-Host "Using version $(${{ github.event.inputs.version }})"
+
+# TODO finish the rest of the publish workflow

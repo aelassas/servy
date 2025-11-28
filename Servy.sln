@@ -12,8 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA68
 		bump-version.ps1 = bump-version.ps1
 		codecov.yml = codecov.yml
 		LICENSE.txt = LICENSE.txt
-		README.md = README.md
 		NOTES.md = NOTES.md
+		README.md = README.md
 		ROADMAP.md = ROADMAP.md
 	EndProjectSection
 EndProject
@@ -52,6 +52,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\bump-version.yml = .github\workflows\bump-version.yml
 		.github\workflows\choco.yml = .github\workflows\choco.yml
 		.github\workflows\loc.yml = .github\workflows\loc.yml
+		.github\workflows\publish.yml = .github\workflows\publish.yml
 		.github\workflows\release.yml = .github\workflows\release.yml
 		.github\workflows\scoop.yml = .github\workflows\scoop.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
