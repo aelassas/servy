@@ -121,10 +121,10 @@ namespace Servy.Manager
                 ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigrationAppPublishPath;
 #endif
 
-                if (!File.Exists(ConfigurationAppPublishPath))
-                {
-                    MessageBox.Show($"Configurator App not found: {ConfigurationAppPublishPath}");
-                }
+                //if (!File.Exists(ConfigurationAppPublishPath))
+                //{
+                //    MessageBox.Show($"Configurator App not found: {ConfigurationAppPublishPath}");
+                //}
 
                 IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
 
