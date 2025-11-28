@@ -26,7 +26,7 @@ jobs:
         shell: pwsh
         id: get_version
         run: |
-          $publishFile = "src/setup/publish.ps1"
+          $publishFile = "setup/publish.ps1"
           if (-not (Test-Path $publishFile)) {
               throw "Cannot find $publishFile"
           }
@@ -82,6 +82,16 @@ jobs:
           Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile "7zip.exe"
           Start-Process "7zip.exe" -ArgumentList "/S" -Wait
 
+      - name: Install SignPath PowerShell module
+        shell: pwsh
+        run: |
+          if (-not (Get-Module -ListAvailable -Name SignPath)) {
+              Install-Module -Name SignPath -Scope CurrentUser -Force -AllowClobber
+              Write-Host "SignPath module installed."
+          } else {
+              Write-Host "SignPath module already installed."
+          }
+
       # -----------------------------------------------------
       # RUN BUILD SCRIPT
       # -----------------------------------------------------
@@ -89,7 +99,7 @@ jobs:
         shell: pwsh
         run: |
           $env:VERSION = "${{ steps.get_version.outputs.version }}"
-          powershell -ExecutionPolicy Bypass -File src/setup/publish.ps1
+          powershell -ExecutionPolicy Bypass -File setup/publish.ps1
 
       # -----------------------------------------------------
       # UPLOAD SIGNED INSTALLER
