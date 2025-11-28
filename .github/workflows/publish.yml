@@ -15,7 +15,7 @@ jobs:
       # CHECKOUT
       # -----------------------------------------------------
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Required for provenance
 
@@ -89,14 +89,6 @@ jobs:
         shell: pwsh
         run: |
           $env:VERSION = "${{ steps.get_version.outputs.version }}"
-          if (-not (Get-Module -ListAvailable -Name SignPath)) {
-              Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-              Install-Module -Name SignPath -Force
-              Write-Host "SignPath module installed."
-          } else {
-              Write-Host "SignPath module already installed."
-          }
-          Get-Module -ListAvailable SignPath
           powershell -ExecutionPolicy Bypass -File setup/publish.ps1
 
       # -----------------------------------------------------

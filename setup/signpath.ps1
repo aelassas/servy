@@ -32,8 +32,8 @@ param(
 # ENSURE SIGNPATH MODULE EXISTS
 # ----------------------------------------------------------
 if (-not (Get-Module -ListAvailable -Name SignPath)) {
-    Write-Error "SignPath PowerShell module is not installed. Install it with: Install-Module -Name SignPath"
-    exit 1
+    Write-Error "Installing SignPath PowerShell module..."
+    Install-Module -Name SignPath
 }
 
 # ----------------------------------------------------------
@@ -116,6 +116,14 @@ try {
         InputArtifactPath  = $FilePath
         WaitForCompletion  = $true
         OutputArtifactPath = $SignedPath
+        Origin = @{
+            RepositoryData = @{
+                SourceControlManagementType = "git"
+                Url = "https://github.com/aelassas/servy.git"
+                CommitId   = (git rev-parse HEAD)
+                BranchName = (git rev-parse --abbrev-ref HEAD)
+            }
+        }
     }
 
 <#
