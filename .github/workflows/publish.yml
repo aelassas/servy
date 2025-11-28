@@ -1,0 +1,104 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 4.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-sign:
+    runs-on: windows-latest
+
+    env:
+      ROOT_DIR: ${{ github.workspace }}
+
+    steps:
+      # -----------------------------------------------------
+      # CHECKOUT
+      # -----------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for provenance
+
+      # -----------------------------------------------------
+      # VALIDATE VERSION INPUT
+      # -----------------------------------------------------
+      - name: Validate version input
+        shell: pwsh
+        run: |
+          if (${{ github.event.inputs.version }} -notmatch '^\d+\.\d+$') {
+              throw "Invalid version format: ${{ github.event.inputs.version }}. Must match d+.d+"
+          }
+          Write-Host "Using version $(${{ github.event.inputs.version }})"
+
+      # -----------------------------------------------------
+      # CREATE setup/.signpath FILE
+      # -----------------------------------------------------
+      - name: Create temporary .signpath for GitHub Actions
+        shell: pwsh
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          $SignPathFile = "setup/.signpath"
+          $content = @"
+            SIGN=true
+            API_TOKEN=$env:SIGNPATH_API_TOKEN
+            ORGANIZATION_ID=e2c60587-5f20-4593-ab8b-c7eab6b7bfb6
+            PROJECT_SLUG=servy
+            SIGNING_POLICY_SLUG=test-signing
+            "@
+          $content | Set-Content -Path $SignPathFile -Encoding UTF8
+          Write-Host "Created temporary $SignPathFile"
+
+      # -----------------------------------------------------
+      # INSTALL BUILD DEPENDENCIES
+      # -----------------------------------------------------
+      - name: Install MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v2
+
+      - name: Install Inno Setup 6.6.1
+        shell: pwsh
+        run: |
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
+          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe"
+          Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+
+      - name: Install 7-Zip
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile "7zip.exe"
+          Start-Process "7zip.exe" -ArgumentList "/S" -Wait
+
+      # -----------------------------------------------------
+      # RUN BUILD SCRIPT
+      # -----------------------------------------------------
+      - name: Build Servy (NET48)
+        shell: pwsh
+        run: |
+          $env:VERSION = "${{ github.event.inputs.version }}"
+          powershell -ExecutionPolicy Bypass -File src/setup/publish.ps1
+
+      # -----------------------------------------------------
+      # UPLOAD SIGNED INSTALLER
+      # -----------------------------------------------------
+      - name: Upload signed installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: servy-installer-signed
+          path: setup/servy-${{ github.event.inputs.version }}-net48-x64-installer.exe
+
+      # -----------------------------------------------------
+      # UPLOAD PORTABLE 7Z PACKAGE
+      # -----------------------------------------------------
+      - name: Upload portable 7z package
+        uses: actions/upload-artifact@v4
+        with:
+          name: servy-portable-7z
+          path: setup/servy-${{ github.event.inputs.version }}-net48-x64-portable.7z

@@ -60,7 +60,7 @@ Write-Host "Loading config from $ConfigPath"
 # LOAD CONFIG
 # ----------------------------------------------------------
 $Config = @{}
-Get-Content -Raw -Path $ConfigPath | Out-String | ForEach-Object {
+Get-Content $ConfigPath| ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
@@ -72,6 +72,7 @@ Get-Content -Raw -Path $ConfigPath | Out-String | ForEach-Object {
 # CHECK SIGN FLAG
 # ----------------------------------------------------------
 $SignFlag = $Config["SIGN"]
+
 if ($SignFlag -ine "true") {
     Write-Host "SIGN is not true in $ConfigPath. Skipping signing."
     exit 0
@@ -115,13 +116,18 @@ try {
         InputArtifactPath  = $FilePath
         WaitForCompletion  = $true
         OutputArtifactPath = $SignedPath
+    }
+
+<#
         Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
                 Url = "https://github.com/aelassas/servy.git"
+                CommitId   = (git rev-parse HEAD)
+                BranchName = (git rev-parse --abbrev-ref HEAD)
             }
         }
-    }
+#>
 
     if ($ArtifactConfigurationSlug) {
         $CommonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
