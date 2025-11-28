@@ -45,6 +45,11 @@ $BuildOutput           = Join-Path $ScriptDir "..\Servy.Service\bin\$Platform\$B
 $ResourcesBuildOutput  = Join-Path $ScriptDir "..\Servy.Manager\bin\$Platform\$BuildConfiguration"
 
 # ------------------------------------------------------------------------
+# 0. Build Servy to ensure x86 and x64 resources exist
+# ------------------------------------------------------------------------
+& msbuild $ManagerProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
+
+# ------------------------------------------------------------------------
 # 1. Build Servy.Service
 # ------------------------------------------------------------------------
 & $ServicePublishScript -BuildConfiguration $BuildConfiguration
