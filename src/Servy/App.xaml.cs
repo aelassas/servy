@@ -121,10 +121,10 @@ namespace Servy
 #else
                 ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
 #endif
-                if (!File.Exists(ManagerAppPublishPath))
-                {
-                    MessageBox.Show($"Manager App not found: {ManagerAppPublishPath}");
-                }
+                //if (!File.Exists(ManagerAppPublishPath))
+                //{
+                //    MessageBox.Show($"Manager App not found: {ManagerAppPublishPath}");
+                //}
 
                 IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
 
