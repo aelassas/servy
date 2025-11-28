@@ -140,6 +140,7 @@ try {
                 BranchName                  = $BranchName
             }
         }
+        Write-Host "Setting origin info: Repo=$RepoUrl, Commit=$CommitId, Branch=$BranchName"
     }
 
     if ($ArtifactConfigurationSlug) {
