@@ -74,27 +74,38 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
-[Files]
-Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
-Source: "..\src\Servy\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
-Source: "..\src\Servy\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+[Types]
+Name: "full"; Description: "Full installation"
+Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
-; Manager
-Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.Manager\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
-Source: "..\src\Servy.Manager\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
+[Components]
+Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
+Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
+Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
+
+[Files]
+Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
+; Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_main_app
+Source: "..\src\Servy\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
+Source: "..\src\Servy\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_main_app
+Source: "..\src\Servy\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs;  Components: install_main_app
 
 ; cli
-Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"{#CliExeName}"; Flags: ignoreversion
-; Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
-Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; 
-Source: "..\src\Servy.CLI\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; 
-Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"{#CliExeName}"; Flags: ignoreversion; Components: install_cli
+; Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
+Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
+Source: "..\src\Servy.CLI\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
+
+; PowerShell Module
+Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+
+; Manager
+Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
+Source: "..\src\Servy.Manager\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
+Source: "..\src\Servy.Manager\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
 
 ; taskschd
 Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
@@ -102,11 +113,11 @@ Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdo
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: install_main_app
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app
 
-Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"
-Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -141,6 +152,22 @@ Type: filesandordirs; Name: "{app}\x64"
 ; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+
+  if CurPageID = wpSelectComponents then
+  begin
+    if not WizardIsComponentSelected('install_main_app') and
+       not WizardIsComponentSelected('install_cli') and
+       not WizardIsComponentSelected('install_manager') then
+    begin
+      MsgBox('You must select at least one component to continue.', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
+end;
+
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
