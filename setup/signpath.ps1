@@ -13,9 +13,6 @@
         - Download the signed artifact
         - Replace the original file with the signed version
 
-    Requires:
-        Install-Module -Name SignPath
-
 .PARAMETER FilePath
     Path to the file that should be signed.
 
@@ -36,7 +33,7 @@ if (-not (Get-Module -ListAvailable -Name SignPath)) {
     Write-Host "SignPath module not found. Installing..."
     
     # Install in CurrentUser scope to avoid requiring admin
-    Install-Module -Name SignPath -Scope CurrentUser -Force -Repository PSGallery
+    Install-Module -Name SignPath -Force
 
     # Import the module to make it available in this session
     Import-Module SignPath -Force
@@ -130,16 +127,20 @@ try {
         OutputArtifactPath = $SignedPath
     }
 
-<#
-        Origin = @{
+    $RepoUrl = "https://github.com/aelassas/servy.git"
+    $CommitId = & git rev-parse HEAD 2>$null
+    $BranchName = & git rev-parse --abbrev-ref HEAD 2>$null
+
+    if ($CommitId -and $BranchName) {
+        $CommonParams.Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
-                Url = "https://github.com/aelassas/servy.git"
-                CommitId   = (git rev-parse HEAD)
-                BranchName = (git rev-parse --abbrev-ref HEAD)
+                Url                         = $RepoUrl
+                CommitId                    = $CommitId
+                BranchName                  = $BranchName
             }
         }
-#>
+    }
 
     if ($ArtifactConfigurationSlug) {
         $CommonParams.ArtifactConfigurationSlug = $ArtifactConfigurationSlug
