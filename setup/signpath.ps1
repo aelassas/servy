@@ -127,7 +127,7 @@ try {
         OutputArtifactPath = $SignedPath
     }
 
-    $RepoUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+    $RepoUrl = "https://github.com/aelassas/servy.git"
     $CommitId = $env:GITHUB_SHA
     $BranchName = $env:GITHUB_REF_NAME
 

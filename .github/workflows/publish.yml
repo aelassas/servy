@@ -85,7 +85,7 @@ jobs:
       # -----------------------------------------------------
       # RUN BUILD SCRIPT
       # -----------------------------------------------------
-      - name: Build Servy (NET48)
+      - name: Build Servy (net48)
         shell: pwsh
         run: |
           $env:VERSION = "${{ steps.get_version.outputs.version }}"
