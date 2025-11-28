@@ -38,8 +38,8 @@ jobs:
           $version = $matches.Groups[1].Value
           Write-Host "Version found: $version"
 
-          # Use environment file for output (new recommended way)
-          echo "version=$version" >> $GITHUB_OUTPUT
+          # proper output export
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       # -----------------------------------------------------
       # CREATE setup/.signpath FILE

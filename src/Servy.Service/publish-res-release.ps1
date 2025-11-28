@@ -39,7 +39,7 @@ $RestarterPublishScript = Join-Path $ScriptDir "..\Servy.Restarter\publish.ps1" 
 $ResourcesFolder        = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
 $BuildConfiguration     = "Release"
 $Platform               = "x64"
-$BuildOutput            = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Platform\$BuildConfiguration" | Resolve-Path
+$BuildOutput            = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Platform\$BuildConfiguration"
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter in Release mode
