@@ -60,7 +60,7 @@ Write-Host "Loading config from $ConfigPath"
 # LOAD CONFIG
 # ----------------------------------------------------------
 $Config = @{}
-Get-Content $ConfigPath | ForEach-Object {
+Get-Content -Raw -Path $ConfigPath | Out-String | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
@@ -104,6 +104,8 @@ Write-Host "Submitting signing job for $FileName..."
 # ----------------------------------------------------------
 # SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
+$SignedPath = "$FilePath.signed"
+
 try {
     $CommonParams = @{
         OrganizationId     = $OrganizationId
@@ -112,7 +114,7 @@ try {
         SigningPolicySlug  = $SigningPolicySlug
         InputArtifactPath  = $FilePath
         WaitForCompletion  = $true
-        OutputArtifactPath = "$FilePath.signed"
+        OutputArtifactPath = $SignedPath
         Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
@@ -138,7 +140,11 @@ catch {
 # REPLACE ORIGINAL FILE WITH SIGNED VERSION
 # ----------------------------------------------------------
 try {
-    Move-Item -Force -Path "$FilePath.signed" -Destination $FilePath
+    if (-not (Test-Path $SignedPath)) {
+        Write-Error "SignPath did not produce the expected output file: $SignedPath"
+        exit 1
+    }
+    Move-Item -Force -Path $SignedPath -Destination $FilePath
     Write-Host "Signing complete: $FilePath"
 }
 catch {
