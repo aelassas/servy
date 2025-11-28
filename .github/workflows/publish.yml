@@ -37,7 +37,9 @@ jobs:
           $matches = [regex]::Match($versionLine, '^\s*\$Version\s*=\s*"(.*)"')
           $version = $matches.Groups[1].Value
           Write-Host "Version found: $version"
-          echo "::set-output name=version::$version"
+
+          # Use environment file for output (new recommended way)
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # -----------------------------------------------------
       # CREATE setup/.signpath FILE
