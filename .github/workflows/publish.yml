@@ -50,14 +50,14 @@ jobs:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
         run: |
           $SignPathFile = "setup/.signpath"
-          $content = @"
-SIGN=true
-API_TOKEN=$env:SIGNPATH_API_TOKEN
-ORGANIZATION_ID=e2c60587-5f20-4593-ab8b-c7eab6b7bfb6
-PROJECT_SLUG=servy
-SIGNING_POLICY_SLUG=test-signing
-"@.Trim()
-          $content | Set-Content -Path $SignPathFile -Encoding UTF8
+          $content = @(
+              "SIGN=true",
+              "API_TOKEN=$env:SIGNPATH_API_TOKEN",
+              "ORGANIZATION_ID=e2c60587-5f20-4593-ab8b-c7eab6b7bfb6",
+              "PROJECT_SLUG=servy",
+              "SIGNING_POLICY_SLUG=test-signing"
+          ) -join [Environment]::NewLine
+          [System.IO.File]::WriteAllText($SignPathFile, $content, [System.Text.Encoding]::UTF8)
           Write-Host "Created temporary $SignPathFile"
 
       # -----------------------------------------------------
