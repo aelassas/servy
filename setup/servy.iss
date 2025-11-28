@@ -27,6 +27,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
+DisableDirPage=no
 DefaultDirName={autopf}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
@@ -49,6 +50,9 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 
+UsePreviousTasks=no
+AlwaysRestart=no
+
 [Messages]
 SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease close all instances of it now, then click OK to continue, or Cancel to exit.
 
@@ -56,7 +60,8 @@ SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease 
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
+Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone
 
 [Types]
 Name: "full"; Description: "Full installation"
@@ -105,6 +110,14 @@ Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[UninstallRun]
+Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
+Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
+
+[UninstallDelete]
+; Type: filesandordirs; Name: "{app}\taskschd"
+
 [Code]
 // Declare Windows API function for refreshing icon cache
 procedure SHChangeNotify(wEventId, uFlags: LongWord; dwItem1, dwItem2: LongWord); external 'SHChangeNotify@shell32.dll stdcall';
@@ -115,22 +128,78 @@ begin
   SHChangeNotify($8000000, $0, 0, 0); // SHCNE_ASSOCCHANGED = $8000000
 end;
 
-// Called after installation finishes
-procedure CurStepChanged(CurStep: TSetupStep);
+const
+  WM_SETTINGCHANGE = $001A;
+  SMTO_ABORTIFHUNG = $0002;
+
+function SendMessageTimeout(hWnd: LongWord; Msg: LongWord; wParam: LongWord;
+  lParam: string; fuFlags: LongWord; uTimeout: LongWord; var lpdwResult: LongWord): LongWord;
+  external 'SendMessageTimeoutW@user32.dll stdcall';
+
+procedure RefreshEnvironment;
+var
+  ResultCode: LongWord;
 begin
-  if CurStep = ssPostInstall then
+  SendMessageTimeout(
+    HWND_BROADCAST,
+    WM_SETTINGCHANGE,
+    0,
+    'Environment',        // pass string directly
+    SMTO_ABORTIFHUNG,
+    5000,
+    ResultCode
+  );
+end;
+  
+procedure AddToPath(const Folder: string);
+var
+  OldPath, NewPath: string;
+  ResultCode: LongWord;
+begin
+  // Read the current system PATH
+  if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
+    OldPath := '';
+
+  // Only add if it's not already there
+  if Pos(LowerCase(Folder), LowerCase(OldPath)) = 0 then
   begin
-    RefreshIconCache();
+    if OldPath <> '' then
+      NewPath := OldPath + ';' + Folder
+    else
+      NewPath := Folder;
+
+    // Write the new system PATH
+    if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
+    begin
+      MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+      Exit;
+    end;
+
+    // Notify the system about the environment change
+    RefreshEnvironment();
   end;
 end;
 
-[UninstallRun]
-Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
-Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
-Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  InstallDir, OldPath, NewPath: string;
+  ResultCode: LongWord;
+  EnvPtr: LongInt;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    // Refresh icons
+    RefreshIconCache();
 
-[UninstallDelete]
-; Type: filesandordirs; Name: "{app}\taskschd"
+    // Add to PATH if task selected
+    if WizardIsTaskSelected('addpath') then
+    begin
+      InstallDir := ExpandConstant('{app}');
+      AddToPath(InstallDir);
+    end;
+    
+  end;
+end;
 
 [Code]
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -149,11 +218,12 @@ begin
   end;
 end;
 
+[Code]
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
 begin
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   sUnInstallString := '';
 
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'UninstallString', sUnInstallString) then
@@ -163,7 +233,7 @@ begin
 
   if sUnInstallString = '' then
   begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
 
     if not RegQueryStringValue(HKLM32, sUnInstPath, 'UninstallString', sUnInstallString) then
     begin
@@ -223,7 +293,7 @@ var
   sUnInstPath, sVersionString: String;
 begin
   sVersionString := ''
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
   begin
@@ -232,7 +302,7 @@ begin
 
   if sVersionString = '' then
   begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   
     if not RegQueryStringValue(HKLM32, sUnInstPath, 'DisplayVersion', sVersionString) then
     begin
@@ -274,6 +344,10 @@ var
   sInstalledVersion, message: String;
   installedVersion, myAppVersion: Integer;
   v: Integer;
+  UninstKey: String;
+  Hives: array[0..1] of Integer;
+  Values: array[0..4] of String;
+  i, j: Integer;
 begin
   Result := True;
   sInstalledVersion := GetInstalledVersion();
@@ -314,6 +388,24 @@ begin
       Result := False;
     end;
   end;
+  
+  // Uninstall key path
+  UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
+
+  // Define the hives and value names to delete
+  Hives[0] := HKLM64;
+  Hives[1] := HKCU;
+  Values[0] := 'Inno Setup: Selected Tasks';
+  Values[1] := 'Inno Setup: Deselected Tasks';
+  Values[2] := 'Inno Setup: Selected Components';
+  Values[3] := 'Inno Setup: Deselected Components';
+  Values[4] := 'Inno Setup: Setup Type';
+
+  // Loop over hives and values to delete
+  for i := 0 to High(Hives) do
+    for j := 0 to High(Values) do
+      if RegValueExists(Hives[i], UninstKey, Values[j]) then
+        RegDeleteValue(Hives[i], UninstKey, Values[j]);
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

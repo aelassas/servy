@@ -27,6 +27,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
+DisableDirPage=no
 DefaultDirName={autopf}\{#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 DisableProgramGroupPage=yes
@@ -122,7 +123,7 @@ function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
 begin
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   sUnInstallString := '';
 
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'UninstallString', sUnInstallString) then
@@ -132,7 +133,7 @@ begin
 
   if sUnInstallString = '' then
   begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
 
     if not RegQueryStringValue(HKLM32, sUnInstPath, 'UninstallString', sUnInstallString) then
     begin
@@ -192,7 +193,7 @@ var
   sUnInstPath, sVersionString: String;
 begin
   sVersionString := ''
-  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+  sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
   begin
@@ -201,7 +202,7 @@ begin
 
   if sVersionString = '' then
   begin
-    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+    sUnInstPath := ExpandConstant('SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   
     if not RegQueryStringValue(HKLM32, sUnInstPath, 'DisplayVersion', sVersionString) then
     begin
@@ -243,6 +244,10 @@ var
   sInstalledVersion, message: String;
   installedVersion, myAppVersion: Integer;
   v: Integer;
+  UninstKey: String;
+  Hives: array[0..1] of Integer;
+  Values: array[0..4] of String;
+  i, j: Integer;
 begin
   Result := True;
   sInstalledVersion := GetInstalledVersion();
@@ -283,8 +288,25 @@ begin
       Result := False;
     end;
   end;
-end;
+  
+  // Uninstall key path
+  UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
 
+  // Define the hives and value names to delete
+  Hives[0] := HKLM64;
+  Hives[1] := HKCU;
+  Values[0] := 'Inno Setup: Selected Tasks';
+  Values[1] := 'Inno Setup: Deselected Tasks';
+  Values[2] := 'Inno Setup: Selected Components';
+  Values[3] := 'Inno Setup: Deselected Components';
+  Values[4] := 'Inno Setup: Setup Type';
+
+  // Loop over hives and values to delete
+  for i := 0 to High(Hives) do
+    for j := 0 to High(Values) do
+      if RegValueExists(Hives[i], UninstKey, Values[j]) then
+        RegDeleteValue(Hives[i], UninstKey, Values[j]);
+end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
