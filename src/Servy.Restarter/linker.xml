@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <linker>
-  <assembly fullname="Servy.CLI" preserve="all" />
 
   <assembly fullname="Servy.Core">
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
