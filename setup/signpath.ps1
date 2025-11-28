@@ -127,7 +127,7 @@ try {
         OutputArtifactPath = $SignedPath
     }
 
-    $RepoUrl = "https://github.com/aelassas/servy.git"
+    $RepoUrl = "https://github.com/aelassas/servy"
     $CommitId = & git rev-parse HEAD 2>$null
     $BranchName = & git rev-parse --abbrev-ref HEAD 2>$null
 
