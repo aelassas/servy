@@ -58,23 +58,34 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+[Types]
+Name: "full"; Description: "Full installation"
+Name: "custom"; Description: "Custom installation"; Flags: iscustom
+
+[Components]
+Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
+Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
+Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
+
 [Files]
 ; Main app EXE
-Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
 
 ; Appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 
 ; CLI appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
+; PowerShell Module
+Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+
 ; Manager
-Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 
 ; taskschd
 Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
@@ -85,11 +96,11 @@ Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdo
 ; Name: "{group}\Servy"; Filename: "{app}\Servy.exe"; IconFilename: "{app}\servy.ico"; WorkingDir: "{app}"
 ; Name: "{group}\Servy Manager"; Filename: "{app}\Servy.Manager.exe"; IconFilename: "{app}\servy.ico"; WorkingDir: "{app}"
 
-Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: install_main_app
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app 
 
-Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"
-Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
@@ -122,6 +133,22 @@ Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidde
 ; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+
+  if CurPageID = wpSelectComponents then
+  begin
+    if not WizardIsComponentSelected('install_main_app') and
+       not WizardIsComponentSelected('install_cli') and
+       not WizardIsComponentSelected('install_manager') then
+    begin
+      MsgBox('You must select at least one component to continue.', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
+end;
+
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
