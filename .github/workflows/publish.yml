@@ -30,7 +30,7 @@ jobs:
           if (-not (Test-Path $publishFile)) {
               throw "Cannot find $publishFile"
           }
-          $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\[string]$Version\s*=\s*"(.*)"' }
+          $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\[string\]$Version\s*=\s*"(.*)"' }
           if (-not $versionLine) {
               throw "Cannot find version assignment in $publishFile"
           }
