@@ -461,3 +461,14 @@ jobs:
           if-no-files-found: error
           retention-days: 1
       
+      # -----------------------------------------------------
+      # SCAN WITH VIRUSTOTAL
+      # -----------------------------------------------------
+      - name: Scan signed installer and portable package with VirusTotal
+        uses: cssnr/virustotal-action@v1
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          sha256: true
+          file_globs: |
+            signed/installer/servy-${{ env.VERSION }}-x64-installer.exe
+            servy-${{ env.VERSION }}-x64-portable.7z
