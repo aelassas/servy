@@ -118,14 +118,12 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-restarter'
           wait-for-completion: true
-          output-artifact-directory: '/signed/Servy.Restarter'
+          output-artifact-directory: 'signed/Servy.Restarter'
 
       - name: Inject signed Servy.Restarter.exe
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse signed/Servy.Restarter
           Get-ChildItem -Recurse signed
-          Get-ChildItem -Recurse .
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
@@ -168,7 +166,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-service'
           wait-for-completion: true
-          output-artifact-directory: '/signed/Servy.Service'
+          output-artifact-directory: 'signed/Servy.Service'
 
       - name: Inject Servy.Service signed binaries
         shell: pwsh
@@ -223,7 +221,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy'
           wait-for-completion: true
-          output-artifact-directory: '/signed/Servy'
+          output-artifact-directory: 'signed/Servy'
 
       - name: Replace Servy.exe with signed
         shell: pwsh
@@ -270,7 +268,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-manager'
           wait-for-completion: true
-          output-artifact-directory: '/signed/Servy.Manager'
+          output-artifact-directory: 'signed/Servy.Manager'
 
       - name: Replace Servy.Manager.exe with signed
         shell: pwsh
@@ -317,7 +315,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-cli'
           wait-for-completion: true
-          output-artifact-directory: '/signed/Servy.CLI'
+          output-artifact-directory: 'signed/Servy.CLI'
 
       - name: Replace Servy.CLI.exe with signed
         shell: pwsh
@@ -367,7 +365,7 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-installer'
           wait-for-completion: true
-          output-artifact-directory: '/signed/installer'
+          output-artifact-directory: 'signed/installer'
 
       - name: Rename signed installer
         shell: pwsh
