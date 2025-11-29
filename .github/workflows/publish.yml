@@ -1,3 +1,10 @@
+# ==========================================================================================
+# Servy Publish Workflow
+# ------------------------------------------------------------------------------------------
+# Builds all Servy components, signs all executables using SignPath, builds installer,
+# packages the portable 7z archive, and uploads all signed artifacts.
+# ==========================================================================================
+
 name: publish
 
 on:
@@ -9,6 +16,9 @@ jobs:
 
     env:
       ROOT_DIR: ${{ github.workspace }}
+      BUILD_CONFIG: Release
+      PLATFORM: x64
+      FRAMEWORK: net48
 
     steps:
       # -----------------------------------------------------
@@ -17,94 +27,372 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # Required for provenance
+          fetch-depth: 0
 
       # -----------------------------------------------------
       # EXTRACT VERSION FROM setup/publish.ps1
       # -----------------------------------------------------
       - name: Get version from publish.ps1
-        shell: pwsh
         id: get_version
-        run: |
-          $publishFile = "setup/publish.ps1"
-          if (-not (Test-Path $publishFile)) {
-              throw "Cannot find $publishFile"
-          }
-          $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
-          if (-not $versionLine) {
-              throw "Cannot find version assignment in $publishFile"
-          }
-          $matches = [regex]::Match($versionLine, '^\s*\$Version\s*=\s*"(.*)"')
-          $version = $matches.Groups[1].Value
-          Write-Host "Version found: $version"
-
-          # proper output export
-          "version=$version" >> $env:GITHUB_OUTPUT
-
-      # -----------------------------------------------------
-      # CREATE setup/.signpath FILE
-      # -----------------------------------------------------
-      - name: Create temporary .signpath for GitHub Actions
         shell: pwsh
-        env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
         run: |
-          $SignPathFile = "setup/.signpath"
-          $content = @(
-              "SIGN=true",
-              "API_TOKEN=$env:SIGNPATH_API_TOKEN",
-              "ORGANIZATION_ID=e2c60587-5f20-4593-ab8b-c7eab6b7bfb6",
-              "PROJECT_SLUG=servy",
-              "SIGNING_POLICY_SLUG=test-signing"
-          ) -join [Environment]::NewLine
-          [System.IO.File]::WriteAllText($SignPathFile, $content, [System.Text.Encoding]::UTF8)
-          Write-Host "Created temporary $SignPathFile"
+          $file = "setup/publish.ps1"
+          if (!(Test-Path $file)) { throw "cannot find publish.ps1" }
+          $line = Get-Content $file | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
+          if (!$line) { throw "version not found" }
+          $v = ([regex]::Match($line,'"(.*)"')).Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Set VERSION env
+        run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
       # -----------------------------------------------------
       # INSTALL BUILD DEPENDENCIES
       # -----------------------------------------------------
-      - name: Install MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Install NuGet
-        uses: nuget/setup-nuget@v2
+      - uses: microsoft/setup-msbuild@v2
+      - uses: nuget/setup-nuget@v2
 
       - name: Install Inno Setup 6.6.1
         shell: pwsh
         run: |
-          $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
-          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe"
-          Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          Invoke-WebRequest "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe" -OutFile is.exe
+          Start-Process .\is.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait
 
-      - name: Install 7-Zip
+      - name: Install 7zip
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile "7zip.exe"
-          Start-Process "7zip.exe" -ArgumentList "/S" -Wait
+          Invoke-WebRequest "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile 7z.exe
+          Start-Process .\7z.exe -ArgumentList "/S" -Wait
 
       # -----------------------------------------------------
-      # RUN BUILD SCRIPT
+      # BUILD SOLUTION
       # -----------------------------------------------------
-      - name: Build Servy (net48)
+      - name: Build Servy.sln
         shell: pwsh
         run: |
-          $env:VERSION = "${{ steps.get_version.outputs.version }}"
-          powershell -ExecutionPolicy Bypass -File setup/publish.ps1
+          msbuild Servy.sln `
+            /t:Clean,Rebuild `
+            /p:Configuration=$env:BUILD_CONFIG `
+            /p:Platform=$env:PLATFORM `
+            /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
-      # UPLOAD SIGNED INSTALLER
+      # BUILD Servy.Restarter BEFORE SIGNING
       # -----------------------------------------------------
+      - name: Build Servy.Restarter
+        shell: pwsh
+        run: |
+          $BuildConfiguration = "Release"
+          $Platform = "x64"
+          $RestarterProject = "src/Servy.Restarter/Servy.Restarter.csproj"
+
+          msbuild $RestarterProject `
+            /t:Clean,Rebuild `
+            /p:Configuration=$BuildConfiguration `
+            /p:Platform=$Platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN RESTARTER
+      # -----------------------------------------------------
+      - name: Upload Servy.Restarter.exe (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-restarter
+          path: src/Servy.Restarter/bin/x64/Release/Servy.Restarter.exe
+          if-no-files-found: error
+
+      - name: Submit Servy.Restarter for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/Servy.Restarter
+
+      - name: Inject signed Servy.Restarter.exe
+        shell: pwsh
+        run: |
+          $file = "signed/Servy.Restarter/Servy.Restarter.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
+          Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
+
+      # -----------------------------------------------------
+      # BUILD Servy.Service BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Build Servy.Service
+        shell: pwsh
+        run: |
+          $BuildConfiguration = "Release"
+          $Platform = "x64"
+          $ServiceProject = "src/Servy.Service/Servy.Service.csproj"
+
+          msbuild $ServiceProject `
+            /t:Clean,Rebuild `
+            /p:Configuration=$BuildConfiguration `
+            /p:Platform=$Platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN SERVY.SERVICE
+      # -----------------------------------------------------
+      - name: Upload Servy.Service.exe (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-service
+          path: src/Servy.Service/bin/x64/Release/Servy.Service.exe
+          if-no-files-found: error
+
+      - name: Submit Servy.Service for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/Servy.Service
+
+      - name: Inject Servy.Service signed binaries
+        shell: pwsh
+        run: |
+          $signed = "signed/Servy.Service/Servy.Service.exe"
+          if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
+
+          Copy-Item $signed src/Servy/Resources/Servy.Service.Net48.exe -Force
+          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy/Resources/ -Force
+
+          Copy-Item $signed src/Servy.Manager/Resources/Servy.Service.Net48.exe -Force
+          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy.Manager/Resources/ -Force
+
+          Copy-Item $signed src/Servy.CLI/Resources/Servy.Service.Net48.CLI.exe -Force
+          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy.CLI/Resources/ -Force
+
+      # -----------------------------------------------------
+      # BUILD Servy BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Build Servy
+        shell: pwsh
+        run: |
+          $BuildConfiguration = "Release"
+          $Platform = "x64"
+          $ServyProject = "src/Servy/Servy.csproj"
+
+          msbuild $ServyProject `
+            /t:Clean,Rebuild `
+            /p:Configuration=$BuildConfiguration `
+            /p:Platform=$Platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.exe (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-servy
+          path: src/Servy/bin/x64/Release/Servy.exe
+          if-no-files-found: error
+
+      - name: Submit Servy.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/Servy
+
+      - name: Replace Servy.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy/Servy.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.exe not found!" }
+          Copy-Item $file src/Servy/bin/x64/Release/Servy.exe -Force
+
+      # -----------------------------------------------------
+      # BUILD Servy.Manager BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Build Servy.Manager
+        shell: pwsh
+        run: |
+          $BuildConfiguration = "Release"
+          $Platform = "x64"
+          $ManagerProject = "src/Servy.Manager/Servy.Manager.csproj"
+
+          msbuild $ManagerProject `
+            /t:Clean,Rebuild `
+            /p:Configuration=$BuildConfiguration `
+            /p:Platform=$Platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.Manager.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.Manager.exe (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-manager
+          path: src/Servy.Manager/bin/x64/Release/Servy.Manager.exe
+          if-no-files-found: error
+
+      - name: Submit Servy.Manager.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/Servy.Manager
+
+      - name: Replace Servy.Manager.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy.Manager/Servy.Manager.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
+          Copy-Item $file src/Servy.Manager/bin/x64/Release/Servy.Manager.exe -Force
+
+      # -----------------------------------------------------
+      # BUILD Servy.CLI BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Build Servy.CLI
+        shell: pwsh
+        run: |
+          $BuildConfiguration = "Release"
+          $Platform = "x64"
+          $CLIProject = "src/Servy.CLI/Servy.CLI.csproj"
+
+          msbuild $CLIProject `
+            /t:Clean,Rebuild `
+            /p:Configuration=$BuildConfiguration `
+            /p:Platform=$Platform `
+            /p:AllowUnsafeBlocks=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.CLI.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.CLI.exe (unsigned)
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-cli
+          path: src/Servy.CLI/bin/x64/Release/Servy.CLI.exe
+          if-no-files-found: error
+
+      - name: Submit Servy.CLI.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/Servy.CLI
+
+      - name: Replace Servy.CLI.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy.CLI/Servy.CLI.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
+          Copy-Item $file src/Servy.CLI/bin/x64/Release/Servy.CLI.exe -Force
+
+      # -----------------------------------------------------
+      # BUILD UNSIGNED INSTALLER
+      # -----------------------------------------------------
+      - name: Build unsigned installer
+        shell: pwsh
+        run: |
+          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & "$compiler" "setup\servy.iss" `
+            /DMyAppVersion=$env:VERSION `
+            /DMyAppPlatform=$env:FRAMEWORK
+
+      # -----------------------------------------------------
+      # SIGN INSTALLER
+      # -----------------------------------------------------
+      - name: Upload unsigned installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: setup/servy-${{ env.VERSION }}-net48-x64-installer.exe
+          if-no-files-found: error
+
+      - name: Submit installer for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
+          wait-for-completion: true
+          output-artifact-directory: /signed/installer
+
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
         with:
-          name: servy-installer-signed
-          path: setup/servy-${{ steps.get_version.outputs.version }}-net48-x64-installer.exe
+          name: signed-installer
+          path: signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe
+          if-no-files-found: error
 
       # -----------------------------------------------------
-      # UPLOAD PORTABLE 7Z PACKAGE
+      # BUILD PORTABLE 7Z PACKAGE
       # -----------------------------------------------------
-      - name: Upload portable 7z package
+      - name: Build portable 7z package
+        shell: pwsh
+        run: |
+          $name = "servy-$env:VERSION-$env:FRAMEWORK-$env:PLATFORM-portable"
+          $pkg = "$name"
+          New-Item -ItemType Directory -Force -Path $pkg | Out-Null
+
+          $servy = "src/Servy/bin/x64/Release"
+          $cli = "src/Servy.CLI/bin/x64/Release"
+          $manager = "src/Servy.Manager/bin/x64/Release"
+
+          # WPF + Manager
+          Copy-Item "$servy\*" $pkg -Recurse -Force
+          Copy-Item "$manager\*" $pkg -Recurse -Force
+
+          # CLI
+          New-Item -ItemType Directory -Force -Path "$pkg\cli" | Out-Null
+          Copy-Item "$cli\*" "$pkg\cli" -Recurse -Force
+
+          # PowerShell module
+          Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
+          Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
+          
+          # Task Scheduler setup
+          Copy-Item "setup\taskschd" $pkg -Recurse -Force
+
+          # Remove PDB
+          Get-ChildItem $pkg -Recurse -Filter "*.pdb" | Remove-Item -Force
+
+          $zip = "$name.7z"
+
+          # use advanced compression config
+          & "C:\Program Files\7-Zip\7z.exe" a `
+            -t7z `
+            -m0=lzma2 `
+            -mx=9 `
+            -mfb=273 `
+            -md=32m `
+            -ms=on `
+            $zip `
+            $pkg
+
+          Remove-Item $pkg -Recurse -Force
+
+      - name: Upload portable package
         uses: actions/upload-artifact@v4
         with:
-          name: servy-portable-7z
-          path: setup/servy-${{ steps.get_version.outputs.version }}-net48-x64-portable.7z
+          name: portable-7z
+          path: servy-${{ env.VERSION }}-net48-x64-portable.7z
+          if-no-files-found: error
