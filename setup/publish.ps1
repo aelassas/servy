@@ -100,7 +100,6 @@ try {
     Copy-Item -Path (Join-Path $ManagerBuildOutputDir "Servy.Manager.exe") -Destination $AppPackagePath -Force
     Copy-Item -Path (Join-Path $ManagerBuildOutputDir "*.dll") -Destination $AppPackagePath -Force
 
-
     $destSQLiteWPFX64 = Join-Path $AppPackagePath "x64"
     $destSQLiteWPFX86 = Join-Path $AppPackagePath "x86"
     if (-not (Test-Path $destSQLiteWPFX64)) { New-Item -ItemType Directory -Path $destSQLiteWPFX64 | Out-Null }
