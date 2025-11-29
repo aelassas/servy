@@ -116,7 +116,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/Servy.Restarter
+          output-artifact-directory: '/signed/Servy.Restarter'
 
       - name: Inject signed Servy.Restarter.exe
         shell: pwsh
@@ -161,7 +161,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/Servy.Service
+          output-artifact-directory: '/signed/Servy.Service'
 
       - name: Inject Servy.Service signed binaries
         shell: pwsh
@@ -214,7 +214,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/Servy
+          output-artifact-directory: '/signed/Servy'
 
       - name: Replace Servy.exe with signed
         shell: pwsh
@@ -259,7 +259,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/Servy.Manager
+          output-artifact-directory: '/signed/Servy.Manager'
 
       - name: Replace Servy.Manager.exe with signed
         shell: pwsh
@@ -304,7 +304,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/Servy.CLI
+          output-artifact-directory: '/signed/Servy.CLI'
 
       - name: Replace Servy.CLI.exe with signed
         shell: pwsh
@@ -344,7 +344,7 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: /signed/installer
+          output-artifact-directory: '/signed/installer'
 
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
