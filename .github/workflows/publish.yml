@@ -88,9 +88,9 @@ jobs:
         run: |
           $BuildConfiguration = "Release"
           $Platform = "x64"
-          $RestarterProject = "src/Servy.Restarter/Servy.Restarter.csproj"
+          $ProjectPath = "src/Servy.Restarter/Servy.Restarter.csproj"
 
-          msbuild $RestarterProject `
+          msbuild $ProjectPath `
             /t:Clean,Rebuild `
             /p:Configuration=$BuildConfiguration `
             /p:Platform=$Platform `
@@ -136,9 +136,9 @@ jobs:
         run: |
           $BuildConfiguration = "Release"
           $Platform = "x64"
-          $ServiceProject = "src/Servy.Service/Servy.Service.csproj"
+          $ProjectPath = "src/Servy.Service/Servy.Service.csproj"
 
-          msbuild $ServiceProject `
+          msbuild $ProjectPath `
             /t:Clean,Rebuild `
             /p:Configuration=$BuildConfiguration `
             /p:Platform=$Platform `
@@ -191,9 +191,9 @@ jobs:
         run: |
           $BuildConfiguration = "Release"
           $Platform = "x64"
-          $ServyProject = "src/Servy/Servy.csproj"
+          $ProjectPath = "src/Servy/Servy.csproj"
 
-          msbuild $ServyProject `
+          msbuild $ProjectPath `
             /t:Clean,Rebuild `
             /p:Configuration=$BuildConfiguration `
             /p:Platform=$Platform `
@@ -238,9 +238,9 @@ jobs:
         run: |
           $BuildConfiguration = "Release"
           $Platform = "x64"
-          $ManagerProject = "src/Servy.Manager/Servy.Manager.csproj"
+          $ProjectPath = "src/Servy.Manager/Servy.Manager.csproj"
 
-          msbuild $ManagerProject `
+          msbuild $ProjectPath `
             /t:Clean,Rebuild `
             /p:Configuration=$BuildConfiguration `
             /p:Platform=$Platform `
@@ -285,9 +285,9 @@ jobs:
         run: |
           $BuildConfiguration = "Release"
           $Platform = "x64"
-          $CLIProject = "src/Servy.CLI/Servy.CLI.csproj"
+          $ProjectPath = "src/Servy.CLI/Servy.CLI.csproj"
 
-          msbuild $CLIProject `
+          msbuild $ProjectPath `
             /t:Clean,Rebuild `
             /p:Configuration=$BuildConfiguration `
             /p:Platform=$Platform `
