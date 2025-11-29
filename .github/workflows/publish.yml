@@ -92,6 +92,13 @@ jobs:
           dotnet build Servy.sln --configuration Release --no-restore
 
       # -----------------------------------------------------
+      # Run unit tests
+      # -----------------------------------------------------
+      - name: Run unit tests
+        shell: pwsh
+        run: dotnet test Servy.sln --configuration Release --no-build
+
+      # -----------------------------------------------------
       # Publish Servy.Restarter BEFORE SIGNING
       # -----------------------------------------------------
       - name: Publish Servy.Restarter
