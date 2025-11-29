@@ -103,11 +103,13 @@ jobs:
         id: unsigned-restarter
         uses: actions/upload-artifact@v4
         with:
+          name: unsigned-restarter
           path: src/Servy.Restarter/bin/x64/Release/Servy.Restarter.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit Servy.Restarter for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -150,9 +152,10 @@ jobs:
           name: unsigned-service
           path: src/Servy.Service/bin/x64/Release/Servy.Service.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit Servy.Service for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -203,9 +206,10 @@ jobs:
           name: unsigned-servy
           path: src/Servy/bin/x64/Release/Servy.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit Servy.exe for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -248,9 +252,10 @@ jobs:
           name: unsigned-manager
           path: src/Servy.Manager/bin/x64/Release/Servy.Manager.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit Servy.Manager.exe for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -293,9 +298,10 @@ jobs:
           name: unsigned-cli
           path: src/Servy.CLI/bin/x64/Release/Servy.CLI.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit Servy.CLI.exe for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -333,9 +339,10 @@ jobs:
           name: unsigned-installer
           path: setup/servy-${{ env.VERSION }}-net48-x64-installer.exe
           if-no-files-found: error
+          retention-days: 1
 
       - name: Submit installer for signing
-        uses: signpath/github-action-submit-signing-request@v1
+        uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -405,3 +412,4 @@ jobs:
           name: portable-7z
           path: servy-${{ env.VERSION }}-net48-x64-portable.7z
           if-no-files-found: error
+          retention-days: 1
