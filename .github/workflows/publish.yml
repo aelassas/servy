@@ -134,9 +134,9 @@ jobs:
       - name: Build Servy.Restarter
         shell: pwsh
         run: |
-          $BuildConfiguration = "Release"
-          $Platform = "x64"
-          $ProjectPath = "src/Servy.Restarter/Servy.Restarter.csproj"
+          $BuildConfiguration = $env:BUILD_CONFIG
+          $Platform           = $env:PLATFORM
+          $ProjectPath        = "src/Servy.Restarter/Servy.Restarter.csproj"
 
           msbuild $ProjectPath `
             /t:Clean,Rebuild `
@@ -152,7 +152,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-restarter
-          path: src/Servy.Restarter/bin/x64/Release/Servy.Restarter.exe
+          path: src/Servy.Restarter/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Restarter.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -182,9 +182,9 @@ jobs:
       - name: Build Servy.Service
         shell: pwsh
         run: |
-          $BuildConfiguration = "Release"
-          $Platform = "x64"
-          $ProjectPath = "src/Servy.Service/Servy.Service.csproj"
+          $BuildConfiguration = $env:BUILD_CONFIG
+          $Platform           = $env:PLATFORM
+          $ProjectPath        = "src/Servy.Service/Servy.Service.csproj"
 
           msbuild $ProjectPath `
             /t:Clean,Rebuild `
@@ -200,7 +200,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-service
-          path: src/Servy.Service/bin/x64/Release/Servy.Service.exe
+          path: src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Service.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -223,13 +223,13 @@ jobs:
           if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
           Copy-Item $signed src/Servy/Resources/Servy.Service.Net48.exe -Force
-          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy/Resources/ -Force
+          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy/Resources/ -Force
 
           Copy-Item $signed src/Servy.Manager/Resources/Servy.Service.Net48.exe -Force
-          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy.Manager/Resources/ -Force
+          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy.Manager/Resources/ -Force
 
           Copy-Item $signed src/Servy.CLI/Resources/Servy.Service.Net48.CLI.exe -Force
-          Copy-Item src/Servy.Service/bin/x64/Release/*.dll src/Servy.CLI/Resources/ -Force
+          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy.CLI/Resources/ -Force
 
       # -----------------------------------------------------
       # BUILD Servy BEFORE SIGNING
@@ -237,9 +237,9 @@ jobs:
       - name: Build Servy
         shell: pwsh
         run: |
-          $BuildConfiguration = "Release"
-          $Platform = "x64"
-          $ProjectPath = "src/Servy/Servy.csproj"
+          $BuildConfiguration = $env:BUILD_CONFIG
+          $Platform           = $env:PLATFORM
+          $ProjectPath        = "src/Servy/Servy.csproj"
 
           msbuild $ProjectPath `
             /t:Clean,Rebuild `
@@ -255,7 +255,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-servy
-          path: src/Servy/bin/x64/Release/Servy.exe
+          path: src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -276,7 +276,7 @@ jobs:
         run: |
           $file = "signed/Servy/Servy.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.exe not found!" }
-          Copy-Item $file src/Servy/bin/x64/Release/Servy.exe -Force
+          Copy-Item $file src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe -Force
 
       # -----------------------------------------------------
       # BUILD Servy.Manager BEFORE SIGNING
@@ -284,9 +284,9 @@ jobs:
       - name: Build Servy.Manager
         shell: pwsh
         run: |
-          $BuildConfiguration = "Release"
-          $Platform = "x64"
-          $ProjectPath = "src/Servy.Manager/Servy.Manager.csproj"
+          $BuildConfiguration = $env:BUILD_CONFIG
+          $Platform           = $env:PLATFORM
+          $ProjectPath        = "src/Servy.Manager/Servy.Manager.csproj"
 
           msbuild $ProjectPath `
             /t:Clean,Rebuild `
@@ -302,7 +302,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-manager
-          path: src/Servy.Manager/bin/x64/Release/Servy.Manager.exe
+          path: src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -323,7 +323,7 @@ jobs:
         run: |
           $file = "signed/Servy.Manager/Servy.Manager.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
-          Copy-Item $file src/Servy.Manager/bin/x64/Release/Servy.Manager.exe -Force
+          Copy-Item $file src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
       # BUILD Servy.CLI BEFORE SIGNING
@@ -331,9 +331,9 @@ jobs:
       - name: Build Servy.CLI
         shell: pwsh
         run: |
-          $BuildConfiguration = "Release"
-          $Platform = "x64"
-          $ProjectPath = "src/Servy.CLI/Servy.CLI.csproj"
+          $BuildConfiguration = $env:BUILD_CONFIG
+          $Platform           = $env:PLATFORM
+          $ProjectPath        = "src/Servy.CLI/Servy.CLI.csproj"
 
           msbuild $ProjectPath `
             /t:Clean,Rebuild `
@@ -349,7 +349,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-cli
-          path: src/Servy.CLI/bin/x64/Release/Servy.CLI.exe
+          path: src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -370,7 +370,7 @@ jobs:
         run: |
           $file = "signed/Servy.CLI/Servy.CLI.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
-          Copy-Item $file src/Servy.CLI/bin/x64/Release/Servy.CLI.exe -Force
+          Copy-Item $file src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
       # BUILD UNSIGNED INSTALLER
@@ -441,9 +441,9 @@ jobs:
           $pkg = "$name"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
-          $servy = "src/Servy/bin/x64/Release"
-          $cli = "src/Servy.CLI/bin/x64/Release"
-          $manager = "src/Servy.Manager/bin/x64/Release"
+          $servy = "src/Servy/bin/${{ env.PLATFORM }}/Release"
+          $cli = "src/Servy.CLI/bin/${{ env.PLATFORM }}/Release"
+          $manager = "src/Servy.Manager/bin/${{ env.PLATFORM }}/Release"
 
           # Desktop app + Manager
           Copy-Item "$servy\*" $pkg -Recurse -Force
