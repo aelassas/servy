@@ -1,3 +1,10 @@
+# ==========================================================================================
+# Servy Publish Workflow
+# ------------------------------------------------------------------------------------------
+# Builds all Servy components, signs all executables using SignPath, builds installer,
+# packages the portable 7z archive, and uploads all signed artifacts.
+# ==========================================================================================
+
 name: publish
 
 on:
@@ -9,6 +16,9 @@ jobs:
 
     env:
       ROOT_DIR: ${{ github.workspace }}
+      CONFIGURATION: Release
+      RUNTIME: win-x64
+      TFM: net10.0-windows
 
     steps:
       # -----------------------------------------------------
@@ -40,24 +50,8 @@ jobs:
           # proper output export
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      # -----------------------------------------------------
-      # CREATE setup/.signpath FILE
-      # -----------------------------------------------------
-      - name: Create temporary .signpath for GitHub Actions
-        shell: pwsh
-        env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-        run: |
-          $SignPathFile = "setup/.signpath"
-          $content = @(
-              "SIGN=true",
-              "API_TOKEN=$env:SIGNPATH_API_TOKEN",
-              "ORGANIZATION_ID=e2c60587-5f20-4593-ab8b-c7eab6b7bfb6",
-              "PROJECT_SLUG=servy",
-              "SIGNING_POLICY_SLUG=test-signing"
-          ) -join [Environment]::NewLine
-          [System.IO.File]::WriteAllText($SignPathFile, $content, [System.Text.Encoding]::UTF8)
-          Write-Host "Created temporary $SignPathFile"
+      - name: Set VERSION env
+        run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
       # -----------------------------------------------------
       # INSTALL BUILD DEPENDENCIES
@@ -86,28 +80,383 @@ jobs:
           Start-Process "7zip.exe" -ArgumentList "/S" -Wait
 
       # -----------------------------------------------------
-      # RUN BUILD SCRIPT
+      # BUILD SOLUTION
       # -----------------------------------------------------
-      - name: Build Servy (main)
+      - name: Build Servy.sln
         shell: pwsh
         run: |
-          $env:VERSION = "${{ steps.get_version.outputs.version }}"
-          powershell -ExecutionPolicy Bypass -File setup/publish.ps1
+          Write-Host "Restoring NuGet packages..."
+          dotnet restore Servy.sln
+
+          Write-Host "Building Servy.sln..."
+          dotnet build Servy.sln --configuration Release --no-restore
 
       # -----------------------------------------------------
-      # UPLOAD SIGNED INSTALLER
+      # Publish Servy.Restarter BEFORE SIGNING
       # -----------------------------------------------------
+      - name: Publish Servy.Restarter
+        shell: pwsh
+        run: |
+          $Configuration = $env:CONFIGURATION
+          $Runtime       = $env:RUNTIME
+          $Tfm           = $env:TFM
+          $ProjectPath   = Resolve-Path "src\Servy.Restarter\Servy.Restarter.csproj"
+          $PublishDir    = "src\Servy.Restarter\bin\$Configuration\$Tfm\$Runtime\publish"
+
+          dotnet publish $ProjectPath `
+              -c $Configuration `
+              -r $Runtime `
+              -f $Tfm `
+              -o $PublishDir `
+              --force `
+              /p:DeleteExistingFiles=true
+
+      # -----------------------------------------------------
+      # SIGN RESTARTER
+      # -----------------------------------------------------
+      - name: Upload Servy.Restarter.exe (unsigned)
+        id: unsigned-restarter
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-restarter
+          path: src/Servy.Restarter/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Restarter.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.Restarter for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-restarter'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy.Restarter'
+
+      - name: Inject signed Servy.Restarter.exe
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse signed
+          $file = "signed/Servy.Restarter/Servy.Restarter.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
+          Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
+
+      # -----------------------------------------------------
+      # Publish Servy.Service BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Publish Servy.Service
+        shell: pwsh
+        run: |
+          $Configuration = $env:CONFIGURATION
+          $Runtime       = $env:RUNTIME
+          $Tfm           = $env:TFM
+          $ProjectPath   = Resolve-Path "src\Servy.Service\Servy.Service.csproj"
+          $PublishDir    = "src\Servy.Service\bin\$Configuration\$Tfm\$Runtime\publish"
+
+          dotnet publish $ProjectPath `
+              -c $Configuration `
+              -r $Runtime `
+              -f $Tfm `
+              -o $PublishDir `
+              --force `
+              /p:DeleteExistingFiles=true
+
+      # -----------------------------------------------------
+      # SIGN SERVY.SERVICE
+      # -----------------------------------------------------
+      - name: Upload Servy.Service.exe (unsigned)
+        id: unsigned-service
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-service
+          path: src/Servy.Service/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Service.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.Service for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-service'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy.Service'
+
+      - name: Inject Servy.Service signed binaries
+        shell: pwsh
+        run: |
+          $signed = "signed/Servy.Service/Servy.Service.exe"
+          if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
+
+          Copy-Item $signed src/Servy/Resources/Servy.Service.exe -Force
+
+          Copy-Item $signed src/Servy.Manager/Resources/Servy.Service.exe -Force
+
+          Copy-Item $signed src/Servy.CLI/Resources/Servy.Service.CLI.exe -Force
+
+      # -----------------------------------------------------
+      # Publish Servy BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Publish Servy
+        shell: pwsh
+        run: |
+          $Configuration = $env:CONFIGURATION
+          $Runtime       = $env:RUNTIME
+          $Tfm           = $env:TFM
+          $ProjectPath   = Resolve-Path "src\Servy\Servy.csproj"
+          $PublishDir    = "src\Servy\bin\$Configuration\$Tfm\$Runtime\publish"
+
+          dotnet publish $ProjectPath `
+              -c $Configuration `
+              -r $Runtime `
+              -f $Tfm `
+              -o $PublishDir `
+              --force `
+              /p:DeleteExistingFiles=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.exe (unsigned)
+        id: unsigned-servy
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-servy
+          path: src/Servy/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy'
+
+      - name: Replace Servy.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy/Servy.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.exe not found!" }
+          Copy-Item $file src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.exe -Force
+
+      # -----------------------------------------------------
+      # Publish Servy.Manager BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Publish Servy.Manager
+        shell: pwsh
+        run: |
+          $Configuration = $env:CONFIGURATION
+          $Runtime       = $env:RUNTIME
+          $Tfm           = $env:TFM
+          $ProjectPath   = Resolve-Path "src\Servy.Manager\Servy.Manager.csproj"
+          $PublishDir    = "src\Servy.Manager\bin\$Configuration\$Tfm\$Runtime\publish"
+
+          dotnet publish $ProjectPath `
+              -c $Configuration `
+              -r $Runtime `
+              -f $Tfm `
+              -o $PublishDir `
+              --force `
+              /p:DeleteExistingFiles=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.Manager.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.Manager.exe (unsigned)
+        id: unsigned-manager
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-manager
+          path: src/Servy.Manager/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Manager.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.Manager.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-manager'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy.Manager'
+
+      - name: Replace Servy.Manager.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy.Manager/Servy.Manager.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
+          Copy-Item $file src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Manager.exe -Force
+
+      # -----------------------------------------------------
+      # Publish Servy.CLI BEFORE SIGNING
+      # -----------------------------------------------------
+      - name: Publish Servy.CLI
+        shell: pwsh
+        run: |
+          $Configuration = $env:CONFIGURATION
+          $Runtime       = $env:RUNTIME
+          $Tfm           = $env:TFM
+          $ProjectPath   = Resolve-Path "src\Servy.CLI\Servy.CLI.csproj"
+          $PublishDir    = "src\Servy.CLI\bin\$Configuration\$Tfm\$Runtime\publish"
+
+          dotnet publish $ProjectPath `
+              -c $Configuration `
+              -r $Runtime `
+              -f $Tfm `
+              -o $PublishDir `
+              --force `
+              /p:DeleteExistingFiles=true
+
+      # -----------------------------------------------------
+      # SIGN Servy.CLI.exe
+      # -----------------------------------------------------
+      - name: Upload Servy.CLI.exe (unsigned)
+        id: unsigned-cli
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-cli
+          path: src/Servy.CLI/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.CLI.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit Servy.CLI.exe for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-cli'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/Servy.CLI'
+
+      - name: Replace Servy.CLI.exe with signed
+        shell: pwsh
+        run: |
+          $file = "signed/Servy.CLI/Servy.CLI.exe"
+          if (!(Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
+          Copy-Item $file src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.CLI.exe -Force
+
+      # -----------------------------------------------------
+      # BUILD UNSIGNED INSTALLER
+      # -----------------------------------------------------
+      - name: Build unsigned installer
+        shell: pwsh
+        run: |
+          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & "$compiler" "setup\servy.iss" `
+            /DMyAppVersion=$env:VERSION
+
+      # -----------------------------------------------------
+      # SIGN INSTALLER
+      # -----------------------------------------------------
+      - name: Rename unsigned installer
+        shell: pwsh
+        run: |
+          $source = "setup/servy-${{ env.VERSION }}-x64-installer.exe"
+          $target = "setup/servy-x64-installer.exe"
+          if (!(Test-Path $source)) { throw "Unsigned installer not found: $source" }
+          Copy-Item $source $target -Force
+
+      - name: Upload unsigned installer
+        id: unsigned-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-installer
+          path: setup/servy-x64-installer.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Submit installer for signing
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-installer'
+          wait-for-completion: true
+          output-artifact-directory: 'signed/installer'
+
+      - name: Rename signed installer
+        shell: pwsh
+        run: |
+          $source = "signed/installer/servy-x64-installer.exe"
+          $target = "signed/installer/servy-${{ env.VERSION }}-x64-installer.exe"
+          if (!(Test-Path $source)) { throw "Signed installer not found: $source" }
+          Copy-Item $source $target -Force
+
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
         with:
-          name: servy-installer-signed
-          path: setup/servy-${{ steps.get_version.outputs.version }}-x64-installer.exe
+          name: signed-installer
+          path: signed/installer/servy-${{ env.VERSION }}-x64-installer.exe
+          if-no-files-found: error
 
       # -----------------------------------------------------
-      # UPLOAD PORTABLE 7Z PACKAGE
+      # BUILD PORTABLE 7Z PACKAGE
       # -----------------------------------------------------
-      - name: Upload portable 7z package
+      - name: Build portable 7z package
+        shell: pwsh
+        run: |
+          $name = "servy-$env:VERSION-x64-portable"
+          $pkg = "$name"
+          New-Item -ItemType Directory -Force -Path $pkg | Out-Null
+
+          $servy = "src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
+          $cli = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
+          $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
+
+          # WPF + Manager
+          Copy-Item "$servy\Servy.exe" $pkg -Force
+          Copy-Item "$manager\Servy.Manager.exe" $pkg -Force
+
+          # CLI
+          Copy-Item "$cli\Servy.CLI.exe" "$pkg\servy-cli.exe" -Force
+
+          # PowerShell module
+          Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
+          Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
+          
+          # Task Scheduler setup
+          Copy-Item "setup\taskschd" $pkg -Recurse -Force
+
+          $zip = "$name.7z"
+
+          # use advanced compression config
+          & "C:\Program Files\7-Zip\7z.exe" a `
+            -t7z `
+            -m0=lzma2 `
+            -mx=9 `
+            -mfb=273 `
+            -md=32m `
+            -ms=on `
+            $zip `
+            $pkg
+
+          Remove-Item $pkg -Recurse -Force
+
+      - name: Upload portable package
         uses: actions/upload-artifact@v4
         with:
-          name: servy-portable-7z
-          path: setup/servy-${{ steps.get_version.outputs.version }}-x64-portable.7z
+          name: portable-7z
+          path: servy-${{ env.VERSION }}-x64-portable.7z
+          if-no-files-found: error
+          retention-days: 1
+      
