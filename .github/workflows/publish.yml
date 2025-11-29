@@ -106,10 +106,11 @@ jobs:
           msbuild Servy.sln `
             /t:Clean,Rebuild `
             /p:Configuration=Debug `
+            /p:Platform=$env:PLATFORM `
             /p:AllowUnsafeBlocks=true
 
           # Find all test assemblies
-          $testDlls = Get-ChildItem -Path "tests/*/bin/Debug/*.UnitTests.dll" -File
+          $testDlls = Get-ChildItem -Path "tests/*/bin/*/Debug/*.UnitTests.dll" -File
 
           if (-not $testDlls) {
               throw "No test assemblies with *.UnitTests.dll found!"
