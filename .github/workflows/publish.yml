@@ -116,6 +116,7 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-restarter'
           wait-for-completion: true
           output-artifact-directory: '/signed/Servy.Restarter'
 
@@ -162,6 +163,7 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-service'
           wait-for-completion: true
           output-artifact-directory: '/signed/Servy.Service'
 
@@ -216,6 +218,7 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy'
           wait-for-completion: true
           output-artifact-directory: '/signed/Servy'
 
@@ -262,6 +265,7 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-manager'
           wait-for-completion: true
           output-artifact-directory: '/signed/Servy.Manager'
 
@@ -308,6 +312,7 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-cli'
           wait-for-completion: true
           output-artifact-directory: '/signed/Servy.CLI'
 
@@ -332,12 +337,21 @@ jobs:
       # -----------------------------------------------------
       # SIGN INSTALLER
       # -----------------------------------------------------
+      - name: Rename unsigned installer
+        id: unsigned-installer
+        shell: pwsh
+        run: |
+          $source = "setup/servy-${{ env.VERSION }}-net48-x64-installer.exe"
+          $target = "setup/servy-x64-installer.exe"
+          if (!(Test-Path $source)) { throw "Installer not found: $source" }
+          Copy-Item $source $target -Force
+
       - name: Upload unsigned installer
         id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-installer
-          path: setup/servy-${{ env.VERSION }}-net48-x64-installer.exe
+          path: setup/servy-x64-installer.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -349,8 +363,18 @@ jobs:
           signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
+          artifact-configuration-slug: 'servy-installer'
           wait-for-completion: true
           output-artifact-directory: '/signed/installer'
+
+      - name: Rename signed installer
+        id: unsigned-installer
+        shell: pwsh
+        run: |
+          $source = "signed/installer/servy-x64-installer.exe"
+          $target = "signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe"
+          if (!(Test-Path $source)) { throw "Installer not found: $source" }
+          Copy-Item $source $target -Force
 
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
@@ -379,7 +403,17 @@ jobs:
 
           # CLI
           New-Item -ItemType Directory -Force -Path "$pkg\cli" | Out-Null
-          Copy-Item "$cli\*" "$pkg\cli" -Recurse -Force
+          Copy-Item "$cli\*" "$pkg" -Recurse -Force
+          
+          # Rename Servy.CLI.exe to servy-cli.exe
+          $sourceExe = Join-Path $pkg "Servy.CLI.exe"
+          $targetExe = Join-Path $pkg "servy-cli.exe"
+
+          if (Test-Path $sourceExe) {
+              Rename-Item -Path $sourceExe -NewName "servy-cli.exe" -Force
+          } else {
+              Write-Error "Servy.CLI.exe not found in $pkg"
+          }
 
           # PowerShell module
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
