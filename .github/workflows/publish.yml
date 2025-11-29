@@ -424,7 +424,7 @@ jobs:
           $cli = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
           $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
 
-          # WPF + Manager
+          # Desktop app + Manager
           Copy-Item "$servy\Servy.exe" $pkg -Force
           Copy-Item "$manager\Servy.Manager.exe" $pkg -Force
 
