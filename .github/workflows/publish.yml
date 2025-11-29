@@ -338,7 +338,6 @@ jobs:
       # SIGN INSTALLER
       # -----------------------------------------------------
       - name: Rename unsigned installer
-        id: unsigned-installer
         shell: pwsh
         run: |
           $source = "setup/servy-${{ env.VERSION }}-net48-x64-installer.exe"
@@ -368,7 +367,6 @@ jobs:
           output-artifact-directory: '/signed/installer'
 
       - name: Rename signed installer
-        id: unsigned-installer
         shell: pwsh
         run: |
           $source = "signed/installer/servy-x64-installer.exe"
