@@ -397,7 +397,7 @@ jobs:
           $cli = "src/Servy.CLI/bin/x64/Release"
           $manager = "src/Servy.Manager/bin/x64/Release"
 
-          # WPF + Manager
+          # Desktop app + Manager
           Copy-Item "$servy\*" $pkg -Recurse -Force
           Copy-Item "$manager\*" $pkg -Recurse -Force
 
