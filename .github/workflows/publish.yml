@@ -401,7 +401,6 @@ jobs:
           Copy-Item "$manager\*" $pkg -Recurse -Force
 
           # CLI
-          New-Item -ItemType Directory -Force -Path "$pkg\cli" | Out-Null
           Copy-Item "$cli\*" "$pkg" -Recurse -Force
           
           # Rename Servy.CLI.exe to servy-cli.exe
