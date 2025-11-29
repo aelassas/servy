@@ -455,9 +455,11 @@ jobs:
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           file_globs: signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe
+          sha256: true
 
       - name: Scan portable package with VirusTotal
         uses: cssnr/virustotal-action@v1
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           file_globs: servy-${{ env.VERSION }}-net48-x64-portable.7z
+          sha256: true
