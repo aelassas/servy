@@ -102,9 +102,15 @@ jobs:
 
           Write-Host "Using vstest.console.exe at: $vsTest"
 
+          Write-Host "Building Servy.sln in Debug..."
+          msbuild Servy.sln `
+            /t:Clean,Rebuild `
+            /p:Configuration=Debug `
+            /p:Platform=$env:PLATFORM `
+            /p:AllowUnsafeBlocks=true
+
           # Find all test assemblies
-          $testDlls = Get-ChildItem -Recurse -Filter *.UnitTests.dll |
-              Where-Object { $_.FullName -notmatch "\\obj\\" }
+          $testDlls = Get-ChildItem -Path "src/**/bin/Debug/**/*.UnitTests.dll"
 
           if (-not $testDlls) {
               throw "No test assemblies with *.UnitTests.dll found!"
@@ -113,15 +119,9 @@ jobs:
           Write-Host "Found test assemblies:"
           $testDlls | ForEach-Object { Write-Host " - $($_.FullName)" }
 
-          Write-Host "Building Servy.sln in Debug..."
-          msbuild Servy.sln `
-            /t:Clean,Rebuild `
-            /p:Configuration=Debug `
-            /p:AllowUnsafeBlocks=true
-
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.FullName)..."
-              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx /p:Configuration=Debug
+              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx
 
               if ($LASTEXITCODE -ne 0) {
                   throw "Unit tests failed in $($dll.FullName)"
