@@ -112,7 +112,7 @@ jobs:
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
-      # SIGN RESTARTER
+      # SIGN Servy.Restarter.exe
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
@@ -164,7 +164,7 @@ jobs:
               /p:DeleteExistingFiles=true
 
       # -----------------------------------------------------
-      # SIGN SERVY.SERVICE
+      # SIGN Servy.Service.exe
       # -----------------------------------------------------
       - name: Upload Servy.Service.exe (unsigned)
         id: unsigned-service
@@ -408,6 +408,7 @@ jobs:
           name: signed-installer
           path: signed/installer/servy-${{ env.VERSION }}-x64-installer.exe
           if-no-files-found: error
+          retention-days: 1
 
       # -----------------------------------------------------
       # BUILD PORTABLE 7Z PACKAGE
