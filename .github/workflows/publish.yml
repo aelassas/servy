@@ -100,6 +100,7 @@ jobs:
       # SIGN RESTARTER
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
+        id: unsigned-restarter
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-restarter
@@ -144,6 +145,7 @@ jobs:
       # SIGN SERVY.SERVICE
       # -----------------------------------------------------
       - name: Upload Servy.Service.exe (unsigned)
+        id: unsigned-service
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-service
@@ -196,6 +198,7 @@ jobs:
       # SIGN Servy.exe
       # -----------------------------------------------------
       - name: Upload Servy.exe (unsigned)
+        id: unsigned-servy
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-servy
@@ -240,6 +243,7 @@ jobs:
       # SIGN Servy.Manager.exe
       # -----------------------------------------------------
       - name: Upload Servy.Manager.exe (unsigned)
+        id: unsigned-manager
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-manager
@@ -284,6 +288,7 @@ jobs:
       # SIGN Servy.CLI.exe
       # -----------------------------------------------------
       - name: Upload Servy.CLI.exe (unsigned)
+        id: unsigned-cli
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-cli
@@ -323,6 +328,7 @@ jobs:
       # SIGN INSTALLER
       # -----------------------------------------------------
       - name: Upload unsigned installer
+        id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-installer
