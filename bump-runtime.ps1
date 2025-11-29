@@ -134,16 +134,13 @@ $Ps1Files      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.ps1
 $IssFiles      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.iss
 $CsprojFiles   = Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj
 $AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
+$PublishPath   = Join-Path $BaseDir ".github\workflows\publish.yml"
 
 Update-Files -Files $Ps1Files    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
 Update-Files -Files $IssFiles    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
 Update-Files -Files $CsprojFiles -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-
-if (Test-Path $AppConfigPath) {
-    Update-Files -Files (Get-Item $AppConfigPath) -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-} else {
-    Write-Error "File not found: $AppConfigPath"
-}
+Update-Files -Files (Get-Item $AppConfigPath) -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
+Update-Files -Files (Get-Item $PublishPath)   -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
 
 # -----------------------------
 # Summary
