@@ -127,22 +127,32 @@ try {
         OutputArtifactPath = $SignedPath
     }
 
-    $RepoUrl = "https://github.com/aelassas/servy.git"
-    $CommitId = $env:GITHUB_SHA
+    $RepoUrl    = "https://github.com/aelassas/servy.git"
+    $CommitId   = $env:GITHUB_SHA
     $BranchName = $env:GITHUB_REF_NAME
 
-    # Check if environment variables are available (they should be in GitHub Actions)
+    # BuildData.Url must point to the RUN URL — NOT the job URL
+    $BuildUrl = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+
     if ($CommitId -and $BranchName) {
-        # SignPath expects a complex object structure for the Origin parameter
+
         $CommonParams.Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
-                Url                         = $RepoUrl
-                CommitId                    = $CommitId
-                BranchName                  = $BranchName
+                Url         = $RepoUrl
+                CommitId    = $CommitId
+                BranchName  = $BranchName
+            }
+            BuildData = @{
+                Url = $BuildUrl
             }
         }
-        Write-Host "Setting origin info (from env vars): Repo=$RepoUrl, Commit=$CommitId, Branch=$BranchName"
+
+        Write-Host "Setting origin info:"
+        Write-Host "  Repo      = $RepoUrl"
+        Write-Host "  Commit    = $CommitId"
+        Write-Host "  Branch    = $BranchName"
+        Write-Host "  Build URL = $BuildUrl"
     }
     else {
         Write-Warning "Could not retrieve Git origin information from GitHub environment variables."
@@ -153,7 +163,6 @@ try {
     }
 
     $SigningRequestId = Submit-SigningRequest @CommonParams
-
     Write-Host "Signing request completed: $SigningRequestId"
 }
 catch {
