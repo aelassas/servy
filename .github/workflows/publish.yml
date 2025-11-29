@@ -97,7 +97,7 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
-      # SIGN RESTARTER
+      # SIGN Servy.restarter.exe
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
@@ -145,7 +145,7 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
-      # SIGN SERVY.SERVICE
+      # SIGN Servy.Service.exe
       # -----------------------------------------------------
       - name: Upload Servy.Service.exe (unsigned)
         id: unsigned-service
@@ -381,6 +381,7 @@ jobs:
           name: signed-installer
           path: signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe
           if-no-files-found: error
+          retention-days: 1
 
       # -----------------------------------------------------
       # BUILD PORTABLE 7Z PACKAGE
