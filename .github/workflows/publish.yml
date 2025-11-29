@@ -70,6 +70,10 @@ jobs:
       - name: Build Servy.sln
         shell: pwsh
         run: |
+          Write-Host "Restoring NuGet packages..."
+          nuget restore "Servy.sln"
+
+          Write-Host "Building Servy.sln..."
           msbuild Servy.sln `
             /t:Clean,Rebuild `
             /p:Configuration=$env:BUILD_CONFIG `
