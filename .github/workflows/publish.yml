@@ -445,7 +445,7 @@ jobs:
             -m0=lzma2 `
             -mx=9 `
             -mfb=273 `
-            -md=32m `
+            -md=128m `
             -ms=on `
             $zip `
             $pkg
