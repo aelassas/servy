@@ -450,10 +450,14 @@ jobs:
       # -----------------------------------------------------
       # SCAN WITH VIRUSTOTAL
       # -----------------------------------------------------
-      - name: VirusTotal scan
-        uses: Virustotal/Action@v1
+      - name: Scan signed installer with VirusTotal
+        uses: cssnr/virustotal-action@v1
         with:
-          api-key: ${{ secrets.VIRUSTOTAL_API_KEY }}
-          files: |
-            signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe
-            servy-${{ env.VERSION }}-net48-x64-portable.7z
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          file_globs: signed/installer/servy-${{ env.VERSION }}-net48-x64-installer.exe
+
+      - name: Scan portable package with VirusTotal
+        uses: cssnr/virustotal-action@v1
+        with:
+          vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          file_globs: servy-${{ env.VERSION }}-net48-x64-portable.7z
