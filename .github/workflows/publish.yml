@@ -368,7 +368,7 @@ jobs:
       - name: Rename unsigned installer
         shell: pwsh
         run: |
-          $source = "setup/servy-${{ env.VERSION }}-x64-installer.exe"
+          $source = "setup/servy-$env:VERSION-x64-installer.exe"
           $target = "setup/servy-x64-installer.exe"
           if (!(Test-Path $source)) { throw "Unsigned installer not found: $source" }
           Copy-Item $source $target -Force
@@ -398,7 +398,7 @@ jobs:
         shell: pwsh
         run: |
           $source = "signed/installer/servy-x64-installer.exe"
-          $target = "signed/installer/servy-${{ env.VERSION }}-x64-installer.exe"
+          $target = "signed/installer/servy-$env:VERSION-x64-installer.exe"
           if (!(Test-Path $source)) { throw "Signed installer not found: $source" }
           Copy-Item $source $target -Force
 
