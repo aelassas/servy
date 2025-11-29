@@ -113,9 +113,15 @@ jobs:
           Write-Host "Found test assemblies:"
           $testDlls | ForEach-Object { Write-Host " - $($_.FullName)" }
 
+          Write-Host "Building Servy.sln in Debug..."
+          msbuild Servy.sln `
+            /t:Clean,Rebuild `
+            /p:Configuration=Debug `
+            /p:AllowUnsafeBlocks=true
+
           foreach ($dll in $testDlls) {
               Write-Host "`nRunning tests in $($dll.FullName)..."
-              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx
+              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx /p:Configuration=Debug
 
               if ($LASTEXITCODE -ne 0) {
                   throw "Unit tests failed in $($dll.FullName)"
