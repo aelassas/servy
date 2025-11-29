@@ -89,14 +89,14 @@ jobs:
           dotnet restore Servy.sln
 
           Write-Host "Building Servy.sln..."
-          dotnet build Servy.sln --configuration Release --no-restore
+          dotnet build Servy.sln --configuration $env:CONFIGURATION --no-restore
 
       # -----------------------------------------------------
       # Run unit tests
       # -----------------------------------------------------
       - name: Run unit tests
         shell: pwsh
-        run: dotnet test Servy.sln --configuration Release --no-build
+        run: dotnet test Servy.sln --configuration Debug
 
       # -----------------------------------------------------
       # Publish Servy.Restarter BEFORE SIGNING
