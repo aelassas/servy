@@ -112,8 +112,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-restarter.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-restarter'
@@ -160,8 +160,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-service.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-service'
@@ -215,8 +215,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-servy.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy'
@@ -262,8 +262,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-manager.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-manager'
@@ -309,8 +309,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-cli.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-cli'
@@ -359,8 +359,8 @@ jobs:
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
-          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ secrets.SIGNPATH_POLICY_SLUG }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG }}
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-installer'
