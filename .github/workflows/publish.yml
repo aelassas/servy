@@ -110,7 +110,7 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
           # Find all test assemblies
-          $testDlls = Get-ChildItem -Path "src/**/bin/Debug/**/*.UnitTests.dll"
+          $testDlls = Get-ChildItem -Path "tests/**/bin/Debug/**/*.UnitTests.dll"
 
           if (-not $testDlls) {
               throw "No test assemblies with *.UnitTests.dll found!"
