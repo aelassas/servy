@@ -81,6 +81,48 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
+      # Run unit tests
+      # -----------------------------------------------------
+      - name: Run unit tests
+        shell: pwsh
+        run: |
+          # Common paths for vstest.console.exe
+          $possiblePaths = @(
+                "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
+                "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
+                "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
+                "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+            )
+
+          $vsTest = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+          if (-not $vsTest) {
+              throw "Could not locate vstest.console.exe on the runner."
+          }
+
+          Write-Host "Using vstest.console.exe at: $vsTest"
+
+          # Find all test assemblies
+          $testDlls = Get-ChildItem -Recurse -Filter *.UnitTests.dll |
+              Where-Object { $_.FullName -notmatch "\\obj\\" }
+
+          if (-not $testDlls) {
+              throw "No test assemblies with *.UnitTests.dll found!"
+          }
+
+          Write-Host "Found test assemblies:"
+          $testDlls | ForEach-Object { Write-Host " - $($_.FullName)" }
+
+          foreach ($dll in $testDlls) {
+              Write-Host "`nRunning tests in $($dll.FullName)..."
+              & $vsTest $dll.FullName /Framework:".NETFramework,Version=v4.8" /logger:trx
+
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Unit tests failed in $($dll.FullName)"
+              }
+          }
+  
+      # -----------------------------------------------------
       # BUILD Servy.Restarter BEFORE SIGNING
       # -----------------------------------------------------
       - name: Build Servy.Restarter
