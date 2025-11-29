@@ -145,7 +145,7 @@ jobs:
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
-      # SIGN Servy.restarter.exe
+      # SIGN Servy.Restarter.exe
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
