@@ -99,22 +99,15 @@ jobs:
       # -----------------------------------------------------
       # SIGN RESTARTER
       # -----------------------------------------------------
-      - name: Prepare unsigned Restarter artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/restarter | Out-Null
-          Copy-Item src/Servy.Restarter/bin/x64/Release/Servy.Restarter.exe artifacts/restarter/
-
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
         uses: actions/upload-artifact@v4
         with:
-          name: unsigned-restarter
-          path: artifacts/restarter
+          path: src/Servy.Restarter/bin/x64/Release/Servy.Restarter.exe
           if-no-files-found: error
 
       - name: Submit Servy.Restarter for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -150,22 +143,16 @@ jobs:
       # -----------------------------------------------------
       # SIGN SERVY.SERVICE
       # -----------------------------------------------------
-      - name: Prepare unsigned Service artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/service | Out-Null
-          Copy-Item src/Servy.Service/bin/x64/Release/Servy.Service.exe artifacts/service/
-
       - name: Upload Servy.Service.exe (unsigned)
         id: unsigned-service
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-service
-          path: artifacts/service
+          path: src/Servy.Service/bin/x64/Release/Servy.Service.exe
           if-no-files-found: error
 
       - name: Submit Servy.Service for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -209,22 +196,16 @@ jobs:
       # -----------------------------------------------------
       # SIGN Servy.exe
       # -----------------------------------------------------
-      - name: Prepare unsigned Servy artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/servy | Out-Null
-          Copy-Item src/Servy/bin/x64/Release/Servy.exe artifacts/servy/
-
       - name: Upload Servy.exe (unsigned)
         id: unsigned-servy
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-servy
-          path: artifacts/servy
+          path: src/Servy/bin/x64/Release/Servy.exe
           if-no-files-found: error
 
       - name: Submit Servy.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -260,22 +241,16 @@ jobs:
       # -----------------------------------------------------
       # SIGN Servy.Manager.exe
       # -----------------------------------------------------
-      - name: Prepare unsigned Servy.Manager artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/manager | Out-Null
-          Copy-Item src/Servy.Manager/bin/x64/Release/Servy.Manager.exe artifacts/manager/
-
       - name: Upload Servy.Manager.exe (unsigned)
         id: unsigned-manager
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-manager
-          path: artifacts/manager
+          path: src/Servy.Manager/bin/x64/Release/Servy.Manager.exe
           if-no-files-found: error
 
       - name: Submit Servy.Manager.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -311,22 +286,16 @@ jobs:
       # -----------------------------------------------------
       # SIGN Servy.CLI.exe
       # -----------------------------------------------------
-      - name: Prepare unsigned Servy.CLI artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/manager | Out-Null
-          Copy-Item src/Servy.CLI/bin/x64/Release/Servy.CLI.exe artifacts/cli/
-
       - name: Upload Servy.CLI.exe (unsigned)
         id: unsigned-cli
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-cli
-          path: artifacts/cli
+          path: src/Servy.CLI/bin/x64/Release/Servy.CLI.exe
           if-no-files-found: error
 
       - name: Submit Servy.CLI.exe for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
@@ -357,22 +326,16 @@ jobs:
       # -----------------------------------------------------
       # SIGN INSTALLER
       # -----------------------------------------------------
-      - name: Prepare unsigned Servy.CLI artifact
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts/installer | Out-Null
-          Copy-Item setup/servy-${{ env.VERSION }}-net48-x64-installer.exe artifacts/installer/
-
       - name: Upload unsigned installer
         id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-installer
-          path: artifacts/installer
+          path: setup/servy-${{ env.VERSION }}-net48-x64-installer.exe
           if-no-files-found: error
 
       - name: Submit installer for signing
-        uses: signpath/github-action-submit-signing-request@v2
+        uses: signpath/github-action-submit-signing-request@v1
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
           project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
