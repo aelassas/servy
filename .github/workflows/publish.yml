@@ -39,7 +39,7 @@ jobs:
           $file = "setup/publish.ps1"
           if (-not (Test-Path $file)) { throw "cannot find publish.ps1" }
           $line = Get-Content $file | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
-          if (-not $line) { throw "Version line not found in publish.ps1" }
+          if (-not $line) { throw "Version line not found in $file" }
           $v = ([regex]::Match($line, '"(.*)"')).Groups[1].Value
           if (-not $v) { throw "Failed to extract version" }
           Write-Host "Version found: $v"
