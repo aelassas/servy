@@ -66,14 +66,15 @@ jobs:
         shell: pwsh
         run: |
           $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
-          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe" -ErrorAction Stop
           Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
 
-      - name: Install 7-Zip
+      - name: Install 7zip
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://www.7-zip.org/a/7z2501-x64.exe" -OutFile "7zip.exe"
-          Start-Process "7zip.exe" -ArgumentList "/S" -Wait
+          $url = "https://www.7-zip.org/a/7z2501-x64.exe"
+          Invoke-WebRequest -Uri $url -OutFile "7z.exe" -ErrorAction Stop
+          Start-Process ".\7z.exe" -ArgumentList "/S" -Wait
 
       # -----------------------------------------------------
       # Build solution
