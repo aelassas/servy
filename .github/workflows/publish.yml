@@ -175,7 +175,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
       # -----------------------------------------------------
@@ -222,7 +222,7 @@ jobs:
         shell: pwsh
         run: |
           $signed = "signed/Servy.Service/Servy.Service.exe"
-          if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
+          if (-not (Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
           $targets = @(
               @{ Path = "src/Servy/Resources";           Name = "Servy.Service.Net48.exe" },
@@ -280,7 +280,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy/Servy.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.exe not found!" }
           Copy-Item $file src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe -Force
 
       # -----------------------------------------------------
@@ -327,7 +327,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.Manager/Servy.Manager.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
           Copy-Item $file src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
@@ -374,7 +374,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.CLI/Servy.CLI.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
           Copy-Item $file src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
@@ -396,7 +396,7 @@ jobs:
         run: |
           $source = "setup/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
           $target = "setup/servy-x64-installer.exe"
-          if (!(Test-Path $source)) { throw "Unsigned installer not found: $source" }
+          if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
           Copy-Item $source $target -Force
 
       - name: Upload unsigned installer
@@ -424,9 +424,9 @@ jobs:
         shell: pwsh
         run: |
           $source = "signed/installer/servy-x64-installer.exe"
-          $target = "signed/installer/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
-          if (!(Test-Path $source)) { throw "Signed installer not found: $source" }
-          Copy-Item $source $target -Force
+          $target = "servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
+          if (-not (Test-Path $source)) { throw "Signed installer not found: $source" }
+          Rename-Item -Path $source -NewName $target -Force
 
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
