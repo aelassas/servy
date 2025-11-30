@@ -22,7 +22,7 @@ jobs:
 
     steps:
       # -----------------------------------------------------
-      # CHECKOUT
+      # Checkout repository
       # -----------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0  # Required for provenance
 
       # -----------------------------------------------------
-      # EXTRACT VERSION FROM setup/publish.ps1
+      # Extract Version from setup/publish.ps1
       # -----------------------------------------------------
       - name: Get version from publish.ps1
         shell: pwsh
@@ -54,7 +54,7 @@ jobs:
         run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
       # -----------------------------------------------------
-      # INSTALL BUILD DEPENDENCIES
+      # Install Build dependencies
       # -----------------------------------------------------
       - name: Install the latest .NET SDK
         shell: powershell
@@ -66,7 +66,7 @@ jobs:
       - name: Check .NET version
         run: dotnet --version
 
-      - name: Install Inno Setup 6.6.1
+      - name: Install Inno Setup
         shell: pwsh
         run: |
           $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
@@ -80,7 +80,7 @@ jobs:
           Start-Process "7zip.exe" -ArgumentList "/S" -Wait
 
       # -----------------------------------------------------
-      # BUILD SOLUTION
+      # Build solution
       # -----------------------------------------------------
       - name: Build Servy.sln
         shell: pwsh
@@ -99,7 +99,7 @@ jobs:
         run: dotnet test Servy.sln --configuration Debug
 
       # -----------------------------------------------------
-      # Publish Servy.Restarter BEFORE SIGNING
+      # Publish UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
       - name: Publish Servy.Restarter
         shell: pwsh
@@ -126,7 +126,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-restarter
-          path: src/Servy.Restarter/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Restarter.exe
+          path: src/Servy.Restarter/bin/${{ env.CONFIGURATION }}/${{ env.TFM }}/${{ env.RUNTIME }}/publish/Servy.Restarter.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -145,13 +145,12 @@ jobs:
       - name: Inject signed Servy.Restarter.exe
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse signed
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
       # -----------------------------------------------------
-      # Publish Servy.Service BEFORE SIGNING
+      # Publish UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
       - name: Publish Servy.Service
         shell: pwsh
@@ -178,7 +177,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-service
-          path: src/Servy.Service/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Service.exe
+          path: src/Servy.Service/bin/${{ env.CONFIGURATION }}/${{ env.TFM }}/${{ env.RUNTIME }}/publish/Servy.Service.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -194,20 +193,25 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: 'signed/Servy.Service'
 
-      - name: Inject Servy.Service signed binaries
+      - name: Inject signed Servy.Service.exe
         shell: pwsh
         run: |
           $signed = "signed/Servy.Service/Servy.Service.exe"
           if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
-          Copy-Item $signed src/Servy/Resources/Servy.Service.exe -Force
+          $targets = @(
+              "src/Servy/Resources/Servy.Service.exe",
+              "src/Servy.Manager/Resources/Servy.Service.exe",
+              "src/Servy.CLI/Resources/Servy.Service.CLI.exe"
+          )
 
-          Copy-Item $signed src/Servy.Manager/Resources/Servy.Service.exe -Force
-
-          Copy-Item $signed src/Servy.CLI/Resources/Servy.Service.CLI.exe -Force
+          # Inject the signed EXE into each resource folder
+          foreach ($dst in $targets) {
+              Copy-Item $signed $dst -Force
+          }
 
       # -----------------------------------------------------
-      # Publish Servy BEFORE SIGNING
+      # Publish UNSIGNED Servy.exe
       # -----------------------------------------------------
       - name: Publish Servy
         shell: pwsh
@@ -234,7 +238,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-servy
-          path: src/Servy/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.exe
+          path: src/Servy/bin/${{ env.CONFIGURATION }}/${{ env.TFM }}/${{ env.RUNTIME }}/publish/Servy.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -258,7 +262,7 @@ jobs:
           Copy-Item $file src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.exe -Force
 
       # -----------------------------------------------------
-      # Publish Servy.Manager BEFORE SIGNING
+      # Publish UNSIGNED Servy.Manager.exe
       # -----------------------------------------------------
       - name: Publish Servy.Manager
         shell: pwsh
@@ -285,7 +289,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-manager
-          path: src/Servy.Manager/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.Manager.exe
+          path: src/Servy.Manager/bin/${{ env.CONFIGURATION }}/${{ env.TFM }}/${{ env.RUNTIME }}/publish/Servy.Manager.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -309,7 +313,7 @@ jobs:
           Copy-Item $file src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
-      # Publish Servy.CLI BEFORE SIGNING
+      # Publish UNSIGNED Servy.CLI.exe
       # -----------------------------------------------------
       - name: Publish Servy.CLI
         shell: pwsh
@@ -336,7 +340,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-cli
-          path: src/Servy.CLI/bin/${{env.CONFIGURATION}}/${{env.TFM}}/${{env.RUNTIME}}/publish/Servy.CLI.exe
+          path: src/Servy.CLI/bin/${{ env.CONFIGURATION }}/${{ env.TFM }}/${{ env.RUNTIME }}/publish/Servy.CLI.exe
           if-no-files-found: error
           retention-days: 1
 
@@ -360,7 +364,7 @@ jobs:
           Copy-Item $file src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
-      # BUILD UNSIGNED INSTALLER
+      # Build UNSIGNED installer
       # -----------------------------------------------------
       - name: Build unsigned installer
         shell: pwsh
@@ -370,7 +374,7 @@ jobs:
             /DMyAppVersion=$env:VERSION
 
       # -----------------------------------------------------
-      # SIGN INSTALLER
+      # SIGN installer
       # -----------------------------------------------------
       - name: Rename unsigned installer
         shell: pwsh
@@ -418,7 +422,7 @@ jobs:
           retention-days: 1
 
       # -----------------------------------------------------
-      # BUILD PORTABLE 7Z PACKAGE
+      # Build portable 7z package
       # -----------------------------------------------------
       - name: Build portable 7z package
         shell: pwsh
@@ -431,7 +435,7 @@ jobs:
           $cli = "src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
           $manager = "src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/"
 
-          # Desktop app + Manager
+          # Desktop app and Manager app
           Copy-Item "$servy\Servy.exe" $pkg -Force
           Copy-Item "$manager\Servy.Manager.exe" $pkg -Force
 
@@ -469,7 +473,7 @@ jobs:
           retention-days: 1
       
       # -----------------------------------------------------
-      # SCAN WITH VIRUSTOTAL
+      # Scan with VirusTotal
       # -----------------------------------------------------
       - name: Scan signed installer and portable package with VirusTotal
         uses: cssnr/virustotal-action@v1
