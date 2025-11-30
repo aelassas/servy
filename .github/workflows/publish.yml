@@ -58,8 +58,9 @@ jobs:
       - name: Install Inno Setup
         shell: pwsh
         run: |
-          Invoke-WebRequest "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe" -OutFile is.exe
-          Start-Process .\is.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES" -Wait
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
+          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe"
+          Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
 
       - name: Install 7zip
         shell: pwsh
