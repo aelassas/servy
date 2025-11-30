@@ -37,18 +37,14 @@ jobs:
         id: get_version
         run: |
           $publishFile = "setup/publish.ps1"
-          if (-not (Test-Path $publishFile)) {
-              throw "Cannot find $publishFile"
-          }
-          $versionLine = Get-Content $publishFile | Where-Object { $_ -match '^\s*\[string\]\$Version\s*=\s*"(.*)"' }
-
-          if ($versionLine -match '^\s*\[string\]\$Version\s*=\s*"(.*)"') {
-              $version = $matches[1]
-              Write-Host "Version found: $version"
-          }
-
+          if (-not (Test-Path $publishFile)) { throw "Cannot find $publishFile" }
+          $line = Get-Content $publishFile | Where-Object { $_ -match '^\s*\[string\]\$Version\s*=\s*"(.*)"' }
+          if (-not $line) { throw "Version line not found in publish.ps1" }
+          $v = ([regex]::Match($line, '"(.*)"')).Groups[1].Value
+          if (-not $v) { throw "Failed to extract version" }
+          Write-Host "Version found: $v"
           # proper output export
-          "version=$version" >> $env:GITHUB_OUTPUT
+          "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Set VERSION env
         run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
@@ -146,7 +142,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
       # -----------------------------------------------------
@@ -197,7 +193,7 @@ jobs:
         shell: pwsh
         run: |
           $signed = "signed/Servy.Service/Servy.Service.exe"
-          if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
+          if (-not (Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
           $targets = @(
               "src/Servy/Resources/Servy.Service.exe",
@@ -258,7 +254,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy/Servy.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.exe not found!" }
           Copy-Item $file src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.exe -Force
 
       # -----------------------------------------------------
@@ -309,7 +305,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.Manager/Servy.Manager.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
           Copy-Item $file src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
@@ -360,7 +356,7 @@ jobs:
         shell: pwsh
         run: |
           $file = "signed/Servy.CLI/Servy.CLI.exe"
-          if (!(Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
+          if (-not (Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
           Copy-Item $file src/Servy.CLI/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
@@ -381,7 +377,7 @@ jobs:
         run: |
           $source = "setup/servy-$env:VERSION-x64-installer.exe"
           $target = "setup/servy-x64-installer.exe"
-          if (!(Test-Path $source)) { throw "Unsigned installer not found: $source" }
+          if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
           Copy-Item $source $target -Force
 
       - name: Upload unsigned installer
@@ -409,9 +405,9 @@ jobs:
         shell: pwsh
         run: |
           $source = "signed/installer/servy-x64-installer.exe"
-          $target = "signed/installer/servy-$env:VERSION-x64-installer.exe"
-          if (!(Test-Path $source)) { throw "Signed installer not found: $source" }
-          Copy-Item $source $target -Force
+          $target = "servy-$env:VERSION-x64-installer.exe"
+          if (-not (Test-Path $source)) { throw "Signed installer not found: $source" }
+          Rename-Item -Path $source -NewName $target -Force
 
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
