@@ -456,11 +456,11 @@ jobs:
           Copy-Item "$cli\*" "$pkg" -Recurse -Force
           
           # Rename Servy.CLI.exe to servy-cli.exe
-          $sourceExe = Join-Path $pkg "Servy.CLI.exe"
-          $targetExe = Join-Path $pkg "servy-cli.exe"
+          $sourceExe  = Join-Path $pkg "Servy.CLI.exe"
+          $targetName = "servy-cli.exe"
 
           if (Test-Path $sourceExe) {
-              Rename-Item -Path $sourceExe -NewName "servy-cli.exe" -Force
+              Rename-Item -Path $sourceExe -NewName $targetName -Force
           } else {
               Write-Error "Servy.CLI.exe not found in $pkg"
           }
@@ -469,11 +469,15 @@ jobs:
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
           
+          # Remove *.pdb, *.config, *.xml files
+          $exts = @("*.pdb", "*.config", "*.xml")
+
+          foreach ($ext in $exts) {
+              Get-ChildItem -Path $pkg -Recurse -Filter $ext -File | Remove-Item -Force
+          }
+
           # Task Scheduler setup
           Copy-Item "setup\taskschd" $pkg -Recurse -Force
-
-          # Remove PDB
-          Get-ChildItem $pkg -Recurse -Filter "*.pdb" | Remove-Item -Force
 
           $zip = "$name.7z"
 
