@@ -22,15 +22,15 @@ jobs:
 
     steps:
       # -----------------------------------------------------
-      # CHECKOUT
+      # Checkout repository
       # -----------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Required for provenance
 
       # -----------------------------------------------------
-      # EXTRACT VERSION FROM setup/publish.ps1
+      # Extract Version from setup/publish.ps1
       # -----------------------------------------------------
       - name: Get version from publish.ps1
         id: get_version
@@ -41,18 +41,19 @@ jobs:
           $line = Get-Content $file | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
           if (!$line) { throw "version not found" }
           $v = ([regex]::Match($line,'"(.*)"')).Groups[1].Value
+          # proper output export
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Set VERSION env
         run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
       # -----------------------------------------------------
-      # INSTALL BUILD DEPENDENCIES
+      # Install Build dependencies
       # -----------------------------------------------------
       - uses: microsoft/setup-msbuild@v2
       - uses: nuget/setup-nuget@v2
 
-      - name: Install Inno Setup 6.6.1
+      - name: Install Inno Setup
         shell: pwsh
         run: |
           Invoke-WebRequest "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe" -OutFile is.exe
@@ -65,7 +66,7 @@ jobs:
           Start-Process .\7z.exe -ArgumentList "/S" -Wait
 
       # -----------------------------------------------------
-      # BUILD SOLUTION
+      # Build solution
       # -----------------------------------------------------
       - name: Build Servy.sln
         shell: pwsh
@@ -129,7 +130,7 @@ jobs:
           }
   
       # -----------------------------------------------------
-      # BUILD Servy.Restarter BEFORE SIGNING
+      # Build UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
       - name: Build Servy.Restarter
         shell: pwsh
@@ -171,13 +172,12 @@ jobs:
       - name: Inject signed Servy.Restarter.exe
         shell: pwsh
         run: |
-          Get-ChildItem -Recurse signed
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
           if (!(Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
       # -----------------------------------------------------
-      # BUILD Servy.Service BEFORE SIGNING
+      # Build UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
       - name: Build Servy.Service
         shell: pwsh
@@ -216,23 +216,26 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: 'signed/Servy.Service'
 
-      - name: Inject Servy.Service signed binaries
+      - name: Inject signed Servy.Service.exe
         shell: pwsh
         run: |
           $signed = "signed/Servy.Service/Servy.Service.exe"
           if (!(Test-Path $signed)) { throw "Signed Servy.Service.exe not found!" }
 
-          Copy-Item $signed src/Servy/Resources/Servy.Service.Net48.exe -Force
-          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy/Resources/ -Force
+          $targets = @(
+              @{ Path = "src/Servy/Resources";           Name = "Servy.Service.Net48.exe" },
+              @{ Path = "src/Servy.Manager/Resources";   Name = "Servy.Service.Net48.exe" },
+              @{ Path = "src/Servy.CLI/Resources";       Name = "Servy.Service.Net48.CLI.exe" }
+          )
 
-          Copy-Item $signed src/Servy.Manager/Resources/Servy.Service.Net48.exe -Force
-          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy.Manager/Resources/ -Force
-
-          Copy-Item $signed src/Servy.CLI/Resources/Servy.Service.Net48.CLI.exe -Force
-          Copy-Item src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/*.dll src/Servy.CLI/Resources/ -Force
+          # Inject the signed EXE into each resource folder
+          foreach ($t in $targets) {
+              Copy-Item $signed "$($t.Path)/$($t.Name)" -Force
+              Copy-Item "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/*.dll" $t.Path -Force
+          }
 
       # -----------------------------------------------------
-      # BUILD Servy BEFORE SIGNING
+      # Build UNSIGNED Servy.exe
       # -----------------------------------------------------
       - name: Build Servy
         shell: pwsh
@@ -279,7 +282,7 @@ jobs:
           Copy-Item $file src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe -Force
 
       # -----------------------------------------------------
-      # BUILD Servy.Manager BEFORE SIGNING
+      # Build UNSIGNED Servy.Manager.exe
       # -----------------------------------------------------
       - name: Build Servy.Manager
         shell: pwsh
@@ -326,7 +329,7 @@ jobs:
           Copy-Item $file src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
-      # BUILD Servy.CLI BEFORE SIGNING
+      # Build UNSIGNED Servy.CLI.exe
       # -----------------------------------------------------
       - name: Build Servy.CLI
         shell: pwsh
@@ -373,7 +376,7 @@ jobs:
           Copy-Item $file src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
-      # BUILD UNSIGNED INSTALLER
+      # Build UNSIGNED installer
       # -----------------------------------------------------
       - name: Build unsigned installer
         shell: pwsh
@@ -384,7 +387,7 @@ jobs:
             /DMyAppPlatform=$env:FRAMEWORK
 
       # -----------------------------------------------------
-      # SIGN INSTALLER
+      # SIGN installer
       # -----------------------------------------------------
       - name: Rename unsigned installer
         shell: pwsh
@@ -432,7 +435,7 @@ jobs:
           retention-days: 1
 
       # -----------------------------------------------------
-      # BUILD PORTABLE 7Z PACKAGE
+      # Build portable 7z package
       # -----------------------------------------------------
       - name: Build portable 7z package
         shell: pwsh
@@ -445,7 +448,7 @@ jobs:
           $cli = "src/Servy.CLI/bin/${{ env.PLATFORM }}/Release"
           $manager = "src/Servy.Manager/bin/${{ env.PLATFORM }}/Release"
 
-          # Desktop app + Manager
+          # Desktop app and Manager app
           Copy-Item "$servy\*" $pkg -Recurse -Force
           Copy-Item "$manager\*" $pkg -Recurse -Force
 
@@ -496,7 +499,7 @@ jobs:
           retention-days: 1
 
       # -----------------------------------------------------
-      # SCAN WITH VIRUSTOTAL
+      # Scan with VirusTotal
       # -----------------------------------------------------
       - name: Scan signed installer and portable package with VirusTotal
         uses: cssnr/virustotal-action@v1
