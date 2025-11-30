@@ -397,9 +397,9 @@ jobs:
         shell: pwsh
         run: |
           $source = "setup/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
-          $target = "setup/servy-x64-installer.exe"
+          $target = "servy-x64-installer.exe"
           if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
-          Copy-Item $source $target -Force
+          Rename-Item -Path $source -NewName $target -Force
 
       - name: Upload unsigned installer
         id: unsigned-installer
@@ -448,9 +448,9 @@ jobs:
           $pkg = "$name"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
-          $servy = "src/Servy/bin/${{ env.PLATFORM }}/Release"
-          $cli = "src/Servy.CLI/bin/${{ env.PLATFORM }}/Release"
-          $manager = "src/Servy.Manager/bin/${{ env.PLATFORM }}/Release"
+          $servy = "src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}"
+          $cli = "src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}"
+          $manager = "src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}"
 
           # Desktop app and Manager app
           Copy-Item "$servy\*" $pkg -Recurse -Force
