@@ -130,7 +130,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Submit Servy.Restarter for signing
+      - name: Submit Servy.Restarter.exe for signing
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
@@ -181,7 +181,7 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-      - name: Submit Servy.Service for signing
+      - name: Submit Servy.Service.exe for signing
         uses: signpath/github-action-submit-signing-request@v2
         with:
           organization-id: ${{ secrets.SIGNPATH_ORG_ID }}
