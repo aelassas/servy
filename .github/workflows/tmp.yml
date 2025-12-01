@@ -18,10 +18,10 @@ jobs:
           $installed = winget list -e --id JRSoftware.InnoSetup
           
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "Inno Setup already installed → upgrading..."
+            Write-Host "Inno Setup already installed - upgrading..."
             winget upgrade -e --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements || true
           } else {
-            Write-Host "Inno Setup not installed → installing..."
+            Write-Host "Inno Setup not installed - installing..."
             winget install -e --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements
           }
 
@@ -46,10 +46,10 @@ jobs:
           $installed = winget list -e --id 7zip.7zip
 
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "7-Zip already installed → upgrading..."
+            Write-Host "7-Zip already installed - upgrading..."
             winget upgrade -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements || true
           } else {
-            Write-Host "7-Zip not installed → installing..."
+            Write-Host "7-Zip not installed - installing..."
             winget install -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements
           }
 
