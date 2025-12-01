@@ -262,9 +262,8 @@ namespace Servy.Services
         /// <inheritdoc />
         public async Task UninstallService(string serviceName)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
+            if (!(await IsServiceNameValid(serviceName)))
             {
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, Caption);
                 return;
             }
 
@@ -302,6 +301,11 @@ namespace Servy.Services
         {
             try
             {
+                if (!(await IsServiceNameValid(serviceName)))
+                {
+                    return;
+                }
+
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
@@ -333,6 +337,11 @@ namespace Servy.Services
         {
             try
             {
+                if (!(await IsServiceNameValid(serviceName)))
+                {
+                    return;
+                }
+
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
@@ -357,6 +366,11 @@ namespace Servy.Services
         {
             try
             {
+                if (!(await IsServiceNameValid(serviceName)))
+                {
+                    return;
+                }
+
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
@@ -588,6 +602,26 @@ namespace Servy.Services
             };
 
             process.Start();
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// Validates the service name.
+        /// </summary>
+        /// <param name="serviceName">Service name.</param>
+        /// <returns>Returns true if valid; otherwise, false.</returns>
+        private async Task<bool> IsServiceNameValid(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, Caption);
+                return false;
+            }
+
+            return true;
         }
 
         #endregion
