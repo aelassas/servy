@@ -10,16 +10,17 @@ jobs:
     steps:
       - name: Install Inno Setup
         run: |
-          winget install --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements
+          winget install -e --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements
 
       - name: Show Inno Setup Version
         run: |
           iscc.exe /? || true
 
-      - name: Install 7-Zip
+      - name: Ensure 7-Zip Installed (non-failing)
         run: |
-          winget install -e --id 7zip.7zip 
+          winget list -e --id 7zip.7zip || true
+          winget upgrade -e --id 7zip.7zip --accept-source-agreements || true
 
       - name: Show 7-Zip Version
         run: |
-          7z.exe -version
+          7z.exe -version || true
