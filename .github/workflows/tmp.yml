@@ -1,0 +1,25 @@
+name: Install Tools
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-tools:
+    runs-on: windows-latest
+
+    steps:
+      - name: Install Inno Setup
+        run: |
+          winget install --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements
+
+      - name: Show Inno Setup Version
+        run: |
+          iscc.exe /?
+
+      - name: Install 7-Zip
+        run: |
+          winget install --id 7zip.7zip --accept-source-agreements --accept-package-agreements
+
+      - name: Show 7-Zip Version
+        run: |
+          7z.exe -version
