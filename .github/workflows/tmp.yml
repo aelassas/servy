@@ -26,14 +26,14 @@ jobs:
           }
 
           # Add to PATH for this job
-          $innoPath = "C:\Program Files (x86)\Inno Setup 6"
-          if (Test-Path $innoPath) {
-            Write-Host "Adding Inno Setup to PATH"
-            echo "$innoPath" >> $env:GITHUB_PATH
-          }
+          #$innoPath = "C:\Program Files (x86)\Inno Setup 6"
+          #if (Test-Path $innoPath) {
+          #  Write-Host "Adding Inno Setup to PATH"
+          #  echo "$innoPath" >> $env:GITHUB_PATH
+          #}
 
       - name: Show Inno Setup Version
-        run: iscc.exe /? || true
+        run: ISCC.exe /? || true
 
 
       # ---------------------------
