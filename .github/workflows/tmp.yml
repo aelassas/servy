@@ -18,7 +18,7 @@ jobs:
 
       - name: Install 7-Zip
         run: |
-          winget install --id 7zip.7zip --accept-source-agreements --accept-package-agreements
+          winget install -e --id 7zip.7zip 
 
       - name: Show 7-Zip Version
         run: |
