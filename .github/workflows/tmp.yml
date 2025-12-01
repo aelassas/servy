@@ -1,4 +1,4 @@
-name: Install Tools
+name: tmp
 
 on:
   workflow_dispatch:
