@@ -14,18 +14,25 @@ jobs:
       - name: Install or Upgrade Inno Setup
         shell: pwsh
         run: |
+          $version = "6.6.1"
           # Check if installed
-          $installed = winget list -e --id JRSoftware.InnoSetup
+          $installed = winget list -e --id JRSoftware.InnoSetup | Select-String -Pattern "\d+\.\d+\.\d+"
           
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Inno Setup already installed - upgrading..."
-            winget upgrade -e --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements || true
+          if ($installed) {
+              $currentVersion = $installed.Matches[0].Value
+              if ($currentVersion -ne $version) {
+                  Write-Host "Installed version $currentVersion does not match pinned version $version"
+                  winget uninstall -e --id JRSoftware.InnoSetup || true
+                  winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
+              } else {
+                  Write-Host "Pinned version $version already installed"
+              }
           } else {
-            Write-Host "Inno Setup not installed - installing..."
-            winget install -e --id JRSoftware.InnoSetup --accept-source-agreements --accept-package-agreements
+              Write-Host "Installing Inno Setup $version..."
+              winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
           }
 
-          # Add to PATH for this job
+          # Add to PATH for this job (Inno Setup already in path)
           #$innoPath = "C:\Program Files (x86)\Inno Setup 6"
           #if (Test-Path $innoPath) {
           #  Write-Host "Adding Inno Setup to PATH"
