@@ -375,6 +375,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
+  <data name="Msg_ServiceNameError" xml:space="preserve">
+    <value>A service name is required to perform this action.</value>
+  </data>
   <data name="Msg_InvalidPath" xml:space="preserve">
     <value>The specified process path is invalid.</value>
   </data>

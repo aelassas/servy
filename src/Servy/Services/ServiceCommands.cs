@@ -620,7 +620,7 @@ namespace Servy.Services
         {
             if (string.IsNullOrWhiteSpace(serviceName))
             {
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, Caption);
+                await _messageBoxService.ShowWarningAsync(Strings.Msg_ServiceNameError, Caption);
                 return false;
             }
 

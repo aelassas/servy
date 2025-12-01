@@ -1000,6 +1000,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A service name is required to perform this action..
+        /// </summary>
+        public static string Msg_ServiceNameError {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified service was not found..
         /// </summary>
         public static string Msg_ServiceNotFound {
