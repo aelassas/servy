@@ -41,10 +41,10 @@ jobs:
         id: get_version
         shell: pwsh
         run: |
-          $file = "setup/publish.ps1"
-          if (-not (Test-Path $file)) { throw "cannot find publish.ps1" }
-          $line = Get-Content $file | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
-          if (-not $line) { throw "Version line not found in $file" }
+          $publishFile = "setup/publish.ps1"
+          if (-not (Test-Path $publishFile)) { throw "cannot find publish.ps1" }
+          $line = Get-Content $publishFile | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
+          if (-not $line) { throw "Version line not found in $publishFile" }
           $v = ([regex]::Match($line, '"(.*)"')).Groups[1].Value
           if (-not $v) { throw "Failed to extract version" }
           Write-Host "Version found: $v"
@@ -52,12 +52,15 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Set VERSION env
-        run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=${{ steps.get_version.outputs.version }}"
 
-      - name: Verify VERSION provided
+      - name: Verify VERSION is set
         shell: pwsh
         run: |
           if (-not $env:VERSION) { throw "VERSION env variable must be provided" }
+          Write-Host "VERSION is set to $env:VERSION"
 
       # -----------------------------------------------------
       # Install Build dependencies
