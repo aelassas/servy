@@ -22,6 +22,8 @@ jobs:
       CONFIGURATION: Release
       RUNTIME: win-x64
       TFM: net10.0-windows
+      ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      SEVEN_ZIP: 'C:\Program Files\7-Zip\7z.exe'
 
     steps:
       # -----------------------------------------------------
@@ -52,6 +54,11 @@ jobs:
       - name: Set VERSION env
         run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
+      - name: Verify VERSION provided
+        shell: pwsh
+        run: |
+          if (-not $env:VERSION) { throw "VERSION env variable must be provided" }
+
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
@@ -72,6 +79,7 @@ jobs:
           $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
           Invoke-WebRequest -Uri $url -OutFile "innosetup.exe" -ErrorAction Stop
           Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
       - name: Install 7zip
         shell: pwsh
@@ -79,6 +87,7 @@ jobs:
           $url = "https://www.7-zip.org/a/7z2501-x64.exe"
           Invoke-WebRequest -Uri $url -OutFile "7z.exe" -ErrorAction Stop
           Start-Process ".\7z.exe" -ArgumentList "/S" -Wait
+          if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
 
       # -----------------------------------------------------
       # Build solution
@@ -370,9 +379,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          & "$compiler" "setup\servy.iss" `
-            /DMyAppVersion=$env:VERSION
+          & $env:ISCC "setup\servy.iss" /DMyAppVersion=$env:VERSION
 
       # -----------------------------------------------------
       # SIGN installer
@@ -453,15 +460,15 @@ jobs:
           $zip = "$name.7z"
 
           # use advanced compression config
-          & "C:\Program Files\7-Zip\7z.exe" a `
+          & $env:SEVEN_ZIP a `
             -t7z `
             -m0=lzma2 `
             -mx=9 `
             -mfb=273 `
             -md=128m `
             -ms=on `
-            $zip `
-            $pkg
+            "$zip" `
+            "$pkg"
 
           Remove-Item $pkg -Recurse -Force
 
