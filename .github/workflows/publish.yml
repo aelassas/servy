@@ -4,8 +4,8 @@
 # Builds all Servy components using the modern .NET SDK, signs all executables using SignPath,
 # builds the installer, creates the portable 7z archive, and uploads all signed artifacts.
 #
-# This build targets Windows 10, Windows 11, and Windows Server editions. It provides better
-# performance, runtime features, trimming, and overall modern platform support.
+# This build targets Windows 10, Windows 11, and Windows Server (x64) editions. It provides 
+# better performance, runtime features, trimming, and overall modern platform support.
 # ==========================================================================================
 
 name: publish
