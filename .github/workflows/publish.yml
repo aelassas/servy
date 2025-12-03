@@ -22,6 +22,8 @@ jobs:
       BUILD_CONFIG: Release
       PLATFORM: x64
       FRAMEWORK: net48
+      ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      SEVEN_ZIP: 'C:\Program Files\7-Zip\7z.exe'
 
     steps:
       # -----------------------------------------------------
@@ -52,6 +54,11 @@ jobs:
       - name: Set VERSION env
         run: echo "VERSION=${{ steps.get_version.outputs.version }}" >> $env:GITHUB_ENV
 
+      - name: Verify VERSION provided
+        shell: pwsh
+        run: |
+          if (-not $env:VERSION) { throw "VERSION env variable must be provided" }
+
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
@@ -64,6 +71,7 @@ jobs:
           $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
           Invoke-WebRequest -Uri $url -OutFile "innosetup.exe" -ErrorAction Stop
           Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
       - name: Install 7zip
         shell: pwsh
@@ -71,6 +79,7 @@ jobs:
           $url = "https://www.7-zip.org/a/7z2501-x64.exe"
           Invoke-WebRequest -Uri $url -OutFile "7z.exe" -ErrorAction Stop
           Start-Process ".\7z.exe" -ArgumentList "/S" -Wait
+          if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
 
       # -----------------------------------------------------
       # Build solution
@@ -286,7 +295,7 @@ jobs:
         run: |
           $file = "signed/Servy/Servy.exe"
           if (-not (Test-Path $file)) { throw "Signed Servy.exe not found!" }
-          Copy-Item $file src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe -Force
+          Copy-Item $file src/Servy/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.exe -Force
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Manager.exe
@@ -333,7 +342,7 @@ jobs:
         run: |
           $file = "signed/Servy.Manager/Servy.Manager.exe"
           if (-not (Test-Path $file)) { throw "Signed Servy.Manager.exe not found!" }
-          Copy-Item $file src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe -Force
+          Copy-Item $file src/Servy.Manager/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.CLI.exe
@@ -380,7 +389,7 @@ jobs:
         run: |
           $file = "signed/Servy.CLI/Servy.CLI.exe"
           if (-not (Test-Path $file)) { throw "Signed Servy.CLI.exe not found!" }
-          Copy-Item $file src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe -Force
+          Copy-Item $file src/Servy.CLI/bin/$env:PLATFORM/$env:BUILD_CONFIG/Servy.CLI.exe -Force
 
       # -----------------------------------------------------
       # Build UNSIGNED installer
@@ -388,8 +397,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-          & "$compiler" "setup\servy.iss" `
+          & $env:ISCC "setup\servy.iss" `
             /DMyAppVersion=$env:VERSION `
             /DMyAppPlatform=$env:FRAMEWORK
 
@@ -489,15 +497,15 @@ jobs:
           $zip = "$name.7z"
 
           # use advanced compression config
-          & "C:\Program Files\7-Zip\7z.exe" a `
+          & $env:SEVEN_ZIP a `
             -t7z `
             -m0=lzma2 `
             -mx=9 `
             -mfb=273 `
             -md=32m `
             -ms=on `
-            $zip `
-            $pkg
+            "$zip" `
+            "$pkg"
 
           Remove-Item $pkg -Recurse -Force
 
