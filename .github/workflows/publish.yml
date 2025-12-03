@@ -1,8 +1,11 @@
 # ==========================================================================================
-# Servy Publish Workflow
+# Servy Publish Workflow (.NET Framework 4.8)
 # ------------------------------------------------------------------------------------------
-# Builds all Servy components, signs all executables using SignPath, builds installer,
-# packages the portable 7z archive, and uploads all signed artifacts.
+# Builds all Servy components using .NET Framework 4.8, signs all executables using SignPath,
+# builds the installer, creates the portable 7z archive, and uploads all signed artifacts.
+#
+# This build targets legacy systems. .NET Framework 4.8 ensures compatibility with older
+# Windows versions that cannot run modern .NET (e.g., Windows 7, 8, 8.1).
 # ==========================================================================================
 
 name: publish
