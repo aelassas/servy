@@ -139,7 +139,7 @@ jobs:
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
-      - name: Build Servy.Restarter
+      - name: Build Servy.Restarter.exe
         shell: pwsh
         run: |
           $BuildConfiguration = $env:BUILD_CONFIG
@@ -186,7 +186,7 @@ jobs:
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
-      - name: Build Servy.Service
+      - name: Build Servy.Service.exe
         shell: pwsh
         run: |
           $BuildConfiguration = $env:BUILD_CONFIG
@@ -244,7 +244,7 @@ jobs:
       # -----------------------------------------------------
       # Build UNSIGNED Servy.exe
       # -----------------------------------------------------
-      - name: Build Servy
+      - name: Build Servy.exe
         shell: pwsh
         run: |
           $BuildConfiguration = $env:BUILD_CONFIG
@@ -291,7 +291,7 @@ jobs:
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Manager.exe
       # -----------------------------------------------------
-      - name: Build Servy.Manager
+      - name: Build Servy.Manager.exe
         shell: pwsh
         run: |
           $BuildConfiguration = $env:BUILD_CONFIG
@@ -338,7 +338,7 @@ jobs:
       # -----------------------------------------------------
       # Build UNSIGNED Servy.CLI.exe
       # -----------------------------------------------------
-      - name: Build Servy.CLI
+      - name: Build Servy.CLI.exe
         shell: pwsh
         run: |
           $BuildConfiguration = $env:BUILD_CONFIG
