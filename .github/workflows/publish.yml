@@ -100,9 +100,9 @@ jobs:
         run: dotnet test Servy.sln --configuration Debug
 
       # -----------------------------------------------------
-      # Publish UNSIGNED Servy.Restarter.exe
+      # Build UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
-      - name: Publish Servy.Restarter
+      - name: Build Servy.Restarter.exe
         shell: pwsh
         run: |
           $Configuration = $env:CONFIGURATION
@@ -151,9 +151,9 @@ jobs:
           Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
 
       # -----------------------------------------------------
-      # Publish UNSIGNED Servy.Service.exe
+      # Build UNSIGNED Servy.Service.exe
       # -----------------------------------------------------
-      - name: Publish Servy.Service
+      - name: Build Servy.Service.exe
         shell: pwsh
         run: |
           $Configuration = $env:CONFIGURATION
@@ -212,9 +212,9 @@ jobs:
           }
 
       # -----------------------------------------------------
-      # Publish UNSIGNED Servy.exe
+      # Build UNSIGNED Servy.exe
       # -----------------------------------------------------
-      - name: Publish Servy
+      - name: Build Servy.exe
         shell: pwsh
         run: |
           $Configuration = $env:CONFIGURATION
@@ -263,9 +263,9 @@ jobs:
           Copy-Item $file src/Servy/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.exe -Force
 
       # -----------------------------------------------------
-      # Publish UNSIGNED Servy.Manager.exe
+      # Build UNSIGNED Servy.Manager.exe
       # -----------------------------------------------------
-      - name: Publish Servy.Manager
+      - name: Build Servy.Manager.exe
         shell: pwsh
         run: |
           $Configuration = $env:CONFIGURATION
@@ -314,9 +314,9 @@ jobs:
           Copy-Item $file src/Servy.Manager/bin/$env:CONFIGURATION/$env:TFM/$env:RUNTIME/publish/Servy.Manager.exe -Force
 
       # -----------------------------------------------------
-      # Publish UNSIGNED Servy.CLI.exe
+      # Build UNSIGNED Servy.CLI.exe
       # -----------------------------------------------------
-      - name: Publish Servy.CLI
+      - name: Build Servy.CLI.exe
         shell: pwsh
         run: |
           $Configuration = $env:CONFIGURATION
@@ -385,7 +385,7 @@ jobs:
           if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
           Rename-Item -Path $source -NewName $target -Force
 
-      - name: Upload unsigned installer
+      - name: Upload installer (unsigned)
         id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
