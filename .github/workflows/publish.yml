@@ -255,7 +255,7 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: 'signed/Servy'
 
-      - name: Replace Servy.exe with signed
+      - name: Inject signed Servy.exe
         shell: pwsh
         run: |
           $file = "signed/Servy/Servy.exe"
@@ -306,7 +306,7 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: 'signed/Servy.Manager'
 
-      - name: Replace Servy.Manager.exe with signed
+      - name: Inject signed Servy.Manager.exe
         shell: pwsh
         run: |
           $file = "signed/Servy.Manager/Servy.Manager.exe"
@@ -357,7 +357,7 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: 'signed/Servy.CLI'
 
-      - name: Replace Servy.CLI.exe with signed
+      - name: Inject signed Servy.CLI.exe
         shell: pwsh
         run: |
           $file = "signed/Servy.CLI/Servy.CLI.exe"
