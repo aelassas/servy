@@ -49,7 +49,7 @@ jobs:
           if (-not $v) { throw "Failed to extract version" }
           Write-Host "Version found: $v"
           # proper output export
-          "version=$v" >> $env:GITHUB_OUTPUT
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$v"
 
       - name: Set VERSION env
         shell: pwsh
