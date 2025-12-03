@@ -404,7 +404,7 @@ jobs:
           if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
           Rename-Item -Path $source -NewName $target -Force
 
-      - name: Upload unsigned installer
+      - name: Upload installer (unsigned)
         id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
