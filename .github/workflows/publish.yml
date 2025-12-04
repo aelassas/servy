@@ -59,7 +59,7 @@ jobs:
       - name: Verify VERSION is set
         shell: pwsh
         run: |
-          if (-not $env:VERSION) { throw "VERSION env variable must be provided" }
+          if (-not $env:VERSION) { throw "VERSION env variable is not set." }
           Write-Host "VERSION is set to $env:VERSION"
 
       # -----------------------------------------------------
