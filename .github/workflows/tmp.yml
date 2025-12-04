@@ -32,12 +32,12 @@ jobs:
               winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
           }
 
-          # Add to PATH for this job (Inno Setup already in path)
-          #$innoPath = "C:\Program Files (x86)\Inno Setup 6"
-          #if (Test-Path $innoPath) {
-          #  Write-Host "Adding Inno Setup to PATH"
-          #  echo "$innoPath" >> $env:GITHUB_PATH
-          #}
+          # Add to PATH for this job
+          $innoPath = "C:\Program Files (x86)\Inno Setup 6"
+          if (Test-Path $innoPath) {
+           Write-Host "Adding Inno Setup to PATH"
+           Add-Content -Path $env:GITHUB_PATH -Value $innoPath
+          }
 
       - name: Show Inno Setup Version
         run: ISCC.exe /? || true
@@ -64,7 +64,7 @@ jobs:
           $zipPath = "C:\Program Files\7-Zip"
           if (Test-Path $zipPath) {
             Write-Host "Adding 7-Zip to PATH"
-            echo "$zipPath" >> $env:GITHUB_PATH
+            Add-Content -Path $env:GITHUB_PATH -Value $zipPath
           }
 
       - name: Show 7-Zip Version
