@@ -382,7 +382,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          & $env:ISCC "setup\servy.iss" /DMyAppVersion=$env:VERSION
+          & "$env:ISCC" "setup\servy.iss" /DMyAppVersion=$env:VERSION
 
       # -----------------------------------------------------
       # SIGN installer
@@ -463,7 +463,7 @@ jobs:
           $zip = "$name.7z"
 
           # use advanced compression config
-          & $env:SEVEN_ZIP a `
+          & "$env:SEVEN_ZIP" a `
             -t7z `
             -m0=lzma2 `
             -mx=9 `
