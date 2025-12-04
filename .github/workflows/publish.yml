@@ -59,7 +59,7 @@ jobs:
       - name: Verify VERSION is set
         shell: pwsh
         run: |
-          if (-not $env:VERSION) { throw "VERSION env variable must be provided" }
+          if (-not $env:VERSION) { throw "VERSION env variable is not set." }
           Write-Host "VERSION is set to $env:VERSION"
 
       # -----------------------------------------------------
@@ -108,10 +108,10 @@ jobs:
         run: |
           # Common paths for vstest.console.exe
           $possiblePaths = @(
-                "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
-                "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
-                "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe",
-                "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
+                'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+                'C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+                'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe',
+                'C:\Program Files\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\Extensions\TestPlatform\vstest.console.exe'
             )
 
           $vsTest = $possiblePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -400,7 +400,7 @@ jobs:
       - name: Build unsigned installer
         shell: pwsh
         run: |
-          & $env:ISCC "setup\servy.iss" `
+          & "$env:ISCC" "setup\servy.iss" `
             /DMyAppVersion=$env:VERSION `
             /DMyAppPlatform=$env:FRAMEWORK
 
@@ -458,7 +458,7 @@ jobs:
       - name: Build portable 7z package
         shell: pwsh
         run: |
-          $name = "servy-$env:VERSION-$env:FRAMEWORK-$env:PLATFORM-portable"
+          $name = "servy-$env:VERSION-$env:FRAMEWORK-x64-portable"
           $pkg = "$name"
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
 
@@ -500,7 +500,7 @@ jobs:
           $zip = "$name.7z"
 
           # use advanced compression config
-          & $env:SEVEN_ZIP a `
+          & "$env:SEVEN_ZIP" a `
             -t7z `
             -m0=lzma2 `
             -mx=9 `
