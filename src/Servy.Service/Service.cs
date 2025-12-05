@@ -242,17 +242,18 @@ namespace Servy.Service
 
         /// <summary>
         /// Initializes the path to the restart attempts file for the current service,
-        /// located under the %ProgramData%\Servy directory.  
+        /// located under the %ProgramData%\Servy\recovery directory.  
         /// The filename is unique per service based on its name to prevent conflicts  
         /// when multiple services are managed by Servy on the same machine.
         /// </summary>
         /// <param name="options">The service startup options containing the service name.</param>
         private void SetupAttemptsFile(StartOptions options)
         {
-            Directory.CreateDirectory(AppConfig.ProgramDataPath); // ensures folder exists
+            var attemptsDir = Path.Combine(AppConfig.ProgramDataPath, "recovery");
+            Directory.CreateDirectory(attemptsDir); // ensures folder exists
 
             string safeServiceName = MakeFilenameSafe(options.ServiceName);
-            _restartAttemptsFile = Path.Combine(AppConfig.ProgramDataPath, $"{safeServiceName}_restartAttempts.dat");
+            _restartAttemptsFile = Path.Combine(attemptsDir, $"{safeServiceName}_restartAttempts.dat");
         }
 
         /// <summary>
