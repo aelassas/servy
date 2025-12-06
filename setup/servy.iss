@@ -97,6 +97,9 @@ Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdo
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
+[Dirs]
+Name: "{commonappdata}\Servy"; Permissions: networkservice-modify service-modify
+
 [Icons]
 ; Name: "{group}\Servy"; Filename: "{app}\Servy.exe"; IconFilename: "{app}\servy.ico"; WorkingDir: "{app}"
 ; Name: "{group}\Servy Manager"; Filename: "{app}\Servy.Manager.exe"; IconFilename: "{app}\servy.ico"; WorkingDir: "{app}"
