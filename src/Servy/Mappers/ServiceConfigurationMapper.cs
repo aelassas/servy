@@ -56,6 +56,7 @@ namespace Servy.Mappers
                 PostLaunchExecutablePath = config.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
                 PostLaunchParameters = config.PostLaunchParameters,
+                MaxRotations = ParseInt(config.MaxRotations, Core.Config.AppConfig.DefaultMaxRotations),
             };
         }
 
@@ -105,6 +106,7 @@ namespace Servy.Mappers
                 PostLaunchExecutablePath = service.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
                 PostLaunchParameters = service.PostLaunchParameters,
+                MaxRotations = service.MaxRotations.ToString(),
             };
         }
 

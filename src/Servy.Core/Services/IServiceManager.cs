@@ -58,6 +58,7 @@ namespace Servy.Core.Services
         /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
         /// <param name="enableDebugLogs">Enable debug logs for the service wrapper.</param>
         /// <param name="displayName">The Display Name of the service, shown in the Windows Services management console (<c>services.msc</c>).</param>
+        /// <param name="maxRotations">The maximum number of rotated log file to keep. Set to 0 for unlimited.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -99,7 +100,8 @@ namespace Servy.Core.Services
                 string postLaunchWorkingDirectory = null,
                 string postLaunchArgs = null,
                 bool enableDebugLogs = false,
-                string displayName = null
+                string displayName = null,
+                int? maxRotations = AppConfig.DefaultMaxRotations
         );
 
         /// <summary>

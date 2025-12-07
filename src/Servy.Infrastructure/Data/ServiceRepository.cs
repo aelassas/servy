@@ -10,10 +10,10 @@ using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using System.Linq;
 
 namespace Servy.Infrastructure.Data
 {
@@ -66,7 +66,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -75,7 +75,7 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations
                 );
                 SELECT last_insert_rowid();";
 
@@ -133,7 +133,10 @@ namespace Servy.Infrastructure.Data
 
                     EnableDebugLogs = @EnableDebugLogs,
 
-                    DisplayName = @DisplayName
+                    DisplayName = @DisplayName,
+
+                    MaxRotations = @MaxRotations
+
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);
@@ -434,6 +437,8 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
 
                 DisplayName = dto.DisplayName,
+
+                MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
             };
         }
 
@@ -490,6 +495,8 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = domain.EnableDebugLogs,
 
                 DisplayName = domain.DisplayName,
+
+                MaxRotations = domain.MaxRotations,
             };
         }
 

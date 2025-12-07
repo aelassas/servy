@@ -105,6 +105,12 @@ namespace Servy.Validators
                 return false;
             }
 
+            if (dto.MaxRotations < 0)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRotations, AppConfig.Caption);
+                return false;
+            }
+
             if (dto.HeartbeatInterval < MinHeartbeatInterval)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
