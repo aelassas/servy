@@ -156,7 +156,7 @@
                 catch
                 {
                     // Do NOT crash logging if deletion fails.
-                    // Silently ignore — logging must be resilient.
+                    // Silently ignore. Logging must be resilient.
                 }
             }
         }
