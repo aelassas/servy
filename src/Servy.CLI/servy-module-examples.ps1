@@ -60,6 +60,7 @@ Install-ServyService `
   -Priority "BelowNormal" `
   -EnableRotation `
   -RotationSize 1 `
+  -MaxRotations 3 `
   -Stdout "C:\Windows\Temp\dummy-stdout.log" `
   -Stderr "C:\Windows\Temp\dummy-stderr.log" `
   -EnableHealth `
