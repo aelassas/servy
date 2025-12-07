@@ -74,6 +74,7 @@ namespace Servy.UnitTests.Services
             var postLaunchDir = @"C:\postLaunchDir";
             var postLaunchArgs = "postLaunchArgs";
             var enableDebugLogs = false;
+            var maxRotations = "0";
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -119,7 +120,8 @@ namespace Servy.UnitTests.Services
                 postLaunchArgs,
                 enableDebugLogs,
 
-                serviceDisplayName
+                serviceDisplayName,
+                maxRotations
                 );
 
             // Assert
@@ -166,7 +168,8 @@ namespace Servy.UnitTests.Services
                 postLaunchArgs,
                 enableDebugLogs,
 
-                serviceDisplayName
+                serviceDisplayName,
+                maxRotations
                 ), Times.Once);
         }
 

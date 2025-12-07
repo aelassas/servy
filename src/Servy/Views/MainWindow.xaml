@@ -76,6 +76,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -162,13 +164,21 @@
                         <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableRotation}" />
                         <TextBlock Grid.Row="13" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
+                        <!-- Max Rotations -->
+                        <TextBlock Grid.Row="14" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxRotations}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding MaxRotations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" IsEnabled="{Binding EnableRotation}" />
+                        <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
+                          Text="{x:Static resx:Strings.Info_MaxRotations}" 
+                          FontStyle="Normal" 
+                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                          TextWrapping="Wrap"/>
 
                         <!-- Enable Debug Logs -->
-                        <CheckBox Grid.Row="14" Grid.Column="1"
+                        <CheckBox Grid.Row="16" Grid.Column="1"
                            Content="{x:Static resx:Strings.Label_EnableDebugLogs}"
                            IsChecked="{Binding EnableDebugLogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                            Margin="0,5" />
-                        <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="17" Grid.Column="1" Grid.ColumnSpan="2"
                            Text="{x:Static resx:Strings.Info_EnableDebugLogs}" 
                            FontStyle="Normal" 
                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"

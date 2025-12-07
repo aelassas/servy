@@ -243,6 +243,9 @@ function Install-ServyService {
     .PARAMETER RotationSize
         Maximum log file size in bytes before rotation. Must be >= 1 MB. Optional.
 
+    .PARAMETER MaxRotations
+        Maximum rotated log files to keep. 0 for unlimited. Optional.
+
     .PARAMETER EnableHealth
         Switch to enable health monitoring. Optional.
 
@@ -332,6 +335,7 @@ function Install-ServyService {
             -Stderr "C:\Logs\MyService.err.log" `
             -EnableRotation `
             -RotationSize 10 `
+            -MaxRotations 0 `
             -EnableHealth `
             -HeartbeatInterval 30 `
             -MaxFailedChecks 3 `
@@ -361,6 +365,7 @@ function Install-ServyService {
     [string] $Stderr,
     [switch] $EnableRotation,
     [string] $RotationSize,
+    [string] $MaxRotations,
     [switch] $EnableHealth,
     [string] $HeartbeatInterval,
     [string] $MaxFailedChecks,
@@ -420,6 +425,7 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--stderr" $Stderr
   if ($EnableRotation) { $argsList.Add("--enableRotation") }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
+  $argsList = Add-Arg $argsList "--maxRotations" $MaxRotations
   if ($EnableHealth) { $argsList.Add("--enableHealth") }
   $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval
   $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks

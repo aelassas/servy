@@ -83,6 +83,12 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
+            if (dto.MaxRotations.HasValue && dto.MaxRotations < 0)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRotations, AppConfig.Caption);
+                return false;
+            }
+
             if (dto.EnableHealthMonitoring.HasValue && dto.EnableHealthMonitoring.Value)
             {
                 if (dto.HeartbeatInterval < MinHeartbeatInterval)

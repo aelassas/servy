@@ -189,7 +189,8 @@ namespace Servy.Core.UnitTests.Domain
                      service.PostLaunchParameters,
 
                      service.EnableDebugLogs,
-                     service.DisplayName
+                     service.DisplayName,
+                     service.MaxRotations
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -282,7 +283,8 @@ namespace Servy.Core.UnitTests.Domain
                      service.PostLaunchParameters,
 
                      service.EnableDebugLogs,
-                     service.DisplayName
+                     service.DisplayName,
+                     service.MaxRotations
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -356,7 +358,8 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // postLaunchWorkingDirectory
                     null,                                // postLaunchArgs
                     It.IsAny<bool>(),                    // enableDebugLogs
-                    service.DisplayName                  // displayName
+                    service.DisplayName,                 // displayName
+                    service.MaxRotations                 // maxRotations
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

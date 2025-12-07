@@ -182,6 +182,16 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Megabytes (MB)</value>
   </data>
 
+  <data name="Label_MaxRotations" xml:space="preserve">
+    <value>Max Rotations</value>
+  </data>
+  <data name="Info_MaxRotations" xml:space="preserve">
+    <value>Maximum rotated log files to keep. Set to 0 for unlimited.</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>Maximum rotations must be a number greater than or equal to 0.</value>
+  </data>
+
   <!-- Health monitoring -->
   <data name="Label_EnableHealthMonitoring" xml:space="preserve">
     <value>Enable Health Monitoring</value>

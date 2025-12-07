@@ -147,6 +147,12 @@ namespace Servy.Core.Config
         public const int DefaultRotationSize = 10;
 
         /// <summary>
+        /// Default maximum number of rotated log files to keep by default. 
+        /// A value of 0 indicates no limit (unlimited retention).
+        /// </summary>
+        public const int DefaultMaxRotations = 0;
+
+        /// <summary>
         /// Default heartbeat interval in seconds. Default is 30 seconds.
         /// </summary>
         public const int DefaultHeartbeatInterval = 30;

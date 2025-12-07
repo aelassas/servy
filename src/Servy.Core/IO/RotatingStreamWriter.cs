@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace Servy.Core.IO
 {
@@ -14,6 +15,7 @@ namespace Servy.Core.IO
         private readonly FileInfo _file;
         private StreamWriter _writer;
         private readonly long _rotationSize;
+        private readonly int _maxRotations; // 0 = unlimited
         private readonly object _lock = new object();
 
         /// <summary>
@@ -21,7 +23,8 @@ namespace Servy.Core.IO
         /// </summary>
         /// <param name="path">The path to the log file.</param>
         /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
-        public RotatingStreamWriter(string path, long rotationSizeInBytes)
+        /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        public RotatingStreamWriter(string path, long rotationSizeInBytes, int maxRotations = 0)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -34,6 +37,7 @@ namespace Servy.Core.IO
             }
             _file = new FileInfo(path);
             _rotationSize = rotationSizeInBytes;
+            _maxRotations = maxRotations;
             _writer = CreateWriter();
         }
 
@@ -121,6 +125,47 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
+        /// Deletes older rotated log files to enforce the maximum rotation limit.
+        /// If <see cref="_maxRotations"/> is set to <c>0</c>, rotation cleanup is disabled.
+        /// Only files matching the rotated filename pattern of the current log file
+        /// are considered. 
+        /// </summary>
+        /// <remarks>
+        /// This method never throws exceptions. Any deletion failure is silently ignored
+        /// to ensure logging remains fully resilient.
+        /// </remarks>
+        private void EnforceMaxRotations()
+        {
+            if (_maxRotations <= 0)
+                return; // unlimited
+
+            string directory = _file.Directory.FullName;
+            string baseName = Path.GetFileName(_file.FullName);
+
+            // Rotated files follow: logfile.txt.20240101_120355 or logfile.txt(1).txt
+            var rotatedFiles = Directory.GetFiles(directory, baseName + ".*")
+                .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .ToList();
+
+            if (rotatedFiles.Count <= _maxRotations)
+                return;
+
+            foreach (var file in rotatedFiles.Skip(_maxRotations))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // Do NOT crash logging if deletion fails.
+                    // Silently ignore — logging must be resilient.
+                }
+            }
+        }
+
+        /// <summary>
         /// Rotates the current log file by renaming it with a timestamp suffix.
         /// If a file with the target name exists, a numeric suffix is appended to generate a unique filename.
         /// After rotation, a new log file is created.
@@ -140,6 +185,9 @@ namespace Servy.Core.IO
             rotatedPath = GenerateUniqueFileName(rotatedPath);
 
             File.Move(_file.FullName, rotatedPath);
+
+            // Enforce retention
+            EnforceMaxRotations();
 
             // Recreate writer for new log file
             _writer = new StreamWriter(new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))

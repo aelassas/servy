@@ -187,6 +187,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Maximum rotated log files to keep. Set to 0 for unlimited..
+        /// </summary>
+        public static string Info_MaxRotations {
+            get {
+                return ResourceManager.GetString("Info_MaxRotations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run after the process starts successfully..
         /// </summary>
         public static string Info_PostLaunch {
@@ -382,6 +391,15 @@ namespace Servy.Resources {
         public static string Label_MaxRestartAttempts {
             get {
                 return ResourceManager.GetString("Label_MaxRestartAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Rotations.
+        /// </summary>
+        public static string Label_MaxRotations {
+            get {
+                return ResourceManager.GetString("Label_MaxRotations", resourceCulture);
             }
         }
         
@@ -805,6 +823,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidMaxRestartAttempts {
             get {
                 return ResourceManager.GetString("Msg_InvalidMaxRestartAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Maximum rotations must be a number greater than or equal to 0..
+        /// </summary>
+        public static string Msg_InvalidMaxRotations {
+            get {
+                return ResourceManager.GetString("Msg_InvalidMaxRotations", resourceCulture);
             }
         }
         

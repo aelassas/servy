@@ -45,8 +45,8 @@ namespace Servy.Service.UnitTests
             _mockTimer = new Mock<ITimer>();
             _mockProcess = new Mock<IProcessWrapper>();
 
-            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>()))
-                .Returns((string path, long size) =>
+            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<int>()))
+                .Returns((string path, long size, int maxRotations) =>
                 {
                     if (path.Contains("stdout"))
                         return _mockStdoutWriter.Object;
@@ -104,8 +104,8 @@ namespace Servy.Service.UnitTests
             _service.StartForTest(new string[] { });
 
             // Assert
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes), Times.Once);
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes, options.MaxRotations), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes, options.MaxRotations), Times.Once);
 
             _mockServiceHelper.Verify(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object), Times.Once);
 
@@ -274,10 +274,10 @@ namespace Servy.Service.UnitTests
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.RotationSizeInBytes))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.RotationSizeInBytes, options.MaxRotations))
                 .Returns(mockStdOutWriter.Object);
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.RotationSizeInBytes))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.RotationSizeInBytes, options.MaxRotations))
                 .Returns(mockStdErrWriter.Object);
 
             mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -286,8 +286,8 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes), Times.Once);
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.RotationSizeInBytes, options.MaxRotations), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.RotationSizeInBytes, options.MaxRotations), Times.Once);
 
             // Check no errors logged
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -331,7 +331,7 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
 
             mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
 
@@ -364,14 +364,15 @@ namespace Servy.Service.UnitTests
             {
                 StdOutPath = "",
                 StdErrPath = string.Empty,
-                RotationSizeInBytes = 12345
+                RotationSizeInBytes = 12345,
+                MaxRotations = 5,
             };
 
             // Act
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>()), Times.Never);
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 
