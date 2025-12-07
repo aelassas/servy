@@ -262,7 +262,8 @@ namespace Servy.Core.Services
                 string? postLaunchWorkingDirectory = null,
                 string? postLaunchArgs = null,
                 bool enableDebugLogs = false,
-                string? displayName = null
+                string? displayName = null,
+                int? maxRotations = AppConfig.DefaultMaxRotations
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -311,7 +312,10 @@ namespace Servy.Core.Services
                 Helper.Quote(postLaunchArgs ?? string.Empty),
 
                 // Debug Logs
-                Helper.Quote(enableDebugLogs.ToString())
+                Helper.Quote(enableDebugLogs.ToString()),
+
+                // Max rotations
+                Helper.Quote(maxRotations.ToString())
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -402,6 +406,8 @@ namespace Servy.Core.Services
                     PostLaunchParameters = postLaunchArgs,
 
                     EnableDebugLogs = enableDebugLogs,
+
+                    MaxRotations = maxRotations,
                 };
 
                 // Set PID

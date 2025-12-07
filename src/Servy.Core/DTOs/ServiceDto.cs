@@ -84,6 +84,12 @@ namespace Servy.Core.DTOs
         public int? RotationSize { get; set; }
 
         /// <summary>
+        /// Maximum number of rotated log files to keep. 
+        /// Set to 0 for unlimited.
+        /// </summary>
+        public int? MaxRotations{ get; set; }
+
+        /// <summary>
         /// Whether health monitoring is enabled.
         /// </summary>
         public bool? EnableHealthMonitoring { get; set; }
@@ -228,6 +234,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
         public bool ShouldSerializeEnableRotation() => EnableRotation.HasValue;
         public bool ShouldSerializeRotationSize() => RotationSize.HasValue;
+        public bool ShouldSerializeMaxRotations() => MaxRotations.HasValue;
         public bool ShouldSerializeEnableHealthMonitoring() => EnableHealthMonitoring.HasValue;
         public bool ShouldSerializeHeartbeatInterval() => HeartbeatInterval.HasValue;
         public bool ShouldSerializeMaxFailedChecks() => MaxFailedChecks.HasValue;

@@ -578,7 +578,7 @@ namespace Servy.Service
                     return null;
                 }
 
-                return _streamWriterFactory.Create(path, options.RotationSizeInBytes);
+                return _streamWriterFactory.Create(path, options.RotationSizeInBytes, options.MaxRotations);
             }
 
             // Always create stdout writer if path is valid

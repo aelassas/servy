@@ -203,12 +203,21 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets the log rotation size as a string (in bytes).
+        /// Gets or sets the log rotation size as a string (in MB).
         /// </summary>
         public string RotationSize
         {
             get => _config.RotationSize;
             set { _config.RotationSize = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum number of rotated log files to keep.
+        /// </summary>
+        public string MaxRotations
+        {
+            get => _config.MaxRotations;
+            set { _config.MaxRotations = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -643,6 +652,7 @@ namespace Servy.ViewModels
             SelectedProcessPriority = ProcessPriority.Normal;
             EnableRotation = false;
             RotationSize = DefaultRotationSize.ToString();
+            MaxRotations = DefaultMaxRotations.ToString();
             SelectedRecoveryAction = RecoveryAction.RestartService;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
@@ -908,7 +918,8 @@ namespace Servy.ViewModels
                 _config.PostLaunchStartupDirectory,
                 _config.PostLaunchParameters,
                 _config.EnableDebugLogs,
-                _config.DisplayName
+                _config.DisplayName,
+                _config.MaxRotations
                 );
         }
 
@@ -978,6 +989,7 @@ namespace Servy.ViewModels
             SelectedProcessPriority = ProcessPriority.Normal;
             EnableRotation = false;
             RotationSize = DefaultRotationSize.ToString();
+            MaxRotations = DefaultMaxRotations.ToString();
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
             EnableHealthMonitoring = false;
@@ -1121,6 +1133,7 @@ namespace Servy.ViewModels
             StderrPath = dto.StderrPath;
             EnableRotation = dto.EnableRotation ?? false;
             RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
+            MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
             EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
             HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
             MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
@@ -1182,6 +1195,7 @@ namespace Servy.ViewModels
                 StderrPath = StderrPath,
                 EnableRotation = EnableRotation,
                 RotationSize = int.TryParse(RotationSize, out var rs) ? rs : 0,
+                MaxRotations = int.TryParse(MaxRotations, out var mrs) ? mrs : 0,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(HeartbeatInterval, out var hi) ? hi : 0,
                 MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : 0,

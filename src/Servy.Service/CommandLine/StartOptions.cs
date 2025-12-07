@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using System.Diagnostics;
 
@@ -161,5 +162,11 @@ namespace Servy.Service.CommandLine
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         public bool EnableDebugLogs { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the maximum number of rotated log files to keep. 
+        /// Defaults to 0 (unlimited).
+        /// </summary>
+        public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
     }
 }

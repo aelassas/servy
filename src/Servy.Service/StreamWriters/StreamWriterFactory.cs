@@ -7,9 +7,9 @@
     public class StreamWriterFactory : IStreamWriterFactory
     {
         /// <inheritdoc/>
-        public IStreamWriter Create(string path, long rotationSizeInBytes)
+        public IStreamWriter Create(string path, long rotationSizeInBytes, int maxRotations)
         {
-            return new RotatingStreamWriterAdapter(path, rotationSizeInBytes);
+            return new RotatingStreamWriterAdapter(path, rotationSizeInBytes, maxRotations);
         }
     }
 }

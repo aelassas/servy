@@ -16,9 +16,10 @@ namespace Servy.Service.StreamWriters
         /// </summary>
         /// <param name="path">The file path to write logs to.</param>
         /// <param name="rotationSize">The maximum file size in bytes before rotation.</param>
-        public RotatingStreamWriterAdapter(string path, long rotationSize)
+        /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        public RotatingStreamWriterAdapter(string path, long rotationSize, int maxRotations)
         {
-            _inner = new RotatingStreamWriter(path, rotationSize);
+            _inner = new RotatingStreamWriter(path, rotationSize, maxRotations);
         }
 
         /// <inheritdoc/>

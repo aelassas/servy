@@ -97,9 +97,15 @@ namespace Servy.Validators
                 return false;
             }
 
-            if ( dto.RotationSize < MinRotationSize)
+            if (dto.RotationSize < MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.MaxRotations < 0)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRotations, AppConfig.Caption);
                 return false;
             }
 

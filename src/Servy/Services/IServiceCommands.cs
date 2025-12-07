@@ -51,6 +51,7 @@ namespace Servy.Services
         /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
         /// <param name="enableDebugLogs">Enable debug logs for the service wrapper.</param>
         /// <param name="displayName">The display name of the service.</param>
+        /// <param name="maxRotations">The maximum number of log rotations to keep.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -90,7 +91,8 @@ namespace Servy.Services
             string postLaunchWorkingDirectory,
             string postLaunchArgs,
             bool enableDebugLogs,
-            string displayName
+            string displayName,
+            string maxRotations
             );
 
         /// <summary>

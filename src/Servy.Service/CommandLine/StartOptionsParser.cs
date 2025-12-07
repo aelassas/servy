@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using System.Diagnostics;
@@ -64,6 +65,9 @@ namespace Servy.Service.CommandLine
 
                 // Debug Logs
                 EnableDebugLogs = fullArgs.Length > 29 && bool.TryParse(fullArgs[29], out bool enableDebugLogs) && enableDebugLogs,
+
+                // Max Rotations
+                MaxRotations = fullArgs.Length > 30 && int.TryParse(fullArgs[30], out int maxRotations) ? maxRotations : AppConfig.DefaultMaxRotations,
             };
         }
     }

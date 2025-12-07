@@ -112,7 +112,8 @@ namespace Servy.Services
             string postLaunchWorkingDirectory,
             string postLaunchArgs,
             bool enableDebugLogs,
-            string displayName
+            string displayName,
+            string maxRotations
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -137,12 +138,12 @@ namespace Servy.Services
                 StdoutPath = stdoutPath,
                 StderrPath = stderrPath,
                 EnableRotation = enableRotation,
-                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : AppConfig.DefaultRotationSize,
+                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : -1,
                 EnableHealthMonitoring = enableHealthMonitoring,
-                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : AppConfig.DefaultHeartbeatInterval,
-                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : AppConfig.DefaultMaxFailedChecks,
+                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : -1,
+                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : -1,
                 RecoveryAction = (int)recoveryAction,
-                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : AppConfig.DefaultMaxRestartAttempts,
+                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : -1,
                 FailureProgramPath = failureProgramPath,
                 FailureProgramStartupDirectory = failureProgramWorkingDirectory,
                 FailureProgramParameters = failureProgramArgs,
@@ -157,13 +158,15 @@ namespace Servy.Services
                 PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = preLaunchStdoutPath,
                 PreLaunchStderrPath = preLaunchStderrPath,
-                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : AppConfig.DefaultPreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : AppConfig.DefaultPreLaunchRetryAttempts,
+                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : -1,
+                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : -1,
                 PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
 
                 PostLaunchExecutablePath = postLaunchExePath,
                 PostLaunchStartupDirectory = postLaunchWorkingDirectory,
                 PostLaunchParameters = postLaunchArgs,
+
+                MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
             };
 
             // Validate
@@ -192,6 +195,7 @@ namespace Servy.Services
                 var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
                 var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
                 var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
+                var maxRotationsValue = int.Parse(maxRotations);
 
                 if (runAsLocalSystem)
                 {
@@ -237,7 +241,8 @@ namespace Servy.Services
                     postLaunchWorkingDirectory: postLaunchWorkingDirectory,
                     postLaunchArgs: postLaunchArgs,
                     enableDebugLogs: enableDebugLogs,
-                    displayName: displayName
+                    displayName: displayName,
+                    maxRotations: maxRotationsValue
                 );
 
                 if (success)

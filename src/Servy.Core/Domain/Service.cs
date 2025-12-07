@@ -103,6 +103,12 @@ namespace Servy.Core.Domain
         public int RotationSize { get; set; } = AppConfig.DefaultRotationSize;
 
         /// <summary>
+        /// Maximum number of rotated log files to keep. 
+        /// Set to 0 for unlimited.
+        /// </summary>
+        public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
+
+        /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// Default is false.
         /// </summary>
@@ -395,7 +401,9 @@ namespace Servy.Core.Domain
 
                 enableDebugLogs: EnableDebugLogs,
 
-                displayName: DisplayName
+                displayName: DisplayName,
+
+                maxRotations: MaxRotations
             );
         }
 

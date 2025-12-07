@@ -105,6 +105,13 @@ namespace Servy.CLI.Options
         public string? RotationSize { get; set; }
 
         /// <summary>
+        /// Gets or sets the maximum number of rotated log files to keep.
+        /// Set to 0 for unlimited.
+        /// </summary>
+        [Option("maxRotations", HelpText = "Maximum rotated log files to keep. Set to 0 or leave empty for unlimited.")]
+        public string? MaxRotations { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// </summary>
         [Option("enableHealth", HelpText = "Enable health monitoring.")]

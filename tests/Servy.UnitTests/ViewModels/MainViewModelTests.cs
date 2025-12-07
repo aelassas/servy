@@ -102,6 +102,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PostLaunchExecutablePath = @"C:\post-launch.exe";
             _viewModel.PostLaunchStartupDirectory = @"C:\";
             _viewModel.PostLaunchParameters = "--param1 val1";
+            _viewModel.MaxRotations = "5";
 
             // Act
             _viewModel.InstallCommand.Execute(null);
@@ -149,7 +150,8 @@ namespace Servy.UnitTests.ViewModels
                  @"C:\",
                  "--param1 val1",
                  false,
-                 "TestServiceDisplayName"
+                 "TestServiceDisplayName",
+                 "5"
             ), Times.Once);
         }
 

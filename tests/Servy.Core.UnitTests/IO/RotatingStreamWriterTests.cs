@@ -244,6 +244,105 @@ namespace Servy.Core.UnitTests.IO
             Assert.NotEmpty(rotatedFiles);
         }
 
+        [Fact]
+        public void EnforceMaxRotations_CoversAllBranches()
+        {
+            // Arrange
+            string baseLog = Path.Combine(_testDir, "service.log");
+            File.WriteAllText(baseLog, "base"); // the main file
+
+            var writer = new RotatingStreamWriter(baseLog, 1000);
+
+            // Get private fields
+            var enforceMethod = typeof(RotatingStreamWriter)
+                .GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(enforceMethod);
+
+            var maxRotField = typeof(RotatingStreamWriter)
+                .GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(maxRotField);
+
+            // ---- BRANCH 1: _maxRotations <= 0 -> return ----
+            maxRotField.SetValue(writer, 0); // unlimited
+            var ex1 = Record.Exception(() => enforceMethod.Invoke(writer, null));
+            Assert.Null(ex1); // should simply return
+
+            // ---- Create rotated files ----
+            string f1 = Path.Combine(_testDir, "service.log.1");
+            string f2 = Path.Combine(_testDir, "service.log.2");
+            string f3 = Path.Combine(_testDir, "service.log.3");
+
+            File.WriteAllText(f1, "1");
+            File.WriteAllText(f2, "2");
+            File.WriteAllText(f3, "3");
+
+            // Make timestamps predictable (f1 newest, f3 oldest)
+            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(0));
+            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow.AddMinutes(-1));
+            File.SetLastWriteTimeUtc(f3, DateTime.UtcNow.AddMinutes(-2));
+
+            // ---- BRANCH 2: rotatedFiles.Count <= _maxRotations -> return ----
+            maxRotField.SetValue(writer, 3);
+            var ex2 = Record.Exception(() => enforceMethod.Invoke(writer, null));
+            Assert.Null(ex2);
+            Assert.True(File.Exists(f1) && File.Exists(f2) && File.Exists(f3));
+
+            // ---- BRANCH 3: rotatedFiles.Count > _maxRotations -> deletion happens ----
+            maxRotField.SetValue(writer, 1); // keep only newest (f1)
+            enforceMethod.Invoke(writer, null);
+
+            Assert.True(File.Exists(f1));     // newest kept
+            Assert.False(File.Exists(f2));    // deleted
+            Assert.False(File.Exists(f3));    // deleted
+
+            // ---- BRANCH 4: deletion failure is swallowed ----
+            // Recreate files
+            File.WriteAllText(f2, "x");
+            File.WriteAllText(f3, "x");
+
+            // Lock f2 so deletion throws
+            using (var locked = new FileStream(f2, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                maxRotField.SetValue(writer, 1);
+
+                var ex3 = Record.Exception(() => enforceMethod.Invoke(writer, null));
+                Assert.Null(ex3); // must swallow deletion exception
+            }
+
+            // Cleanup
+            writer.Dispose();
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_DeletionFails_DoesNotThrow()
+        {
+            var logPath = Path.Combine(_testDir, "service.log");
+            File.WriteAllText(logPath, "current");
+
+            var rotated1 = Path.Combine(_testDir, "service.log.1");
+            File.WriteAllText(rotated1, "new");
+
+            var rotated2 = Path.Combine(_testDir, "service.log.2");
+            File.WriteAllText(rotated2, "old");
+
+            File.SetLastWriteTimeUtc(rotated1, DateTime.UtcNow.AddMinutes(0));
+            File.SetLastWriteTimeUtc(rotated2, DateTime.UtcNow.AddMinutes(-1));
+
+            var writer = new RotatingStreamWriter(logPath, 1, 1); // keep 1
+
+            // Make the rotated file read-only to simulate deletion failure
+            File.SetAttributes(rotated2, FileAttributes.ReadOnly);
+
+            var ex = Record.Exception(() =>
+            {
+                // Force cleanup directly via reflection
+                var method = typeof(RotatingStreamWriter)
+                    .GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+                method!.Invoke(writer, Array.Empty<object>());
+            });
+
+            Assert.Null(ex); // no exception should propagate
+        }
 
         public void Dispose()
         {

@@ -73,7 +73,8 @@ namespace Servy.Service.Helpers
                   $"- priority: {options.Priority}\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
                   $"- stderrFilePath: {options.StdErrPath}\n" +
-                  $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n\n" +
+                  $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
+                  $"- maxRotations: {options.MaxRotations}\n\n" +
 
                   "--------Recovery---------------\n" +
                   $"- heartbeatInterval: {options.HeartbeatInterval}\n" +

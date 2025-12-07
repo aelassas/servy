@@ -92,6 +92,9 @@ namespace Servy.Infrastructure.Data
 
                 // DisplayName
                 new KeyValuePair<string, string>("DisplayName", "ALTER TABLE Services ADD COLUMN DisplayName TEXT;"),
+
+                // MaxRotations
+                new KeyValuePair<string, string>("MaxRotations", "ALTER TABLE Services ADD COLUMN MaxRotations INTEGER;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

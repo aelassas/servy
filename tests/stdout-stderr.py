@@ -25,4 +25,4 @@ while True:
     except Exception as e:
         print(f"An error occurred: {e}", file=sys.stderr)
 
-    time.sleep(20)
+    time.sleep(5)

@@ -64,9 +64,14 @@ namespace Servy.Models
         public bool EnableRotation { get; set; }
 
         /// <summary>
-        /// Gets or sets the rotation size in bytes.
+        /// Gets or sets the rotation size in MB.
         /// </summary>
         public string RotationSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of rotated log files to keep.
+        /// </summary>
+        public string MaxRotations{ get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
