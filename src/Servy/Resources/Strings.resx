@@ -82,6 +82,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_MainTab" xml:space="preserve">
     <value>Main</value>
   </data>
+  <data name="Label_LoggingTab" xml:space="preserve">
+    <value>Logging</value>
+  </data>
   <data name="Label_RecoveryTab" xml:space="preserve">
     <value>Recovery</value>
   </data>
