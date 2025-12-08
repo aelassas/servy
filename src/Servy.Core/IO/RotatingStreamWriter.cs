@@ -116,7 +116,7 @@ namespace Servy.Core.IO
             string newPath;
             do
             {
-                newPath = Path.Combine(directory, $"{filenameWithoutExt}({count}){extension}");
+                newPath = Path.Combine(directory, $"{filenameWithoutExt}.({count}){extension}");
                 count++;
             }
             while (File.Exists(newPath));
@@ -142,8 +142,9 @@ namespace Servy.Core.IO
             string directory = _file.Directory.FullName;
             string baseName = Path.GetFileName(_file.FullName);
 
-            // Rotated files follow: logfile.txt.20240101_120355 or logfile.txt(1).20240101_120355
-            var rotatedFiles = Directory.GetFiles(directory, baseName + ".*")
+            // Rotated files follow: logfile.log.20240101_120355 or logfile.log.(1).20240101_120355 or
+            // logfile.20240101_120355 or logfile.(1).20240101_120355
+            var rotatedFiles = Directory.GetFiles(directory, $"{baseName}.*")
                 .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(File.GetLastWriteTimeUtc)
                 .ToList();
