@@ -138,8 +138,8 @@
             string directory = _file.Directory!.FullName;
             string baseName = Path.GetFileName(_file.FullName);
 
-            // Rotated files follow: logfile.log.20240101_120355 or logfile.log.(1).20240101_120355 or
-            // logfile.20240101_120355 or logfile.(1).20240101_120355
+            // Rotated files follow: logfile.log.20251208_104539 or logfile.log.(1).20251208_104539 or
+            // logfile.20251208_104539 or logfile.(1).20251208_104539
             var rotatedFiles = Directory.GetFiles(directory, $"{baseName}.*")
                 .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(File.GetLastWriteTimeUtc)
