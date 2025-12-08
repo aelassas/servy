@@ -296,7 +296,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Rotation size must be a number of Megabytes (MB) greater than or equal to 1 MB.</value>
   </data>
   <data name="Msg_InvalidMaxRotations" xml:space="preserve">
-    <value>Maximum rotations must be a number greater than or equal to 0.</value>
+    <value>Max rotations must be a number greater than or equal to 0.</value>
   </data>
   <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
     <value>Heartbeat interval must be a number of seconds greater than or equal to 5 seconds.</value>

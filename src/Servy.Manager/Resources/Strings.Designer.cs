@@ -673,7 +673,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Maximum rotations must be a number greater than or equal to 0..
+        ///   Recherche une chaîne localisée semblable à Max rotations must be a number greater than or equal to 0..
         /// </summary>
         public static string Msg_InvalidMaxRotations {
             get {
