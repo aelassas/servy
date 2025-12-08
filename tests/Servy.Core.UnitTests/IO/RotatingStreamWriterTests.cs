@@ -74,7 +74,7 @@ namespace Servy.Core.UnitTests.IO
 
             var second = InvokeGenerateUniqueFileName(path);
 
-            Assert.Equal(Path.Combine(_testDir, "log(2).txt"), second);
+            Assert.Equal(Path.Combine(_testDir, "log.(2).txt"), second);
         }
 
         [Fact]
@@ -108,8 +108,8 @@ namespace Servy.Core.UnitTests.IO
             // Read content of the latest rotated file
             var content = File.ReadAllText(latestRotatedFile.FullName);
 
-            // Assert that it contains "more"
-            Assert.Contains("more", content);
+            // Assert that it contains "12345"
+            Assert.Contains("12345", content);
         }
 
         [Fact]
@@ -179,12 +179,12 @@ namespace Servy.Core.UnitTests.IO
                 var basePath = Path.Combine(_testDir, "file.log");
 
                 File.WriteAllText(basePath, "test");
-                File.WriteAllText(Path.Combine(_testDir, "file(1).log"), "test");
-                File.WriteAllText(Path.Combine(_testDir, "file(2).log"), "test");
+                File.WriteAllText(Path.Combine(_testDir, "file.(1).log"), "test");
+                File.WriteAllText(Path.Combine(_testDir, "file.(2).log"), "test");
 
                 var uniqueName = (string)methodInfo.Invoke(writer, new object[] { basePath })!;
 
-                Assert.Equal(Path.Combine(_testDir, "file(3).log"), uniqueName);
+                Assert.Equal(Path.Combine(_testDir, "file.(3).log"), uniqueName);
             }
         }
 
