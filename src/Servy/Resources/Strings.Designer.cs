@@ -359,6 +359,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Logging.
+        /// </summary>
+        public static string Label_LoggingTab {
+            get {
+                return ResourceManager.GetString("Label_LoggingTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Log On.
         /// </summary>
         public static string Label_LogOnTab {
