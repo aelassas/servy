@@ -142,7 +142,7 @@ namespace Servy.Core.IO
             string directory = _file.Directory.FullName;
             string baseName = Path.GetFileName(_file.FullName);
 
-            // Rotated files follow: logfile.txt.20240101_120355 or logfile.txt(1).txt
+            // Rotated files follow: logfile.txt.20240101_120355 or logfile.txt(1).20240101_120355
             var rotatedFiles = Directory.GetFiles(directory, baseName + ".*")
                 .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(File.GetLastWriteTimeUtc)
