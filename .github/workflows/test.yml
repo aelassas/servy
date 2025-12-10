@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - net48
+  workflow_dispatch:
 
 jobs:
   test:
