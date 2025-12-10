@@ -40,6 +40,7 @@ Compression=lzma2
 LZMAAlgorithm=1
 ; LZMADictionarySize=65536
 LZMADictionarySize=131072
+LZMADictionarySize=196608
 LZMANumFastBytes=273
 LZMAUseSeparateProcess=yes
 SolidCompression=yes
