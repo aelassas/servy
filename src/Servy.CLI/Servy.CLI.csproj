@@ -53,7 +53,7 @@
     <EmbeddedResource Include="Resources\Servy.Service.CLI.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.CLI.pdb" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="appsettings.cli.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -85,6 +85,10 @@
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.NETCore.App" />
   </ItemGroup>
 
 </Project>
