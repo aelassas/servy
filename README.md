@@ -54,7 +54,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
 * Environment variable expansion supported in both environment variables and process parameters
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
-* Redirect stdout/stderr to log files with automatic size-based rotation
+* Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
