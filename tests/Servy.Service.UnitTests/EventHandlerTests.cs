@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Xunit;
 using Servy.Core.Data;
+using Servy.Core.Enums;
 
 namespace Servy.Service.UnitTests
 {
@@ -71,7 +72,7 @@ namespace Servy.Service.UnitTests
 
             var mockWriter = new Mock<IStreamWriter>();
             // Setup rotating writer factory to return this mock writer
-            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<int>())).Returns(mockWriter.Object);
+            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>())).Returns(mockWriter.Object);
 
             // Prepare a sample non-empty data event
             var nonEmptyArgs = CreateDataReceivedEventArgs("output line");
@@ -116,7 +117,7 @@ namespace Servy.Service.UnitTests
                 out var serviceRepository);
 
             var mockWriter = new Mock<IStreamWriter>();
-            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<long>(), It.IsAny<int>())).Returns(mockWriter.Object);
+            swFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>())).Returns(mockWriter.Object);
 
             var nonEmptyArgs = CreateDataReceivedEventArgs("error line");
             var emptyArgs = CreateDataReceivedEventArgs(null);

@@ -157,7 +157,7 @@ namespace Servy.Service.CommandLine
         public string? PostLaunchExecutableArgs { get; set; }
 
         /// <summary>
-        /// Whether debug logs are enabled.
+        /// Gets or sets a value indicating whether debug logs are enabled.
         /// When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
@@ -168,5 +168,20 @@ namespace Servy.Service.CommandLine
         /// Defaults to 0 (unlimited).
         /// </summary>
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether size log rotation is enabled.
+        /// </summary>
+        public bool EnableSizeRotation { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether date log rotation is enabled.
+        /// </summary>
+        public bool EnableDateRotation { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating date rotation type (<see cref="Core.Enums.DateRotationType"/>).
+        /// </summary>
+        public DateRotationType DateRotationType { get; set; } = DateRotationType.Daily;
     }
 }

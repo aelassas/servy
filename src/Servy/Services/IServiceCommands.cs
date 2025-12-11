@@ -21,7 +21,7 @@ namespace Servy.Services
         /// <param name="processPriority">The process priority.</param>
         /// <param name="stdoutPath">Path to standard output log file.</param>
         /// <param name="stderrPath">Path to standard error log file.</param>
-        /// <param name="enableRotation">Whether to enable log rotation.</param>
+        /// <param name="enableSizeRotation">Whether to enable size-based log rotation.</param>
         /// <param name="rotationSize">The log rotation size threshold.</param>
         /// <param name="enableHealthMonitoring">Whether to enable health monitoring.</param>
         /// <param name="heartbeatInterval">Interval in seconds for health check heartbeat.</param>
@@ -52,6 +52,8 @@ namespace Servy.Services
         /// <param name="enableDebugLogs">Enable debug logs for the service wrapper.</param>
         /// <param name="displayName">The display name of the service.</param>
         /// <param name="maxRotations">The maximum number of log rotations to keep.</param>
+        /// <param name="enableDateRotation">Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</param>
+        /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -62,7 +64,7 @@ namespace Servy.Services
             ProcessPriority processPriority,
             string stdoutPath,
             string stderrPath,
-            bool enableRotation,
+            bool enableSizeRotation,
             string rotationSize,
             bool enableHealthMonitoring,
             string heartbeatInterval,
@@ -92,7 +94,9 @@ namespace Servy.Services
             string postLaunchArgs,
             bool enableDebugLogs,
             string displayName,
-            string maxRotations
+            string maxRotations,
+            bool enableDateRotation,
+            DateRotationType dateRotationType
             );
 
         /// <summary>

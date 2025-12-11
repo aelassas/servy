@@ -190,7 +190,10 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.EnableDebugLogs,
                      service.DisplayName,
-                     service.MaxRotations
+                     service.MaxRotations,
+
+                     service.EnableDateRotation,
+                     service.DateRotationType
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -284,7 +287,10 @@ namespace Servy.Core.UnitTests.Domain
 
                      service.EnableDebugLogs,
                      service.DisplayName,
-                     service.MaxRotations
+                     service.MaxRotations,
+
+                     service.EnableDateRotation,
+                     service.DateRotationType
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -359,7 +365,10 @@ namespace Servy.Core.UnitTests.Domain
                     null,                                // postLaunchArgs
                     It.IsAny<bool>(),                    // enableDebugLogs
                     service.DisplayName,                 // displayName
-                    service.MaxRotations                 // maxRotations
+                    service.MaxRotations,                 // maxRotations
+
+                     service.EnableDateRotation,
+                     service.DateRotationType
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

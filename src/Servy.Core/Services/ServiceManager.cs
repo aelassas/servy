@@ -263,7 +263,9 @@ namespace Servy.Core.Services
                 string? postLaunchArgs = null,
                 bool enableDebugLogs = false,
                 string? displayName = null,
-                int? maxRotations = AppConfig.DefaultMaxRotations
+                int? maxRotations = AppConfig.DefaultMaxRotations,
+                bool enableDateRotation = false,
+                DateRotationType dateRotationType = DateRotationType.Daily
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -315,7 +317,12 @@ namespace Servy.Core.Services
                 Helper.Quote(enableDebugLogs.ToString()),
 
                 // Max rotations
-                Helper.Quote(maxRotations.ToString())
+                Helper.Quote(maxRotations.ToString()),
+
+                // Date rotation
+                Helper.Quote(enableRotation.ToString()), // size rotation
+                Helper.Quote(enableDateRotation.ToString()),
+                Helper.Quote(dateRotationType.ToString())
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -378,6 +385,9 @@ namespace Servy.Core.Services
                     StderrPath = stderrPath,
                     EnableRotation = enableRotation,
                     RotationSize = (int)(rotationSizeInBytes / (1024 * 1024)),
+                    EnableDateRotation = enableDateRotation,
+                    DateRotationType = (int)dateRotationType,
+                    MaxRotations = maxRotations,
                     EnableHealthMonitoring = enableHealthMonitoring,
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,
@@ -406,8 +416,6 @@ namespace Servy.Core.Services
                     PostLaunchParameters = postLaunchArgs,
 
                     EnableDebugLogs = enableDebugLogs,
-
-                    MaxRotations = maxRotations,
                 };
 
                 // Set PID

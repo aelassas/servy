@@ -238,10 +238,22 @@ function Install-ServyService {
         File path for capturing standard error logs. Optional.
 
     .PARAMETER EnableRotation
-        Switch to enable log rotation. Optional.
+        Deprecated. Enables size-based log rotation.
+        This switch is kept only for backward compatibility.
+        Use -EnableSizeRotation instead.
+
+    .PARAMETER EnableSizeRotation
+        Switch to enable size-based log rotation. Optional.
 
     .PARAMETER RotationSize
         Maximum log file size in bytes before rotation. Must be >= 1 MB. Optional.
+
+    .PARAMETER EnableDateRotation
+        Enable date-based log rotation based on the date interval specified by -DateRotationType. Optional.
+        When both size-based and date-based rotation are enabled, size rotation takes precedence.
+
+    .PARAMETER DateRotationType
+        Date rotation type. Options: Daily, Weekly, Monthly. Optional.
 
     .PARAMETER MaxRotations
         Maximum rotated log files to keep. 0 for unlimited. Optional.
@@ -364,7 +376,10 @@ function Install-ServyService {
     [string] $Stdout,
     [string] $Stderr,
     [switch] $EnableRotation,
+    [switch] $EnableSizeRotation,
     [string] $RotationSize,
+    [switch] $EnableDateRotation,
+    [string] $DateRotationType,
     [string] $MaxRotations,
     [switch] $EnableHealth,
     [string] $HeartbeatInterval,
@@ -423,8 +438,10 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--priority" $Priority
   $argsList = Add-Arg $argsList "--stdout" $Stdout
   $argsList = Add-Arg $argsList "--stderr" $Stderr
-  if ($EnableRotation) { $argsList.Add("--enableRotation") }
+  if ($EnableRotation -or $EnableSizeRotation) { $argsList.Add("--enableSizeRotation") }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
+  if ($EnableDateRotation) { $argsList.Add("--enableDateRotation") }
+  $argsList = Add-Arg $argsList "--dateRotationType" $DateRotationType
   $argsList = Add-Arg $argsList "--maxRotations" $MaxRotations
   if ($EnableHealth) { $argsList.Add("--enableHealth") }
   $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval

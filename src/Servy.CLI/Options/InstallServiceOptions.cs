@@ -92,10 +92,17 @@ namespace Servy.CLI.Options
         public string? StderrPath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether log rotation is enabled.
+        /// Gets or sets a value indicating whether size-based log rotation is enabled.
+        /// This option is deprecated and is kept for backward compatibility. Use --enableSizeRotation instead.
         /// </summary>
-        [Option("enableRotation", HelpText = "Enable log rotation.")]
+        [Option("enableRotation", HelpText = "Enable size-based log rotation. This option is deprecated and is kept for backward compatibility. Use --enableSizeRotation instead.")]
         public bool EnableRotation { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether size-based log rotation is enabled.
+        /// </summary>
+        [Option("enableSizeRotation", HelpText = "Enable size-based log rotation.")]
+        public bool EnableSizeRotation { get; set; }
 
         /// <summary>
         /// Gets or sets the rotation size in bytes for log files.
@@ -103,6 +110,24 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("rotationSize", HelpText = "Log rotation size in Megabytes (MB). Must be greater than or equal to 1 MB.")]
         public string? RotationSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether date-based log rotation is enabled based on the date interval specified by --dateRotationType.
+        /// </summary>
+        [Option("enableDateRotation", HelpText = "Enable date-based log rotation based on the date interval specified by --dateRotationType. When both size-based and date-based rotation are enabled, size rotation takes precedence.")]
+        public bool EnableDateRotation { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date rotation type.
+        /// Possible values:
+        /// <list type="bullet">
+        /// <item><description>Daily</description></item>
+        /// <item><description>Weekly</description></item>
+        /// <item><description>Monthly</description></item>
+        /// </list>
+        /// </summary>
+        [Option("dateRotationType", HelpText = "Date rotation type. Options: Daily, Weekly, Monthly.")]
+        public string? DateRotationType { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.

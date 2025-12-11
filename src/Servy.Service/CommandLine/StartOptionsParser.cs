@@ -68,6 +68,11 @@ namespace Servy.Service.CommandLine
 
                 // Max Rotations
                 MaxRotations = fullArgs.Length > 30 && int.TryParse(fullArgs[30], out int maxRotations) ? maxRotations : AppConfig.DefaultMaxRotations,
+
+                // Date & Size Rotation
+                EnableSizeRotation = fullArgs.Length > 31 && bool.TryParse(fullArgs[31], out bool enableSizeRotation) && enableSizeRotation,
+                EnableDateRotation = fullArgs.Length > 32 && bool.TryParse(fullArgs[32], out bool enableDateRotation) && enableDateRotation,
+                DateRotationType = fullArgs.Length > 33 && Enum.TryParse(fullArgs[33], true, out DateRotationType dateRotationType) ? dateRotationType : DateRotationType.Daily,
             };
         }
     }

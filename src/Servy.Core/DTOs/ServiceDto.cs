@@ -74,7 +74,7 @@ namespace Servy.Core.DTOs
         public string? StderrPath { get; set; }
 
         /// <summary>
-        /// Whether log rotation is enabled.
+        /// Whether size-based log rotation is enabled.
         /// </summary>
         public bool? EnableRotation { get; set; }
 
@@ -82,6 +82,16 @@ namespace Servy.Core.DTOs
         /// Maximum size of the log file in Megabytes (MB) before rotation.
         /// </summary>
         public int? RotationSize { get; set; }
+
+        /// <summary>
+        /// Whether date-based log rotation is enabled.
+        /// </summary>
+        public bool? EnableDateRotation { get; set; }
+
+        /// <summary>
+        /// Date rotation type (stored as int, represents <see cref="Servy.Core.Enums.DateRotationType"/>).
+        /// </summary>
+        public int? DateRotationType { get; set; }
 
         /// <summary>
         /// Maximum number of rotated log files to keep. 
@@ -234,6 +244,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
         public bool ShouldSerializeEnableRotation() => EnableRotation.HasValue;
         public bool ShouldSerializeRotationSize() => RotationSize.HasValue;
+        public bool ShouldSerializeEnableDateRotation() => EnableDateRotation.HasValue;
+        public bool ShouldSerializeDateRotationType() => DateRotationType.HasValue;
         public bool ShouldSerializeMaxRotations() => MaxRotations.HasValue;
         public bool ShouldSerializeEnableHealthMonitoring() => EnableHealthMonitoring.HasValue;
         public bool ShouldSerializeHeartbeatInterval() => HeartbeatInterval.HasValue;

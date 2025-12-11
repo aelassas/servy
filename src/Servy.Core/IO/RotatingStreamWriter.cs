@@ -1,4 +1,7 @@
-﻿namespace Servy.Core.IO
+﻿using Servy.Core.Enums;
+using System.Globalization;
+
+namespace Servy.Core.IO
 {
     /// <summary>
     /// Writes text to a file with automatic log rotation based on file size.
@@ -10,7 +13,11 @@
         private bool _disposed;
         private readonly FileInfo _file;
         private StreamWriter? _writer;
+        private readonly bool _enableSizeRotation;
         private readonly long _rotationSize;
+        private readonly bool _enableDateRotation;
+        private readonly DateRotationType _dateRotationType;
+        private DateTime _lastRotationDateUtc;
         private readonly int _maxRotations; // 0 = unlimited
         private readonly object _lock = new object();
 
@@ -18,9 +25,31 @@
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
         /// </summary>
         /// <param name="path">The path to the log file.</param>
+        /// <param name="enableSizeRotation">
+        /// Enables rotation when the log file exceeds the size specified
+        /// in <paramref name="rotationSizeInBytes"/>.
+        /// </param>
         /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
+        /// <param name="enableDateRotation">
+        /// Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.
+        /// </param>
+        /// <param name="dateRotationType">
+        /// Defines the date-based rotation schedule (daily, weekly, or monthly).
+        /// Ignored when <paramref name="enableDateRotation"/> is <c>false</c>.
+        /// </param>
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
-        public RotatingStreamWriter(string path, long rotationSizeInBytes, int maxRotations = 0)
+        /// <remarks>
+        /// When both size-based and date-based rotation are enabled,
+        /// size rotation takes precedence. If a size-based rotation occurs,
+        /// date-based rotation is skipped for that write.
+        /// </remarks>
+        public RotatingStreamWriter(
+            string path,
+            bool enableSizeRotation,
+            long rotationSizeInBytes,
+            bool enableDateRotation,
+            DateRotationType dateRotationType,
+            int maxRotations)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -32,7 +61,11 @@
                 Directory.CreateDirectory(directory);
             }
             _file = new FileInfo(path);
+            _enableSizeRotation = enableSizeRotation;
             _rotationSize = rotationSizeInBytes;
+            _enableDateRotation = enableDateRotation;
+            _dateRotationType = dateRotationType;
+            _lastRotationDateUtc = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.UtcNow; // baseline for date rotation
             _maxRotations = maxRotations;
             _writer = CreateWriter();
         }
@@ -81,14 +114,101 @@
         }
 
         /// <summary>
-        /// Checks if the file exceeds rotation size and rotates if necessary.
+        /// Determines whether a date-based rotation should occur
+        /// based on the configured <see cref="DateRotationType"/>.
         /// </summary>
+        /// <returns>
+        /// <c>true</c> if the current UTC date has crossed the rotation boundary
+        /// (day, week, or month) since the last rotation; otherwise <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// Daily rotation triggers when the calendar date changes (UTC).
+        /// </para>
+        /// <para>
+        /// Weekly rotation uses ISO week numbering (Monday as first day of week).
+        /// </para>
+        /// <para>
+        /// Monthly rotation triggers when either the month or year differs.
+        /// </para>
+        /// </remarks>
+        private bool ShouldRotateByDate()
+        {
+            var now = DateTime.UtcNow;
+
+            switch (_dateRotationType)
+            {
+                case DateRotationType.Daily:
+                    return now.Date > _lastRotationDateUtc.Date;
+
+                case DateRotationType.Weekly:
+                    var lastWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                        _lastRotationDateUtc, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+                    var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+                        now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+                    return thisWeek != lastWeek;
+
+                case DateRotationType.Monthly:
+                    return now.Month != _lastRotationDateUtc.Month || now.Year != _lastRotationDateUtc.Year;
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the current log file should be rotated,
+        /// based on enabled rotation modes (size and/or date).
+        /// </summary>
+        /// <remarks>
+        /// Rotation rules:
+        /// <list type="number">
+        /// <item>
+        /// <description>
+        /// If size rotation is enabled and the file exceeds the configured size,
+        /// the file is rotated immediately and date-based rotation is skipped.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// If size rotation does not apply and date rotation is enabled,
+        /// rotation occurs when the configured date interval has elapsed.
+        /// </description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         private void CheckRotation()
         {
             _file.Refresh();
-            if (_rotationSize > 0 && _file.Length >= _rotationSize)
+
+            bool rotateBySize = false;
+            bool rotateByDate = false;
+
+            // --- SIZE ROTATION ---
+            if (_enableSizeRotation && _rotationSize > 0)
+            {
+                if (_file.Length >= _rotationSize)
+                    rotateBySize = true;
+            }
+
+            // If size rotation matches, rotate immediately and return
+            if (rotateBySize)
             {
                 Rotate();
+                _lastRotationDateUtc = DateTime.UtcNow;
+                return;
+            }
+
+            // --- DATE ROTATION ---
+            if (_enableDateRotation)
+            {
+                rotateByDate = ShouldRotateByDate();
+            }
+
+            if (rotateByDate)
+            {
+                Rotate();
+                _lastRotationDateUtc = DateTime.UtcNow;
             }
         }
 

@@ -73,7 +73,10 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
             }
 
-            if(!string.IsNullOrWhiteSpace(opts.MaxRotations) && (!int.TryParse(opts.MaxRotations, out var maxRotations) || maxRotations < 0))
+            if (!ValidateEnumOption<DateRotationType>(opts.DateRotationType))
+                return CommandResult.Fail(Strings.Msg_InvalidDateRotationType);
+
+            if (!string.IsNullOrWhiteSpace(opts.MaxRotations) && (!int.TryParse(opts.MaxRotations, out var maxRotations) || maxRotations < 0))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidMaxRotations);
             }

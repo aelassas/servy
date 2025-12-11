@@ -58,8 +58,10 @@ Install-ServyService `
   -Params "--param 2000" `
   -StartupType "Manual" `
   -Priority "BelowNormal" `
-  -EnableRotation `
+  -EnableSizeRotation `
   -RotationSize 1 `
+  -EnableDateRotation `
+  -DateRotationType "Weekly" `
   -MaxRotations 3 `
   -Stdout "C:\Windows\Temp\dummy-stdout.log" `
   -Stderr "C:\Windows\Temp\dummy-stderr.log" `

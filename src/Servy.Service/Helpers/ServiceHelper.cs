@@ -73,7 +73,10 @@ namespace Servy.Service.Helpers
                   $"- priority: {options.Priority}\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
                   $"- stderrFilePath: {options.StdErrPath}\n" +
+                  $"- enableSizeRotation: {options.EnableSizeRotation}\n" +
                   $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
+                  $"- enableDateRotation: {options.EnableDateRotation}\n" +
+                  $"- dateRotationType: {options.DateRotationType}\n" +
                   $"- maxRotations: {options.MaxRotations}\n\n" +
 
                   "--------Recovery---------------\n" +

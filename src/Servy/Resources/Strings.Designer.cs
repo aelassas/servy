@@ -133,6 +133,33 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Daily (default).
+        /// </summary>
+        public static string DateRotationType_Daily {
+            get {
+                return ResourceManager.GetString("DateRotationType_Daily", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Monthly.
+        /// </summary>
+        public static string DateRotationType_Monthly {
+            get {
+                return ResourceManager.GetString("DateRotationType_Monthly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Weekly.
+        /// </summary>
+        public static string DateRotationType_Weekly {
+            get {
+                return ResourceManager.GetString("DateRotationType_Weekly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à JSON Configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {
@@ -147,6 +174,15 @@ namespace Servy.Resources {
         public static string ExportXml_Success {
             get {
                 return ResourceManager.GetString("ExportXml_Success", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à When both size-based and date-based rotation are enabled, size rotation takes precedence..
+        /// </summary>
+        public static string Info_DateRotation {
+            get {
+                return ResourceManager.GetString("Info_DateRotation", resourceCulture);
             }
         }
         
@@ -314,6 +350,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Date Rotation Interval.
+        /// </summary>
+        public static string Label_DateRotationType {
+            get {
+                return ResourceManager.GetString("Label_DateRotationType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable date-based Rotation.
+        /// </summary>
+        public static string Label_EnableDateRotation {
+            get {
+                return ResourceManager.GetString("Label_EnableDateRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Enable Debug Logs.
         /// </summary>
         public static string Label_EnableDebugLogs {
@@ -332,11 +386,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enable File Rotation.
+        ///   Recherche une chaîne localisée semblable à Enable size-based Rotation.
         /// </summary>
-        public static string Label_EnableRotation {
+        public static string Label_EnableSizeRotation {
             get {
-                return ResourceManager.GetString("Label_EnableRotation", resourceCulture);
+                return ResourceManager.GetString("Label_EnableSizeRotation", resourceCulture);
             }
         }
         
