@@ -594,11 +594,18 @@ namespace Servy.Infrastructure.UnitTests.Data
                 StderrPath = "err.log",
                 EnableRotation = true,
                 RotationSize = 2048,
+                EnableDateRotation = true,
+                DateRotationType = (int)DateRotationType.Weekly,
+                MaxRotations = 5,
+                EnableDebugLogs = true,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 60,
                 MaxFailedChecks = 5,
                 RecoveryAction = (int)RecoveryAction.RestartService,
                 MaxRestartAttempts = 7,
+                FailureProgramPath = @"C:\apps\failure_prog.exe",
+                FailureProgramParameters = "--param1",
+                FailureProgramStartupDirectory = @"C:\apps",
                 EnvironmentVariables = "ENV=1",
                 ServiceDependencies = "Dep1,Dep2",
                 RunAsLocalSystem = false,
@@ -612,7 +619,10 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PreLaunchStderrPath = "preerr.log",
                 PreLaunchTimeoutSeconds = 120,
                 PreLaunchRetryAttempts = 2,
-                PreLaunchIgnoreFailure = true
+                PreLaunchIgnoreFailure = true,
+                PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
+                PostLaunchParameters = "--post-param1",
+                PostLaunchStartupDirectory = @"C:\apps\post_launch\",
             };
 
             var domain = InvokeMapToDomain(dto);
@@ -628,11 +638,18 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(dto.StderrPath, domain.StderrPath);
             Assert.True(domain.EnableRotation);
             Assert.Equal(2048, domain.RotationSize);
+            Assert.Equal(dto.EnableDateRotation, domain.EnableDateRotation);
+            Assert.Equal(dto.DateRotationType, (int)domain.DateRotationType);
+            Assert.Equal(dto.MaxRotations, domain.MaxRotations);
+            Assert.Equal(dto.EnableDebugLogs, domain.EnableDebugLogs);
             Assert.True(domain.EnableHealthMonitoring);
             Assert.Equal(60, domain.HeartbeatInterval);
             Assert.Equal(5, domain.MaxFailedChecks);
             Assert.Equal(RecoveryAction.RestartService, domain.RecoveryAction);
             Assert.Equal(7, domain.MaxRestartAttempts);
+            Assert.Equal(dto.FailureProgramPath, domain.FailureProgramPath);
+            Assert.Equal(dto.FailureProgramStartupDirectory, domain.FailureProgramStartupDirectory);
+            Assert.Equal(dto.FailureProgramParameters, domain.FailureProgramParameters);
             Assert.Equal("ENV=1", domain.EnvironmentVariables);
             Assert.Equal("Dep1,Dep2", domain.ServiceDependencies);
             Assert.False(domain.RunAsLocalSystem);
@@ -647,6 +664,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(120, domain.PreLaunchTimeoutSeconds);
             Assert.Equal(2, domain.PreLaunchRetryAttempts);
             Assert.True(domain.PreLaunchIgnoreFailure);
+            Assert.Equal(dto.PostLaunchExecutablePath, domain.PostLaunchExecutablePath);
+            Assert.Equal(dto.PostLaunchStartupDirectory, domain.PostLaunchStartupDirectory);
+            Assert.Equal(dto.PostLaunchParameters, domain.PostLaunchParameters);
         }
 
         [Fact]
@@ -659,6 +679,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(ServiceStartType.Manual, domain.StartupType);
             Assert.Equal(ProcessPriority.Normal, domain.Priority);
             Assert.False(domain.EnableRotation);
+            Assert.False(domain.EnableDateRotation);
+            Assert.Equal(DateRotationType.Daily, domain.DateRotationType);
+            Assert.Equal(AppConfig.DefaultMaxRotations, domain.MaxRotations);
             Assert.Equal(AppConfig.DefaultRotationSize, domain.RotationSize);
             Assert.False(domain.EnableHealthMonitoring);
             Assert.Equal(30, domain.HeartbeatInterval);

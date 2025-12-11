@@ -61,6 +61,7 @@ namespace Servy.CLI.Commands
                 // Parse enums safely with defaults
                 var startupType = ParseEnumOption(opts.ServiceStartType, ServiceStartType.Automatic);
                 var processPriority = ParseEnumOption(opts.ProcessPriority, ProcessPriority.Normal);
+                var dateRotationType = ParseEnumOption(opts.DateRotationType, DateRotationType.Daily);
                 var recoveryAction = ParseEnumOption(opts.RecoveryAction, RecoveryAction.RestartService);
 
                 // Parse numeric options
@@ -84,7 +85,7 @@ namespace Servy.CLI.Commands
                     processPriority,
                     opts.StdoutPath,
                     opts.StderrPath,
-                    opts.EnableRotation,
+                    opts.EnableRotation || opts.EnableSizeRotation,
                     rotationSize,
                     opts.EnableHealthMonitoring,
                     heartbeatInterval,
@@ -118,7 +119,10 @@ namespace Servy.CLI.Commands
                     // Display name
                     displayName: opts.ServiceDisplayName,
                     // Max Rotations
-                    maxRotations: maxRotations
+                    maxRotations: maxRotations,
+                    // Date rotation
+                    enableDateRotation: opts.EnableDateRotation,
+                    dateRotationType: dateRotationType
                 );
 
                 if (!success)

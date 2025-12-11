@@ -59,14 +59,24 @@ namespace Servy.Models
         public string StderrPath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether log rotation is enabled.
+        /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// </summary>
-        public bool EnableRotation { get; set; }
+        public bool EnableSizeRotation { get; set; }
 
         /// <summary>
         /// Gets or sets the rotation size in MB.
         /// </summary>
         public string RotationSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether date-based log rotation is enabled.
+        /// </summary>
+        public bool EnableDateRotation { get; set; }
+
+        /// <summary>
+        /// Gets or sets the date rotation interval.
+        /// </summary>
+        public DateRotationType DateRotationType { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.

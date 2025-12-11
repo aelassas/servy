@@ -197,12 +197,17 @@ namespace Servy.ViewModels
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether log rotation is enabled.
+        /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// </summary>
-        public bool EnableRotation
+        public bool EnableSizeRotation
         {
-            get => _config.EnableRotation;
-            set { _config.EnableRotation = value; OnPropertyChanged(); }
+            get => _config.EnableSizeRotation;
+            set
+            {
+                _config.EnableSizeRotation = value;
+                OnPropertyChanged(nameof(EnableSizeRotation));
+                OnPropertyChanged(nameof(EnableRotation));
+            }
         }
 
         /// <summary>
@@ -213,6 +218,44 @@ namespace Servy.ViewModels
             get => _config.RotationSize;
             set { _config.RotationSize = value; OnPropertyChanged(); }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether date-based log rotation is enabled.
+        /// </summary>
+        public bool EnableDateRotation
+        {
+            get => _config.EnableDateRotation;
+            set
+            {
+                _config.EnableDateRotation = value;
+                OnPropertyChanged(nameof(EnableDateRotation));
+                OnPropertyChanged(nameof(EnableRotation));
+            }
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether log rotation is enabled.
+        /// </summary>
+        public bool EnableRotation => EnableSizeRotation || EnableDateRotation;
+
+        /// <summary>
+        /// Gets or sets the startup type selected for the service.
+        /// </summary>
+        public DateRotationType SelectedDateRotationType
+        {
+            get => _config.DateRotationType;
+            set { _config.DateRotationType = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets the list of available startup types for services.
+        /// </summary>
+        public List<DateRotationTypeItem> DateRotationTypes { get; } = new List<DateRotationTypeItem>
+        {
+            new DateRotationTypeItem { DateRotationType = DateRotationType.Daily, DisplayName = Strings.DateRotationType_Daily},
+            new DateRotationTypeItem { DateRotationType = DateRotationType.Weekly, DisplayName = Strings.DateRotationType_Weekly},
+            new DateRotationTypeItem { DateRotationType = DateRotationType.Monthly, DisplayName = Strings.DateRotationType_Monthly },
+        };
 
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
@@ -653,8 +696,10 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
-            EnableRotation = false;
+            EnableSizeRotation = false;
             RotationSize = DefaultRotationSize.ToString();
+            EnableDateRotation = false;
+            SelectedDateRotationType = DateRotationType.Daily;
             MaxRotations = DefaultMaxRotations.ToString();
             SelectedRecoveryAction = RecoveryAction.RestartService;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
@@ -892,7 +937,7 @@ namespace Servy.ViewModels
                 _config.Priority,
                 _config.StdoutPath,
                 _config.StderrPath,
-                _config.EnableRotation,
+                _config.EnableSizeRotation,
                 _config.RotationSize,
                 _config.EnableHealthMonitoring,
                 _config.HeartbeatInterval,
@@ -922,7 +967,9 @@ namespace Servy.ViewModels
                 _config.PostLaunchParameters,
                 _config.EnableDebugLogs,
                 _config.DisplayName,
-                _config.MaxRotations
+                _config.MaxRotations,
+                _config.EnableDateRotation,
+                _config.DateRotationType
                 );
         }
 
@@ -990,9 +1037,11 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
-            EnableRotation = false;
+            EnableSizeRotation = false;
             RotationSize = DefaultRotationSize.ToString();
             MaxRotations = DefaultMaxRotations.ToString();
+            EnableDateRotation = false;
+            SelectedDateRotationType = DateRotationType.Daily;
             StdoutPath = string.Empty;
             StderrPath = string.Empty;
             EnableHealthMonitoring = false;
@@ -1099,9 +1148,9 @@ namespace Servy.ViewModels
         {
             await _helpService.OpenAboutDialog(
                 string.Format(Strings.Text_About,
-                Core.Config.AppConfig.Version,
-                Helper.GetBuiltWithFramework(),
-                DateTime.Now.Year),
+                    Core.Config.AppConfig.Version,
+                    Helper.GetBuiltWithFramework(),
+                    DateTime.Now.Year),
                 AppConfig.Caption);
         }
 
@@ -1134,8 +1183,10 @@ namespace Servy.ViewModels
             SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
             StdoutPath = dto.StdoutPath;
             StderrPath = dto.StderrPath;
-            EnableRotation = dto.EnableRotation ?? false;
+            EnableSizeRotation = dto.EnableRotation ?? false;
             RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
+            EnableDateRotation = dto.EnableDateRotation ?? false;
+            SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
             MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
             EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
             HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
@@ -1196,8 +1247,10 @@ namespace Servy.ViewModels
                 Priority = (int)SelectedProcessPriority,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
-                EnableRotation = EnableRotation,
+                EnableRotation = EnableSizeRotation,
                 RotationSize = int.TryParse(RotationSize, out var rs) ? rs : 0,
+                EnableDateRotation = EnableDateRotation,
+                DateRotationType = (int)SelectedDateRotationType,
                 MaxRotations = int.TryParse(MaxRotations, out var mrs) ? mrs : 0,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(HeartbeatInterval, out var hi) ? hi : 0,

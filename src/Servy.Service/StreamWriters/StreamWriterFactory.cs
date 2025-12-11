@@ -1,4 +1,6 @@
-﻿namespace Servy.Service.StreamWriters
+﻿using Servy.Core.Enums;
+
+namespace Servy.Service.StreamWriters
 {
     /// <summary>
     /// Default implementation of <see cref="IStreamWriterFactory"/> that creates
@@ -7,9 +9,20 @@
     public class StreamWriterFactory : IStreamWriterFactory
     {
         /// <inheritdoc/>
-        public IStreamWriter Create(string path, long rotationSizeInBytes, int maxRotations)
+        public IStreamWriter Create(
+            string path,
+            bool enableSizeRotation,
+            long rotationSizeInBytes,
+            bool enableDateRotation,
+            DateRotationType dateRotationType,
+            int maxRotations)
         {
-            return new RotatingStreamWriterAdapter(path, rotationSizeInBytes, maxRotations);
+            return new RotatingStreamWriterAdapter(path,
+                enableSizeRotation,
+                rotationSizeInBytes,
+                enableDateRotation,
+                dateRotationType,
+                maxRotations);
         }
     }
 }

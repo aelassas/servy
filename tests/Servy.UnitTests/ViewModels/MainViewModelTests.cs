@@ -71,7 +71,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.ProcessParameters = "--flag";
             _viewModel.StdoutPath = "out.log";
             _viewModel.StderrPath = "err.log";
-            _viewModel.EnableRotation = true;
+            _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "12345";
             _viewModel.EnableHealthMonitoring = true;
             _viewModel.HeartbeatInterval = "60";
@@ -105,6 +105,8 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PostLaunchStartupDirectory = @"C:\";
             _viewModel.PostLaunchParameters = "--param1 val1";
             _viewModel.MaxRotations = "5";
+            _viewModel.EnableDateRotation = true;
+            _viewModel.SelectedDateRotationType = DateRotationType.Weekly;
 
             // Act
             _viewModel.InstallCommand.Execute(null);
@@ -153,7 +155,9 @@ namespace Servy.UnitTests.ViewModels
                  "--param1 val1",
                  false,
                  "TestServiceDisplayName",
-                 "5"
+                 "5",
+                 true,
+                 DateRotationType.Weekly
             ), Times.Once);
         }
 
@@ -163,7 +167,7 @@ namespace Servy.UnitTests.ViewModels
             // Arrange
             _viewModel.ServiceName = "TestService";
             _viewModel.ProcessPath = "test.exe";
-            _viewModel.EnableRotation = true;
+            _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "555";
 
             // Mock dialog service to always confirm
@@ -177,7 +181,7 @@ namespace Servy.UnitTests.ViewModels
             // Assert
             Assert.Equal(string.Empty, _viewModel.ServiceName);
             Assert.Equal(string.Empty, _viewModel.ProcessPath);
-            Assert.False(_viewModel.EnableRotation);
+            Assert.False(_viewModel.EnableSizeRotation);
             Assert.Equal(AppConfig.DefaultRotationSize.ToString(), _viewModel.RotationSize);
         }
 
@@ -187,7 +191,7 @@ namespace Servy.UnitTests.ViewModels
             // Arrange
             _viewModel.ServiceName = "TestService";
             _viewModel.ProcessPath = "test.exe";
-            _viewModel.EnableRotation = true;
+            _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "555";
 
             // Mock dialog service to cancel
@@ -201,7 +205,7 @@ namespace Servy.UnitTests.ViewModels
             // Assert values remain unchanged
             Assert.Equal("TestService", _viewModel.ServiceName);
             Assert.Equal("test.exe", _viewModel.ProcessPath);
-            Assert.True(_viewModel.EnableRotation);
+            Assert.True(_viewModel.EnableSizeRotation);
             Assert.Equal("555", _viewModel.RotationSize);
         }
 

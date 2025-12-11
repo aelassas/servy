@@ -1,4 +1,5 @@
-﻿using Servy.Core.IO;
+﻿using Servy.Core.Enums;
+using Servy.Core.IO;
 using System;
 
 namespace Servy.Service.StreamWriters
@@ -15,12 +16,34 @@ namespace Servy.Service.StreamWriters
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriterAdapter"/> class.
         /// </summary>
-        /// <param name="path">The file path to write logs to.</param>
-        /// <param name="rotationSize">The maximum file size in bytes before rotation.</param>
+        /// <param name="path">The path to the log file.</param>
+        /// <param name="enableSizeRotation">
+        /// Enables rotation when the log file exceeds the size specified
+        /// in <paramref name="rotationSizeInBytes"/>.
+        /// </param>
+        /// <param name="rotationSizeInBytes">The maximum file size in bytes before rotating.</param>
+        /// <param name="enableDateRotation">
+        /// Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.
+        /// </param>
+        /// <param name="dateRotationType">
+        /// Defines the date-based rotation schedule (daily, weekly, or monthly).
+        /// Ignored when <paramref name="enableDateRotation"/> is <c>false</c>.
+        /// </param>
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
-        public RotatingStreamWriterAdapter(string path, long rotationSize, int maxRotations)
+        /// <remarks>
+        /// When both size-based and date-based rotation are enabled,
+        /// size rotation takes precedence. If a size-based rotation occurs,
+        /// date-based rotation is skipped for that write.
+        /// </remarks>
+        public RotatingStreamWriterAdapter(
+            string path,
+            bool enableSizeRotation,
+            long rotationSizeInBytes,
+            bool enableDateRotation,
+            DateRotationType dateRotationType,
+            int maxRotations)
         {
-            _inner = new RotatingStreamWriter(path, rotationSize, maxRotations);
+            _inner = new RotatingStreamWriter(path, enableSizeRotation, rotationSizeInBytes, enableDateRotation, dateRotationType, maxRotations);
         }
 
         /// <inheritdoc/>
