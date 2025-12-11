@@ -66,7 +66,8 @@ namespace Servy.Infrastructure.Data
                     PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
+                    EnableDateRotation, DateRotationType
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -75,7 +76,8 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
+                    @EnableDateRotation, @DateRotationType
                 );
                 SELECT last_insert_rowid();";
 
@@ -135,7 +137,10 @@ namespace Servy.Infrastructure.Data
 
                     DisplayName = @DisplayName,
 
-                    MaxRotations = @MaxRotations
+                    MaxRotations = @MaxRotations,
+
+                    EnableDateRotation = @EnableDateRotation,
+                    DateRotationType = @DateRotationType
 
                 WHERE Id = @Id;";
 
@@ -407,6 +412,9 @@ namespace Servy.Infrastructure.Data
                 StderrPath = dto.StderrPath,
                 EnableRotation = dto.EnableRotation ?? false,
                 RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize,
+                EnableDateRotation = dto.EnableDateRotation ?? false,
+                DateRotationType = dto.DateRotationType.HasValue ? (DateRotationType)dto.DateRotationType.Value : DateRotationType.Daily,
+                MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
                 EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = dto.HeartbeatInterval ?? 30,
                 MaxFailedChecks = dto.MaxFailedChecks ?? 3,
@@ -437,8 +445,6 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
 
                 DisplayName = dto.DisplayName,
-
-                MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
             };
         }
 
@@ -465,6 +471,9 @@ namespace Servy.Infrastructure.Data
                 StderrPath = domain.StderrPath,
                 EnableRotation = domain.EnableRotation,
                 RotationSize = domain.RotationSize,
+                EnableDateRotation = domain.EnableDateRotation,
+                DateRotationType = (int)domain.DateRotationType,
+                MaxRotations = domain.MaxRotations,
                 EnableHealthMonitoring = domain.EnableHealthMonitoring,
                 HeartbeatInterval = domain.HeartbeatInterval,
                 MaxFailedChecks = domain.MaxFailedChecks,
@@ -495,8 +504,6 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = domain.EnableDebugLogs,
 
                 DisplayName = domain.DisplayName,
-
-                MaxRotations = domain.MaxRotations,
             };
         }
 

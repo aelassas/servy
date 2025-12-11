@@ -54,6 +54,9 @@
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
     <value>Rotation size must be a number of Megabytes (MB) greater than or equal to 1 MB.</value>
   </data>
+  <data name="Msg_InvalidDateRotationType" xml:space="preserve">
+    <value>The specified date rotation type is invalid. Options: Daily, Weekly, Monthly.</value>
+  </data>
   <data name="Msg_InvalidMaxRotations" xml:space="preserve">
     <value>Max rotations must be a number greater than or equal to 0.</value>
   </data>

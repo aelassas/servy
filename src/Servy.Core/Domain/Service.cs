@@ -94,7 +94,7 @@ namespace Servy.Core.Domain
         public string StderrPath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether log rotation is enabled.
+        /// Gets or sets a value indicating whether size log rotation is enabled.
         /// Default is false.
         /// </summary>
         public bool EnableRotation { get; set; } = false;
@@ -103,6 +103,17 @@ namespace Servy.Core.Domain
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
         /// </summary>
         public int RotationSize { get; set; } = AppConfig.DefaultRotationSize;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether date log rotation is enabled.
+        /// Default is false.
+        /// </summary>
+        public bool EnableDateRotation { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating date rotation type (stored as int, represents <see cref="Servy.Core.Enums.DateRotationType"/>).
+        /// </summary>
+        public DateRotationType DateRotationType { get; set; }
 
         /// <summary>
         /// Maximum number of rotated log files to keep. 
@@ -373,7 +384,7 @@ namespace Servy.Core.Domain
                 processPriority: Priority,
                 stdoutPath: StdoutPath,
                 stderrPath: StderrPath,
-                enableRotation: EnableRotation,
+                enableSizeRotation: EnableRotation,
                 rotationSizeInBytes: (ulong)RotationSize * 1024 * 1024,
                 enableHealthMonitoring: EnableHealthMonitoring,
                 heartbeatInterval: HeartbeatInterval,
@@ -405,7 +416,10 @@ namespace Servy.Core.Domain
 
                 displayName: DisplayName,
 
-                maxRotations: MaxRotations
+                maxRotations: MaxRotations,
+
+                enableDateRotation: EnableDateRotation,
+                dateRotationType: DateRotationType
             );
         }
 

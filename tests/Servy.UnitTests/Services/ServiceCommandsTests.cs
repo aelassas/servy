@@ -6,9 +6,9 @@ using Servy.Services;
 using Servy.UI.Services;
 using Servy.Validators;
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using Xunit;
+using System.IO;
 
 namespace Servy.UnitTests.Services
 {
@@ -75,6 +75,8 @@ namespace Servy.UnitTests.Services
             var postLaunchArgs = "postLaunchArgs";
             var enableDebugLogs = false;
             var maxRotations = "0";
+            var enableDateRotation = true;
+            var dateRotationType = DateRotationType.Weekly;
 
             // Act
             _mockServiceCommands.Object.InstallService(
@@ -121,7 +123,10 @@ namespace Servy.UnitTests.Services
                 enableDebugLogs,
 
                 serviceDisplayName,
-                maxRotations
+                maxRotations,
+
+                enableDateRotation,
+                dateRotationType
                 );
 
             // Assert
@@ -169,7 +174,10 @@ namespace Servy.UnitTests.Services
                 enableDebugLogs,
 
                 serviceDisplayName,
-                maxRotations
+                maxRotations,
+
+                enableDateRotation,
+                dateRotationType
                 ), Times.Once);
         }
 

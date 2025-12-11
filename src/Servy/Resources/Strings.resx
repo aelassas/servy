@@ -175,14 +175,32 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_StderrPath" xml:space="preserve">
     <value>Stderr File Path</value>
   </data>
-  <data name="Label_EnableRotation" xml:space="preserve">
-    <value>Enable File Rotation</value>
+  <data name="Label_EnableSizeRotation" xml:space="preserve">
+    <value>Enable size-based Rotation</value>
   </data>
   <data name="Label_RotationSize" xml:space="preserve">
     <value>Rotation Size</value>
   </data>
   <data name="Label_RotationSizeUnity" xml:space="preserve">
     <value>Megabytes (MB)</value>
+  </data>
+  <data name="Label_EnableDateRotation" xml:space="preserve">
+    <value>Enable date-based Rotation</value>
+  </data>
+  <data name="Label_DateRotationType" xml:space="preserve">
+    <value>Date Rotation Interval</value>
+  </data>
+  <data name="DateRotationType_Daily" xml:space="preserve">
+    <value>Daily (default)</value>
+  </data>
+  <data name="DateRotationType_Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="DateRotationType_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Info_DateRotation" xml:space="preserve">
+    <value>When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
   </data>
 
   <data name="Label_MaxRotations" xml:space="preserve">

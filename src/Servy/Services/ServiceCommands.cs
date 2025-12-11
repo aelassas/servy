@@ -86,7 +86,7 @@ namespace Servy.Services
             ProcessPriority processPriority,
             string stdoutPath,
             string stderrPath,
-            bool enableRotation,
+            bool enableSizeRotation,
             string rotationSize,
             bool enableHealthMonitoring,
             string heartbeatInterval,
@@ -116,7 +116,9 @@ namespace Servy.Services
             string postLaunchArgs,
             bool enableDebugLogs,
             string displayName,
-            string maxRotations
+            string maxRotations,
+            bool enableDateRotation,
+            DateRotationType dateRotationType
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -140,8 +142,11 @@ namespace Servy.Services
                 Priority = (int)processPriority,
                 StdoutPath = stdoutPath,
                 StderrPath = stderrPath,
-                EnableRotation = enableRotation,
+                EnableRotation = enableSizeRotation,
                 RotationSize = int.TryParse(rotationSize, out var rs) ? rs : -1,
+                EnableDateRotation = enableDateRotation,
+                DateRotationType = (int)dateRotationType,
+                MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
                 EnableHealthMonitoring = enableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : -1,
                 MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : -1,
@@ -168,8 +173,6 @@ namespace Servy.Services
                 PostLaunchExecutablePath = postLaunchExePath,
                 PostLaunchStartupDirectory = postLaunchWorkingDirectory,
                 PostLaunchParameters = postLaunchArgs,
-
-                MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
             };
 
             // Validate
@@ -217,7 +220,7 @@ namespace Servy.Services
                     processPriority: processPriority,
                     stdoutPath: stdoutPath,
                     stderrPath: stderrPath,
-                    enableRotation: enableRotation,
+                    enableSizeRotation: enableSizeRotation,
                     rotationSizeInBytes: rotationSizeValue,
                     enableHealthMonitoring: enableHealthMonitoring,
                     heartbeatInterval: heartbeatIntervalValue,
@@ -245,7 +248,9 @@ namespace Servy.Services
                     postLaunchArgs: postLaunchArgs,
                     enableDebugLogs: enableDebugLogs,
                     displayName: displayName,
-                    maxRotations: maxRotationsValue
+                    maxRotations: maxRotationsValue,
+                    enableDateRotation: enableDateRotation,
+                    dateRotationType: dateRotationType
                 );
 
                 if (success)

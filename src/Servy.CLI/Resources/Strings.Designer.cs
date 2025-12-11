@@ -79,6 +79,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified date rotation type is invalid. Options: Daily, Weekly, Monthly..
+        /// </summary>
+        public static string Msg_InvalidDateRotationType {
+            get {
+                return ResourceManager.GetString("Msg_InvalidDateRotationType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The failure program path is invalid..
         /// </summary>
         public static string Msg_InvalidFailureProgramPath {

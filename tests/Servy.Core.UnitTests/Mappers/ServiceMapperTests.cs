@@ -43,11 +43,18 @@ namespace Servy.Core.UnitTests.Mappers
                 StderrPath = "stderr.log",
                 EnableRotation = true,
                 RotationSize = 2048,
+                EnableDateRotation = true,
+                DateRotationType = DateRotationType.Daily,
+                MaxRotations = 5,
+                EnableDebugLogs = true,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 60,
                 MaxFailedChecks = 5,
                 RecoveryAction = RecoveryAction.RestartService,
                 MaxRestartAttempts = 10,
+                FailureProgramPath = @"C:\apps\failure_prog.exe",
+                FailureProgramParameters = "--param1",
+                FailureProgramStartupDirectory = @"C:\apps",
                 EnvironmentVariables = "KEY1=VALUE1;KEY2=VALUE2",
                 ServiceDependencies = "Dep1,Dep2",
                 RunAsLocalSystem = false,
@@ -61,7 +68,10 @@ namespace Servy.Core.UnitTests.Mappers
                 PreLaunchStderrPath = "pre_stderr.log",
                 PreLaunchTimeoutSeconds = 45,
                 PreLaunchRetryAttempts = 2,
-                PreLaunchIgnoreFailure = true
+                PreLaunchIgnoreFailure = true,
+                PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
+                PostLaunchParameters = "--post-param1",
+                PostLaunchStartupDirectory = @"C:\apps\post_launch\",
             };
 
             // Act
@@ -80,11 +90,18 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(service.StderrPath, dto.StderrPath);
             Assert.Equal(service.EnableRotation, dto.EnableRotation);
             Assert.Equal(service.RotationSize, dto.RotationSize);
+            Assert.Equal(service.EnableDateRotation, dto.EnableDateRotation);
+            Assert.Equal((int)service.DateRotationType, dto.DateRotationType);
+            Assert.Equal(service.MaxRotations, dto.MaxRotations);
+            Assert.Equal(service.EnableDebugLogs, dto.EnableDebugLogs);
             Assert.Equal(service.EnableHealthMonitoring, dto.EnableHealthMonitoring);
             Assert.Equal(service.HeartbeatInterval, dto.HeartbeatInterval);
             Assert.Equal(service.MaxFailedChecks, dto.MaxFailedChecks);
             Assert.Equal((int)service.RecoveryAction, dto.RecoveryAction);
             Assert.Equal(service.MaxRestartAttempts, dto.MaxRestartAttempts);
+            Assert.Equal(service.FailureProgramPath, dto.FailureProgramPath);
+            Assert.Equal(service.FailureProgramStartupDirectory, dto.FailureProgramStartupDirectory);
+            Assert.Equal(service.FailureProgramParameters, dto.FailureProgramParameters);
             Assert.Equal(service.EnvironmentVariables, dto.EnvironmentVariables);
             Assert.Equal(service.ServiceDependencies, dto.ServiceDependencies);
             Assert.Equal(service.RunAsLocalSystem, dto.RunAsLocalSystem);
@@ -99,6 +116,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(service.PreLaunchTimeoutSeconds, dto.PreLaunchTimeoutSeconds);
             Assert.Equal(service.PreLaunchRetryAttempts, dto.PreLaunchRetryAttempts);
             Assert.Equal(service.PreLaunchIgnoreFailure, dto.PreLaunchIgnoreFailure);
+            Assert.Equal(service.PostLaunchExecutablePath, dto.PostLaunchExecutablePath);
+            Assert.Equal(service.PostLaunchStartupDirectory, dto.PostLaunchStartupDirectory);
+            Assert.Equal(service.PostLaunchParameters, dto.PostLaunchParameters);
         }
 
         [Fact]
@@ -118,11 +138,18 @@ namespace Servy.Core.UnitTests.Mappers
                 StderrPath = "stderr.log",
                 EnableRotation = true,
                 RotationSize = 4096,
+                EnableDateRotation = true,
+                DateRotationType = (int)DateRotationType.Weekly,
+                MaxRotations = 5,
+                EnableDebugLogs = true,
                 EnableHealthMonitoring = false,
                 HeartbeatInterval = 90,
                 MaxFailedChecks = 7,
                 RecoveryAction = (int)RecoveryAction.None,
                 MaxRestartAttempts = 20,
+                FailureProgramPath = @"C:\apps\failure_prog.exe",
+                FailureProgramParameters = "--param1",
+                FailureProgramStartupDirectory = @"C:\apps",
                 EnvironmentVariables = "KEY1=VALUE1",
                 ServiceDependencies = "DepA,DepB",
                 RunAsLocalSystem = true,
@@ -136,7 +163,10 @@ namespace Servy.Core.UnitTests.Mappers
                 PreLaunchStderrPath = "pre_stderr.log",
                 PreLaunchTimeoutSeconds = 50,
                 PreLaunchRetryAttempts = 3,
-                PreLaunchIgnoreFailure = false
+                PreLaunchIgnoreFailure = false,
+                PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
+                PostLaunchParameters = "--post-param1",
+                PostLaunchStartupDirectory = @"C:\apps\post_launch\",
             };
 
             // Act
@@ -154,11 +184,18 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.StderrPath, service.StderrPath);
             Assert.Equal(dto.EnableRotation, service.EnableRotation);
             Assert.Equal(dto.RotationSize, service.RotationSize);
+            Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
+            Assert.Equal(dto.DateRotationType, (int)service.DateRotationType);
+            Assert.Equal(dto.MaxRotations, service.MaxRotations);
+            Assert.Equal(dto.EnableDebugLogs, service.EnableDebugLogs);
             Assert.Equal(dto.EnableHealthMonitoring, service.EnableHealthMonitoring);
             Assert.Equal(dto.HeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(dto.MaxFailedChecks, service.MaxFailedChecks);
             Assert.Equal((RecoveryAction)dto.RecoveryAction, service.RecoveryAction);
             Assert.Equal(dto.MaxRestartAttempts, service.MaxRestartAttempts);
+            Assert.Equal(dto.FailureProgramPath, service.FailureProgramPath);
+            Assert.Equal(dto.FailureProgramStartupDirectory, service.FailureProgramStartupDirectory);
+            Assert.Equal(dto.FailureProgramParameters, service.FailureProgramParameters);
             Assert.Equal(dto.EnvironmentVariables, service.EnvironmentVariables);
             Assert.Equal(dto.ServiceDependencies, service.ServiceDependencies);
             Assert.Equal(dto.RunAsLocalSystem, service.RunAsLocalSystem);
@@ -173,6 +210,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.PreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
             Assert.Equal(dto.PreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
             Assert.Equal(dto.PreLaunchIgnoreFailure, service.PreLaunchIgnoreFailure);
+            Assert.Equal(dto.PostLaunchExecutablePath, service.PostLaunchExecutablePath);
+            Assert.Equal(dto.PostLaunchStartupDirectory, service.PostLaunchStartupDirectory);
+            Assert.Equal(dto.PostLaunchParameters, service.PostLaunchParameters);
         }
 
         [Fact]
@@ -191,11 +231,18 @@ namespace Servy.Core.UnitTests.Mappers
                 StderrPath = "stderr.log",
                 EnableRotation = null,
                 RotationSize = null,
+                EnableDateRotation = null,
+                DateRotationType = null,
+                MaxRotations = null,
+                EnableDebugLogs = null,
                 EnableHealthMonitoring = null,
                 HeartbeatInterval = null,
                 MaxFailedChecks = null,
                 RecoveryAction = null,
                 MaxRestartAttempts = null,
+                FailureProgramPath = null,
+                FailureProgramStartupDirectory = null,
+                FailureProgramParameters = null,
                 EnvironmentVariables = null,
                 ServiceDependencies = null,
                 RunAsLocalSystem = null,
@@ -209,7 +256,10 @@ namespace Servy.Core.UnitTests.Mappers
                 PreLaunchStderrPath = null,
                 PreLaunchTimeoutSeconds = null,
                 PreLaunchRetryAttempts = null,
-                PreLaunchIgnoreFailure = null
+                PreLaunchIgnoreFailure = null,
+                PostLaunchExecutablePath = null,
+                PostLaunchStartupDirectory = null,
+                PostLaunchParameters = null,
             };
 
             var service = ServiceMapper.ToDomain(null, dto);
@@ -221,6 +271,9 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(ProcessPriority.Normal, service.Priority); // default branch
             Assert.False(service.EnableRotation); // default branch
             Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // default branch
+            Assert.False(service.EnableDateRotation); // default branch
+            Assert.Equal(DateRotationType.Daily, service.DateRotationType); // default branch
+            Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
             Assert.False(service.EnableHealthMonitoring);
             Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
@@ -423,3 +476,4 @@ namespace Servy.Core.UnitTests.Mappers
 
     }
 }
+
