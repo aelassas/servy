@@ -94,7 +94,7 @@ namespace Servy.Core.Domain
         public string StderrPath { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether size log rotation is enabled.
+        /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// Default is false.
         /// </summary>
         public bool EnableRotation { get; set; } = false;
@@ -105,7 +105,7 @@ namespace Servy.Core.Domain
         public int RotationSize { get; set; } = AppConfig.DefaultRotationSize;
 
         /// <summary>
-        /// Gets or sets a value indicating whether date log rotation is enabled.
+        /// Gets or sets a value indicating whether date-based log rotation is enabled.
         /// Default is false.
         /// </summary>
         public bool EnableDateRotation { get; set; } = false;
