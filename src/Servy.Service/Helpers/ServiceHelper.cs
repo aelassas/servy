@@ -70,7 +70,9 @@ namespace Servy.Service.Helpers
                   // realArgs are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- realArgs: {options.ExecutableArgs}\n") +
                   $"- workingDir: {options.WorkingDirectory}\n" +
-                  $"- priority: {options.Priority}\n" +
+                  $"- priority: {options.Priority}\n\n" +
+
+                  "--------Logging----------------\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
                   $"- stderrFilePath: {options.StdErrPath}\n" +
                   $"- enableSizeRotation: {options.EnableSizeRotation}\n" +
@@ -94,7 +96,7 @@ namespace Servy.Service.Helpers
                   // environmentVariables are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- environmentVariables: {envVarsFormatted}\n\n") +
 
-                  "--------Pre-Launch args--------\n" +
+                  "--------Pre-Launch--------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
                   // preLaunchExecutableArgs are not logged to avoid exposing sensitive information
@@ -107,7 +109,7 @@ namespace Servy.Service.Helpers
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +
 
-                  "--------Post-Launch args-------\n" +
+                  "--------Post-Launch-------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
                   // postLaunchExecutableArgs are not logged to avoid exposing sensitive information
