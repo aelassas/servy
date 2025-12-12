@@ -74,7 +74,9 @@ namespace Servy.Service.Helpers
                   // realArgs are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- realArgs: {options.ExecutableArgs}\n") +
                   $"- workingDir: {options.WorkingDirectory}\n" +
-                  $"- priority: {options.Priority}\n" +
+                  $"- priority: {options.Priority}\n\n" +
+
+                  "--------Logging----------------\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +
                   $"- stderrFilePath: {options.StdErrPath}\n" +
                   $"- enableSizeRotation: {options.EnableSizeRotation}\n" +
