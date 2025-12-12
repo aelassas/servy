@@ -56,26 +56,36 @@ SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease 
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
+Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone
+
+[Types]
+Name: "full"; Description: "Full installation"
+Name: "custom"; Description: "Custom installation"; Flags: iscustom
+
+[Components]
+Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
+Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
+Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
 
 [Files]
 ; Main app
-Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
+Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_main_app
 
 ; Appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}\cli"; DestName: "{#CliExeName}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_cli
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; CLI appsettings.json (only copy if not present, and never uninstall)
 ; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; Manager app
-Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}\manager"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"
+Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_manager
 
 ; taskschd
 Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
@@ -86,14 +96,22 @@ Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdo
 Name: "{commonappdata}\Servy"; Permissions: networkservice-modify service-modify
 
 [Icons]
-Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: install_main_app
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; Components: install_main_app
 
-Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"
-Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon
+Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
+Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
 ; [Run]
 ; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
+Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
+Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
+
+[UninstallDelete]
+; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
 // Declare Windows API function for refreshing icon cache
@@ -105,22 +123,95 @@ begin
   SHChangeNotify($8000000, $0, 0, 0); // SHCNE_ASSOCCHANGED = $8000000
 end;
 
-// Called after installation finishes
-procedure CurStepChanged(CurStep: TSetupStep);
+const
+  WM_SETTINGCHANGE = $001A;
+  SMTO_ABORTIFHUNG = $0002;
+
+function SendMessageTimeout(hWnd: LongWord; Msg: LongWord; wParam: LongWord;
+  lParam: string; fuFlags: LongWord; uTimeout: LongWord; var lpdwResult: LongWord): LongWord;
+  external 'SendMessageTimeoutW@user32.dll stdcall';
+
+procedure RefreshEnvironment;
+var
+  ResultCode: LongWord;
 begin
-  if CurStep = ssPostInstall then
+  SendMessageTimeout(
+    HWND_BROADCAST,
+    WM_SETTINGCHANGE,
+    0,
+    'Environment',        // pass string directly
+    SMTO_ABORTIFHUNG,
+    5000,
+    ResultCode
+  );
+end;
+  
+procedure AddToPath(const Folder: string);
+var
+  OldPath, NewPath: string;
+  ResultCode: LongWord;
+begin
+  // Read the current system PATH
+  if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
+    OldPath := '';
+
+  // Only add if it's not already there
+  if Pos(LowerCase(Folder), LowerCase(OldPath)) = 0 then
   begin
-    RefreshIconCache();
+    if OldPath <> '' then
+      NewPath := OldPath + ';' + Folder
+    else
+      NewPath := Folder;
+
+    // Write the new system PATH
+    if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
+    begin
+      MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+      Exit;
+    end;
+
+    // Notify the system about the environment change
+    RefreshEnvironment();
   end;
 end;
 
-[UninstallRun]
-Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
-Filename: "taskkill"; Parameters: "/im ""{#ManagerAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopManagerApp
-Filename: "taskkill"; Parameters: "/im ""{#CliExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopCliApp
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  InstallDir, OldPath, NewPath: string;
+  ResultCode: LongWord;
+  EnvPtr: LongInt;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    // Refresh icons
+    RefreshIconCache();
 
-[UninstallDelete]
-; Type: filesandordirs; Name: "{app}\taskschd"
+    // Add to PATH if task selected
+    if WizardIsTaskSelected('addpath') then
+    begin
+      InstallDir := ExpandConstant('{app}');
+      AddToPath(InstallDir);
+    end;
+    
+  end;
+end;
+
+[Code]
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  Result := True;
+
+  if CurPageID = wpSelectComponents then
+  begin
+    if not WizardIsComponentSelected('install_main_app') and
+       not WizardIsComponentSelected('install_cli') and
+       not WizardIsComponentSelected('install_manager') then
+    begin
+      MsgBox('You must select at least one component to continue.', mbError, MB_OK);
+      Result := False;
+    end;
+  end;
+end;
 
 [Code]
 function GetUninstallString(): String;
