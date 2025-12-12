@@ -185,10 +185,9 @@ namespace Servy.Core.IO
             bool rotateByDate = false;
 
             // --- SIZE ROTATION ---
-            if (_enableSizeRotation && _rotationSize > 0)
+            if (_enableSizeRotation && _rotationSize > 0 && _file.Length >= _rotationSize)
             {
-                if (_file.Length >= _rotationSize)
-                    rotateBySize = true;
+                rotateBySize = true;
             }
 
             // If size rotation matches, rotate immediately and return
