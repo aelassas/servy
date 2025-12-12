@@ -96,7 +96,6 @@ namespace Servy.CLI.Options
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// This option is deprecated and is kept for backward compatibility. Use --enableSizeRotation instead.
         /// </summary>
-        [Obsolete]
         [Option("enableRotation", HelpText = "Deprecated. Enable size-based log rotation. This option is kept only for backward compatibility. Use --enableSizeRotation instead.")]
         public bool EnableRotation { get; set; }
 
