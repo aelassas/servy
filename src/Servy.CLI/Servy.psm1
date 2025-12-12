@@ -238,7 +238,7 @@ function Install-ServyService {
         File path for capturing standard error logs. Optional.
 
     .PARAMETER EnableRotation
-        Deprecated. Enables size-based log rotation.
+        Deprecated. Switch to enable size-based log rotation.
         This switch is kept only for backward compatibility.
         Use -EnableSizeRotation instead.
 
