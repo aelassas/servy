@@ -2,6 +2,8 @@
 
 * [x] Windows Service creation via GUI
 * [x] Logging stdout/stderr with size-based rotation
+* [x] Logging stdout/stderr with date-based rotation ([#27](https://github.com/aelassas/servy/issues/27))
+* [x] Add max rotations option to specify the maximum number of rotated log files to keep ([#26](https://github.com/aelassas/servy/issues/26))
 * [x] Allow logging of stdout/stderr to the same file with size-based rotation ([#14](https://github.com/aelassas/servy/issues/14))
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
