@@ -235,7 +235,7 @@ namespace Servy.Core.Services
                 ProcessPriority processPriority = ProcessPriority.Normal,
                 string? stdoutPath = null,
                 string? stderrPath = null,
-                bool enableRotation = false,
+                bool enableSizeRotation = false,
                 ulong rotationSizeInBytes = AppConfig.DefaultRotationSize * 1024 * 1024,
                 bool enableHealthMonitoring = false,
                 int heartbeatInterval = AppConfig.DefaultHeartbeatInterval,
@@ -284,7 +284,7 @@ namespace Servy.Core.Services
                 Helper.Quote(processPriority.ToString()),
                 Helper.Quote(stdoutPath ?? string.Empty),
                 Helper.Quote(stderrPath ?? string.Empty),
-                Helper.Quote(enableRotation ? rotationSizeInBytes.ToString() : "0"),
+                Helper.Quote(enableSizeRotation ? rotationSizeInBytes.ToString() : "0"),
                 Helper.Quote(enableHealthMonitoring ? heartbeatInterval.ToString() : "0"),
                 Helper.Quote(enableHealthMonitoring ? maxFailedChecks.ToString() : "0"),
                 Helper.Quote(recoveryAction.ToString()),
@@ -320,7 +320,7 @@ namespace Servy.Core.Services
                 Helper.Quote(maxRotations.ToString()),
 
                 // Date rotation
-                Helper.Quote(enableRotation.ToString()), // size rotation
+                Helper.Quote(enableSizeRotation.ToString()), // size rotation
                 Helper.Quote(enableDateRotation.ToString()),
                 Helper.Quote(dateRotationType.ToString())
             );
@@ -383,7 +383,7 @@ namespace Servy.Core.Services
                     Priority = (int)processPriority,
                     StdoutPath = stdoutPath,
                     StderrPath = stderrPath,
-                    EnableRotation = enableRotation,
+                    EnableRotation = enableSizeRotation,
                     RotationSize = (int)(rotationSizeInBytes / (1024 * 1024)),
                     EnableDateRotation = enableDateRotation,
                     DateRotationType = (int)dateRotationType,
