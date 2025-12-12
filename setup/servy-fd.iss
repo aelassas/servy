@@ -265,15 +265,15 @@ begin
 
     if installedVersion < myAppVersion  then 
     begin 
-      message := 'An older version of Servy is already installed. Would you like to replace it with this newer version?';
+      message := 'An older version of Servy is already installed. Would you like to upgrade to this newer version?';
     end 
     else if installedVersion > myAppVersion then
     begin
-      message := 'A newer version of Servy is already installed. Would you like to replace it with this older version?';
+      message := 'A newer version of Servy is already installed. Are you sure you want to downgrade to this older version?';
     end
     else
     begin
-      message := 'The same version of Servy is already installed. Would you like to repair it?';
+      message := 'The same version of Servy is already installed. Would you like to reinstall it?';
     end;
 
     if WizardSilent then

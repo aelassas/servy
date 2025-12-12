@@ -96,7 +96,7 @@ namespace Servy.Service.Helpers
                   // environmentVariables are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- environmentVariables: {envVarsFormatted}\n\n") +
 
-                  "--------Pre-Launch--------\n" +
+                  "--------Pre-Launch-------------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
                   // preLaunchExecutableArgs are not logged to avoid exposing sensitive information
@@ -109,7 +109,7 @@ namespace Servy.Service.Helpers
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +
 
-                  "--------Post-Launch-------\n" +
+                  "--------Post-Launch------------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
                   // postLaunchExecutableArgs are not logged to avoid exposing sensitive information
