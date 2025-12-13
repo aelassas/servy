@@ -249,7 +249,9 @@ jobs:
 
           # Inject the signed EXE into each resource folder
           foreach ($t in $targets) {
-              Copy-Item $signed "$($t.Path)/$($t.Name)" -Force
+              $dst = Join-Path $t.Path $t.Name
+              Write-Host "Injecting SIGNED Servy.Service.exe into $dst"
+              Copy-Item $signed $dst -Force
               Copy-Item "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/*.dll" $t.Path -Force
           }
 
