@@ -176,7 +176,6 @@ end;
 procedure AddToPath(const Folder: string);
 var
   OldPath, NewPath: string;
-  ResultCode: LongWord;
 begin
   // Read the current system PATH
   if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
@@ -204,9 +203,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  InstallDir, OldPath, NewPath: string;
-  ResultCode: LongWord;
-  EnvPtr: LongInt;
+  InstallDir: string;
 begin
   if CurStep = ssPostInstall then
   begin
