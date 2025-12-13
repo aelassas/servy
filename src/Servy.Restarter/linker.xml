@@ -12,10 +12,6 @@
 
   <assembly fullname="Dapper" preserve="all" />
 
-  <assembly fullname="CommandLine" preserve="all" />
-
-  <assembly fullname="System.Data.SQLite" preserve="all" />
-
   <assembly fullname="System.CodeDom" preserve="all" />
 
 </linker>

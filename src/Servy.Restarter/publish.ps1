@@ -71,7 +71,6 @@ dotnet publish $ProjectPath `
 
 # Step 2: Sign the published executable if signing is enabled
 if ($Configuration -eq "Release") {
-    Write-Host $(Join-Path $PublishFolder "Servy.Restarter.exe")
     $ExePath = Join-Path $PublishFolder "Servy.Restarter.exe" | Resolve-Path
     & $SignPath $ExePath
 }
