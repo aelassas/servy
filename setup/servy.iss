@@ -76,10 +76,6 @@ SetupAppRunningError=Setup has detected that %1 is currently running.%n%nPlease 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
-[Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
-Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone; Components: install_cli
-
 [Types]
 Name: "full"; Description: "Full installation";
 Name: "custom"; Description: "Custom installation"; Flags: iscustom
@@ -88,6 +84,10 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 Name: "install_main_app"; Description: "Install Desktop App ({#MyAppExeName})"; Types: full
 Name: "install_cli"; Description: "Install CLI ({#CliExeName})"; Types: full custom
 Name: "install_manager"; Description: "Install Manager App ({#ManagerAppExeName})"; Types: full custom
+
+[Tasks]
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
+Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone; Components: install_cli
 
 [Files]
 Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
