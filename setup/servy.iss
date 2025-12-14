@@ -343,7 +343,7 @@ begin
     Parts.DelimitedText := Version;
 
     Result :=
-      StrToIntDef(Parts[0], 0) * 10 +
+      StrToIntDef(Parts[0], 0) * 1000 +
       StrToIntDef(Parts[1], 0);
   finally
     Parts.Free;
