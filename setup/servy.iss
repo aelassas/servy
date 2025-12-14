@@ -3,7 +3,7 @@
 
 #define MyAppName "Servy"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.0"  ; default if not provided
+  #define MyAppVersion "1.0"  ; default if not provided
 #endif
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
