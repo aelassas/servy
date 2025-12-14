@@ -3,10 +3,11 @@
 
 #define MyAppName "Servy"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0"  ; default if not provided
+  #define MyAppVersion "4.0"  ; default if not provided
 #endif
 #define MyAppPublisher "Akram El Assas"
 #define MyAppURL "https://servy-win.github.io/"
+#define DocsURL "https://github.com/aelassas/servy/wiki"
 #define MyAppExeName "Servy.exe"
 
 #define ManagerAppName "Servy Manager"
@@ -61,7 +62,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Additional Options"; Flags: checkablealone
-Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone
+Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional Options"; Flags: checkablealone; Components: install_cli
 
 [Types]
 Name: "full"; Description: "Full installation"
@@ -110,8 +111,10 @@ Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: 
 Name: "{commonprograms}\{#MyAppName}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Components: install_manager
 Name: "{commondesktop}\{#ManagerAppName}"; Filename: "{app}\{#ManagerAppExeName}"; Tasks: desktopicon; Components: install_manager
 
-; [Run]
-; Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_main_app
+; Filename: "{app}\{#ManagerAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(ManagerAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_manager
+Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall shellexec skipifsilent unchecked
 
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp
@@ -163,7 +166,7 @@ begin
     OldPath := '';
 
   // Only add if it's not already there
-  if Pos(LowerCase(Folder), LowerCase(OldPath)) = 0 then
+  if Pos(';' + LowerCase(Folder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
   begin
     if OldPath <> '' then
       NewPath := OldPath + ';' + Folder
@@ -192,7 +195,7 @@ begin
     RefreshIconCache();
 
     // Add to PATH if task selected
-    if WizardIsTaskSelected('addpath') then
+    if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
     begin
       InstallDir := ExpandConstant('{app}');
       AddToPath(InstallDir);
@@ -201,7 +204,6 @@ begin
   end;
 end;
 
-[Code]
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
@@ -218,7 +220,6 @@ begin
   end;
 end;
 
-[Code]
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
@@ -292,7 +293,7 @@ function GetInstalledVersion(): String;
 var
   sUnInstPath, sVersionString: String;
 begin
-  sVersionString := ''
+  sVersionString := '';
   sUnInstPath := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
   
   if not RegQueryStringValue(HKLM64, sUnInstPath, 'DisplayVersion', sVersionString) then
@@ -313,30 +314,21 @@ begin
   Result := sVersionString;
 end;
 
-function NumericVersion(sVersion: String): Integer;
+function NumericVersion(const Version: string): Integer;
 var
-  s1, s2, i: Integer;
-  sv : String;
+  Parts: TStringList;
 begin
-  s1 := 0;
-  for i := 1 to Length(sVersion) do
-  begin
-    sv := sVersion[i];
+  Parts := TStringList.Create;
+  try
+    Parts.Delimiter := '.';
+    Parts.DelimitedText := Version;
 
-    if (sv >= '0') and (sv <= '9') then
-      begin
-        s2 := StrToInt(sv);
-
-        if i = 1 then
-        begin
-          s2 := s2  * 10;
-        end;
-        
-        s1 := s1 + s2;
-      end;
+    Result :=
+      StrToIntDef(Parts[0], 0) * 10 +
+      StrToIntDef(Parts[1], 0);
+  finally
+    Parts.Free;
   end;
-  
-  Result := s1;
 end;
 
 function InitializeSetup(): Boolean;
@@ -420,4 +412,54 @@ begin
   end;
   Log('PrepareToInstall.ForceDirectories done');
   Result := '';  
+end;
+
+procedure RemoveFromPath(const Folder: string);
+var
+  OldPath, NewPath: string;
+begin
+  if RegQueryStringValue(
+       HKLM64,
+       'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+       'Path',
+       OldPath) then
+  begin
+    NewPath := OldPath;
+
+    // Remove ;Folder
+    StringChangeEx(NewPath, ';' + Folder, '', True);
+
+    // Remove Folder;
+    StringChangeEx(NewPath, Folder + ';', '', True);
+
+    // Remove Folder alone
+    StringChangeEx(NewPath, Folder, '', True);
+
+    // Remove consecutive semicolons (;; -> ;)
+    StringChangeEx(NewPath, ';;', ';', True);
+
+    // Trim all leading semicolons
+    while (Length(NewPath) > 0) and (NewPath[1] = ';') do
+      Delete(NewPath, 1, 1);
+      
+    // Trim all trailing semicolons
+    while (Length(NewPath) > 0) and (NewPath[Length(NewPath)] = ';') do
+      Delete(NewPath, Length(NewPath), 1);
+
+    RegWriteStringValue(
+      HKLM64,
+      'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
+      'Path',
+      NewPath
+    );
+
+    RefreshEnvironment();
+  end;
+end;
+
+// PATH removal on uninstall
+procedure CurUninstallStepChanged(Step: TUninstallStep);
+begin
+  if Step = usUninstall then
+    RemoveFromPath(ExpandConstant('{app}'));
 end;
