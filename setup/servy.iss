@@ -3,7 +3,7 @@
 
 #define MyAppName "Servy"
 #ifndef MyAppVersion
-  #define MyAppVersion "4.0"  ; default if not provided
+  #define MyAppVersion "1.0"  ; default if not provided
 #endif
 #ifndef MyAppPlatform
   #define MyAppPlatform "net48"  ; default if not provided
