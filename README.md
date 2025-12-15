@@ -44,6 +44,8 @@
 
 Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
+Servy is officially signed with a trusted SignPath certificate. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
+
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
 If you've ever struggled with the built-in `sc.exe` tool or found NSSM lacking in features or UI, Servy might be exactly what you need. It addresses those limitations, including the ability to set a custom working directory so apps behave exactly as if launched from a shortcut or command prompt.
@@ -137,6 +139,8 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 Servy is [MIT licensed](https://github.com/aelassas/servy/blob/main/LICENSE.txt).
 
 ## Acknowledgments
+
+Thanks to [SignPath](https://signpath.io/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for providing free code signing service, and to the [SignPath Foundation](https://signpath.org/?utm_source=foundation&utm_medium=github&utm_campaign=servy) for supplying a free code signing certificate.
 
 Thanks to [JetBrains](https://www.jetbrains.com/) for providing an [open-source license](https://www.jetbrains.com/community/opensource/) for their tools. Their software made it much easier to profile, debug, and optimize Servy, helping improve its performance and stability. Having access to these professional tools really made a difference during development and saved a lot of time.
 
