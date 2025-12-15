@@ -173,21 +173,30 @@ begin
   );
 end;
   
+// Removes trailing backslash
+function NormalizeFolder(const S: string): string;
+begin
+  Result := S;
+  if (Length(Result) > 0) and (Result[Length(Result)] = '\') then
+    SetLength(Result, Length(Result) - 1);
+end;  
+  
 procedure AddToPath(const Folder: string);
 var
-  OldPath, NewPath: string;
+  OldPath, NewPath, NormalizedFolder: string;
 begin
   // Read the current system PATH
   if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
     OldPath := '';
 
   // Only add if it's not already there
-  if Pos(';' + LowerCase(Folder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
+  NormalizedFolder := NormalizeFolder(Folder);
+  if Pos(';' + LowerCase(NormalizedFolder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
   begin
     if OldPath <> '' then
-      NewPath := OldPath + ';' + Folder
+      NewPath := OldPath + ';' + NormalizedFolder
     else
-      NewPath := Folder;
+      NewPath := NormalizedFolder;
 
     // Write the new system PATH
     if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
@@ -213,7 +222,7 @@ begin
     // Add to PATH if task selected
     if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
     begin
-      InstallDir := ExpandConstant('{app}');
+      InstallDir := NormalizeFolder(ExpandConstant('{app}'));
       AddToPath(InstallDir);
       RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
     end;
@@ -286,25 +295,22 @@ var
 begin
   Result := 0;
   sUnInstallString := GetUninstallString();
+  Log('Uninstalling old version: ' + sUnInstallString);
+
   if sUnInstallString <> '' then
   begin
     sUnInstallString := RemoveQuotes(sUnInstallString);
     if Exec(sUnInstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES','', SW_HIDE, ewWaitUntilTerminated, iResultCode) then 
-    begin
-      Result := 3;
-    end 
+      Result := 3
     else
-    begin
       Result := 2;
-    end;
   end
   else
-  begin
     Result := 1;
-  end;
-  
+
   Log('UnInstallOldVersion.Result = ' + IntToStr(Result));
 end;
+
 
 function GetInstalledVersion(): String;
 var
@@ -442,7 +448,10 @@ var
   OldPath, NewPath: string;
   Parts: TStringList;
   i: Integer;
+  NormalizedFolder: string;
 begin
+  NormalizedFolder := NormalizeFolder(Folder);
+
   if RegQueryStringValue(
        HKLM64,
        'SYSTEM\CurrentControlSet\Control\Session Manager\Environment',
@@ -450,35 +459,16 @@ begin
        OldPath) then
   begin
     Parts := TStringList.Create;
-    
     try
       Parts.StrictDelimiter := True;
       Parts.Delimiter := ';';
       Parts.DelimitedText := OldPath;
 
       for i := Parts.Count - 1 downto 0 do
-        if LowerCase(Trim(Parts[i])) = LowerCase(Folder) then
+        if CompareText(Trim(Parts[i]), NormalizedFolder) = 0 then
           Parts.Delete(i);
 
-      NewPath := '';
-      for i := 0 to Parts.Count - 1 do
-      begin
-        if Parts[i] <> '' then
-        begin
-          if NewPath <> '' then
-            NewPath := NewPath + ';';
-          NewPath := NewPath + Parts[i];
-        end;
-      end;
-
-      // Normalize separators
-      StringChangeEx(NewPath, ';;', ';', True);
-
-      // Trim leading/trailing ;
-      while (Length(NewPath) > 0) and (NewPath[1] = ';') do
-        Delete(NewPath, 1, 1);
-      while (Length(NewPath) > 0) and (NewPath[Length(NewPath)] = ';') do
-        Delete(NewPath, Length(NewPath), 1);
+      NewPath := Parts.DelimitedText;
 
       RegWriteStringValue(
         HKLM64,
@@ -495,6 +485,7 @@ begin
     end;
   end;
 end;
+
 
 // PATH removal on uninstall
 procedure CurUninstallStepChanged(Step: TUninstallStep);
