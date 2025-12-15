@@ -141,95 +141,9 @@ Type: filesandordirs; Name: "{app}\x64"
 ; Type: filesandordirs; Name: "{app}\taskschd"
 
 [Code]
-// Declare Windows API function for refreshing icon cache
-procedure SHChangeNotify(wEventId, uFlags: LongWord; dwItem1, dwItem2: LongWord); external 'SHChangeNotify@shell32.dll stdcall';
-
-// Refresh icon cache after install
-procedure RefreshIconCache();
-begin
-  SHChangeNotify($8000000, $0, 0, 0); // SHCNE_ASSOCCHANGED = $8000000
-end;
-
-const
-  WM_SETTINGCHANGE = $001A;
-  SMTO_ABORTIFHUNG = $0002;
-
-function SendMessageTimeout(hWnd: LongWord; Msg: LongWord; wParam: LongWord;
-  lParam: string; fuFlags: LongWord; uTimeout: LongWord; var lpdwResult: LongWord): LongWord;
-  external 'SendMessageTimeoutW@user32.dll stdcall';
-
-procedure RefreshEnvironment;
-var
-  ResultCode: LongWord;
-begin
-  SendMessageTimeout(
-    HWND_BROADCAST,
-    WM_SETTINGCHANGE,
-    0,
-    'Environment',        // pass string directly
-    SMTO_ABORTIFHUNG,
-    5000,
-    ResultCode
-  );
-end;
-  
-// Removes trailing backslash
-function NormalizeFolder(const S: string): string;
-begin
-  Result := S;
-  if (Length(Result) > 0) and (Result[Length(Result)] = '\') then
-    SetLength(Result, Length(Result) - 1);
-end;  
-  
-procedure AddToPath(const Folder: string);
-var
-  OldPath, NewPath, NormalizedFolder: string;
-begin
-  // Read the current system PATH
-  if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
-    OldPath := '';
-
-  // Only add if it's not already there
-  NormalizedFolder := NormalizeFolder(Folder);
-  if Pos(';' + LowerCase(NormalizedFolder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
-  begin
-    if OldPath <> '' then
-      NewPath := OldPath + ';' + NormalizedFolder
-    else
-      NewPath := NormalizedFolder;
-
-    // Write the new system PATH
-    if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
-    begin
-      MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
-      Exit;
-    end;
-
-    // Notify the system about the environment change
-    RefreshEnvironment();
-  end;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  InstallDir: string;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    // Refresh icons
-    RefreshIconCache();
-
-    // Add to PATH if task selected
-    if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
-    begin
-      InstallDir := NormalizeFolder(ExpandConstant('{app}'));
-      AddToPath(InstallDir);
-      RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
-    end;
-    
-  end;
-end;
-
+// -----------------------------------------------------
+// At least one component is required
+// ----------------------------------------------------- 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
   Result := True;
@@ -246,6 +160,11 @@ begin
   end;
 end;
 
+// -----------------------------------------------------
+// Pre-Install actions:
+//  - Check if a version is already installed 
+//  - Prepare install
+// ----------------------------------------------------- 
 function GetUninstallString(): String;
 var
   sUnInstPath, sUnInstallString: String;
@@ -310,7 +229,6 @@ begin
 
   Log('UnInstallOldVersion.Result = ' + IntToStr(Result));
 end;
-
 
 function GetInstalledVersion(): String;
 var
@@ -402,7 +320,7 @@ begin
     begin
       Result := False;
     end;
-  end;
+  end;  
   
   // Uninstall key path
   UninstKey := ExpandConstant('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1');
@@ -443,6 +361,106 @@ begin
   Result := '';  
 end;
 
+// -----------------------------------------------------
+// Post-Install actions:
+//  - Add Servy to PATH if related task selected
+//  - Refresh icon cache after install
+// -----------------------------------------------------  
+// Declare Windows API function for refreshing icon cache
+procedure SHChangeNotify(wEventId, uFlags: LongWord; dwItem1, dwItem2: LongWord); external 'SHChangeNotify@shell32.dll stdcall';
+
+// Refresh icon cache after install
+procedure RefreshIconCache();
+begin
+  SHChangeNotify($8000000, $0, 0, 0); // SHCNE_ASSOCCHANGED = $8000000
+end;
+
+const
+  WM_SETTINGCHANGE = $001A;
+  SMTO_ABORTIFHUNG = $0002;
+
+function SendMessageTimeout(hWnd: LongWord; Msg: LongWord; wParam: LongWord;
+  lParam: string; fuFlags: LongWord; uTimeout: LongWord; var lpdwResult: LongWord): LongWord;
+  external 'SendMessageTimeoutW@user32.dll stdcall';
+
+procedure RefreshEnvironment;
+var
+  ResultCode: LongWord;
+begin
+  SendMessageTimeout(
+    HWND_BROADCAST,
+    WM_SETTINGCHANGE,
+    0,
+    'Environment',        // pass string directly
+    SMTO_ABORTIFHUNG,
+    5000,
+    ResultCode
+  );
+end;
+  
+// Removes trailing backslash
+function NormalizeFolder(const S: string): string;
+begin
+  Result := S;
+  if (Length(Result) > 0) and (Result[Length(Result)] = '\') then
+    SetLength(Result, Length(Result) - 1);
+end;  
+  
+procedure AddToPath(const Folder: string);
+var
+  OldPath, NewPath, NormalizedFolder: string;
+begin
+  // Read the current system PATH
+  if not RegQueryStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', OldPath) then
+    OldPath := '';
+
+  // Only add if it's not already there
+  NormalizedFolder := NormalizeFolder(Folder);
+  
+  // Append semicolons to both sides for reliable checking against other entries (e.g., 'C:\A' vs 'C:\A B')
+  if Pos(';' + LowerCase(NormalizedFolder) + ';', ';' + LowerCase(OldPath) + ';') = 0 then
+  begin
+    if OldPath <> '' then
+        NewPath := OldPath + ';' + NormalizedFolder
+    else
+        NewPath := NormalizedFolder;
+
+    // Write the new system PATH
+    if not RegWriteStringValue(HKLM64, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', NewPath) then
+    begin
+      MsgBox('Failed to update system PATH environment variable.', mbError, MB_OK);
+      Exit;
+    end;
+
+    // Notify the system about the environment change
+    RefreshEnvironment();
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  InstallDir: string;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    // Refresh icons
+    RefreshIconCache();
+
+    // Add to PATH if task selected
+    if WizardIsTaskSelected('addpath') and WizardIsComponentSelected('install_cli') then
+    begin
+      InstallDir := NormalizeFolder(ExpandConstant('{app}'));
+      AddToPath(InstallDir);
+      RegWriteDWordValue(HKLM64, 'Software\Servy', 'AddedToPath', 1);
+    end;
+    
+  end;
+end;
+
+// -----------------------------------------------------
+// Uninstall actions:
+//  - Remove Servy from PATH if necessary
+// ----------------------------------------------------- 
 procedure RemoveFromPath(const Folder: string);
 var
   OldPath, NewPath: string;
@@ -465,7 +483,7 @@ begin
       Parts.DelimitedText := OldPath;
 
       for i := Parts.Count - 1 downto 0 do
-        if CompareText(Trim(Parts[i]), NormalizedFolder) = 0 then
+        if CompareText(NormalizeFolder(Trim(Parts[i])), NormalizedFolder) = 0 then
           Parts.Delete(i);
 
       NewPath := Parts.DelimitedText;
@@ -485,7 +503,6 @@ begin
     end;
   end;
 end;
-
 
 // PATH removal on uninstall
 procedure CurUninstallStepChanged(Step: TUninstallStep);
