@@ -60,6 +60,9 @@ namespace Servy.Infrastructure.Data
             if (!string.IsNullOrWhiteSpace(service.EnvironmentVariables))
                 service.EnvironmentVariables = _securePassword.Encrypt(service.EnvironmentVariables);
 
+            if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
+                service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
+
             var sql = @"
                 INSERT INTO Services (
                     Name, Description, ExecutablePath, StartupDirectory, Parameters, 
@@ -95,6 +98,9 @@ namespace Servy.Infrastructure.Data
 
             if (!string.IsNullOrWhiteSpace(service.EnvironmentVariables))
                 service.EnvironmentVariables = _securePassword.Encrypt(service.EnvironmentVariables);
+
+            if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
+                service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
 
             var sql = @"
                 UPDATE Services SET
@@ -200,6 +206,9 @@ namespace Servy.Infrastructure.Data
             if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
                 dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
 
+            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+
             return dto;
         }
 
@@ -216,6 +225,9 @@ namespace Servy.Infrastructure.Data
 
             if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
                 dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+
+            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
 
             return dto;
         }
@@ -238,6 +250,9 @@ namespace Servy.Infrastructure.Data
 
                 if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
                     dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+
+                if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                    dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
             }
 
             return list;
@@ -272,6 +287,9 @@ namespace Servy.Infrastructure.Data
 
                 if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
                     dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+
+                if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                    dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
             }
 
             return list;

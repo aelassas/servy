@@ -81,7 +81,6 @@ namespace Servy.Service.CommandLine
                 RecoveryAction = fullArgs.Length > 10 && Enum.TryParse(fullArgs[10], true, out RecoveryAction ra) ? ra : RecoveryAction.None,
                 ServiceName = serviceName,
                 MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3,
-
                 // Environment variables are no longer passed from binary path and are retrived from DB instead
                 // EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
@@ -90,7 +89,9 @@ namespace Servy.Service.CommandLine
                 PreLaunchExecutablePath = fullArgs.Length > 14 ? fullArgs[14] : string.Empty,
                 PreLaunchWorkingDirectory = fullArgs.Length > 15 ? fullArgs[15] : string.Empty,
                 PreLaunchExecutableArgs = Helper.EscapeBackslashes(fullArgs.Length > 16 ? fullArgs[16] : string.Empty),
-                PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 17 ? fullArgs[17] : string.Empty),
+                // Environment variables are no longer passed from binary path and are retrived from DB instead
+                //PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 17 ? fullArgs[17] : string.Empty),
+                PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.PreLaunchEnvironmentVariables ?? string.Empty),
                 PreLaunchStdOutPath = fullArgs.Length > 18 ? fullArgs[18] : string.Empty,
                 PreLaunchStdErrPath = fullArgs.Length > 19 ? fullArgs[19] : string.Empty,
                 PreLaunchTimeout = fullArgs.Length > 20 && int.TryParse(fullArgs[20], out int preLaunchTimeout) ? preLaunchTimeout : 30,
