@@ -1,6 +1,7 @@
 ## Local test
 ```
 scoop install servy.json
+scoop uninstall servy
 ```
 
 Fix encoding:
