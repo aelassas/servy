@@ -58,8 +58,9 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("MySecretPassword123!", "MySecretPassword123!")]
-        [InlineData("SERVY_ENC:MySecretPassword123!", "MySecretPassword123!")]
+        [InlineData("MySecretPassword123!", "MySecretPassword123!")]              // plain text
+        [InlineData("SERVY_ENC:MySecretPassword123!", "MySecretPassword123!")]    // marker but not encrypted
+        [InlineData("U29tZUJhc2U2NFN0cmluZw==", "U29tZUJhc2U2NFN0cmluZw==")]      // valid Base64, fails AES -> returns original
         public void Decrypt_ReturnsOriginal(string original, string expected)
         {
             var sp = new SecurePassword(_mockProvider.Object);

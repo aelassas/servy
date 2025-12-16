@@ -69,16 +69,23 @@ namespace Servy.Core.Helpers
                 return payload;
             }
 
-            using (var aes = Aes.Create())
+            try
             {
-                aes.Key = _protectedKeyProvider.GetKey();
-                aes.IV = _protectedKeyProvider.GetIV();
+                using (var aes = Aes.Create())
+                {
+                    aes.Key = _protectedKeyProvider.GetKey();
+                    aes.IV = _protectedKeyProvider.GetIV();
 
-                var decryptor = aes.CreateDecryptor();
-                var cipherBytes = Convert.FromBase64String(payload);
-                var decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
+                    var decryptor = aes.CreateDecryptor();
+                    var cipherBytes = Convert.FromBase64String(payload);
+                    var decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
 
-                return Encoding.UTF8.GetString(decryptedBytes);
+                    return Encoding.UTF8.GetString(decryptedBytes);
+                }
+            }
+            catch
+            {
+                return payload;
             }
         }
 
