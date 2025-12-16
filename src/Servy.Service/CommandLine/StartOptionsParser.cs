@@ -1,8 +1,13 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using System;
+using System.Configuration;
 using System.Diagnostics;
 
 namespace Servy.Service.CommandLine
@@ -27,6 +32,41 @@ namespace Servy.Service.CommandLine
             if (fullArgs == null || fullArgs.Length == 0)
                 return new StartOptions();
 
+            var serviceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                throw new Exception("Service name is empty!");
+            }
+
+            // Load configuration
+            var config = ConfigurationManager.AppSettings;
+
+            var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+            // Initialize database and helpers
+            var dbContext = new AppDbContext(connectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+            var dapperExecutor = new DapperExecutor(dbContext);
+            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+            var securePassword = new SecurePassword(protectedKeyProvider);
+            var xmlSerializer = new XmlServiceSerializer();
+
+            IServiceRepository serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+            var service = serviceRepository.GetByNameAsync(serviceName).Result;
+
+            var serviceDto = serviceRepository
+                .GetByNameAsync(serviceName)
+                .ConfigureAwait(false).GetAwaiter().GetResult();
+
+            if (serviceDto == null)
+            {
+                throw new Exception($"Service {serviceName} not found in the database!");
+            }
+
             return new StartOptions
             {
                 ExecutablePath = fullArgs.Length > 1 ? fullArgs[1] : string.Empty,
@@ -39,9 +79,12 @@ namespace Servy.Service.CommandLine
                 HeartbeatInterval = fullArgs.Length > 8 && int.TryParse(fullArgs[8], out int hbi) ? hbi : 0,
                 MaxFailedChecks = fullArgs.Length > 9 && int.TryParse(fullArgs[9], out int mfc) ? mfc : 0,
                 RecoveryAction = fullArgs.Length > 10 && Enum.TryParse(fullArgs[10], true, out RecoveryAction ra) ? ra : RecoveryAction.None,
-                ServiceName = fullArgs.Length > 11 ? fullArgs[11] : string.Empty,
+                ServiceName = serviceName,
                 MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3,
-                EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
+
+                // Environment variables are no longer passed from binary path and are retrived from DB instead
+                // EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
+                EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 
                 // Pre-Launch args
                 PreLaunchExecutablePath = fullArgs.Length > 14 ? fullArgs[14] : string.Empty,
