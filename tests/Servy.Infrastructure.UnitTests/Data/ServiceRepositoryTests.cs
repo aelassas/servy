@@ -62,8 +62,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task AddAsync_EncryptsPasswordAndInserts_ReturnsId()
         {
-            var dto = new ServiceDto { Name = "S1", Password = "plain" };
+            var dto = new ServiceDto { Name = "S1", Password = "plain", EnvironmentVariables = "v1=val1;v2=val2" };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
 
             var repo = CreateRepository();
@@ -71,13 +72,15 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             Assert.Equal(42, result);
             Assert.Equal("encrypted", dto.Password);
+            Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
         }
 
         [Fact]
         public async Task UpdateAsync_EncryptsPasswordAndExecutes_ReturnsAffectedRows()
         {
-            var dto = new ServiceDto { Id = 1, Password = "plain" };
+            var dto = new ServiceDto { Id = 1, Password = "plain", EnvironmentVariables = "v1=val1;v2=val2" };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
@@ -85,6 +88,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             Assert.Equal(1, rows);
             Assert.Equal("encrypted", dto.Password);
+            Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
         }
 
         [Fact]
@@ -188,14 +192,16 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task GetByIdAsync_DecryptsPassword()
         {
-            var dto = new ServiceDto { Id = 1, Password = "encrypted" };
+            var dto = new ServiceDto { Id = 1, Password = "encrypted", EnvironmentVariables = "encrypted_vars" };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1);
 
             Assert.Equal("plain", result!.Password);
+            Assert.Equal("v1=val1;v2=val2", result!.EnvironmentVariables);
         }
 
         [Fact]
@@ -225,34 +231,51 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task GetByNameAsync_DecryptsPassword()
         {
-            var dto = new ServiceDto { Name = "S", Password = "encrypted" };
+            var dto = new ServiceDto { Name = "S", Password = "encrypted", EnvironmentVariables = "encrypted_vars" };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
 
             var repo = CreateRepository();
             var result = await repo.GetByNameAsync("S");
 
             Assert.Equal("plain", result!.Password);
+            Assert.Equal("v1=val1;v2=val2", result!.EnvironmentVariables);
         }
 
         [Fact]
-        public async Task GetAllAsync_DecryptsAllPasswords()
+        public async Task GetAllAsync_DecryptsAllPasswordsAndEnvVars()
         {
             var list = new List<ServiceDto>
             {
-                new ServiceDto { Id = 1, Password = "e1" },
-                new ServiceDto { Id = 2, Password = "e2" }
+                new ServiceDto { Id = 1, Password = "e1", EnvironmentVariables = "encrypted_vars1" },
+                new ServiceDto { Id = 2, Password = "e2", EnvironmentVariables = "encrypted_vars2" }
             };
-            _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
+
+            _mockDapper
+                .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
+                .ReturnsAsync(list);
+
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
             _mockSecurePassword.Setup(s => s.Decrypt("e2")).Returns("p2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars1")).Returns("vars1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars2")).Returns("vars2");
 
             var repo = CreateRepository();
             var result = (await repo.GetAllAsync()).ToList();
 
             Assert.Collection(result,
-                r => Assert.Equal("p1", r.Password),
-                r => Assert.Equal("p2", r.Password));
+                r =>
+                {
+                    Assert.Equal("p1", r.Password);
+                    Assert.Equal("vars1", r.EnvironmentVariables);
+                },
+                r =>
+                {
+                    Assert.Equal("p2", r.Password);
+                    Assert.Equal("vars2", r.EnvironmentVariables);
+                }
+            );
         }
 
         [Fact]
@@ -272,15 +295,17 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task Search_NullKeyword()
         {
-            var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
+            var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1", EnvironmentVariables = "encrypted_vars" } };
             _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("vars");
 
             var repo = CreateRepository();
             var result = (await repo.Search(null!)).ToList();
 
             Assert.Single(result);
             Assert.Equal("p1", result[0].Password);
+            Assert.Equal("vars", result[0].EnvironmentVariables);
         }
 
         [Fact]

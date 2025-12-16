@@ -57,6 +57,17 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(original, decrypted);
         }
 
+        [Theory]
+        [InlineData("MySecretPassword123!", "MySecretPassword123!")]
+        [InlineData("SERVY_ENC:MySecretPassword123!", "MySecretPassword123!")]
+        public void Decrypt_ReturnsOriginal(string original, string expected)
+        {
+            var sp = new SecurePassword(_mockProvider.Object);
+
+            var decrypted = sp.Decrypt(original);
+            Assert.Equal(expected, decrypted);
+        }
+
         [Fact]
         public void Encrypt_ReturnsDifferentValues_ForDifferentPlainText()
         {
@@ -75,5 +86,28 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Throws<ArgumentNullException>(() => sp.Encrypt(""));
             Assert.Throws<ArgumentNullException>(() => sp.Decrypt(""));
         }
+
+        // Use reflection to access private static method
+        private static bool CallIsBase64(string value)
+        {
+            var method = typeof(SecurePassword).GetMethod(
+                "IsBase64",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+            );
+            return (bool)method!.Invoke(null, new object[] { value })!;
+        }
+
+        [Theory]
+        [InlineData("", false)]                      // empty
+        [InlineData("   ", false)]                   // whitespace
+        [InlineData("abcd!@", false)]                // invalid Base64 format
+        [InlineData("SGVsbG8gd29ybGQ=", true)]       // valid Base64
+        [InlineData("U29tZVRleHRXaXRoU3BlY2lhbENoYXJzIQ==", true)] // valid Base64
+        public void IsBase64_CoversAllBranches(string input, bool expected)
+        {
+            var result = CallIsBase64(input);
+            Assert.Equal(expected, result);
+        }
+
     }
 }
