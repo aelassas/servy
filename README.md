@@ -76,6 +76,7 @@ choco install -y servy
 **Scoop**
 ```powershell
 scoop bucket add extras
+scoop update innounp
 scoop install servy
 ```
 
