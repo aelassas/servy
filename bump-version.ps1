@@ -44,7 +44,7 @@ if (-Not (Test-Path $PublishPath)) { Write-Error "File not found: $PublishPath";
 $Content = [System.IO.File]::ReadAllText($PublishPath)
 $Content = [regex]::Replace(
     $Content,
-    '(\$version\s*=\s*")[^"]*(")',
+    '(\$Version\s*=\s*")[^"]*(")',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
 [System.IO.File]::WriteAllText($PublishPath, $Content)
