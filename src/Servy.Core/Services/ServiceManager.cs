@@ -290,7 +290,8 @@ namespace Servy.Core.Services
                 Helper.Quote(recoveryAction.ToString()),
                 Helper.Quote(serviceName),
                 Helper.Quote(enableHealthMonitoring ? maxRestartAttempts.ToString() : "0"),
-                Helper.Quote(environmentVariables ?? string.Empty),
+                //Helper.Quote(environmentVariables ?? string.Empty),
+                Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
 
                 // Pre-Launch
                 Helper.Quote(preLaunchExePath ?? string.Empty),

@@ -125,17 +125,14 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
-        public void InitializeStartup_ReturnsNull_IfOptionsAreInvalid()
+        public void InitializeStartup_Throws_IfServiceNameIsEmpty()
         {
             // Arrange
             _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new string[] { "ignored.exe" }); // no valid args
             var mockLog = new Mock<ILogger>();
 
-            // Act
-            var result = _helper.InitializeStartup(mockLog.Object);
-
             // Assert
-            Assert.Null(result);
+            var result = Assert.Throws<Exception>(() => _helper.InitializeStartup(mockLog.Object));
         }
     }
 }
