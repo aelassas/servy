@@ -33,7 +33,12 @@ jobs:
 
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX . --output . --filename servy-$env:VERSION-sbom.xml
+        run: |
+          Set-Location $env:GITHUB_WORKSPACE
+          if (-not (Test-Path "Servy.sln")) { 
+              throw "Servy.sln not found at repo root" 
+          }
+          dotnet-CycloneDX Servy.sln --output . --filename servy-$env:VERSION-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
