@@ -13,7 +13,9 @@ jobs:
       # ---------------------------
       - name: Install or Upgrade Inno Setup
         shell: pwsh
-        run: winget install -e --id JRSoftware.InnoSetup --version 6.6.1 --accept-source-agreements --accept-package-agreements || $true
+        run: |
+          winget install -e --id JRSoftware.InnoSetup --version 6.6.1 --accept-source-agreements --accept-package-agreements || $true
+          $global:LASTEXITCODE = 0
         
       - name: Show Inno Setup Version
         run: ISCC.exe /? || true
@@ -24,7 +26,9 @@ jobs:
       # ---------------------------
       - name: Install or Upgrade 7-Zip
         shell: pwsh
-        run: winget install -e --id 7zip.7zip --version 25.01 --accept-source-agreements --accept-package-agreements || $true
+        run: |
+          winget install -e --id 7zip.7zip --version 25.01 --accept-source-agreements --accept-package-agreements || $true
+          $global:LASTEXITCODE = 0
 
       - name: Show 7-Zip Version
         run: 7z.exe -version || true
