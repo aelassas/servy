@@ -58,35 +58,40 @@ jobs:
           $PinnedVersion = "25.01"
           $PackageId = "7zip.7zip"
 
-          $installed = winget list -e --id $PackageId 2>$null
+          $currentVersion = $null
 
-          Write-Host $installed
-
-          if ($installed -match '(\d+\.\d+(?:\.\d+)?)') {
-            $currentVersion = $Matches[1]
-            Write-Host "Detected 7-Zip version: $currentVersion"
-
-            if ($currentVersion -eq $PinnedVersion) {
-              Write-Host "Pinned version $PinnedVersion already installed. Skipping."
-            } else {
-              Write-Host "Version mismatch. Reinstalling $PinnedVersion"
-              winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements || $true
-              winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
+          try {
+            $json = winget list -e --id $PackageId --output json 2>$null | ConvertFrom-Json
+            if ($json.Count -gt 0) {
+              $currentVersion = $json[0].Version
+              Write-Host "Detected 7-Zip version: $currentVersion"
             }
-          } else {
-            Write-Host "7-Zip not found. Installing $PinnedVersion"
-            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
+          } catch {
+            Write-Host "Failed to parse winget output"
           }
 
-          # Add to PATH
+          if ($currentVersion -eq $PinnedVersion) {
+            Write-Host "Pinned version $PinnedVersion already installed. Skipping."
+          }
+          elseif ($currentVersion) {
+            Write-Host "Version mismatch. Reinstalling $PinnedVersion"
+            winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements
+            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements
+          }
+          else {
+            Write-Host "7-Zip not found. Installing $PinnedVersion"
+            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements
+          }
+
           $zipPath = "C:\Program Files\7-Zip"
           if (Test-Path $zipPath) {
             Write-Host "Adding 7-Zip to PATH"
             Add-Content -Path $env:GITHUB_PATH -Value $zipPath
           }
 
-          # IMPORTANT: winget may exit 1 even on success
+          # winget may exit non-zero even on success
           $global:LASTEXITCODE = 0
+      
 
       - name: Show 7-Zip Version
         run: 7z.exe -version || true
