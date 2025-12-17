@@ -135,7 +135,7 @@ namespace Servy.Service.UnitTests.Helpers
             var mockLog = new Mock<ILogger>();
 
             // Assert
-            var result = Assert.Throws<Exception>(() => _helper.InitializeStartup(mockLog.Object));
+            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockLog.Object));
         }
     }
 }
