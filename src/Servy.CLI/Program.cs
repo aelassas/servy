@@ -131,8 +131,6 @@ namespace Servy.CLI
                         new ResourceItem{ FileNameWithoutExtension = "System.Data.SQLite", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "System.Runtime.CompilerServices.Unsafe", Extension= "dll" },
                         new ResourceItem{ FileNameWithoutExtension = "System.Threading.Tasks.Extensions", Extension= "dll" },
-                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop",  Extension= "dll", Subfolder = "x64" },
-                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop", Extension= "dll", Subfolder = "x86" },
                         new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
                     });
 #endif
