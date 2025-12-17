@@ -60,7 +60,9 @@ jobs:
 
           $installed = winget list -e --id $PackageId 2>$null
 
-          if ($installed -match '(\d+\.\d+)') {
+          Write-Host $installed
+
+          if ($installed -match '(\d+\.\d+(?:\.\d+)?)') {
             $currentVersion = $Matches[1]
             Write-Host "Detected 7-Zip version: $currentVersion"
 
