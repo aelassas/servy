@@ -68,6 +68,23 @@ jobs:
       - uses: microsoft/setup-msbuild@v2
       - uses: nuget/setup-nuget@v2
 
+      - name: Install the latest .NET SDK
+        shell: powershell
+        run: |
+          $url = "https://dot.net/v1/dotnet-install.ps1"
+          Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
+          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\dotnet"
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Install CycloneDX .NET Tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global CycloneDX
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
+
       - name: Install Inno Setup
         shell: pwsh
         run: |
@@ -148,6 +165,21 @@ jobs:
               }
           }
   
+      # -----------------------------------------------------
+      # Build and Publish SBOM
+      # -----------------------------------------------------
+      - name: Generate SBOM
+        shell: pwsh
+        run: dotnet-CycloneDX Servy.sln --output . --filename servy-$env:VERSION-$env.FRAMEWORK-sbom.xml
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom
+          path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom.xml
+          if-no-files-found: error
+          retention-days: 1
+
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Restarter.exe
       # -----------------------------------------------------
