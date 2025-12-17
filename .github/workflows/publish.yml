@@ -71,10 +71,16 @@ jobs:
           $url = "https://dot.net/v1/dotnet-install.ps1"
           Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
           ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
-          "$env:RUNNER_TEMP\dotnet" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\dotnet"
 
       - name: Check .NET version
         run: dotnet --version
+
+      - name: Install CycloneDX .NET Tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global CycloneDX
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
       - name: Install Inno Setup
         shell: pwsh
@@ -110,6 +116,21 @@ jobs:
       - name: Run unit tests
         shell: pwsh
         run: dotnet test Servy.sln --configuration Debug
+
+      # -----------------------------------------------------
+      # Build and Publish SBOM
+      # -----------------------------------------------------
+      - name: Generate SBOM
+        shell: pwsh
+        run: dotnet-CycloneDX Servy.sln --output . --filename servy-$env:VERSION-sbom.xml
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ env.VERSION }}-sbom
+          path: servy-${{ env.VERSION }}-sbom.xml
+          if-no-files-found: error
+          retention-days: 1
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Restarter.exe
@@ -483,7 +504,7 @@ jobs:
           path: servy-${{ env.VERSION }}-x64-portable.7z
           if-no-files-found: error
           retention-days: 1
-      
+
       # -----------------------------------------------------
       # Scan with VirusTotal
       # -----------------------------------------------------
