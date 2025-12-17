@@ -7,6 +7,9 @@ jobs:
   setup-tools:
     runs-on: windows-latest
 
+    env:
+      VERSION: '4.2'
+
     steps:
       # ---------------------------
       # Inno Setup
@@ -69,3 +72,35 @@ jobs:
 
       - name: Show 7-Zip Version
         run: 7z.exe -version || true
+
+      # -----------------------------------------------------
+      # Build and Publish SBOM
+      # -----------------------------------------------------
+      - name: Install the latest .NET SDK
+        shell: powershell
+        run: |
+          $url = "https://dot.net/v1/dotnet-install.ps1"
+          Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
+          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\dotnet"
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Install CycloneDX .NET Tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global CycloneDX
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
+
+      - name: Generate SBOM
+        shell: pwsh
+        run: dotnet-CycloneDX Servy.sln --output . --filename servy-$env:VERSION-sbom.xml
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ env.VERSION }}-sbom
+          path: servy-${{ env.VERSION }}-sbom.xml
+          if-no-files-found: error
+          retention-days: 1
