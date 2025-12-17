@@ -62,16 +62,34 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task AddAsync_EncryptsPasswordAndInserts_ReturnsId()
         {
-            var dto = new ServiceDto { Name = "S1", Password = "plain", EnvironmentVariables = "v1=val1;v2=val2", PreLaunchEnvironmentVariables = "v3=val3" };
+            var dto = new ServiceDto
+            {
+                Name = "S1",
+                Parameters = "params",
+                FailureProgramParameters = "failure-prog-params",
+                PreLaunchParameters = "pre-launch-params",
+                PostLaunchParameters = "post-launch-params",
+                Password = "plain",
+                EnvironmentVariables = "v1=val1;v2=val2",
+                PreLaunchEnvironmentVariables = "v3=val3"
+            };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
             _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
             _mockSecurePassword.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
+            _mockSecurePassword.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
 
             var repo = CreateRepository();
             var result = await repo.AddAsync(dto);
 
             Assert.Equal(42, result);
+            Assert.Equal("encrypted_params", dto.Parameters);
+            Assert.Equal("encrypted_failure_prog_params", dto.FailureProgramParameters);
+            Assert.Equal("encrypted_pre_launch_params", dto.PreLaunchParameters);
+            Assert.Equal("encrypted_post_launch_params", dto.PostLaunchParameters);
             Assert.Equal("encrypted", dto.Password);
             Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
             Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
@@ -80,16 +98,34 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task UpdateAsync_EncryptsPasswordAndExecutes_ReturnsAffectedRows()
         {
-            var dto = new ServiceDto { Id = 1, Password = "plain", EnvironmentVariables = "v1=val1;v2=val2", PreLaunchEnvironmentVariables = "v3=val3" };
+            var dto = new ServiceDto
+            {
+                Id = 1,
+                Parameters = "params",
+                FailureProgramParameters = "failure-prog-params",
+                PreLaunchParameters = "pre-launch-params",
+                PostLaunchParameters = "post-launch-params",
+                Password = "plain",
+                EnvironmentVariables = "v1=val1;v2=val2",
+                PreLaunchEnvironmentVariables = "v3=val3"
+            };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
             _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
             _mockSecurePassword.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
+            _mockSecurePassword.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
             var rows = await repo.UpdateAsync(dto);
 
             Assert.Equal(1, rows);
+            Assert.Equal("encrypted_params", dto.Parameters);
+            Assert.Equal("encrypted_failure_prog_params", dto.FailureProgramParameters);
+            Assert.Equal("encrypted_pre_launch_params", dto.PreLaunchParameters);
+            Assert.Equal("encrypted_post_launch_params", dto.PostLaunchParameters);
             Assert.Equal("encrypted", dto.Password);
             Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
             Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
@@ -196,15 +232,33 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task GetByIdAsync_DecryptsPassword()
         {
-            var dto = new ServiceDto { Id = 1, Password = "encrypted", EnvironmentVariables = "encrypted_vars", PreLaunchEnvironmentVariables = "encrypted_pre_vars" };
+            var dto = new ServiceDto
+            {
+                Id = 1,
+                Parameters = "encrypted_params",
+                FailureProgramParameters = "encrypted_failure_prog_params",
+                PreLaunchParameters = "encrypted_pre_launch_params",
+                PostLaunchParameters = "encrypted_post_launch_params",
+                Password = "encrypted",
+                EnvironmentVariables = "encrypted_vars",
+                PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+            };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1);
 
+            Assert.Equal("params", result.Parameters);
+            Assert.Equal("failure-prog-params", result.FailureProgramParameters);
+            Assert.Equal("pre-launch-params", result.PreLaunchParameters);
+            Assert.Equal("post-launch-params", result.PostLaunchParameters);
             Assert.Equal("plain", result.Password);
             Assert.Equal("v1=val1;v2=val2", result.EnvironmentVariables);
             Assert.Equal("v3=val3", result.PreLaunchEnvironmentVariables);
@@ -237,27 +291,63 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task GetByNameAsync_DecryptsPassword()
         {
-            var dto = new ServiceDto { Name = "S", Password = "encrypted", EnvironmentVariables = "encrypted_vars", PreLaunchEnvironmentVariables = "encrypted_pre_vars" };
+            var dto = new ServiceDto
+            {
+                Name = "S",
+                Parameters = "encrypted_params",
+                FailureProgramParameters = "encrypted_failure_prog_params",
+                PreLaunchParameters = "encrypted_pre_launch_params",
+                PostLaunchParameters = "encrypted_post_launch_params",
+                Password = "encrypted",
+                EnvironmentVariables = "encrypted_vars",
+                PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+            };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByNameAsync("S");
 
+            Assert.Equal("params", result.Parameters);
+            Assert.Equal("failure-prog-params", result.FailureProgramParameters);
+            Assert.Equal("pre-launch-params", result.PreLaunchParameters);
+            Assert.Equal("post-launch-params", result.PostLaunchParameters);
             Assert.Equal("plain", result.Password);
             Assert.Equal("v1=val1;v2=val2", result.EnvironmentVariables);
             Assert.Equal("v3=val3", result.PreLaunchEnvironmentVariables);
         }
 
         [Fact]
-        public async Task GetAllAsync_DecryptsAllPasswordsAndEnvVars()
+        public async Task GetAllAsync_DecryptsAll()
         {
             var list = new List<ServiceDto>
             {
-                new ServiceDto { Id = 1, Password = "e1", EnvironmentVariables = "encrypted_vars1", PreLaunchEnvironmentVariables = "encrypted_pre_vars1" },
-                new ServiceDto { Id = 2, Password = "e2", EnvironmentVariables = "encrypted_vars2", PreLaunchEnvironmentVariables = "encrypted_pre_vars2" }
+                new ServiceDto {
+                    Id = 1,
+                    Parameters = "encrypted_params1",
+                    FailureProgramParameters = "encrypted_failure_prog_params1",
+                    PreLaunchParameters = "encrypted_pre_launch_params1",
+                    PostLaunchParameters = "encrypted_post_launch_params1",
+                    Password = "e1",
+                    EnvironmentVariables = "encrypted_vars1",
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars1"
+                },
+                new ServiceDto {
+                    Id = 2,
+                    Parameters = "encrypted_params2",
+                    FailureProgramParameters = "encrypted_failure_prog_params2",
+                    PreLaunchParameters = "encrypted_pre_launch_params2",
+                    PostLaunchParameters = "encrypted_post_launch_params2",
+                    Password = "e2",
+                    EnvironmentVariables = "encrypted_vars2",
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars2"
+                }
             };
 
             _mockDapper
@@ -270,6 +360,14 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars2")).Returns("vars2");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars1")).Returns("pre_vars1");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars2")).Returns("pre_vars2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params1")).Returns("params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params1")).Returns("failure-prog-params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params1")).Returns("pre-launch-params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params1")).Returns("post-launch-params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params2")).Returns("params2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params2")).Returns("failure-prog-params2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params2")).Returns("pre-launch-params2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params2")).Returns("post-launch-params2");
 
             var repo = CreateRepository();
             var result = (await repo.GetAllAsync()).ToList();
@@ -277,12 +375,20 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Collection(result,
                 r =>
                 {
+                    Assert.Equal("params1", r.Parameters);
+                    Assert.Equal("failure-prog-params1", r.FailureProgramParameters);
+                    Assert.Equal("pre-launch-params1", r.PreLaunchParameters);
+                    Assert.Equal("post-launch-params1", r.PostLaunchParameters);
                     Assert.Equal("p1", r.Password);
                     Assert.Equal("vars1", r.EnvironmentVariables);
                     Assert.Equal("pre_vars1", r.PreLaunchEnvironmentVariables);
                 },
                 r =>
                 {
+                    Assert.Equal("params2", r.Parameters);
+                    Assert.Equal("failure-prog-params2", r.FailureProgramParameters);
+                    Assert.Equal("pre-launch-params2", r.PreLaunchParameters);
+                    Assert.Equal("post-launch-params2", r.PostLaunchParameters);
                     Assert.Equal("p2", r.Password);
                     Assert.Equal("vars2", r.EnvironmentVariables);
                     Assert.Equal("pre_vars2", r.PreLaunchEnvironmentVariables);
@@ -307,16 +413,36 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task Search_NullKeyword()
         {
-            var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1", EnvironmentVariables = "encrypted_vars", PreLaunchEnvironmentVariables = "encrypted_pre_vars" } };
+            var list = new List<ServiceDto>
+            {
+                new ServiceDto {
+                    Name = "A",
+                    Parameters = "encrypted_params",
+                    FailureProgramParameters = "encrypted_failure_prog_params",
+                    PreLaunchParameters = "encrypted_pre_launch_params",
+                    PostLaunchParameters = "encrypted_post_launch_params",
+                    Password = "e1",
+                    EnvironmentVariables = "encrypted_vars",
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+                }
+            };
             _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("vars");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("pre_vars");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
             var result = (await repo.Search(null)).ToList();
 
             Assert.Single(result);
+            Assert.Equal("params", result[0].Parameters);
+            Assert.Equal("failure-prog-params", result[0].FailureProgramParameters);
+            Assert.Equal("pre-launch-params", result[0].PreLaunchParameters);
+            Assert.Equal("post-launch-params", result[0].PostLaunchParameters);
             Assert.Equal("p1", result[0].Password);
             Assert.Equal("vars", result[0].EnvironmentVariables);
             Assert.Equal("pre_vars", result[0].PreLaunchEnvironmentVariables);
