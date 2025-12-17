@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>notepad_full</Name>
+  <DisplayName />
+  <Description>notepad</Description>
+  <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
+  <Parameters>--params</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <EnableRotation>false</EnableRotation>
+  <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <EnableHealthMonitoring>true</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>2</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <FailureProgramPath>C:\Windows\System32\notepad.exe</FailureProgramPath>
+  <FailureProgramParameters>--failure-args</FailureProgramParameters>
+  <EnvironmentVariables>var1=val1</EnvironmentVariables>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchParameters>pre-launch-args</PreLaunchParameters>
+  <PreLaunchEnvironmentVariables>pre-var1=pre-val1</PreLaunchEnvironmentVariables>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <PostLaunchExecutablePath>C:\Windows\System32\notepad.exe</PostLaunchExecutablePath>
+  <PostLaunchParameters>post-launch-args</PostLaunchParameters>
+  <EnableDebugLogs>true</EnableDebugLogs>
+</ServiceDto>
