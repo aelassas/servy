@@ -1,16 +1,35 @@
-name: tmp
+name: sbom
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version in Major.Minor format (e.g. 4.2)'
+        required: true
 
 jobs:
-  tmp:
+  sbom:
     runs-on: windows-latest
 
     env:
       VERSION: '4.2'
 
     steps:
+      # -----------------------------------------------------
+      # Validate version input (Major.Minor)
+      # -----------------------------------------------------
+      - name: Validate version format
+        shell: pwsh
+        run: |
+          $version = '${{ github.event.inputs.version }}'
+
+          if ($version -notmatch '^\d+\.\d+$') {
+            Write-Error "Invalid version format '$version'. Expected Major.Minor (e.g. 4.2)."
+            exit 1
+          }
+
+          Write-Host "Version format validated: $version"
+          
       # -----------------------------------------------------
       # Checkout repository
       # -----------------------------------------------------
@@ -41,12 +60,12 @@ jobs:
 
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --set-version "$env:VERSION.0" --output . --filename servy-$env:VERSION-sbom.xml
+        run: dotnet-CycloneDX Servy.sln --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-$env:VERSION-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-${{ env.VERSION }}-sbom
-          path: servy-${{ env.VERSION }}-sbom.xml
+          name: sbom-${{ github.event.inputs.version }}-sbom
+          path: servy-${{ github.event.inputs.version }}-sbom.xml
           if-no-files-found: error
           retention-days: 1
