@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-tools:
+  tmp:
     runs-on: windows-latest
 
     env:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --output . --filename servy-$env:VERSION-sbom.xml
+        run: dotnet-CycloneDX . --output . --filename servy-$env:VERSION-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
