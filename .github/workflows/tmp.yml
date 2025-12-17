@@ -42,6 +42,9 @@ jobs:
             Add-Content -Path $env:GITHUB_PATH -Value $innoPath
           }
 
+          # IMPORTANT: winget may exit 1 even on success
+          $global:LASTEXITCODE = 0
+
       - name: Show Inno Setup Version
         run: ISCC.exe /? || true
 
@@ -79,6 +82,9 @@ jobs:
             Write-Host "Adding 7-Zip to PATH"
             Add-Content -Path $env:GITHUB_PATH -Value $zipPath
           }
+
+          # IMPORTANT: winget may exit 1 even on success
+          $global:LASTEXITCODE = 0
 
       - name: Show 7-Zip Version
         run: 7z.exe -version || true
