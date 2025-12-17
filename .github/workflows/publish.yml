@@ -122,7 +122,7 @@ jobs:
       # -----------------------------------------------------
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --set-version $env:VERSION.0 --output . --filename servy-$env:VERSION-sbom.xml
+        run: dotnet-CycloneDX Servy.sln --set-version "$env:VERSION.0" --output . --filename servy-$env:VERSION-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
