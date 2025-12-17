@@ -36,7 +36,7 @@ namespace Servy.Service.CommandLine
 
             if (string.IsNullOrWhiteSpace(serviceName))
             {
-                throw new Exception("Service name is empty!");
+                throw new ArgumentException("Service name is empty!");
             }
 
             // Load configuration
@@ -56,7 +56,6 @@ namespace Servy.Service.CommandLine
             var xmlSerializer = new XmlServiceSerializer();
 
             IServiceRepository serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
-            var service = serviceRepository.GetByNameAsync(serviceName).Result;
 
             var serviceDto = serviceRepository
                 .GetByNameAsync(serviceName)
@@ -64,7 +63,7 @@ namespace Servy.Service.CommandLine
 
             if (serviceDto == null)
             {
-                throw new Exception($"Service {serviceName} not found in the database!");
+                throw new ArgumentNullException($"Service {serviceName} not found in the database!");
             }
 
             return new StartOptions
