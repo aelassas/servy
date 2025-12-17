@@ -1,0 +1,68 @@
+name: sbom
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version in Major.Minor format (e.g. 4.2)'
+        required: true
+
+jobs:
+  sbom:
+    runs-on: windows-latest
+
+    steps:
+      # -----------------------------------------------------
+      # Validate version input (Major.Minor)
+      # -----------------------------------------------------
+      - name: Validate version format
+        shell: pwsh
+        run: |
+          $version = '${{ github.event.inputs.version }}'
+
+          if ($version -notmatch '^\d+\.\d+$') {
+            Write-Error "Invalid version format '$version'. Expected Major.Minor (e.g. 4.2)."
+            exit 1
+          }
+
+          Write-Host "Version format validated: $version"
+          
+      # -----------------------------------------------------
+      # Checkout repository
+      # -----------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Required for provenance
+
+      # -----------------------------------------------------
+      # Build and Publish SBOM
+      # -----------------------------------------------------
+      - name: Install the latest .NET SDK
+        shell: powershell
+        run: |
+          $url = "https://dot.net/v1/dotnet-install.ps1"
+          Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
+          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\dotnet"
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Install CycloneDX .NET Tool
+        shell: pwsh
+        run: |
+          dotnet tool install --global CycloneDX
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
+
+      - name: Generate SBOM
+        shell: pwsh
+        run: dotnet-CycloneDX Servy.sln --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-${{ github.event.inputs.version }}-sbom.xml
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.event.inputs.version }}-sbom
+          path: servy-${{ github.event.inputs.version }}-sbom.xml
+          if-no-files-found: error
+          retention-days: 1
