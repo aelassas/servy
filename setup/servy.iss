@@ -90,15 +90,15 @@ Name: "addpath"; Description: "Add Servy to PATH"; GroupDescription: "Additional
 Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
 ; Source: "..\src\Servy\bin\x64\Release\{#MyAppExeName}.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_main_app
 Source: "..\src\Servy\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_main_app
-Source: "..\src\Servy\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_main_app
-Source: "..\src\Servy\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs;  Components: install_main_app
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_main_app
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs;  Components: install_main_app
 
 ; cli
 Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe"; DestDir: "{app}"; DestName:"{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 ; Source: "..\src\Servy.CLI\bin\x64\Release\Servy.CLI.exe.config"; DestDir: "{app}"; DestName:"servy-cli.exe.config"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall; Components: install_cli
 Source: "..\src\Servy.CLI\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
-Source: "..\src\Servy.CLI\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
-Source: "..\src\Servy.CLI\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_cli
 
 ; PowerShell Module
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
@@ -107,8 +107,8 @@ Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: i
 ; Manager
 Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
-Source: "..\src\Servy.Manager\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
-Source: "..\src\Servy.Manager\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
+Source: "..\src\Servy.Infrastructure\bin\x64\Release\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: install_manager
 
 ; taskschd
 Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall

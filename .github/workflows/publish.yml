@@ -284,7 +284,12 @@ jobs:
               $dst = Join-Path $t.Path $t.Name
               Write-Host "Injecting SIGNED Servy.Service.exe into $dst"
               Copy-Item $signed $dst -Force
-              Copy-Item "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/*.dll" $t.Path -Force
+              Copy-Item "src/Servy.Service/bin/$env:PLATFORM/$env:BUILD_CONFIG/*.dll" $t.Path -Force -ErrorAction Stop
+
+              New-Item -ItemType Directory -Force -Path "$($t.Path)\x86" | Out-Null
+              New-Item -ItemType Directory -Force -Path "$($t.Path)\x64" | Out-Null
+              Copy-Item "src/Servy.Infrastructure/bin/$env:PLATFORM/$env:BUILD_CONFIG/x86/*.dll" "$($t.Path)\x86" -Force -ErrorAction Stop
+              Copy-Item "src/Servy.Infrastructure/bin/$env:PLATFORM/$env:BUILD_CONFIG/x64/*.dll" "$($t.Path)\x64" -Force -ErrorAction Stop
           }
 
       # -----------------------------------------------------

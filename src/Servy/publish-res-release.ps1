@@ -44,6 +44,7 @@ $BuildConfiguration   = "Release"
 $Platform             = "x64"
 $BuildOutput          = Join-Path $ScriptDir "..\Servy.Service\bin\$Platform\$BuildConfiguration"
 $ResourcesBuildOutput = Join-Path $ScriptDir "..\Servy\bin\$Platform\$BuildConfiguration"
+$InfraBuildOutput     = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$Platform\$BuildConfiguration"
 $SignPath             = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ------------------------------------------------------------------------
@@ -86,8 +87,8 @@ New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x86" | Out-Null
 New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x64" | Out-Null
 
 # Copy x86/ x64/ folders
-Copy-Item -Path "$ResourcesBuildOutput\x86\*" -Destination "$ResourcesFolder\x86" -Force -Recurse
-Copy-Item -Path "$ResourcesBuildOutput\x64\*" -Destination "$ResourcesFolder\x64" -Force -Recurse
+Copy-Item -Path "$InfraBuildOutput\x86\*" -Destination "$ResourcesFolder\x86" -Force -Recurse
+Copy-Item -Path "$InfraBuildOutput\x64\*" -Destination "$ResourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
 # 5. CopyServy.Infrastructure.pdb
