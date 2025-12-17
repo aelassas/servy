@@ -33,4 +33,4 @@ jobs:
         run: nuget restore Servy.sln
 
       - name: Build solution (Release)
-        run: msbuild Servy.sln /p:Configuration=Release /p:AllowUnsafeBlocks=true
+        run: msbuild Servy.sln /p:Configuration=Release /p:AllowUnsafeBlocks=true /p:Platform=x64
