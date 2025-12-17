@@ -7,9 +7,6 @@ jobs:
   setup-tools:
     runs-on: windows-latest
 
-    env:
-      VERSION: '4.2'
-
     steps:
       # ---------------------------
       # Inno Setup
@@ -17,29 +14,32 @@ jobs:
       - name: Install or Upgrade Inno Setup
         shell: pwsh
         run: |
-          $version = "6.6.1"
-          # Check if installed
-          $installed = winget list -e --id JRSoftware.InnoSetup | Select-String -Pattern "\d+\.\d+\.\d+"
-          
-          if ($installed) {
-              $currentVersion = $installed.Matches[0].Value
-              if ($currentVersion -ne $version) {
-                  Write-Host "Installed version $currentVersion does not match pinned version $version"
-                  winget uninstall -e --id JRSoftware.InnoSetup || true
-                  winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
-              } else {
-                  Write-Host "Pinned version $version already installed"
-              }
+          $PinnedVersion = "6.6.1"
+          $PackageId = "JRSoftware.InnoSetup"
+
+          $installed = winget list -e --id $PackageId 2>$null
+
+          if ($installed -match '(\d+\.\d+\.\d+)') {
+            $currentVersion = $Matches[1]
+            Write-Host "Detected Inno Setup version: $currentVersion"
+
+            if ($currentVersion -eq $PinnedVersion) {
+              Write-Host "Pinned version $PinnedVersion already installed. Skipping."
+            } else {
+              Write-Host "Version mismatch. Reinstalling $PinnedVersion"
+              winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements || $true
+              winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
+            }
           } else {
-              Write-Host "Installing Inno Setup $version..."
-              winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
+            Write-Host "Inno Setup not found. Installing $PinnedVersion"
+            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
           }
 
-          # Add to PATH for this job
+          # Add to PATH
           $innoPath = "C:\Program Files (x86)\Inno Setup 6"
           if (Test-Path $innoPath) {
-           Write-Host "Adding Inno Setup to PATH"
-           Add-Content -Path $env:GITHUB_PATH -Value $innoPath
+            Write-Host "Adding Inno Setup to PATH"
+            Add-Content -Path $env:GITHUB_PATH -Value $innoPath
           }
 
       - name: Show Inno Setup Version
@@ -52,18 +52,28 @@ jobs:
       - name: Install or Upgrade 7-Zip
         shell: pwsh
         run: |
-          # Check if installed
-          $installed = winget list -e --id 7zip.7zip
+          $PinnedVersion = "25.01"
+          $PackageId = "7zip.7zip"
 
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "7-Zip already installed - upgrading..."
-            winget upgrade -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements || true
+          $installed = winget list -e --id $PackageId 2>$null
+
+          if ($installed -match '(\d+\.\d+)') {
+            $currentVersion = $Matches[1]
+            Write-Host "Detected 7-Zip version: $currentVersion"
+
+            if ($currentVersion -eq $PinnedVersion) {
+              Write-Host "Pinned version $PinnedVersion already installed. Skipping."
+            } else {
+              Write-Host "Version mismatch. Reinstalling $PinnedVersion"
+              winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements || $true
+              winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
+            }
           } else {
-            Write-Host "7-Zip not installed - installing..."
-            winget install -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements
+            Write-Host "7-Zip not found. Installing $PinnedVersion"
+            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
           }
 
-          # Add to PATH for this job
+          # Add to PATH
           $zipPath = "C:\Program Files\7-Zip"
           if (Test-Path $zipPath) {
             Write-Host "Adding 7-Zip to PATH"
