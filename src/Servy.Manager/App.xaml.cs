@@ -150,6 +150,8 @@ namespace Servy.Manager
                     var resourceItems = new List<ResourceItem>
                     {
                         new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceUIFileName, Extension= "exe"},
+                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop",  Extension= "dll", Subfolder = "x64" },
+                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop", Extension= "dll", Subfolder = "x86" },
                     };
 
 #if DEBUG
