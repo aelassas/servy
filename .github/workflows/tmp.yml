@@ -13,38 +13,8 @@ jobs:
       # ---------------------------
       - name: Install or Upgrade Inno Setup
         shell: pwsh
-        run: |
-          $PinnedVersion = "6.6.1"
-          $PackageId = "JRSoftware.InnoSetup"
-
-          $installed = winget list -e --id $PackageId 2>$null
-
-          if ($installed -match '(\d+\.\d+\.\d+)') {
-            $currentVersion = $Matches[1]
-            Write-Host "Detected Inno Setup version: $currentVersion"
-
-            if ($currentVersion -eq $PinnedVersion) {
-              Write-Host "Pinned version $PinnedVersion already installed. Skipping."
-            } else {
-              Write-Host "Version mismatch. Reinstalling $PinnedVersion"
-              winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements || $true
-              winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
-            }
-          } else {
-            Write-Host "Inno Setup not found. Installing $PinnedVersion"
-            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements || $true
-          }
-
-          # Add to PATH
-          $innoPath = "C:\Program Files (x86)\Inno Setup 6"
-          if (Test-Path $innoPath) {
-            Write-Host "Adding Inno Setup to PATH"
-            Add-Content -Path $env:GITHUB_PATH -Value $innoPath
-          }
-
-          # IMPORTANT: winget may exit 1 even on success
-          $global:LASTEXITCODE = 0
-
+        run: winget install -e --id JRSoftware.InnoSetup --version 6.6.1 --accept-source-agreements --accept-package-agreements || $true
+        
       - name: Show Inno Setup Version
         run: ISCC.exe /? || true
 
@@ -54,44 +24,7 @@ jobs:
       # ---------------------------
       - name: Install or Upgrade 7-Zip
         shell: pwsh
-        run: |
-          $PinnedVersion = "25.01"
-          $PackageId = "7zip.7zip"
-
-          $currentVersion = $null
-
-          try {
-            $json = winget list -e --id $PackageId --output json 2>$null | ConvertFrom-Json
-            if ($json.Count -gt 0) {
-              $currentVersion = $json[0].Version
-              Write-Host "Detected 7-Zip version: $currentVersion"
-            }
-          } catch {
-            Write-Host "Failed to parse winget output"
-          }
-
-          if ($currentVersion -eq $PinnedVersion) {
-            Write-Host "Pinned version $PinnedVersion already installed. Skipping."
-          }
-          elseif ($currentVersion) {
-            Write-Host "Version mismatch. Reinstalling $PinnedVersion"
-            winget uninstall -e --id $PackageId --accept-source-agreements --accept-package-agreements
-            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements
-          }
-          else {
-            Write-Host "7-Zip not found. Installing $PinnedVersion"
-            winget install -e --id $PackageId --version $PinnedVersion --accept-source-agreements --accept-package-agreements
-          }
-
-          $zipPath = "C:\Program Files\7-Zip"
-          if (Test-Path $zipPath) {
-            Write-Host "Adding 7-Zip to PATH"
-            Add-Content -Path $env:GITHUB_PATH -Value $zipPath
-          }
-
-          # winget may exit non-zero even on success
-          $global:LASTEXITCODE = 0
-      
+        run: winget install -e --id 7zip.7zip --version 25.01 --accept-source-agreements --accept-package-agreements || $true
 
       - name: Show 7-Zip Version
         run: 7z.exe -version || true
