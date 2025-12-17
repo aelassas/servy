@@ -1,0 +1,75 @@
+name: tmp
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-tools:
+    runs-on: windows-latest
+
+    env:
+      VERSION: '4.2'
+
+    steps:
+      # ---------------------------
+      # Inno Setup
+      # ---------------------------
+      - name: Install or Upgrade Inno Setup
+        shell: pwsh
+        run: |
+          $version = "6.6.1"
+          # Check if installed
+          $installed = winget list -e --id JRSoftware.InnoSetup | Select-String -Pattern "\d+\.\d+\.\d+"
+          
+          if ($installed) {
+              $currentVersion = $installed.Matches[0].Value
+              if ($currentVersion -ne $version) {
+                  Write-Host "Installed version $currentVersion does not match pinned version $version"
+                  winget uninstall -e --id JRSoftware.InnoSetup || true
+                  winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
+              } else {
+                  Write-Host "Pinned version $version already installed"
+              }
+          } else {
+              Write-Host "Installing Inno Setup $version..."
+              winget install -e --id JRSoftware.InnoSetup --version $version --accept-source-agreements --accept-package-agreements
+          }
+
+          # Add to PATH for this job
+          $innoPath = "C:\Program Files (x86)\Inno Setup 6"
+          if (Test-Path $innoPath) {
+           Write-Host "Adding Inno Setup to PATH"
+           Add-Content -Path $env:GITHUB_PATH -Value $innoPath
+          }
+
+      - name: Show Inno Setup Version
+        run: ISCC.exe /? || true
+
+
+      # ---------------------------
+      # 7-Zip
+      # ---------------------------
+      - name: Install or Upgrade 7-Zip
+        shell: pwsh
+        run: |
+          # Check if installed
+          $installed = winget list -e --id 7zip.7zip
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "7-Zip already installed - upgrading..."
+            winget upgrade -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements || true
+          } else {
+            Write-Host "7-Zip not installed - installing..."
+            winget install -e --id 7zip.7zip --accept-source-agreements --accept-package-agreements
+          }
+
+          # Add to PATH for this job
+          $zipPath = "C:\Program Files\7-Zip"
+          if (Test-Path $zipPath) {
+            Write-Host "Adding 7-Zip to PATH"
+            Add-Content -Path $env:GITHUB_PATH -Value $zipPath
+          }
+
+      - name: Show 7-Zip Version
+        run: 7z.exe -version || true
+

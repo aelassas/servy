@@ -1,3 +1,32 @@
+# ==============================================================================
+# SBOM Generation Workflow
+# ==============================================================================
+#
+# Purpose:
+#   This workflow generates a CycloneDX Software Bill of Materials (SBOM)
+#   for the Servy solution and uploads it as a short-lived build artifact.
+#
+# Trigger:
+#   Manually triggered via workflow_dispatch.
+#
+# Inputs:
+#   version:
+#     Required. Must be in Major.Minor format (e.g. 4.2).
+#     The value is validated at runtime and used consistently for:
+#       - SBOM metadata version
+#       - Output filename
+#       - Artifact name
+#
+# Security / Trust Notes:
+#   - Version input is validated early and the workflow fails fast on error.
+#   - Repository checkout uses full history to support provenance generation.
+#   - The SBOM artifact is retained for 1 day to reduce exposure surface.
+#
+# Output:
+#   - servy-<version>-sbom.xml (CycloneDX XML)
+#
+# ==============================================================================
+
 name: sbom
 
 on:
