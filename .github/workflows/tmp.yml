@@ -12,6 +12,14 @@ jobs:
 
     steps:
       # -----------------------------------------------------
+      # Checkout repository
+      # -----------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Required for provenance
+
+      # -----------------------------------------------------
       # Build and Publish SBOM
       # -----------------------------------------------------
       - name: Install the latest .NET SDK
