@@ -11,9 +11,6 @@ jobs:
   sbom:
     runs-on: windows-latest
 
-    env:
-      VERSION: '4.2'
-
     steps:
       # -----------------------------------------------------
       # Validate version input (Major.Minor)
@@ -60,7 +57,7 @@ jobs:
 
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-$env:VERSION-sbom.xml
+        run: dotnet-CycloneDX Servy.sln --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-${{ github.event.inputs.version }}-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
