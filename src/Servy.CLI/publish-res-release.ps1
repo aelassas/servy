@@ -45,7 +45,6 @@ $BuildConfiguration    = "Release"
 $Platform              = "x64"
 $BuildOutput           = Join-Path $ScriptDir "..\Servy.Service\bin\$Platform\$BuildConfiguration"
 $ResourcesBuildOutput  = Join-Path $ScriptDir "..\Servy.CLI\bin\$Platform\$BuildConfiguration"
-$InfraBuildOutput      = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$Platform\$BuildConfiguration"
 
 # ------------------------------------------------------------------------
 # Step 0: Build Servy to ensure x86 and x64 resources exist
@@ -81,14 +80,6 @@ foreach ($File in $FilesToCopy) {
         Write-Host "Copied $($File.Source) -> $($File.Destination)"
     }
 }
-
-# Ensure destination folders exist
-New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x86" | Out-Null
-New-Item -ItemType Directory -Force -Path "$ResourcesFolder\x64" | Out-Null
-
-# Copy x86/ x64/ folders
-Copy-Item -Path "$InfraBuildOutput\x86\*" -Destination "$ResourcesFolder\x86" -Force -Recurse
-Copy-Item -Path "$InfraBuildOutput\x64\*" -Destination "$ResourcesFolder\x64" -Force -Recurse
 
 # ----------------------------------------------------------------------
 # 5. Copy Servy.Infrastructure.pdb
