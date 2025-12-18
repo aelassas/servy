@@ -28,7 +28,7 @@ Servy lets you run any app as a native Windows service with full control over th
 
 This .NET Framework 4.8 version is designed for compatibility with older Windows operating systems, from Windows 7 SP1 to Windows 11 and Windows Server.
 
-Servy is officially signed with a trusted SignPath certificate. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
+Servy is digitally signed using a trusted code-signing certificate provided by the SignPath Foundation. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
