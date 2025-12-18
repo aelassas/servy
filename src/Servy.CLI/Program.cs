@@ -109,8 +109,6 @@ namespace Servy.CLI
                     var resourceItems = new List<ResourceItem>
                     {
                         new ResourceItem{ FileNameWithoutExtension = AppConfig.ServyServiceCLIFileName, Extension= "exe"},
-                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop",  Extension= "dll", Subfolder = "x64" },
-                        new ResourceItem{ FileNameWithoutExtension = "SQLite.Interop", Extension= "dll", Subfolder = "x86" },
                     };
 
 #if DEBUG

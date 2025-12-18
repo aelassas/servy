@@ -175,8 +175,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <EmbeddedResource Include="Resources\e_sqlite3.dll" />
-    <EmbeddedResource Include="Resources\x64\SQLite.Interop.dll" />
-    <EmbeddedResource Include="Resources\x86\SQLite.Interop.dll" />
     <EmbeddedResource Include="Resources\Dapper.dll" />
     <EmbeddedResource Include="Resources\Microsoft.Bcl.AsyncInterfaces.dll" />
     <EmbeddedResource Include="Resources\Newtonsoft.Json.dll" />
