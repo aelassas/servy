@@ -96,8 +96,8 @@ jobs:
           dotnet-CycloneDX "src\Servy\Servy.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.xml"
           dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Manager.xml"
           dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.CLI.xml"
-          dotnet-CycloneDX "src\Servy.CLI\Servy.Service.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Service.xml"
-          dotnet-CycloneDX "src\Servy.CLI\Servy.Restarter.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Restarter.xml"
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Service.xml"
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Restarter.xml"
           
           # Merge into servy-${{ github.event.inputs.version }}-net48-sbom.xml
           cyclonedx merge --input-files `
