@@ -87,7 +87,8 @@ jobs:
       - name: Install CycloneDX CLI
         shell: pwsh
         run: |
-          choco install cyclonedx-cli -y
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.29.2/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
+          Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Generate SBOM
         shell: pwsh
@@ -99,13 +100,14 @@ jobs:
           dotnet-CycloneDX "src\Servy.CLI\Servy.Restarter.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Restarter.xml"
           
           # Merge into servy-${{ github.event.inputs.version }}-net48-sbom.xml
-          cyclonedx merge `
+          cyclonedx merge --input-files `
             servy-Servy.xml `
             servy-Servy.Manager.xml `
             servy-Servy.CLI.xml `
             servy-Servy.Service.xml `
             servy-Servy.Restarter.xml `
-            --output "servy-${{ github.event.inputs.version }}-net48-sbom.xml"
+            --output-format xml `
+            --output-file "servy-${{ github.event.inputs.version }}-net48-sbom.xml"
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
