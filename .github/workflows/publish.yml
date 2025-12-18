@@ -130,20 +130,19 @@ jobs:
         shell: pwsh
         run: |
           $version = "$env:VERSION.0"
-          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.xml"
-          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Manager.xml"
-          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.CLI.xml"
-          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Service.xml"
-          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Restarter.xml"
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml"
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml"
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml"
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml"
           
           # Merge into servy-$env:VERSION-sbom.xml
           cyclonedx merge --input-files `
-            servy-Servy.xml `
-            servy-Servy.Manager.xml `
-            servy-Servy.CLI.xml `
-            servy-Servy.Service.xml `
-            servy-Servy.Restarter.xml `
-            --output-format xml `
+            sbom-Servy.xml `
+            sbom-Servy.CLI.xml `
+            sbom-Servy.Manager.xml `
+            sbom-Servy.Restarter.xml `
+            sbom-Servy.Service.xml `
             --output-file "servy-$env:VERSION-sbom.xml"
 
       - name: Upload SBOM
