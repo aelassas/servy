@@ -84,16 +84,28 @@ jobs:
           dotnet tool install --global CycloneDX
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
+      - name: Install CycloneDX CLI
+        shell: pwsh
+        run: |
+          choco install cyclonedx-cli -y
+
       - name: Generate SBOM
         shell: pwsh
         run: |
-          dotnet-CycloneDX "src\Servy\Servy.csproj" `
-          "src\Servy.Manager\Servy.Manager.csproj" `
-          "src\Servy.CLI\Servy.CLI.csproj" `
-          --recursive `
-          --set-version "${{ github.event.inputs.version }}.0" `
-          --output . `
-          --filename servy-${{ github.event.inputs.version }}-net48-sbom.xml
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.xml"
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Manager.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.CLI.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.Service.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Service.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.Restarter.csproj" --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Restarter.xml"
+          
+          # Merge into servy-${{ github.event.inputs.version }}-net48-sbom.xml
+          cyclonedx merge `
+            servy-Servy.xml `
+            servy-Servy.Manager.xml `
+            servy-Servy.CLI.xml `
+            servy-Servy.Service.xml `
+            servy-Servy.Restarter.xml `
+            --output "servy-${{ github.event.inputs.version }}-net48-sbom.xml"
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
