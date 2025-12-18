@@ -93,11 +93,12 @@ jobs:
       - name: Generate SBOM
         shell: pwsh
         run: |
-          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.xml"
-          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Manager.xml"
-          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.CLI.xml"
-          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Service.xml"
-          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "${{ github.event.inputs.version }}.0" --output . --filename "servy-Servy.Restarter.xml"
+          $version = "${{ github.event.inputs.version }}.0"
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.xml"
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Manager.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.CLI.xml"
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Service.xml"
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Restarter.xml"
           
           # Merge into servy-${{ github.event.inputs.version }}-net48-sbom.xml
           cyclonedx merge --input-files `
