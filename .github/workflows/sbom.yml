@@ -86,7 +86,7 @@ jobs:
 
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-${{ github.event.inputs.version }}-net48-sbom.xml
+        run: dotnet-CycloneDX Servy.sln --exclude-test-projects --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-${{ github.event.inputs.version }}-net48-sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
