@@ -177,6 +177,8 @@ jobs:
           --output . `
           --filename servy-$env:VERSION-$env:FRAMEWORK-sbom.xml
 
+
+
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
