@@ -84,9 +84,31 @@ jobs:
           dotnet tool install --global CycloneDX
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
 
+      - name: Install CycloneDX CLI
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.29.2/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
+          Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
+
       - name: Generate SBOM
         shell: pwsh
-        run: dotnet-CycloneDX Servy.sln --exclude-test-projects --set-version "${{ github.event.inputs.version }}.0" --output . --filename servy-${{ github.event.inputs.version }}-sbom.xml
+        run: |
+          $version = "${{ github.event.inputs.version }}.0"
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.xml"
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Manager.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.CLI.xml"
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Service.xml"
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "servy-Servy.Restarter.xml"
+          
+          # Merge into servy-${{ github.event.inputs.version }}-sbom.xml
+          cyclonedx merge --input-files `
+            servy-Servy.xml `
+            servy-Servy.Manager.xml `
+            servy-Servy.CLI.xml `
+            servy-Servy.Service.xml `
+            servy-Servy.Restarter.xml `
+            --output-format xml `
+            --output-file "servy-${{ github.event.inputs.version }}-sbom.xml"
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
