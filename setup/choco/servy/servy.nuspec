@@ -2,12 +2,12 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>servy</id>
-    <version>4.2.0</version>
+    <version>4.3.0</version>
     <title>Servy</title>
     <authors>Akram El Assas</authors>
     <owners>Akram El Assas</owners>
     <projectUrl>https://github.com/aelassas/servy</projectUrl>
-    <iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v4.2/src/Servy/servy.ico</iconUrl>
+    <iconUrl>https://cdn.jsdelivr.net/gh/aelassas/servy@v4.3/src/Servy/servy.ico</iconUrl>
     <licenseUrl>https://github.com/aelassas/servy/blob/main/LICENSE.txt</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
@@ -20,6 +20,6 @@
       Service.
       It is a modern, lightweight, and open alternative to NSSM and WinSW.
     </description>
-    <releaseNotes>Release for version 4.2.0. See https://github.com/aelassas/servy/releases/tag/v4.2</releaseNotes>
+    <releaseNotes>Release for version 4.3.0. See https://github.com/aelassas/servy/releases/tag/v4.3</releaseNotes>
   </metadata>
 </package>
