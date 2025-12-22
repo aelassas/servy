@@ -78,11 +78,21 @@ foreach ($Proj in $TestProjects) {
 
     Write-Host "Running tests for $($ProjName)..."
 
-    coverlet "$DllPath" `
-      --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-      --targetargs "$DllPath --ResultsDirectory:$TestResultsDir" `
-      --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
-      --format "cobertura"
+    if ($Proj -like "*Servy.Infrastructure*") {
+        coverlet "$DllPath" `
+            --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
+            --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
+            --format "cobertura" `
+            --exclude "[Servy.Core]*"
+    } else {
+        coverlet "$DllPath" `
+            --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
+            --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
+            --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
+            --format "cobertura"
+    }
+
 }
 
 # Generate a global coverage report

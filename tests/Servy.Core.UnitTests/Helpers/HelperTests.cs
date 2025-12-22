@@ -189,6 +189,7 @@ namespace Servy.Core.UnitTests.Helpers
             string result = Helper.ParseFrameworkName(input);
             Assert.Equal(expected, result);
         }
+
     }
 
 }
