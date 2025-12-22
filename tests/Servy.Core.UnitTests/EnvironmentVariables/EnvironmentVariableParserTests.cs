@@ -1,5 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using System;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
@@ -196,6 +197,79 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
             Assert.Single(result);
             Assert.Equal("KEY", result[0].Name);
             Assert.Equal(value, result[0].Value);
+        }
+
+        private static string[] InvokeSplit(string input, char delimiter)
+        {
+            var method = typeof(EnvironmentVariableParser)
+                .GetMethod(
+                    "SplitByUnescapedDelimiter",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.NotNull(method);
+
+            return (string[])method!.Invoke(null, new object[] { input, delimiter })!;
+        }
+
+        [Fact]
+        public void SplitByUnescapedDelimiter_AllBranchesCovered()
+        {
+            // no delimiter
+            var result = InvokeSplit("abc", '=');
+            Assert.Single(result);
+            Assert.Equal("abc", result[0]);
+
+            // unescaped delimiter
+            result = InvokeSplit("a=b", '=');
+            Assert.Equal(new[] { "a", "b" }, result);
+
+            // escaped delimiter (odd backslashes)
+            result = InvokeSplit(@"a\=b", '=');
+            Assert.Single(result);
+            Assert.Equal(@"a\=b", result[0]);
+
+            // even backslashes -> delimiter is unescaped
+            result = InvokeSplit(@"a\\=b", '=');
+            Assert.Equal(new[] { @"a\\", "b" }, result);
+
+            // odd backslashes again
+            result = InvokeSplit(@"a\\\=b", '=');
+            Assert.Single(result);
+            Assert.Equal(@"a\\\=b", result[0]);
+
+            // multiple unescaped delimiters
+            result = InvokeSplit("a=b=c", '=');
+            Assert.Equal(new[] { "a", "b", "c" }, result);
+
+            // trailing delimiter
+            result = InvokeSplit("a=", '=');
+            Assert.Equal(new[] { "a", string.Empty }, result);
+        }
+
+        [Fact]
+        public void SplitByUnescapedDelimiter_CoversAllWhileBranchConditions()
+        {
+            // 1. j < 0 (delimiter at index 0)
+            var result = InvokeSplit("=a", '=');
+            Assert.Equal(new[] { string.Empty, "a" }, result);
+
+            // 2. j >= 0 but previous char is NOT backslash
+            result = InvokeSplit("a=b", '=');
+            Assert.Equal(new[] { "a", "b" }, result);
+
+            // 3. loop executes once (single backslash)
+            result = InvokeSplit(@"a\=b", '=');
+            Assert.Single(result);
+            Assert.Equal(@"a\=b", result[0]);
+
+            // 4. loop executes multiple times (multiple backslashes)
+            result = InvokeSplit(@"a\\\=b", '=');
+            Assert.Single(result);
+            Assert.Equal(@"a\\\=b", result[0]);
+
+            // sanity: even backslashes -> split
+            result = InvokeSplit(@"a\\=b", '=');
+            Assert.Equal(new[] { @"a\\", "b" }, result);
         }
 
     }
