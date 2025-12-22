@@ -1,5 +1,6 @@
 ﻿using Servy.Core.EnvironmentVariables;
 using System;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.EnvironmentVariables
@@ -181,6 +182,55 @@ namespace Servy.Core.UnitTests.EnvironmentVariables
 
             // Assert
             Assert.Equal(-1, result);
+        }
+
+        private static string[] InvokeSplit(string input, char[] delimiters)
+        {
+            var method = typeof(EnvironmentVariablesValidator)
+                .GetMethod(
+                    "SplitByUnescapedDelimiters",
+                    BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.NotNull(method);
+
+            return (string[])method.Invoke(null, new object[] { input, delimiters });
+        }
+
+        [Fact]
+        public void SplitByUnescapedDelimiters_AllBranchesCovered()
+        {
+            var delims = new[] { '=', ';' };
+
+            // 1. delimiter at index 0 -> j < 0
+            var result = InvokeSplit("=a", delims);
+            Assert.Equal(new[] { string.Empty, "a" }, result);
+
+            // 2. delimiter preceded by non-backslash
+            result = InvokeSplit("a=b", delims);
+            Assert.Equal(new[] { "a", "b" }, result);
+
+            // 3. delimiter not in delimiters list
+            result = InvokeSplit("a:b", delims);
+            Assert.Single(result);
+            Assert.Equal("a:b", result[0]);
+
+            // 4. single backslash before delimiter (odd -> escaped)
+            result = InvokeSplit(@"a\=b", delims);
+            Assert.Single(result);
+            Assert.Equal(@"a\=b", result[0]);
+
+            // 5. multiple backslashes (odd -> escaped, loop runs multiple times)
+            result = InvokeSplit(@"a\\\=b", delims);
+            Assert.Single(result);
+            Assert.Equal(@"a\\\=b", result[0]);
+
+            // 6. even backslashes -> unescaped delimiter
+            result = InvokeSplit(@"a\\=b", delims);
+            Assert.Equal(new[] { @"a\\", "b" }, result);
+
+            // 7. multiple delimiters, mixed escaped and unescaped
+            result = InvokeSplit(@"a=b\;c;d", delims);
+            Assert.Equal(new[] { "a", @"b\;c", "d" }, result);
         }
 
     }
