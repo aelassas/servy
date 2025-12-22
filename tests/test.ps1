@@ -63,7 +63,8 @@ foreach ($Proj in $TestProjects) {
 
     # Build the test project in Debug mode
     Write-Host "Building $($Proj)..."
-    & $MsbuildPath $Proj /p:Configuration=Debug /verbosity:minimal
+    $Platform = "x64"
+    & $MsbuildPath $Proj /p:Configuration=Debug /verbosity:minimal /p:Platform=$Platform
 
     # Get project name without extension
     $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
