@@ -305,7 +305,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$ for Group Managed Service Accounts)..
+        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$)..
         /// </summary>
         public static string Info_UserAccount {
             get {
@@ -314,7 +314,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Make sure to grant write access on %ProgramData%\Servy to whichever account runs the service..
+        ///   Recherche une chaîne localisée semblable à If the service runs under an account other than Local System, NT AUTHORITY\NetworkService, or NT AUTHORITY\LocalService, make sure to grant write access to %ProgramData%\Servy for the account running the service..
         /// </summary>
         public static string Info_UserAccountRights {
             get {
