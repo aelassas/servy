@@ -291,10 +291,10 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>User Account</value>
   </data>
   <data name="Info_UserAccount" xml:space="preserve">
-    <value>The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$ for Group Managed Service Accounts).</value>
+    <value>The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$).</value>
   </data>
   <data name="Info_UserAccountRights" xml:space="preserve">
-    <value>Make sure to grant write access on %ProgramData%\Servy to whichever account runs the service.</value>
+    <value>If the service runs under an account other than Local System, NT AUTHORITY\NetworkService, or NT AUTHORITY\LocalService, make sure to grant write access to %ProgramData%\Servy for the account running the service.</value>
   </data>
   <data name="Label_Password" xml:space="preserve">
     <value>Password</value>
