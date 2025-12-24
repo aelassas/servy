@@ -228,10 +228,14 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Helper method to convert "v1.2.3" or "1.2.3" into a comparable double, e.g., 1.23
+        /// Helper method to convert a version string like "v1.2" or "1.2" into a comparable double (e.g. 1.2).
+        /// Only the major and minor parts are considered; any additional segments are ignored.
+        /// Major version can be any non-negative integer.
+        /// Minor version is a single digit between 1 and 9.
+        /// Returns 0 if the input is invalid or cannot be parsed.
         /// </summary>
-        /// <param name="version">Version in the following format  "v1.2.3" or "1.2.3".</param>
-        /// <returns>Version as double.</returns>
+        /// <param name="version">Version string in the format "v1.2" or "1.2".</param>
+        /// <returns>The parsed version as a double, or 0 on failure.</returns>
         public static double ParseVersion(string version)
         {
             version = version.TrimStart('v', 'V');
