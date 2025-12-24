@@ -62,7 +62,7 @@ namespace Servy.UI.Services
                         return;
                     }
 
-                    // Convert version tag to double (e.g., "v1.2.3" -> 1.23)
+                    // Convert version tag to double (e.g., "v1.2" -> 1.2)
                     var latestVersion = Helper.ParseVersion(tagName);
                     var currentVersion = Helper.ParseVersion(AppConfig.Version);
 
