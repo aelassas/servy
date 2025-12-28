@@ -1,6 +1,5 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Models;
 
 namespace Servy.Services
 {
