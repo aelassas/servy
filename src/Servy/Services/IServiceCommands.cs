@@ -1,9 +1,4 @@
-﻿using Servy.Core.DTOs;
-using Servy.Core.Enums;
-using Servy.Models;
-using System.Threading.Tasks;
-
-namespace Servy.Services
+﻿namespace Servy.Services
 {
     /// <summary>
     /// Defines commands for managing Windows services, including install, uninstall, start, stop, and restart operations.
