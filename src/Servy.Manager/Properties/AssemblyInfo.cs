@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Servy.Manager")]
-[assembly: AssemblyCopyright("Copyright © 2025 Akram El Assas. All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright © 2026 Akram El Assas. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
