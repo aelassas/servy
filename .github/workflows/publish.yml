@@ -190,7 +190,7 @@ jobs:
             sbom-Servy.CLI.xml `
             sbom-Servy.Manager.xml `
             sbom-Servy.Restarter.xml `
-            sbom-Servy.Service.xml 
+            sbom-Servy.Service.xml `
             --output-file "servy-$env:VERSION-$env:FRAMEWORK-sbom.xml"
 
       - name: Upload SBOM
