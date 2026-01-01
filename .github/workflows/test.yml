@@ -63,7 +63,8 @@ jobs:
             --targetargs "tests\Servy.Infrastructure.UnitTests\bin\x64\Debug\Servy.Infrastructure.UnitTests.dll" `
             --output "Infrastructure\coverage.cobertura.xml" `
             --format "cobertura" `
-            --include-directory "${{ github.workspace }}"
+            --include-directory "${{ github.workspace }}" `
+            --exclude "[Servy.Core]*"
         shell: pwsh
 
       # - name: Dump Infrastructure\coverage.cobertura.xml
