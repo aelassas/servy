@@ -24,9 +24,6 @@ jobs:
         with:
           fetch-depth: 0   # important, otherwise commit message won't be available
 
-      - name: Ensure base commit is available
-        run: git fetch origin main --depth=1
-
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
