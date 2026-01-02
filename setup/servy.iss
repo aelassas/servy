@@ -62,7 +62,7 @@ SolidCompression=yes
 
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-WizardStyle=modern
+WizardStyle=modern dynamic
 
 UsePreviousTasks=no
 AlwaysRestart=no
@@ -268,6 +268,17 @@ begin
   end;
 end;
 
+// 528040 is the release key for .NET Framework 4.8
+const DotNet48Release = 528040;
+
+// Checks if .NET Framework 4.8 or newer is installed on the target machine
+function IsDotNet48Installed: Boolean;
+var
+  Release: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', Release) and (Release >= DotNet48Release);
+end;
+
 function InitializeSetup(): Boolean;
 var
   sInstalledVersion, message: String;
@@ -279,6 +290,18 @@ var
   i, j: Integer;
 begin
   Result := True;
+ 
+  if not IsDotNet48Installed then
+  begin
+    MsgBox(
+      'Servy requires .NET Framework 4.8 or newer. Please install it and try again.',
+      mbCriticalError,
+      MB_OK
+    );
+    Result := False;
+    Exit;
+  end;
+ 
   sInstalledVersion := GetInstalledVersion();
  
   if IsUpgrade() and (sInstalledVersion <> '') then
