@@ -46,7 +46,7 @@ SolidCompression=yes
 
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-WizardStyle=modern
+WizardStyle=modern dynamic
 
 UsePreviousTasks=no
 AlwaysRestart=no
