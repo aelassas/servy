@@ -65,18 +65,26 @@ namespace Servy.Manager.ViewModels
                 _selectedService = value;
                 OnPropertyChanged(nameof(SelectedService));
 
-                // Reset display values
+                // 1. Reset display values
                 Pid = NotAvailableText;
                 CpuUsage = NotAvailableText;
                 RamUsage = NotAvailableText;
 
-                // Reset data history
-                _cpuValues = new List<double>();
-                CpuPointCollection = new PointCollection();
-                _ramValues = new List<double>();
-                RamPointCollection = new PointCollection();
+                // 2. Clear and SEED the data history with 100 zeros
+                // This ensures the graph line spans the whole width immediately
+                _cpuValues = Enumerable.Repeat(0.0, 100).ToList();
+                _ramValues = Enumerable.Repeat(0.0, 100).ToList();
 
-                StopMonitoring(true);
+                // 3. Reset the UI collections to empty (they will update on next tick)
+                CpuPointCollection = new PointCollection();
+                RamPointCollection = new PointCollection();
+                RamFillPoints = new PointCollection();
+
+                // 4. Clear smoothing buffers to prevent old service data leaking into new service
+                _cpuSmoothingBuffer.Clear();
+                _ramSmoothingBuffer.Clear();
+
+                StopMonitoring(false); // Pass false so we don't clear the zeros we just added
                 StartMonitoring();
             }
         }
