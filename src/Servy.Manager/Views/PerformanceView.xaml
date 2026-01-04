@@ -1,0 +1,172 @@
+﻿<UserControl x:Class="Servy.Manager.Views.PerformanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             xmlns:local="clr-namespace:Servy.Manager"
+             xmlns:resx="clr-namespace:Servy.Manager.Resources"
+             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+             xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="4*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: SEARCH + SERVICES -->
+        <Border Grid.Column="0" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search -->
+                <DockPanel Margin="6">
+                    <TextBox Width="164" Height="24" Margin="0,0,6,0"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="SearchTextBox_KeyDown" />
+                    <Button Width="92" Height="24"
+                            Content="{Binding SearchButtonText}"
+                            Command="{Binding SearchCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" />
+                </DockPanel>
+
+                <!-- Services list -->
+                <ListView Grid.Row="1"
+                          ItemsSource="{Binding Services}"
+                          SelectedItem="{Binding SelectedService, Mode=TwoWay}"
+                          SelectionMode="Single"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+                    <ListView.Resources>
+                        <Style TargetType="GridViewColumnHeader">
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            <Setter Property="AllowDrop" Value="False"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="GridViewColumnHeader">
+                                        <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="0,0,0,1">
+                                            <ContentPresenter Content="{TemplateBinding Content}" 
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.Resources>
+
+                    <ListView.View>
+                        <GridView AllowsColumnReorder="False">
+                            <GridViewColumn Header="{x:Static resx:Strings.Column_Service}"
+                            DisplayMemberBinding="{Binding Name}"
+                            Width="Auto"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+
+            </Grid>
+        </Border>
+
+        <!-- RIGHT: GRAPHS -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="20" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <DockPanel Grid.Row="0" Margin="0,0,0,2">
+                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" />
+                <TextBlock Margin="0,0,6,0" Text="{Binding Pid, UpdateSourceTrigger=PropertyChanged}" />
+            </DockPanel>
+
+            <Border Grid.Row="1" Background="Black" BorderBrush="#008000" BorderThickness="1" Margin="0,0,0,5">
+                <Grid>
+                    <Viewbox Stretch="Fill">
+                        <Canvas Width="400" Height="200">
+                            <ItemsControl ItemsSource="{Binding CpuHorizontalGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding CpuVerticalGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+
+                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#00FF00" StrokeThickness="2"/>
+                        </Canvas>
+                    </Viewbox>
+
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
+                        <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Foreground="#00FF00" 
+                                   FontSize="14" FontWeight="Medium" />
+                    </StackPanel>
+
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
+                        <TextBlock Text="{Binding CpuUsage}" Foreground="#00FF00" 
+                      FontSize="14" FontWeight="Medium" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="2" Background="Black" BorderBrush="#008000" BorderThickness="1" Margin="0,5,0,0">
+                <Grid>
+                    <Viewbox Stretch="Fill">
+                        <Canvas Width="400" Height="200">
+                            <ItemsControl ItemsSource="{Binding RamHorizontalGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding RamVerticalGridLines}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+
+                            <Polygon Points="{Binding RamFillPoints}" 
+                         Fill="#3300FF00" 
+                         StrokeThickness="0"/>
+
+                            <Polyline Points="{Binding RamPointCollection}" 
+                          Stroke="#00FF00" 
+                          StrokeThickness="2"/>
+                        </Canvas>
+                    </Viewbox>
+
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
+                        <TextBlock Text="{x:Static resx:Strings.Label_RAM}" Foreground="#00FF00" FontSize="14" FontWeight="Medium" />
+                    </StackPanel>
+
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
+                        <TextBlock Text="{Binding RamUsage}" Foreground="#00FF00" FontSize="14" FontWeight="Medium" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+    </Grid>
+</UserControl>

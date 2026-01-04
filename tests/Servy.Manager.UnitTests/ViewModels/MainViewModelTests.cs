@@ -50,15 +50,18 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void Constructor_ShouldInitializeProperties()
         {
-            // Arrange & Act
-            var vm = CreateViewModel();
+            Helper.RunOnSTA(async () =>
+            {
+                // Arrange & Act
+                var vm = CreateViewModel();
 
-            // Assert
-            Assert.NotNull(vm.ServicesView);
-            Assert.NotNull(vm.ServiceCommands);
-            Assert.NotNull(vm.SearchCommand);
-            Assert.False(vm.IsBusy);
-            Assert.Equal("Search", vm.SearchButtonText);
+                // Assert
+                Assert.NotNull(vm.ServicesView);
+                Assert.NotNull(vm.ServiceCommands);
+                Assert.NotNull(vm.SearchCommand);
+                Assert.False(vm.IsBusy);
+                Assert.Equal("Search", vm.SearchButtonText);
+            }, createApp: false);
         }
 
         [Fact]
@@ -90,117 +93,141 @@ namespace Servy.Manager.UnitTests.ViewModels
         [Fact]
         public void SearchText_Setter_ShouldRaisePropertyChanged()
         {
-            // Arrange
-            var vm = CreateViewModel();
-            var propertyChangedRaised = false;
-            vm.PropertyChanged += (s, e) =>
+            Helper.RunOnSTA(async () =>
             {
-                if (e.PropertyName == "SearchText")
-                    propertyChangedRaised = true;
-            };
+                // Arrange
+                var vm = CreateViewModel();
+                var propertyChangedRaised = false;
+                vm.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == "SearchText")
+                        propertyChangedRaised = true;
+                };
 
-            // Act
-            vm.SearchText = "Test";
+                // Act
+                vm.SearchText = "Test";
 
-            // Assert
-            Assert.True(propertyChangedRaised);
-            Assert.Equal("Test", vm.SearchText);
+                // Assert
+                Assert.True(propertyChangedRaised);
+                Assert.Equal("Test", vm.SearchText);
+            }, createApp: false);
         }
 
         [Fact]
         public void RemoveService_ShouldRemoveServiceFromCollection()
         {
-            // Arrange
-            var vm = CreateViewModel();
-            var service1 = new Service { Name = "S1" };
-            var service2 = new Service { Name = "S2" };
+            Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var service1 = new Service { Name = "S1" };
+                var service2 = new Service { Name = "S2" };
 
-            var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object, _loggerMock.Object);
-            var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object, _loggerMock.Object);
+                var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object, _loggerMock.Object);
+                var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object, _loggerMock.Object);
 
-            var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var servicesList = (ObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
-            servicesList?.Add(srvm1);
-            servicesList?.Add(srvm2);
-            vm.ServicesView.Refresh();
+                var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var servicesList = (ObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
+                servicesList?.Add(srvm1);
+                servicesList?.Add(srvm2);
+                vm.ServicesView.Refresh();
 
-            // Act
-            vm.RemoveService("S1");
+                // Act
+                vm.RemoveService("S1");
 
-            // Assert
-            Assert.Single(vm.ServicesView.Cast<ServiceRowViewModel>());
-            Assert.Equal("S2", vm.ServicesView.Cast<ServiceRowViewModel>().First().Service.Name);
+                // Assert
+                Assert.Single(vm.ServicesView.Cast<ServiceRowViewModel>());
+                Assert.Equal("S2", vm.ServicesView.Cast<ServiceRowViewModel>().First().Service.Name);
+            }, createApp: false);
         }
 
         [Fact]
         public void ConfigureCommand_ShouldCallConfigureServiceAsync()
         {
-            var vm = CreateViewModel();
-            var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.ConfigureServiceAsync(service))
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                var service = new Service { Name = "S" };
+                _serviceCommandsMock.Setup(s => s.ConfigureServiceAsync(service))
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-            vm.ConfigureCommand.Execute(service);
+                vm.ConfigureCommand.Execute(service);
 
-            _serviceCommandsMock.Verify();
+                _serviceCommandsMock.Verify();
+            }, createApp: false);
         }
 
         [Fact]
         public void ImportXmlCommand_ShouldCallImportXmlConfigAsync()
         {
-            var vm = CreateViewModel();
-            _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync()).Returns(Task.CompletedTask).Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync()).Returns(Task.CompletedTask).Verifiable();
 
-            vm.ImportXmlCommand.Execute(null);
+                vm.ImportXmlCommand.Execute(null);
 
-            _serviceCommandsMock.Verify();
+                _serviceCommandsMock.Verify();
+            }, createApp: false);
         }
 
         [Fact]
         public void ImportJsonCommand_ShouldCallImportJsonConfigAsync()
         {
-            var vm = CreateViewModel();
-            _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync()).Returns(Task.CompletedTask).Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync()).Returns(Task.CompletedTask).Verifiable();
 
-            vm.ImportJsonCommand.Execute(null);
+                vm.ImportJsonCommand.Execute(null);
 
-            _serviceCommandsMock.Verify();
+                _serviceCommandsMock.Verify();
+            }, createApp: false);
         }
 
         [Fact]
         public void OpenDocumentationCommand_ShouldCallHelpService()
         {
-            var vm = CreateViewModel();
-            _helpServiceMock.Setup(h => h.OpenDocumentation()).Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                _helpServiceMock.Setup(h => h.OpenDocumentation()).Verifiable();
 
-            vm.OpenDocumentationCommand.Execute(null);
+                vm.OpenDocumentationCommand.Execute(null);
 
-            _helpServiceMock.Verify();
+                _helpServiceMock.Verify();
+            }, createApp: false);
         }
 
         [Fact]
         public void CheckUpdatesCommand_ShouldCallHelpService()
         {
-            var vm = CreateViewModel();
-            _helpServiceMock.Setup(h => h.CheckUpdates(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                _helpServiceMock.Setup(h => h.CheckUpdates(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
 
-            vm.CheckUpdatesCommand.Execute(null);
+                vm.CheckUpdatesCommand.Execute(null);
 
-            _helpServiceMock.Verify();
+                _helpServiceMock.Verify();
+            }, createApp: false);
         }
 
         [Fact]
         public void OpenAboutDialogCommand_ShouldCallHelpService()
         {
-            var vm = CreateViewModel();
-            _helpServiceMock.Setup(h => h.OpenAboutDialog(It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.CompletedTask)
-                .Verifiable();
+            Helper.RunOnSTA(async () =>
+            {
+                var vm = CreateViewModel();
+                _helpServiceMock.Setup(h => h.OpenAboutDialog(It.IsAny<string>(), It.IsAny<string>()))
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-            vm.OpenAboutDialogCommand.Execute(null);
+                vm.OpenAboutDialogCommand.Execute(null);
 
-            _helpServiceMock.Verify();
+                _helpServiceMock.Verify();
+            }, createApp: false);
         }
 
     }

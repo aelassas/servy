@@ -17,7 +17,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -76,6 +75,11 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Gets the performance view model.
+        /// </summary>
+        public PerformanceViewModel PerformanceVM { get; }
 
         /// <summary>
         /// Indicates whether a background operation is running.
@@ -141,10 +145,22 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        private IServiceCommands _serviceCommands;
+
         /// <summary>
         /// The set of service commands available for each service row.
         /// </summary>
-        public IServiceCommands ServiceCommands { get; set; }
+        public IServiceCommands ServiceCommands
+        {
+            get => _serviceCommands; set
+            {
+                _serviceCommands = value;
+                if (PerformanceVM != null)
+                {
+                    PerformanceVM.ServiceCommands = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Collection of services displayed in the DataGrid.
@@ -315,6 +331,9 @@ namespace Servy.Manager.ViewModels
             _helpService = helpService;
             _messageBoxService = messageBoxService;
             _selectAll = false;
+
+            // Create PerformanceVM only once
+            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands);
 
             ServicesView = new ListCollectionView(_services);
 
