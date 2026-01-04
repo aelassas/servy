@@ -277,6 +277,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service.
+        /// </summary>
+        public static string Column_Service {
+            get {
+                return ResourceManager.GetString("Column_Service", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Startup Type.
         /// </summary>
         public static string Column_StartupType {
@@ -421,6 +430,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à CPU.
+        /// </summary>
+        public static string Label_CPU {
+            get {
+                return ResourceManager.GetString("Label_CPU", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh - Press F5 to refresh the full list.
         /// </summary>
         public static string Label_F5_Shortcut {
@@ -489,6 +507,33 @@ namespace Servy.Manager.Resources {
         public static string Label_LogsTab {
             get {
                 return ResourceManager.GetString("Label_LogsTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Performance.
+        /// </summary>
+        public static string Label_PerformanceTab {
+            get {
+                return ResourceManager.GetString("Label_PerformanceTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à PID:.
+        /// </summary>
+        public static string Label_Pid {
+            get {
+                return ResourceManager.GetString("Label_Pid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à RAM.
+        /// </summary>
+        public static string Label_RAM {
+            get {
+                return ResourceManager.GetString("Label_RAM", resourceCulture);
             }
         }
         

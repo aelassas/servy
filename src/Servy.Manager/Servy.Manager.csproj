@@ -96,6 +96,7 @@
     <Compile Include="Converters\RamUsageConverter.cs" />
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
+    <Compile Include="Models\PerformanceService.cs" />
     <Compile Include="Validators\IServiceConfigurationValidator.cs" />
     <Compile Include="Validators\ServiceConfigurationValidator.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
@@ -110,7 +111,11 @@
     <Compile Include="Services\ServiceCommands.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\PerformanceViewModel.cs" />
     <Compile Include="ViewModels\ServiceRowViewModel.cs" />
+    <Compile Include="Views\PerformanceView.xaml.cs">
+      <DependentUpon>PerformanceView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\SplashWindow.xaml.cs">
       <DependentUpon>SplashWindow.xaml</DependentUpon>
     </Compile>
@@ -133,6 +138,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\PerformanceView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\SplashWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
