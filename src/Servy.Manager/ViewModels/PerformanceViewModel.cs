@@ -250,8 +250,8 @@ namespace Servy.Manager.ViewModels
             RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
 
             // Update Graphs with Smoothing
-            AddPoint(_cpuValues, rawCpu, "CpuPointCollection", _cpuSmoothingBuffer);
-            AddPoint(_ramValues, rawRamMb, "RamPointCollection", _ramSmoothingBuffer);
+            AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection), _cpuSmoothingBuffer);
+            AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection), _ramSmoothingBuffer);
         }
 
         private void AddPoint(List<double> valueHistory, double newValue, string propertyName, List<double> smoothingBuffer)
@@ -267,7 +267,7 @@ namespace Servy.Manager.ViewModels
             if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
 
             // 2. Consistent Scale
-            double displayMax = (propertyName == "CpuPointCollection")
+            double displayMax = (propertyName == nameof(CpuPointCollection))
                 ? 100.0
                 : Math.Max(valueHistory.Max() * 1.2, 50);
 
@@ -284,7 +284,7 @@ namespace Servy.Manager.ViewModels
             }
 
             // Assign collections
-            if (propertyName == "CpuPointCollection")
+            if (propertyName == nameof(CpuPointCollection))
                 CpuPointCollection = pc;
             else
             {
