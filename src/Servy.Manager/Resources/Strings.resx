@@ -12,12 +12,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
-  
+
   <!--Splash screen-->
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy Manager...</value>
   </data>
-  
+
   <!-- Menus -->
   <data name="Menu_Import" xml:space="preserve">
     <value>Import</value>
@@ -32,7 +32,7 @@
   <data name="Menu_Config" xml:space="preserve">
     <value>Configurator</value>
   </data>
-  
+
   <data name="Menu_Help" xml:space="preserve">
     <value>Help</value>
   </data>
@@ -59,7 +59,7 @@ Licensed under the MIT License.
 Copyright © {2} Akram El Assas. All rights reserved.
     </value>
   </data>
-  
+
   <!--Tabs-->
   <data name="Label_ServicesTab" xml:space="preserve">
     <value>Services</value>
@@ -67,7 +67,10 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_LogsTab" xml:space="preserve">
     <value>Logs</value>
   </data>
-  
+  <data name="Label_PerformanceTab" xml:space="preserve">
+    <value>Performance</value>
+  </data>
+
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">
     <value>Search</value>
@@ -199,7 +202,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Button_ExportJSON" xml:space="preserve">
     <value>Export JSON</value>
   </data>
-  
+
   <!-- Startup Type Items -->
   <data name="StartupType_Automatic" xml:space="preserve">
     <value>Automatic</value>
@@ -347,7 +350,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_ConfigurationAppNotFound" xml:space="preserve">
     <value>Servy Configuration App not found.</value>
   </data>
-  
+
   <!--Logs View-->
   <data name="Label_Level" xml:space="preserve">
     <value>Level:</value>
@@ -422,6 +425,20 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>CPU</value>
   </data>
   <data name="Column_RAM" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+
+  <!--Performand tab-->
+  <data name="Column_Service" xml:space="preserve">
+    <value>Service</value>
+  </data>
+  <data name="Label_Pid" xml:space="preserve">
+    <value>PID:</value>
+  </data>
+  <data name="Label_CPU" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Label_RAM" xml:space="preserve">
     <value>RAM</value>
   </data>
 

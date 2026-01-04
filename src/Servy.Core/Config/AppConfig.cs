@@ -109,6 +109,11 @@ namespace Servy.Core.Config
         public static readonly int DefaultRefreshIntervalInSeconds = 4;
 
         /// <summary>
+        /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 1 second.
+        /// </summary>
+        public static readonly int DefaultPerformanceRefreshIntervalInSeconds = 1;
+
+        /// <summary>
         /// Servy's official documentation link.
         /// </summary>
         public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";

@@ -422,6 +422,11 @@
                 </Grid>
             </TabItem>
 
+            <!--Performance Tab-->
+            <TabItem x:Name="PerformanceTab" Header="{x:Static resx:Strings.Label_PerformanceTab}" VirtualizingStackPanel.IsVirtualizing="False">
+                <views:PerformanceView DataContext="{Binding PerformanceVM}" />
+            </TabItem>            
+            
             <!--Logs Tab-->
             <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
                 <views:LogsView />
