@@ -102,7 +102,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 -->
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
-* Real-time CPU and RAM usage tracking for installed services
+* Real-time CPU and RAM monitoring with live performance graphs for installed services
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
