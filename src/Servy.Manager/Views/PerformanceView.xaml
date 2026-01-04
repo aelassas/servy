@@ -89,7 +89,7 @@
             </Grid.RowDefinitions>
 
             <DockPanel Grid.Row="0" Margin="0,0,0,2">
-                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" />
+                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" FontWeight="Medium" />
                 <TextBlock Margin="0,0,6,0" Text="{Binding Pid, UpdateSourceTrigger=PropertyChanged}" />
             </DockPanel>
 
@@ -123,7 +123,7 @@
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
                         <TextBlock Text="{Binding CpuUsage}" Foreground="#00FF00" 
-                      FontSize="14" FontWeight="Medium" />
+                      FontSize="14" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -162,7 +162,7 @@
                     </StackPanel>
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
-                        <TextBlock Text="{Binding RamUsage}" Foreground="#00FF00" FontSize="14" FontWeight="Medium" />
+                        <TextBlock Text="{Binding RamUsage}" Foreground="#00FF00" FontSize="14" />
                     </StackPanel>
                 </Grid>
             </Border>
