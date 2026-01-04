@@ -237,21 +237,22 @@ namespace Servy.Manager.ViewModels
             double ramMb = ramBytes / 1024d / 1024d;
 
             // Update Graph points
-            AddPoint(_cpuValues, cpu, 100, nameof(CpuPointCollection));
-            AddPoint(_ramValues, ramMb, 0, nameof(RamPointCollection));
+            AddPoint(_cpuValues, cpu, nameof(CpuPointCollection));
+            AddPoint(_ramValues, ramMb, nameof(RamPointCollection));
         }
 
         /// <summary>
         /// Calculates and adds a new data point to the history, then updates the UI PointCollections.
         /// Compatible with .NET Framework 4.8.
         /// </summary>
-        private void AddPoint(List<double> valueHistory, double newValue, double max, string propertyName)
+        private void AddPoint(List<double> valueHistory, double newValue, string propertyName)
         {
             valueHistory.Add(newValue);
             if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
 
             // .Max() requires using System.Linq;
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
+            // Use a dynamic scaling logic to calculate the top vertical limit
             double displayMax = Math.Max(currentMax * 1.2, 10);
 
             PointCollection pc = new PointCollection();
