@@ -46,7 +46,7 @@ namespace Servy.Manager
         /// <summary>
         /// Performance refresh interval in seconds.
         /// </summary>
-        public int PerformanceRefreshIntervalInSeconds { get; private set; }
+        public int PerformanceRefreshIntervalInMs { get; private set; }
 
         /// <summary>
         /// Servy Configuration App publish path.
@@ -122,9 +122,9 @@ namespace Servy.Manager
                 RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var result)
                     ? result
                     : AppConfig.DefaultRefreshIntervalInSeconds;
-                PerformanceRefreshIntervalInSeconds = int.TryParse(config["PerformanceRefreshIntervalInSeconds"], out var presult)
+                PerformanceRefreshIntervalInMs = int.TryParse(config["PerformanceRefreshIntervalInMs"], out var presult)
                     ? presult
-                    : AppConfig.DefaultPerformanceRefreshIntervalInSeconds;
+                    : AppConfig.DefaultPerformanceRefreshIntervalInMs;
 
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;

@@ -39,6 +39,8 @@ namespace Servy.Manager.ViewModels
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
+        private readonly List<double> _cpuSmoothingBuffer = new List<double>();
+        private readonly List<double> _ramSmoothingBuffer = new List<double>();
 
         #endregion
 
@@ -183,7 +185,7 @@ namespace Servy.Manager.ViewModels
             SearchCommand = new AsyncCommand(SearchServicesAsync);
 
             var app = (App)Application.Current;
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(app.PerformanceRefreshIntervalInSeconds) };
+            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
             _timer.Tick += OnTick;
 
             GenerateGridLines();
@@ -216,6 +218,9 @@ namespace Servy.Manager.ViewModels
                 Pid = NotAvailableText;
                 CpuUsage = NotAvailableText;
                 RamUsage = NotAvailableText;
+                // Clear buffers when service stops/disappears
+                _cpuSmoothingBuffer.Clear();
+                _ramSmoothingBuffer.Clear();
                 return;
             }
 
@@ -227,69 +232,60 @@ namespace Servy.Manager.ViewModels
             int pid = SelectedService.Pid.Value;
             SetPidText();
 
-            // Fetch metrics
-            double cpu = ProcessHelper.GetCpuUsage(pid);
-            CpuUsage = ProcessHelper.FormatCpuUsage(cpu);
-
+            // Fetch raw metrics
+            double rawCpu = ProcessHelper.GetCpuUsage(pid);
             long ramBytes = ProcessHelper.GetRamUsage(pid);
+            double rawRamMb = ramBytes / 1024d / 1024d;
+
+            // Update UI Texts
+            CpuUsage = ProcessHelper.FormatCpuUsage(rawCpu);
             RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
 
-            double ramMb = ramBytes / 1024d / 1024d;
-
-            // Update Graph points
-            AddPoint(_cpuValues, cpu, nameof(CpuPointCollection));
-            AddPoint(_ramValues, ramMb, nameof(RamPointCollection));
+            // Update Graphs with Smoothing
+            AddPoint(_cpuValues, rawCpu, "CpuPointCollection", _cpuSmoothingBuffer);
+            AddPoint(_ramValues, rawRamMb, "RamPointCollection", _ramSmoothingBuffer);
         }
 
-        /// <summary>
-        /// Calculates and adds a new data point to the history, then updates the UI PointCollections.
-        /// Compatible with .NET Framework 4.8.
-        /// </summary>
-        private void AddPoint(List<double> valueHistory, double newValue, string propertyName)
+        private void AddPoint(List<double> valueHistory, double newValue, string propertyName, List<double> smoothingBuffer)
         {
-            valueHistory.Add(newValue);
+            // 1. Increased Smoothing Buffer for higher frequency
+            smoothingBuffer.Add(newValue);
+            if (smoothingBuffer.Count > 10) smoothingBuffer.RemoveAt(0);
+            double smoothedValue = smoothingBuffer.Average();
+
+            valueHistory.Add(smoothedValue);
+
+            // Always keep exactly 100 points to maintain the "scrolling" effect
             if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
 
-            // .Max() requires using System.Linq;
-            double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
-            // Use a dynamic scaling logic to calculate the top vertical limit
-            double displayMax = Math.Max(currentMax * 1.2, 10);
+            // 2. Consistent Scale
+            double displayMax = (propertyName == "CpuPointCollection")
+                ? 100.0
+                : Math.Max(valueHistory.Max() * 1.2, 50);
 
             PointCollection pc = new PointCollection();
             for (int i = 0; i < valueHistory.Count; i++)
             {
-                double x = i * (_graphWidth / 100.0);
-                double ratio = valueHistory[i] / displayMax;
+                // Use i directly. Since history is always 100 points, it always fills 0 to _graphWidth
+                double x = i * (_graphWidth / 99.0);
+
+                double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
                 double y = _graphHeight - (ratio * _graphHeight);
+
                 pc.Add(new Point(x, y));
             }
 
-            if (propertyName == "CpuPointCollection") // nameof() is fine in 4.8, but string literal is safest for older compilers
-            {
+            // Assign collections
+            if (propertyName == "CpuPointCollection")
                 CpuPointCollection = pc;
-            }
             else
             {
                 RamPointCollection = pc;
-
-                // Create the polygon fill path
-                PointCollection fillPc = new PointCollection();
-                foreach (Point p in pc)
-                {
-                    fillPc.Add(p);
-                }
-
+                var fillPc = new PointCollection(pc);
                 if (fillPc.Count > 0)
                 {
-                    // .Last() and .First() extension methods can be finicky with PointCollection in 4.8
-                    // Indexers are the most reliable way.
-                    Point lastPoint = fillPc[fillPc.Count - 1];
-                    Point firstPoint = fillPc[0];
-
-                    // 1. Drop a point to the bottom-right corner
-                    fillPc.Add(new Point(lastPoint.X, _graphHeight));
-                    // 2. Drop a point to the bottom-left corner
-                    fillPc.Add(new Point(firstPoint.X, _graphHeight));
+                    fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, _graphHeight));
+                    fillPc.Add(new Point(fillPc[0].X, _graphHeight));
                 }
                 RamFillPoints = fillPc;
             }
