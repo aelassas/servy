@@ -39,8 +39,6 @@ namespace Servy.Manager.ViewModels
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
-        private readonly List<double> _cpuSmoothingBuffer = new List<double>();
-        private readonly List<double> _ramSmoothingBuffer = new List<double>();
 
         #endregion
 
@@ -80,10 +78,6 @@ namespace Servy.Manager.ViewModels
                 CpuFillPoints = new PointCollection();
                 RamPointCollection = new PointCollection();
                 RamFillPoints = new PointCollection();
-
-                // 4. Clear smoothing buffers to prevent old service data leaking into new service
-                _cpuSmoothingBuffer.Clear();
-                _ramSmoothingBuffer.Clear();
 
                 StopMonitoring(false); // Pass false so we don't clear the zeros we just added
                 StartMonitoring();
@@ -237,9 +231,6 @@ namespace Servy.Manager.ViewModels
                 Pid = NotAvailableText;
                 CpuUsage = NotAvailableText;
                 RamUsage = NotAvailableText;
-                // Clear buffers when service stops/disappears
-                _cpuSmoothingBuffer.Clear();
-                _ramSmoothingBuffer.Clear();
                 return;
             }
 
@@ -261,32 +252,28 @@ namespace Servy.Manager.ViewModels
             RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
 
             // Update Graphs with Smoothing
-            AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection), _cpuSmoothingBuffer);
-            AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection), _ramSmoothingBuffer);
+            AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
+            AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
         }
 
         /// <summary>
-        /// Processes new performance data, applies smoothing, and updates the point collections for the graph UI.
+        /// Processes new performance data and updates the point collections for the graph UI.
+        /// Smoothing has been removed to provide raw, real-time data visualization.
         /// </summary>
         /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
         /// <param name="newValue">The latest raw value captured from the process.</param>
         /// <param name="propertyName">The name of the property being updated (used to distinguish CPU vs RAM logic).</param>
-        /// <param name="smoothingBuffer">A temporary buffer used to calculate the Simple Moving Average (SMA).</param>
-        private void AddPoint(List<double> valueHistory, double newValue, string propertyName, List<double> smoothingBuffer)
+        private void AddPoint(List<double> valueHistory, double newValue, string propertyName)
         {
             var isCpu = propertyName == nameof(CpuPointCollection);
 
-            // 1. Increased Smoothing Buffer for higher frequency
-            smoothingBuffer.Add(newValue);
-            if (smoothingBuffer.Count > 10) smoothingBuffer.RemoveAt(0);
-            double smoothedValue = smoothingBuffer.Average();
-
-            valueHistory.Add(smoothedValue);
+            // Add the raw value directly to history without averaging
+            valueHistory.Add(newValue);
 
             // Always keep exactly 100 points to maintain the "scrolling" effect
             if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
 
-            // 2. Consistent Scale
+            // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
             double displayMax = isCpu
                 ? 100.0
                 : Math.Max(valueHistory.Max() * 1.2, 10);
@@ -294,16 +281,17 @@ namespace Servy.Manager.ViewModels
             PointCollection pc = new PointCollection();
             for (int i = 0; i < valueHistory.Count; i++)
             {
-                // Use i directly. Since history is always 100 points, it always fills 0 to _graphWidth
+                // Calculate X: Maps the index (0-99) to the pixel width (0-400)
                 double x = i * (_graphWidth / 99.0);
 
+                // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
                 double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
                 double y = _graphHeight - (ratio * _graphHeight);
 
                 pc.Add(new Point(x, y));
             }
 
-            // Update the specific UI-bound collections
+            // Update the specific UI-bound collections and their corresponding fill areas
             if (isCpu)
             {
                 CpuPointCollection = pc;
@@ -340,7 +328,7 @@ namespace Servy.Manager.ViewModels
         {
             int rows = 10;
             int cols = 10;
-            Brush gridBrush = new SolidColorBrush(Color.FromRgb(0, 45, 0));
+            Brush gridBrush = new SolidColorBrush(Color.FromRgb(235, 235, 235));
             double thickness = 0.5;
 
             CpuHorizontalGridLines.Clear();

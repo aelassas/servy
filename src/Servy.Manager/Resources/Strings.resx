@@ -433,7 +433,7 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Service</value>
   </data>
   <data name="Label_Pid" xml:space="preserve">
-    <value>PID:</value>
+    <value>PID</value>
   </data>
   <data name="Label_CPU" xml:space="preserve">
     <value>CPU</value>
