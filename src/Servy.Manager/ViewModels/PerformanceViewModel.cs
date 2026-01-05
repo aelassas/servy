@@ -289,7 +289,7 @@ namespace Servy.Manager.ViewModels
             // 2. Consistent Scale
             double displayMax = isCpu
                 ? 100.0
-                : Math.Max(valueHistory.Max() * 1.2, 50);
+                : Math.Max(valueHistory.Max() * 1.2, 10);
 
             PointCollection pc = new PointCollection();
             for (int i = 0; i < valueHistory.Count; i++)
