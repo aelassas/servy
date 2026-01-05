@@ -99,6 +99,16 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public PointCollection CpuPointCollection { get => _cpuPointCollection; set => Set(ref _cpuPointCollection, value); }
 
+        private PointCollection _cpuFillPoints = new PointCollection();
+        /// <summary>
+        /// Collection of points representing the filled area beneath the CPU usage line.
+        /// </summary>
+        public PointCollection CpuFillPoints
+        {
+            get => _cpuFillPoints;
+            set => Set(ref _cpuFillPoints, value);
+        }
+
         private PointCollection _ramPointCollection = new PointCollection();
         /// <summary>
         /// Collection of points representing the RAM usage line.
@@ -254,8 +264,17 @@ namespace Servy.Manager.ViewModels
             AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection), _ramSmoothingBuffer);
         }
 
+        /// <summary>
+        /// Processes new performance data, applies smoothing, and updates the point collections for the graph UI.
+        /// </summary>
+        /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
+        /// <param name="newValue">The latest raw value captured from the process.</param>
+        /// <param name="propertyName">The name of the property being updated (used to distinguish CPU vs RAM logic).</param>
+        /// <param name="smoothingBuffer">A temporary buffer used to calculate the Simple Moving Average (SMA).</param>
         private void AddPoint(List<double> valueHistory, double newValue, string propertyName, List<double> smoothingBuffer)
         {
+            var isCpu = propertyName == nameof(CpuPointCollection);
+
             // 1. Increased Smoothing Buffer for higher frequency
             smoothingBuffer.Add(newValue);
             if (smoothingBuffer.Count > 10) smoothingBuffer.RemoveAt(0);
@@ -267,7 +286,7 @@ namespace Servy.Manager.ViewModels
             if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
 
             // 2. Consistent Scale
-            double displayMax = (propertyName == nameof(CpuPointCollection))
+            double displayMax = isCpu
                 ? 100.0
                 : Math.Max(valueHistory.Max() * 1.2, 50);
 
@@ -283,20 +302,34 @@ namespace Servy.Manager.ViewModels
                 pc.Add(new Point(x, y));
             }
 
-            // Assign collections
-            if (propertyName == nameof(CpuPointCollection))
+            // Update the specific UI-bound collections
+            if (isCpu)
+            {
                 CpuPointCollection = pc;
+                CpuFillPoints = CreateFillCollection(pc);
+            }
             else
             {
                 RamPointCollection = pc;
-                var fillPc = new PointCollection(pc);
-                if (fillPc.Count > 0)
-                {
-                    fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, _graphHeight));
-                    fillPc.Add(new Point(fillPc[0].X, _graphHeight));
-                }
-                RamFillPoints = fillPc;
+                RamFillPoints = CreateFillCollection(pc);
             }
+        }
+
+        /// <summary>
+        /// Creates a closed polygon point collection based on a line path to create a filled area effect.
+        /// </summary>
+        /// <param name="linePoints">The point collection representing the top stroke of the graph.</param>
+        /// <returns>A <see cref="PointCollection"/> that includes the baseline anchors for a filled Polygon.</returns>
+        private PointCollection CreateFillCollection(PointCollection linePoints)
+        {
+            var fillPc = new PointCollection(linePoints);
+            if (fillPc.Count > 0)
+            {
+                // Add anchor points at the bottom-right and bottom-left to close the shape
+                fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, _graphHeight));
+                fillPc.Add(new Point(fillPc[0].X, _graphHeight));
+            }
+            return fillPc;
         }
 
         /// <summary>

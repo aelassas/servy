@@ -230,10 +230,12 @@ namespace Servy.Manager.Views
 
                     var logsVm = GetLogsVm();
 
-                    if (LogsTab.IsSelected)
-                        await HandleLogsTabSelected(vm, perfVm, logsVm);
-                    else if (MainTab.IsSelected)
+                    if (MainTab.IsSelected)
                         await HandleMainTabSelected(vm, perfVm, logsVm);
+                    else if (PerformanceTab.IsSelected)
+                        await HandlePerfTabSelected(vm, perfVm, logsVm);
+                    else if (LogsTab.IsSelected)
+                        await HandleLogsTabSelected(vm, perfVm, logsVm);
 
                     if (PerformanceTab.IsSelected)
                         perfVm?.StartMonitoring();
@@ -247,29 +249,24 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles tasks when the Logs tab is selected:
-        /// cleans up main tab resources and triggers a search for logs if the logs collection is empty.
+        /// Retrieves the <see cref="PerformanceViewModel"/> instance bound to the <see cref="PerformanceTab"/> content, if available.
         /// </summary>
-        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
-        /// <param name="perfVm">
-        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
-        /// </param> 
-        /// <param name="logsVm">
-        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
-        /// </param>
-        private async Task HandleLogsTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, LogsViewModel? logsVm)
-        {
-            // Cleanup all background tasks and stop timers in main tab
-            vm.Cleanup();
+        /// <returns>
+        /// The <see cref="PerformanceViewModel"/> instance if the <see cref="PerformanceTab"/> has content and its DataContext 
+        /// is a <see cref="PerformanceViewModel"/>; otherwise, <c>null</c>.
+        /// </returns>
+        private PerformanceViewModel? GetPerformanceVm()
+            => PerformanceTab.Content is PerformanceView PerformanceView ? PerformanceView.DataContext as PerformanceViewModel : null;
 
-            // Stop timers in performance tab
-            perfVm?.StopMonitoring(false);
-
-            // Run search for logs tab if applicable
-            if (logsVm != null && logsVm.LogsView.IsEmpty)
-                await logsVm.SearchCommand.ExecuteAsync(null);
-
-        }
+        /// <summary>
+        /// Retrieves the <see cref="LogsViewModel"/> instance bound to the <see cref="LogsTab"/> content, if available.
+        /// </summary>
+        /// <returns>
+        /// The <see cref="LogsViewModel"/> instance if the <see cref="LogsTab"/> has content and its DataContext 
+        /// is a <see cref="LogsViewModel"/>; otherwise, <c>null</c>.
+        /// </returns>
+        private LogsViewModel? GetLogsVm()
+            => LogsTab.Content is LogsView logsView ? logsView.DataContext as LogsViewModel : null;
 
         /// <summary>
         /// Handles tasks when the Main tab is selected:
@@ -299,26 +296,52 @@ namespace Servy.Manager.Views
             vm.CreateAndStartTimer();
         }
 
+        /// <summary>
+        /// Handles tasks when the Logs tab is selected:
+        /// cleans up main tab resources and triggers a search for logs if the logs collection is empty.
+        /// </summary>
+        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
+        /// <param name="perfVm">
+        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
+        /// </param> 
+        /// <param name="logsVm">
+        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
+        /// </param>
+        private async Task HandleLogsTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, LogsViewModel? logsVm)
+        {
+            // Cleanup all background tasks and stop timers in main tab
+            vm.Cleanup();
+
+            // Stop timers in performance tab
+            perfVm?.StopMonitoring(false);
+
+            // Run search for logs tab if applicable
+            if (logsVm != null && logsVm.LogsView.IsEmpty)
+                await logsVm.SearchCommand.ExecuteAsync(null);
+        }
 
         /// <summary>
-        /// Retrieves the <see cref="PerformanceViewModel"/> instance bound to the <see cref="PerformanceTab"/> content, if available.
+        /// Handles tasks when the Performance tab is selected:
+        /// cleans up main tab resources and stops search in logs tab.
         /// </summary>
-        /// <returns>
-        /// The <see cref="PerformanceViewModel"/> instance if the <see cref="PerformanceTab"/> has content and its DataContext 
-        /// is a <see cref="PerformanceViewModel"/>; otherwise, <c>null</c>.
-        /// </returns>
-        private PerformanceViewModel? GetPerformanceVm()
-            => PerformanceTab.Content is PerformanceView PerformanceView ? PerformanceView.DataContext as PerformanceViewModel : null;
+        /// <param name="vm">The main <see cref="MainViewModel"/> instance.</param>
+        /// <param name="perfVm">
+        /// The <see cref="PerformanceViewModel"/> instance for the performance tab, or <c>null</c> if unavailable.
+        /// </param> 
+        /// <param name="logsVm">
+        /// The <see cref="LogsViewModel"/> instance for the logs tab, or <c>null</c> if unavailable.
+        /// </param>
+        private async Task HandlePerfTabSelected(MainViewModel vm, PerformanceViewModel? perfVm, LogsViewModel? logsVm)
+        {
+            // Cleanup all background tasks and stop timers in main tab
+            vm.Cleanup();
 
-        /// <summary>
-        /// Retrieves the <see cref="LogsViewModel"/> instance bound to the <see cref="LogsTab"/> content, if available.
-        /// </summary>
-        /// <returns>
-        /// The <see cref="LogsViewModel"/> instance if the <see cref="LogsTab"/> has content and its DataContext 
-        /// is a <see cref="LogsViewModel"/>; otherwise, <c>null</c>.
-        /// </returns>
-        private LogsViewModel? GetLogsVm()
-            => LogsTab.Content is LogsView logsView ? logsView.DataContext as LogsViewModel : null;
+            // Start timers in performance tab
+            perfVm?.StartMonitoring();
+
+            // Stop ongoing search in Logs tab
+            logsVm?.Cleanup();
+        }
 
         /// <summary>
         /// Handles the <see cref="Window.Closed"/> event.
