@@ -520,7 +520,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à PID:.
+        ///   Recherche une chaîne localisée semblable à PID.
         /// </summary>
         public static string Label_Pid {
             get {
