@@ -32,7 +32,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotEmpty(vm.RamHorizontalGridLines);
                 // 10 rows/cols + 1 edge line = 11 lines
                 Assert.Equal(11, vm.CpuHorizontalGridLines.Count);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Single(vm.Services);
                 Assert.Equal("TestSvc", vm.Services[0].Name);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Equal("N/A", vm.CpuUsage);
                 Assert.Equal("N/A", vm.RamUsage);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Empty(vm.RamPointCollection);
                 // Check internal lists via logic (RamFillPoints should be a new empty collection)
                 Assert.Empty(vm.RamFillPoints);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -116,7 +116,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 Assert.Null(exception);
                 Assert.Null(vm.SelectedService);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         private PerformanceViewModel CreateViewModel()
