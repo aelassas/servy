@@ -77,6 +77,7 @@ namespace Servy.Manager.ViewModels
 
                 // 3. Reset the UI collections to empty (they will update on next tick)
                 CpuPointCollection = new PointCollection();
+                CpuFillPoints = new PointCollection();
                 RamPointCollection = new PointCollection();
                 RamFillPoints = new PointCollection();
 
@@ -410,6 +411,7 @@ namespace Servy.Manager.ViewModels
             if (clearPoints)
             {
                 CpuPointCollection = new PointCollection();
+                CpuFillPoints = new PointCollection();
                 RamPointCollection = new PointCollection();
                 RamFillPoints = new PointCollection();
 
