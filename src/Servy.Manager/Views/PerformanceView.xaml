@@ -42,24 +42,32 @@
 
                 <!-- Services list -->
                 <ListView Grid.Row="1"
+                          Name="ServiceList"
                           ItemsSource="{Binding Services}"
                           SelectedItem="{Binding SelectedService, Mode=TwoWay}"
                           SelectionMode="Single"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
 
+                    <!-- COLUMN HEADER STYLE -->
                     <ListView.Resources>
-                        <Style TargetType="GridViewColumnHeader">
+                        <Style x:Key="ServiceColumnHeaderStyle" TargetType="GridViewColumnHeader">
+
+                            <!-- layout -->
                             <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                            <Setter Property="Padding" Value="10,6"/>
+
+                            <!-- disable drag -->
                             <Setter Property="AllowDrop" Value="False"/>
+
+                            <!-- custom template (NO resize thumb) -->
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="GridViewColumnHeader">
                                         <Border Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="0,0,0,1">
-                                            <ContentPresenter Content="{TemplateBinding Content}" 
-                                              HorizontalAlignment="Stretch"
-                                              VerticalAlignment="Center"/>
+                                                BorderBrush="#D5D5D5"
+                                                BorderThickness="0,0,0,1"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                         </Border>
                                     </ControlTemplate>
                                 </Setter.Value>
@@ -67,14 +75,37 @@
                         </Style>
                     </ListView.Resources>
 
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+
+
                     <ListView.View>
-                        <GridView AllowsColumnReorder="False">
-                            <GridViewColumn Header="{x:Static resx:Strings.Column_Service}"
-                            DisplayMemberBinding="{Binding Name}"
-                            Width="Auto"/>
+                        <GridView AllowsColumnReorder="False" ColumnHeaderContainerStyle="{StaticResource ServiceColumnHeaderStyle}">
+
+                            <GridViewColumn Width="{Binding ElementName=ServiceList, Path=ActualWidth}">
+                                <!-- HEADER -->
+                                <GridViewColumn.Header>
+                                    <TextBlock Text="{x:Static resx:Strings.Column_Service}"
+                               FontWeight="SemiBold"/>
+                                </GridViewColumn.Header>
+
+                                <!-- CELL CONTENT (padding works here) -->
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,6" HorizontalAlignment="Stretch">
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Stretch" TextTrimming="CharacterEllipsis"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+
                         </GridView>
                     </ListView.View>
                 </ListView>
+
 
 
             </Grid>
@@ -89,11 +120,12 @@
             </Grid.RowDefinitions>
 
             <DockPanel Grid.Row="0" Margin="0,0,0,2">
-                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" FontWeight="Medium" />
-                <TextBlock Margin="0,0,6,0" Text="{Binding Pid, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" FontWeight="Medium" Foreground="#1B7F9F" />
+                <TextBlock Margin="0,0,6,0" Text="{Binding Pid, UpdateSourceTrigger=PropertyChanged}" Foreground="#1B7F9F" />
             </DockPanel>
 
-            <Border Grid.Row="1" Background="Black" BorderBrush="#008000" BorderThickness="1" Margin="0,0,0,5">
+            <!--CPU-->
+            <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Canvas Width="400" Height="200">
@@ -112,27 +144,27 @@
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
 
-                            <Polygon Points="{Binding CpuFillPoints}" 
-                              Fill="#3300FF00" 
-                              StrokeThickness="0"/>
+                            <Polygon Points="{Binding CpuFillPoints}" Fill="#C3ECFA" StrokeThickness="0"/>
 
-                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#00FF00" StrokeThickness="2"/>
+                            <!--CpuPointCollection-->
+                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1"/>
                         </Canvas>
                     </Viewbox>
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
-                        <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Foreground="#00FF00" 
+                        <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Foreground="#1B7F9F" 
                                    FontSize="14" />
                     </StackPanel>
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
-                        <TextBlock Text="{Binding CpuUsage}" Foreground="#00FF00" 
+                        <TextBlock Text="{Binding CpuUsage}" Foreground="#1B7F9F" 
                       FontSize="14" />
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <Border Grid.Row="2" Background="Black" BorderBrush="#008000" BorderThickness="1" Margin="0,5,0,0">
+            <!--RAM-->
+            <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Canvas Width="400" Height="200">
@@ -151,23 +183,19 @@
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
 
-                            <Polygon Points="{Binding RamFillPoints}" 
-                              Fill="#3300FF00" 
-                              StrokeThickness="0"/>
+                            <Polygon Points="{Binding RamFillPoints}" Fill="#C3ECFA" StrokeThickness="0"/>
 
-                            <Polyline Points="{Binding RamPointCollection}" 
-                              Stroke="#00FF00" 
-                              StrokeThickness="2"
-                               />
+                            <!--RamPointCollection-->
+                            <Polyline Points="{Binding RamPointCollection}"  Stroke="#1B7F9F"  StrokeThickness="1" />
                         </Canvas>
                     </Viewbox>
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
-                        <TextBlock Text="{x:Static resx:Strings.Label_RAM}" Foreground="#00FF00" FontSize="14" />
+                        <TextBlock Text="{x:Static resx:Strings.Label_RAM}" Foreground="#1B7F9F" FontSize="14" />
                     </StackPanel>
 
                     <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
-                        <TextBlock Text="{Binding RamUsage}" Foreground="#00FF00" FontSize="14" />
+                        <TextBlock Text="{Binding RamUsage}" Foreground="#1B7F9F" FontSize="14" />
                     </StackPanel>
                 </Grid>
             </Border>
