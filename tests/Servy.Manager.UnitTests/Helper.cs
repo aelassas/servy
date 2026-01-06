@@ -6,22 +6,44 @@ namespace Servy.Manager.UnitTests
 {
     public static class Helper
     {
-        public static void RunOnSTA(Action action)
-        {
-            Exception ex = null;
+        private static readonly object _lock = new object();
+        private static bool _applicationCreated;
 
-            var thread = new Thread(() =>
+        private static void EnsureApplication()
+        {
+            lock (_lock)
+            {
+                if (_applicationCreated)
+                    return;
+
+                if (Application.Current == null)
+                {
+                    new App
+                    {
+                        ShutdownMode = ShutdownMode.OnExplicitShutdown
+                    };
+                }
+
+                _applicationCreated = true;
+            }
+        }
+
+        public static void RunOnSTA(Action action, bool createApp = false)
+        {
+            Exception exception = null;
+
+            Thread thread = new Thread(() =>
             {
                 try
                 {
-                    if (Application.Current == null)
-                        new Application(); // create only once per thread
+                    if (createApp)
+                        EnsureApplication();
 
                     action();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    ex = e;
+                    exception = ex;
                 }
             });
 
@@ -29,26 +51,27 @@ namespace Servy.Manager.UnitTests
             thread.Start();
             thread.Join();
 
-            if (ex != null) throw ex;
+            if (exception != null)
+                throw exception;
         }
 
         public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
         {
             T result = default;
-            Exception ex = null;
+            Exception exception = null;
 
-            var thread = new Thread(() =>
+            Thread thread = new Thread(() =>
             {
                 try
                 {
-                    if (createApp && Application.Current == null)
-                        new App();
+                    if (createApp)
+                        EnsureApplication();
 
                     result = func();
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    ex = e;
+                    exception = ex;
                 }
             });
 
@@ -56,9 +79,10 @@ namespace Servy.Manager.UnitTests
             thread.Start();
             thread.Join();
 
-            if (ex != null) throw ex;
+            if (exception != null)
+                throw exception;
+
             return result;
         }
-
     }
 }
