@@ -117,7 +117,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.True(scrollRaised);
                 Assert.Equal("Search", vm.SearchButtonText); // Reset after search
                 Assert.False(vm.IsBusy);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await vm.SearchCommand.ExecuteAsync(null);
 
                 _loggerMock.Verify(l => l.Warning(It.Is<string>(msg => msg.Contains("boom"))), Times.Once);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // No warning should be logged on cancellation
                 _loggerMock.Verify(l => l.Warning(It.IsAny<string>()), Times.Never);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]

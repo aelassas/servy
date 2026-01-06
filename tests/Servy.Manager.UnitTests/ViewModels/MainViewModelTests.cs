@@ -61,7 +61,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(vm.SearchCommand);
                 Assert.False(vm.IsBusy);
                 Assert.Equal("Search", vm.SearchButtonText);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.True(propertyChangedRaised);
                 Assert.Equal("Test", vm.SearchText);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -138,7 +138,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Single(vm.ServicesView.Cast<ServiceRowViewModel>());
                 Assert.Equal("S2", vm.ServicesView.Cast<ServiceRowViewModel>().First().Service.Name);
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.ConfigureCommand.Execute(service);
 
                 _serviceCommandsMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.ImportXmlCommand.Execute(null);
 
                 _serviceCommandsMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -183,7 +183,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.ImportJsonCommand.Execute(null);
 
                 _serviceCommandsMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -197,7 +197,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.OpenDocumentationCommand.Execute(null);
 
                 _helpServiceMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -211,7 +211,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.CheckUpdatesCommand.Execute(null);
 
                 _helpServiceMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
         [Fact]
@@ -227,7 +227,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.OpenAboutDialogCommand.Execute(null);
 
                 _helpServiceMock.Verify();
-            }, createApp: false);
+            }, createApp: true);
         }
 
     }
