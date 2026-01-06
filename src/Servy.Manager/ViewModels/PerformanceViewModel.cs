@@ -416,16 +416,6 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Explicit trigger for when the selected service is updated.
-        /// </summary>
-        public void OnSelectedServiceChanged()
-        {
-            StopMonitoring(true);
-            if (SelectedService?.Pid != null)
-                StartMonitoring();
-        }
-
         #endregion
     }
 }
