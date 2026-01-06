@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -34,6 +35,7 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceRepository _serviceRepository;
         private readonly DispatcherTimer _timer;
+        private readonly ILogger _logger;
         private readonly double _graphWidth = 400;
         private readonly double _graphHeight = 200;
 
@@ -191,11 +193,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        public PerformanceViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands)
+        /// <param name="logger">Logger for logging operations.</param>
+        public PerformanceViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands, ILogger logger)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
+            _logger = logger;
 
             var app = (App)Application.Current;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
@@ -367,6 +371,10 @@ namespace Servy.Manager.ViewModels
                 Services.Clear();
                 foreach (var s in results)
                     Services.Add(new PerformanceService { Name = s.Name, Pid = s.Pid });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to search services from performance tab: {ex}");
             }
             finally
             {
