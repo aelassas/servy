@@ -16,7 +16,7 @@ namespace Servy.Manager.UnitTests
 
                 if (Application.Current == null)
                 {
-                    new Application
+                    new App
                     {
                         ShutdownMode = ShutdownMode.OnExplicitShutdown
                     };
@@ -26,7 +26,7 @@ namespace Servy.Manager.UnitTests
             }
         }
 
-        public static void RunOnSTA(Action action, bool createApp)
+        public static void RunOnSTA(Action action, bool createApp = false)
         {
             Exception exception = null!;
 
@@ -53,7 +53,7 @@ namespace Servy.Manager.UnitTests
                 throw exception;
         }
 
-        public static T RunOnSTA<T>(Func<T> func, bool createApp)
+        public static T RunOnSTA<T>(Func<T> func, bool createApp = false)
         {
             T result = default!;
             Exception exception = null!;
