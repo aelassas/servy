@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
@@ -12,11 +13,13 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<ILogger> _loggerMock;
 
         public PerformanceViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _loggerMock = new Mock<ILogger>();
         }
 
         [Fact]
@@ -121,7 +124,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private PerformanceViewModel CreateViewModel()
         {
-            return new PerformanceViewModel(_serviceRepoMock.Object, _serviceCommandsMock.Object);
+            return new PerformanceViewModel(_serviceRepoMock.Object, _serviceCommandsMock.Object, _loggerMock.Object);
         }
     }
 }

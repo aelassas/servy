@@ -328,7 +328,7 @@ namespace Servy.Manager.ViewModels
             _selectAll = false;
 
             // Create PerformanceVM only once
-            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands);
+            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands, _logger);
 
             ServicesView = new ListCollectionView(_services);
 
@@ -477,9 +477,6 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Performs search of services asynchronously.
         /// </summary>
-        /// <summary>
-        /// Performs search of services asynchronously.
-        /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
             try
@@ -560,7 +557,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to search services: {ex}");
+                _logger.Error($"Failed to search services from main tab: {ex}");
             }
             finally
             {
