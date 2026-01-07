@@ -38,9 +38,9 @@ namespace Servy.Manager.ViewModels
         private readonly ILogger _logger;
         private readonly double _graphWidth = 400;
         private readonly double _graphHeight = 200;
+        private readonly double _ramDisplayMax = 10;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isTickRunning;
-        private double _ramDisplayMax = 10;
         private PerformanceService _previousSelectedService;
 
         private List<double> _cpuValues = new List<double>();
