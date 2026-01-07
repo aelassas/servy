@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Newtonsoft.Json.Linq;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
@@ -479,16 +480,17 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
+            // Step 0: cancel any previous search
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            var token = _cancellationTokenSource.Token;
+
             try
             {
                 var stopwatch = Stopwatch.StartNew();
 
                 FooterText = string.Empty; // Clear footer text before search
-
-                // Step 0: cancel any previous search
-                _cancellationTokenSource?.Cancel();
-                _cancellationTokenSource?.Dispose();
-                _cancellationTokenSource = new CancellationTokenSource();
 
                 // Step 1: show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
@@ -500,7 +502,7 @@ namespace Servy.Manager.ViewModels
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
-                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, _cancellationTokenSource.Token), _cancellationTokenSource.Token);
+                var results = await Task.Run(() => ServiceCommands.SearchServicesAsync(SearchText, true, token), token);
                 sw.Stop();
                 Debug.WriteLine($"Created {results.Count} SearchServicesAsync in {sw.ElapsedMilliseconds} ms");
 
@@ -508,7 +510,7 @@ namespace Servy.Manager.ViewModels
                 sw = Stopwatch.StartNew();
                 var vms = await Task.Run(() =>
                     results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)).ToList()
-                , _cancellationTokenSource.Token);
+                , token);
                 sw.Stop();
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
@@ -562,9 +564,12 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Step 7: restore button text and IsBusy
-                Mouse.OverrideCursor = null;
-                SearchButtonText = Strings.Button_Search;
-                IsBusy = false;
+                if (!token.IsCancellationRequested)
+                {
+                    Mouse.OverrideCursor = null;
+                    SearchButtonText = Strings.Button_Search;
+                    IsBusy = false;
+                }
             }
         }
 

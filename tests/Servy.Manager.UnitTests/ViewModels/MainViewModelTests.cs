@@ -72,7 +72,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     };
 
                 _serviceCommandsMock
-                    .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(services);
 
                 await vm.SearchCommand.ExecuteAsync(null);
