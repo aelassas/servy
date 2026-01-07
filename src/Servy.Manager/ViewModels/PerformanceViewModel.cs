@@ -40,6 +40,8 @@ namespace Servy.Manager.ViewModels
         private readonly double _graphWidth = 400;
         private readonly double _graphHeight = 200;
         private CancellationTokenSource _cancellationTokenSource;
+        private bool _isTickRunning;
+        private double _ramDisplayMax = 10;
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -67,21 +69,7 @@ namespace Servy.Manager.ViewModels
                 _selectedService = value;
                 OnPropertyChanged(nameof(SelectedService));
 
-                // 1. Reset display values
-                Pid = NotAvailableText;
-                CpuUsage = NotAvailableText;
-                RamUsage = NotAvailableText;
-
-                // 2. Clear and SEED the data history with 100 zeros
-                // This ensures the graph line spans the whole width immediately
-                _cpuValues = Enumerable.Repeat(0.0, 100).ToList();
-                _ramValues = Enumerable.Repeat(0.0, 100).ToList();
-
-                // 3. Reset the UI collections to empty (they will update on next tick)
-                CpuPointCollection = new PointCollection();
-                CpuFillPoints = new PointCollection();
-                RamPointCollection = new PointCollection();
-                RamFillPoints = new PointCollection();
+                ResetGraphs(true);
 
                 StopMonitoring(false); // Pass false so we don't clear the zeros we just added
                 StartMonitoring();
@@ -123,15 +111,6 @@ namespace Servy.Manager.ViewModels
             get => _ramFillPoints;
             set => Set(ref _ramFillPoints, value);
         }
-
-        #endregion
-
-        #region Properties - Grid Lines
-
-        public ObservableCollection<Line> CpuHorizontalGridLines { get; } = new ObservableCollection<Line>();
-        public ObservableCollection<Line> CpuVerticalGridLines { get; } = new ObservableCollection<Line>();
-        public ObservableCollection<Line> RamHorizontalGridLines { get; } = new ObservableCollection<Line>();
-        public ObservableCollection<Line> RamVerticalGridLines { get; } = new ObservableCollection<Line>();
 
         #endregion
 
@@ -206,13 +185,38 @@ namespace Servy.Manager.ViewModels
             var app = (App)Application.Current;
             _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
             _timer.Tick += OnTick;
-
-            GenerateGridLines();
         }
 
         #endregion
 
         #region Private Methods - Logic & Calculation
+
+        /// <summary>
+        /// Resets all graph-related display values and data collections to their initial state.
+        /// </summary>
+        /// <remarks>Call this method to clear existing CPU and RAM usage data and prepare the graphs for
+        /// fresh input. This is typically used when reinitializing the display or after a data source change.</remarks>
+        private void ResetGraphs(bool resetLabels)
+        {
+            // 1. Reset display values
+            if (resetLabels)
+            {
+                Pid = NotAvailableText;
+                CpuUsage = NotAvailableText;
+                RamUsage = NotAvailableText;
+            }
+
+            // 2. Clear and SEED the data history with 101 zeros
+            // This ensures the graph line spans the whole width immediately
+            _cpuValues = Enumerable.Repeat(0.0, 101).ToList();
+            _ramValues = Enumerable.Repeat(0.0, 101).ToList();
+
+            // 3. Reset the UI collections to empty (they will update on next tick)
+            CpuPointCollection = new PointCollection();
+            CpuFillPoints = new PointCollection();
+            RamPointCollection = new PointCollection();
+            RamFillPoints = new PointCollection();
+        }
 
         /// <summary>
         /// Updates the PID display text based on the selected service.
@@ -228,38 +232,49 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
-            if (SelectedService == null) return;
-
-            var serviceDto = await _serviceRepository.GetByNameAsync(SelectedService.Name);
-
-            if (serviceDto == null || serviceDto.Pid == null)
-            {
-                Pid = NotAvailableText;
-                CpuUsage = NotAvailableText;
-                RamUsage = NotAvailableText;
+            if (_isTickRunning || SelectedService == null)
                 return;
-            }
 
-            if (SelectedService.Pid != serviceDto.Pid)
+            _isTickRunning = true;
+
+            try
             {
-                SelectedService.Pid = serviceDto.Pid;
+                var serviceDto = await _serviceRepository.GetByNameAsync(SelectedService.Name);
+
+                if (serviceDto == null || serviceDto.Pid == null)
+                {
+                    ResetGraphs(true);
+                    return;
+                }
+
+                if (SelectedService.Pid != serviceDto.Pid)
+                {
+                    SelectedService.Pid = serviceDto.Pid;
+                    ResetGraphs(false);
+                }
+
+                int pid = SelectedService.Pid.Value;
+                SetPidText();
+
+                // Fetch raw metrics
+                var (rawCpu, ramBytes) = await Task.Run(() => (
+                    ProcessHelper.GetCpuUsage(pid),
+                    ProcessHelper.GetRamUsage(pid)
+                ));
+                double rawRamMb = ramBytes / 1024d / 1024d;
+
+                // Update UI Texts
+                CpuUsage = ProcessHelper.FormatCpuUsage(rawCpu);
+                RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
+
+                // Update Graphs with Smoothing
+                AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
+                AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
             }
-
-            int pid = SelectedService.Pid.Value;
-            SetPidText();
-
-            // Fetch raw metrics
-            double rawCpu = ProcessHelper.GetCpuUsage(pid);
-            long ramBytes = ProcessHelper.GetRamUsage(pid);
-            double rawRamMb = ramBytes / 1024d / 1024d;
-
-            // Update UI Texts
-            CpuUsage = ProcessHelper.FormatCpuUsage(rawCpu);
-            RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
-
-            // Update Graphs with Smoothing
-            AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
-            AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
+            finally
+            {
+                _isTickRunning = false;
+            }
         }
 
         /// <summary>
@@ -282,13 +297,13 @@ namespace Servy.Manager.ViewModels
             // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
             double displayMax = isCpu
                 ? 100.0
-                : Math.Max(valueHistory.Max() * 1.2, 10);
+                : Math.Max(valueHistory.Max() * 1.2, _ramDisplayMax);
 
             PointCollection pc = new PointCollection();
             for (int i = 0; i < valueHistory.Count; i++)
             {
                 // Calculate X: Maps the index (0-99) to the pixel width (0-400)
-                double x = i * (_graphWidth / 99.0);
+                double x = i * (_graphWidth / 100.0);
 
                 // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
                 double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
@@ -325,36 +340,6 @@ namespace Servy.Manager.ViewModels
                 fillPc.Add(new Point(fillPc[0].X, _graphHeight));
             }
             return fillPc;
-        }
-
-        /// <summary>
-        /// Generates the static horizontal and vertical background grid lines for the charts.
-        /// </summary>
-        private void GenerateGridLines()
-        {
-            int rows = 10;
-            int cols = 10;
-            Brush gridBrush = new SolidColorBrush(Color.FromRgb(235, 235, 235));
-            double thickness = 0.5;
-
-            CpuHorizontalGridLines.Clear();
-            CpuVerticalGridLines.Clear();
-            RamHorizontalGridLines.Clear();
-            RamVerticalGridLines.Clear();
-
-            for (int i = 0; i <= rows; i++)
-            {
-                double y = (i / (double)rows) * _graphHeight;
-                CpuHorizontalGridLines.Add(new Line { X1 = 0, X2 = _graphWidth, Y1 = y, Y2 = y, Stroke = gridBrush, StrokeThickness = thickness });
-                RamHorizontalGridLines.Add(new Line { X1 = 0, X2 = _graphWidth, Y1 = y, Y2 = y, Stroke = gridBrush, StrokeThickness = thickness });
-            }
-
-            for (int i = 0; i <= cols; i++)
-            {
-                double x = (i / (double)cols) * _graphWidth;
-                CpuVerticalGridLines.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = _graphHeight, Stroke = gridBrush, StrokeThickness = thickness });
-                RamVerticalGridLines.Add(new Line { X1 = x, X2 = x, Y1 = 0, Y2 = _graphHeight, Stroke = gridBrush, StrokeThickness = thickness });
-            }
         }
 
         /// <summary>
