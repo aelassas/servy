@@ -16,9 +16,9 @@
     <AssemblyDescription>Servy.Restarter unit tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Restarter.UnitTests</Product>
-    <Version>4.7.0</Version>
-    <FileVersion>4.7.0.0</FileVersion>
-    <AssemblyVersion>4.7.0.0</AssemblyVersion>
+    <Version>4.8.0</Version>
+    <FileVersion>4.8.0.0</FileVersion>
+    <AssemblyVersion>4.8.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
