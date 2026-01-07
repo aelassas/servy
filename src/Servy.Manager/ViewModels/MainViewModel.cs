@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
