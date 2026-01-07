@@ -36,6 +36,7 @@ namespace Servy.Manager.ViewModels
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isTickRunning;
         private double _ramDisplayMax = 10;
+        private PerformanceService _previousSelectedService;
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -226,13 +227,25 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
-            if (_isTickRunning || SelectedService == null)
+            if (_isTickRunning)
                 return;
 
             _isTickRunning = true;
 
             try
             {
+                // Only reset graphs if selection changed
+                if (SelectedService == null)
+                {
+                    if (_previousSelectedService != null)
+                    {
+                        ResetGraphs(true);
+                        _previousSelectedService = null;
+                    }
+                    return;
+                }
+                _previousSelectedService = SelectedService;
+
                 var serviceDto = await _serviceRepository.GetByNameAsync(SelectedService.Name);
 
                 if (serviceDto == null || serviceDto.Pid == null)
