@@ -262,7 +262,7 @@ namespace Servy.Manager.ViewModels
                 if (SelectedService.Pid != serviceDto.Pid)
                 {
                     SelectedService.Pid = serviceDto.Pid;
-                    ResetGraphs(false);
+                    ResetGraphs(true);
                 }
 
                 int pid = SelectedService.Pid.Value;
@@ -376,9 +376,7 @@ namespace Servy.Manager.ViewModels
 
                 // Allow WPF to repaint the button and show progress bar
                 // Only execute if we are in a real UI context with a running dispatcher frame
-                if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA &&
-                    Application.Current?.Dispatcher != null &&
-                    !Helper.IsRunningInUnitTest())
+                if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
                 {
                     await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
