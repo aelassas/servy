@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
@@ -291,8 +290,8 @@ namespace Servy.Manager.ViewModels
             // Add the raw value directly to history without averaging
             valueHistory.Add(newValue);
 
-            // Always keep exactly 100 points to maintain the "scrolling" effect
-            if (valueHistory.Count > 100) valueHistory.RemoveAt(0);
+            // Always keep exactly 101 points to maintain the "scrolling" effect
+            if (valueHistory.Count > 101) valueHistory.RemoveAt(0);
 
             // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
             double displayMax = isCpu
