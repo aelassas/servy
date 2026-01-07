@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
@@ -11,18 +10,14 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Servy.Manager.ViewModels
 {
