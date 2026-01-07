@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -38,6 +39,7 @@ namespace Servy.Manager.ViewModels
         private readonly ILogger _logger;
         private readonly double _graphWidth = 400;
         private readonly double _graphHeight = 200;
+        private CancellationTokenSource _cancellationTokenSource;
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -356,21 +358,40 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Asynchronously searches for services matching the SearchText.
+        /// Asynchronously searches for services. Consolidates background work and 
+        /// handles cancellation to keep the UI responsive.
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
+            // Cancel previous search
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+            _cancellationTokenSource = new CancellationTokenSource();
+            var token = _cancellationTokenSource.Token;
+
             try
             {
+                // Show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                var results = await ServiceCommands.SearchServicesAsync(SearchText);
+                // Allow WPF to repaint the button and show progress bar
+                await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
 
+                // Async I/O
+                var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
+
+                // Mapping is cheap; do it on UI thread
                 Services.Clear();
                 foreach (var s in results)
+                {
                     Services.Add(new PerformanceService { Name = s.Name, Pid = s.Pid });
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected: user triggered a new search
             }
             catch (Exception ex)
             {
@@ -378,9 +399,13 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                Mouse.OverrideCursor = null;
-                IsBusy = false;
-                SearchButtonText = Strings.Button_Search;
+                // Restore button text and IsBusy
+                if (!token.IsCancellationRequested)
+                {
+                    Mouse.OverrideCursor = null;
+                    IsBusy = false;
+                    SearchButtonText = Strings.Button_Search;
+                }
             }
         }
 

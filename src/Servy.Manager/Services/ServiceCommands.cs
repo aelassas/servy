@@ -71,13 +71,13 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<Service>> SearchServicesAsync(string searchText, CancellationToken cancellationToken = default)
+        public async Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             var results = await _serviceRepository.SearchDomainServicesAsync(
                 _serviceManager, searchText ?? string.Empty, cancellationToken);
 
             // Map all domain services to Service models in parallel
-            var tasks = results.Select(ServiceMapper.ToModelAsync);
+            var tasks = results.Select(r => ServiceMapper.ToModelAsync(r, calculatePerf));
             var services = await Task.WhenAll(tasks);
 
             return services.ToList();
