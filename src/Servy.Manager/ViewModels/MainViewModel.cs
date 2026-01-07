@@ -928,8 +928,11 @@ namespace Servy.Manager.ViewModels
                 long? ramUsage = null;
                 if (service.Pid.HasValue)
                 {
-                    cpuUsage = await Task.Run(() => ProcessHelper.GetCpuUsage(service.Pid.Value));
-                    ramUsage = await Task.Run(() => ProcessHelper.GetRamUsage(service.Pid.Value));
+                    var pid = service.Pid.Value;
+                    (cpuUsage, ramUsage) = await Task.Run(() => (
+                        ProcessHelper.GetCpuUsage(pid),
+                        ProcessHelper.GetRamUsage(pid)
+                    ));
                 }
                 service.CpuUsage = cpuUsage;
                 service.RamUsage = ramUsage;
