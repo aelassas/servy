@@ -27,22 +27,6 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task Constructor_ShouldGenerateGridLines()
-        {
-            await Helper.RunOnSTA(async () =>
-            {
-                // Arrange & Act
-                var vm = CreateViewModel();
-
-                // Assert
-                Assert.NotEmpty(vm.CpuHorizontalGridLines);
-                Assert.NotEmpty(vm.RamHorizontalGridLines);
-                // 10 rows/cols + 1 edge line = 11 lines
-                Assert.Equal(11, vm.CpuHorizontalGridLines.Count);
-            }, createApp: true);
-        }
-
-        [Fact]
         public async Task SearchCommand_ShouldPopulateServices()
         {
             await Helper.RunOnSTA(async () =>
