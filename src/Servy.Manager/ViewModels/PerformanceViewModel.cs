@@ -264,6 +264,10 @@ namespace Servy.Manager.ViewModels
                 SetPidText();
 
                 // Fetch raw metrics
+                // Parallelizing CPU and RAM tasks that only 1–5ms actually slows down the app
+                // because the time it takes to manage two threads is greater than the time
+                // saved by running them at once.
+                // Parallelism is only a "win" if the tasks are "heavy."
                 var (rawCpu, ramBytes) = await Task.Run(() => (
                     ProcessHelper.GetCpuUsage(pid),
                     ProcessHelper.GetRamUsage(pid)

@@ -11,15 +11,18 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Services;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Servy.Manager.ViewModels
 {
@@ -924,6 +927,10 @@ namespace Servy.Manager.ViewModels
                 long? ramUsage = null;
                 if (service.Pid.HasValue)
                 {
+                    // Parallelizing CPU and RAM tasks that only 1–5ms actually slows down the app
+                    // because the time it takes to manage two threads is greater than the time
+                    // saved by running them at once.
+                    // Parallelism is only a "win" if the tasks are "heavy."
                     var pid = service.Pid.Value;
                     (cpuUsage, ramUsage) = await Task.Run(() => (
                         ProcessHelper.GetCpuUsage(pid),
