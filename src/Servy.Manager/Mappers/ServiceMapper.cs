@@ -17,8 +17,9 @@ namespace Servy.Manager
         /// Maps a <see cref="Core.Domain.Service"/> to a <see cref="Service"/>.
         /// </summary>
         /// <param name="service">The domain service instance.</param>
+        /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service)
+        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool calculatePerf)
         {
             if (service == null) return null;
 
@@ -26,7 +27,7 @@ namespace Servy.Manager
 
             double? cpuUsage = null;
             long? ramUsage = null;
-            if (service.Pid.HasValue)
+            if (calculatePerf && service.Pid.HasValue)
             {
                 cpuUsage = await Task.Run(() => ProcessHelper.GetCpuUsage(service.Pid.Value));
                 ramUsage = await Task.Run(() => ProcessHelper.GetRamUsage(service.Pid.Value));
