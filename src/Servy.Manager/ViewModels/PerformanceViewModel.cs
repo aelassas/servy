@@ -357,7 +357,13 @@ namespace Servy.Manager.ViewModels
                 SearchButtonText = Strings.Button_Searching;
 
                 // Allow WPF to repaint the button and show progress bar
-                await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                // Only execute if we are in a real UI context with a running dispatcher frame
+                if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA &&
+                    Application.Current?.Dispatcher != null &&
+                    !Helper.IsRunningInUnitTest())
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                }
 
                 // Async I/O
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);

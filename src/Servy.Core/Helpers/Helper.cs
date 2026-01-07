@@ -310,5 +310,19 @@ namespace Servy.Core.Helpers
             }
         }
 
+        /// <summary>
+        /// Determines whether the current process is running under a unit test framework.
+        /// </summary>
+        /// <remarks>This method checks for the presence of assemblies commonly used by unit test
+        /// frameworks, such as xUnit, to infer whether the code is executing within a test environment. The result may
+        /// not be accurate if custom or less common test runners are used.</remarks>
+        /// <returns>true if a known unit test runner is detected in the current application domain; otherwise, false.</returns>
+        [ExcludeFromCodeCoverage]
+        public static bool IsRunningInUnitTest()
+        {
+            // Checks if common test runners are loaded in the process
+            return AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName != null && a.FullName.StartsWith("xunit"));
+        }
+
     }
 }
