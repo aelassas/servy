@@ -127,66 +127,54 @@
             <!--CPU-->
             <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
-                    <Viewbox Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="400" Height="200">
-                            <ItemsControl ItemsSource="{Binding CpuHorizontalGridLines}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                            <ItemsControl ItemsSource="{Binding CpuVerticalGridLines}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                            <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0"/>
 
-                            <Polygon Points="{Binding CpuFillPoints}" Fill="#C3ECFA" StrokeThickness="0"/>
+                            <Rectangle Width="400" Height="200">
+                                <Rectangle.Fill>
+                                    <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
+                                        <VisualBrush.Visual>
+                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" Stroke="#EBEBEB" StrokeThickness="0.5" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
 
-                            <!--CpuPointCollection-->
                             <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1"/>
                         </Canvas>
                     </Viewbox>
 
-                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
-                        <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Foreground="#1B7F9F" 
-                                   FontSize="14" />
-                    </StackPanel>
-
-                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
-                        <TextBlock Text="{Binding CpuUsage}" Foreground="#1B7F9F" 
-                      FontSize="14" />
-                    </StackPanel>
+                    <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" Foreground="#1B7F9F" FontSize="14" />
+                    <TextBlock Text="{Binding CpuUsage}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="#1B7F9F" FontSize="14" />
                 </Grid>
             </Border>
 
             <!--RAM-->
             <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
-                    <Viewbox Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="400" Height="200">
-                            <ItemsControl ItemsSource="{Binding RamHorizontalGridLines}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                            <ItemsControl ItemsSource="{Binding RamVerticalGridLines}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Canvas/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
 
-                            <Polygon Points="{Binding RamFillPoints}" Fill="#C3ECFA" StrokeThickness="0"/>
+                            <Polygon Points="{Binding RamFillPoints}" 
+                         Fill="#80C3ECFA" 
+                         StrokeThickness="0"/>
 
-                            <!--RamPointCollection-->
-                            <Polyline Points="{Binding RamPointCollection}"  Stroke="#1B7F9F"  StrokeThickness="1" />
+                            <Rectangle Width="400" Height="200">
+                                <Rectangle.Fill>
+                                    <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
+                                        <VisualBrush.Visual>
+                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" 
+                                      Stroke="#EBEBEB" 
+                                      StrokeThickness="0.5" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+
+                            <Polyline Points="{Binding RamPointCollection}" 
+                          Stroke="#1B7F9F" 
+                          StrokeThickness="1" />
                         </Canvas>
                     </Viewbox>
 
@@ -199,6 +187,7 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
         </Grid>
 
     </Grid>
