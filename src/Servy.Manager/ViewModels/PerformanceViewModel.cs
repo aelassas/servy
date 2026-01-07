@@ -296,7 +296,8 @@ namespace Servy.Manager.ViewModels
             PointCollection pc = new PointCollection();
             for (int i = 0; i < valueHistory.Count; i++)
             {
-                // Calculate X: Maps the index (0-99) to the pixel width (0-400)
+                // Calculate X: Maps the index (0-100) to the pixel width (0-400)
+                // With 101 points, we have exactly 100 intervals, matching the 400px width.
                 double x = i * (_graphWidth / 100.0);
 
                 // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
