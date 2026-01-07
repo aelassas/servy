@@ -274,7 +274,7 @@ namespace Servy.Manager.ViewModels
                 CpuUsage = ProcessHelper.FormatCpuUsage(rawCpu);
                 RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
 
-                // Update Graphs with Smoothing
+                // Update Graphs
                 AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
                 AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
             }
