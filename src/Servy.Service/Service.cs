@@ -32,16 +32,6 @@ namespace Servy.Service
     public partial class Service : ServiceBase
     {
 
-        #region Constants
-
-        /// <summary>
-        /// Default timeout (in seconds) to wait for the process to start 
-        /// successfully before considering the startup as failed.
-        /// </summary>
-        private const int StartupTimeout = 10;
-
-        #endregion
-
         #region Private Fields
 
         private readonly IServiceHelper _serviceHelper;
@@ -709,7 +699,7 @@ namespace Servy.Service
             {
                 try
                 {
-                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(StartupTimeout), cts.Token))
+                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
                     {
                         StartPostLaunchProcess();
                     }
@@ -1233,7 +1223,7 @@ namespace Servy.Service
                 }
 
                 // Attempt to stop child process gracefully or kill forcibly
-                SafeKillProcess(_childProcess);
+                SafeKillProcess(_childProcess, _options.StopTimeout * 1000);
 
                 if (_childProcess != null)
                 {
@@ -1283,7 +1273,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="process">Process to stop.</param>
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
-        private void SafeKillProcess(IProcessWrapper process, int timeoutMs = 10_000)
+        private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
             try
             {

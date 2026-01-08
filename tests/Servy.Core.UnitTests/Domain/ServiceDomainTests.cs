@@ -193,7 +193,10 @@ namespace Servy.Core.UnitTests.Domain
                      service.MaxRotations,
 
                      service.EnableDateRotation,
-                     service.DateRotationType
+                     service.DateRotationType,
+
+                     service.StartTimeout,
+                     service.StopTimeout
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -290,7 +293,10 @@ namespace Servy.Core.UnitTests.Domain
                      service.MaxRotations,
 
                      service.EnableDateRotation,
-                     service.DateRotationType
+                     service.DateRotationType,
+
+                     service.StartTimeout,
+                     service.StopTimeout
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -368,7 +374,10 @@ namespace Servy.Core.UnitTests.Domain
                     service.MaxRotations,                 // maxRotations
 
                      service.EnableDateRotation,
-                     service.DateRotationType
+                     service.DateRotationType,
+
+                     service.StartTimeout,
+                     service.StopTimeout
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

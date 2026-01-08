@@ -442,4 +442,12 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>RAM</value>
   </data>
 
+  <!--Start/Stop timeouts-->
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>Start timeout must be a number greater than or equal to 1.</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>Stop timeout must be a number greater than or equal to 1.</value>
+  </data>
+
 </root>

@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using System;
 
 namespace Servy.CLI.Options
 {
@@ -326,5 +325,22 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("debug", HelpText = "Whether debug logs are enabled. When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information.")]
         public bool EnableDebugLogs { get; set; }
+
+        /// <summary>
+        /// Gets or sets timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// Must be >= 1 second.
+        /// Optional. Defaults to 10 seconds.
+        /// </summary>
+        [Option("startTimeout", HelpText = "Timeout in seconds to wait for the process to start successfully before considering the startup as failed. Must be greater than or equal to 1 second. Defaults to 10 seconds.")]
+        public string StartTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets timeout in seconds to wait for the process to exit.
+        /// Must be >= 1 second.
+        /// Optional. Defaults to 5 seconds.
+        /// </summary>
+        [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be greater than or equal to 1 second. Defaults to 5 seconds.")]
+        public string StopTimeout { get; set; }
+
     }
 }

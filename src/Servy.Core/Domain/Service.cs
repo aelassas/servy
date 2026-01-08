@@ -261,6 +261,16 @@ namespace Servy.Core.Domain
         /// </summary>
         public bool EnableDebugLogs { get; set; } = false;
 
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        public int StartTimeout { get; set; } = AppConfig.DefaultStartTimeout;
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
+
         #endregion
 
         #region Public Methods
@@ -419,7 +429,10 @@ namespace Servy.Core.Domain
                 maxRotations: MaxRotations,
 
                 enableDateRotation: EnableDateRotation,
-                dateRotationType: DateRotationType
+                dateRotationType: DateRotationType,
+
+                startTimeout: StartTimeout,
+                stopTimeout: StopTimeout
             );
         }
 

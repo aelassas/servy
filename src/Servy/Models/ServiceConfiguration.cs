@@ -224,5 +224,15 @@ namespace Servy.Models
         /// </summary>
         public bool EnableDebugLogs { get; set; }
 
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        public string StartTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public string StopTimeout { get; set; }
+
     }
 }

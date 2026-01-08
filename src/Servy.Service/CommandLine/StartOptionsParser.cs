@@ -125,6 +125,10 @@ namespace Servy.Service.CommandLine
                 EnableSizeRotation = fullArgs.Length > 31 && bool.TryParse(fullArgs[31], out bool enableSizeRotation) && enableSizeRotation,
                 EnableDateRotation = fullArgs.Length > 32 && bool.TryParse(fullArgs[32], out bool enableDateRotation) && enableDateRotation,
                 DateRotationType = fullArgs.Length > 33 && Enum.TryParse(fullArgs[33], true, out DateRotationType dateRotationType) ? dateRotationType : DateRotationType.Daily,
+
+                // Start and Stop timeouts
+                StartTimeout = fullArgs.Length > 34 && int.TryParse(fullArgs[34], out int startTimeout) ? startTimeout : AppConfig.DefaultStartTimeout,
+                StopTimeout = fullArgs.Length > 35 && int.TryParse(fullArgs[35], out int stopTimeout) ? stopTimeout : AppConfig.DefaultStopTimeout,
             };
         }
     }
