@@ -270,7 +270,9 @@ namespace Servy.Core.Services
                 string displayName = null,
                 int? maxRotations = AppConfig.DefaultMaxRotations,
                 bool enableDateRotation = false,
-                DateRotationType dateRotationType = DateRotationType.Daily
+                DateRotationType dateRotationType = DateRotationType.Daily,
+                int? startTimeout = AppConfig.DefaultStartTimeout,
+                int? stopTimeout = AppConfig.DefaultStopTimeout
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -333,7 +335,12 @@ namespace Servy.Core.Services
                 // Date rotation
                 Helper.Quote(enableSizeRotation.ToString()), // size rotation
                 Helper.Quote(enableDateRotation.ToString()),
-                Helper.Quote(dateRotationType.ToString())
+                Helper.Quote(dateRotationType.ToString()),
+
+                // Start/Stop timeouts
+                Helper.Quote((startTimeout ?? AppConfig.DefaultStartTimeout).ToString()),
+                Helper.Quote((stopTimeout ?? AppConfig.DefaultStopTimeout).ToString())
+
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -427,6 +434,9 @@ namespace Servy.Core.Services
                     PostLaunchParameters = postLaunchArgs,
 
                     EnableDebugLogs = enableDebugLogs,
+
+                    StartTimeout = startTimeout,
+                    StopTimeout = stopTimeout
                 };
 
                 // Set PID

@@ -61,6 +61,8 @@ namespace Servy.Core.Services
         /// <param name="maxRotations">The maximum number of rotated log file to keep. Set to 0 for unlimited.</param>
         /// <param name="enableDateRotation">Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</param>
         /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
+        /// <param name="startTimeout">The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</param>
+        /// <param name="stopTimeout">The timeout in seconds to wait for the process to exit.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -105,7 +107,9 @@ namespace Servy.Core.Services
                 string displayName = null,
                 int? maxRotations = AppConfig.DefaultMaxRotations,
                 bool enableDateRotation = false,
-                DateRotationType dateRotationType = DateRotationType.Daily
+                DateRotationType dateRotationType = DateRotationType.Daily,
+                int? startTimeout = AppConfig.DefaultStartTimeout,
+                int? stopTimeout = AppConfig.DefaultStopTimeout
         );
 
         /// <summary>

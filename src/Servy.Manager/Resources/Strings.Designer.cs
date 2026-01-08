@@ -817,6 +817,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start timeout must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidStartTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStartTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified startup directory is invalid..
         /// </summary>
         public static string Msg_InvalidStartupDirectory {
@@ -840,6 +849,15 @@ namespace Servy.Manager.Resources {
         public static string Msg_InvalidStdoutPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidStdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop timeout must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidStopTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStopTimeout", resourceCulture);
             }
         }
         

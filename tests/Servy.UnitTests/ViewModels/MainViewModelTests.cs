@@ -108,6 +108,9 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.EnableDateRotation = true;
             _viewModel.SelectedDateRotationType = DateRotationType.Weekly;
 
+            _viewModel.StartTimeout = "11";
+            _viewModel.StopTimeout = "6";
+
             // Act
             _viewModel.InstallCommand.Execute(null);
 
@@ -157,7 +160,9 @@ namespace Servy.UnitTests.ViewModels
                  "TestServiceDisplayName",
                  "5",
                  true,
-                 DateRotationType.Weekly
+                 DateRotationType.Weekly,
+                 "11",
+                 "6"
             ), Times.Once);
         }
 

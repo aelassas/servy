@@ -77,6 +77,18 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
+            if (dto.StartTimeout.HasValue && dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartTimeout, AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.StopTimeout.HasValue && dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStopTimeout, AppConfig.Caption);
+                return false;
+            }
+
             if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && dto.RotationSize < MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);

@@ -1,11 +1,11 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
-using Servy.Core.Services;
 using System;
 using System.IO;
 
@@ -67,6 +67,16 @@ namespace Servy.CLI.Validators
 
             if (!ValidateEnumOption<ProcessPriority>(opts.ProcessPriority))
                 return CommandResult.Fail(Strings.Msg_InvalidProcessPriority);
+
+            if (!string.IsNullOrWhiteSpace(opts.StartTimeout) && (!int.TryParse(opts.StartTimeout, out var startTimeout) || startTimeout < AppConfig.MinStartTimeout))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidStartTimeout);
+            }
+
+            if (!string.IsNullOrWhiteSpace(opts.StopTimeout) && (!int.TryParse(opts.StopTimeout, out var stopTimeout) || stopTimeout < AppConfig.MinStopTimeout))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidStopTimeout);
+            }
 
             if (opts.EnableRotation
                 && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < MinRotationSize)

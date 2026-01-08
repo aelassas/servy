@@ -64,6 +64,8 @@ namespace Servy.Core.Mappers
                 PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
                 PostLaunchParameters = service.PostLaunchParameters,
                 EnableDebugLogs = service.EnableDebugLogs,
+                StartTimeout = service.StartTimeout,
+                StopTimeout = service.StopTimeout,
             };
         }
 
@@ -120,6 +122,8 @@ namespace Servy.Core.Mappers
                 PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                 PostLaunchParameters = dto.PostLaunchParameters,
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
+                StartTimeout = dto.StartTimeout ?? DefaultStartTimeout,
+                StopTimeout = dto.StopTimeout ?? DefaultStopTimeout,
             };
         }
     }

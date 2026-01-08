@@ -57,6 +57,8 @@ namespace Servy.Mappers
                 PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
                 PostLaunchParameters = config.PostLaunchParameters,
                 MaxRotations = ParseInt(config.MaxRotations, Core.Config.AppConfig.DefaultMaxRotations),
+                StartTimeout = ParseInt(config.StartTimeout, Core.Config.AppConfig.DefaultStartTimeout),
+                StopTimeout = ParseInt(config.StopTimeout, Core.Config.AppConfig.DefaultStopTimeout),
             };
         }
 
@@ -107,6 +109,8 @@ namespace Servy.Mappers
                 PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
                 PostLaunchParameters = service.PostLaunchParameters,
                 MaxRotations = service.MaxRotations.ToString(),
+                StartTimeout = service.StartTimeout.ToString(),
+                StopTimeout = service.StopTimeout.ToString(),
             };
         }
 

@@ -305,6 +305,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The timeout in seconds to wait for the process to start successfully before considering the startup as failed..
+        /// </summary>
+        public static string Info_StartTimeout {
+            get {
+                return ResourceManager.GetString("Info_StartTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The timeout in seconds to wait for the process to exit..
+        /// </summary>
+        public static string Info_StopTimeout {
+            get {
+                return ResourceManager.GetString("Info_StopTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$)..
         /// </summary>
         public static string Info_UserAccount {
@@ -656,6 +674,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start Timeout.
+        /// </summary>
+        public static string Label_StartTimeout {
+            get {
+                return ResourceManager.GetString("Label_StartTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Startup Directory.
         /// </summary>
         public static string Label_StartupDirectory {
@@ -688,6 +715,15 @@ namespace Servy.Resources {
         public static string Label_StdoutPath {
             get {
                 return ResourceManager.GetString("Label_StdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop Timeout.
+        /// </summary>
+        public static string Label_StopTimeout {
+            get {
+                return ResourceManager.GetString("Label_StopTimeout", resourceCulture);
             }
         }
         
@@ -989,6 +1025,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start timeout must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidStartTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStartTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified startup directory is invalid..
         /// </summary>
         public static string Msg_InvalidStartupDirectory {
@@ -1012,6 +1057,15 @@ namespace Servy.Resources {
         public static string Msg_InvalidStdoutPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidStdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop timeout must be a number greater than or equal to 1..
+        /// </summary>
+        public static string Msg_InvalidStopTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidStopTimeout", resourceCulture);
             }
         }
         
