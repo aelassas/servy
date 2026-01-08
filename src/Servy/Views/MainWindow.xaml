@@ -70,6 +70,10 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -134,6 +138,24 @@
                                   SelectedValuePath="Priority"
                                   Margin="0,5"
                                   Grid.ColumnSpan="2" />
+
+                        <!--Start Timeout-->
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartTimeout}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding StartTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StartTimeout}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
+
+                        <!--Stop Timeout-->
+                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_StopTimeout}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding StopTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StopTimeout}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
                     </Grid>
                 </TabItem>
 

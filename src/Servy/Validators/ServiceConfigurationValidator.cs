@@ -97,6 +97,18 @@ namespace Servy.Validators
                 return false;
             }
 
+            if (dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartTimeout, AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStopTimeout, AppConfig.Caption);
+                return false;
+            }
+
             if (dto.RotationSize < MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);

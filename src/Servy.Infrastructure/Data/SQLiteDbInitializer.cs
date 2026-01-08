@@ -99,6 +99,10 @@ namespace Servy.Infrastructure.Data
                 // Date Rotation
                 new KeyValuePair<string, string>("EnableDateRotation", "ALTER TABLE Services ADD COLUMN EnableDateRotation INTEGER;"),
                 new KeyValuePair<string, string>("DateRotationType", "ALTER TABLE Services ADD COLUMN DateRotationType INTEGER;"),
+
+                // Start and Stop timeouts
+                new KeyValuePair<string, string>("StartTimeout", "ALTER TABLE Services ADD COLUMN StartTimeout INTEGER;"),
+                new KeyValuePair<string, string>("StopTimeout", "ALTER TABLE Services ADD COLUMN StopTimeout INTEGER;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

@@ -58,6 +58,8 @@ Install-ServyService `
   -Params "--param 2000" `
   -StartupType "Manual" `
   -Priority "BelowNormal" `
+  -StartTimeout 15 `
+  -StopTimeout 10 `
   -EnableSizeRotation `
   -RotationSize 1 `
   -EnableDateRotation `

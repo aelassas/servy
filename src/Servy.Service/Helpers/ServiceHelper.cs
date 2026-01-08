@@ -70,7 +70,9 @@ namespace Servy.Service.Helpers
                   // realArgs are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- realArgs: {options.ExecutableArgs}\n") +
                   $"- workingDir: {options.WorkingDirectory}\n" +
-                  $"- priority: {options.Priority}\n\n" +
+                  $"- priority: {options.Priority}\n" +
+                  $"- startTimeoutInSeconds: {options.StartTimeout}\n" +
+                  $"- stopTimeoutInSeconds: {options.StopTimeout}\n\n" +
 
                   "--------Logging----------------\n" +
                   $"- stdoutFilePath: {options.StdOutPath}\n" +

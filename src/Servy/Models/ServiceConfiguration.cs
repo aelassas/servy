@@ -81,7 +81,7 @@ namespace Servy.Models
         /// <summary>
         /// Gets or sets the maximum number of rotated log files to keep.
         /// </summary>
-        public string MaxRotations{ get; set; }
+        public string MaxRotations { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
@@ -223,6 +223,16 @@ namespace Servy.Models
         /// Not recommended for production environments, as these logs may contain sensitive information.
         /// </summary>
         public bool EnableDebugLogs { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        public string StartTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public string StopTimeout { get; set; }
 
     }
 }

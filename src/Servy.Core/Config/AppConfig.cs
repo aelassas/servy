@@ -195,6 +195,26 @@ namespace Servy.Core.Config
         /// </summary>
         public const int DefaultPreLaunchRetryAttempts = 0;
 
+        /// <summary>
+        /// Default start timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 10 seconds.
+        /// </summary>
+        public const int DefaultStartTimeout = 10;
+
+        /// <summary>
+        /// Default minimum timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 1 second.
+        /// </summary>
+        public const int MinStartTimeout = 1;
+
+        /// <summary>
+        /// Default start timeout in seconds to wait for exit. Default is 5 seconds.
+        /// </summary>
+        public const int DefaultStopTimeout = 5;
+
+        /// <summary>
+        /// Default minimum timeout in seconds to wait for exit. Default is 1 second.
+        /// </summary>
+        public const int MinStopTimeout = 1;
+
         #endregion
 
         #region Public Methods

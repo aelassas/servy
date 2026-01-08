@@ -507,4 +507,25 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_EnableDebugLogs" xml:space="preserve">
     <value>When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information.</value>
   </data>
+  
+  <!--Start/Stop timeouts-->
+  <data name="Label_StartTimeout" xml:space="preserve">
+    <value>Start Timeout</value>
+  </data>
+  <data name="Info_StartTimeout" xml:space="preserve">
+    <value>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</value>
+  </data>
+  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
+    <value>Start timeout must be a number greater than or equal to 1.</value>
+  </data>
+  
+  <data name="Label_StopTimeout" xml:space="preserve">
+    <value>Stop Timeout</value>
+  </data>
+  <data name="Info_StopTimeout" xml:space="preserve">
+    <value>The timeout in seconds to wait for the process to exit.</value>
+  </data>
+  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
+    <value>Stop timeout must be a number greater than or equal to 1.</value>
+  </data>
 </root>

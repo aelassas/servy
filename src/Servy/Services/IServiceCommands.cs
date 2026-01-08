@@ -53,6 +53,8 @@ namespace Servy.Services
         /// <param name="maxRotations">The maximum number of log rotations to keep.</param>
         /// <param name="enableDateRotation">Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</param>
         /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
+        /// <param name="startTimeout">The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</param>
+        /// <param name="stopTimeout">The timeout in seconds to wait for the process to exit.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -95,7 +97,9 @@ namespace Servy.Services
             string displayName,
             string maxRotations,
             bool enableDateRotation,
-            DateRotationType dateRotationType
+            DateRotationType dateRotationType,
+            string startTimeout,
+            string stopTimeout
             );
 
         /// <summary>

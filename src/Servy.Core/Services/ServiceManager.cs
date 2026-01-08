@@ -265,7 +265,9 @@ namespace Servy.Core.Services
                 string? displayName = null,
                 int? maxRotations = AppConfig.DefaultMaxRotations,
                 bool enableDateRotation = false,
-                DateRotationType dateRotationType = DateRotationType.Daily
+                DateRotationType dateRotationType = DateRotationType.Daily,
+                int? startTimeout = AppConfig.DefaultStartTimeout,
+                int? stopTimeout = AppConfig.DefaultStopTimeout
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -299,7 +301,7 @@ namespace Servy.Core.Services
                 Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
                 //Helper.Quote(preLaunchArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
+                                            //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
                 Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
                 Helper.Quote(preLaunchStdoutPath ?? string.Empty),
                 Helper.Quote(preLaunchStderrPath ?? string.Empty),
@@ -328,7 +330,12 @@ namespace Servy.Core.Services
                 // Date rotation
                 Helper.Quote(enableSizeRotation.ToString()), // size rotation
                 Helper.Quote(enableDateRotation.ToString()),
-                Helper.Quote(dateRotationType.ToString())
+                Helper.Quote(dateRotationType.ToString()),
+
+                // Start/Stop timeouts
+                Helper.Quote((startTimeout ?? AppConfig.DefaultStartTimeout).ToString()),
+                Helper.Quote((stopTimeout ?? AppConfig.DefaultStopTimeout).ToString())
+
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -422,6 +429,9 @@ namespace Servy.Core.Services
                     PostLaunchParameters = postLaunchArgs,
 
                     EnableDebugLogs = enableDebugLogs,
+
+                    StartTimeout = startTimeout,
+                    StopTimeout = stopTimeout
                 };
 
                 // Set PID

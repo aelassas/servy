@@ -115,7 +115,9 @@ namespace Servy.Services
             string displayName,
             string maxRotations,
             bool enableDateRotation,
-            DateRotationType dateRotationType
+            DateRotationType dateRotationType,
+            string startTimeout,
+            string stopTimeout
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -170,6 +172,9 @@ namespace Servy.Services
                 PostLaunchExecutablePath = postLaunchExePath,
                 PostLaunchStartupDirectory = postLaunchWorkingDirectory,
                 PostLaunchParameters = postLaunchArgs,
+
+                StartTimeout = int.TryParse(startTimeout, out var st) ? st : -1,
+                StopTimeout = int.TryParse(stopTimeout, out var sot) ? sot : -1,
             };
 
             // Validate
@@ -199,6 +204,9 @@ namespace Servy.Services
                 var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
                 var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
                 var maxRotationsValue = int.Parse(maxRotations);
+
+                var startTimeoutValue = int.Parse(startTimeout);
+                var stopTimeoutValue = int.Parse(stopTimeout);
 
                 if (runAsLocalSystem)
                 {
@@ -247,7 +255,9 @@ namespace Servy.Services
                     displayName: displayName,
                     maxRotations: maxRotationsValue,
                     enableDateRotation: enableDateRotation,
-                    dateRotationType: dateRotationType
+                    dateRotationType: dateRotationType,
+                    startTimeout: startTimeoutValue,
+                    stopTimeout: stopTimeoutValue
                 );
 
                 if (success)

@@ -13,7 +13,6 @@ using Servy.Validators;
 using Servy.ViewModels.Items;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using static Servy.Core.Config.AppConfig;
@@ -191,6 +190,24 @@ namespace Servy.ViewModels
         {
             get => _config.StderrPath;
             set { _config.StderrPath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the start timeout as a string (in seconds).
+        /// </summary>
+        public string StartTimeout
+        {
+            get => _config.StartTimeout;
+            set { _config.StartTimeout = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the start timeout as a string (in seconds).
+        /// </summary>
+        public string StopTimeout
+        {
+            get => _config.StopTimeout;
+            set { _config.StopTimeout = value; OnPropertyChanged(); }
         }
 
         /// <summary>
@@ -693,6 +710,8 @@ namespace Servy.ViewModels
             ProcessParameters = string.Empty;
             SelectedStartupType = ServiceStartType.Automatic;
             SelectedProcessPriority = ProcessPriority.Normal;
+            StartTimeout = DefaultStartTimeout.ToString();
+            StopTimeout = DefaultStopTimeout.ToString();
             EnableSizeRotation = false;
             RotationSize = DefaultRotationSize.ToString();
             EnableDateRotation = false;
@@ -966,7 +985,9 @@ namespace Servy.ViewModels
                 _config.DisplayName,
                 _config.MaxRotations,
                 _config.EnableDateRotation,
-                _config.DateRotationType
+                _config.DateRotationType,
+                _config.StartTimeout,
+                _config.StopTimeout
                 );
         }
 
@@ -1073,6 +1094,9 @@ namespace Servy.ViewModels
             PostLaunchParameters = string.Empty;
 
             EnableDebugLogs = false;
+
+            StartTimeout = DefaultStartTimeout.ToString();
+            StopTimeout = DefaultStopTimeout.ToString();
         }
 
         #endregion
@@ -1214,6 +1238,9 @@ namespace Servy.ViewModels
             PostLaunchParameters = dto.PostLaunchParameters;
 
             EnableDebugLogs = dto.EnableDebugLogs ?? false;
+
+            StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.ToString();
+            StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.ToString();
         }
 
         /// <summary>
@@ -1276,7 +1303,10 @@ namespace Servy.ViewModels
                 PostLaunchStartupDirectory = PostLaunchStartupDirectory,
                 PostLaunchParameters = PostLaunchParameters,
 
-                EnableDebugLogs = EnableDebugLogs
+                EnableDebugLogs = EnableDebugLogs,
+
+                StartTimeout = int.TryParse(StartTimeout, out var startTimeout) ? startTimeout: DefaultStartTimeout,
+                StopTimeout = int.TryParse(StopTimeout, out var stopTimeout) ? stopTimeout : DefaultStopTimeout,
             };
 
             return dto;

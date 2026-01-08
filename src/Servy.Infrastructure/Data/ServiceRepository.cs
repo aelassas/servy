@@ -79,7 +79,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
                     PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
-                    EnableDateRotation, DateRotationType
+                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -89,7 +89,7 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
                     @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
-                    @EnableDateRotation, @DateRotationType
+                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout
                 );
                 SELECT last_insert_rowid();";
 
@@ -170,7 +170,10 @@ namespace Servy.Infrastructure.Data
                     MaxRotations = @MaxRotations,
 
                     EnableDateRotation = @EnableDateRotation,
-                    DateRotationType = @DateRotationType
+                    DateRotationType = @DateRotationType,
+
+                    StartTimeout = @StartTimeout,
+                    StopTimeout = @StopTimeout
 
                 WHERE Id = @Id;";
 
@@ -547,6 +550,9 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
 
                 DisplayName = dto.DisplayName,
+
+                StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
+                StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
             };
         }
 
@@ -606,6 +612,9 @@ namespace Servy.Infrastructure.Data
                 EnableDebugLogs = domain.EnableDebugLogs,
 
                 DisplayName = domain.DisplayName,
+
+                StartTimeout = domain.StartTimeout,
+                StopTimeout = domain.StopTimeout,
             };
         }
 

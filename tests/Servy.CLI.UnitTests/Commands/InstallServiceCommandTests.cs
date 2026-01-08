@@ -81,7 +81,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>(),
-                It.IsAny<Core.Enums.DateRotationType>()
+                It.IsAny<Core.Enums.DateRotationType>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()
             )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
@@ -167,7 +169,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>(),
-                It.IsAny<Core.Enums.DateRotationType>()
+                It.IsAny<Core.Enums.DateRotationType>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()
             )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
@@ -238,7 +242,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>(),
-                It.IsAny<Core.Enums.DateRotationType>()
+                It.IsAny<Core.Enums.DateRotationType>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
@@ -309,7 +315,9 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<string>(),
                 It.IsAny<int>(),
                 It.IsAny<bool>(),
-                It.IsAny<Core.Enums.DateRotationType>()
+                It.IsAny<Core.Enums.DateRotationType>(),
+                It.IsAny<int>(),
+                It.IsAny<int>()
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test

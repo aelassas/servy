@@ -118,7 +118,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the pre-launch script retry attempts.
         /// Defaults to 0.
         /// </summary>
-        public int PreLaunchRetryAttempts{ get; set; } = 0;
+        public int PreLaunchRetryAttempts { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the ignore failure option of pre-launch script.
@@ -183,5 +183,16 @@ namespace Servy.Service.CommandLine
         /// Gets or sets a value indicating date rotation type (<see cref="Core.Enums.DateRotationType"/>).
         /// </summary>
         public DateRotationType DateRotationType { get; set; } = DateRotationType.Daily;
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        public int StartTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public int StopTimeout { get; set; }
+
     }
 }

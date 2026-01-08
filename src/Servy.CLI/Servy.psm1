@@ -237,6 +237,16 @@ function Install-ServyService {
     .PARAMETER Stderr
         File path for capturing standard error logs. Optional.
 
+    .PARAMETER StartTimeout
+        Timeout in seconds to wait for the process to start successfully before considering the startup as failed. 
+        Must be >= 1 second. Optional.
+        Defaults to 10 seconds.
+
+    .PARAMETER StopTimeout
+        Timeout in seconds to wait for the process to exit.
+        Must be >= 1 second. Optional.
+        Defaults to 5 seconds.
+
     .PARAMETER EnableRotation
         Deprecated. Switch to enable size-based log rotation.
         This switch is kept only for backward compatibility.
@@ -375,6 +385,8 @@ function Install-ServyService {
     [string] $Priority,
     [string] $Stdout,
     [string] $Stderr,
+    [string] $StartTimeout,
+    [string] $StopTimeout,
     [switch] $EnableRotation,
     [switch] $EnableSizeRotation,
     [string] $RotationSize,
@@ -438,6 +450,8 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--priority" $Priority
   $argsList = Add-Arg $argsList "--stdout" $Stdout
   $argsList = Add-Arg $argsList "--stderr" $Stderr
+  $argsList = Add-Arg $argsList "--startTimeout" $StartTimeout
+  $argsList = Add-Arg $argsList "--stopTimeout" $StopTimeout
   if ($EnableRotation -or $EnableSizeRotation) { $argsList.Add("--enableSizeRotation") }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
   if ($EnableDateRotation) { $argsList.Add("--enableDateRotation") }

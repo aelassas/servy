@@ -231,6 +231,16 @@ namespace Servy.Core.DTOs
         /// </summary>
         public bool? EnableDebugLogs { get; set; }
 
+        /// <summary>
+        /// Timeout in seconds to wait for the process to start successfully before considering the startup as failed.
+        /// </summary>
+        public int? StartTimeout { get; set; }
+
+        /// <summary>
+        /// Timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public int? StopTimeout { get; set; }
+
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => false;
@@ -273,6 +283,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PostLaunchStartupDirectory);
         public bool ShouldSerializePostLaunchParameters() => !string.IsNullOrWhiteSpace(PostLaunchParameters);
         public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
+        public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
+        public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
 
         #endregion
     }
