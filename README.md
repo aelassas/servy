@@ -115,7 +115,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
-* Export/Import service configurations
+* Export/Import service configurations for easy backups and automation
 * Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7-11 x64 and Windows Server editions
 
