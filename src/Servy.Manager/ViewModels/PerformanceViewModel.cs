@@ -351,15 +351,19 @@ namespace Servy.Manager.ViewModels
             }
 
             // Update the specific UI-bound collections and their corresponding fill areas
+            var fill = CreateFillCollection(pc);
+            pc.Freeze();
+            fill.Freeze();
+
             if (isCpu)
             {
                 CpuPointCollection = pc;
-                CpuFillPoints = CreateFillCollection(pc);
+                CpuFillPoints = fill;
             }
             else
             {
                 RamPointCollection = pc;
-                RamFillPoints = CreateFillCollection(pc);
+                RamFillPoints = fill;
             }
         }
 
