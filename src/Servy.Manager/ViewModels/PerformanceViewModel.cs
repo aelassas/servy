@@ -40,6 +40,7 @@ namespace Servy.Manager.ViewModels
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isTickRunning;
         private bool _hadSelectedService;
+        private bool _isMonitoring;
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -233,6 +234,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
+            // 1. Initial guard
+            if (!_isMonitoring) return;
+
             _timer.Stop();
             try
             {
@@ -240,7 +244,12 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                _timer.Start();
+                // 2. The safety check: Only restart if we are STILL supposed to be monitoring
+                // This prevents the timer from "resurrecting" after StopMonitoring was called.
+                if (_isMonitoring)
+                {
+                    _timer.Start();
+                }
             }
         }
 
@@ -249,8 +258,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OnTickAsync()
         {
-            if (_isTickRunning)
-                return;
+            if (_isTickRunning) return;
 
             _isTickRunning = true;
 
@@ -449,6 +457,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StartMonitoring()
         {
+            _isMonitoring = true;
             _timer.Start();
         }
 
@@ -458,6 +467,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearPoints">True to reset the graph visualizations.</param>
         public void StopMonitoring(bool clearPoints)
         {
+            _isMonitoring = false;
             _timer.Stop();
 
             if (clearPoints)
