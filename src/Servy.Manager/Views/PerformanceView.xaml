@@ -128,10 +128,10 @@
             <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-                        <Canvas Width="400" Height="200">
+                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
                             <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0"/>
 
-                            <Rectangle Width="400" Height="200">
+                            <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
                                 <Rectangle.Fill>
                                     <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
                                         <VisualBrush.Visual>
@@ -154,13 +154,11 @@
             <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-                        <Canvas Width="400" Height="200">
+                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
 
-                            <Polygon Points="{Binding RamFillPoints}" 
-                         Fill="#80C3ECFA" 
-                         StrokeThickness="0"/>
+                            <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0"/>
 
-                            <Rectangle Width="400" Height="200">
+                            <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
                                 <Rectangle.Fill>
                                     <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
                                         <VisualBrush.Visual>

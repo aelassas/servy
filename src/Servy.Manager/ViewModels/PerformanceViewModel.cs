@@ -36,12 +36,10 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly DispatcherTimer _timer;
         private readonly ILogger _logger;
-        private readonly double _graphWidth = 400;
-        private readonly double _graphHeight = 200;
-        private readonly double _ramDisplayMax = 10;
+        private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
         private CancellationTokenSource _cancellationTokenSource;
         private bool _isTickRunning;
-        private PerformanceService _previousSelectedService;
+        private bool _hadSelectedService;
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -115,6 +113,9 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties - UI State & Search
+
+        public double GraphWidth { get; } = 400;
+        public double GraphHeight { get; } = 200;
 
         private string _searchText;
         public string SearchText
@@ -232,6 +233,22 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
+            _timer.Stop();
+            try
+            {
+                await OnTickAsync();
+            }
+            finally
+            {
+                _timer.Start();
+            }
+        }
+
+        /// <summary>
+        /// Core logic for performance polling.
+        /// </summary>
+        private async Task OnTickAsync()
+        {
             if (_isTickRunning)
                 return;
 
@@ -242,14 +259,14 @@ namespace Servy.Manager.ViewModels
                 // Only reset graphs if selection changed
                 if (SelectedService == null)
                 {
-                    if (_previousSelectedService != null)
+                    if (_hadSelectedService)
                     {
                         ResetGraphs(true);
-                        _previousSelectedService = null;
+                        _hadSelectedService = false;
                     }
                     return;
                 }
-                _previousSelectedService = SelectedService;
+                _hadSelectedService = true;
 
                 var serviceDto = await _serviceRepository.GetByNameAsync(SelectedService.Name);
 
@@ -273,10 +290,8 @@ namespace Servy.Manager.ViewModels
                 // because the time it takes to manage two threads is greater than the time
                 // saved by running them at once.
                 // Parallelism is only a "win" if the tasks are "heavy."
-                var (rawCpu, ramBytes) = await Task.Run(() => (
-                    ProcessHelper.GetCpuUsage(pid),
-                    ProcessHelper.GetRamUsage(pid)
-                ));
+                var rawCpu = ProcessHelper.GetCpuUsage(pid);
+                var ramBytes = ProcessHelper.GetRamUsage(pid);
                 double rawRamMb = ramBytes / 1024d / 1024d;
 
                 // Update UI Texts
@@ -286,6 +301,11 @@ namespace Servy.Manager.ViewModels
                 // Update Graphs
                 AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
                 AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
+            }
+            catch
+            {
+                // Silently ignore errors (e.g., Access Denied or Process Exited) 
+                // to prevent log bloating and keep the UI stable.
             }
             finally
             {
@@ -315,16 +335,17 @@ namespace Servy.Manager.ViewModels
                 ? 100.0
                 : Math.Max(valueHistory.Max() * 1.2, _ramDisplayMax);
 
-            PointCollection pc = new PointCollection();
+            var pc = new PointCollection();
+            double stepX = GraphWidth / 100.0;
             for (int i = 0; i < valueHistory.Count; i++)
             {
                 // Calculate X: Maps the index (0-100) to the pixel width (0-400)
                 // With 101 points, we have exactly 100 intervals, matching the 400px width.
-                double x = i * (_graphWidth / 100.0);
+                double x = i * stepX;
 
                 // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
                 double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
-                double y = _graphHeight - (ratio * _graphHeight);
+                double y = GraphHeight - (ratio * GraphHeight);
 
                 pc.Add(new Point(x, y));
             }
@@ -353,8 +374,8 @@ namespace Servy.Manager.ViewModels
             if (fillPc.Count > 0)
             {
                 // Add anchor points at the bottom-right and bottom-left to close the shape
-                fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, _graphHeight));
-                fillPc.Add(new Point(fillPc[0].X, _graphHeight));
+                fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, GraphHeight));
+                fillPc.Add(new Point(fillPc[0].X, GraphHeight));
             }
             return fillPc;
         }
