@@ -87,7 +87,7 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                var importCommand = new ImportServiceCommand(serviceRepository);
+                var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, serviceManager);
 
                 void Run()
                 {

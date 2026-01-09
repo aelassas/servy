@@ -20,5 +20,14 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option('p', "path", Required = true, HelpText = "Path of the configuration file to import.")]
         public string Path { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to install the service after import.
+        /// If the service is already installed, restarting it is required for changes to take effect.
+        /// </summary>
+        [Option('i', "install",
+            Required = false,
+            HelpText = "Install the service after import. If the service is already installed, restarting it is required for changes to take effect.")]
+        public bool InstallService { get; set; }
     }
 }
