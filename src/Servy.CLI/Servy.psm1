@@ -517,7 +517,7 @@ function Uninstall-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name
+    [string] $Name
   )
   
   try {
@@ -566,7 +566,7 @@ function Start-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name
+    [string] $Name
   )
 
   try {
@@ -615,7 +615,7 @@ function Stop-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name
+    [string] $Name
   )
     
   try {
@@ -664,7 +664,7 @@ function Restart-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name
+    [string] $Name
   )
 
   try {
@@ -714,7 +714,7 @@ function Get-ServyServiceStatus {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name
+    [string] $Name
   )
 
   try {
@@ -769,14 +769,14 @@ function Export-ServyServiceConfig {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
-    [string]$Name,
+    [string] $Name,
 
     [Parameter(Mandatory = $true)]
     [ValidateSet("xml", "json")]
-    [string]$ConfigFileType,
+    [string] $ConfigFileType,
 
     [Parameter(Mandatory = $true)]
-    [string]$Path
+    [string] $Path
   )
 
   try {
@@ -823,18 +823,23 @@ function Import-ServyServiceConfig {
     .PARAMETER Path
         The full path of the configuration file to import. (Required)
 
+    .PARAMETER Install
+        Install the service after import. If the service is already installed, restarting it is required for changes to take effect.
+        Optional.
+
     .EXAMPLE
-        Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\MyService.json"
+        Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\MyService.json" -Install
         # Imports the configuration file into Servy's database.
     #>
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
     [ValidateSet("xml", "json")]
-    [string]$ConfigFileType,
+    [string] $ConfigFileType,
 
     [Parameter(Mandatory = $true)]
-    [string]$Path
+    [string] $Path,
+    [switch] $Install
   )
 
   try {
@@ -850,6 +855,7 @@ function Import-ServyServiceConfig {
 
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
+  if ($Install) { $argsList.Add("--install") }
 
   if ($Quiet) { $argsList.Add("--quiet") }
 

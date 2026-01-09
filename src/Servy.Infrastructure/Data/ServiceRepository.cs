@@ -413,7 +413,7 @@ namespace Servy.Infrastructure.Data
             if (service == null)
                 return string.Empty;
 
-            return JsonConvert.SerializeObject(service, Newtonsoft.Json.Formatting.Indented);
+            return JsonConvert.SerializeObject(service, Formatting.Indented);
         }
 
         /// <inheritdoc />
