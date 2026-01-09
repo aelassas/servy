@@ -3,18 +3,23 @@ using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Data;
 using Servy.Core.Helpers;
+using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands
 {
     public class ImportServiceCommandTests
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
+        private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializer;
+        private readonly Mock<IServiceManager> _serviceManager;
         private readonly ImportServiceCommand _command;
 
         public ImportServiceCommandTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
-            _command = new ImportServiceCommand(_serviceRepoMock.Object);
+            _xmlServiceSerializer = new Mock<IXmlServiceSerializer>();
+            _serviceManager = new Mock<IServiceManager>();
+            _command = new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _serviceManager.Object);
         }
 
         [Fact]
