@@ -41,72 +41,80 @@
                 </DockPanel>
 
                 <!-- Services list -->
-                <ListView Grid.Row="1"
-                          Name="ServiceList"
-                          ItemsSource="{Binding Services}"
-                          SelectedItem="{Binding SelectedService, Mode=TwoWay}"
-                          SelectionMode="Single"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <DataGrid x:Name="ServicesDataGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Services, IsAsync=True}"
+                          SelectedItem="{Binding SelectedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          IsSynchronizedWithCurrentItem="False"
+                          CanUserReorderColumns="False"
+                          CanUserSortColumns="True"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                          VirtualizingStackPanel.ScrollUnit="Pixel"
+                          ScrollViewer.CanContentScroll="True"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeRows="False"
+                          IsReadOnly="True"
+                          SelectionUnit="FullRow"
+                          SelectionMode="Extended"
+                          GridLinesVisibility="None"
+                          HeadersVisibility="Column"
+                          Background="Transparent"
+                          BorderThickness="1"
+                          BorderBrush="#757575"
+                          FocusVisualStyle="{x:Null}"
+                          >
 
-                    <!-- COLUMN HEADER STYLE -->
-                    <ListView.Resources>
-                        <Style x:Key="ServiceColumnHeaderStyle" TargetType="GridViewColumnHeader">
+                    <DataGrid.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
 
-                            <!-- layout -->
-                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-                            <Setter Property="Padding" Value="10,6"/>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Padding" Value="10,7"/>
+                        </Style>
 
-                            <!-- disable drag -->
-                            <Setter Property="AllowDrop" Value="False"/>
-
-                            <!-- custom template (NO resize thumb) -->
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
                             <Setter Property="Template">
                                 <Setter.Value>
-                                    <ControlTemplate TargetType="GridViewColumnHeader">
-                                        <Border Background="{TemplateBinding Background}"
-                                                BorderBrush="#D5D5D5"
-                                                BorderThickness="0,0,0,1"
-                                                Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Background="{TemplateBinding Background}" Padding="0">
+                                            <ContentPresenter VerticalAlignment="Center" />
                                         </Border>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
                         </Style>
-                    </ListView.Resources>
-
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
+                    </DataGrid.Resources>
 
 
-                    <ListView.View>
-                        <GridView AllowsColumnReorder="False" ColumnHeaderContainerStyle="{StaticResource ServiceColumnHeaderStyle}">
 
-                            <GridViewColumn Width="{Binding ElementName=ServiceList, Path=ActualWidth}">
-                                <!-- HEADER -->
-                                <GridViewColumn.Header>
-                                    <TextBlock Text="{x:Static resx:Strings.Column_Service}"
-                               FontWeight="SemiBold"/>
-                                </GridViewColumn.Header>
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="*" SortMemberPath="Name" CanUserReorder="False" CanUserResize="False">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="{x:Static resx:Strings.Column_Service}" FontWeight="SemiBold"/>
+                            </DataGridTemplateColumn.Header>
 
-                                <!-- CELL CONTENT (padding works here) -->
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,6" HorizontalAlignment="Stretch">
-                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Stretch" TextTrimming="CharacterEllipsis"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-
-
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="Transparent" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="10,6">
+                                        <TextBlock Text="{Binding Name}" 
+                                           IsHitTestVisible="False" 
+                                           VerticalAlignment="Center" 
+                                           TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
 
             </Grid>
         </Border>

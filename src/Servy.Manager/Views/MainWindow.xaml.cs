@@ -455,14 +455,5 @@ namespace Servy.Manager.Views
             return false;
         }
 
-        /// <summary>
-        /// Enables or disables the main and logs tabs to prevent reentrant tab switching.
-        /// </summary>
-        /// <param name="enable">If true, enables the tabs; otherwise, disables them.</param>
-        private void EnableTabs(bool enable)
-        {
-            MainTab.IsEnabled = enable;
-            LogsTab.IsEnabled = enable;
-        }
     }
 }
