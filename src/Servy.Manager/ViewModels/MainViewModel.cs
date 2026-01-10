@@ -932,10 +932,8 @@ namespace Servy.Manager.ViewModels
                     // saved by running them at once.
                     // Parallelism is only a "win" if the tasks are "heavy."
                     var pid = service.Pid.Value;
-                    (cpuUsage, ramUsage) = await Task.Run(() => (
-                        ProcessHelper.GetCpuUsage(pid),
-                        ProcessHelper.GetRamUsage(pid)
-                    ));
+                    cpuUsage = ProcessHelper.GetCpuUsage(pid);
+                    ramUsage = ProcessHelper.GetRamUsage(pid);
                 }
                 service.CpuUsage = cpuUsage;
                 service.RamUsage = ramUsage;
