@@ -49,10 +49,10 @@ SetupIconFile=..\src\Servy\servy.ico
 ; Compression=bzip/1
 ; SolidCompression=yes
 
-Compression=lzma2
+Compression=lzma
 LZMAAlgorithm=1
-; LZMADictionarySize=32768
-LZMADictionarySize=65536
+LZMADictionarySize=32768
+; LZMADictionarySize=65536
 ; LZMADictionarySize=98304
 ; LZMADictionarySize=131072
 ; LZMADictionarySize=196608
