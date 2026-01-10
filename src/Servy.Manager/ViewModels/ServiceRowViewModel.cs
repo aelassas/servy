@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
 {
