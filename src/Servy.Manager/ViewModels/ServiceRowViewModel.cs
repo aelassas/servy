@@ -5,7 +5,6 @@ using Servy.Manager.Services;
 using Servy.UI.Commands;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace Servy.Manager.ViewModels
 {
