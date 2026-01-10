@@ -125,9 +125,10 @@ try {
         "a",
         "-t7z",
         "-m0=lzma2",
-        "-mx=9",
-        "-mfb=273",
-        "-md=64m",
+        #"-mx=9",
+        #"-mfb=273",
+        #"-md=64m",
+        "-md=1m",
         "-ms=on",
         $OutputZip,
         "$PackageFolder"
