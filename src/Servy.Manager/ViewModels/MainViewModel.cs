@@ -50,8 +50,8 @@ namespace Servy.Manager.ViewModels
         private string _footerText;
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
-        private readonly object _refreshLock = new object();
-        private bool _isRefreshing = false;
+        private readonly object _servicesLock = new object();
+        private int _isRefreshingFlag = 0; // 0 = false, 1 = true
 
         #endregion
 
@@ -443,36 +443,37 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="sender">The <see cref="DispatcherTimer"/> that raised the event.</param>
         /// <param name="e">Event data associated with the tick.</param>
-        private void RefreshTimer_Tick(object sender, EventArgs e)
+        private async void RefreshTimer_Tick(object sender, EventArgs e)
         {
-            // Prevent overlapping refreshes
-            lock (_refreshLock)
+            // Atomically check if 0, and if so, set to 1.
+            // If it was already 1, return immediately.
+            if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
             {
-                if (_isRefreshing) return;
-                _isRefreshing = true;
+                return;
             }
 
-            Task.Run(async () =>
+            try
             {
-                try
-                {
-                    if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
-                        return;
+                // Check cancellation before starting heavy work
+                if (_cancellationTokenSource?.IsCancellationRequested == true)
+                    return;
 
-                    await RefreshAllServicesAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.Warning($"Failed background refresh: {ex}");
-                }
-                finally
-                {
-                    lock (_refreshLock)
-                    {
-                        _isRefreshing = false;
-                    }
-                }
-            });
+                // This runs the heavy fetching off the UI thread (via the Task.Run calls inside)
+                await RefreshAllServicesAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Clean exit
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed background refresh: {ex.Message}");
+            }
+            finally
+            {
+                // Atomically set back to 0
+                Interlocked.Exchange(ref _isRefreshingFlag, 0);
+            }
         }
 
         #endregion
@@ -852,33 +853,45 @@ namespace Servy.Manager.ViewModels
         {
             try
             {
-                var cts = _cancellationTokenSource;
-                var token = cts?.Token ?? CancellationToken.None;
-
+                var token = _cancellationTokenSource?.Token ?? CancellationToken.None;
                 token.ThrowIfCancellationRequested();
 
-                // Take snapshot of services
-                var snapshot = _services.Select(r => r.Service).ToList();
-
-                // Fetch all service info once
-                var allServicesList = await Task.Run(() =>
+                // 1. Take snapshot of services safely
+                List<Service> snapshot;
+                lock (_servicesLock)
                 {
-                    try
-                    {
-                        return _serviceManager.GetAllServices(_cancellationTokenSource.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        return new List<ServiceInfo>(); // empty list if canceled
-                    }
-                }, _cancellationTokenSource.Token);
-                var allServicesDict = allServicesList.ToDictionary(
-                    s => s.Name,
-                    StringComparer.OrdinalIgnoreCase);
+                    snapshot = _services.Select(r => r.Service).ToList();
+                }
 
-                // Refresh all services in parallel
-                var tasks = snapshot.Select(service => RefreshServiceInternal(service, allServicesDict));
-                await Task.WhenAll(tasks);
+                // 2. Fetch OS Info in bulk (WMI/ServiceController)
+                var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
+                var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
+
+                // 3. Fetch all Repository DTOs in bulk
+                // Note: You may need to add 'GetAllAsync()' to your repository if it doesn't exist
+                var allDtosList = await _serviceRepository.GetAllAsync(token);
+                var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
+
+                // 4. Process in parallel using the semaphore
+                using (var semaphore = new SemaphoreSlim(Environment.ProcessorCount))
+                {
+                    var tasks = snapshot.Select(async service =>
+                    {
+                        await semaphore.WaitAsync(token);
+                        try
+                        {
+                            // Pass the pre-fetched DTO from our dictionary
+                            allDtosDict.TryGetValue(service.Name, out var dto);
+                            await RefreshServiceInternal(service, allServicesDict, dto);
+                        }
+                        finally
+                        {
+                            semaphore.Release();
+                        }
+                    }).ToList(); // Force task creation while semaphore is in scope
+
+                    await Task.WhenAll(tasks);
+                }
 
                 // Refresh UI only if not cancelled
                 if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
@@ -904,25 +917,22 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="service">The service to refresh.</param>
         /// <param name="allServices">Dictionary of all installed services keyed by name.</param>
-        private async Task RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices)
+        /// <param name="serviceDto">The service DTO from the repository, if any.</param>
+        private async Task RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto)
         {
             try
             {
-                _cancellationTokenSource?.Token.ThrowIfCancellationRequested();
+                var token = _cancellationTokenSource?.Token ?? CancellationToken.None;
+                token.ThrowIfCancellationRequested();
 
-                // Check if service is installed
-                service.IsInstalled = allServices.ContainsKey(service.Name);
-
-                // Update PID if necessary
-                var serviceDto = await _serviceRepository.GetByNameAsync(service.Name);
-
+                // Use the pre-fetched DTO to update PID
                 if (serviceDto != null && service.Pid != serviceDto.Pid)
                 {
                     service.Pid = serviceDto.Pid;
                     service.IsPidEnabled = service.Pid != null;
                 }
 
-                // Update CPU and RAM usage
+                // Heavy work: CPU/RAM
                 double? cpuUsage = null;
                 long? ramUsage = null;
                 if (service.Pid.HasValue)
@@ -941,19 +951,15 @@ namespace Servy.Manager.ViewModels
                 // Load startup type from repository if null
                 if (service.StartupType == null)
                 {
-                    var dto = await _serviceRepository.GetByNameAsync(service.Name, _cancellationTokenSource.Token);
-                    if (dto != null)
-                        service.StartupType = (ServiceStartType)dto.StartupType;
+                    if (serviceDto != null)
+                        service.StartupType = (ServiceStartType)serviceDto.StartupType;
                 }
 
-                if (!service.IsInstalled)
+                // Update from OS Info (Dictionary)
+                if (allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
-                    service.Status = ServiceStatus.NotInstalled;
-                }
+                    service.IsInstalled = true;
 
-                // If installed, populate info from dictionary
-                if (service.IsInstalled && allServices.TryGetValue(service.Name, out var info) && info != null)
-                {
                     if (service.Status != info.Status)
                         service.Status = info.Status;
 
@@ -967,16 +973,24 @@ namespace Servy.Manager.ViewModels
                     if (service.Description != info.Description)
                         service.Description = info.Description;
                 }
-
-                // Repository update if needed
-                var dtoUpdate = await _serviceRepository.GetByNameAsync(service.Name, _cancellationTokenSource.Token);
-                if (dtoUpdate != null &&
-                    (!dtoUpdate.Description.Equals(service.Description) ||
-                     dtoUpdate.StartupType != (int)service.StartupType))
+                else
                 {
-                    dtoUpdate.Description = service.Description;
-                    dtoUpdate.StartupType = (int)service.StartupType;
-                    await _serviceRepository.UpsertAsync(dtoUpdate, _cancellationTokenSource.Token);
+                    service.IsInstalled = false;
+                    service.Status = ServiceStatus.NotInstalled;
+                }
+
+                // Repository update ONLY if something actually changed in the Metadata
+                if (serviceDto != null)
+                {
+                    bool needsUpdate = !string.Equals(serviceDto.Description, service.Description, StringComparison.Ordinal) ||
+                                       serviceDto.StartupType != (int)service.StartupType;
+
+                    if (needsUpdate)
+                    {
+                        serviceDto.Description = service.Description;
+                        serviceDto.StartupType = (int)service.StartupType;
+                        await _serviceRepository.UpsertAsync(serviceDto, token);
+                    }
                 }
             }
             catch (OperationCanceledException)
