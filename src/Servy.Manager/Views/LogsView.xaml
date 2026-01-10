@@ -88,6 +88,11 @@
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
                     <Setter Property="Height" Value="26"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#F7F7F7"/>
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
 

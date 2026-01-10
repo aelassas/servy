@@ -80,6 +80,16 @@
                             <Setter Property="Padding" Value="10,7"/>
                         </Style>
 
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="SnapsToDevicePixels" Value="True"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+
                         <Style TargetType="DataGridCell">
                             <Setter Property="BorderThickness" Value="0"/>
                             <Setter Property="Template">
@@ -91,10 +101,14 @@
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                </Trigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.Resources>
-
-
 
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Width="*" SortMemberPath="Name" CanUserReorder="False" CanUserResize="False">
