@@ -61,7 +61,7 @@
                           CanUserResizeRows="False"
                           IsReadOnly="True"
                           SelectionUnit="FullRow"
-                          SelectionMode="Extended"
+                          SelectionMode="Single"
                           GridLinesVisibility="None"
                           HeadersVisibility="Column"
                           Background="Transparent"
