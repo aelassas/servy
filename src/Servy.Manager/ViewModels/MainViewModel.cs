@@ -569,12 +569,9 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Step 7: restore button text and IsBusy
-                if (!token.IsCancellationRequested)
-                {
-                    Mouse.OverrideCursor = null;
-                    SearchButtonText = Strings.Button_Search;
-                    IsBusy = false;
-                }
+                Mouse.OverrideCursor = null;
+                SearchButtonText = Strings.Button_Search;
+                IsBusy = false;
             }
         }
 
@@ -810,10 +807,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            if (_cancellationTokenSource != null)
-            {
-                _cancellationTokenSource.Cancel(); // cancel any in-progress async work
-            }
+            _cancellationTokenSource?.Cancel(); // cancel any in-progress async work
 
             if (_refreshTimer != null)
             {
@@ -863,12 +857,11 @@ namespace Servy.Manager.ViewModels
                     snapshot = _services.Select(r => r.Service).ToList();
                 }
 
-                // 2. Fetch OS Info in bulk (WMI/ServiceController)
+                // 2. Fetch OS Info in bulk
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
                 var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 3. Fetch all Repository DTOs in bulk
-                // Note: You may need to add 'GetAllAsync()' to your repository if it doesn't exist
                 var allDtosList = await _serviceRepository.GetAllAsync(token);
                 var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
