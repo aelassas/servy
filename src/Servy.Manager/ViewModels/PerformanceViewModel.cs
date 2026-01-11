@@ -38,9 +38,9 @@ namespace Servy.Manager.ViewModels
         private readonly ILogger _logger;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
         private CancellationTokenSource _cancellationTokenSource;
-        private bool _isTickRunning;
         private bool _hadSelectedService;
-        private bool _isMonitoring;
+        private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
+        private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
 
         private List<double> _cpuValues = new List<double>();
         private List<double> _ramValues = new List<double>();
@@ -234,8 +234,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
-            // 1. Initial guard
-            if (!_isMonitoring) return;
+            // 1. Atomic Guard: Must be monitoring AND not already running a tick
+            // Interlocked.CompareExchange ensure we see the latest state
+            if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
+                Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
+            {
+                return;
+            }
 
             _timer.Stop();
             try
@@ -244,9 +249,12 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
+                // Release the flag
+                Interlocked.Exchange(ref _isTickRunningFlag, 0);
+
                 // 2. The safety check: Only restart if we are STILL supposed to be monitoring
                 // This prevents the timer from "resurrecting" after StopMonitoring was called.
-                if (_isMonitoring)
+                if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
                 {
                     _timer.Start();
                 }
@@ -258,14 +266,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OnTickAsync()
         {
-            if (_isTickRunning) return;
-
-            _isTickRunning = true;
-
             try
             {
+                // Capture selection locally to prevent race conditions during the async flow
+                var currentSelection = SelectedService;
+
                 // Only reset graphs if selection changed
-                if (SelectedService == null)
+                if (currentSelection == null)
                 {
                     if (_hadSelectedService)
                     {
@@ -276,7 +283,7 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(SelectedService.Name);
+                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name);
 
                 if (serviceDto == null || serviceDto.Pid == null)
                 {
@@ -284,13 +291,13 @@ namespace Servy.Manager.ViewModels
                     return;
                 }
 
-                if (SelectedService.Pid != serviceDto.Pid)
+                if (currentSelection.Pid != serviceDto.Pid)
                 {
                     SelectedService.Pid = serviceDto.Pid;
                     ResetGraphs(true);
                 }
 
-                int pid = SelectedService.Pid.Value;
+                int pid = currentSelection.Pid.Value;
                 SetPidText();
 
                 // Fetch raw metrics
@@ -315,10 +322,6 @@ namespace Servy.Manager.ViewModels
                 // Silently ignore errors (e.g., Access Denied or Process Exited) 
                 // to prevent log bloating and keep the UI stable.
             }
-            finally
-            {
-                _isTickRunning = false;
-            }
         }
 
         /// <summary>
@@ -339,9 +342,10 @@ namespace Servy.Manager.ViewModels
             if (valueHistory.Count > 101) valueHistory.RemoveAt(0);
 
             // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
+            double currentMax = valueHistory.Any() ? valueHistory.Max() : 0;
             double displayMax = isCpu
                 ? 100.0
-                : Math.Max(valueHistory.Max() * 1.2, _ramDisplayMax);
+                : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
             var pc = new PointCollection();
             double stepX = GraphWidth / 100.0;
@@ -439,12 +443,9 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Restore button text and IsBusy
-                if (!token.IsCancellationRequested)
-                {
-                    Mouse.OverrideCursor = null;
-                    IsBusy = false;
-                    SearchButtonText = Strings.Button_Search;
-                }
+                Mouse.OverrideCursor = null;
+                IsBusy = false;
+                SearchButtonText = Strings.Button_Search;
             }
         }
 
@@ -457,7 +458,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StartMonitoring()
         {
-            _isMonitoring = true;
+            // Atomically signal start
+            Interlocked.Exchange(ref _isMonitoringFlag, 1);
+
+            // Start timer
             _timer.Start();
         }
 
@@ -467,9 +471,16 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearPoints">True to reset the graph visualizations.</param>
         public void StopMonitoring(bool clearPoints)
         {
-            _isMonitoring = false;
+            // cancel any in-progress async work
+            _cancellationTokenSource?.Cancel();
+
+            // Atomically signal stop
+            Interlocked.Exchange(ref _isMonitoringFlag, 0);
+
+            // Stop timer
             _timer.Stop();
 
+            // Clear points
             if (clearPoints)
             {
                 CpuPointCollection = new PointCollection();

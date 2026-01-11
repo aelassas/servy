@@ -151,7 +151,7 @@
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
-                            <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0"/>
+                            <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" IsHitTestVisible="False"/>
 
                             <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
                                 <Rectangle.Fill>
@@ -163,7 +163,7 @@
                                 </Rectangle.Fill>
                             </Rectangle>
 
-                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1"/>
+                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" IsHitTestVisible="False"/>
                         </Canvas>
                     </Viewbox>
 
@@ -178,15 +178,13 @@
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
 
-                            <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0"/>
+                            <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" IsHitTestVisible="False" />
 
                             <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
                                 <Rectangle.Fill>
                                     <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
                                         <VisualBrush.Visual>
-                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" 
-                                      Stroke="#EBEBEB" 
-                                      StrokeThickness="0.5" />
+                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" Stroke="#EBEBEB" StrokeThickness="0.5" IsHitTestVisible="False" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Rectangle.Fill>
