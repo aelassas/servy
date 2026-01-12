@@ -66,7 +66,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Search Panel -->
-                    <Grid Grid.Row="0" Margin="0,0,0,10" VerticalAlignment="Center">
+                    <Grid Grid.Row="0" Margin="0,0,0,10" VerticalAlignment="Center" Focusable="True">
                         <Grid.ColumnDefinitions>
                             <!-- Search box -->
                             <ColumnDefinition Width="Auto"/>
@@ -135,12 +135,12 @@
                                 <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ColumnHeader_PreviewMouseLeftButtonDown"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
-                        
+
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
                                 <!-- Apply height to all rows -->
                                 <Setter Property="Height" Value="32"/>
-                                
+
                                 <!-- default background -->
                                 <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
@@ -429,8 +429,8 @@
             <!--Performance Tab-->
             <TabItem x:Name="PerformanceTab" Header="{x:Static resx:Strings.Label_PerformanceTab}" VirtualizingStackPanel.IsVirtualizing="False">
                 <views:PerformanceView DataContext="{Binding PerformanceVM}" />
-            </TabItem>            
-            
+            </TabItem>
+
             <!--Logs Tab-->
             <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
                 <views:LogsView />
