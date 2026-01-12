@@ -29,7 +29,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Search -->
-                <DockPanel Margin="6">
+                <DockPanel Margin="6" Focusable="True">
                     <TextBox Width="164" Height="24" Margin="0,0,6,0"
                              VerticalContentAlignment="Center"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
