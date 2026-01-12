@@ -142,7 +142,7 @@
             </Grid.RowDefinitions>
 
             <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,6" VerticalAlignment="Center">
-                <Border Background="#F0F7FA" CornerRadius="2" Padding="4,3" HorizontalAlignment="Left">
+                <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
                                    Foreground="#1B7F9F" 
@@ -156,8 +156,8 @@
                                    VerticalAlignment="Center"/>
 
                         <Button Command="{Binding CopyPidCommand}"
-                                Margin="6,0,0,0"
-                                Padding="1"
+                                Margin="5,0,0,0"
+                                Padding="4"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Cursor="Hand"
