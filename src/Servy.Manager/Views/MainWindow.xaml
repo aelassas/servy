@@ -79,9 +79,10 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBox x:Name="SearchTextBox" Grid.Column="0"
-                         Width="200" Height="24" Margin="0,0,5,0"  
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                         KeyDown="SearchTextBox_KeyDown" />
+                                 Width="200" Height="24" Margin="0,0,5,0"  
+                                 VerticalContentAlignment="Center"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                 KeyDown="SearchTextBox_KeyDown" />
 
                         <Button Grid.Column="1"
                         Content="{Binding SearchButtonText, UpdateSourceTrigger=PropertyChanged}"
