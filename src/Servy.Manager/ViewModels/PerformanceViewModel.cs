@@ -185,7 +185,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
-            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid > 0);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             _logger = logger;
 
             var app = (App)Application.Current;
@@ -475,7 +475,7 @@ namespace Servy.Manager.ViewModels
         /// <returns>A task that represents the asynchronous copy operation.</returns>
         private async Task CopyPidAsync(object parameter)
         {
-            if (SelectedService?.Pid > 0)
+            if (SelectedService?.Pid != null)
             {
                 var service = ServiceMapper.ToModel(SelectedService);
                 await ServiceCommands.CopyPid(service);
