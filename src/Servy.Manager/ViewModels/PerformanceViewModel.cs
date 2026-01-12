@@ -63,6 +63,8 @@ namespace Servy.Manager.ViewModels
                 _selectedService = value;
                 OnPropertyChanged(nameof(SelectedService));
 
+                CopyPidCommand?.RaiseCanExecuteChanged();
+
                 ResetGraphs(true);
 
                 StopMonitoring(false); // Pass false so we don't clear the zeros we just added
@@ -161,6 +163,7 @@ namespace Servy.Manager.ViewModels
 
         public IServiceCommands ServiceCommands { get; set; }
         public IAsyncCommand SearchCommand { get; }
+        public IAsyncCommand CopyPidCommand { get; set; }
 
         #endregion
 
@@ -177,6 +180,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
+            CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             _logger = logger;
 
             var app = (App)Application.Current;
@@ -273,6 +277,9 @@ namespace Servy.Manager.ViewModels
                     {
                         ResetGraphs(true);
                         _hadSelectedService = false;
+
+                        // Notify that the command can no longer execute because selection is gone
+                        CopyPidCommand?.RaiseCanExecuteChanged();
                     }
                     return;
                 }
@@ -280,9 +287,14 @@ namespace Servy.Manager.ViewModels
 
                 var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name);
 
-                if (serviceDto == null || serviceDto.Pid == null)
+                if (serviceDto?.Pid == null)
                 {
                     ResetGraphs(true);
+
+                    SelectedService.Pid = null;
+
+                    // IMPORTANT: Tell the command the PID is now available (or gone)
+                    CopyPidCommand?.RaiseCanExecuteChanged();
                     return;
                 }
 
@@ -290,6 +302,9 @@ namespace Servy.Manager.ViewModels
                 {
                     SelectedService.Pid = serviceDto.Pid;
                     ResetGraphs(true);
+
+                    // IMPORTANT: Tell the command the PID is now available (or gone)
+                    CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 
                 int pid = currentSelection.Pid.Value;
@@ -438,9 +453,27 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Restore button text and IsBusy
-                    Mouse.OverrideCursor = null;
-                    IsBusy = false;
-                    SearchButtonText = Strings.Button_Search;
+                Mouse.OverrideCursor = null;
+                IsBusy = false;
+                SearchButtonText = Strings.Button_Search;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously copies the process identifier (PID) of the selected service to the clipboard or a designated
+        /// destination.
+        /// </summary>
+        /// <remarks>The method performs no action if no service is selected or if the selected service
+        /// does not have a PID.</remarks>
+        /// <param name="parameter">An optional parameter that can be used to pass additional data for the copy operation. This parameter is not
+        /// used by the method.</param>
+        /// <returns>A task that represents the asynchronous copy operation.</returns>
+        private async Task CopyPidAsync(object parameter)
+        {
+            if (SelectedService?.Pid != null)
+            {
+                var service = ServiceMapper.ToModel(SelectedService);
+                await ServiceCommands.CopyPid(service);
             }
         }
 
