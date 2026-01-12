@@ -44,7 +44,7 @@
             <DatePicker SelectedDate="{Binding ToDate, Mode=TwoWay}" DisplayDateStart="{Binding ToDateMinDate}" Width="150" Margin="0,0,10,0"/>
 
             <TextBlock Text="{x:Static resx:Strings.Label_Keyword}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-            <TextBox Text="{Binding Keyword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="0,0,10,0">
+            <TextBox Text="{Binding Keyword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="0,0,10,0" VerticalContentAlignment="Center">
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
                 </TextBox.InputBindings>
