@@ -34,9 +34,9 @@
     <AssemblyDescription>A tool to restart a Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Restarter</Product>
-    <Version>5.2.0</Version>
-    <FileVersion>5.2.0.0</FileVersion>
-    <AssemblyVersion>5.2.0.0</AssemblyVersion>
+    <Version>5.1.0</Version>
+    <FileVersion>5.1.0.0</FileVersion>
+    <AssemblyVersion>5.1.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
