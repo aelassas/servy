@@ -91,7 +91,7 @@ jobs:
       - name: Install Inno Setup
         shell: pwsh
         run: |
-          $url = "https://files.jrsoftware.org/is/6/innosetup-6.6.1.exe"
+          $url = "https://files.jrsoftware.org/is/6/innosetup-6.7.0.exe"
           Invoke-WebRequest -Uri $url -OutFile "innosetup.exe" -ErrorAction Stop
           Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
