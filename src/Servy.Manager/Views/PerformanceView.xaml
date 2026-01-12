@@ -29,7 +29,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Search -->
-                <DockPanel Margin="6" Focusable="True">
+                <DockPanel Margin="6" Focusable="True" FocusVisualStyle="{x:Null}">
                     <TextBox Width="164" Height="24" Margin="0,0,6,0"
                              VerticalContentAlignment="Center"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -141,10 +141,46 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0" Margin="0,0,0,2">
-                <TextBlock Margin="0,0,6,0" Text="{x:Static resx:Strings.Label_Pid}" FontWeight="Medium" Foreground="#1B7F9F" />
-                <TextBlock Margin="0,0,6,0" Text="{Binding Pid, UpdateSourceTrigger=PropertyChanged}" Foreground="#1B7F9F" />
-            </DockPanel>
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,2" VerticalAlignment="Center">
+                <Border Background="#F0F7FA" CornerRadius="2" Padding="4,3" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
+                                   Foreground="#1B7F9F" 
+                                   FontSize="11" 
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding Pid}" 
+                                   Foreground="#1B7F9F" 
+                                   FontWeight="Bold" 
+                                   FontSize="12"
+                                   VerticalAlignment="Center"/>
+
+                        <Button Command="{Binding CopyPidCommand}"
+                                Margin="6,0,0,0"
+                                Padding="1"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                ToolTip="{x:Static resx:Strings.Button_CopyPid}"
+                                FocusVisualStyle="{x:Null}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Opacity" Value="0.5" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" Value="1.0" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" 
+                                  Fill="#1B7F9F" 
+                                  Stretch="Uniform" 
+                                  Width="10" Height="10" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
             <!--CPU-->
             <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
