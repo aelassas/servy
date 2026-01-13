@@ -107,8 +107,7 @@ function Show-ServyVersion {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -120,8 +119,7 @@ function Show-ServyVersion {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to get Servy CLI version: $_"
-    exit 1
+    throw "Failed to get Servy CLI version: $_"
   }
 }
 
@@ -149,8 +147,7 @@ function Show-ServyHelp {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -162,8 +159,7 @@ function Show-ServyHelp {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to display Servy CLI help: $_"
-    exit 1
+    throw "Failed to display Servy CLI help: $_"
   }
 }
 
@@ -464,8 +460,7 @@ function Install-ServyService {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -523,8 +518,7 @@ function Install-ServyService {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to install service '$Name': $_"
-    exit 1
+    throw "Failed to install service '$Name': $_"
   }
 }
 
@@ -557,8 +551,7 @@ function Uninstall-ServyService {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -572,8 +565,7 @@ function Uninstall-ServyService {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to uninstall service '$Name': $_"
-    exit 1
+    throw "Failed to uninstall service '$Name': $_"
   }
 }
 
@@ -606,8 +598,7 @@ function Start-ServyService {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -621,8 +612,7 @@ function Start-ServyService {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to start service '$Name': $_"
-    exit 1
+    throw "Failed to start service '$Name': $_"
   }
 }
 
@@ -655,8 +645,7 @@ function Stop-ServyService {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
     
   $argsList = @()
@@ -670,8 +659,7 @@ function Stop-ServyService {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to stop service '$Name': $_"
-    exit 1
+    throw "Failed to stop service '$Name': $_"
   }
 }
 
@@ -704,8 +692,7 @@ function Restart-ServyService {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -719,8 +706,7 @@ function Restart-ServyService {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to restart service '$Name': $_"
-    exit 1
+    throw "Failed to restart service '$Name': $_"
   }
 }
 
@@ -754,8 +740,7 @@ function Get-ServyServiceStatus {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -769,8 +754,7 @@ function Get-ServyServiceStatus {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to get status of service '$Name': $_"
-    exit 1
+    throw "Failed to get status of service '$Name': $_"
   }
 }
 
@@ -816,8 +800,7 @@ function Export-ServyServiceConfig {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -833,8 +816,7 @@ function Export-ServyServiceConfig {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to export configuration for service '$Name': $_"
-    exit 1
+    throw "Failed to export configuration for service '$Name': $_"
   }
 }
 
@@ -879,8 +861,7 @@ function Import-ServyServiceConfig {
     Test-ServyCliPath
   }
   catch {
-    Write-Error $_
-    exit 1
+    throw $_
   }
 
   $argsList = @()
@@ -896,8 +877,7 @@ function Import-ServyServiceConfig {
     & $script:ServyCliPath $argsList
   }
   catch {
-    Write-Error "Failed to import configuration from '$Path': $_"
-    exit 1
+    throw "Failed to import configuration from '$Path': $_"
   }
 }
 
