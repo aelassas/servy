@@ -12,7 +12,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy Manager" 
         Width="1000"
-        MinWidth="840"
+        MinWidth="940"
         Height="600" 
         MinHeight="500"
         Loaded="Window_Loaded"
@@ -185,7 +185,11 @@
                             </DataGridTemplateColumn>
 
                             <!--Name-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" MinWidth="100" CanUserReorder="False" SortMemberPath="Name">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" 
+                                                    Width="120" 
+                                                    MinWidth="100" 
+                                                    CanUserReorder="False" 
+                                                    SortMemberPath="Name">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Name}"
@@ -194,26 +198,31 @@
                                                    Margin="5,0,0,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   />
+                                                   HorizontalAlignment="Left"
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
                             <!--Description-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" Width="*" MinWidth="160" CanUserReorder="False" SortMemberPath="Description">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" 
+                                                    Width="*" 
+                                                    MinWidth="160" 
+                                                    CanUserReorder="False" 
+                                                    SortMemberPath="Description">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Description}"
                                                    ToolTip="{Binding Description}"
                                                    VerticalAlignment="Center"
-                                                   Margin="5,0,0,0"
+                                                   Margin="5,0,5,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   />
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-
+                            
                             <!--Status-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}" MinWidth="80" CanUserReorder="False" SortMemberPath="Status">
                                 <DataGridTemplateColumn.CellTemplate>
