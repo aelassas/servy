@@ -119,10 +119,7 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Border Background="Transparent" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="10,6">
-                                        <TextBlock Text="{Binding Name}" 
-                                           IsHitTestVisible="False" 
-                                           VerticalAlignment="Center" 
-                                           TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -186,25 +183,47 @@
             <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
-                            <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" IsHitTestVisible="False"/>
+                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
 
-                            <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
-                                <Rectangle.Fill>
-                                    <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
-                                        <VisualBrush.Visual>
-                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" Stroke="#EBEBEB" StrokeThickness="0.5" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Rectangle.Fill>
-                            </Rectangle>
+                            <Canvas.Background>
+                                <DrawingBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute" Stretch="None">
+                                    <DrawingBrush.Drawing>
+                                        <GeometryDrawing>
+                                            <GeometryDrawing.Geometry>
+                                                <GeometryGroup>
+                                                    <LineGeometry StartPoint="0,20" EndPoint="40,20" />
+                                                    <LineGeometry StartPoint="40,0" EndPoint="40,20" />
+                                                </GeometryGroup>
+                                            </GeometryDrawing.Geometry>
+                                            <GeometryDrawing.Pen>
+                                                <Pen Brush="#EBEBEB" Thickness="0.5" />
+                                            </GeometryDrawing.Pen>
+                                        </GeometryDrawing>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                            </Canvas.Background>
 
-                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" IsHitTestVisible="False"/>
+                            <Polygon Points="{Binding CpuFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" />
+
+                            <Polyline Points="{Binding CpuPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" />
                         </Canvas>
                     </Viewbox>
 
-                    <TextBlock Text="{x:Static resx:Strings.Label_CPU}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Left" Foreground="#1B7F9F" FontSize="14" />
-                    <TextBlock Text="{Binding CpuUsage}" Margin="10" VerticalAlignment="Top" HorizontalAlignment="Right" Foreground="#1B7F9F" FontSize="14" />
+                    <TextBlock 
+                        Text="{x:Static resx:Strings.Label_CPU}" 
+                        Margin="10" VerticalAlignment="Top" 
+                        HorizontalAlignment="Left" 
+                        Foreground="#1B7F9F" 
+                        FontSize="14" 
+                        IsHitTestVisible="False" />
+                    <TextBlock 
+                        Text="{Binding CpuUsage}" 
+                        Margin="10" 
+                        VerticalAlignment="Top" 
+                        HorizontalAlignment="Right" 
+                        Foreground="#1B7F9F" 
+                        FontSize="14" 
+                        IsHitTestVisible="False" />
                 </Grid>
             </Border>
 
@@ -212,33 +231,47 @@
             <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
                 <Grid>
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
-                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
+                        <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
 
-                            <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" IsHitTestVisible="False" />
+                            <Canvas.Background>
+                                <DrawingBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute" Stretch="None">
+                                    <DrawingBrush.Drawing>
+                                        <GeometryDrawing>
+                                            <GeometryDrawing.Geometry>
+                                                <GeometryGroup>
+                                                    <LineGeometry StartPoint="0,20" EndPoint="40,20" />
+                                                    <LineGeometry StartPoint="40,0" EndPoint="40,20" />
+                                                </GeometryGroup>
+                                            </GeometryDrawing.Geometry>
+                                            <GeometryDrawing.Pen>
+                                                <Pen Brush="#EBEBEB" Thickness="0.5" />
+                                            </GeometryDrawing.Pen>
+                                        </GeometryDrawing>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                            </Canvas.Background>
 
-                            <Rectangle Width="{Binding GraphWidth}" Height="{Binding GraphHeight}">
-                                <Rectangle.Fill>
-                                    <VisualBrush TileMode="Tile" Viewport="0,0,40,20" ViewportUnits="Absolute">
-                                        <VisualBrush.Visual>
-                                            <Path Data="M 0 20 L 40 20 M 40 0 L 40 20" Stroke="#EBEBEB" StrokeThickness="0.5" IsHitTestVisible="False" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Rectangle.Fill>
-                            </Rectangle>
+                            <Polygon Points="{Binding RamFillPoints}" Fill="#80C3ECFA" StrokeThickness="0" />
 
-                            <Polyline Points="{Binding RamPointCollection}" 
-                          Stroke="#1B7F9F" 
-                          StrokeThickness="1" />
+                            <Polyline Points="{Binding RamPointCollection}" Stroke="#1B7F9F" StrokeThickness="1" />
                         </Canvas>
                     </Viewbox>
 
-                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10">
-                        <TextBlock Text="{x:Static resx:Strings.Label_RAM}" Foreground="#1B7F9F" FontSize="14" />
-                    </StackPanel>
+                    <TextBlock Text="{x:Static resx:Strings.Label_RAM}" 
+                               Margin="10" 
+                               VerticalAlignment="Top" 
+                               HorizontalAlignment="Left" 
+                               Foreground="#1B7F9F" 
+                               FontSize="14" 
+                               IsHitTestVisible="False" />
 
-                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="10">
-                        <TextBlock Text="{Binding RamUsage}" Foreground="#1B7F9F" FontSize="14" />
-                    </StackPanel>
+                    <TextBlock Text="{Binding RamUsage}" 
+                               Margin="10" 
+                               VerticalAlignment="Top" 
+                               HorizontalAlignment="Right" 
+                               Foreground="#1B7F9F" 
+                               FontSize="14" 
+                               IsHitTestVisible="False" />
                 </Grid>
             </Border>
 
