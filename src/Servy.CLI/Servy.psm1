@@ -38,7 +38,11 @@
   Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
 #>
 
-$script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
+$script:ServyCliPath = Join-Path $PSScriptRoot "servy-cli.exe"
+
+if (-not (Test-Path $script:ServyCliPath)) {
+    $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
+}
 
 <#
 .SYNOPSIS
