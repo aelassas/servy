@@ -102,13 +102,8 @@ function Show-ServyVersion {
   param(
     [switch] $Quiet
   )
- 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "--version"
@@ -143,12 +138,7 @@ function Show-ServyHelp {
     [switch] $Quiet
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "--help"
@@ -456,12 +446,7 @@ function Install-ServyService {
     [switch] $EnableDebugLogs
   )
   
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "install"
@@ -547,12 +532,7 @@ function Uninstall-ServyService {
     [string] $Name
   )
   
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "uninstall"
@@ -594,12 +574,7 @@ function Start-ServyService {
     [string] $Name
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "start"
@@ -640,13 +615,8 @@ function Stop-ServyService {
     [Parameter(Mandatory = $true)]
     [string] $Name
   )
-    
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+
+  Test-ServyCliPath
     
   $argsList = @()
   $argsList += "stop"
@@ -688,12 +658,7 @@ function Restart-ServyService {
     [string] $Name
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "restart"
@@ -736,12 +701,7 @@ function Get-ServyServiceStatus {
     [string] $Name
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "status"
@@ -796,12 +756,7 @@ function Export-ServyServiceConfig {
     [string] $Path
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "export"
@@ -857,12 +812,7 @@ function Import-ServyServiceConfig {
     [switch] $Install
   )
 
-  try {
-    Test-ServyCliPath
-  }
-  catch {
-    throw $_
-  }
+  Test-ServyCliPath
 
   $argsList = @()
   $argsList += "import"
