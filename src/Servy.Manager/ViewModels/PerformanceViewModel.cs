@@ -352,7 +352,7 @@ namespace Servy.Manager.ViewModels
             if (valueHistory.Count > 101) valueHistory.RemoveAt(0);
 
             // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
-            double currentMax = valueHistory.Any() ? valueHistory.Max() : 0;
+            double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
             double displayMax = isCpu
                 ? 100.0
                 : Math.Max(currentMax * 1.2, _ramDisplayMax);
