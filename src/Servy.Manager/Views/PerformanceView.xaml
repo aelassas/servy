@@ -196,7 +196,7 @@
                                                 </GeometryGroup>
                                             </GeometryDrawing.Geometry>
                                             <GeometryDrawing.Pen>
-                                                <Pen Brush="#EBEBEB" Thickness="0.5" />
+                                                <Pen Brush="#EBEBEB" Thickness="1" />
                                             </GeometryDrawing.Pen>
                                         </GeometryDrawing>
                                     </DrawingBrush.Drawing>
@@ -244,7 +244,7 @@
                                                 </GeometryGroup>
                                             </GeometryDrawing.Geometry>
                                             <GeometryDrawing.Pen>
-                                                <Pen Brush="#EBEBEB" Thickness="0.5" />
+                                                <Pen Brush="#EBEBEB" Thickness="1" />
                                             </GeometryDrawing.Pen>
                                         </GeometryDrawing>
                                     </DrawingBrush.Drawing>
