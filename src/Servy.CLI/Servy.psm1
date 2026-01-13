@@ -7,6 +7,17 @@
   export and import configurations, and check the status of Windows services
   via the Servy CLI.
 
+  The module works with both installed and portable versions of Servy:
+
+  - Installed version: If Servy is installed, the module will automatically
+    locate the CLI executable.
+
+  - Portable version: If using a portable version, place this module in the
+    same folder as `servy-cli.exe`. The module will automatically detect and
+    use the local executable.
+
+  Note: Most service management operations require Administrator privileges.
+
   Functions included:
     - Show-ServyVersion
     - Show-ServyHelp
