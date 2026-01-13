@@ -22,7 +22,7 @@
 .NOTES
   Author      : Akram El Assas
   Module Name : Servy
-  Requires    : PowerShell 5.1 or later
+  Requires    : PowerShell 2.0 or later
   Repository  : https://github.com/aelassas/servy
 
 .EXAMPLE
@@ -38,7 +38,16 @@
   Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
 #>
 
-$script:ServyCliPath = Join-Path $PSScriptRoot "servy-cli.exe"
+# Determine module folder
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+    # PS3+ has automatic $PSScriptRoot
+    $ModuleRoot = $PSScriptRoot
+} else {
+    # PS2 does not have $PSScriptRoot
+    $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+$script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 
 if (-not (Test-Path $script:ServyCliPath)) {
     $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
@@ -59,7 +68,7 @@ if (-not (Test-Path $script:ServyCliPath)) {
 #>
 function Test-ServyCliPath {
   if (-not (Test-Path $script:ServyCliPath)) {
-    throw "Servy CLI not found at path: $script:ServyCliPath"
+    throw "Servy CLI not found at path: $($script:ServyCliPath)"
   }
 }
 
@@ -91,13 +100,13 @@ function Show-ServyVersion {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("--version")
+  $argsList = @()
+  $argsList += "--version"
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to get Servy CLI version: $_"
@@ -133,13 +142,13 @@ function Show-ServyHelp {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("--help")
+  $argsList = @()
+  $argsList += "--help"
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to display Servy CLI help: $_"
@@ -155,14 +164,11 @@ function Add-Arg {
   .DESCRIPTION
       This helper function appends a command-line argument in the form:
           key=value
-      to an existing .NET generic list of strings (`System.Collections.Generic.List[string]`),
+      to an existing array of strings,
       but only if the value is not null or empty.
-      Useful for efficiently building CLI argument lists dynamically
-      without creating new array copies.
 
   .PARAMETER list
-      The existing generic list of arguments (`System.Collections.Generic.List[string]`)
-      to which the new argument will be added.
+      The existing array of arguments to which the new argument will be added.
 
   .PARAMETER key
       The name of the argument or option (e.g., "--startupDir").
@@ -171,27 +177,38 @@ function Add-Arg {
       The value associated with the argument. Only added if not null or empty.
 
   .OUTPUTS
-      Returns the updated generic list of arguments including the new key-value pair.
+      Returns the updated array of arguments including the new key-value pair.
 
   .EXAMPLE
-      $argsList = [System.Collections.Generic.List[string]]::new()
+      $argsList = @()
       $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
       # Result: $argsList contains '--startupDir="C:\MyApp"'
   #>
   param(
-    [System.Collections.Generic.List[string]] $list, # Existing argument list
-    [string] $key, # Argument key
+    $list,          # Existing argument list (Array)
+    [string] $key,  # Argument key
     [string] $value # Argument value
   )
+  
+  $key = $key.Trim()
 
-  # Only add the argument if a non-empty value is provided
-  if ($null -ne $value -and $value -ne "") {
-    # Add the argument in the form key=value
-    $list.Add("$key=$value")
+  # 1. Ensure $list is an array, even if $null was passed
+  if ($null -eq $list) { 
+      $list = @() 
   }
 
-  # Return the same instance without PowerShell array coercion  
-  return ,$list  # the comma prevents unrolling / array coercion
+  # 2. Robust check for null or empty strings
+  # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
+  if ($null -ne $value -and $value.Trim() -ne "") {
+
+      # 3. Explicitly cast to array during addition to prevent string concatenation 
+      # if $list somehow became a single string.
+      [array]$list += "$key=$value"
+  }
+
+  # 4. The unary comma (,) is essential in PS 2.0 to prevent 
+  # PowerShell from "unrolling" the array into individual objects.
+  return ,$list
 }
 
 function Install-ServyService {
@@ -383,7 +400,7 @@ function Install-ServyService {
 
     [string] $StartupDir,
     [string] $Params,
-    [ValidateSet("Automatic", "Manual", "Disabled")]
+    [ValidateSet("Automatic", "AutomaticDelayedStart", "Manual", "Disabled")]
     [string] $StartupType,
     [ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "High", "RealTime")]
     [string] $Priority,
@@ -395,6 +412,7 @@ function Install-ServyService {
     [switch] $EnableSizeRotation,
     [string] $RotationSize,
     [switch] $EnableDateRotation,
+    [ValidateSet("Daily", "Weekly", "Monthly")]
     [string] $DateRotationType,
     [string] $MaxRotations,
     [switch] $EnableHealth,
@@ -439,10 +457,10 @@ function Install-ServyService {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("install")
+  $argsList = @()
+  $argsList += "install"
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   $argsList = Add-Arg $argsList "--name" $Name
   $argsList = Add-Arg $argsList "--displayName" $DisplayName
@@ -456,12 +474,12 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--stderr" $Stderr
   $argsList = Add-Arg $argsList "--startTimeout" $StartTimeout
   $argsList = Add-Arg $argsList "--stopTimeout" $StopTimeout
-  if ($EnableRotation -or $EnableSizeRotation) { $argsList.Add("--enableSizeRotation") }
+  if ($EnableRotation -or $EnableSizeRotation) { $argsList += "--enableSizeRotation" }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
-  if ($EnableDateRotation) { $argsList.Add("--enableDateRotation") }
+  if ($EnableDateRotation) { $argsList += "--enableDateRotation" }
   $argsList = Add-Arg $argsList "--dateRotationType" $DateRotationType
   $argsList = Add-Arg $argsList "--maxRotations" $MaxRotations
-  if ($EnableHealth) { $argsList.Add("--enableHealth") }
+  if ($EnableHealth) { $argsList += "--enableHealth" }
   $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval
   $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks
   $argsList = Add-Arg $argsList "--recoveryAction" $RecoveryAction
@@ -482,16 +500,16 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--preLaunchStderr" $PreLaunchStderr
   $argsList = Add-Arg $argsList "--preLaunchTimeout" $PreLaunchTimeout
   $argsList = Add-Arg $argsList "--preLaunchRetryAttempts" $PreLaunchRetryAttempts
-  if ($PreLaunchIgnoreFailure) { $argsList.Add("--preLaunchIgnoreFailure") }
+  if ($PreLaunchIgnoreFailure) { $argsList += "--preLaunchIgnoreFailure" }
 
   $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
   $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
   $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
 
-  if ($EnableDebugLogs) { $argsList.Add("--debug") }
+  if ($EnableDebugLogs) { $argsList += "--debug" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to install service '$Name': $_"
@@ -532,15 +550,15 @@ function Uninstall-ServyService {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("uninstall")
+  $argsList = @()
+  $argsList += "uninstall"
 
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
   
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to uninstall service '$Name': $_"
@@ -581,15 +599,15 @@ function Start-ServyService {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("start")
+  $argsList = @()
+  $argsList += "start"
 
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to start service '$Name': $_"
@@ -630,15 +648,15 @@ function Stop-ServyService {
     exit 1
   }
     
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("stop")
+  $argsList = @()
+  $argsList += "stop"
 
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to stop service '$Name': $_"
@@ -679,15 +697,15 @@ function Restart-ServyService {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("restart")
+  $argsList = @()
+  $argsList += "restart"
 
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to restart service '$Name': $_"
@@ -729,15 +747,15 @@ function Get-ServyServiceStatus {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("status")
+  $argsList = @()
+  $argsList += "status"
 
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to get status of service '$Name': $_"
@@ -791,17 +809,17 @@ function Export-ServyServiceConfig {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("export")
+  $argsList = @()
+  $argsList += "export"
 
   $argsList = Add-Arg $argsList "--name" $Name
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to export configuration for service '$Name': $_"
@@ -854,17 +872,17 @@ function Import-ServyServiceConfig {
     exit 1
   }
 
-  $argsList = [System.Collections.Generic.List[string]]::new()
-  $argsList.Add("import")
+  $argsList = @()
+  $argsList += "import"
 
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
-  if ($Install) { $argsList.Add("--install") }
+  if ($Install) { $argsList += "--install" }
 
-  if ($Quiet) { $argsList.Add("--quiet") }
+  if ($Quiet) { $argsList += "--quiet" }
 
   try {
-    & $script:ServyCliPath $argsList.ToArray()
+    & $script:ServyCliPath $argsList
   }
   catch {
     Write-Error "Failed to import configuration from '$Path': $_"
