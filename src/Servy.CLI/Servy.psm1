@@ -198,7 +198,7 @@ function Invoke-ServyCli {
         & $script:ServyCliPath $finalArgs
     }
     catch {
-        throw "$ErrorContext: $_"
+        throw "$ErrorContext : $_"
     }
 }
 
@@ -556,7 +556,7 @@ function Uninstall-ServyService {
         The name of the service to uninstall.
 
     .EXAMPLE
-        Uninstall-ServyService -Name "MyService"
+        Uninstall-Service -Name "MyService"
     #>
   
   param(
