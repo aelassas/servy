@@ -183,7 +183,7 @@ function Invoke-ServyCli {
     param(
         [string] $Command,
         [array]  $Arguments,
-        [bool]   $Quiet,
+        [switch] $Quiet,
         [string] $ErrorContext
     )
 
@@ -195,7 +195,7 @@ function Invoke-ServyCli {
     if ($Quiet) { $finalArgs += "--quiet" }
 
     try {
-        & $script:ServyCliPath $finalArgs
+        & $script:ServyCliPath $finalArgs       
     }
     catch {
         throw "$($ErrorContext): $_"
@@ -212,7 +212,7 @@ function Show-ServyVersion {
         Displays the version of the Servy CLI.
 
     .DESCRIPTION
-        Wraps the Servy CLI `--version` command to show the current version
+        Wraps the Servy CLI `--version`command to show the current version
         of the Servy tool installed on the system.
 
     .PARAMETER Quiet
@@ -226,7 +226,13 @@ function Show-ServyVersion {
     [switch] $Quiet
   )
 
-  Invoke-ServyCli -Command "--version" -Quiet $Quiet -ErrorContext "Failed to get Servy CLI version"
+  $invokeParams = @{
+    Arguments    = @("--version")
+    Quiet        = $Quiet
+    ErrorContext = "Failed to get Servy CLI version"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Show-ServyHelp {
@@ -235,7 +241,7 @@ function Show-ServyHelp {
         Displays help information for the Servy CLI.
 
     .DESCRIPTION
-        Wraps the Servy CLI `help` command to show usage information
+        Wraps the Servy CLI `help`command to show usage information
         and details about all available commands and options.
 
     .PARAMETER Quiet
@@ -249,7 +255,13 @@ function Show-ServyHelp {
     [switch] $Quiet
   )
 
-  Invoke-ServyCli -Command "--help" -Quiet $Quiet -ErrorContext "Failed to display Servy CLI help"
+  $invokeParams = @{
+    Arguments    = @("--help")
+    Quiet        = $Quiet
+    ErrorContext = "Failed to display Servy CLI help"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Install-ServyService {
@@ -258,7 +270,7 @@ function Install-ServyService {
         Installs a new Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `install` command to create a Windows service from any
+        Wraps the Servy CLI `install`command to create a Windows service from any
         executable. This function allows configuring service name, description, process path,
         startup directory, parameters, startup type, process priority, logging, health monitoring,
         recovery actions, environment variables, dependencies, service account credentials,
@@ -537,7 +549,14 @@ function Install-ServyService {
 
   if ($EnableDebugLogs) { $argsList += "--debug" }
 
-  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to install service '$Name'"
+  $invokeParams = @{
+    Command      = "install"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to install service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Uninstall-ServyService {
@@ -546,7 +565,7 @@ function Uninstall-ServyService {
         Uninstalls a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `uninstall` command. 
+        Wraps the Servy CLI `uninstall`command. 
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -568,7 +587,14 @@ function Uninstall-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
   
-  Invoke-ServyCli -Command "uninstall" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to uninstall service '$Name'"
+  $invokeParams = @{
+    Command      = "uninstall"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to uninstall service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Start-ServyService {
@@ -577,7 +603,7 @@ function Start-ServyService {
         Starts a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `start` command to start a service by its name.
+        Wraps the Servy CLI `start`command to start a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -599,7 +625,14 @@ function Start-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "start" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to start service '$Name'"
+  $invokeParams = @{
+    Command      = "start"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to start service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Stop-ServyService {
@@ -608,7 +641,7 @@ function Stop-ServyService {
         Stops a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `stop` command to stop a service by its name.
+        Wraps the Servy CLI `stop`command to stop a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -630,7 +663,14 @@ function Stop-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "stop" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to stop service '$Name'"
+  $invokeParams = @{
+    Command      = "stop"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to stop service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Restart-ServyService {
@@ -639,7 +679,7 @@ function Restart-ServyService {
         Restarts a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `restart` command to restart a service by its name.
+        Wraps the Servy CLI `restart`command to restart a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -661,7 +701,14 @@ function Restart-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "restart" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to restart service '$Name'"
+  $invokeParams = @{
+    Command      = "restart"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to restart service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Get-ServyServiceStatus {
@@ -670,7 +717,7 @@ function Get-ServyServiceStatus {
         Retrieves the current status of a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `status` command to get the status of a service by its name.
+        Wraps the Servy CLI `status`command to get the status of a service by its name.
         Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused.
         Requires Administrator privileges.
 
@@ -693,7 +740,14 @@ function Get-ServyServiceStatus {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "status" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to get status of service '$Name'"
+  $invokeParams = @{
+    Command      = "status"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to get status of service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Export-ServyServiceConfig {
@@ -702,7 +756,7 @@ function Export-ServyServiceConfig {
         Exports a Servy Windows service configuration to a file.
 
     .DESCRIPTION
-        Wraps the Servy CLI `export` command to export the configuration of a service
+        Wraps the Servy CLI `export`command to export the configuration of a service
         to a file. Supports XML and JSON file types. Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -739,7 +793,14 @@ function Export-ServyServiceConfig {
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
 
-  Invoke-ServyCli -Command "export" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to export configuration for service '$Name'"
+  $invokeParams = @{
+    Command      = "export"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to export configuration for service '$Name'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 function Import-ServyServiceConfig {
@@ -748,7 +809,7 @@ function Import-ServyServiceConfig {
         Imports a Windows service configuration into Servy's database.
 
     .DESCRIPTION
-        Wraps the Servy CLI `import` command to import a service configuration file
+        Wraps the Servy CLI `import`command to import a service configuration file
         (XML or JSON) into Servy's database. Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -784,7 +845,14 @@ function Import-ServyServiceConfig {
   $argsList = Add-Arg $argsList "--path" $Path
   if ($Install) { $argsList += "--install" }
 
-  Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to import configuration from '$Path'"
+  $invokeParams = @{
+    Command      = "import"
+    Arguments    = $argsList
+    Quiet        = $Quiet
+    ErrorContext = "Failed to import configuration from '$Path'"
+  }
+
+  Invoke-ServyCli @invokeParams
 }
 
 # ----------------------------------------------------------------
