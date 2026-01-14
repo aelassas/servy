@@ -23,10 +23,9 @@
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.1" />
-    <PackageReference Include="System.Management" Version="10.0.1" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.1" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.1" />
+    <PackageReference Include="System.Management" Version="10.0.2" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.2" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup>
