@@ -195,7 +195,11 @@ function Invoke-ServyCli {
     if ($Quiet) { $finalArgs += "--quiet" }
 
     try {
-        & $script:ServyCliPath $finalArgs       
+        & $script:ServyCliPath $finalArgs   
+        
+        if ($LASTEXITCODE -ne 0) {
+          throw "Servy CLI exited with code $LASTEXITCODE"
+        }          
     }
     catch {
         throw "$($ErrorContext): $_"
@@ -247,16 +251,21 @@ function Show-ServyHelp {
     .PARAMETER Quiet
         Suppress spinner and run in non-interactive mode. Optional.
 
+    .PARAMETER Command
+        Specific command to show help for. Optional.
+
     .EXAMPLE
         Show-ServyHelp
         # Displays help for the Servy CLI.
     #>
   param(
-    [switch] $Quiet
+    [switch] $Quiet,
+    [string] $Command
   )
 
   $invokeParams = @{
-    Arguments    = @("--help")
+    Command      = "help"
+    Arguments    = @($Command)
     Quiet        = $Quiet
     ErrorContext = "Failed to display Servy CLI help"
   }
