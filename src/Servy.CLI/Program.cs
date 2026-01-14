@@ -168,7 +168,17 @@ namespace Servy.CLI
                         async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts))),
                         async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.Execute(opts)),
                         async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.Execute(opts)),
-                        errs => Task.FromResult(1) // Wrap synchronous error result in Task
+                        // Wrap synchronous error result in Task
+                        errs =>
+                        {
+                            if (errs.IsHelp())
+                                return Task.FromResult(0);
+
+                            if (errs.IsVersion())
+                                return Task.FromResult(0);
+
+                            return Task.FromResult(1);
+                        }
                     );
 
                 return exitCode;
