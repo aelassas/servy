@@ -260,6 +260,7 @@ function Show-ServyHelp {
     #>
   param(
     [switch] $Quiet,
+    [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
     [string] $Command
   )
 
