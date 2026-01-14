@@ -266,7 +266,7 @@ function Show-ServyHelp {
 
   $invokeParams = @{
     Command      = "help"
-    Arguments    = @($Command)
+    Arguments    = if ($Command) { @($Command) } else { @() }
     Quiet        = $Quiet
     ErrorContext = "Failed to display Servy CLI help"
   }
