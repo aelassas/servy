@@ -9,7 +9,7 @@
 .NOTES
   Author: Akram El Assas
   Module: Servy
-  Requires: PowerShell 5.1 or later
+  Requires: PowerShell 2.0 or later
   Repository: https://github.com/aelassas/servy
 
 .EXAMPLE
