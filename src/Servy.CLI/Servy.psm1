@@ -198,7 +198,7 @@ function Invoke-ServyCli {
         & $script:ServyCliPath $finalArgs
     }
     catch {
-        throw "$ErrorContext : $_"
+        throw "$ErrorContext: $_"
     }
 }
 
