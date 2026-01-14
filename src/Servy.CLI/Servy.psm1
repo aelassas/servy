@@ -49,6 +49,10 @@
   Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
 #>
 
+# ----------------------------------------------------------------
+# Module Initialization
+# ----------------------------------------------------------------
+
 # Determine module folder
 if ($PSVersionTable.PSVersion.Major -ge 3) {
     # PS3+ has automatic $PSScriptRoot
@@ -63,6 +67,10 @@ $script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 if (-not (Test-Path $script:ServyCliPath)) {
     $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
 }
+
+# ----------------------------------------------------------------
+# Private Helper Functions
+# ----------------------------------------------------------------
 
 <#
 .SYNOPSIS
@@ -80,76 +88,6 @@ if (-not (Test-Path $script:ServyCliPath)) {
 function Test-ServyCliPath {
   if (-not (Test-Path $script:ServyCliPath)) {
     throw "Servy CLI not found at path: $($script:ServyCliPath)"
-  }
-}
-
-function Show-ServyVersion {
-  <#
-    .SYNOPSIS
-        Displays the version of the Servy CLI.
-
-    .DESCRIPTION
-        Wraps the Servy CLI `--version` command to show the current version
-        of the Servy tool installed on the system.
-
-    .PARAMETER Quiet
-        Suppress spinner and run in non-interactive mode. Optional.
-
-    .EXAMPLE
-        Show-ServyVersion
-        # Displays the current version of Servy CLI.
-    #>
-  param(
-    [switch] $Quiet
-  )
-
-  Test-ServyCliPath
-
-  $argsList = @()
-  $argsList += "--version"
-
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to get Servy CLI version: $_"
-  }
-}
-
-function Show-ServyHelp {
-  <#
-    .SYNOPSIS
-        Displays help information for the Servy CLI.
-
-    .DESCRIPTION
-        Wraps the Servy CLI `help` command to show usage information
-        and details about all available commands and options.
-
-    .PARAMETER Quiet
-        Suppress spinner and run in non-interactive mode. Optional.
-
-    .EXAMPLE
-        Show-ServyHelp
-        # Displays help for the Servy CLI.
-    #>
-  param(
-    [switch] $Quiet
-  )
-
-  Test-ServyCliPath
-
-  $argsList = @()
-  $argsList += "--help"
-
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to display Servy CLI help: $_"
   }
 }
 
@@ -186,8 +124,6 @@ function Add-Arg {
     [string] $key,  # Argument key
     [string] $value # Argument value
   )
-  
-  $key = $key.Trim()
 
   # 1. Ensure $list is an array, even if $null was passed
   if ($null -eq $list) { 
@@ -200,12 +136,120 @@ function Add-Arg {
 
       # 3. Explicitly cast to array during addition to prevent string concatenation 
       # if $list somehow became a single string.
-      [array]$list += "$key=$value"
+      [array]$list += "$($key.Trim())=$value"
   }
 
   # 4. The unary comma (,) is essential in PS 2.0 to prevent 
   # PowerShell from "unrolling" the array into individual objects.
   return ,$list
+}
+
+<#
+.SYNOPSIS
+    Internal helper to execute the Servy CLI.
+
+.DESCRIPTION
+    Builds and executes a Servy CLI command with the provided arguments.
+    This function centralizes CLI invocation logic, including command
+    construction, quiet mode handling, and error propagation.
+
+    It ensures the Servy CLI path is validated before execution and throws
+    a terminating error with contextual information if the command fails.
+
+.PARAMETER Command
+    The Servy CLI command to execute (for example: install, uninstall, start).
+
+.PARAMETER Arguments
+    An array of additional command-line arguments to pass to the Servy CLI.
+
+.PARAMETER Quiet
+    When specified, adds the --quiet flag to suppress interactive output.
+
+.PARAMETER ErrorContext
+    A contextual error message describing the operation being performed.
+    This message is included in any thrown exception.
+
+.NOTES
+    This function is intended for internal use within the Servy PowerShell
+    module and is not exported.
+
+    Compatible with PowerShell 2.0 and later.
+
+.EXAMPLE
+    Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
+
+#>
+function Invoke-ServyCli {
+    param(
+        [string] $Command,
+        [array]  $Arguments,
+        [bool]   $Quiet,
+        [string] $ErrorContext
+    )
+
+    Test-ServyCliPath
+
+    [array]$finalArgs = @()
+    if ($null -ne $Command -and $Command -ne "") { $finalArgs += $Command }
+    if ($Arguments) { $finalArgs += $Arguments }
+    if ($Quiet) { $finalArgs += "--quiet" }
+
+    try {
+        & $script:ServyCliPath $finalArgs
+    }
+    catch {
+        throw "$ErrorContext : $_"
+    }
+}
+
+# ----------------------------------------------------------------
+# Public Functions
+# ----------------------------------------------------------------
+
+function Show-ServyVersion {
+  <#
+    .SYNOPSIS
+        Displays the version of the Servy CLI.
+
+    .DESCRIPTION
+        Wraps the Servy CLI `--version` command to show the current version
+        of the Servy tool installed on the system.
+
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
+    .EXAMPLE
+        Show-ServyVersion
+        # Displays the current version of Servy CLI.
+    #>
+  param(
+    [switch] $Quiet
+  )
+
+  Invoke-ServyCli -Command "--version" -Quiet $Quiet -ErrorContext "Failed to get Servy CLI version"
+}
+
+function Show-ServyHelp {
+  <#
+    .SYNOPSIS
+        Displays help information for the Servy CLI.
+
+    .DESCRIPTION
+        Wraps the Servy CLI `help` command to show usage information
+        and details about all available commands and options.
+
+    .PARAMETER Quiet
+        Suppress spinner and run in non-interactive mode. Optional.
+
+    .EXAMPLE
+        Show-ServyHelp
+        # Displays help for the Servy CLI.
+    #>
+  param(
+    [switch] $Quiet
+  )
+
+  Invoke-ServyCli -Command "--help" -Quiet $Quiet -ErrorContext "Failed to display Servy CLI help"
 }
 
 function Install-ServyService {
@@ -445,14 +489,8 @@ function Install-ServyService {
     # Debug Logs
     [switch] $EnableDebugLogs
   )
-  
-  Test-ServyCliPath
 
   $argsList = @()
-  $argsList += "install"
-
-  if ($Quiet) { $argsList += "--quiet" }
-
   $argsList = Add-Arg $argsList "--name" $Name
   $argsList = Add-Arg $argsList "--displayName" $DisplayName
   $argsList = Add-Arg $argsList "--path" $Path
@@ -499,12 +537,7 @@ function Install-ServyService {
 
   if ($EnableDebugLogs) { $argsList += "--debug" }
 
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to install service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to install service '$Name'"
 }
 
 function Uninstall-ServyService {
@@ -531,22 +564,11 @@ function Uninstall-ServyService {
     [Parameter(Mandatory = $true)]
     [string] $Name
   )
-  
-  Test-ServyCliPath
 
   $argsList = @()
-  $argsList += "uninstall"
-
   $argsList = Add-Arg $argsList "--name" $Name
-
-  if ($Quiet) { $argsList += "--quiet" }
   
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to uninstall service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "uninstall" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to uninstall service '$Name'"
 }
 
 function Start-ServyService {
@@ -574,21 +596,10 @@ function Start-ServyService {
     [string] $Name
   )
 
-  Test-ServyCliPath
-
   $argsList = @()
-  $argsList += "start"
-
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to start service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "start" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to start service '$Name'"
 }
 
 function Stop-ServyService {
@@ -616,21 +627,10 @@ function Stop-ServyService {
     [string] $Name
   )
 
-  Test-ServyCliPath
-    
   $argsList = @()
-  $argsList += "stop"
-
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to stop service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "stop" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to stop service '$Name'"
 }
 
 function Restart-ServyService {
@@ -658,21 +658,10 @@ function Restart-ServyService {
     [string] $Name
   )
 
-  Test-ServyCliPath
-
   $argsList = @()
-  $argsList += "restart"
-
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to restart service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "restart" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to restart service '$Name'"
 }
 
 function Get-ServyServiceStatus {
@@ -701,21 +690,10 @@ function Get-ServyServiceStatus {
     [string] $Name
   )
 
-  Test-ServyCliPath
-
   $argsList = @()
-  $argsList += "status"
-
   $argsList = Add-Arg $argsList "--name" $Name
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to get status of service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "status" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to get status of service '$Name'"
 }
 
 function Export-ServyServiceConfig {
@@ -756,23 +734,12 @@ function Export-ServyServiceConfig {
     [string] $Path
   )
 
-  Test-ServyCliPath
-
   $argsList = @()
-  $argsList += "export"
-
   $argsList = Add-Arg $argsList "--name" $Name
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to export configuration for service '$Name': $_"
-  }
+  Invoke-ServyCli -Command "export" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to export configuration for service '$Name'"
 }
 
 function Import-ServyServiceConfig {
@@ -812,33 +779,35 @@ function Import-ServyServiceConfig {
     [switch] $Install
   )
 
-  Test-ServyCliPath
-
   $argsList = @()
-  $argsList += "import"
-
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
   if ($Install) { $argsList += "--install" }
 
-  if ($Quiet) { $argsList += "--quiet" }
-
-  try {
-    & $script:ServyCliPath $argsList
-  }
-  catch {
-    throw "Failed to import configuration from '$Path': $_"
-  }
+  Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet $Quiet -ErrorContext "Failed to import configuration from '$Path'"
 }
 
+# ----------------------------------------------------------------
 # Export all public functions of the Servy module
-Export-ModuleMember -Function Show-ServyVersion
-Export-ModuleMember -Function Show-ServyHelp
-Export-ModuleMember -Function Install-ServyService
-Export-ModuleMember -Function Uninstall-ServyService
-Export-ModuleMember -Function Start-ServyService
-Export-ModuleMember -Function Stop-ServyService
-Export-ModuleMember -Function Restart-ServyService
-Export-ModuleMember -Function Get-ServyServiceStatus
-Export-ModuleMember -Function Export-ServyServiceConfig
-Export-ModuleMember -Function Import-ServyServiceConfig
+# ----------------------------------------------------------------
+
+$publicFunctions = @(
+    "Show-ServyVersion",
+    "Show-ServyHelp",
+    "Install-ServyService",
+    "Uninstall-ServyService",
+    "Start-ServyService",
+    "Stop-ServyService",
+    "Restart-ServyService",
+    "Get-ServyServiceStatus",
+    "Export-ServyServiceConfig",
+    "Import-ServyServiceConfig"
+)
+
+foreach ($fn in $publicFunctions) {
+    if (-not (Get-Command $fn -CommandType Function -ErrorAction SilentlyContinue)) {
+        throw "Public function '$fn' is missing"
+    }
+}
+
+Export-ModuleMember -Function $publicFunctions
