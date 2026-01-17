@@ -87,13 +87,8 @@ scoop install servy
 
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
-* [Overview](https://github.com/aelassas/servy/wiki/Overview)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
-* [Servy Manager](https://github.com/aelassas/servy/wiki/Servy-Manager)
-* [Servy CLI](https://github.com/aelassas/servy/wiki/Servy-CLI)
-* [PowerShell Module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module)
-* [Examples & Recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
