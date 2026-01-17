@@ -88,6 +88,7 @@ scoop install servy
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
+* [Overview](https://github.com/aelassas/servy/wiki/Overview)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
