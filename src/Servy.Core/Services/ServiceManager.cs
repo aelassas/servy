@@ -306,7 +306,7 @@ namespace Servy.Core.Services
                 Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
                 //Helper.Quote(preLaunchArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                                            //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
+                //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
                 Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
                 Helper.Quote(preLaunchStdoutPath ?? string.Empty),
                 Helper.Quote(preLaunchStderrPath ?? string.Empty),
