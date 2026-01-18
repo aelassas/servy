@@ -62,10 +62,21 @@ if ($PSVersionTable.PSVersion.Major -ge 3) {
     $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 
+# 1. Check local module folder
 $script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 
+# 2. Check 64-bit Program Files directory
 if (-not (Test-Path $script:ServyCliPath)) {
-    $script:ServyCliPath = "C:\Program Files\Servy\servy-cli.exe"
+    # $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
+    # even if the current PowerShell session is 32-bit (x86).
+    $basePath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
+    $script:ServyCliPath = Join-Path $basePath "Servy\servy-cli.exe"
+}
+
+# 3. Check system PATH
+if (-not (Test-Path $script:ServyCliPath)) {
+    $pathSearch = Get-Command "servy-cli.exe" -ErrorAction SilentlyContinue
+    if ($pathSearch) { $script:ServyCliPath = $pathSearch.Definition }
 }
 
 # ----------------------------------------------------------------
@@ -216,7 +227,7 @@ function Show-ServyVersion {
         Displays the version of the Servy CLI.
 
     .DESCRIPTION
-        Wraps the Servy CLI `--version`command to show the current version
+        Wraps the Servy CLI `--version` command to show the current version
         of the Servy tool installed on the system.
 
     .PARAMETER Quiet
@@ -245,7 +256,7 @@ function Show-ServyHelp {
         Displays help information for the Servy CLI.
 
     .DESCRIPTION
-        Wraps the Servy CLI `help`command to show usage information
+        Wraps the Servy CLI `help` command to show usage information
         and details about all available commands and options.
 
     .PARAMETER Quiet
@@ -525,6 +536,7 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--stderr" $Stderr
   $argsList = Add-Arg $argsList "--startTimeout" $StartTimeout
   $argsList = Add-Arg $argsList "--stopTimeout" $StopTimeout
+  if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
   if ($EnableRotation -or $EnableSizeRotation) { $argsList += "--enableSizeRotation" }
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
   if ($EnableDateRotation) { $argsList += "--enableDateRotation" }

@@ -29,6 +29,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
 
         private bool _refreshCalled;
+        private TaskCompletionSource<bool> _refreshTcs;
         private string _removedServiceName;
 
         private ServiceCommands CreateServiceCommands()
@@ -50,6 +51,8 @@ namespace Servy.Manager.UnitTests.Services
                 wmiSearcherMock.Object
             );
 
+            _refreshTcs = new TaskCompletionSource<bool>();
+
             return new ServiceCommands(
                 realServiceManager,
                 _serviceRepositoryMock.Object,
@@ -57,7 +60,12 @@ namespace Servy.Manager.UnitTests.Services
                 _loggerMock.Object,
                 _fileDialogServiceMock.Object,
                 name => _removedServiceName = name,
-                () => Task.Run(() => _refreshCalled = true),
+                () =>
+                {
+                    _refreshCalled = true;
+                    _refreshTcs.SetResult(true);
+                    return Task.CompletedTask;
+                },
                 _serviceConfigurationValidatorMock.Object
             );
         }
@@ -70,6 +78,8 @@ namespace Servy.Manager.UnitTests.Services
             _fileDialogServiceMock = new Mock<IFileDialogService>();
             _loggerMock = new Mock<ILogger>();
             _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
+            _refreshTcs = new TaskCompletionSource<bool>();
+            _removedServiceName = null;
         }
 
         [Fact]
@@ -135,6 +145,7 @@ namespace Servy.Manager.UnitTests.Services
 
             // Act
             await sut.ImportJsonConfigAsync();
+            await _refreshTcs.Task;
 
             // Assert
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.Is<ServiceDto>(d => d.Name == "MyService"), It.IsAny<CancellationToken>()), Times.Once);
