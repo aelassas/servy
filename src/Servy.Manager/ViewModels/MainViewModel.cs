@@ -942,10 +942,9 @@ namespace Servy.Manager.ViewModels
                 service.RamUsage = ramUsage;
 
                 // Load startup type from repository if null
-                if (service.StartupType == null)
+                if (service.StartupType == null && serviceDto != null)
                 {
-                    if (serviceDto != null)
-                        service.StartupType = (ServiceStartType)serviceDto.StartupType;
+                    service.StartupType = (ServiceStartType)serviceDto.StartupType;
                 }
 
                 // Update from OS Info (Dictionary)
