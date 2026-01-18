@@ -10,12 +10,6 @@ using Servy.Manager.Helpers;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Services;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Manager.UnitTests.Services
 {
