@@ -248,14 +248,17 @@
                             </DataGridTemplateColumn>
 
                             <!--User Session-->
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" Width="100" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding UserSession}"
                                                    ToolTip="{Binding UserSession}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
-                                        />
+                                                   TextWrapping="NoWrap"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   HorizontalAlignment="Left"
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
