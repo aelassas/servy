@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Views;
@@ -10,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -129,7 +131,7 @@ namespace Servy
                 IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
 
                 // Run heavy startup work off UI thread
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     var stopwatch = Stopwatch.StartNew();
 
@@ -138,8 +140,20 @@ namespace Servy
 
                     var asm = Assembly.GetExecutingAssembly();
 
+                    var dbContext = new AppDbContext(ConnectionString);
+                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    var securePassword = new SecurePassword(protectedKeyProvider);
+                    var xmlSerializer = new XmlServiceSerializer();
+
+                    var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+                    var resourceHelper = new ResourceHelper(serviceRepository);
+
                     // Copy Sysinternals from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Current.Dispatcher.Invoke(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}")
@@ -153,7 +167,7 @@ namespace Servy
                     };
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
                         Current.Dispatcher.Invoke(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb")
@@ -175,7 +189,12 @@ namespace Servy
                     });
 #endif
                     // Copy embedded resources
-                    CopyResources(asm, resourceItems);
+                    if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
+                    {
+                        Current.Dispatcher.Invoke(() =>
+                            MessageBox.Show($"Failed copying embedded resources.")
+                        );
+                    }
 
                     stopwatch.Stop();
 
@@ -211,38 +230,6 @@ namespace Servy
                 {
                     splash.Close();
                 }
-            }
-        }
-
-        #endregion
-
-        #region Helpers
-
-        /// <summary>
-        /// Copies the specified embedded resources from the given assembly and handles errors by 
-        /// showing a message box if the operation fails.
-        /// </summary>
-        /// <param name="asm">
-        /// The <see cref="Assembly"/> that contains the embedded resources.
-        /// </param>
-        /// <param name="dllResources">
-        /// A list of <see cref="ResourceItem"/> objects representing the resources to copy.
-        /// </param>
-        /// <param name="stopServices">
-        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
-        /// Default is <c>true</c>.
-        /// </param>
-        /// <remarks>
-        /// This method calls <see cref="ResourceHelper.CopyResources"/> to perform the actual copying.  
-        /// If the operation fails, the user is notified via a message box on the UI thread.
-        /// </remarks>
-        private void CopyResources(Assembly asm, List<ResourceItem> dllResources, bool stopServices = true)
-        {
-            if (!ResourceHelper.CopyResources(asm, ResourcesNamespace, dllResources, stopServices))
-            {
-                Current.Dispatcher.Invoke(() =>
-                    MessageBox.Show($"Failed copying embedded resources.")
-                );
             }
         }
 

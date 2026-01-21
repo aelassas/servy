@@ -22,7 +22,7 @@ namespace Servy.CLI.Helpers
         /// This method runs the spinner on a background task and cancels it automatically
         /// when the action completes. The console line is cleared after the spinner stops.
         /// </remarks>
-        public static async Task RunWithLoadingAnimation(Action action, string message = "Preparing environment...")
+        public static async Task RunWithLoadingAnimation(Func<Task> action, string message = "Preparing environment...")
         {
             var spinnerChars = new[] { '|', '/', '-', '\\' };
             var spinnerIndex = 0;
@@ -47,7 +47,7 @@ namespace Servy.CLI.Helpers
 
                 try
                 {
-                    action();  // synchronous work
+                    await action();  // synchronous work
                 }
                 finally
                 {
