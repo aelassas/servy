@@ -34,9 +34,9 @@
     <AssemblyDescription>Servy Command Line Interface</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.CLI</Product>
-    <Version>5.5.0</Version>
-    <FileVersion>5.5.0.0</FileVersion>
-    <AssemblyVersion>5.5.0.0</AssemblyVersion>
+    <Version>5.6.0</Version>
+    <FileVersion>5.6.0.0</FileVersion>
+    <AssemblyVersion>5.6.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
     <ApplicationIcon>servy.ico</ApplicationIcon>
     <ApplicationManifest></ApplicationManifest>
