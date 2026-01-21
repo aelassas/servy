@@ -152,9 +152,9 @@ namespace Servy.CLI
                     .MapResult(
                         async (InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
                         async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.Execute(opts)),
-                        async (StartServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(startCommand.Execute(opts))),
-                        async (StopServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(stopCommand.Execute(opts))),
-                        async (RestartServiceOptions opts) => await PrintAndReturnAsync(Task.FromResult(restartCommand.Execute(opts))),
+                        async (StartServiceOptions opts) => await PrintAndReturnAsync(startCommand.Execute(opts)),
+                        async (StopServiceOptions opts) => await PrintAndReturnAsync(stopCommand.Execute(opts)),
+                        async (RestartServiceOptions opts) => await PrintAndReturnAsync(restartCommand.Execute(opts)),
                         async (ServiceStatusOptions opts) => await PrintAndReturnAsync(Task.FromResult(serviceStatusCommand.Execute(opts))),
                         async (ExportServiceOptions opts) => await PrintAndReturnAsync(exportCommand.Execute(opts)),
                         async (ImportServiceOptions opts) => await PrintAndReturnAsync(importCommand.Execute(opts)),

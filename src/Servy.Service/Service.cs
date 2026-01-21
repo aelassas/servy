@@ -178,8 +178,9 @@ namespace Servy.Service
                 var options = _serviceHelper.InitializeStartup(_logger);
                 if (options == null)
                 {
-                    Stop();
-                    return;
+                    // Set a non-zero exit code so Windows knows it failed
+                    ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
+                    throw new Exception("Failed to initialize service options.");
                 }
 
                 _options = options;
@@ -191,8 +192,11 @@ namespace Servy.Service
                 _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
-                // Request 30 seconds for startup to accommodate slow process
-                //_serviceHelper.RequestAdditionalTime(this, 30 * 1000, _logger);
+                // Request timeout for startup to accommodate slow process
+                if (_options.StartTimeout > 20) // Use a lower threshold to be safe
+                {
+                    _serviceHelper.RequestAdditionalTime(this, (_options.StartTimeout + 10) * 1000, _logger);
+                }
 
                 // Set up attempts file
                 SetupAttemptsFile(options);

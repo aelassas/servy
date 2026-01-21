@@ -2,6 +2,10 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Services;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -17,16 +21,16 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void Execute_ValidOptions_ReturnsSuccess()
+        public async Task Execute_ValidOptions_ReturnsSuccess()
         {
             // Arrange
             var options = new StopServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StopService("TestService")).Returns(true);
+            _mockServiceManager.Setup(sm => sm.StopService("TestService")).ReturnsAsync(true);
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.True(result.Success);
@@ -34,13 +38,13 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void Execute_EmptyServiceName_ReturnsFailure()
+        public async Task Execute_EmptyServiceName_ReturnsFailure()
         {
             // Arrange
             var options = new StopServiceOptions { ServiceName = "" };
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -48,16 +52,16 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void Execute_ServiceManagerFails_ReturnsFailure()
+        public async Task Execute_ServiceManagerFails_ReturnsFailure()
         {
             // Arrange
             var options = new StopServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _mockServiceManager.Setup(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>())).Returns(Core.Enums.ServiceStartType.Automatic);
-            _mockServiceManager.Setup(sm => sm.StopService("TestService")).Returns(false);
+            _mockServiceManager.Setup(sm => sm.StopService("TestService")).ReturnsAsync(false);
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -65,7 +69,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void Execute_UnauthorizedAccessException_ReturnsFailure()
+        public async Task Execute_UnauthorizedAccessException_ReturnsFailure()
         {
             // Arrange
             var options = new StopServiceOptions { ServiceName = "TestService" };
@@ -74,7 +78,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopService("TestService")).Throws<UnauthorizedAccessException>();
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -82,7 +86,7 @@ namespace Servy.CLI.UnitTests.Commands
         }
 
         [Fact]
-        public void Execute_GenericException_ReturnsFailure()
+        public async Task Execute_GenericException_ReturnsFailure()
         {
             // Arrange
             var options = new StopServiceOptions { ServiceName = "TestService" };
@@ -91,7 +95,7 @@ namespace Servy.CLI.UnitTests.Commands
             _mockServiceManager.Setup(sm => sm.StopService("TestService")).Throws<Exception>();
 
             // Act
-            var result = _command.Execute(options);
+            var result = await _command.Execute(options);
 
             // Assert
             Assert.False(result.Success);
@@ -99,5 +103,3 @@ namespace Servy.CLI.UnitTests.Commands
         }
     }
 }
-
-

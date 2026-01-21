@@ -6,6 +6,9 @@ using Servy.Core.Enums;
 using Servy.Core.Mappers;
 using Servy.Core.Services;
 using System.ServiceProcess;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.Core.UnitTests.Mappers
 {
@@ -349,66 +352,66 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
-        public void Start_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        public async Task Start_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).ReturnsAsync(true);
 
-            var result = _service.Start();
+            var result = await _service.Start();
 
             Assert.True(result);
             _serviceManagerMock.Verify(sm => sm.StartService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).Returns(false);
+            _serviceManagerMock.Setup(sm => sm.StartService("TestService")).ReturnsAsync(false);
 
-            var result = _service.Start();
+            var result = await _service.Start();
 
             Assert.False(result);
             _serviceManagerMock.Verify(sm => sm.StartService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Stop_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        public async Task Stop_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).ReturnsAsync(true);
 
-            var result = _service.Stop();
+            var result = await _service.Stop();
 
             Assert.True(result);
             _serviceManagerMock.Verify(sm => sm.StopService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).Returns(false);
+            _serviceManagerMock.Setup(sm => sm.StopService("TestService")).ReturnsAsync(false);
 
-            var result = _service.Stop();
+            var result = await _service.Stop();
 
             Assert.False(result);
             _serviceManagerMock.Verify(sm => sm.StopService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Restart_ReturnsTrue_WhenServiceManagerReturnsTrue()
+        public async Task Restart_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).ReturnsAsync(true);
 
-            var result = _service.Restart();
+            var result = await _service.Restart();
 
             Assert.True(result);
             _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
+        public async Task Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).Returns(false);
+            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).ReturnsAsync(false);
 
-            var result = _service.Restart();
+            var result = await _service.Restart();
 
             Assert.False(result);
             _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
@@ -474,4 +477,3 @@ namespace Servy.Core.UnitTests.Mappers
 
     }
 }
-

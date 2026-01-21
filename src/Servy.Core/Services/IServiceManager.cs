@@ -121,21 +121,21 @@ namespace Servy.Core.Services
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was started; otherwise false.</returns>
-        bool StartService(string serviceName);
+        Task<bool> StartService(string serviceName);
 
         /// <summary>
         /// Stops the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was stopped; otherwise false.</returns>
-        bool StopService(string serviceName);
+        Task<bool> StopService(string serviceName);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was restarted; otherwise false.</returns>
-        bool RestartService(string serviceName);
+        Task<bool> RestartService(string serviceName);
 
         /// <summary>
         /// Gets the current status of the specified Windows service.

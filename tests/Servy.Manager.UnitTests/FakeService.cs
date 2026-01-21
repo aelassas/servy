@@ -1,11 +1,7 @@
 ﻿using Servy.Core.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Servy.Manager.UnitTests
+namespace Servy.Manager.UnitTests.Services
 {
     public class FakeService : Core.Domain.Service
     {
@@ -18,7 +14,7 @@ namespace Servy.Manager.UnitTests
             _stopResult = stopResult;
         }
 
-        public override bool Stop()
+        public override async Task<bool> Stop()
         {
             return _stopResult;
         }
