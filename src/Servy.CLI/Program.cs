@@ -96,7 +96,7 @@ namespace Servy.CLI
                 var exportCommand = new ExportServiceCommand(serviceRepository);
                 var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, serviceManager);
 
-                void Run()
+                async Task Run()
                 {
                     // Ensure db and security folders exist
                     AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
@@ -106,21 +106,23 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
+                    var resourceHelper = new ResourceHelper(serviceRepository);
+
                     // Copy service executable from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "exe", true, true))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIExe}");
                     }
 
                     // Copy Sysinternals from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
                     }
 
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                     }
@@ -129,13 +131,13 @@ namespace Servy.CLI
 
                 if (quiet)
                 {
-                    Run();
+                    await Run();
                 }
                 else
                 {
-                    await ConsoleHelper.RunWithLoadingAnimation(() =>
+                    await ConsoleHelper.RunWithLoadingAnimation(async () =>
                     {
-                        Run();
+                        await Run();
                     });
                 }
 

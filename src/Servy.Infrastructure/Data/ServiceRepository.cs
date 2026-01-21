@@ -173,7 +173,12 @@ namespace Servy.Infrastructure.Data
                     DateRotationType = @DateRotationType,
 
                     StartTimeout = @StartTimeout,
-                    StopTimeout = @StopTimeout
+                    StopTimeout = @StopTimeout,
+                    PreviousStopTimeout =
+                        CASE
+                            WHEN StopTimeout <> @StopTimeout THEN StopTimeout
+                            ELSE PreviousStopTimeout
+                        END
 
                 WHERE Id = @Id;";
 

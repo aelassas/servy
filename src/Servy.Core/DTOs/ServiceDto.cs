@@ -241,6 +241,11 @@ namespace Servy.Core.DTOs
         /// </summary>
         public int? StopTimeout { get; set; }
 
+        /// <summary>
+        /// Previous Timeout in seconds to wait for the process to exit.
+        /// </summary>
+        public int? PreviousStopTimeout { get; set; }
+
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => false;
@@ -285,6 +290,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
         public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
         public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
+        public bool ShouldSerializePreviousStopTimeout() => PreviousStopTimeout.HasValue;
 
         #endregion
     }

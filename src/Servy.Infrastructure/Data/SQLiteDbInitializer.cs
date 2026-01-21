@@ -103,6 +103,7 @@ namespace Servy.Infrastructure.Data
                 // Start and Stop timeouts
                 new KeyValuePair<string, string>("StartTimeout", "ALTER TABLE Services ADD COLUMN StartTimeout INTEGER;"),
                 new KeyValuePair<string, string>("StopTimeout", "ALTER TABLE Services ADD COLUMN StopTimeout INTEGER;"),
+                new KeyValuePair<string, string>("PreviousStopTimeout", "ALTER TABLE Services ADD COLUMN PreviousStopTimeout INTEGER;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

@@ -1,5 +1,9 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Service.Native;
 using System.Diagnostics;
 using System.Reflection;
@@ -38,7 +42,30 @@ namespace Servy.Service
             // Ensure event source exists
             Helper.EnsureEventSourceExists();
 
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
+            // Load configuration from appsettings.json
+            var config = new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                .Build();
+
+            var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
+            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+            // Initialize database and helpers
+            var dbContext = new AppDbContext(connectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+            var dapperExecutor = new DapperExecutor(dbContext);
+            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+            var securePassword = new SecurePassword(protectedKeyProvider);
+            var xmlSerializer = new XmlServiceSerializer();
+
+            var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+            var resourceHelper = new ResourceHelper(serviceRepository);
+
+            if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false).ConfigureAwait(false).GetAwaiter().GetResult())
             {
                 EventLog.WriteEntry(
                     eventSource,
@@ -50,7 +77,7 @@ namespace Servy.Service
 
 #if DEBUG
             // Copy debug symbols from embedded resources (only in debug builds)
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false))
+            if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false).ConfigureAwait(false).GetAwaiter().GetResult())
             {
                 EventLog.WriteEntry(
                     eventSource,

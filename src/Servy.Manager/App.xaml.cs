@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Manager.Views;
 using System.Diagnostics;
 using System.IO;
@@ -140,7 +143,7 @@ namespace Servy.Manager
                 IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
 
                 // Run heavy startup work off UI thread
-                await Task.Run(() =>
+                await Task.Run(async () =>
                 {
                     var stopwatch = Stopwatch.StartNew();
 
@@ -149,14 +152,26 @@ namespace Servy.Manager
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
+                    var dbContext = new AppDbContext(ConnectionString);
+                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    var securePassword = new SecurePassword(protectedKeyProvider);
+                    var xmlSerializer = new XmlServiceSerializer();
+
+                    var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+                    var resourceHelper = new ResourceHelper(serviceRepository);
+
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
                     {
                         Current.Dispatcher.Invoke(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}")
                         );
                     }
 
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Current.Dispatcher.Invoke(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}")
@@ -164,7 +179,7 @@ namespace Servy.Manager
                     }
 
 #if DEBUG
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
                         Current.Dispatcher.Invoke(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb")
