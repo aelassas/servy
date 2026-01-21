@@ -3,6 +3,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
 {
@@ -27,9 +28,9 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Restart service options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public CommandResult Execute(RestartServiceOptions opts)
+        public async Task<CommandResult> Execute(RestartServiceOptions opts)
         {
-            return ExecuteWithHandling(() =>
+            return await ExecuteWithHandlingAsync(async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
@@ -46,7 +47,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var success = _serviceManager.RestartService(opts.ServiceName);
+                var success = await _serviceManager.RestartService(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service restarted successfully.")
                     : CommandResult.Fail("Failed to restart service.");

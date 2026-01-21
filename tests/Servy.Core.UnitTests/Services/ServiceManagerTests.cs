@@ -1216,13 +1216,15 @@ namespace Servy.Core.UnitTests.Services
 
 
         [Fact]
-        public void StartService_ShouldReturnTrue_WhenAlreadyRunning()
+        public async Task StartService_ShouldReturnTrue_WhenAlreadyRunning()
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
             // Act
-            var result = _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartService("TestService");
 
             // Assert
             Assert.True(result);
@@ -1230,11 +1232,13 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void StartService_ShouldStartAndWait_WhenNotRunning()
+        public async Task StartService_ShouldStartAndWait_WhenNotRunning()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
-            var result = _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartService("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Start(), Times.Once);
@@ -1242,23 +1246,57 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void StartService_ShouldReturnFalse_WhenExceptionIsThrown()
+        public async Task StartService_ShouldStartAndWaitSpecificTime_WhenNotRunning()
+        {
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StartTimeout = 10 });
+
+            var result = await _serviceManager.StartService("TestService");
+
+            Assert.True(result);
+            _mockController.Verify(c => c.Start(), Times.Once);
+            _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Running, It.IsAny<TimeSpan>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task StartService_ShouldReturnFalse_WhenServiceNotInDB()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(null as DTOs.ServiceDto);
+
+            // Act
+            var result = await _serviceManager.StartService("TestService");
+
+            // Assert
+            Assert.False(result);
+            _mockController.Verify(c => c.Start(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StartService_ShouldReturnFalse_WhenExceptionIsThrown()
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
-            var result = _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartService("TestService");
 
             Assert.False(result);
         }
 
         [Fact]
-        public void StopService_ShouldReturnTrue_WhenAlreadyStopped()
+        public async Task StopService_ShouldReturnTrue_WhenAlreadyStopped()
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
             // Act
-            var result = _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopService("TestService");
 
             // Assert
             Assert.True(result);
@@ -1266,11 +1304,29 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void StopService_ShouldStopAndWait_WhenNotStopped()
+        public async Task StopService_ShouldReturnFalse_WhenServiceNotFoundInDB()
+        {
+            // Arrange
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(null as DTOs.ServiceDto);
+
+            // Act
+            var result = await _serviceManager.StopService("TestService");
+
+            // Assert
+            Assert.False(result);
+            _mockController.Verify(c => c.Stop(), Times.Never);
+        }
+
+        [Fact]
+        public async Task StopService_ShouldStopAndWait_WhenNotStopped()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
-            var result = _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopService("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -1278,24 +1334,43 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void StopService_ShouldReturnFalse_WhenExceptionIsThrown()
+        public async Task StopService_ShouldStopAndWaitSpecificTime_WhenNotStopped()
+        {
+            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
+
+            var result = await _serviceManager.StopService("TestService");
+
+            Assert.True(result);
+            _mockController.Verify(c => c.Stop(), Times.Once);
+            _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task StopService_ShouldReturnFalse_WhenExceptionIsThrown()
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
-            var result = _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopService("TestService");
 
             Assert.False(result);
         }
 
         [Fact]
-        public void RestartService_ShouldStopAndStart_WhenStopSucceeds()
+        public async Task RestartService_ShouldStopAndStart_WhenStopSucceeds()
         {
             _mockController.SetupSequence(c => c.Status)
                 .Returns(ServiceControllerStatus.Running)
                 .Returns(ServiceControllerStatus.Stopped)
                 .Returns(ServiceControllerStatus.Running);
 
-            var result = _serviceManager.RestartService("TestService");
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
+
+            var result = await _serviceManager.RestartService("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -1303,7 +1378,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void RestartService_ShouldReturnFalse_WhenStopServiceFails()
+        public async Task RestartService_ShouldReturnFalse_WhenStopServiceFails()
         {
             // Arrange
             // Simulate the service is already stopped so StopService returns true
@@ -1313,14 +1388,14 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Stop()).Throws(new Exception("Boom!"));
 
             // Act
-            var result = _serviceManager.RestartService("TestService");
+            var result = await _serviceManager.RestartService("TestService");
 
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void RestartService_ShouldReturnFalse_WhenStartServiceFails()
+        public async Task RestartService_ShouldReturnFalse_WhenStartServiceFails()
         {
             // Arrange
             // Simulate the service is already stopped so StopService returns true
@@ -1330,7 +1405,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Start()).Throws(new Exception("Boom!"));
 
             // Act
-            var result = _serviceManager.RestartService("TestService");
+            var result = await _serviceManager.RestartService("TestService");
 
             // Assert
             Assert.False(result);

@@ -3,8 +3,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
 using Servy.Core.Services;
-using System;
-using System.ServiceProcess;
+using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
 {
@@ -29,9 +28,9 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Start service options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public CommandResult Execute(StartServiceOptions opts)
+        public async Task<CommandResult> Execute(StartServiceOptions opts)
         {
-            return ExecuteWithHandling(() =>
+            return await ExecuteWithHandlingAsync(async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
@@ -48,7 +47,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var success = _serviceManager.StartService(opts.ServiceName);
+                var success = await _serviceManager.StartService(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service started successfully.")
                     : CommandResult.Fail("Failed to start service.");

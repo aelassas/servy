@@ -281,9 +281,9 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully started; otherwise, <c>false</c>.
         /// </returns>
-        public bool Start()
+        public async Task<bool> Start()
         {
-            return _serviceManager.StartService(Name);
+            return await _serviceManager.StartService(Name);
         }
 
         /// <summary>
@@ -292,9 +292,9 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
         /// </returns>
-        public virtual bool Stop()
+        public virtual async Task<bool> Stop()
         {
-            return _serviceManager.StopService(Name);
+            return await _serviceManager.StopService(Name);
         }
 
         /// <summary>
@@ -303,9 +303,9 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully restarted; otherwise, <c>false</c>.
         /// </returns>
-        public bool Restart()
+        public async Task<bool> Restart()
         {
-            return _serviceManager.RestartService(Name);
+            return await _serviceManager.RestartService(Name);
         }
 
         /// <summary>
