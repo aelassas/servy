@@ -623,6 +623,8 @@ namespace Servy.Core.Services
         {
             try
             {
+                var bufferTimeInSeconds = 15;
+
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
 
                 if (service == null) return false;
@@ -632,8 +634,9 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return true;
 
-                    int totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + 15;
-                    totalWaitTime = Math.Max(totalWaitTime, ServiceStopTimeoutSeconds);
+                    var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                    var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
 
                     sc.Stop();
                     sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(totalWaitTime));
