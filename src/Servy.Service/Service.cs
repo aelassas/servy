@@ -1193,7 +1193,7 @@ namespace Servy.Service
                 {
                     // Add a small buffer to the SCM request
                     // to account for cleanup, logging, and service stop overhead.
-                    int scmTimeoutMs = (_options.StopTimeout + 5) * 1000;
+                    int scmTimeoutMs = (_options.StopTimeout + 10) * 1000;
 
                     if (_options.StopTimeout > 25) // Request if we are near or over the 30s limit
                     {
