@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Servy.Core.Data;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 #if !DEBUG
 using Servy.Core.Config;
 #endif
@@ -16,8 +18,19 @@ namespace Servy.Core.Helpers
     /// from the assembly, such as the Servy service executable and related files.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class ResourceHelper
+    public class ResourceHelper
     {
+        private readonly ServiceHelper _serviceHelper;
+
+        /// <summary>
+        /// Initializes a new instance of the ResourceHelper class using the specified service repository.
+        /// </summary>
+        /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
+        public ResourceHelper(IServiceRepository serviceRepository)
+        {
+            _serviceHelper = new ServiceHelper(serviceRepository);
+        }
+
         /// <summary>
         /// Copies an embedded resource from the assembly to disk, stopping and restarting services if necessary.
         /// </summary>
@@ -28,7 +41,7 @@ namespace Servy.Core.Helpers
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public static bool CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true, string subfolder = null)
+        public async Task<bool> CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true, string subfolder = null)
         {
             try
             {
@@ -72,13 +85,13 @@ namespace Servy.Core.Helpers
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
-                    runningServices = ServiceHelper.GetRunningServyServices();
+                    runningServices = _serviceHelper.GetRunningServyServices();
                 }
 
                 try
                 {
                     if (stopServices)
-                        ServiceHelper.StopServices(runningServices);
+                        await _serviceHelper.StopServices(runningServices);
 
                     if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                         return false;
@@ -111,7 +124,7 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices)
                     {
-                        ServiceHelper.StartServices(runningServices);
+                        await _serviceHelper.StartServices(runningServices);
                     }
                 }
 
@@ -162,7 +175,7 @@ namespace Servy.Core.Helpers
         /// returning <c>false</c> at the end.
         /// </para>
         /// </remarks>
-        public static bool CopyResources(Assembly assembly, string resourceNamespace, List<ResourceItem> resourceItems, bool stopServices = true)
+        public async Task<bool> CopyResources(Assembly assembly, string resourceNamespace, List<ResourceItem> resourceItems, bool stopServices = true)
         {
             var res = true;
             try
@@ -216,13 +229,13 @@ namespace Servy.Core.Helpers
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
-                    runningServices = ServiceHelper.GetRunningServyServices();
+                    runningServices = _serviceHelper.GetRunningServyServices();
                 }
 
                 try
                 {
                     if (stopServices)
-                        ServiceHelper.StopServices(runningServices);
+                        await _serviceHelper.StopServices(runningServices);
 
                     foreach (var resourceItem in resourceItems.Where(r => r.ShouldCopy))
                     {
@@ -279,7 +292,7 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices)
                     {
-                        ServiceHelper.StartServices(runningServices);
+                        await _serviceHelper.StartServices(runningServices);
                     }
                 }
             }
@@ -304,7 +317,7 @@ namespace Servy.Core.Helpers
         /// The UTC <see cref="DateTime"/> representing the assembly's last write time,
         /// or <see cref="DateTime.UtcNow"/> if it cannot be determined.
         /// </returns>
-        public static DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
+        public DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
 #pragma warning disable IL3000
             var assemblyPath = assembly.Location;

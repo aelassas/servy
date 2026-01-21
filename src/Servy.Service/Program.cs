@@ -1,10 +1,15 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using Servy.Service.Native;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
 namespace Servy.Service
 {
@@ -27,7 +32,7 @@ namespace Servy.Service
         /// Main entry point of the Servy Windows service application.
         /// Extracts required embedded resources and starts the service host.
         /// </summary>
-        static void Main()
+        static async Task Main()
         {
             _ = NativeMethods.FreeConsole();
             _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
@@ -39,7 +44,25 @@ namespace Servy.Service
             // Ensure event source exists
             Helper.EnsureEventSourceExists();
 
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
+            var config = ConfigurationManager.AppSettings;
+
+            var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+            // Initialize database and helpers
+            var dbContext = new AppDbContext(connectionString);
+            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+            var dapperExecutor = new DapperExecutor(dbContext);
+            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+            var securePassword = new SecurePassword(protectedKeyProvider);
+            var xmlSerializer = new XmlServiceSerializer();
+
+            var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+            var resourceHelper = new ResourceHelper(serviceRepository);
+
+            if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))
             {
                 EventLog.WriteEntry(
                     eventSource,
@@ -51,7 +74,7 @@ namespace Servy.Service
 
 #if DEBUG
             // Copy debug symbols from embedded resources (only in debug builds)
-            if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false))
+            if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false))
             {
                 EventLog.WriteEntry(
                     eventSource,

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting;
 using System.Threading.Tasks;
 using static Servy.CLI.Helpers.Helper;
 
@@ -89,7 +90,7 @@ namespace Servy.CLI
                 var exportCommand = new ExportServiceCommand(serviceRepository);
                 var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, serviceManager);
 
-                void Run()
+                async Task Run()
                 {
                     // Ensure db and security folders exist
                     AppFoldersHelper.EnsureFolders(connectionString, aesKeyFilePath, aesIVFilePath);
@@ -99,8 +100,10 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
+                    var resourceHelper = new ResourceHelper(serviceRepository);
+
                     // Copy Sysinternals from embedded resources
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
                     }
@@ -113,7 +116,7 @@ namespace Servy.CLI
 
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!ResourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                     }
@@ -134,18 +137,21 @@ namespace Servy.CLI
 #endif
 
                     // Copy embedded resources
-                    CopyResources(asm, resourceItems);
+                    if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
+                    {
+                        Console.WriteLine($"Failed copying embedded resources.");
+                    }
                 }
 
                 if (quiet)
                 {
-                    Run();
+                    await Run();
                 }
                 else
                 {
-                    await ConsoleHelper.RunWithLoadingAnimation(() =>
+                    await ConsoleHelper.RunWithLoadingAnimation(async () =>
                     {
-                        Run();
+                        await Run();
                     });
                 }
 
@@ -190,35 +196,5 @@ namespace Servy.CLI
             }
         }
 
-        #region Helpers
-
-
-        /// <summary>
-        /// Copies the specified embedded resources from the given assembly and handles errors by 
-        /// showing a message box if the operation fails.
-        /// </summary>
-        /// <param name="asm">
-        /// The <see cref="Assembly"/> that contains the embedded resources.
-        /// </param>
-        /// <param name="dllResources">
-        /// A list of <see cref="ResourceItem"/> objects representing the resources to copy.
-        /// </param>
-        /// <param name="stopServices">
-        /// If <c>true</c>, running Servy services will be stopped before copying and restarted afterward. 
-        /// Default is <c>true</c>.
-        /// </param>
-        /// <remarks>
-        /// This method calls <see cref="ResourceHelper.CopyResources"/> to perform the actual copying.  
-        /// If the operation fails, the user is notified via a message box on the UI thread.
-        /// </remarks>
-        private static void CopyResources(Assembly asm, List<ResourceItem> dllResources, bool stopServices = true)
-        {
-            if (!ResourceHelper.CopyResources(asm, ResourcesNamespace, dllResources, stopServices))
-            {
-                Console.WriteLine($"Failed copying embedded resources.");
-            }
-        }
-
-        #endregion
     }
 }

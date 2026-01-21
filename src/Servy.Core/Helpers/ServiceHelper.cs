@@ -1,10 +1,12 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Management;
 using System.ServiceProcess;
+using System.Threading.Tasks;
 
 namespace Servy.Core.Helpers
 {
@@ -12,8 +14,18 @@ namespace Servy.Core.Helpers
     /// Provides helper methods to query, start, and stop Servy services via WMI and ServiceController.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class ServiceHelper
+    public class ServiceHelper
     {
+        private readonly IServiceRepository _serviceRepository;
+
+        /// <summary>
+        /// Initializes a new instance of the ServiceHelper class using the specified service repository.
+        /// </summary>
+        /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
+        public ServiceHelper(IServiceRepository serviceRepository)
+        {
+            _serviceRepository = serviceRepository;
+        }
 
         #region Public Methods
 
@@ -21,7 +33,7 @@ namespace Servy.Core.Helpers
         /// Gets the names of all currently running Servy UI services.
         /// </summary>
         /// <returns>A list of service names.</returns>
-        public static List<string> GetRunningServyUIServices()
+        public List<string> GetRunningServyUIServices()
         {
             var wrapperExe = AppConfig.ServyServiceUIExe;
             var services = GetRunningServices(wrapperExe);
@@ -32,7 +44,7 @@ namespace Servy.Core.Helpers
         /// Gets the names of all currently running Servy CLI services.
         /// </summary>
         /// <returns>A list of service names.</returns>
-        public static List<string> GetRunningServyCLIServices()
+        public List<string> GetRunningServyCLIServices()
         {
             var wrapperExe = AppConfig.ServyServiceCLIExe;
             var services = GetRunningServices(wrapperExe);
@@ -43,7 +55,7 @@ namespace Servy.Core.Helpers
         /// Gets the names of all currently running Servy services (GUI and CLI).
         /// </summary>
         /// <returns>A list of service names.</returns>
-        public static List<string> GetRunningServyServices()
+        public List<string> GetRunningServyServices()
         {
             var guiServices = GetRunningServyUIServices();
             var cliServices = GetRunningServyCLIServices();
@@ -58,14 +70,16 @@ namespace Servy.Core.Helpers
         /// and waits until each service is fully running.
         /// </summary>
         /// <param name="services">A collection of service names to start.</param>
-        /// <param name="timeout">The maximum time to wait for each service to start (default: 30 seconds).</param>
-        public static void StartServices(IEnumerable<string> services, TimeSpan? timeout = null)
+        public async Task StartServices(IEnumerable<string> services)
         {
-            foreach (var service in services)
+            var defaultTimeoutInSeconds = 30;
+            var bufferTimeInSeconds = 15;
+
+            foreach (var serviceName in services)
             {
                 try
                 {
-                    using (var sc = new ServiceController(service))
+                    using (var sc = new ServiceController(serviceName))
                     {
                         sc.Refresh(); // Sync with SCM
 
@@ -79,22 +93,34 @@ namespace Servy.Core.Helpers
                             sc.Start();
                         }
 
-                        // 120s is safe for OnStart logic that includes RequestAdditionalTime
-                        var waitTime = timeout ?? TimeSpan.FromSeconds(120);
+                        // If paused, continue it
+                        if (sc.Status == ServiceControllerStatus.Paused)
+                        {
+                            sc.Continue();
+                        }
 
-                        sc.WaitForStatus(ServiceControllerStatus.Running, waitTime);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName);
+                        if (service == null)
+                        {
+                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
+                        }
+                        var startTimeout = (service.StartTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
+                        startTimeout = Math.Max(startTimeout, defaultTimeoutInSeconds);
+                        var waitTime = TimeSpan.FromSeconds(startTimeout);
+
+                        // This blocks until the service is Started or the waitTime expires
+                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime));
                     }
                 }
                 catch (System.ServiceProcess.TimeoutException)
                 {
                     throw new InvalidOperationException(
-                        string.Format("Timed out waiting for service '{0}' to start after {1}s.",
-                        service, (timeout ?? TimeSpan.FromSeconds(120)).TotalSeconds));
+                        $"Timed out waiting for service '{serviceName}' to start.");
                 }
                 catch (Exception ex)
                 {
                     throw new InvalidOperationException(
-                        string.Format("Could not start service '{0}': {1}", service, ex.Message));
+                        $"Could not start service '{serviceName}': {ex.Message}");
                 }
             }
         }
@@ -104,14 +130,16 @@ namespace Servy.Core.Helpers
         /// and waits until each service is fully stopped.
         /// </summary>
         /// <param name="services">A collection of service names to stop.</param>
-        /// <param name="timeout">The maximum time to wait for each service to stop.</param>
-        public static void StopServices(IEnumerable<string> services, TimeSpan? timeout = null)
+        public async Task StopServices(IEnumerable<string> services)
         {
-            foreach (var service in services)
+            var defaultTimeoutInSeconds = 30;
+            var bufferTimeInSeconds = 15;
+
+            foreach (var serviceName in services)
             {
                 try
                 {
-                    using (var sc = new ServiceController(service))
+                    using (var sc = new ServiceController(serviceName))
                     {
                         // IMPORTANT: Always refresh to get the latest status from SCM
                         sc.Refresh();
@@ -126,26 +154,31 @@ namespace Servy.Core.Helpers
                             sc.Stop();
                         }
 
-                        // Default wait time = 120 seconds if not specified
-                        var waitTime = timeout ?? TimeSpan.FromSeconds(120);
+                        var service = await _serviceRepository.GetByNameAsync(serviceName);
+                        if (service == null)
+                        {
+                            throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
+                        }
+                        var stopTimeout = (service.StopTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
+                        var previousStopTimeout = (service.PreviousStopTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
+                        stopTimeout = Math.Max(Math.Max(stopTimeout, previousStopTimeout), defaultTimeoutInSeconds);
+                        var waitTime = TimeSpan.FromSeconds(stopTimeout);
 
-                        // This blocks until the service is Stopped or the 120s expires
-                        sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime);
+                        // This blocks until the service is Stopped or the waitTime expires
+                        await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime));
                     }
                 }
                 catch (System.ServiceProcess.TimeoutException)
                 {
                     // Providing the actual timeout value in the error helps with debugging
                     throw new InvalidOperationException(
-                        string.Format("Timed out waiting for service '{0}' to stop after {1}s.",
-                        service, (timeout ?? TimeSpan.FromSeconds(120)).TotalSeconds));
+                        $"Timed out waiting for service '{serviceName}' to stop.");
                 }
                 catch (Exception ex)
                 {
                     // Catching general exceptions (like Service Not Found)
                     throw new InvalidOperationException(
-                        string.Format("An error occurred while stopping service '{0}': {1}",
-                        service, ex.Message));
+                        $"An error occurred while stopping service '{serviceName}': {ex.Message}");
                 }
             }
         }
@@ -161,7 +194,7 @@ namespace Servy.Core.Helpers
         /// <returns>A list of service names that are currently running and match the executable.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="wrapperExe"/> is null or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown if WMI query fails.</exception>
-        private static List<string> GetRunningServices(string wrapperExe)
+        private List<string> GetRunningServices(string wrapperExe)
         {
             if (string.IsNullOrWhiteSpace(wrapperExe))
                 throw new ArgumentException("Wrapper executable name must be provided.", nameof(wrapperExe));
