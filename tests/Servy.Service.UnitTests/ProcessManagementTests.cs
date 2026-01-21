@@ -7,7 +7,10 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -89,7 +92,7 @@ namespace Servy.Service.UnitTests
 
             mockProcess.Verify(p => p.Stop(It.IsAny<int>()), Times.Once);
 
-            logger.Verify(l => l.Info(It.IsAny<string>()), Times.Once);
+            logger.Verify(l => l.Info(It.IsAny<string>()), Times.AtLeast(1));
         }
 
         [Fact]
@@ -105,7 +108,7 @@ namespace Servy.Service.UnitTests
                 out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
-            mockProcess.Setup(p => p.HasExited).Throws(new Exception("Boom!"));
+            mockProcess.Setup(p => p.Stop(It.IsAny<int>())).Throws(new Exception("Boom!"));
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 

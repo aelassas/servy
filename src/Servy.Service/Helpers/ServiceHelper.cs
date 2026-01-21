@@ -273,8 +273,22 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public void RequestAdditionalTime(ServiceBase service, int milliseconds, ILogger logger)
         {
-            service.RequestAdditionalTime(milliseconds);
-            logger?.Info($"Requested additional {milliseconds}ms for service operation.");
+            if (service == null) return;
+
+            try
+            {
+                service.RequestAdditionalTime(milliseconds);
+                logger?.Info($"Requested additional {milliseconds} ms for service operation.");
+            }
+            catch (InvalidOperationException)
+            {
+                // SCM no longer accepts wait hints (service likely exiting)
+            }
+            catch (Exception ex)
+            {
+                // Last-resort safety: never let SCM signaling crash the service
+                logger?.Error($"RequestAdditionalTime failed: {ex.Message}");
+            }
         }
 
         #endregion

@@ -948,7 +948,7 @@ namespace Servy.Service
             {
                 serviceDto.Pid = pid;
                 if (setPreviousStopTimeout)
-                    serviceDto.PreviousStopTimeout = _options.StopTimeout;
+                    serviceDto.PreviousStopTimeout = _options?.StopTimeout;
                 _ = _serviceRepository
                     .UpdateAsync(serviceDto)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
@@ -1187,18 +1187,6 @@ namespace Servy.Service
         {
             try
             {
-                if (_options != null)
-                {
-                    // Add a small buffer to the SCM request
-                    // to account for cleanup, logging, and service stop overhead.
-                    int scmTimeoutMs = (_options.StopTimeout + 10) * 1000;
-
-                    if (_options.StopTimeout > 25) // Request if we are near or over the 30s limit
-                    {
-                        _serviceHelper.RequestAdditionalTime(this, scmTimeoutMs, _logger);
-                    }
-                }
-
                 _cancellationSource?.Cancel();
                 OnStoppedForTest?.Invoke();
 
@@ -1285,33 +1273,73 @@ namespace Servy.Service
         /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
         private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
+            if (process == null || process.HasExited) return;
+
             try
             {
-                if (process == null || process.HasExited) return;
+                _logger?.Info(string.Format("Starting stop sequence for {0} (Timeout: {1}ms)", process.Format(), timeoutMs));
 
-                bool? result = process.Stop(timeoutMs);
-                string message;
+                // 1. Run the blocking process.Stop call on a background thread
+                // This ensures we call it exactly once with the full timeout.
+                Task<bool?> stopTask = Task.Run(() =>
+                {
+                    return process.Stop(timeoutMs);
+                });
 
-                if (result == true)
+                // 2. Wait for the task to complete in 5-second pulses
+                // This prevents ContextSwitchDeadlock and keeps the SCM happy.
+                int totalWaited = 0;
+                while (!stopTask.Wait(5000))
                 {
-                    message = $"Child process '{process.Format()}' canceled with code {process.ExitCode}.";
-                }
-                else if (result == false)
-                {
-                    message = $"Child process '{process.Format()}' terminated.";
-                }
-                else // result == null
-                {
-                    message = $"Child process '{process.Format()}' finished with code '{process.ExitCode}'.";
+                    totalWaited += 5000;
+
+                    // Request 15s of "Wait Hint" every 5s pulse
+                    _serviceHelper.RequestAdditionalTime(this, 15000, null!);
+
+                    // Hard safety cap if something goes horribly wrong 
+                    // with the underlying process.Stop call itself.
+                    if (totalWaited > (timeoutMs + 10000))
+                    {
+                        _logger?.Warning(
+                            $"Stop timeout exceeded for {process.Format()} after {totalWaited}ms. Proceeding with shutdown."
+                         );
+                        break;
+                    }
                 }
 
-                _logger?.Info(message);
+                // 3. Retrieve the result from the finished task
+                bool? result = stopTask.IsCompleted ? stopTask.Result : null;
+
+                // 4. Handle Logging
+                HandleStopResult(process, result);
+
                 process.StopDescendants(timeoutMs);
             }
             catch (Exception ex)
             {
-                _logger?.Warning($"SafeKillProcess error: {ex.Message}");
+                _logger?.Warning("SafeKillProcess error: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Logs the outcome of a stop operation for the specified child process.
+        /// </summary>
+        /// <param name="process">The process wrapper representing the child process whose stop result is being handled. Cannot be null.</param>
+        /// <param name="result">The result of the stop operation. <see langword="true"/> if the process was canceled; <see
+        /// langword="false"/> if the process was terminated; <see langword="null"/> if the stop operation timed out or
+        /// failed.</param>
+        private void HandleStopResult(IProcessWrapper process, bool? result)
+        {
+            var message = string.Empty;
+
+            if (result == true)
+                message = string.Format("Child process '{0}' canceled with code {1}.", process.Format(), process.ExitCode);
+            else if (result == false)
+                message = string.Format("Child process '{0}' terminated.", process.Format());
+            else
+                message = string.Format("Child process '{0}' stop timed out or failed.", process.Format());
+
+            _logger?.Info(message);
         }
 
     }
