@@ -63,26 +63,38 @@ namespace Servy.Core.Helpers
         {
             foreach (var service in services)
             {
-                using (var sc = new ServiceController(service))
+                try
                 {
-                    if (sc.Status != ServiceControllerStatus.Running &&
-                        sc.Status != ServiceControllerStatus.StartPending)
+                    using (var sc = new ServiceController(service))
                     {
-                        sc.Start();
-                    }
+                        sc.Refresh(); // Sync with SCM
 
-                    // Default wait time = 30 seconds if not specified
-                    var waitTime = timeout ?? TimeSpan.FromSeconds(30);
+                        // If already running, move to the next service
+                        if (sc.Status == ServiceControllerStatus.Running)
+                            continue;
 
-                    try
-                    {
+                        // Only trigger Start if it is currently Stopped
+                        if (sc.Status == ServiceControllerStatus.Stopped)
+                        {
+                            sc.Start();
+                        }
+
+                        // 120s is safe for OnStart logic that includes RequestAdditionalTime
+                        var waitTime = timeout ?? TimeSpan.FromSeconds(120);
+
                         sc.WaitForStatus(ServiceControllerStatus.Running, waitTime);
                     }
-                    catch (System.ServiceProcess.TimeoutException)
-                    {
-                        throw new InvalidOperationException(
-                            $"Timed out waiting for service '{service}' to start.");
-                    }
+                }
+                catch (System.ServiceProcess.TimeoutException)
+                {
+                    throw new InvalidOperationException(
+                        string.Format("Timed out waiting for service '{0}' to start after {1}s.",
+                        service, (timeout ?? TimeSpan.FromSeconds(120)).TotalSeconds));
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        string.Format("Could not start service '{0}': {1}", service, ex.Message));
                 }
             }
         }
