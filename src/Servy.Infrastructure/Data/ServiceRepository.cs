@@ -180,11 +180,7 @@ namespace Servy.Infrastructure.Data
 
                     StartTimeout = @StartTimeout,
                     StopTimeout = @StopTimeout,
-                    PreviousStopTimeout =
-                        CASE
-                            WHEN StopTimeout <> @StopTimeout THEN StopTimeout
-                            ELSE PreviousStopTimeout
-                        END
+                    PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout)
 
                 WHERE Id = @Id;";
 

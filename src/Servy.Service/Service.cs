@@ -688,8 +688,8 @@ namespace Servy.Service
                 _ = NativeMethods.SetConsoleCtrlHandler(null, true);
             }
 
-            // Persist PID
-            InsertPid(_childProcess.Id);
+            // Persist PID and PreviousStopTimeout
+            InsertPidAndPreviousStopTimeout(_childProcess.Id, true);
 
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
@@ -937,10 +937,11 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Inserts PID in database.
+        /// Inserts PID and PreviousStopTimeout in database.
         /// </summary>
         /// <param name="pid">PID.</param>
-        private void InsertPid(int? pid)
+        /// <param name="setPreviousStopTimeout">Indicates whether to set previous stop timeout.</param>
+        private void InsertPidAndPreviousStopTimeout(int? pid, bool setPreviousStopTimeout)
         {
             if (string.IsNullOrWhiteSpace(_serviceName))
                 return;
@@ -952,6 +953,8 @@ namespace Servy.Service
             if (serviceDto != null)
             {
                 serviceDto.Pid = pid;
+                if (setPreviousStopTimeout)
+                    serviceDto.PreviousStopTimeout = _options.StopTimeout;
                 _ = _serviceRepository
                     .UpdateAsync(serviceDto)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
@@ -963,7 +966,7 @@ namespace Servy.Service
         /// </summary>
         private void ResetPid()
         {
-            InsertPid(null);
+            InsertPidAndPreviousStopTimeout(null, false);
         }
 
         /// <summary>
