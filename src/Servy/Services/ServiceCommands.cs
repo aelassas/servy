@@ -343,7 +343,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = _serviceManager.StartService(serviceName);
+                bool success = await _serviceManager.StartService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
                 else
@@ -372,7 +372,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = _serviceManager.StopService(serviceName);
+                bool success = await _serviceManager.StopService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
                 else
@@ -408,7 +408,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = _serviceManager.RestartService(serviceName);
+                bool success = await _serviceManager.RestartService(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
                 else

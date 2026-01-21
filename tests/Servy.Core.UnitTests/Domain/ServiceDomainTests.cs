@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -29,36 +28,36 @@ namespace Servy.Core.UnitTests.Domain
         }
 
         [Fact]
-        public void Start_ShouldCallServiceManager()
+        public async Task Start_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StartService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(s => s.StartService("TestService")).ReturnsAsync(true);
 
-            var result = service.Start();
+            var result = await service.Start();
 
             Assert.True(result);
             _serviceManagerMock.Verify(s => s.StartService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Stop_ShouldCallServiceManager()
+        public async Task Stop_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StopService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(s => s.StopService("TestService")).ReturnsAsync(true);
 
-            var result = service.Stop();
+            var result = await service.Stop();
 
             Assert.True(result);
             _serviceManagerMock.Verify(s => s.StopService("TestService"), Times.Once);
         }
 
         [Fact]
-        public void Restart_ShouldCallServiceManager()
+        public async Task Restart_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.RestartService("TestService")).Returns(true);
+            _serviceManagerMock.Setup(s => s.RestartService("TestService")).ReturnsAsync(true);
 
-            var result = service.Restart();
+            var result = await service.Restart();
 
             Assert.True(result);
             _serviceManagerMock.Verify(s => s.RestartService("TestService"), Times.Once);

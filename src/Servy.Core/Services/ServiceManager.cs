@@ -38,6 +38,7 @@ namespace Servy.Core.Services
         private const uint SERVICE_DELETE = 0x00010000;
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
         private const int ServiceStopTimeoutSeconds = 60;
+        private const int ServiceStartTimeoutSeconds = 30;
 
         public const string LocalSystemAccount = "LocalSystem";
 
@@ -306,7 +307,7 @@ namespace Servy.Core.Services
                 Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
                 //Helper.Quote(preLaunchArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
+                                            //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
                 Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
                 Helper.Quote(preLaunchStdoutPath ?? string.Empty),
                 Helper.Quote(preLaunchStderrPath ?? string.Empty),
@@ -589,17 +590,24 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool StartService(string serviceName)
+        public async Task<bool> StartService(string serviceName)
         {
             try
             {
+                var service = await _serviceRepository.GetByNameAsync(serviceName);
+
+                if (service == null) return false;
+
                 using (var sc = _controllerFactory(serviceName))
                 {
                     if (sc.Status == ServiceControllerStatus.Running)
                         return true;
 
+                    int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + 15;
+                    totalWaitTime = Math.Max(totalWaitTime, ServiceStartTimeoutSeconds);
+
                     sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(30));
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(totalWaitTime));
 
                     return true;
                 }
@@ -611,17 +619,24 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool StopService(string serviceName)
+        public async Task<bool> StopService(string serviceName)
         {
             try
             {
+                var service = await _serviceRepository.GetByNameAsync(serviceName);
+
+                if (service == null) return false;
+
                 using (var sc = _controllerFactory(serviceName))
                 {
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return true;
 
+                    int totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + 15;
+                    totalWaitTime = Math.Max(totalWaitTime, ServiceStopTimeoutSeconds);
+
                     sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(ServiceStopTimeoutSeconds));
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(totalWaitTime));
 
                     return true;
                 }
@@ -633,12 +648,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public bool RestartService(string serviceName)
+        public async Task<bool> RestartService(string serviceName)
         {
-            if (!StopService(serviceName))
+            if (!await StopService(serviceName))
                 return false;
 
-            return StartService(serviceName);
+            return await StartService(serviceName);
         }
 
         /// <inheritdoc />

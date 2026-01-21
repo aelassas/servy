@@ -1,8 +1,8 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
-using Servy.Core.Enums;
 using Servy.Core.Services;
+using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
 {
@@ -27,9 +27,9 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Options containing the service name to stop.</param>
         /// <returns>A <see cref="CommandResult"/> indicating the result of the stop operation.</returns>
-        public CommandResult Execute(StopServiceOptions opts)
+        public async Task<CommandResult> Execute(StopServiceOptions opts)
         {
-            return ExecuteWithHandling(() =>
+            return await ExecuteWithHandlingAsync(async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
@@ -40,7 +40,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var success = _serviceManager.StopService(opts.ServiceName);
+                var success = await _serviceManager.StopService(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service stopped successfully.")
                     : CommandResult.Fail("Failed to stop service.");
