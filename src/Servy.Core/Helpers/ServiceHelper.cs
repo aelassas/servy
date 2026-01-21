@@ -97,30 +97,46 @@ namespace Servy.Core.Helpers
         {
             foreach (var service in services)
             {
-                using (var sc = new ServiceController(service))
+                try
                 {
-                    if (sc.Status == ServiceControllerStatus.Running ||
-                        sc.Status == ServiceControllerStatus.StopPending)
+                    using (var sc = new ServiceController(service))
                     {
-                        sc.Stop();
+                        // IMPORTANT: Always refresh to get the latest status from SCM
+                        sc.Refresh();
 
-                        // Default wait time = 30 seconds if not specified
-                        var waitTime = timeout ?? TimeSpan.FromSeconds(30);
+                        // Check if it's already stopped first
+                        if (sc.Status == ServiceControllerStatus.Stopped)
+                            continue;
 
-                        try
+                        // Only call Stop() if it's not already trying to stop
+                        if (sc.Status != ServiceControllerStatus.StopPending)
                         {
-                            sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime);
+                            sc.Stop();
                         }
-                        catch (System.ServiceProcess.TimeoutException)
-                        {
-                            throw new InvalidOperationException(
-                                $"Timed out waiting for service '{service}' to stop.");
-                        }
+
+                        // Default wait time = 120 seconds if not specified
+                        var waitTime = timeout ?? TimeSpan.FromSeconds(120);
+
+                        // This blocks until the service is Stopped or the 120s expires
+                        sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime);
                     }
+                }
+                catch (System.ServiceProcess.TimeoutException)
+                {
+                    // Providing the actual timeout value in the error helps with debugging
+                    throw new InvalidOperationException(
+                        string.Format("Timed out waiting for service '{0}' to stop after {1}s.",
+                        service, (timeout ?? TimeSpan.FromSeconds(120)).TotalSeconds));
+                }
+                catch (Exception ex)
+                {
+                    // Catching general exceptions (like Service Not Found)
+                    throw new InvalidOperationException(
+                        string.Format("An error occurred while stopping service '{0}': {1}",
+                        service, ex.Message));
                 }
             }
         }
-
 
         #endregion
 
