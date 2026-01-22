@@ -180,7 +180,7 @@ namespace Servy.Service
                 {
                     // Set a non-zero exit code so Windows knows it failed
                     ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
-                    throw new Exception("Failed to initialize service options.");
+                    throw new InvalidOperationException("Failed to initialize service options.");
                 }
 
                 _options = options;
