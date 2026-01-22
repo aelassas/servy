@@ -13,7 +13,7 @@
     <projectSourceUrl>https://github.com/aelassas/servy</projectSourceUrl>
     <docsUrl>https://github.com/aelassas/servy/wiki</docsUrl>
     <bugTrackerUrl>https://github.com/aelassas/servy/issues</bugTrackerUrl>
-    <tags>servy windows service nssm winsw</tags>
+    <tags>servy windows service wrapper manager cli automation watchdog nssm winsw</tags>
     <summary>Turn any application into a Windows Service with Servy.</summary>
     <description>
       Servy is an open-source tool that allows you to run any application as a native Windows
