@@ -1282,7 +1282,7 @@ namespace Servy.Service
 
             try
             {
-                _logger?.Info(string.Format("Starting stop sequence for {0} (Timeout: {1}ms)", process.Format(), timeoutMs));
+                _logger?.Info($"Starting stop sequence for {process.Format()} (Timeout: {timeoutMs}ms)");
 
                 // 1. Run the blocking process.Stop call on a background thread
                 // This ensures we call it exactly once with the full timeout.
@@ -1337,11 +1337,11 @@ namespace Servy.Service
             var message = string.Empty;
 
             if (result == true)
-                message = string.Format("Child process '{0}' canceled with code {1}.", process.Format(), process.ExitCode);
+                message = $"Child process '{process.Format()}' canceled with code {process.ExitCode}.";
             else if (result == false)
-                message = string.Format("Child process '{0}' terminated.", process.Format());
+                message = $"Child process '{process.Format()}' terminated.";
             else
-                message = string.Format("Child process '{0}' stop timed out or failed.", process.Format());
+                message = $"Child process '{process.Format()}' stop timed out or failed.";
 
             _logger?.Info(message);
         }

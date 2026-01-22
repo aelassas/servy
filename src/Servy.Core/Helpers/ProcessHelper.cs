@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
 {
@@ -206,6 +208,100 @@ namespace Servy.Core.Helpers
 
             return result;
         }
+
+        /// <summary>
+        /// Resolves and validates an absolute filesystem path for use by a Windows service.
+        /// </summary>
+        /// <param name="inputPath">
+        /// The input path, which may contain environment variables (e.g. %ProgramFiles%).
+        /// Environment variables are expanded using the service account's environment only.
+        /// </param>
+        /// <returns>
+        /// A normalized, absolute path with environment variables expanded.
+        /// </returns>
+        /// <exception cref="ArgumentException">
+        /// Thrown if the path is relative or contains environment variables that could not be expanded.
+        /// </exception>
+        /// <remarks>
+        /// This method is intentionally strict:
+        /// <list type="bullet">
+        /// <item>Only absolute paths are allowed.</item>
+        /// <item>Environment variables must be defined at the system level and visible to the service account.</item>
+        /// <item>User-level environment variables are not supported.</item>
+        /// </list>
+        /// Use <see cref="ValidatePath"/> if you only need a boolean existence check.
+        /// </remarks>
+        public static string ResolvePath(string inputPath)
+        {
+            if (string.IsNullOrWhiteSpace(inputPath)) return inputPath;
+
+            inputPath = inputPath.Trim();
+
+            // 1. Expand variables (Note: only expands variables existing in the SERVICE'S environment)
+            var expandedPath = Environment.ExpandEnvironmentVariables(inputPath);
+
+            // 2. Strict Check: If the path still contains %, expansion likely failed 
+            // because the variable is not defined for the service account (e.g., LocalSystem).
+            var match = Regex.Match(expandedPath, @"%[^%]+%");
+            if (match.Success)
+            {
+                var varName = match.Groups[0].Value;
+                throw new InvalidOperationException(
+                    $"Environment variable '{varName}' could not be expanded. " +
+                    "Ensure it is defined as a System variable and visible to the service account.");
+            }
+
+            // 3. Ensure the path is absolute
+            if (!Path.IsPathRooted(expandedPath))
+            {
+                throw new InvalidOperationException(string.Format("Path '{0}' is relative. Only absolute paths are allowed.", expandedPath));
+            }
+
+            // 4. Normalize (removes trailing slashes, resolves ..\ segments)
+            return Path.GetFullPath(expandedPath);
+        }
+
+        /// <summary>
+        /// Validates that a file or directory path exists after resolving environment variables
+        /// and normalizing the path.
+        /// </summary>
+        /// <param name="path">
+        /// The path to validate. May contain environment variables.
+        /// </param>
+        /// <param name="isFile">
+        /// True to validate a file path; false to validate a directory path.
+        /// </param>
+        /// <returns>
+        /// True if the path resolves successfully and exists; otherwise false.
+        /// </returns>
+        /// <remarks>
+        /// This method never throws exceptions.
+        /// Any failure during resolution (such as unexpanded environment variables,
+        /// relative paths, or invalid paths) results in a false return value.
+        /// </remarks>
+        public static bool ValidatePath(string path, bool isFile = true)
+        {
+            try
+            {
+                var expandedPath = ResolvePath(path);
+
+                if (string.IsNullOrWhiteSpace(expandedPath)) return false;
+
+                if (isFile)
+                {
+                    return File.Exists(expandedPath);
+                }
+                else
+                {
+                    return Directory.Exists(expandedPath);
+                }
+            }
+            catch
+            {
+                return false; // ResolvePath failed (unexpanded vars or relative path)
+            }
+        }
+
     }
 
 }

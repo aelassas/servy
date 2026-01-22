@@ -114,6 +114,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_ProcessPath" xml:space="preserve">
     <value>Process Path *</value>
   </data>
+  <data name="Info_ProcessPath" xml:space="preserve">
+    <value>Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
+  </data>
   <data name="Label_StartupDirectory" xml:space="preserve">
     <value>Startup Directory</value>
   </data>

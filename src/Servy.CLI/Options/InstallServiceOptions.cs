@@ -33,7 +33,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the path to the executable process to run as service.
         /// This option is required.
         /// </summary>
-        [Option('p', "path", Required = true, HelpText = "Path to the executable process.")]
+        [Option('p', "path", Required = true, HelpText = "Path to the executable process. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
         public string ProcessPath { get; set; }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the failure program path.
         /// Optional.
         /// </summary>
-        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.")]
+        [Option("failureProgramPath", HelpText = "The failure program path. Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
         public string FailureProgramPath { get; set; }
 
         /// <summary>
@@ -236,7 +236,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the pre-launch executable path.
         /// Optional.
         /// </summary>
-        [Option("preLaunchPath", HelpText = "The pre-launch executable path. Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable --preLaunchIgnoreFailure.")]
+        [Option("preLaunchPath", HelpText = "The pre-launch executable path. Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable --preLaunchIgnoreFailure. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
         public string PreLaunchPath { get; set; }
 
         /// <summary>
@@ -301,7 +301,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the post-launch executable path.
         /// Optional.
         /// </summary>
-        [Option("postLaunchPath", HelpText = "The post-launch executable path. Configure an optional script or executable to run after the process starts successfully.")]
+        [Option("postLaunchPath", HelpText = "The post-launch executable path. Configure an optional script or executable to run after the process starts successfully. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
         public string PostLaunchPath { get; set; }
 
         /// <summary>
