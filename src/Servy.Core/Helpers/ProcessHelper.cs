@@ -229,7 +229,7 @@ namespace Servy.Core.Helpers
         /// </list>
         /// Use <see cref="ValidatePath"/> if you only need a boolean existence check.
         /// </remarks>
-        public static string ResolvePath(string inputPath)
+        public static string? ResolvePath(string? inputPath)
         {
             if (string.IsNullOrWhiteSpace(inputPath)) return inputPath;
 
@@ -277,7 +277,7 @@ namespace Servy.Core.Helpers
         /// Any failure during resolution (such as unexpanded environment variables,
         /// relative paths, or invalid paths) results in a false return value.
         /// </remarks>
-        public static bool ValidatePath(string path, bool isFile = true)
+        public static bool ValidatePath(string? path, bool isFile = true)
         {
             try
             {

@@ -35,42 +35,191 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Contains(expectedArgs[1], result);
         }
 
-        [Fact]
-        public void ValidateStartupOptions_ReturnsFalse_WhenExecutablePathIsMissing()
-        {
-            // Arrange
-            var options = new StartOptions
-            {
-                ServiceName = "TestService",
-                ExecutablePath = ""
-            };
+        // Helper: create a temporary file
+        private string TempFile() => Path.GetTempFileName();
 
+        [Fact]
+        public void ValidateStartupOptions_ExecutablePath_NullOrWhitespace_ReturnsFalse_LogsError()
+        {
+            var options = new StartOptions { ServiceName = "TestService", ExecutablePath = " " };
             var mockLog = new Mock<ILogger>();
 
-            // Act
             var result = _helper.ValidateStartupOptions(mockLog.Object, options);
 
-            // Assert
             Assert.False(result);
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("Executable path not provided.")), It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
-        public void ValidateStartupOptions_ReturnsFalse_WhenExecutableDoesNotExist()
+        public void ValidateStartupOptions_ServiceName_Empty_ReturnsFalse_LogsError()
         {
-            // Arrange
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions { ServiceName = "", ExecutablePath = tempExe };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains("Service name empty")), It.IsAny<Exception>()), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_ExecutablePath_Invalid_ReturnsFalse_LogsError()
+        {
             var options = new StartOptions
             {
                 ServiceName = "TestService",
-                ExecutablePath = "C:\\Nonexistent\\fake.exe"
+                ExecutablePath = @"C:\Nonexistent\fake.exe"
             };
-
             var mockLog = new Mock<ILogger>();
 
-            // Act
             var result = _helper.ValidateStartupOptions(mockLog.Object, options);
 
-            // Assert
             Assert.False(result);
+            mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains($"Process path {options.ExecutablePath} is invalid.")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_FailureProgramPath_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    FailureProgramPath = @"C:\Invalid\failure.exe"
+                };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains($"Failure program path {options.FailureProgramPath} is invalid.")), It.IsAny<Exception>()), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_PreLaunchExecutablePath_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    PreLaunchExecutablePath = @"C:\Invalid\prelaunch.exe"
+                };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.")), It.IsAny<Exception>()), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_PostLaunchExecutablePath_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    PostLaunchExecutablePath = @"C:\Invalid\postlaunch.exe"
+                };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(It.Is<string>(s => s.Contains($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.")), It.IsAny<Exception>()), Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_AllPathsValid_ReturnsTrue_NoLogs()
+        {
+            var exe = TempFile();
+            var failure = TempFile();
+            var pre = TempFile();
+            var post = TempFile();
+
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = exe,
+                    FailureProgramPath = failure,
+                    PreLaunchExecutablePath = pre,
+                    PostLaunchExecutablePath = post
+                };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.True(result);
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+            finally
+            {
+                File.Delete(exe);
+                File.Delete(failure);
+                File.Delete(pre);
+                File.Delete(post);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_OptionalPaths_NullOrWhitespace_Skipped_ReturnsTrue()
+        {
+            var exe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = exe,
+                    FailureProgramPath = null,
+                    PreLaunchExecutablePath = "",
+                    PostLaunchExecutablePath = "   "
+                };
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.True(result);
+                mockLog.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+            }
+            finally
+            {
+                File.Delete(exe);
+            }
         }
 
         [Fact]
@@ -91,6 +240,8 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.Equal(Path.GetDirectoryName(options.ExecutablePath), options.WorkingDirectory);
         }
+
+
 
         [Fact]
         public void LogStartupArguments_WritesToILogger_WhenOptionsProvided()

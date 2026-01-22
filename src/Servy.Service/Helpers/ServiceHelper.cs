@@ -148,9 +148,27 @@ namespace Servy.Service.Helpers
                 return false;
             }
 
-            if (!Helper.IsValidPath(options.ExecutablePath) || !File.Exists(options.ExecutablePath))
+            if (!ProcessHelper.ValidatePath(options.ExecutablePath))
             {
-                logger?.Error($"Executable not found: {options.ExecutablePath}");
+                logger?.Error($"Process path {options.ExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramPath) && !ProcessHelper.ValidatePath(options.FailureProgramPath))
+            {
+                logger?.Error($"Failure program path {options.FailureProgramPath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PreLaunchExecutablePath))
+            {
+                logger?.Error($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PostLaunchExecutablePath))
+            {
+                logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
                 return false;
             }
 
