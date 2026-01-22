@@ -116,7 +116,7 @@ namespace Servy.Core.Helpers
                     {
                         using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
                         {
-                            resourceStream.CopyTo(fileStream);
+                            await resourceStream.CopyToAsync(fileStream);
                         }
                     }
                 }
