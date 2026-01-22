@@ -226,6 +226,122 @@ namespace Servy.Service.UnitTests.Helpers
         }
 
         [Fact]
+        public void ValidateStartupOptions_WorkingDirectory_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    WorkingDirectory = @"C:\Invalid\workingdir"
+                };
+
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains($"Process working directory {options.WorkingDirectory} is invalid.")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_FailureProgramWorkingDirectory_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    FailureProgramWorkingDirectory = @"C:\Invalid\failureWorkDir"
+                };
+
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Failure program working directory")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_PreLaunchWorkingDirectory_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    PreLaunchWorkingDirectory = @"C:\Invalid\preLaunchWorkDir"
+                };
+
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Pre-launch process working directory")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
+        public void ValidateStartupOptions_PostLaunchWorkingDirectory_Invalid_ReturnsFalse_LogsError()
+        {
+            var tempExe = TempFile();
+            try
+            {
+                var options = new StartOptions
+                {
+                    ServiceName = "TestService",
+                    ExecutablePath = tempExe,
+                    PostLaunchWorkingDirectory = @"C:\Invalid\postLaunchWorkDir"
+                };
+
+                var mockLog = new Mock<ILogger>();
+
+                var result = _helper.ValidateStartupOptions(mockLog.Object, options);
+
+                Assert.False(result);
+                mockLog.Verify(l => l.Error(
+                    It.Is<string>(s => s.Contains("Post-launch process working directory")),
+                    It.IsAny<Exception>()),
+                    Times.Once);
+            }
+            finally
+            {
+                File.Delete(tempExe);
+            }
+        }
+
+        [Fact]
         public void EnsureValidWorkingDirectory_FallbacksToExecutableDirectory_IfInvalid()
         {
             // Arrange

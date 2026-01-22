@@ -138,7 +138,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-       public bool ValidateStartupOptions(ILogger logger, StartOptions options)
+        public bool ValidateStartupOptions(ILogger logger, StartOptions options)
         {
             if (string.IsNullOrWhiteSpace(options.ExecutablePath))
             {
@@ -173,6 +173,30 @@ namespace Servy.Service.Helpers
             if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !Core.Helpers.ProcessHelper.ValidatePath(options.PostLaunchExecutablePath))
             {
                 logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.WorkingDirectory) && !Core.Helpers.ProcessHelper.ValidatePath(options.WorkingDirectory, false))
+            {
+                logger?.Error($"Process working directory {options.WorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramWorkingDirectory) && !Core.Helpers.ProcessHelper.ValidatePath(options.FailureProgramWorkingDirectory, false))
+            {
+                logger?.Error($"Failure program working directory {options.FailureProgramWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory) && !Core.Helpers.ProcessHelper.ValidatePath(options.PreLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Pre-launch process working directory {options.PreLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !Core.Helpers.ProcessHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
                 return false;
             }
 

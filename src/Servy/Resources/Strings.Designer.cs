@@ -323,6 +323,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Supports environment variable expansion, example: %PROGRAMDATA%\MyApp.
+        /// </summary>
+        public static string Info_StartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_StartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The timeout in seconds to wait for the process to exit..
         /// </summary>
         public static string Info_StopTimeout {

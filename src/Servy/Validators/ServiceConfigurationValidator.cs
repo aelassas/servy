@@ -78,8 +78,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) &&
-                (!CoreHelper.IsValidPath(dto.StartupDirectory) || !Directory.Exists(dto.StartupDirectory)))
+            if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !ProcessHelper.ValidatePath(dto.StartupDirectory, false))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartupDirectory, AppConfig.Caption);
                 return false;
@@ -148,8 +147,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) &&
-                (!CoreHelper.IsValidPath(dto.FailureProgramStartupDirectory) || !Directory.Exists(dto.FailureProgramStartupDirectory)))
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) && !ProcessHelper.ValidatePath(dto.FailureProgramStartupDirectory, false))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramStartupDirectory, AppConfig.Caption);
                 return false;
@@ -197,8 +195,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) &&
-                (!CoreHelper.IsValidPath(dto.PreLaunchStartupDirectory) || !Directory.Exists(dto.PreLaunchStartupDirectory)))
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreLaunchStartupDirectory, false))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStartupDirectory, AppConfig.Caption);
                 return false;
@@ -245,8 +242,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) &&
-                (!CoreHelper.IsValidPath(dto.PostLaunchStartupDirectory) || !Directory.Exists(dto.PostLaunchStartupDirectory)))
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostLaunchStartupDirectory, false))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchStartupDirectory, AppConfig.Caption);
                 return false;

@@ -7,7 +7,6 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
 using System;
-using System.IO;
 
 namespace Servy.CLI.Validators
 {
@@ -47,7 +46,7 @@ namespace Servy.CLI.Validators
             if (!ProcessHelper.ValidatePath(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);
 
-            if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && (!Helper.IsValidPath(opts.StartupDirectory) || !Directory.Exists(opts.StartupDirectory)))
+            if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && !ProcessHelper.ValidatePath(opts.StartupDirectory, false))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidStartupDirectory);
             }
@@ -111,7 +110,7 @@ namespace Servy.CLI.Validators
             if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!ProcessHelper.ValidatePath(opts.FailureProgramPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidFailureProgramPath);
 
-            if (!string.IsNullOrWhiteSpace(opts.FailureProgramStartupDir) && (!Helper.IsValidPath(opts.FailureProgramStartupDir) || !Directory.Exists(opts.FailureProgramStartupDir)))
+            if (!string.IsNullOrWhiteSpace(opts.FailureProgramStartupDir) && !ProcessHelper.ValidatePath(opts.FailureProgramStartupDir, false))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidFailureProgramStartupDirectory);
             }
@@ -136,7 +135,7 @@ namespace Servy.CLI.Validators
             if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!ProcessHelper.ValidatePath(opts.PreLaunchPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchPath);
 
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStartupDir) && (!Helper.IsValidPath(opts.PreLaunchStartupDir) || !Directory.Exists(opts.PreLaunchStartupDir)))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStartupDir) && !ProcessHelper.ValidatePath(opts.PreLaunchStartupDir, false))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStartupDirectory);
             }
@@ -171,7 +170,7 @@ namespace Servy.CLI.Validators
             if (!string.IsNullOrWhiteSpace(opts.PostLaunchPath) && (!ProcessHelper.ValidatePath(opts.PostLaunchPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidPostLaunchPath);
 
-            if (!string.IsNullOrWhiteSpace(opts.PostLaunchStartupDir) && (!Helper.IsValidPath(opts.PostLaunchStartupDir) || !Directory.Exists(opts.PostLaunchStartupDir)))
+            if (!string.IsNullOrWhiteSpace(opts.PostLaunchStartupDir) && !ProcessHelper.ValidatePath(opts.PostLaunchStartupDir, false))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPostLaunchStartupDirectory);
             }
