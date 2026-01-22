@@ -252,7 +252,7 @@ namespace Servy.Core.Helpers
             // 3. Ensure the path is absolute
             if (!Path.IsPathRooted(expandedPath))
             {
-                throw new InvalidOperationException(string.Format("Path '{0}' is relative. Only absolute paths are allowed.", expandedPath));
+                throw new InvalidOperationException($"Path '{expandedPath}' is relative. Only absolute paths are allowed.");
             }
 
             // 4. Normalize (removes trailing slashes, resolves ..\ segments)
