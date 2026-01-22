@@ -138,7 +138,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public bool ValidateStartupOptions(ILogger logger, StartOptions options)
+       public bool ValidateStartupOptions(ILogger logger, StartOptions options)
         {
             if (string.IsNullOrWhiteSpace(options.ExecutablePath))
             {
@@ -152,9 +152,27 @@ namespace Servy.Service.Helpers
                 return false;
             }
 
-            if (!Helper.IsValidPath(options.ExecutablePath) || !File.Exists(options.ExecutablePath))
+            if (!Core.Helpers.ProcessHelper.ValidatePath(options.ExecutablePath))
             {
-                logger?.Error($"Executable not found: {options.ExecutablePath}");
+                logger?.Error($"Process path {options.ExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramPath) && !Core.Helpers.ProcessHelper.ValidatePath(options.FailureProgramPath))
+            {
+                logger?.Error($"Failure program path {options.FailureProgramPath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath) && !Core.Helpers.ProcessHelper.ValidatePath(options.PreLaunchExecutablePath))
+            {
+                logger?.Error($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !Core.Helpers.ProcessHelper.ValidatePath(options.PostLaunchExecutablePath))
+            {
+                logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
                 return false;
             }
 
