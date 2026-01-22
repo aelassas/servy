@@ -16,9 +16,9 @@
     <AssemblyDescription>Servy.Manager unit tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Manager.UnitTests</Product>
-    <Version>5.6.0</Version>
-    <FileVersion>5.6.0.0</FileVersion>
-    <AssemblyVersion>5.6.0.0</AssemblyVersion>
+    <Version>5.7.0</Version>
+    <FileVersion>5.7.0.0</FileVersion>
+    <AssemblyVersion>5.7.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
