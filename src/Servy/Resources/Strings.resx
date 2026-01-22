@@ -120,6 +120,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_StartupDirectory" xml:space="preserve">
     <value>Startup Directory</value>
   </data>
+  <data name="Info_StartupDirectory" xml:space="preserve">
+    <value>Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
+  </data>
   <data name="Label_ProcessParameters" xml:space="preserve">
     <value>Process Parameters</value>
   </data>

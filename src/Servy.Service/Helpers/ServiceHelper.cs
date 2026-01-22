@@ -172,6 +172,30 @@ namespace Servy.Service.Helpers
                 return false;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.WorkingDirectory) && !ProcessHelper.ValidatePath(options.WorkingDirectory, false))
+            {
+                logger?.Error($"Process working directory {options.WorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramWorkingDirectory) && !ProcessHelper.ValidatePath(options.FailureProgramWorkingDirectory, false))
+            {
+                logger?.Error($"Failure program working directory {options.FailureProgramWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PreLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Pre-launch process working directory {options.PreLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
             return true;
         }
 
