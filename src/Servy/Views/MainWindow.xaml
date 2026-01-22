@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy"
-        MinWidth="600"
+        MinWidth="640"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         >
@@ -75,11 +75,12 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -114,19 +115,24 @@
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding StartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="6" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseStartupDirectoryCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                         <!-- Process Parameters -->
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_ProcessParameters}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                              TextWrapping="Wrap"/>
 
                         <!-- Startup Type -->
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupType}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="9" 
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupType}" Margin="0,5,10,5"/>
+                        <ComboBox Grid.Row="10" 
                                   Grid.Column="1"
                                   ItemsSource="{Binding StartupTypes}"
                                   DisplayMemberPath="DisplayName"
@@ -136,8 +142,8 @@
                                   Grid.ColumnSpan="2" />
 
                         <!-- Process Priority -->
-                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPriority}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="10" Grid.Column="1"
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPriority}" Margin="0,5,10,5"/>
+                        <ComboBox Grid.Row="11" Grid.Column="1"
                                   ItemsSource="{Binding ProcessPriorities}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedProcessPriority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -146,18 +152,18 @@
                                   Grid.ColumnSpan="2" />
 
                         <!--Start Timeout-->
-                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartTimeout}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding StartTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartTimeout}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding StartTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_StartTimeout}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                              TextWrapping="Wrap"/>
 
                         <!--Stop Timeout-->
-                        <TextBlock Grid.Row="13" Grid.Column="0" Text="{x:Static resx:Strings.Label_StopTimeout}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding StopTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="14" Grid.Column="0" Text="{x:Static resx:Strings.Label_StopTimeout}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding StopTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_StopTimeout}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
@@ -184,7 +190,7 @@
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -272,11 +278,12 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -338,11 +345,16 @@
                         <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FailureProgramStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="9" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramStartupDirectoryCommand}" Margin="5,5,0,5"/>
                         <TextBlock Grid.Row="10"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                         <!-- Process Parameters -->
-                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_ProcessParameters}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
@@ -371,7 +383,7 @@
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -416,7 +428,7 @@
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="250"/>
+                            <ColumnDefinition Width="340"/>
                         </Grid.ColumnDefinitions>
 
                         <!-- Run As Local System (spans both columns) -->
@@ -485,11 +497,12 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -511,42 +524,47 @@
                         <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="3" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStartupDirectoryCommand}" Margin="5,5,0,5"/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PreLaunchStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                         <!-- Process Parameters -->
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
                              Text="{x:Static resx:Strings.Info_ProcessParameters}" 
                              FontStyle="Normal" 
                              Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                              TextWrapping="Wrap"/>
 
                         <!-- Environment Variables -->
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
                                  AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="100" />
-                        <TextBlock Grid.Row="8"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="9"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
 
                         <!-- Stdout Path -->
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="9" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStdoutPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="10" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStdoutPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Stderr Path -->
-                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
-                        <Button Grid.Row="10" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStderrPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="11" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreLaunchStderrPathCommand}" Margin="5,5,0,5"/>
 
                         <!-- Timeout -->
-                        <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
                         <!-- Retry Attempts -->
-                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="13" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="13" Grid.Column="1" Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
 
                         <!-- Ignore Failure -->
-                        <CheckBox Grid.Row="13" Grid.Column="1"
+                        <CheckBox Grid.Row="14" Grid.Column="1"
                           Content="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
                           IsChecked="{Binding PreLaunchIgnoreFailure, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           Margin="0,5" />
@@ -565,11 +583,12 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="300"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="100"/>
                         </Grid.ColumnDefinitions>
 
@@ -591,15 +610,20 @@
                         <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PostLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
                         <Button Grid.Row="3" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePostLaunchStartupDirectoryCommand}" Margin="5,5,0,5"/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PostLaunchStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                         <!-- Process Parameters -->
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
-                        <TextBlock Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
-                      Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                      FontStyle="Normal" 
-                      Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                      TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                             FontStyle="Normal" 
+                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                             TextWrapping="Wrap"/>
 
                     </Grid>
                 </TabItem>

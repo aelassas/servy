@@ -40,7 +40,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the working directory for the service process.
         /// Optional.
         /// </summary>
-        [Option("startupDir", HelpText = "Startup directory for the process.")]
+        [Option("startupDir", HelpText = "Startup directory for the process. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string StartupDirectory { get; set; }
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the failure program startup directory.
         /// Optional. Defaults to the failure program directory.
         /// </summary>
-        [Option("failureProgramStartupDir", HelpText = "Specifies the directory in which the failure program will start. Defaults to the failure program directory.")]
+        [Option("failureProgramStartupDir", HelpText = "Specifies the directory in which the failure program will start. Defaults to the failure program directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string FailureProgramStartupDir { get; set; }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the pre-launch startup directory.
         /// Optional. Defaults to the service working directory.
         /// </summary>
-        [Option("preLaunchStartupDir", HelpText = "Specifies the directory in which the pre-launch executable will start. Defaults to the service working directory.")]
+        [Option("preLaunchStartupDir", HelpText = "Specifies the directory in which the pre-launch executable will start. Defaults to the service working directory. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PreLaunchStartupDir { get; set; }
 
         /// <summary>
@@ -308,7 +308,7 @@ namespace Servy.CLI.Options
         /// Gets or sets the post-launch startup directory.
         /// Optional. Defaults to the service working directory.
         /// </summary>
-        [Option("postLaunchStartupDir", HelpText = "Specifies the directory in which the post-launch executable will start. Defaults to the directory of the post-launch program.")]
+        [Option("postLaunchStartupDir", HelpText = "Specifies the directory in which the post-launch executable will start. Defaults to the directory of the post-launch program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
         public string PostLaunchStartupDir { get; set; }
 
         /// <summary>
