@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>WexflowServer</Name>
+  <DisplayName />
+  <Description>Wexflow Workflow Automation Engine</Description>
+  <ExecutablePath>%PROGRAMFILES%\dotnet\dotnet.exe</ExecutablePath>
+  <StartupDirectory>C:\Program Files\Wexflow Server\Wexflow.Server\</StartupDirectory>
+  <Parameters>Wexflow.Server.dll</Parameters>
+  <StartupType>3</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>C:\dev\servy\stdout.log</StdoutPath>
+  <StderrPath>C:\dev\servy\stderr.log</StderrPath>
+  <EnableRotation>true</EnableRotation>
+  <RotationSize>10485760</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <EnableHealthMonitoring>true</EnableHealthMonitoring>
+  <HeartbeatInterval>5</HeartbeatInterval>
+  <MaxFailedChecks>1</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <FailureProgramPath>%PROGRAMFILES%\nodejs\node.exe</FailureProgramPath>
+  <EnvironmentVariables>var1=val1;var2=val2</EnvironmentVariables>
+  <ServiceDependencies>MongoDB</ServiceDependencies>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchExecutablePath> %PROGRAMFILES%\nodejs\node.exe</PreLaunchExecutablePath>
+  <PreLaunchStartupDirectory>E:\dev\servy\src\tests\nodejs-app-env-vars\</PreLaunchStartupDirectory>
+  <PreLaunchParameters>E:\dev\servy\src\tests\nodejs-app-env-vars\index.js</PreLaunchParameters>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <PostLaunchExecutablePath>%PROGRAMFILES%\nodejs\node.exe</PostLaunchExecutablePath>
+  <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>1</StopTimeout>
+</ServiceDto>

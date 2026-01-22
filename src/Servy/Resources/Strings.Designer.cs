@@ -278,6 +278,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe.
+        /// </summary>
+        public static string Info_ProcessPath {
+            get {
+                return ResourceManager.GetString("Info_ProcessPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts..
         /// </summary>
         public static string Info_RecoveryAction {

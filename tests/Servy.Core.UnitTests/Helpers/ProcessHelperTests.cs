@@ -38,5 +38,199 @@ namespace Servy.Core.UnitTests.Helpers
             var result = ProcessHelper.FormatRamUsage(input);
             Assert.Equal(expected, result);
         }
+
+        // -------------------------
+        // ResolvePath tests
+        // -------------------------
+
+        [Fact]
+        public void ResolvePath_NullInput_ReturnsNull()
+        {
+            var result = ProcessHelper.ResolvePath(null!);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ResolvePath_EmptyInput_ReturnsEmpty()
+        {
+            var result = ProcessHelper.ResolvePath(string.Empty);
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void ResolvePath_AbsolutePath_NoEnvVars_ReturnsNormalizedPath()
+        {
+            var tempDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
+            var input = tempDir + Path.DirectorySeparatorChar;
+
+            var result = ProcessHelper.ResolvePath(input);
+
+            Assert.Equal(Path.GetFullPath(tempDir).TrimEnd(Path.DirectorySeparatorChar), result.TrimEnd(Path.DirectorySeparatorChar));
+        }
+
+        [Fact]
+        public void ResolvePath_AbsolutePath_WithEnvVar_ExpandsSuccessfully()
+        {
+            var input = "%TEMP%";
+
+            var result = ProcessHelper.ResolvePath(input);
+
+            Assert.True(Path.IsPathRooted(result));
+            Assert.Equal(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar), result.TrimEnd(Path.DirectorySeparatorChar));
+        }
+
+        [Fact]
+        public void ResolvePath_UnexpandedEnvVar_ThrowsInvalidOperationException()
+        {
+            var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
+
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                ProcessHelper.ResolvePath(input));
+
+            Assert.Contains("could not be expanded", ex.Message);
+        }
+
+        [Fact]
+        public void ResolvePath_RelativePath_ThrowsInvalidOperationException()
+        {
+            var input = @"relative\path\file.txt";
+
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                ProcessHelper.ResolvePath(input));
+
+            Assert.Contains("relative", ex.Message);
+        }
+
+        [Fact]
+        public void ResolvePath_NormalizesDotDotSegments()
+        {
+            var baseDir = Path.Combine(Path.GetTempPath(), "a", "b");
+            var input = Path.Combine(baseDir, @"..\..\test");
+
+            var result = ProcessHelper.ResolvePath(input);
+
+            Assert.Equal(
+                Path.GetFullPath(Path.Combine(Path.GetTempPath(), "test")),
+                result);
+        }
+
+        // -------------------------
+        // ValidatePath tests
+        // -------------------------
+
+        [Fact]
+        public void ValidatePath_NullInput_ReturnsFalse()
+        {
+            Assert.False(ProcessHelper.ValidatePath(null!));
+        }
+
+        [Fact]
+        public void ValidatePath_WhitespaceInput_ReturnsFalse()
+        {
+            Assert.False(ProcessHelper.ValidatePath("   "));
+        }
+
+        [Fact]
+        public void ValidatePath_ExistingFile_ReturnsTrue()
+        {
+            var file = Path.GetTempFileName();
+
+            try
+            {
+                Assert.True(ProcessHelper.ValidatePath(file, isFile: true));
+            }
+            finally
+            {
+                File.Delete(file);
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_NonExistingFile_ReturnsFalse()
+        {
+            var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".txt");
+
+            Assert.False(ProcessHelper.ValidatePath(file, isFile: true));
+        }
+
+        [Fact]
+        public void ValidatePath_ExistingDirectory_ReturnsTrue()
+        {
+            var dir = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
+            try
+            {
+                Assert.True(ProcessHelper.ValidatePath(dir.FullName, isFile: false));
+            }
+            finally
+            {
+                dir.Delete();
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_NonExistingDirectory_ReturnsFalse()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+            Assert.False(ProcessHelper.ValidatePath(dir, isFile: false));
+        }
+
+        [Fact]
+        public void ValidatePath_UnexpandedEnvVar_ReturnsFalse()
+        {
+            var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
+
+            Assert.False(ProcessHelper.ValidatePath(input));
+        }
+
+        [Fact]
+        public void ValidatePath_RelativePath_ReturnsFalse()
+        {
+            var input = @"relative\path\file.txt";
+
+            Assert.False(ProcessHelper.ValidatePath(input));
+        }
+
+        [Fact]
+        public void ValidatePath_EnvVar_File_ReturnsTrue()
+        {
+            var tempFile = Path.GetTempFileName();
+
+            try
+            {
+                // Convert absolute temp file path into one using %TEMP%
+                var fileName = Path.GetFileName(tempFile);
+                var envPath = Path.Combine("%TEMP%", fileName);
+
+                Assert.True(ProcessHelper.ValidatePath(envPath, isFile: true));
+            }
+            finally
+            {
+                File.Delete(tempFile);
+            }
+        }
+
+        [Fact]
+        public void ValidatePath_EnvVar_Directory_ReturnsTrue()
+        {
+            var dir = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
+
+            try
+            {
+                var dirName = new DirectoryInfo(dir.FullName).Name;
+                var envPath = Path.Combine("%TEMP%", dirName);
+
+                Assert.True(ProcessHelper.ValidatePath(envPath, isFile: false));
+            }
+            finally
+            {
+                dir.Delete();
+            }
+        }
+
+
     }
 }

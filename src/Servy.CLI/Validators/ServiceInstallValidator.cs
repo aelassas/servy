@@ -42,7 +42,7 @@ namespace Servy.CLI.Validators
             //    }
             //}
 
-            if (!Helper.IsValidPath(opts.ProcessPath) || !File.Exists(opts.ProcessPath))
+            if (!ProcessHelper.ValidatePath(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);
 
             if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && (!Helper.IsValidPath(opts.StartupDirectory) || !Directory.Exists(opts.StartupDirectory)))
@@ -106,7 +106,7 @@ namespace Servy.CLI.Validators
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
 
-            if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!Helper.IsValidPath(opts.FailureProgramPath) || !File.Exists(opts.FailureProgramPath)))
+            if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!ProcessHelper.ValidatePath(opts.FailureProgramPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidFailureProgramPath);
 
             if (!string.IsNullOrWhiteSpace(opts.FailureProgramStartupDir) && (!Helper.IsValidPath(opts.FailureProgramStartupDir) || !Directory.Exists(opts.FailureProgramStartupDir)))
@@ -131,7 +131,7 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(envVarsErrorMessage);
 
             // PreLaunch
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!Helper.IsValidPath(opts.PreLaunchPath) || !File.Exists(opts.PreLaunchPath)))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!ProcessHelper.ValidatePath(opts.PreLaunchPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchPath);
 
             if (!string.IsNullOrWhiteSpace(opts.PreLaunchStartupDir) && (!Helper.IsValidPath(opts.PreLaunchStartupDir) || !Directory.Exists(opts.PreLaunchStartupDir)))
@@ -166,7 +166,7 @@ namespace Servy.CLI.Validators
             }
 
             // Post-Launch
-            if (!string.IsNullOrWhiteSpace(opts.PostLaunchPath) && (!Helper.IsValidPath(opts.PostLaunchPath) || !File.Exists(opts.PostLaunchPath)))
+            if (!string.IsNullOrWhiteSpace(opts.PostLaunchPath) && (!ProcessHelper.ValidatePath(opts.PostLaunchPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidPostLaunchPath);
 
             if (!string.IsNullOrWhiteSpace(opts.PostLaunchStartupDir) && (!Helper.IsValidPath(opts.PostLaunchStartupDir) || !Directory.Exists(opts.PostLaunchStartupDir)))

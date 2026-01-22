@@ -48,7 +48,7 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
-            if (!CoreHelper.IsValidPath(dto.ExecutablePath) || !File.Exists(dto.ExecutablePath))
+            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, AppConfig.Caption);
                 return false;
@@ -121,7 +121,7 @@ namespace Servy.Manager.Helpers
             }
 
             // Failure Program
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && (!CoreHelper.IsValidPath(dto.FailureProgramPath) || !File.Exists(dto.FailureProgramPath)))
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && (!ProcessHelper.ValidatePath(dto.FailureProgramPath)))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramPath, AppConfig.Caption);
                 return false;
@@ -163,7 +163,7 @@ namespace Servy.Manager.Helpers
 
             // Pre-launch validation
             if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) &&
-                (!CoreHelper.IsValidPath(dto.PreLaunchExecutablePath) || !File.Exists(dto.PreLaunchExecutablePath)))
+                (!ProcessHelper.ValidatePath(dto.PreLaunchExecutablePath)))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchPath, AppConfig.Caption);
                 return false;
@@ -211,7 +211,7 @@ namespace Servy.Manager.Helpers
 
             // Post-launch validation
             if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath) &&
-                (!CoreHelper.IsValidPath(dto.PostLaunchExecutablePath) || !File.Exists(dto.PostLaunchExecutablePath)))
+                (!ProcessHelper.ValidatePath(dto.PostLaunchExecutablePath)))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchPath, AppConfig.Caption);
                 return false;
