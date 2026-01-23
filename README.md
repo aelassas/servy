@@ -54,7 +54,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
-* Environment variable expansion supported in both environment variables and process parameters
+* Environment variable expansion supported in environment variables, process parameters, process paths and startup directories
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
