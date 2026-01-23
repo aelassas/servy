@@ -6,13 +6,9 @@ Whenever I needed to run an app as a Windows service, I usually relied on tools 
 
 After running into these issues too many times, I decided to build my own tool.
 
-**The goals**
-
 I wanted a solution that was easy to use, with a clean desktop app, but also scriptable through CLI and PowerShell for automation and CI/CD pipelines. It needed to be flexible enough to run any type of app (Node.js, Python, .NET, scripts, and more). It also had to be robust, with built-in logging, health checks, recovery options, pre-launch and post-launch hooks, CPU and RAM monitoring, and restart policies. Finally, it had to work across a wide range of Windows versions, from Windows 7 to Windows 11, including Server editions.
 
-**The result**
-
-The result is **Servy**, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. Servy is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
+The result is Servy, a tool that lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, hooks, and parameters. Servy is designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
 Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
