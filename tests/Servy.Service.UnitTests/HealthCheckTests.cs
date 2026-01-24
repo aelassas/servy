@@ -105,7 +105,8 @@ namespace Servy.Service.UnitTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(),
-                It.IsAny<ILogger>()),
+                It.IsAny<ILogger>(),
+                It.IsAny<int>()),
                 Times.Once);
 
             // We might want to verify process restart logic (mock process kill/start etc.)
@@ -137,7 +138,8 @@ namespace Servy.Service.UnitTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<List<EnvironmentVariable>>(),
-                    It.IsAny<ILogger>()))
+                    It.IsAny<ILogger>(),
+                    It.IsAny<int>()))
                 .Verifiable();
 
             helper.Setup(h => h.RestartService(It.IsAny<ILogger>(), It.IsAny<string>())).Verifiable();
@@ -174,7 +176,8 @@ namespace Servy.Service.UnitTests
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<List<EnvironmentVariable>>(),
-                            It.IsAny<ILogger>()), Times.Once);
+                            It.IsAny<ILogger>(),
+                            It.IsAny<int>()), Times.Once);
                         break;
                     case RecoveryAction.RestartService:
                         helper.Verify(h => h.RestartService(It.IsAny<ILogger>(), service.ServiceName), Times.Once);

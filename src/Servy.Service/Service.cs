@@ -1142,7 +1142,8 @@ namespace Servy.Service
                                             _realArgs!,
                                             _workingDir!,
                                             _environmentVariables,
-                                            _logger!
+                                            _logger!,
+                                            (_options?.StopTimeout ?? AppConfig.DefaultStopTimeout) * 1000
                                         );
                                         break;
 
@@ -1265,12 +1266,17 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Attempts to gracefully stop the process by sending Ctrl+C.
-        /// If that fails or the process has no console, forcibly kills the process.
-        /// Waits up to the specified timeout for the process to exit.
+        /// Stops the specified process and its descendant processes in a service-safe manner.
+        /// Attempts a graceful shutdown of the main process first (Ctrl+C / close window),
+        /// then initiates cleanup of any remaining descendant processes.
+        /// The stop sequence runs on a background thread while periodically reporting
+        /// wait hints to the Service Control Manager.
         /// </summary>
-        /// <param name="process">Process to stop.</param>
-        /// <param name="timeoutMs">Timeout in milliseconds to wait for exit.</param>
+        /// <param name="process">The process to stop.</param>
+        /// <param name="timeoutMs">
+        /// The maximum time, in milliseconds, to allow each stop operation to complete.
+        /// The same timeout is applied to the main process and descendant cleanup.
+        /// </param>
         private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
             if (process == null || process.HasExited) return;
@@ -1283,37 +1289,30 @@ namespace Servy.Service
                 // This ensures we call it exactly once with the full timeout.
                 Task<bool?> stopTask = Task.Run(() =>
                 {
-                    return process.Stop(timeoutMs);
+                    // 1. Stop the main process
+                    var result = process.Stop(timeoutMs);
+
+                    // 2. Immediately start cleaning up descendants 
+                    // This now happens while the main loop is still "pulsing" the SCM
+                    // This will now walk the whole tree but respect the shared timeout
+                    process.StopDescendants(timeoutMs);
+
+                    return result;
                 });
 
                 // 2. Wait for the task to complete in 5-second pulses
                 // This prevents ContextSwitchDeadlock and keeps the SCM happy.
-                int totalWaited = 0;
                 while (!stopTask.Wait(5000))
                 {
-                    totalWaited += 5000;
-
                     // Request 15s of "Wait Hint" every 5s pulse
                     _serviceHelper.RequestAdditionalTime(this, 15000, null!);
-
-                    // Hard safety cap if something goes horribly wrong 
-                    // with the underlying process.Stop call itself.
-                    if (totalWaited > (timeoutMs + 10000))
-                    {
-                        _logger?.Warning(
-                            $"Stop timeout exceeded for {process.Format()} after {totalWaited}ms. Proceeding with shutdown."
-                         );
-                        break;
-                    }
                 }
 
                 // 3. Retrieve the result from the finished task
-                bool? result = stopTask.IsCompleted ? stopTask.Result : null;
+                var res = stopTask.IsCompleted ? stopTask.Result : null;
 
                 // 4. Handle Logging
-                HandleStopResult(process, result);
-
-                process.StopDescendants(5000);
+                HandleStopResult(process, res);
             }
             catch (Exception ex)
             {
