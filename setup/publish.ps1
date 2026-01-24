@@ -35,7 +35,7 @@
 
 param(
     [string]$Fm      = "net10.0",    
-    [string]$Version = "5.7"
+    [string]$Version = "5.8"
 )
 
 $Tfm = "$Fm-windows"
