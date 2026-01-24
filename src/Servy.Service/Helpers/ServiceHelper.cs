@@ -228,7 +228,8 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
-            ILogger logger)
+            ILogger logger,
+            int stopTimeoutMs)
         {
             try
             {
@@ -236,9 +237,8 @@ namespace Servy.Service.Helpers
 
                 if (process != null && !process.HasExited)
                 {
-                    const int timeoutMs = 10_000;
-                    process.Stop(timeoutMs);
-                    process.StopDescendants(timeoutMs);
+                    process.Stop(stopTimeoutMs);
+                    process.StopDescendants(stopTimeoutMs);
                 }
 
                 startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);

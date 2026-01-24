@@ -67,6 +67,7 @@ namespace Servy.Service.Helpers
         /// <param name="workingDir">Working directory for the process.</param>
         /// <param name="environmentVariables">Environment variables.</param>
         /// <param name="logger">Logger instance.</param>
+        /// <param name="stopTimeoutMs">Timeout in milliseconds to wait for the process to stop.</param>
         void RestartProcess(
             IProcessWrapper process,
             Action<string, string, string, List<EnvironmentVariable>> startProcess,
@@ -74,7 +75,8 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
-            ILogger logger);
+            ILogger logger,
+            int stopTimeoutMs);
 
         /// <summary>
         /// Attempts to restart the Windows service associated with the current process.
