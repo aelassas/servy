@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>PythonCtrlC_Child</Name>
+  <DisplayName />
+  <Description>PythonCtrlC_Child</Description>
+  <ExecutablePath>C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe</ExecutablePath>
+  <Parameters>-u E:\dev\servy\src\tests\ctrlc_child.py</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\python_ctrlc.txt</StdoutPath>
+  <StderrPath>E:\dev\servy\python_ctrlc.txt</StderrPath>
+  <EnableRotation>false</EnableRotation>
+  <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchExecutablePath>C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe</PreLaunchExecutablePath>
+  <PreLaunchParameters>-u E:\dev\servy\src\tests\script.py</PreLaunchParameters>
+  <PreLaunchStdoutPath>E:\dev\servy\python_ctrlc2.txt</PreLaunchStdoutPath>
+  <PreLaunchStderrPath>E:\dev\servy\python_ctrlc2.txt</PreLaunchStderrPath>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+</ServiceDto>
