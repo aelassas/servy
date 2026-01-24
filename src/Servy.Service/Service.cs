@@ -1313,7 +1313,7 @@ namespace Servy.Service
                 // 4. Handle Logging
                 HandleStopResult(process, result);
 
-                process.StopDescendants(timeoutMs);
+                process.StopDescendants(5000);
             }
             catch (Exception ex)
             {
