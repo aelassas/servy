@@ -60,6 +60,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
+* Supports `Ctrl+C` propagation to descendant processes of the wrapped process
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
