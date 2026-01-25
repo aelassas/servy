@@ -8,8 +8,10 @@
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
 * [x] CLI and PowerShell module for full scripting and automated deployments
-* [x] Support environment variables for child processes ([#1](https://github.com/aelassas/servy/issues/1))
-* [x] Support environment variable expansion ([#6](https://github.com/aelassas/servy/issues/6))
+* [x] Support environment variables for wrapped process ([#1](https://github.com/aelassas/servy/issues/1))
+* [x] Support environment variable expansion in environment variables and process parameters ([#6](https://github.com/aelassas/servy/issues/6))
+* [x] Support environment variable expansion in process paths ([#35](https://github.com/aelassas/servy/issues/35))
+* [x] Support environment variable expansion in startup directories
 * [x] Support service dependencies
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for DOMAIN\gMSA$ Group Managed Service Accounts
@@ -25,6 +27,7 @@
 * [x] Support Ctrl+C for command-line apps ([#20](https://github.com/aelassas/servy/issues/20))
 * [x] Add support for automatic delayed-start service startup type
 * [x] Upgrade to .NET 10 LTS
+* [x] Keep SCM responsive while stopping the main wrapped process and its process tree
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
@@ -44,5 +47,5 @@
 <!--     
 * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
 * [ ] Add `Certificates` tab to manage service-specific certificates
-  * [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
+* [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
 -->  
