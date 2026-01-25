@@ -8,7 +8,7 @@
 * [x] Service monitoring and heartbeat checks
 * [x] Automatic restart on failure
 * [x] CLI and PowerShell module for full scripting and automated deployments
-* [x] Support environment variables for wrapped process ([#1](https://github.com/aelassas/servy/issues/1))
+* [x] Support environment variables for the wrapped process ([#1](https://github.com/aelassas/servy/issues/1))
 * [x] Support environment variable expansion in environment variables and process parameters ([#6](https://github.com/aelassas/servy/issues/6))
 * [x] Support environment variable expansion in process paths ([#35](https://github.com/aelassas/servy/issues/35))
 * [x] Support environment variable expansion in startup directories
