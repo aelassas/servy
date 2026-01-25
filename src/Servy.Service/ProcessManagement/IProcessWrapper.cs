@@ -57,6 +57,11 @@ namespace Servy.Service.ProcessManagement
         bool EnableRaisingEvents { get; set; }
 
         /// <summary>
+        /// Gets the process start time.
+        /// </summary>
+        DateTime StartTime { get; }
+
+        /// <summary>
         /// Standard output stream of the process.
         /// </summary>
         StreamReader StandardOutput { get; }
@@ -102,8 +107,10 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Stops all descendant processes of the associated process.
         /// </summary>
+        /// <param name="parentPid">Parent process PID.</param>
+        /// <param name="parentStartTime">Parent process start time</param>
         /// <param name="timeoutMs">The timeout in milliseconds to wait for the descendant processes to stop.</param>
-        void StopDescendants(int timeoutMs);
+        void StopDescendants(int parentPid, DateTime parentStartTime, int timeoutMs);
 
         /// <summary>
         /// Formats the process information as a string.

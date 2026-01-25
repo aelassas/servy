@@ -237,8 +237,22 @@ namespace Servy.Service.Helpers
 
                 if (process != null && !process.HasExited)
                 {
+                    // Capture lineage BEFORE stopping
+                    var parentPid = 0;
+                    var parentStartTime = DateTime.MinValue;
+                    try
+                    {
+                        parentPid = process.Id;
+                        parentStartTime = process.StartTime;
+                    }
+                    catch (Exception ex)
+                    {
+                        /* Process already dead, can't get children anyway */
+                        logger?.Warning($"RestartProcess error while getting process PID and StartTime: {ex.Message}");
+                    }
+
                     process.Stop(stopTimeoutMs);
-                    process.StopDescendants(stopTimeoutMs);
+                    process.StopDescendants(parentPid, parentStartTime, stopTimeoutMs);
                 }
 
                 startProcess?.Invoke(realExePath, realArgs, workingDir, environmentVariables);
