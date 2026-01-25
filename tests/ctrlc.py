@@ -4,6 +4,7 @@ import sys
 import io
 import logging
 import os
+import subprocess
 
 # Force stdout to UTF-8
 # sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -26,7 +27,7 @@ def main():
     try:
         while True:
             current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
-            logging.info(f"{current_datetime} > abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
+            logging.info(f"{current_datetime} > (ctrlc) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
             time.sleep(3)
     except Exception as e:
         logging.exception(f"Error in loop: {e}")
@@ -37,6 +38,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
     finally:
-        logging.info("Service stopped!")
+        logging.info("(ctrlc) Service stopped!")
         for handler in logging.root.handlers:
             handler.flush()

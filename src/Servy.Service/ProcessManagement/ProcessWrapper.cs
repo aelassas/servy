@@ -127,6 +127,16 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
+        public DateTime StartTime
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process.StartTime;
+            }
+        }
+
+        /// <inheritdoc/>
         public ProcessPriorityClass PriorityClass
         {
             get
@@ -309,9 +319,23 @@ namespace Servy.Service.ProcessManagement
         /// <param name="timeoutMs">Timeout in Milliseconds.</param>
         private void StopTree(Process process, int timeoutMs)
         {
+            // Capture lineage BEFORE stopping
+            var parentPid = 0;
+            var parentStartTime = DateTime.MinValue;
+            try
+            {
+                parentPid = process.Id;
+                parentStartTime = process.StartTime;
+            }
+            catch (Exception ex)
+            {
+                /* Process already dead, can't get children anyway */
+                _logger?.Warning($"StopTree error while getting process PID and StartTime: {ex.Message}");
+            }
+
             StopPrivate(process, timeoutMs);
 
-            foreach (var child in process.GetChildren())
+            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
             {
                 using (child.Process)
                 using (child.Handle)
@@ -322,11 +346,11 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public void StopDescendants(int timeoutMs)
+        public void StopDescendants(int parentPid, DateTime parentStartTime, int timeoutMs)
         {
             ThrowIfDisposed();
 
-            foreach (var child in _process.GetChildren())
+            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
             {
                 using (child.Process)
                 using (child.Handle)

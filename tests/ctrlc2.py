@@ -25,23 +25,16 @@ logging.basicConfig(
 def main():
     logging.info("Service started")
     try:
-        # spawn child process
         proc = subprocess.Popen(
             [
                 r"C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe",
-                r"E:\dev\servy\src\tests\ctrlc2.py"
-            ],
-        )
-        proc = subprocess.Popen(
-            [
-                r"C:\Windows\System32\notepad.exe",
+                r"E:\dev\servy\src\tests\ctrlc.py"
             ],
         )
         logging.info(f"Spawned PID: {proc.pid}")
-
         while True:
             current_datetime = datetime.now().strftime("%Y%m%d %H:%M:%S.%f")[:-3]
-            logging.info(f"{current_datetime} > (ctrlc_child) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
+            logging.info(f"{current_datetime} > (ctrlc2) abcd&é секунды 同时也感觉没有想象的那么好用 - äöü ß ñ © ™ 🌍")
             time.sleep(3)
     except Exception as e:
         logging.exception(f"Error in loop: {e}")
@@ -52,6 +45,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
     finally:
-        logging.info("(ctrlc_child) Service stopped!")
+        logging.info("(ctrlc2) Service stopped!")
         for handler in logging.root.handlers:
             handler.flush()

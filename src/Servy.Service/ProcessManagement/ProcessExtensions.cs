@@ -28,24 +28,15 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Gets the child processes of the specified process.
         /// </summary>
-        /// <param name="process">Process.</param>
+        /// <param name="parentPid">Parent process PID.</param>
+        /// <param name="parentStartTime">Parent process start time</param>
         /// <returns>Children.</returns>
-        public static unsafe List<(Process Process, Handle Handle)> GetChildren(this Process process)
+        public static unsafe List<(Process Process, Handle Handle)> GetChildren(int parentPid, DateTime parentStartTime)
         {
             var children = new List<(Process Process, Handle Handle)>();
-            int parentPid = process.Id;
-            DateTime parentStartTime;
 
-            try
-            {
-                parentStartTime = process.StartTime;
-            }
-            catch (Exception ex)
-            {
-                // Could not get start time, return empty
-                Debug.WriteLine($"Failed to get StartTime of parent PID {parentPid}: {ex.Message}");
+            if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
                 return children;
-            }
 
             foreach (var other in Process.GetProcesses())
             {

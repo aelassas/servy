@@ -1289,13 +1289,27 @@ namespace Servy.Service
                 // This ensures we call it exactly once with the full timeout.
                 Task<bool?> stopTask = Task.Run(() =>
                 {
+                    // Capture lineage info while the parent is definitely alive
+                    var parentPid = 0;
+                    var parentStartTime = DateTime.MinValue;
+                    try
+                    {
+                        parentPid = process.Id;
+                        parentStartTime = process.StartTime;
+                    }
+                    catch (Exception ex)
+                    {
+                        /* Process already dead, can't get children anyway */
+                        _logger?.Warning($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
+                    }
+
                     // 1. Stop the main process
                     var result = process.Stop(timeoutMs);
 
                     // 2. Immediately start cleaning up descendants 
                     // This now happens while the main loop is still "pulsing" the SCM
-                    // This will now walk the whole tree but respect the shared timeout
-                    process.StopDescendants(timeoutMs);
+                    // This will walk the entire process tree using the configured stop timeout
+                    process.StopDescendants(parentPid, parentStartTime, timeoutMs);
 
                     return result;
                 });
