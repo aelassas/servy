@@ -98,8 +98,8 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
-* Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
-* Environment variable expansion supported in environment variables, process parameters, process paths and startup directories
+* Set service name, description, startup type, priority, working directory, environment variables, and dependencies
+* Environment variable expansion supported in parameters, process paths and startup directories
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
