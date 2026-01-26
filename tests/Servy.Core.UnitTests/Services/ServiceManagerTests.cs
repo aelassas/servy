@@ -1418,7 +1418,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
             // Act
-            var result = _serviceManager.GetServiceStatus("TestService");
+            var result = _serviceManager.GetServiceStatus("TestService", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(ServiceControllerStatus.Running, result);
@@ -1431,7 +1431,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
 
             // Assert
-            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus(""));
+            Assert.Throws<ArgumentException>(() => _serviceManager.GetServiceStatus("", TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -1468,7 +1468,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceStartupType("MyService");
+            var result = _serviceManager.GetServiceStartupType("MyService", TestContext.Current.CancellationToken);
 
             Assert.Equal(ServiceStartType.Automatic, result);
         }
@@ -1481,7 +1481,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(Enumerable.Empty<ManagementObject>());
 
             // Act
-            var result = _serviceManager.GetServiceStartupType("Unknown");
+            var result = _serviceManager.GetServiceStartupType("Unknown", TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Null(result);
@@ -1495,7 +1495,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceStartupType("MyService");
+            var result = _serviceManager.GetServiceStartupType("MyService", TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -1508,7 +1508,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceStartupType("MyService");
+            var result = _serviceManager.GetServiceStartupType("MyService", TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -1516,7 +1516,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void GetServiceStartupType_Throws_ArgumentTnullException()
         {
-            Assert.Throws<ArgumentNullException>(() => _serviceManager.GetServiceStartupType(string.Empty));
+            Assert.Throws<ArgumentNullException>(() => _serviceManager.GetServiceStartupType(string.Empty, TestContext.Current.CancellationToken));
         }
 
         #region GetServiceDescription Tests
@@ -1529,7 +1529,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceDescription("MyService");
+            var result = _serviceManager.GetServiceDescription("MyService", TestContext.Current.CancellationToken);
             Assert.Equal("My Service Description", result);
         }
 
@@ -1541,7 +1541,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceDescription("MyService");
+            var result = _serviceManager.GetServiceDescription("MyService", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -1550,7 +1550,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
-            var result = _serviceManager.GetServiceDescription("NonExistentService");
+            var result = _serviceManager.GetServiceDescription("NonExistentService", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -1559,7 +1559,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Throws(new Exception("Boom"));
 
-            var result = _serviceManager.GetServiceDescription("Service");
+            var result = _serviceManager.GetServiceDescription("Service", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -1575,7 +1575,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceUser("MyService");
+            var result = _serviceManager.GetServiceUser("MyService", TestContext.Current.CancellationToken);
             Assert.Equal("LocalSystem", result);
         }
 
@@ -1587,7 +1587,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(new[] { mo });
 
-            var result = _serviceManager.GetServiceUser("MyService");
+            var result = _serviceManager.GetServiceUser("MyService", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -1596,7 +1596,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Array.Empty<ManagementObject>());
 
-            var result = _serviceManager.GetServiceUser("NonExistentService");
+            var result = _serviceManager.GetServiceUser("NonExistentService", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -1611,7 +1611,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new ManagementObject[0]);
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -1623,7 +1623,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new ManagementObject[0]);
 
-            Assert.Throws<Win32Exception>(() => _serviceManager.GetAllServices());
+            Assert.Throws<Win32Exception>(() => _serviceManager.GetAllServices(TestContext.Current.CancellationToken));
         }
 
         [Theory]
@@ -1649,7 +1649,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new[] { mo });
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             var service = Assert.Single(result);
             Assert.Equal(expectedStatus, service.Status);
@@ -1679,7 +1679,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new[] { mo });
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             var service = Assert.Single(result);
             Assert.Equal(expectedType, service.StartupType);
@@ -1715,7 +1715,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(true); _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new[] { mo });
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             var service = Assert.Single(result);
             Assert.Equal(ServiceStartType.AutomaticDelayedStart, service.StartupType);
@@ -1735,7 +1735,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new[] { mo });
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             var service = Assert.Single(result);
             Assert.Equal(Enums.ServiceStatus.None, service.Status);
@@ -1766,7 +1766,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                             .Returns(new[] { mo1, mo2 });
 
-            var result = _serviceManager.GetAllServices();
+            var result = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count);
 
@@ -1812,7 +1812,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWmiSearcher.Setup(s => s.Get(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(mos);
 
             // Act
-            var services = _serviceManager.GetAllServices();
+            var services = _serviceManager.GetAllServices(TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(3, services.Count);

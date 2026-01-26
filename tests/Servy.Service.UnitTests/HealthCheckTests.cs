@@ -244,7 +244,7 @@ namespace Servy.Service.UnitTests
             // Act - run multiple concurrent CheckHealth calls to test thread safety
             for (int i = 0; i < calls; i++)
             {
-                tasks[i] = Task.Run(() => service.InvokeCheckHealth(null, null));
+                tasks[i] = Task.Run(() => service.InvokeCheckHealth(null, null), TestContext.Current.CancellationToken);
             }
             await Task.WhenAll(tasks);
 

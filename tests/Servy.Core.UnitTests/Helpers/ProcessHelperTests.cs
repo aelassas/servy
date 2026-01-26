@@ -65,7 +65,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             var result = ProcessHelper.ResolvePath(input);
 
-            Assert.Equal(Path.GetFullPath(tempDir).TrimEnd(Path.DirectorySeparatorChar), result.TrimEnd(Path.DirectorySeparatorChar));
+            Assert.Equal(Path.GetFullPath(tempDir).TrimEnd(Path.DirectorySeparatorChar), result?.TrimEnd(Path.DirectorySeparatorChar));
         }
 
         [Fact]
