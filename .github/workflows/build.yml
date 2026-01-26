@@ -41,3 +41,23 @@ jobs:
 
       - name: Build solution (Debug)
         run: dotnet build Servy.sln --configuration Debug --no-restore
+
+      - name: Build Servy projects (Release)
+        shell: pwsh
+        run: |
+          $config = "Release"
+          Write-Host "Restoring NuGet packages..."
+          dotnet restore Servy.sln
+
+          $projects = @(
+            "src\Servy.Restarter\Servy.Restarter.csproj",
+            "src\Servy.Service\Servy.Service.csproj",
+            "src\Servy\Servy.csproj",
+            "src\Servy.CLI\Servy.CLI.csproj",
+            "src\Servy.Manager\Servy.Manager.csproj"
+          )
+
+          foreach ($proj in $projects) {
+            Write-Host "Building $proj ($config)..."
+            dotnet build $proj --configuration $config --no-restore
+          }
