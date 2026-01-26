@@ -34,9 +34,9 @@
     <AssemblyDescription>A tool to restart a Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Restarter</Product>
-    <Version>5.8.0</Version>
-    <FileVersion>5.8.0.0</FileVersion>
-    <AssemblyVersion>5.8.0.0</AssemblyVersion>
+    <Version>5.9.0</Version>
+    <FileVersion>5.9.0.0</FileVersion>
+    <AssemblyVersion>5.9.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
@@ -51,5 +51,10 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.NETCore.App" />
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
+    <RuntimeIdentifier></RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
   
 </Project>

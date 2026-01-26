@@ -81,10 +81,6 @@ scoop update innounp
 scoop install servy
 ```
 
-<!--
-> Servy has been reviewed by Microsoft Security Intelligence and is confirmed safe. It performs only standard installation tasks and does not contain malware, adware, or unwanted software. Servy passes VirusTotal scans and is published in the Windows Package Manager (WinGet), Chocolatey, and Scoop. You can safely install it from GitHub, WinGet, Chocolatey, or Scoop.
--->
-
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
@@ -102,13 +98,14 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
-* Set service name, description, startup type, priority, working directory, environment variables, dependencies, and parameters
-* Environment variable expansion supported in environment variables, process parameters, process paths and startup directories
+* Set service name, description, startup type, priority, working directory, environment variables, and dependencies
+* Environment variable expansion supported in parameters, process paths and startup directories
 * Run services as Local System, local or domain accounts, Active Directory accounts, or gMSAs
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
+* Supports `Ctrl+C` propagation to descendant processes of the wrapped process
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
 * Health checks and automatic service recovery
 * Browse and search logs by level, date, and keyword for faster troubleshooting from Servy Manager
@@ -122,7 +119,7 @@ See the [project roadmap](ROADMAP.md).
 
 ## Support & Contributing
 
-If this project helped you, saved you time, or inspired you in any way, please consider supporting its future growth and maintenance. You can show your support by starring the repository to show your appreciation and increase visibility, sharing the project with colleagues, communities, or on social media, or by making a donation. Your contributions help keep Servy alive, improving, and accessible to everyone. You can donate through [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
+Servy is free and open-source. If you are using this tool in a commercial or revenue-generating context, or if you find it valuable, we strongly encourage you to give back to the project. You can support the project through [GitHub Sponsors](https://github.com/sponsors/aelassas) (one-time or monthly), [PayPal](https://www.paypal.me/aelassaspp), or [Buy Me a Coffee](https://www.buymeacoffee.com/aelassas).
 
 Open-source software requires time, effort, and resources to maintain. Every contribution, big or small, makes a difference and motivates continued work on features, bug fixes, and new ideas.
 

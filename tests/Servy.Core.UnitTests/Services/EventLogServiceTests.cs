@@ -36,7 +36,7 @@ namespace Servy.Core.UnitTests.Services
             var service = CreateService(mockReader);
 
             // Act
-            var result = await service.SearchAsync(null, null, null, null!);
+            var result = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             // Assert
             var entry = Assert.Single(result);
@@ -53,7 +53,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(EventLogLevel.Warning, null, null, null!);
+            var result = await service.SearchAsync(EventLogLevel.Warning, null, null, null!, TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Warning, entry.Level);
@@ -72,7 +72,7 @@ namespace Servy.Core.UnitTests.Services
             var start = DateTime.UtcNow.AddDays(-1);
             var end = DateTime.UtcNow.AddDays(1);
 
-            var result = await service.SearchAsync(null, start, end, null!);
+            var result = await service.SearchAsync(null, start, end, null!, TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level);
@@ -90,7 +90,7 @@ namespace Servy.Core.UnitTests.Services
 
             var end = DateTime.UtcNow;
 
-            var result = await service.SearchAsync(null, null, end, null!);
+            var result = await service.SearchAsync(null, null, end, null!, TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Information, entry.Level); // default branch
@@ -106,7 +106,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "servy");
+            var result = await service.SearchAsync(null, null, null, "servy", TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
             Assert.Contains("servy", entry.Message);
@@ -123,7 +123,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, string.Empty);
+            var result = await service.SearchAsync(null, null, null, string.Empty, TestContext.Current.CancellationToken);
 
             Assert.Equal(2, result.Count());
         }
@@ -138,7 +138,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "servy");
+            var result = await service.SearchAsync(null, null, null, "servy", TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -153,7 +153,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "unknown");
+            var result = await service.SearchAsync(null, null, null, "unknown", TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -168,7 +168,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, null!);
+            var result = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
             Assert.Equal(DateTime.MinValue, entry.Time);
@@ -183,7 +183,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var results = await service.SearchAsync(null, null, null, null!);
+            var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             Assert.Single(results);
             Assert.Equal(DateTime.MinValue, results.First().Time);
@@ -198,7 +198,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var results = await service.SearchAsync(null, null, null, null!);
+            var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             Assert.Empty(results);
         }
@@ -212,7 +212,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var results = await service.SearchAsync(null, null, null, null!);
+            var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             Assert.Single(results);
             // Here check the mapping from 0 -> your default ParseLevel

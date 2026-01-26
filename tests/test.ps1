@@ -57,6 +57,7 @@ foreach ($Proj in $TestProjects) {
 
     Write-Host "Running tests for $($Proj)..."
     dotnet test $Proj `
+        --configuration Debug `
         --collect:"XPlat Code Coverage" `
         --results-directory $TestResultsDir `
         -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura

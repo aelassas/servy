@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    
+
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <PlatformTarget>x64</PlatformTarget>
@@ -17,7 +17,7 @@
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <InvariantGlobalization>false</InvariantGlobalization>
     <StripSymbols>true</StripSymbols>
-    
+
     <ApplicationIcon>servy.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
@@ -29,9 +29,9 @@
     <AssemblyDescription>A tool to run any app as a Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy</Product>
-    <Version>5.8.0</Version>
-    <FileVersion>5.8.0.0</FileVersion>
-    <AssemblyVersion>5.8.0.0</AssemblyVersion>
+    <Version>5.9.0</Version>
+    <FileVersion>5.9.0.0</FileVersion>
+    <AssemblyVersion>5.9.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
@@ -54,17 +54,17 @@
     <EmbeddedResource Include="Resources\Servy.Service.exe" />
     <EmbeddedResource Include="Resources\Servy.Service.pdb" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.2" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
     <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
     <ProjectReference Include="..\Servy.UI\Servy.UI.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Update="Resources\Strings.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -75,12 +75,17 @@
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
+    <RuntimeIdentifier></RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
 
 </Project>

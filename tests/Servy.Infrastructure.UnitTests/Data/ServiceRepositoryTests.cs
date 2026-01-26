@@ -83,7 +83,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
 
             var repo = CreateRepository();
-            var result = await repo.AddAsync(dto);
+            var result = await repo.AddAsync(dto, TestContext.Current.CancellationToken);
 
             Assert.Equal(42, result);
             Assert.Equal("encrypted_params", dto.Parameters);
@@ -119,7 +119,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
-            var rows = await repo.UpdateAsync(dto);
+            var rows = await repo.UpdateAsync(dto, TestContext.Current.CancellationToken);
 
             Assert.Equal(1, rows);
             Assert.Equal("encrypted_params", dto.Parameters);
@@ -141,7 +141,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
-            var rows = await repo.UpsertAsync(dto);
+            var rows = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
             Assert.Equal(1, rows);
             Assert.Equal(5, dto.Id);
@@ -149,7 +149,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1" });
-            rows = await repo.UpsertAsync(dto);
+            rows = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
             Assert.Equal(1, rows);
             Assert.Equal(5, dto.Id);
@@ -165,7 +165,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
-            var rows = await repo.UpsertAsync(dto);
+            var rows = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
             Assert.Equal(7, rows);
         }
@@ -188,7 +188,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
 
             // Act
-            var result = await repo.UpsertAsync(dto);
+            var result = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(7, result);
@@ -202,7 +202,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
-            var rows = await repo.DeleteAsync(10);
+            var rows = await repo.DeleteAsync(10, TestContext.Current.CancellationToken);
 
             Assert.Equal(1, rows);
         }
@@ -213,7 +213,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
-            var rows = await repo.DeleteAsync("ServiceName");
+            var rows = await repo.DeleteAsync("ServiceName", TestContext.Current.CancellationToken);
 
             Assert.Equal(1, rows);
         }
@@ -224,7 +224,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
-            var rows = await repo.DeleteAsync(string.Empty);
+            var rows = await repo.DeleteAsync(string.Empty, TestContext.Current.CancellationToken);
 
             Assert.Equal(0, rows);
         }
@@ -253,7 +253,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1);
+            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
 
             Assert.Equal("params", result!.Parameters);
             Assert.Equal("failure-prog-params", result!.FailureProgramParameters);
@@ -271,7 +271,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1);
+            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
 
             Assert.Null(result!.Password);
         }
@@ -283,7 +283,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1);
+            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -312,7 +312,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
-            var result = await repo.GetByNameAsync("S");
+            var result = await repo.GetByNameAsync("S", TestContext.Current.CancellationToken);
 
             Assert.Equal("params", result!.Parameters);
             Assert.Equal("failure-prog-params", result!.FailureProgramParameters);
@@ -370,7 +370,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params2")).Returns("post-launch-params2");
 
             var repo = CreateRepository();
-            var result = (await repo.GetAllAsync()).ToList();
+            var result = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).ToList();
 
             Assert.Collection(result,
                 r =>
@@ -404,7 +404,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
-            var result = (await repo.Search("A")).ToList();
+            var result = (await repo.Search("A", TestContext.Current.CancellationToken)).ToList();
 
             Assert.Single(result);
             Assert.Equal("p1", result[0].Password);
@@ -436,7 +436,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
 
             var repo = CreateRepository();
-            var result = (await repo.Search(null!)).ToList();
+            var result = (await repo.Search(null!, TestContext.Current.CancellationToken)).ToList();
 
             Assert.Single(result);
             Assert.Equal("params", result[0].Parameters);
@@ -457,7 +457,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             var repo = CreateRepository();
 
-            var xml = await repo.ExportXML("A");
+            var xml = await repo.ExportXML("A", TestContext.Current.CancellationToken);
 
             Assert.Empty(xml);
         }
@@ -476,7 +476,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 .Returns("p1"); // return the same value or "plain" if you prefer
 
             var repo = CreateRepository();
-            var xml = await repo.ExportXML("A");
+            var xml = await repo.ExportXML("A", TestContext.Current.CancellationToken);
 
             Assert.Contains("<ServiceDto", xml);
             Assert.Contains("p1", xml);
@@ -493,7 +493,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXML(xml, TestContext.Current.CancellationToken);
             Assert.True(result);
         }
 
@@ -502,7 +502,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var repo = CreateRepository();
             var xml = string.Empty;
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXML(xml, TestContext.Current.CancellationToken);
             Assert.False(result);
         }
 
@@ -512,7 +512,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var xml = "<ServiceDto><Name></Invalid></ServiceDto>";
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXML(xml, TestContext.Current.CancellationToken);
             Assert.False(result);
         }
 
@@ -524,7 +524,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns((ServiceDto?)null);
 
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXML(xml, TestContext.Current.CancellationToken);
             Assert.False(result);
         }
 
@@ -537,7 +537,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             var repo = CreateRepository();
 
-            var json = await repo.ExportJSON("A");
+            var json = await repo.ExportJSON("A", TestContext.Current.CancellationToken);
 
             Assert.Empty(json);
         }
@@ -549,7 +549,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var json = await repo.ExportJSON("A");
+            var json = await repo.ExportJSON("A", TestContext.Current.CancellationToken);
 
             Assert.Contains("\"Name\": \"A\"", json);
         }
@@ -563,7 +563,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJSON(json, TestContext.Current.CancellationToken);
             Assert.True(result);
         }
 
@@ -573,7 +573,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = string.Empty;
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJSON(json, TestContext.Current.CancellationToken);
 
             Assert.False(result);
         }
@@ -584,7 +584,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = "null";
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJSON(json, TestContext.Current.CancellationToken);
 
             Assert.False(result);
         }
@@ -595,7 +595,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = "{ invalid json }";
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJSON(json, TestContext.Current.CancellationToken);
 
             Assert.False(result);
         }
@@ -604,21 +604,21 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task AddDomainServiceAsync_CallsAddAsync()
         {
             var service = new Service(null!) { Name = "TestService" };
-            var result = await _serviceRepository.AddDomainServiceAsync(service);
+            var result = await _serviceRepository.AddDomainServiceAsync(service, TestContext.Current.CancellationToken);
             Assert.Equal(1, result);
         }
 
         [Fact]
         public async Task AddDomainServiceAsync_ThrowsArgumentNullException()
         {
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceRepository.AddDomainServiceAsync(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceRepository.AddDomainServiceAsync(null!, TestContext.Current.CancellationToken));
         }
 
         [Fact]
         public async Task UpdateDomainServiceAsync_CallsUpdateAsync()
         {
             var service = new Service(null!) { Name = "TestService" };
-            var result = await _serviceRepository.UpdateDomainServiceAsync(service);
+            var result = await _serviceRepository.UpdateDomainServiceAsync(service, TestContext.Current.CancellationToken);
             Assert.Equal(1, result);
         }
 
@@ -626,21 +626,21 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task UpsertDomainServiceAsync_CallsUpsertAsync()
         {
             var service = new Service(null!) { Name = "TestService" };
-            var result = await _serviceRepository.UpsertDomainServiceAsync(service);
+            var result = await _serviceRepository.UpsertDomainServiceAsync(service, TestContext.Current.CancellationToken);
             Assert.Equal(1, result);
         }
 
         [Fact]
         public async Task DeleteDomainServiceAsync_ById_CallsDeleteAsync()
         {
-            var result = await _serviceRepository.DeleteDomainServiceAsync(1);
+            var result = await _serviceRepository.DeleteDomainServiceAsync(1, TestContext.Current.CancellationToken);
             Assert.Equal(1, result);
         }
 
         [Fact]
         public async Task DeleteDomainServiceAsync_ByName_CallsDeleteAsync()
         {
-            var result = await _serviceRepository.DeleteDomainServiceAsync("TestService");
+            var result = await _serviceRepository.DeleteDomainServiceAsync("TestService", TestContext.Current.CancellationToken);
             Assert.Equal(1, result);
         }
 
@@ -648,7 +648,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetDomainServiceByIdAsync_ReturnsMappedService()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1);
+            var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("StubService", result.Name);
         }
@@ -658,7 +658,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1);
+            var result = await serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -666,7 +666,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetDomainServiceByNameAsync_ReturnsMappedService()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await _serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService");
+            var result = await _serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("TestService", result.Name);
         }
@@ -676,7 +676,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService");
+            var result = await serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -684,7 +684,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetAllDomainServicesAsync_ReturnsMappedServices()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = (await _serviceRepository.GetAllDomainServicesAsync(serviceManager)).ToList();
+            var result = (await _serviceRepository.GetAllDomainServicesAsync(serviceManager, TestContext.Current.CancellationToken)).ToList();
             Assert.Single(result);
             Assert.Equal("StubService", result[0].Name);
         }
@@ -693,7 +693,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task SearchDomainServicesAsync_ReturnsMappedServices()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = (await _serviceRepository.SearchDomainServicesAsync(serviceManager, "StubService")).ToList();
+            var result = (await _serviceRepository.SearchDomainServicesAsync(serviceManager, "StubService", TestContext.Current.CancellationToken)).ToList();
             Assert.Single(result);
             Assert.Equal("StubService", result[0].Name);
         }
@@ -701,28 +701,28 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task ExportDomainServiceXMLAsync_ReturnsString()
         {
-            var result = await _serviceRepository.ExportDomainServiceXMLAsync("Service1");
+            var result = await _serviceRepository.ExportDomainServiceXMLAsync("Service1", TestContext.Current.CancellationToken);
             Assert.Equal("<xml></xml>", result);
         }
 
         [Fact]
         public async Task ImportDomainServiceXMLAsync_ReturnsBool()
         {
-            var result = await _serviceRepository.ImportDomainServiceXMLAsync("<xml></xml>");
+            var result = await _serviceRepository.ImportDomainServiceXMLAsync("<xml></xml>", TestContext.Current.CancellationToken);
             Assert.True(result);
         }
 
         [Fact]
         public async Task ExportDomainServiceJSONAsync_ReturnsString()
         {
-            var result = await _serviceRepository.ExportDomainServiceJSONAsync("Service1");
+            var result = await _serviceRepository.ExportDomainServiceJSONAsync("Service1", TestContext.Current.CancellationToken);
             Assert.Equal("{ }", result);
         }
 
         [Fact]
         public async Task ImportDomainServiceJSONAsync_ReturnsBool()
         {
-            var result = await _serviceRepository.ImportDomainServiceJSONAsync("{ }");
+            var result = await _serviceRepository.ImportDomainServiceJSONAsync("{ }", TestContext.Current.CancellationToken);
             Assert.True(result);
         }
 
