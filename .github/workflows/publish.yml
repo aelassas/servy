@@ -110,9 +110,6 @@ jobs:
       - name: Build Servy projects
         shell: pwsh
         run: |
-          Write-Host "Restoring NuGet packages..."
-          dotnet restore Servy.sln
-
           $projects = @(
             "src\Servy.Restarter\Servy.Restarter.csproj",
             "src\Servy.Service\Servy.Service.csproj",
@@ -120,6 +117,11 @@ jobs:
             "src\Servy.CLI\Servy.CLI.csproj",
             "src\Servy.Manager\Servy.Manager.csproj"
           )
+
+          foreach ($proj in $projects) {
+            Write-Host "Restoring $proj..."
+            dotnet restore $proj --runtime win-x64
+          }
 
           foreach ($proj in $projects) {
             Write-Host "Building $proj ($env:CONFIGURATION)..."
