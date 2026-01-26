@@ -105,16 +105,26 @@ jobs:
           if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
 
       # -----------------------------------------------------
-      # Build solution
+      # Build projects individually
       # -----------------------------------------------------
-      - name: Build Servy.sln
+      - name: Build Servy projects
         shell: pwsh
         run: |
           Write-Host "Restoring NuGet packages..."
           dotnet restore Servy.sln
 
-          Write-Host "Building Servy.sln..."
-          dotnet build Servy.sln --configuration Debug --no-restore
+          $projects = @(
+            "src\Servy.Restarter\Servy.Restarter.csproj",
+            "src\Servy.Service\Servy.Service.csproj",
+            "src\Servy\Servy.csproj",
+            "src\Servy.CLI\Servy.CLI.csproj",
+            "src\Servy.Manager\Servy.Manager.csproj"
+          )
+
+          foreach ($proj in $projects) {
+            Write-Host "Building $proj ($env:CONFIGURATION)..."
+            dotnet build $proj --configuration $env:CONFIGURATION --no-restore
+          }
 
       # -----------------------------------------------------
       # Run unit tests
