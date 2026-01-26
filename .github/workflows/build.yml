@@ -39,5 +39,5 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore Servy.sln
 
-      - name: Build solution (Release)
-        run: dotnet build Servy.sln --configuration Release --no-restore
+      - name: Build solution (Debug)
+        run: dotnet build Servy.sln --configuration Debug --no-restore
