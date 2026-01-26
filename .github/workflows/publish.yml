@@ -114,7 +114,7 @@ jobs:
           dotnet restore Servy.sln
 
           Write-Host "Building Servy.sln..."
-          dotnet build Servy.sln --configuration $env:CONFIGURATION --no-restore
+          dotnet build Servy.sln --configuration Debug --no-restore
 
       # -----------------------------------------------------
       # Run unit tests
