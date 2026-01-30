@@ -111,6 +111,16 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.StartTimeout = "11";
             _viewModel.StopTimeout = "6";
 
+            _viewModel.PreStopExecutablePath = @"C:\pre-stop\pre-stop.exe";
+            _viewModel.PreStopStartupDirectory = @"C:\pre-stop";
+            _viewModel.PreStopParameters = "pre-stop-args";
+            _viewModel.PreStopTimeoutSeconds = "15";
+            _viewModel.PreStopLogAsError = true;
+
+            _viewModel.PostStopExecutablePath = @"C:\post-stop\post-stop.exe";
+            _viewModel.PostStopStartupDirectory = @"C:\post-stop";
+            _viewModel.PostStopParameters = "post-stop-args";
+
             // Act
             _viewModel.InstallCommand.Execute(null);
 
@@ -162,7 +172,19 @@ namespace Servy.UnitTests.ViewModels
                  true,
                  DateRotationType.Weekly,
                  "11",
-                 "6"
+                 "6",
+
+                  @"C:\pre-stop\pre-stop.exe",
+                  @"C:\pre-stop",
+                  "pre-stop-args",
+                  "15",
+                  true,
+
+                  @"C:\post-stop\post-stop.exe",
+                  @"C:\post-stop",
+                  "post-stop-args"
+
+
             ), Times.Once);
         }
 

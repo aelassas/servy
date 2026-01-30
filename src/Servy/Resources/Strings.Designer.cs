@@ -250,6 +250,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown..
+        /// </summary>
+        public static string Info_PostStop {
+            get {
+                return ResourceManager.GetString("Info_PostStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-stop program..
+        /// </summary>
+        public static string Info_PostStopStartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_PostStopStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable &quot;Ignore Failure&quot;..
         /// </summary>
         public static string Info_PreLaunch {
@@ -264,6 +282,24 @@ namespace Servy.Resources {
         public static string Info_PreLaunchStartupDirectory {
             get {
                 return ResourceManager.GetString("Info_PreLaunchStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        /// </summary>
+        public static string Info_PreStop {
+            get {
+                return ResourceManager.GetString("Info_PreStop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the pre-stop program..
+        /// </summary>
+        public static string Info_PreStopStartupDirectory {
+            get {
+                return ResourceManager.GetString("Info_PreStopStartupDirectory", resourceCulture);
             }
         }
         
@@ -521,6 +557,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Post-Stop.
+        /// </summary>
+        public static string Label_PostStopTab {
+            get {
+                return ResourceManager.GetString("Label_PostStopTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Ignore Failure.
         /// </summary>
         public static string Label_PreLaunchIgnoreFailure {
@@ -553,6 +598,33 @@ namespace Servy.Resources {
         public static string Label_PreLaunchTimeoutSeconds {
             get {
                 return ResourceManager.GetString("Label_PreLaunchTimeoutSeconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Log pre-stop failure as error.
+        /// </summary>
+        public static string Label_PreStopLogAsError {
+            get {
+                return ResourceManager.GetString("Label_PreStopLogAsError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Stop.
+        /// </summary>
+        public static string Label_PreStopTab {
+            get {
+                return ResourceManager.GetString("Label_PreStopTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Timeout.
+        /// </summary>
+        public static string Label_PreStopTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Label_PreStopTimeoutSeconds", resourceCulture);
             }
         }
         
@@ -980,6 +1052,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The post-stop process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostStopPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostStopPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified post-stop startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPostStopStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPostStopStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The pre-launch process path is invalid..
         /// </summary>
         public static string Msg_InvalidPreLaunchPath {
@@ -1030,6 +1120,33 @@ namespace Servy.Resources {
         public static string Msg_InvalidPreLaunchTimeout {
             get {
                 return ResourceManager.GetString("Msg_InvalidPreLaunchTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The pre-stop process path is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreStopPath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreStopPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified pre-stop startup directory is invalid..
+        /// </summary>
+        public static string Msg_InvalidPreStopStartupDirectory {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreStopStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Stop timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        /// </summary>
+        public static string Msg_InvalidPreStopTimeout {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPreStopTimeout", resourceCulture);
             }
         }
         

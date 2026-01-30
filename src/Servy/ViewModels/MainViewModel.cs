@@ -546,6 +546,78 @@ namespace Servy.ViewModels
             set { _config.EnableDebugLogs = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Gets or sets pre-stop executable path as a string.
+        /// </summary>
+        public string PreStopExecutablePath
+        {
+            get => _config.PreStopExecutablePath;
+            set { _config.PreStopExecutablePath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-stop startup directory as a string.
+        /// </summary>
+        public string PreStopStartupDirectory
+        {
+            get => _config.PreStopStartupDirectory;
+            set { _config.PreStopStartupDirectory = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-stop parameters as a string.
+        /// </summary>
+        public string PreStopParameters
+        {
+            get => _config.PreStopParameters;
+            set { _config.PreStopParameters = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-stop timeout as a string.
+        /// </summary>
+        public string PreStopTimeoutSeconds
+        {
+            get => _config.PreStopTimeoutSeconds;
+            set { _config.PreStopTimeoutSeconds = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets pre-stop log as error as a bool.
+        /// </summary>
+        public bool PreStopLogAsError
+        {
+            get => _config.PreStopLogAsError;
+            set { _config.PreStopLogAsError = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets post-stop executable path as a string.
+        /// </summary>
+        public string PostStopExecutablePath
+        {
+            get => _config.PostStopExecutablePath;
+            set { _config.PostStopExecutablePath = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets post-stop startup directory as a string.
+        /// </summary>
+        public string PostStopStartupDirectory
+        {
+            get => _config.PostStopStartupDirectory;
+            set { _config.PostStopStartupDirectory = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets post-stop parameters as a string.
+        /// </summary>
+        public string PostStopParameters
+        {
+            get => _config.PostStopParameters;
+            set { _config.PostStopParameters = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         #region Commands
@@ -734,6 +806,22 @@ namespace Servy.ViewModels
             PreLaunchTimeoutSeconds = DefaultPreLaunchTimeoutSeconds.ToString();
             PreLaunchRetryAttempts = DefaultPreLaunchRetryAttempts.ToString();
             PreLaunchIgnoreFailure = false;
+
+            PostLaunchExecutablePath = string.Empty;
+            PostLaunchStartupDirectory = string.Empty;
+            PostLaunchParameters = string.Empty;
+
+            EnableDebugLogs = false;
+
+            PreStopExecutablePath = string.Empty;
+            PreStopStartupDirectory = string.Empty;
+            PreStopParameters = string.Empty;
+            PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
+            PreStopLogAsError = false;
+
+            PostStopExecutablePath = string.Empty;
+            PostStopStartupDirectory = string.Empty;
+            PostStopParameters = string.Empty;
 
             // Commands
             BrowseProcessPathCommand = new RelayCommand<object>(_ => BrowseProcessPath());
@@ -990,7 +1078,17 @@ namespace Servy.ViewModels
                 _config.EnableDateRotation,
                 _config.DateRotationType,
                 _config.StartTimeout,
-                _config.StopTimeout
+                _config.StopTimeout,
+
+                _config.PreStopExecutablePath,
+                _config.PreStopStartupDirectory,
+                _config.PreStopParameters,
+                _config.PreStopTimeoutSeconds,
+                _config.PreStopLogAsError,
+
+                _config.PostStopExecutablePath,
+                _config.PostStopStartupDirectory,
+                _config.PostStopParameters
                 );
         }
 
@@ -1100,6 +1198,18 @@ namespace Servy.ViewModels
 
             StartTimeout = DefaultStartTimeout.ToString();
             StopTimeout = DefaultStopTimeout.ToString();
+
+            // Pre-Stop
+            PreStopExecutablePath = string.Empty;
+            PreStopStartupDirectory = string.Empty;
+            PreStopParameters = string.Empty;
+            PreStopTimeoutSeconds = DefaultPreStopTimeoutSeconds.ToString();
+            PreStopLogAsError = false;
+
+            // Post-Stop
+            PostStopExecutablePath = string.Empty;
+            PostStopStartupDirectory = string.Empty;
+            PostStopParameters = string.Empty;
         }
 
         #endregion
@@ -1244,6 +1354,16 @@ namespace Servy.ViewModels
 
             StartTimeout = dto.StartTimeout == null ? DefaultStartTimeout.ToString() : dto.StartTimeout.ToString();
             StopTimeout = dto.StopTimeout == null ? DefaultStopTimeout.ToString() : dto.StopTimeout.ToString();
+
+            PreStopExecutablePath = dto.PreStopExecutablePath;
+            PreStopStartupDirectory = dto.PreStopStartupDirectory;
+            PreStopParameters = dto.PreStopParameters;
+            PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds == null ? DefaultPreStopTimeoutSeconds.ToString() : dto.PreStopTimeoutSeconds.ToString();
+            PreStopLogAsError = dto.PreStopLogAsError ?? false;
+
+            PostStopExecutablePath = dto.PostStopExecutablePath;
+            PostStopStartupDirectory = dto.PostStopStartupDirectory;
+            PostStopParameters = dto.PostStopParameters;
         }
 
         /// <summary>
@@ -1310,6 +1430,16 @@ namespace Servy.ViewModels
 
                 StartTimeout = int.TryParse(StartTimeout, out var startTimeout) ? startTimeout : DefaultStartTimeout,
                 StopTimeout = int.TryParse(StopTimeout, out var stopTimeout) ? stopTimeout : DefaultStopTimeout,
+
+                PreStopExecutablePath = PreStopExecutablePath,
+                PreStopStartupDirectory = PreStopStartupDirectory,
+                PreStopParameters = PreStopParameters,
+                PreStopTimeoutSeconds = int.TryParse(PreStopTimeoutSeconds, out var pst) ? pst : DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = PreStopLogAsError,
+
+                PostStopExecutablePath = PostStopExecutablePath,
+                PostStopStartupDirectory = PostStopStartupDirectory,
+                PostStopParameters = PostStopParameters,
             };
 
             return dto;

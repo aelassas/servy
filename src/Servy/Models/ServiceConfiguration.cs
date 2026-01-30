@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 
 namespace Servy.Models
 {
@@ -233,6 +234,46 @@ namespace Servy.Models
         /// Gets or sets the timeout in seconds to wait for the process to exit.
         /// </summary>
         public string StopTimeout { get; set; }
+
+        /// <summary>
+        /// Optional path to an executable that runs before the service stops.
+        /// </summary>
+        public string PreStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the pre-stop executable.
+        /// </summary>
+        public string PreStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the pre-stop executable.
+        /// </summary>
+        public string PreStopParameters { get; set; }
+
+        /// <summary>
+        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// </summary>
+        public string PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds.ToString();
+
+        /// <summary>
+        /// Whether to log pre-stop failure as error.
+        /// </summary>
+        public bool PreStopLogAsError { get; set; } = false;
+
+        /// <summary>
+        /// Optional path to an executable that runs after the service stops.
+        /// </summary>
+        public string PostStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-stop executable.
+        /// </summary>
+        public string PostStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-stop executable.
+        /// </summary>
+        public string PostStopParameters { get; set; }
 
     }
 }

@@ -59,6 +59,16 @@ namespace Servy.Mappers
                 MaxRotations = ParseInt(config.MaxRotations, Core.Config.AppConfig.DefaultMaxRotations),
                 StartTimeout = ParseInt(config.StartTimeout, Core.Config.AppConfig.DefaultStartTimeout),
                 StopTimeout = ParseInt(config.StopTimeout, Core.Config.AppConfig.DefaultStopTimeout),
+
+                PreStopExecutablePath = config.PreStopExecutablePath,
+                PreStopStartupDirectory = config.PreStopStartupDirectory,
+                PreStopParameters = config.PreStopParameters,
+                PreStopTimeoutSeconds = ParseInt(config.PreStopTimeoutSeconds, Core.Config.AppConfig.DefaultPreStopTimeoutSeconds),
+                PreStopLogAsError = config.PreStopLogAsError,
+
+                PostStopExecutablePath = config.PostStopExecutablePath,
+                PostStopStartupDirectory = config.PostStopStartupDirectory,
+                PostStopParameters = config.PostStopParameters
             };
         }
 
@@ -111,6 +121,16 @@ namespace Servy.Mappers
                 MaxRotations = service.MaxRotations.ToString(),
                 StartTimeout = service.StartTimeout.ToString(),
                 StopTimeout = service.StopTimeout.ToString(),
+
+                PreStopExecutablePath = service.PreStopExecutablePath,
+                PreStopStartupDirectory = service.PreStopStartupDirectory,
+                PreStopParameters = service.PreStopParameters,
+                PreStopTimeoutSeconds = service.PreStopTimeoutSeconds.ToString(),
+                PreStopLogAsError = service.PreStopLogAsError,
+
+                PostStopExecutablePath = service.PostStopExecutablePath,
+                PostStopStartupDirectory = service.PostStopStartupDirectory,
+                PostStopParameters = service.PostStopParameters
             };
         }
 

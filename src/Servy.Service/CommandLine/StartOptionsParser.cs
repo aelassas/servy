@@ -145,6 +145,19 @@ namespace Servy.Service.CommandLine
                 // Start and Stop timeouts
                 StartTimeout = fullArgs.Length > 34 && int.TryParse(fullArgs[34], out int startTimeout) ? startTimeout : AppConfig.DefaultStartTimeout,
                 StopTimeout = fullArgs.Length > 35 && int.TryParse(fullArgs[35], out int stopTimeout) ? stopTimeout : AppConfig.DefaultStopTimeout,
+
+                // Pre-Stop
+                PreStopExecutablePath = ProcessHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
+                PreStopWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
+                PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
+                PreStopTimeout = fullArgs.Length > 36 && int.TryParse(fullArgs[36], out int preStopTimeout) ? preStopTimeout : AppConfig.DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = fullArgs.Length > 37 && bool.TryParse(fullArgs[37], out bool preStopLogAsError) && preStopLogAsError,
+
+                // Post-Stop
+                PostStopExecutablePath = ProcessHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),
+                PostStopWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PostStopStartupDirectory ?? string.Empty),
+                PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters ?? string.Empty),
+
             };
         }
     }

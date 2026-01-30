@@ -210,7 +210,7 @@ namespace Servy.Core.DTOs
         public bool? PreLaunchIgnoreFailure { get; set; }
 
         /// <summary>
-        /// Optional path to an executable that runs before the service starts.
+        /// Optional path to an executable that runs after the service starts.
         /// </summary>
         public string PostLaunchExecutablePath { get; set; }
 
@@ -258,6 +258,45 @@ namespace Servy.Core.DTOs
         /// </summary>
         public string ActiveStderrPath { get; set; }
 
+        /// <summary>
+        /// Optional path to an executable that runs before the service stops.
+        /// </summary>
+        public string PreStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the pre-stop executable.
+        /// </summary>
+        public string PreStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the pre-stop executable.
+        /// </summary>
+        public string PreStopParameters { get; set; }
+
+        /// <summary>
+        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// </summary>
+        public int? PreStopTimeoutSeconds { get; set; }
+
+        /// <summary>
+        /// Whether to log pre-stop failure as error.
+        /// </summary>
+        public bool? PreStopLogAsError { get; set; }
+
+        /// <summary>
+        /// Optional path to an executable that runs after the service stops.
+        /// </summary>
+        public string PostStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-stop executable.
+        /// </summary>
+        public string PostStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-stop executable.
+        /// </summary>
+        public string PostStopParameters { get; set; }
 
         #region ShouldSerialize Methods
 
@@ -306,6 +345,14 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePreviousStopTimeout() => PreviousStopTimeout.HasValue;
         public bool ShouldSerializeActiveStdoutPath() => !string.IsNullOrWhiteSpace(ActiveStdoutPath);
         public bool ShouldSerializeActiveStderrPath() => !string.IsNullOrWhiteSpace(ActiveStderrPath);
+        public bool ShouldSerializePreStopExecutablePath() => !string.IsNullOrWhiteSpace(PreStopExecutablePath);
+        public bool ShouldSerializePreStopStartupDirectory() => !string.IsNullOrWhiteSpace(PreStopStartupDirectory);
+        public bool ShouldSerializePreStopParameters() => !string.IsNullOrWhiteSpace(PreStopParameters);
+        public bool ShouldSerializePreStopTimeoutSeconds() => PreStopTimeoutSeconds.HasValue;
+        public bool ShouldSerializePreStopLogAsError() => PreStopLogAsError.HasValue;
+        public bool ShouldSerializePostStopExecutablePath() => !string.IsNullOrWhiteSpace(PostStopExecutablePath);
+        public bool ShouldSerializePostStopStartupDirectory() => !string.IsNullOrWhiteSpace(PostStopStartupDirectory);
+        public bool ShouldSerializePostStopParameters() => !string.IsNullOrWhiteSpace(PostStopParameters);
 
         #endregion
     }

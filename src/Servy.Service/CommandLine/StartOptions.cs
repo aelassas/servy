@@ -72,7 +72,7 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the maximum number of restart attempts allowed for the child process.
         /// Defaults to 3.
         /// </summary>
-        public int MaxRestartAttempts { get; set; } = 3;
+        public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
         /// <summary>
         /// Gets or sets the environment variables of the child process.
@@ -113,13 +113,13 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the timeout of pre-launch script.
         /// Defaults to 30 seconds.
         /// </summary>
-        public int PreLaunchTimeout { get; set; } = 30;
+        public int PreLaunchTimeout { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the pre-launch script retry attempts.
         /// Defaults to 0.
         /// </summary>
-        public int PreLaunchRetryAttempts { get; set; } = 0;
+        public int PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts;
 
         /// <summary>
         /// Gets or sets the ignore failure option of pre-launch script.
@@ -194,6 +194,46 @@ namespace Servy.Service.CommandLine
         /// Gets or sets the timeout in seconds to wait for the process to exit.
         /// </summary>
         public int StopTimeout { get; set; }
+
+        /// <summary>
+        /// Optional path to an executable that runs before the service stops.
+        /// </summary>
+        public string PreStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the pre-stop executable.
+        /// </summary>
+        public string PreStopWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the pre-stop executable.
+        /// </summary>
+        public string PreStopExecutableArgs { get; set; }
+
+        /// <summary>
+        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// </summary>
+        public int PreStopTimeout { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
+
+        /// <summary>
+        /// Whether to log pre-stop failure as error.
+        /// </summary>
+        public bool PreStopLogAsError { get; set; }
+
+        /// <summary>
+        /// Optional path to an executable that runs after the service stops.
+        /// </summary>
+        public string PostStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-stop executable.
+        /// </summary>
+        public string PostStopWorkingDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-stop executable.
+        /// </summary>
+        public string PostStopExecutableArgs { get; set; }
 
     }
 }

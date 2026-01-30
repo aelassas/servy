@@ -342,5 +342,62 @@ namespace Servy.CLI.Options
         [Option("stopTimeout", HelpText = "Timeout in seconds to wait for the process to exit. Must be greater than or equal to 1 second. Defaults to 5 seconds.")]
         public string StopTimeout { get; set; }
 
+        /// <summary>
+        /// Gets or sets the pre-stop executable path.
+        /// Optional.
+        /// </summary>
+        [Option("preStopPath", HelpText = "The pre-stop executable path. Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
+        public string PreStopPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the pre-stop startup directory.
+        /// Optional. Defaults to the service working directory.
+        /// </summary>
+        [Option("preStopStartupDir", HelpText = "Specifies the directory in which the pre-stop executable will start. Defaults to the directory of the pre-stop program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        public string PreStopStartupDir { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional command-line parameters for the process.
+        /// Optional.
+        /// </summary>
+        [Option("preStopParams", HelpText = "Additional parameters for the pre-stop executable.")]
+        public string PreStopParameters { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for the pre-stop executable.
+        /// Must be >= 5 seconds.
+        /// Optional.
+        /// </summary>
+        [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable.  Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.")]
+        public string PreStopTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout for the pre-stop executable.
+        /// Must be >= 5 seconds.
+        /// Optional.
+        /// </summary>
+        [Option("preStopLogAsError", HelpText = "Log pre-stop failure as error.")]
+        public bool PreStopLogAsError { get; set; }
+
+        /// <summary>
+        /// Gets or sets the post-stop executable path.
+        /// Optional.
+        /// </summary>
+        [Option("postStopPath", HelpText = "The post-stop executable path. Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown. Supports environment variable expansion, example: %JAVA_HOME%\\bin\\java.exe")]
+        public string PostStopPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the post-stop startup directory.
+        /// Optional. Defaults to the service working directory.
+        /// </summary>
+        [Option("postStopStartupDir", HelpText = "Specifies the directory in which the post-stop executable will start. Defaults to the directory of the post-stop program. Supports environment variable expansion, example: %PROGRAMDATA%\\MyApp")]
+        public string PostStopStartupDir { get; set; }
+
+        /// <summary>
+        /// Gets or sets additional command-line parameters for the process.
+        /// Optional.
+        /// </summary>
+        [Option("postStopParams", HelpText = "Additional parameters for the post-stop executable.")]
+        public string PostStopParameters { get; set; }
     }
 }
