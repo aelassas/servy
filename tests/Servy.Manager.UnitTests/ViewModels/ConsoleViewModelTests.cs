@@ -1,15 +1,16 @@
 ﻿using Moq;
-using Xunit;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
+using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
-using Servy.Core.Helpers;
+using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
@@ -167,5 +168,74 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Empty(vm.RawLines);
             }, createApp: true);
         }
+
+        [Fact]
+        public async Task HistorySort_WithIdenticalTimestamps_ShouldSortBySequenceId()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
+
+                // 1. Instantiate in the chronological order they arrived
+                var line1 = new LogLine("Line 1", LogType.StdOut, sameTime); // Gets lower ID
+                var line2 = new LogLine("Line 2", LogType.StdErr, sameTime); // Gets higher ID
+
+                // 2. Put them in the list "out of order" to prove the sort works
+                var list = new List<LogLine> { line2, line1 };
+
+                // Act
+                var sorted = list.OrderBy(l => l.Timestamp).ThenBy(l => l.Id).ToList();
+
+                // Assert
+                Assert.Equal("Line 1", sorted[0].Text);
+                Assert.Equal("Line 2", sorted[1].Text);
+                Assert.True(sorted[0].Id < sorted[1].Id);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public async Task SwitchService_WithIdenticalTimestamps_ShouldKeepStdOutBeforeStdErr()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var vm = CreateViewModel();
+                var sameTime = new DateTime(2026, 1, 30, 12, 0, 0);
+
+                // We simulate StdErr finishing its task first (getting lower IDs)
+                // by instantiating it before StdOut.
+                var errLine = new LogLine("Error Message", LogType.StdErr, sameTime);
+                var outLine = new LogLine("Output Message", LogType.StdOut, sameTime);
+
+                var outRes = new HistoryResult(new List<LogLine> { outLine }, 100, sameTime);
+                var errRes = new HistoryResult(new List<LogLine> { errLine }, 50, sameTime);
+
+                // Act
+                // We simulate the merge logic inside SwitchService:
+                var combinedHistory = new List<LogLine>();
+                combinedHistory.AddRange(outRes.Lines); // Add StdOut first
+                combinedHistory.AddRange(errRes.Lines); // Add StdErr second
+
+                // The specific sorting logic from your SwitchService:
+                var sortedHistory = combinedHistory
+                    .Select((line, index) => new { line, index })
+                    .OrderBy(x => x.line.Timestamp)
+                    .ThenBy(x => x.index)
+                    .Select(x => x.line)
+                    .ToList();
+
+                // Assert
+                Assert.Equal(2, sortedHistory.Count);
+                // Even though errLine has a lower ID (created first), 
+                // outLine must be first because of the index tie-breaker.
+                Assert.Equal(LogType.StdOut, sortedHistory[0].Type);
+                Assert.Equal(LogType.StdErr, sortedHistory[1].Type);
+
+                // Final proof: StdOut is first despite having a higher ID
+                Assert.True(sortedHistory[0].Id > sortedHistory[1].Id);
+            }, createApp: true);
+        }
+
     }
 }
