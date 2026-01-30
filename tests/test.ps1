@@ -69,7 +69,7 @@ foreach ($Proj in $TestProjects) {
     # Get project name without extension
     $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
     $ProjDir = Split-Path $Proj -Parent
-    $DllPath = Join-Path $ProjDir "bin\Debug\$ProjName.dll"
+    $DllPath = Join-Path $ProjDir "bin\$Platform\Debug\$ProjName.dll"
 
     if (-not (Test-Path $DllPath)) {
         Write-Error "Could not find built DLL: $DllPath"
