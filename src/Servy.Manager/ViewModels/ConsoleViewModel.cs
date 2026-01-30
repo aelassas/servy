@@ -47,7 +47,7 @@ namespace Servy.Manager.ViewModels
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
         private CancellationTokenSource _cts;
         private string _consoleSearchText;
-        private int _maxLines;
+        private readonly int _maxLines;
         private string _stdoutPath;
         private string _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
@@ -521,7 +521,10 @@ namespace Servy.Manager.ViewModels
                     Services.Add(new ConsoleService { Name = s.Name, Pid = null, StdoutPath = null, StderrPath = null });
                 }
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                // Search was cancelled; no action needed.
+            }
             catch (Exception ex)
             {
                 _logger.Error($"Failed to search services: {ex}");

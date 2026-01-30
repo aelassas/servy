@@ -26,7 +26,12 @@ namespace Servy.Manager.Views
         /// <summary>
         /// Gets or sets the current view model displayed in the console interface.
         /// </summary>
-        public ConsoleViewModel CurrentViewModel;
+        private ConsoleViewModel CurrentViewModel;
+
+        /// <summary>
+        /// Define a small tolerance for floating point comparisons 
+        /// </summary>
+        private const double ScrollTolerance = 0.001;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConsoleView"/> class.
@@ -64,20 +69,17 @@ namespace Servy.Manager.Views
         /// </summary>
         private void OnVmPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(ConsoleViewModel.IsPaused))
+            if (e.PropertyName == nameof(ConsoleViewModel.IsPaused) && sender is ConsoleViewModel vm && !vm.IsPaused)
             {
-                if (sender is ConsoleViewModel vm && !vm.IsPaused)
-                {
-                    // Clear UI selection
-                    LogList.SelectedItems.Clear();
+                // Clear UI selection
+                LogList.SelectedItems.Clear();
 
-                    // Snap to the bottom of the fresh history loaded by LoadLogsAsync
-                    // We use a slight delay to ensure the ListView has rendered the new items
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        OnRequestScroll(true);
-                    }), DispatcherPriority.Render);
-                }
+                // Snap to the bottom of the fresh history loaded by LoadLogsAsync
+                // We use a slight delay to ensure the ListView has rendered the new items
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    OnRequestScroll(true);
+                }), DispatcherPriority.Render);
             }
         }
 
@@ -88,8 +90,9 @@ namespace Servy.Manager.Views
         /// </summary>
         private void LogList_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            // We only care about vertical scrolls initiated by the user
-            if (e.VerticalChange == 0) return;
+            // Check if the change is effectively zero using the tolerance range
+            if (Math.Abs(e.VerticalChange) < ScrollTolerance)
+                return;
 
             if (DataContext is ConsoleViewModel vm)
             {
@@ -134,13 +137,10 @@ namespace Servy.Manager.Views
                     sv.ScrollToEnd();
                     _isFirstLoad = false;
                 }
-                else if (DataContext is ConsoleViewModel vm)
+                else if (DataContext is ConsoleViewModel vm && sv.VerticalOffset >= (sv.ScrollableHeight - 50) && !vm.IsPaused)
                 {
                     // Only auto-scroll if the user hasn't paused (by selecting or scrolling up)
-                    if (sv.VerticalOffset >= (sv.ScrollableHeight - 50) && !vm.IsPaused)
-                    {
-                        sv.ScrollToEnd();
-                    }
+                    sv.ScrollToEnd();
                 }
             }), DispatcherPriority.DataBind);
         }
