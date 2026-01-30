@@ -307,11 +307,13 @@ namespace Servy.Manager.ViewModels
                 if (errRes != null) combinedHistory.AddRange(errRes.Lines);
 
                 // Stable sort: 
-                // 1. By Time
-                // 2. By Type (Tie-breaker so StdOut/StdErr don't jump around)
+                // 1. By Time (Primary)
+                // 2. Instead of using l.Id (which is raced), we use the list index as the tie-breaker.
                 var sortedHistory = combinedHistory
-                    .OrderBy(l => l.Timestamp)
-                    .ThenBy(l => l.Type)
+                    .Select((line, index) => new { line, index })
+                    .OrderBy(x => x.line.Timestamp)
+                    .ThenBy(x => x.index)
+                    .Select(x => x.line)
                     .ToList();
 
                 if (sortedHistory.Any())
