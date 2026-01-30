@@ -142,6 +142,9 @@ namespace Servy.Core.UnitTests.Domain
                 FailureProgramStartupDirectory = "C:\\failureProgramDir",
                 FailureProgramParameters = "--failureProgramArg",
 
+                ActiveStdoutPath = "C:\\stdout.log",
+                ActiveStderrPath = "C:\\stderr.log",
+
                 PreStopExecutablePath = "C:\\pre-stop.exe",
                 PreStopStartupDirectory = "C:\\preStopDir",
                 PreStopParameters = "--preStopArg",
