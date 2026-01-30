@@ -71,7 +71,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostLaunchParameters = "post-launch-params",
                 Password = "plain",
                 EnvironmentVariables = "v1=val1;v2=val2",
-                PreLaunchEnvironmentVariables = "v3=val3"
+                PreLaunchEnvironmentVariables = "v3=val3",
+                PreStopParameters = "pre-stop-params",
+                PostStopParameters = "post-stop-params",
             };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
             _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
@@ -80,6 +82,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
             _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
             _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
 
             var repo = CreateRepository();
@@ -93,6 +97,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("encrypted", dto.Password);
             Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
             Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
+            Assert.Equal("encrypted_pre_stop_params", dto.PreStopParameters);
+            Assert.Equal("encrypted_post_stop_params", dto.PostStopParameters);
         }
 
         [Fact]
@@ -107,7 +113,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostLaunchParameters = "post-launch-params",
                 Password = "plain",
                 EnvironmentVariables = "v1=val1;v2=val2",
-                PreLaunchEnvironmentVariables = "v3=val3"
+                PreLaunchEnvironmentVariables = "v3=val3",
+                PreStopParameters = "pre-stop-params",
+                PostStopParameters = "post-stop-params",
             };
             _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
             _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
@@ -116,6 +124,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
             _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
             _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
+            _mockSecurePassword.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
@@ -129,6 +139,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("encrypted", dto.Password);
             Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
             Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
+            Assert.Equal("encrypted_pre_stop_params", dto.PreStopParameters);
+            Assert.Equal("encrypted_post_stop_params", dto.PostStopParameters);
         }
 
         [Fact]
@@ -241,7 +253,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostLaunchParameters = "encrypted_post_launch_params",
                 Password = "encrypted",
                 EnvironmentVariables = "encrypted_vars",
-                PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+                PreLaunchEnvironmentVariables = "encrypted_pre_vars",
+                PreStopParameters = "encrypted_pre_stop_params",
+                PostStopParameters = "encrypted_post_stop_params",
             };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
@@ -251,6 +265,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
@@ -262,6 +278,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("plain", result!.Password);
             Assert.Equal("v1=val1;v2=val2", result!.EnvironmentVariables);
             Assert.Equal("v3=val3", result!.PreLaunchEnvironmentVariables);
+            Assert.Equal("pre-stop-params", result!.PreStopParameters);
+            Assert.Equal("post-stop-params", result!.PostStopParameters);
         }
 
         [Fact]
@@ -300,7 +318,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostLaunchParameters = "encrypted_post_launch_params",
                 Password = "encrypted",
                 EnvironmentVariables = "encrypted_vars",
-                PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+                PreLaunchEnvironmentVariables = "encrypted_pre_vars",
+                PreStopParameters = "encrypted_pre_stop_params",
+                PostStopParameters = "encrypted_post_stop_params",
             };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
@@ -310,6 +330,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByNameAsync("S", TestContext.Current.CancellationToken);
@@ -321,6 +343,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("plain", result!.Password);
             Assert.Equal("v1=val1;v2=val2", result!.EnvironmentVariables);
             Assert.Equal("v3=val3", result!.PreLaunchEnvironmentVariables);
+            Assert.Equal("pre-stop-params", result!.PreStopParameters);
+            Assert.Equal("post-stop-params", result!.PostStopParameters);
         }
 
         [Fact]
@@ -336,7 +360,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                     PostLaunchParameters = "encrypted_post_launch_params1",
                     Password = "e1",
                     EnvironmentVariables = "encrypted_vars1",
-                    PreLaunchEnvironmentVariables = "encrypted_pre_vars1"
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars1",
+                    PreStopParameters = "encrypted_pre_stop_params1",
+                    PostStopParameters = "encrypted_post_stop_params1",
                 },
                 new ServiceDto {
                     Id = 2,
@@ -346,7 +372,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                     PostLaunchParameters = "encrypted_post_launch_params2",
                     Password = "e2",
                     EnvironmentVariables = "encrypted_vars2",
-                    PreLaunchEnvironmentVariables = "encrypted_pre_vars2"
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars2",
+                    PreStopParameters = "encrypted_pre_stop_params2",
+                    PostStopParameters = "encrypted_post_stop_params2",
                 }
             };
 
@@ -368,6 +396,10 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params2")).Returns("failure-prog-params2");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params2")).Returns("pre-launch-params2");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params2")).Returns("post-launch-params2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params1")).Returns("pre_stop_params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params2")).Returns("pre_stop_params2");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params1")).Returns("post_stop_params1");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params2")).Returns("post_stop_params2");
 
             var repo = CreateRepository();
             var result = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).ToList();
@@ -382,6 +414,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                     Assert.Equal("p1", r.Password);
                     Assert.Equal("vars1", r.EnvironmentVariables);
                     Assert.Equal("pre_vars1", r.PreLaunchEnvironmentVariables);
+                    Assert.Equal("pre_stop_params1", r.PreStopParameters);
+                    Assert.Equal("post_stop_params1", r.PostStopParameters);
                 },
                 r =>
                 {
@@ -392,6 +426,8 @@ namespace Servy.Infrastructure.UnitTests.Data
                     Assert.Equal("p2", r.Password);
                     Assert.Equal("vars2", r.EnvironmentVariables);
                     Assert.Equal("pre_vars2", r.PreLaunchEnvironmentVariables);
+                    Assert.Equal("pre_stop_params2", r.PreStopParameters);
+                    Assert.Equal("post_stop_params2", r.PostStopParameters);
                 }
             );
         }
@@ -413,7 +449,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task Search_NullKeyword()
         {
-            var list = new List<ServiceDto> 
+            var list = new List<ServiceDto>
             {
                 new ServiceDto {
                     Name = "A",
@@ -423,7 +459,9 @@ namespace Servy.Infrastructure.UnitTests.Data
                     PostLaunchParameters = "encrypted_post_launch_params",
                     Password = "e1",
                     EnvironmentVariables = "encrypted_vars",
-                    PreLaunchEnvironmentVariables = "encrypted_pre_vars"
+                    PreLaunchEnvironmentVariables = "encrypted_pre_vars",
+                    PreStopParameters = "encrypted_pre_stop_params",
+                    PostStopParameters = "encrypted_post_stop_params",
                 }
             };
             _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
@@ -434,6 +472,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
             _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre_stop_params");
+            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post_stop_params");
 
             var repo = CreateRepository();
             var result = (await repo.Search(null!, TestContext.Current.CancellationToken)).ToList();
@@ -446,6 +486,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("p1", result[0].Password);
             Assert.Equal("vars", result[0].EnvironmentVariables);
             Assert.Equal("pre_vars", result[0].PreLaunchEnvironmentVariables);
+            Assert.Equal("pre_stop_params", result[0].PreStopParameters);
+            Assert.Equal("post_stop_params", result[0].PostStopParameters);
         }
 
         [Fact]
@@ -788,6 +830,16 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
+
+                PreStopExecutablePath = @"C:\apps\pre_stop\pre_stop.exe",
+                PreStopParameters = "--pre-stop-param1",
+                PreStopStartupDirectory = @"C:\apps\pre_stop\",
+                PreStopTimeoutSeconds = 90,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = @"C:\apps\post_stop\post_stop.exe",
+                PostStopParameters = "--post-stop-param1",
+                PostStopStartupDirectory = @"C:\apps\post_stop\",
             };
 
             var domain = InvokeMapToDomain(dto);
@@ -832,6 +884,16 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal(dto.PostLaunchExecutablePath, domain.PostLaunchExecutablePath);
             Assert.Equal(dto.PostLaunchStartupDirectory, domain.PostLaunchStartupDirectory);
             Assert.Equal(dto.PostLaunchParameters, domain.PostLaunchParameters);
+
+            Assert.Equal(dto.PreStopExecutablePath, domain.PreStopExecutablePath);
+            Assert.Equal(dto.PreStopStartupDirectory, domain.PreStopStartupDirectory);
+            Assert.Equal(dto.PreStopParameters, domain.PreStopParameters);
+            Assert.Equal(dto.PreStopTimeoutSeconds, domain.PreStopTimeoutSeconds);
+            Assert.Equal(dto.PreStopLogAsError, domain.PreStopLogAsError);
+
+            Assert.Equal(dto.PostStopExecutablePath, domain.PostStopExecutablePath);
+            Assert.Equal(dto.PostStopStartupDirectory, domain.PostStopStartupDirectory);
+            Assert.Equal(dto.PostStopParameters, domain.PostStopParameters);
         }
 
         [Fact]

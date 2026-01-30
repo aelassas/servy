@@ -61,6 +61,9 @@ if (Test-Path $PublishDir) {
 
 # Step 1: Publish project
 Write-Host "Publishing $ProjectName..."
+
+& dotnet restore $ProjectPath -r $Runtime
+
 dotnet publish $ProjectPath `
     -c $Configuration `
     -r $Runtime `

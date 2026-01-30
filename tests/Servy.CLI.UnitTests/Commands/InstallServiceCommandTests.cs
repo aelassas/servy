@@ -6,10 +6,6 @@ using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Services;
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -83,7 +79,16 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<Core.Enums.DateRotationType>(),
                 It.IsAny<int>(),
-                It.IsAny<int>()
+                It.IsAny<int>(),
+
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()
             )).Returns(Task.FromResult(true));
 
             // Create a dummy Servy.Service.exe for the test
@@ -171,7 +176,16 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<Core.Enums.DateRotationType>(),
                 It.IsAny<int>(),
-                It.IsAny<int>()
+                It.IsAny<int>(),
+
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()
             )).Returns(Task.FromResult(false));
 
             // Create a dummy Servy.Service.exe for the test
@@ -244,7 +258,16 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<Core.Enums.DateRotationType>(),
                 It.IsAny<int>(),
-                It.IsAny<int>()
+                It.IsAny<int>(),
+
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()
             )).Throws<UnauthorizedAccessException>();
 
             // Create a dummy Servy.Service.exe for the test
@@ -317,7 +340,16 @@ namespace Servy.CLI.UnitTests.Commands
                 It.IsAny<bool>(),
                 It.IsAny<Core.Enums.DateRotationType>(),
                 It.IsAny<int>(),
-                It.IsAny<int>()
+                It.IsAny<int>(),
+
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()
             )).Throws<Exception>();
 
             // Create a dummy Servy.Service.exe for the test

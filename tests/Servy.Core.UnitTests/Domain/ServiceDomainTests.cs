@@ -3,9 +3,6 @@ using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Core.UnitTests.Domain
 {
@@ -144,6 +141,17 @@ namespace Servy.Core.UnitTests.Domain
                 FailureProgramPath = "C:\\failure-program.exe",
                 FailureProgramStartupDirectory = "C:\\failureProgramDir",
                 FailureProgramParameters = "--failureProgramArg",
+
+                PreStopExecutablePath = "C:\\pre-stop.exe",
+                PreStopStartupDirectory = "C:\\preStopDir",
+                PreStopParameters = "--preStopArg",
+                PreStopTimeoutSeconds = 20,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = "C:\\post-stop.exe",
+                PostStopStartupDirectory = "C:\\postStopDir",
+                PostStopParameters = "--postStopArg",
+
             };
 
             _serviceManagerMock
@@ -195,7 +203,18 @@ namespace Servy.Core.UnitTests.Domain
                      service.DateRotationType,
 
                      service.StartTimeout,
-                     service.StopTimeout
+                     service.StopTimeout,
+
+                     service.PreStopExecutablePath,
+                     service.PreStopStartupDirectory,
+                     service.PreStopParameters,
+                     service.PreStopTimeoutSeconds,
+                     service.PreStopLogAsError,
+
+                     service.PostStopExecutablePath,
+                     service.PostStopStartupDirectory,
+                     service.PostStopParameters
+
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -244,6 +263,16 @@ namespace Servy.Core.UnitTests.Domain
                 FailureProgramPath = null,
                 FailureProgramStartupDirectory = null,
                 FailureProgramParameters = null,
+
+                PreStopExecutablePath = "C:\\pre-stop.exe",
+                PreStopStartupDirectory = "C:\\preStopDir",
+                PreStopParameters = "--preStopArg",
+                PreStopTimeoutSeconds = 20,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = "C:\\post-stop.exe",
+                PostStopStartupDirectory = "C:\\postStopDir",
+                PostStopParameters = "--postStopArg",
             };
 
             _serviceManagerMock
@@ -295,7 +324,17 @@ namespace Servy.Core.UnitTests.Domain
                      service.DateRotationType,
 
                      service.StartTimeout,
-                     service.StopTimeout
+                     service.StopTimeout,
+
+                     service.PreStopExecutablePath,
+                     service.PreStopStartupDirectory,
+                     service.PreStopParameters,
+                     service.PreStopTimeoutSeconds,
+                     service.PreStopLogAsError,
+
+                     service.PostStopExecutablePath,
+                     service.PostStopStartupDirectory,
+                     service.PostStopParameters
                  ))
                  .ReturnsAsync(true)
                  .Verifiable();
@@ -327,7 +366,17 @@ namespace Servy.Core.UnitTests.Domain
                 EnableHealthMonitoring = false,
                 RecoveryAction = RecoveryAction.None,
                 MaxRestartAttempts = 0,
-                RunAsLocalSystem = true
+                RunAsLocalSystem = true,
+
+                PreStopExecutablePath = "C:\\pre-stop.exe",
+                PreStopStartupDirectory = "C:\\preStopDir",
+                PreStopParameters = "--preStopArg",
+                PreStopTimeoutSeconds = 20,
+                PreStopLogAsError = true,
+
+                PostStopExecutablePath = "C:\\post-stop.exe",
+                PostStopStartupDirectory = "C:\\postStopDir",
+                PostStopParameters = "--postStopArg",
             };
 
             _serviceManagerMock
@@ -335,7 +384,7 @@ namespace Servy.Core.UnitTests.Domain
                     service.Name,                        // serviceName
                     It.IsAny<string>(),                 // description
                     It.IsAny<string>(),                   // wrapperExePath
-                    service.ExecutablePath!,              // realExePath
+                    service.ExecutablePath,              // realExePath
                     string.Empty,                        // workingDirectory
                     string.Empty,                        // realArgs
                     service.StartupType,                 // startType
@@ -376,7 +425,17 @@ namespace Servy.Core.UnitTests.Domain
                      service.DateRotationType,
 
                      service.StartTimeout,
-                     service.StopTimeout
+                     service.StopTimeout,
+
+                     service.PreStopExecutablePath,
+                     service.PreStopStartupDirectory,
+                     service.PreStopParameters,
+                     service.PreStopTimeoutSeconds,
+                     service.PreStopLogAsError,
+
+                     service.PostStopExecutablePath,
+                     service.PostStopStartupDirectory,
+                     service.PostStopParameters
                 ))
                 .ReturnsAsync(true)
                 .Verifiable();

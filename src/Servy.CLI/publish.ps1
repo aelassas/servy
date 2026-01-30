@@ -95,6 +95,8 @@ Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : $BuildConfiguration"
 Write-Host "Runtime          : $Runtime"
 
+& dotnet restore $ProjectPath -r $Runtime
+
 & dotnet clean $ProjectPath -c $BuildConfiguration
 
 & dotnet publish $ProjectPath `

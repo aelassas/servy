@@ -66,6 +66,16 @@ namespace Servy.Core.Mappers
                 EnableDebugLogs = service.EnableDebugLogs,
                 StartTimeout = service.StartTimeout,
                 StopTimeout = service.StopTimeout,
+
+                PreStopExecutablePath = service.PreStopExecutablePath,
+                PreStopStartupDirectory = service.PreStopStartupDirectory,
+                PreStopParameters = service.PreStopParameters,
+                PreStopTimeoutSeconds = service.PreStopTimeoutSeconds,
+                PreStopLogAsError = service.PreStopLogAsError,
+
+                PostStopExecutablePath = service.PostStopExecutablePath,
+                PostStopStartupDirectory = service.PostStopStartupDirectory,
+                PostStopParameters = service.PostStopParameters,
             };
         }
 
@@ -124,6 +134,16 @@ namespace Servy.Core.Mappers
                 EnableDebugLogs = dto.EnableDebugLogs ?? false,
                 StartTimeout = dto.StartTimeout ?? DefaultStartTimeout,
                 StopTimeout = dto.StopTimeout ?? DefaultStopTimeout,
+
+                PreStopExecutablePath = dto.PreStopExecutablePath,
+                PreStopStartupDirectory = dto.PreStopStartupDirectory,
+                PreStopParameters = dto.PreStopParameters,
+                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = dto.PreStopLogAsError ?? false,
+
+                PostStopExecutablePath = dto.PostStopExecutablePath,
+                PostStopStartupDirectory = dto.PostStopStartupDirectory,
+                PostStopParameters = dto.PostStopParameters,
             };
         }
     }

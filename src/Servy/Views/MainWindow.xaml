@@ -627,7 +627,132 @@
 
                     </Grid>
                 </TabItem>
-                
+
+                <!-- Pre-Stop tab UI -->
+                <TabItem Header="{x:Static resx:Strings.Label_PreStopTab}" >
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="340"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Info -->
+                        <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PreStop}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
+
+                        <!-- Process Path -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PreStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="1" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreStopProcessPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+             Text="{x:Static resx:Strings.Info_ProcessPath}" 
+             FontStyle="Normal" 
+             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+             TextWrapping="Wrap"/>
+
+                        <!-- Startup Directory -->
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="3" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePreStopStartupDirectoryCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PreStopStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+             FontStyle="Normal" 
+             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+             TextWrapping="Wrap"/>
+
+                        <!-- Process Parameters -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+             FontStyle="Normal" 
+             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+             TextWrapping="Wrap"/>
+
+                        <!-- Timeout -->
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreStopTimeoutSeconds}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreStopTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+
+                        <!-- Log As error -->
+                        <CheckBox Grid.Row="9" Grid.Column="1"
+          Content="{x:Static resx:Strings.Label_PreStopLogAsError}"
+          IsChecked="{Binding PreStopLogAsError, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+          Margin="0,5" />
+
+                    </Grid>
+                </TabItem>
+
+                <!-- Post-Stop tab UI -->
+                <TabItem Header="{x:Static resx:Strings.Label_PostStopTab}" >
+                    <Grid Margin="20" HorizontalAlignment="Center" VerticalAlignment="Top" MinHeight="520">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="340"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Info -->
+                        <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PostStop}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
+
+                        <!-- Process Path -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PostStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="1" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePostStopProcessPathCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+               Text="{x:Static resx:Strings.Info_ProcessPath}" 
+               FontStyle="Normal" 
+               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+               TextWrapping="Wrap"/>
+
+                        <!-- Startup Directory -->
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PostStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"/>
+                        <Button Grid.Row="3" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowsePostStopStartupDirectoryCommand}" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PostStopStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+               Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+               FontStyle="Normal" 
+               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+               TextWrapping="Wrap"/>
+
+                        <!-- Process Parameters -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+               Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+               FontStyle="Normal" 
+               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+               TextWrapping="Wrap"/>
+
+                    </Grid>
+                </TabItem>
+
+
             </TabControl>
 
             <!-- Bottom Buttons Row -->

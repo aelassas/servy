@@ -43,7 +43,7 @@ for (const [key, val] of Object.entries(process.env)) {
   if (!baselineEnvKeys.has(key)) {
     const line = `${key}=${val}\n`
     // Append each line to the file
-    fs.appendFileSync(filePath, line, "utf8")
+    // fs.appendFileSync(filePath, line, "utf8")
     // console.log(line.trim()) // optional: print to console
   }
 }

@@ -84,6 +84,8 @@ Write-Host "Configuration: $BuildConfiguration"
 Write-Host "Runtime: $Runtime"
 Write-Host "Self-contained: true"
 
+& dotnet restore $ProjectPath -r $Runtime
+
 & dotnet clean $ProjectPath -c $BuildConfiguration
 
 & dotnet publish $ProjectPath `

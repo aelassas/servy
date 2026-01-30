@@ -225,6 +225,16 @@ namespace Servy.Core.Config
         /// </summary>
         public const int MinStopTimeout = 1;
 
+        /// <summary>
+        /// Represents the default timeout, in seconds, to wait before stopping a process or service.
+        /// </summary>
+        public const int DefaultPreStopTimeoutSeconds = 5;
+
+        /// <summary>
+        /// Specifies the minimum allowed value, in seconds, for the pre-stop timeout setting.
+        /// </summary>
+        public const int MinPreStopTimeoutSeconds = 0;
+
         #endregion
 
         #region Public Methods

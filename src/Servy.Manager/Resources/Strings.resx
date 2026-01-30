@@ -466,5 +466,24 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_InvalidStopTimeout" xml:space="preserve">
     <value>Stop timeout must be a number greater than or equal to 1.</value>
   </data>
+  
+  <!--Pre-Stop-->
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>The pre-stop process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>The specified pre-stop startup directory is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>Pre-Stop timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+  </data>
+
+  <!--Post-Stop-->
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>The post-stop process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>The specified post-stop startup directory is invalid.</value>
+  </data>  
 
 </root>

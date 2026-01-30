@@ -26,6 +26,22 @@ namespace Servy.Service
     public partial class Service : ServiceBase
     {
 
+        #region Constants
+
+        /// <summary>
+        /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
+        /// </summary>
+        private const int WaitChunkMs = 5000;
+
+        /// <summary>
+        /// Specifies the additional time, in milliseconds, used for Service Control Manager (SCM) operations.
+        /// </summary>
+        /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
+        /// Windows Service Control Manager to account for potential processing overhead.</remarks>
+        private const int ScmAdditionalTime = 15_000;
+
+        #endregion
+
         #region Private Fields
 
         private readonly IServiceHelper _serviceHelper;
@@ -60,10 +76,14 @@ namespace Servy.Service
 
         #endregion
 
+        #region Events
+
         /// <summary>
         /// Event invoked when the service stops, used for testing purposes.
         /// </summary>
         public event Action? OnStoppedForTest;
+
+        #endregion
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
@@ -482,11 +502,12 @@ namespace Servy.Service
                         if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
                         if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
-                        if (!process.WaitForExit(effectiveTimeout))
-                        {
-                            try { process.Kill(true); } catch { /* ignore */ }
-                            throw new System.TimeoutException($"Pre-launch process timed out after {effectiveTimeout / 1000} seconds.");
-                        }
+                        // Wait for pre-lauch process to exit with timeout
+                        WaitForProcessWithScmHeartbeat(
+                            process,
+                            effectiveTimeout,
+                            WaitChunkMs,
+                            "Pre-launch");
 
                         // Ensure all async reads are finished
                         process.WaitForExit();
@@ -530,6 +551,56 @@ namespace Servy.Service
             }
 
             return false; // stop service start
+        }
+
+        /// <summary>
+        /// Waits for a process to exit while periodically sending "Wait Hints" to the Windows Service Control Manager (SCM).
+        /// </summary>
+        /// <param name="process">The external process to monitor.</param>
+        /// <param name="effectiveTimeoutMs">The maximum total time (in milliseconds) allowed before the process is forcibly terminated.</param>
+        /// <param name="waitChunkMs">The interval (in milliseconds) at which to report progress to the SCM and logs.</param>
+        /// <param name="operationName">A descriptive name for the process, used for logging and exception messages.</param>
+        /// <exception cref="TimeoutException">Thrown when the process execution time exceeds <paramref name="effectiveTimeoutMs"/>.</exception>
+        /// <remarks>
+        /// This method uses a "heartbeat" pattern. It is recommended that <paramref name="waitChunkMs"/> 
+        /// be significantly shorter than the 15-second SCM wait hint to ensure the service remains responsive.
+        /// </remarks>
+        private void WaitForProcessWithScmHeartbeat(
+            Process process,
+            int effectiveTimeoutMs,
+            int waitChunkMs,
+            string operationName)
+        {
+            int elapsed = 0;
+
+            while (!process.WaitForExit(waitChunkMs))
+            {
+                elapsed += waitChunkMs;
+
+                // Keep SCM informed: Request 15s of additional time every chunk
+                _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+
+                //_logger?.Info($"{operationName} process still running... {elapsed / 1000}s elapsed.");
+
+                if (elapsed >= effectiveTimeoutMs)
+                {
+                    try
+                    {
+                        process.Kill(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Warning(
+                            $"Failed to kill {operationName} process: {ex.Message}");
+                    }
+
+                    throw new System.TimeoutException(
+                        $"{operationName} process timed out after {effectiveTimeoutMs / 1000} seconds.");
+                }
+            }
+
+            // Ensure async stdout/stderr drains to avoid data loss in logs
+            process.WaitForExit();
         }
 
         /// <summary>
@@ -799,7 +870,7 @@ namespace Servy.Service
                     FileName = _options.PostLaunchExecutablePath,
                     Arguments = args,
                     WorkingDirectory = workingDir,
-                    UseShellExecute = true,
+                    UseShellExecute = false,
                     CreateNoWindow = true
                 };
 
@@ -850,7 +921,7 @@ namespace Servy.Service
                     FileName = _options.FailureProgramPath,
                     Arguments = args,
                     WorkingDirectory = workingDir,
-                    UseShellExecute = true,
+                    UseShellExecute = false,
                     CreateNoWindow = true
                 };
 
@@ -1192,9 +1263,8 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the service stops.
-        /// Unhooks event handlers, disposes output writers,
-        /// kills the child process, and closes the job object handle.
+        /// Called when the service receives a Stop command from the SCM.
+        /// Triggers cancellation and begins the teardown sequence.
         /// </summary>
         protected override void OnStop()
         {
@@ -1216,7 +1286,8 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Disposes the service, cleaning up resources.
+        /// Orchestrates the full cleanup sequence: unhooking events, running the pre-stop hook,
+        /// terminating the child process tree, and running the post-stop hook.
         /// </summary>
         private void Cleanup()
         {
@@ -1228,20 +1299,31 @@ namespace Servy.Service
 
             try
             {
+                // 1. Unhook Exited event early so we don't trigger "unexpected exit" logic
                 if (_childProcess != null)
-                {
                     _childProcess.Exited -= OnProcessExited!;
+
+                // 2. Pre-Stop Hook
+                // Even if this fails, we usually want to continue killing the main process
+                var preStopSuccess = StartPreStopProcess(_options!);
+
+                if (!preStopSuccess && _options!.PreStopLogAsError)
+                {
+                    _logger?.Error("Pre-stop failed. Manual intervention may be required, but continuing cleanup to avoid orphans.");
                 }
 
-                // Attempt to stop child process gracefully or kill forcibly
-                SafeKillProcess(_childProcess!, _options!.StopTimeout * 1000);
-
+                // 3. Main Kill Sequence (with SCM Heartbeats)
                 if (_childProcess != null)
                 {
-                    // Unsubscribe event handlers to prevent memory leaks or callbacks after dispose
+                    SafeKillProcess(_childProcess, _options!.StopTimeout * 1000);
+
+                    // Unsubscribe output only after the process is dead to catch final logs
                     _childProcess.OutputDataReceived -= OnOutputDataReceived;
                     _childProcess.ErrorDataReceived -= OnErrorDataReceived;
                 }
+
+                // 4. Post-Stop Hook
+                StartPostStopProcess();
 
                 try
                 {
@@ -1275,6 +1357,88 @@ namespace Servy.Service
             }
 
             _disposed = true;
+        }
+
+        /// <summary>
+        /// Executes an optional pre-stop executable. 
+        /// Supports fire-and-forget or synchronous wait with SCM heartbeat pulses.
+        /// </summary>
+        /// <param name="options">The service configuration options.</param>
+        /// <returns><see langword="true"/> if the process succeeded or failures are ignored; otherwise <see langword="false"/>.</returns>
+        private bool StartPreStopProcess(StartOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
+            {
+                _logger?.Info("No pre-stop executable configured. Skipping.");
+                return true; // proceed with service stop
+            }
+
+            var effectiveTimeout = options.PreStopTimeout * 1000;
+            var fireAndForget = effectiveTimeout == 0;
+
+            _logger?.Info("Starting pre-stop process...");
+
+            try
+            {
+                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                    options.PreStopExecutableArgs ?? string.Empty,
+                    new Dictionary<string, string?>());
+
+                LogUnexpandedPlaceholders(args, "[Pre-Stop] Arguments");
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = options.PreStopExecutablePath,
+                    Arguments = args,
+                    WorkingDirectory = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory)
+                        ? options.WorkingDirectory
+                        : options.PreStopWorkingDirectory,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using (var process = new Process { StartInfo = psi })
+                {
+                    process.Start();
+
+                    if (fireAndForget)
+                    {
+                        _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                        return true;
+                    }
+                    else
+                    {
+                        // Wait for pre-lauch process to exit with timeout
+                        WaitForProcessWithScmHeartbeat(
+                            process,
+                            effectiveTimeout,
+                            WaitChunkMs,
+                            "Pre-stop");
+
+                        if (process.ExitCode == 0)
+                        {
+                            _logger?.Info("Pre-stop process completed successfully.");
+                            return true;
+                        }
+                        else
+                        {
+                            _logger?.Error($"Pre-stop process exited with code {process.ExitCode}.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Pre-stop process failed: {ex.Message}", ex);
+            }
+
+            if (!options.PreStopLogAsError)
+            {
+                _logger?.Warning("Ignoring pre-stop failure and continuing service stop.");
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1331,7 +1495,7 @@ namespace Servy.Service
                 while (!stopTask.Wait(5000))
                 {
                     // Request 15s of "Wait Hint" every 5s pulse
-                    _serviceHelper.RequestAdditionalTime(this, 15000, null!);
+                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
                 }
 
                 // 3. Retrieve the result from the finished task
@@ -1365,6 +1529,46 @@ namespace Servy.Service
                 message = $"Child process '{process.Format()}' stop timed out or failed.";
 
             _logger?.Info(message);
+        }
+
+        /// <summary>
+        /// Initiates a fire-and-forget post-stop executable if configured.
+        /// This runs after the main process and its tree have been terminated.
+        /// </summary>
+        private void StartPostStopProcess()
+        {
+            if (_options == null || string.IsNullOrWhiteSpace(_options.PostStopExecutablePath))
+                return;
+
+            try
+            {
+                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                    _options.PostStopExecutableArgs ?? string.Empty,
+                    new Dictionary<string, string?>()
+                );
+
+                var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
+                    ? Path.GetDirectoryName(_options.PostStopExecutablePath)
+                    : _options.PostStopWorkingDirectory;
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = _options.PostStopExecutablePath,
+                    Arguments = args,
+                    WorkingDirectory = workingDir,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                _logger?.Info($"Running post-stop program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+
+                // Fire-and-forget: start the process without disposing immediately
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Failed to run post-stop program: {ex.Message}", ex);
+            }
         }
 
     }

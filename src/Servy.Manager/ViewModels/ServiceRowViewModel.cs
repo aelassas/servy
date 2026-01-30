@@ -267,5 +267,6 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
+
     }
 }

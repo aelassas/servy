@@ -281,6 +281,46 @@ namespace Servy.Core.Domain
         /// </summary>
         public string? ActiveStderrPath { get; set; }
 
+        /// <summary>
+        /// Optional path to an executable that runs before the service stops.
+        /// </summary>
+        public string? PreStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the pre-stop executable.
+        /// </summary>
+        public string? PreStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the pre-stop executable.
+        /// </summary>
+        public string? PreStopParameters { get; set; }
+
+        /// <summary>
+        /// Maximum time in seconds to wait for the pre-stop executable to complete.
+        /// </summary>
+        public int PreStopTimeoutSeconds { get; set; } = AppConfig.DefaultPreStopTimeoutSeconds;
+
+        /// <summary>
+        /// Whether to log pre-stop failure as error.
+        /// </summary>
+        public bool PreStopLogAsError { get; set; }
+
+        /// <summary>
+        /// Optional path to an executable that runs after the service stops.
+        /// </summary>
+        public string? PostStopExecutablePath { get; set; }
+
+        /// <summary>
+        /// Optional startup directory for the post-stop executable.
+        /// </summary>
+        public string? PostStopStartupDirectory { get; set; }
+
+        /// <summary>
+        /// Optional parameters for the post-stop executable.
+        /// </summary>
+        public string? PostStopParameters { get; set; }
+
         #endregion
 
         #region Public Methods
@@ -442,7 +482,17 @@ namespace Servy.Core.Domain
                 dateRotationType: DateRotationType,
 
                 startTimeout: StartTimeout,
-                stopTimeout: StopTimeout
+                stopTimeout: StopTimeout,
+
+                preStopExePath: PreStopExecutablePath,
+                preStopWorkingDirectory: PreStopStartupDirectory,
+                preStopArgs: PreStopParameters,
+                preStopTimeout: PreStopTimeoutSeconds,
+                preStopLogAsError: PreStopLogAsError,
+
+                postStopExePath: PostStopExecutablePath,
+                postStopWorkingDirectory: PostStopStartupDirectory,
+                postStopArgs: PostStopParameters
             );
         }
 
@@ -466,5 +516,6 @@ namespace Servy.Core.Domain
         }
 
         #endregion
+
     }
 }

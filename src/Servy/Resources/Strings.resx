@@ -97,6 +97,12 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_PreLaunchTab" xml:space="preserve">
     <value>Pre-Launch</value>
   </data>
+  <data name="Label_PreStopTab" xml:space="preserve">
+    <value>Pre-Stop</value>
+  </data>
+  <data name="Label_PostStopTab" xml:space="preserve">
+    <value>Post-Stop</value>
+  </data>
 
   <!-- Labels / Info -->
   <data name="Label_ServiceName" xml:space="preserve">
@@ -534,4 +540,43 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_InvalidStopTimeout" xml:space="preserve">
     <value>Stop timeout must be a number greater than or equal to 1.</value>
   </data>
+
+  <!-- Pre-Stop -->
+  <data name="Info_PreStop" xml:space="preserve">
+    <value>Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+  </data>
+  <data name="Info_PreStopStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the pre-stop program.</value>
+  </data>
+  <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
+    <value>Timeout</value>
+  </data>
+  <data name="Label_PreStopLogAsError" xml:space="preserve">
+    <value>Log pre-stop failure as error</value>
+  </data>
+  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
+    <value>The pre-stop process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
+    <value>The specified pre-stop startup directory is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
+    <value>Pre-Stop timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+  </data>
+
+  <!-- Post-Stop -->
+  <data name="Info_PostStop" xml:space="preserve">
+    <value>Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown.</value>
+  </data>
+  <data name="Info_PostStopStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the post-stop program.</value>
+  </data>
+  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
+    <value>The post-stop process path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
+    <value>The specified post-stop startup directory is invalid.</value>
+  </data>
+  
+  
 </root>

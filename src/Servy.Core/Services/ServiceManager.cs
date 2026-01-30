@@ -268,7 +268,17 @@ namespace Servy.Core.Services
                 bool enableDateRotation = false,
                 DateRotationType dateRotationType = DateRotationType.Daily,
                 int? startTimeout = AppConfig.DefaultStartTimeout,
-                int? stopTimeout = AppConfig.DefaultStopTimeout
+                int? stopTimeout = AppConfig.DefaultStopTimeout,
+
+                string? preStopExePath = null,
+                string? preStopWorkingDirectory = null,
+                string? preStopArgs = null,
+                int? preStopTimeout = AppConfig.DefaultPreStopTimeoutSeconds,
+                bool? preStopLogAsError = false,
+
+                string? postStopExePath = null,
+                string? postStopWorkingDirectory = null,
+                string? postStopArgs = null
             )
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -343,8 +353,12 @@ namespace Servy.Core.Services
 
                 // Start/Stop timeouts
                 Helper.Quote((startTimeout ?? AppConfig.DefaultStartTimeout).ToString()),
-                Helper.Quote((stopTimeout ?? AppConfig.DefaultStopTimeout).ToString())
+                Helper.Quote((stopTimeout ?? AppConfig.DefaultStopTimeout).ToString()),
 
+                // Pre-Stop
+                Helper.Quote((preStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds).ToString()),
+                Helper.Quote(preStopLogAsError.ToString())
+                
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -440,7 +454,17 @@ namespace Servy.Core.Services
                     EnableDebugLogs = enableDebugLogs,
 
                     StartTimeout = startTimeout,
-                    StopTimeout = stopTimeout
+                    StopTimeout = stopTimeout,
+
+                    PreStopExecutablePath = preStopExePath,
+                    PreStopStartupDirectory = preStopWorkingDirectory,
+                    PreStopParameters = preStopArgs,
+                    PreStopTimeoutSeconds = preStopTimeout,
+                    PreStopLogAsError = preStopLogAsError,
+
+                    PostStopExecutablePath = postStopExePath,
+                    PostStopStartupDirectory = postStopWorkingDirectory,
+                    PostStopParameters = postStopArgs,
                 };
 
                 // Set PID

@@ -115,7 +115,21 @@ namespace Servy.Service.Helpers
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
                   $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
                   // postLaunchExecutableArgs are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n")
+                  GetDebugLog(options, $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n") +
+                  "\n" +
+
+                  "--------Pre-Stop-------------\n" +
+                  $"- preStopExecutablePath: {options.PreStopExecutablePath}\n" +
+                  $"- preStopWorkingDirectory: {options.PreStopWorkingDirectory}\n" +
+                  GetDebugLog(options, $"- preStopExecutableArgs: {options.PreStopExecutableArgs}\n") +
+                  $"- preStopTimeout: {options.PreStopTimeout}\n" +
+                  $"- preStopLogAsError: {options.PreStopLogAsError}\n\n" +
+
+                  "--------Post-Stop-------------\n" +
+                  $"- postStopExecutablePath: {options.PostStopExecutablePath}\n" +
+                  $"- postStopWorkingDirectory: {options.PostStopWorkingDirectory}\n" +
+                  GetDebugLog(options, $"- postStopExecutableArgs: {options.PostStopExecutableArgs}\n")
+
               //"-------------------------------\n"
               );
         }

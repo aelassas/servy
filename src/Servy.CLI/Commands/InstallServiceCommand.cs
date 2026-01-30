@@ -71,6 +71,7 @@ namespace Servy.CLI.Commands
                 int maxRotations = int.TryParse(opts.MaxRotations, out var maxRot) ? maxRot : AppConfig.DefaultMaxRotations;
                 int startTimeout = int.TryParse(opts.StartTimeout, out var stTimeout) ? stTimeout : AppConfig.DefaultStartTimeout;
                 int stopTimeout = int.TryParse(opts.StopTimeout, out var spTimeout) ? spTimeout : AppConfig.DefaultStopTimeout;
+                int preStopTimeout = int.TryParse(opts.PreStopTimeout, out var psTimeout) ? psTimeout : AppConfig.DefaultPreStopTimeoutSeconds;
 
                 // Call the service manager install method
                 var success = await _serviceManager.InstallService(
@@ -124,7 +125,19 @@ namespace Servy.CLI.Commands
                     dateRotationType: dateRotationType,
                     // Start/Stop timeouts
                     startTimeout: startTimeout,
-                    stopTimeout: stopTimeout
+                    stopTimeout: stopTimeout,
+
+                    // Pre-Stop
+                    preStopExePath: opts.PreStopPath,
+                    preStopWorkingDirectory: opts.PreStopStartupDir,
+                    preStopArgs: opts.PreStopParameters,
+                    preStopTimeout: preStopTimeout,
+                    preStopLogAsError: opts.PreStopLogAsError,
+
+                    // Post-Stop
+                    postStopExePath : opts.PostStopPath,
+                    postStopWorkingDirectory : opts.PostStopStartupDir,
+                    postStopArgs : opts.PostStopParameters
                 );
 
                 if (!success)

@@ -440,6 +440,31 @@ function Install-ServyService {
         When enabled, environment variables and process parameters are recorded in the Windows Event Log. 
         Not recommended for production environments, as these logs may contain sensitive information.
         
+    .PARAMETER PreStopPath
+        Path to a pre-stop executable or script. Optional.
+
+    .PARAMETER PreStopStartupDir
+        Startup directory for the pre-stop executable. Optional.
+
+    .PARAMETER PreStopParams
+        Additional parameters for the pre-stop executable. Optional.
+
+    .PARAMETER PreStopTimeout
+        Timeout (seconds) for the pre-stop executable. Must be >= 0. Optional.        
+        Set to 0 for fire and forget.
+
+    .PARAMETER PreStopLogAsError
+        Switch to treate pre-stop failures as error. Optional.
+
+    .PARAMETER PostStopPath
+        Path to a post-stop executable or script. Optional.
+
+    .PARAMETER PostStopStartupDir
+        Startup directory for the post-stop executable. Optional.
+
+    .PARAMETER PostStopParams
+        Additional parameters for the post-stop executable. Optional.
+
     .EXAMPLE
         Install-ServyService -Name "MyService" `
             -Path "C:\Apps\MyApp\MyApp.exe" `
@@ -520,7 +545,20 @@ function Install-ServyService {
     [string] $PostLaunchParams,
 
     # Debug Logs
-    [switch] $EnableDebugLogs
+    [switch] $EnableDebugLogs,
+
+    # Pre-stop
+    $PreStopPath,
+    $PreStopStartupDir,
+    $PreStopParams,
+    $PreStopTimeout,
+    [switch] $PreStopLogAsError,
+
+    # Post-stop
+    $PostStopPath,
+    $PostStopStartupDir,
+    $PostStopParams
+
   )
 
   $argsList = @()
@@ -570,6 +608,16 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
 
   if ($EnableDebugLogs) { $argsList += "--debug" }
+
+  $argsList = Add-Arg $argsList "--preStopPath" $PreStopPath
+  $argsList = Add-Arg $argsList "--preStopStartupDir" $PreStopStartupDir
+  $argsList = Add-Arg $argsList "--preStopParams" $PreStopParams
+  $argsList = Add-Arg $argsList "--preStopTimeout" $PreStopTimeout
+  if ($PreStopLogAsError) { $argsList += "--preStopLogAsError" }
+
+  $argsList = Add-Arg $argsList "--postStopPath" $PostStopPath
+  $argsList = Add-Arg $argsList "--postStopStartupDir" $PostStopStartupDir
+  $argsList = Add-Arg $argsList "--postStopParams" $PostStopParams
 
   $invokeParams = @{
     Command      = "install"
