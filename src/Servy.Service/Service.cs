@@ -685,7 +685,7 @@ namespace Servy.Service
             }
 
             // Persist PID and PreviousStopTimeout
-            InsertPidAndPreviousStopTimeout(_childProcess.Id, true);
+            InsertPid(_childProcess.Id, true);
 
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
@@ -931,11 +931,11 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Inserts PID and PreviousStopTimeout in database.
+        /// Inserts PID in database and updates PreviousStopTimeout, ActiveStdoutPath and ActiveStderrPath.
         /// </summary>
         /// <param name="pid">PID.</param>
         /// <param name="setPreviousStopTimeout">Indicates whether to set previous stop timeout.</param>
-        private void InsertPidAndPreviousStopTimeout(int? pid, bool setPreviousStopTimeout)
+        private void InsertPid(int? pid, bool setPreviousStopTimeout)
         {
             if (string.IsNullOrWhiteSpace(_serviceName))
                 return;
@@ -949,6 +949,18 @@ namespace Servy.Service
                 serviceDto.Pid = pid;
                 if (setPreviousStopTimeout)
                     serviceDto.PreviousStopTimeout = _options?.StopTimeout;
+
+                if (pid == null)
+                {
+                    serviceDto.ActiveStdoutPath = null;
+                    serviceDto.ActiveStderrPath = null;
+                }
+                else
+                {
+                    serviceDto.ActiveStdoutPath = _options?.StdOutPath;
+                    serviceDto.ActiveStderrPath = _options?.StdErrPath;
+                }
+
                 _ = _serviceRepository
                     .UpdateAsync(serviceDto)
                     .ConfigureAwait(false).GetAwaiter().GetResult();
@@ -960,7 +972,7 @@ namespace Servy.Service
         /// </summary>
         private void ResetPid()
         {
-            InsertPidAndPreviousStopTimeout(null, false);
+            InsertPid(null, false);
         }
 
         /// <summary>

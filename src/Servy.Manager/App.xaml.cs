@@ -52,6 +52,16 @@ namespace Servy.Manager
         public int PerformanceRefreshIntervalInMs { get; private set; }
 
         /// <summary>
+        /// Console refresh interval in seconds.
+        /// </summary>
+        public int ConsoleRefreshIntervalInMs { get; private set; }
+
+        /// <summary>
+        /// Gets the maximum number of lines that can be displayed in the console output.
+        /// </summary>
+        public int ConsoleMaxLines { get; private set; }
+
+        /// <summary>
         /// Servy Configuration App publish path.
         /// </summary>
         public string ConfigurationAppPublishPath { get; private set; }
@@ -128,7 +138,12 @@ namespace Servy.Manager
                 PerformanceRefreshIntervalInMs = int.TryParse(config["PerformanceRefreshIntervalInMs"], out var presult)
                     ? presult
                     : AppConfig.DefaultPerformanceRefreshIntervalInMs;
-
+                ConsoleRefreshIntervalInMs = int.TryParse(config["ConsoleRefreshIntervalInMs"], out var cresult)
+                    ? cresult
+                    : AppConfig.DefaultConsoleRefreshIntervalInMs;
+                ConsoleMaxLines = int.TryParse(config["ConsoleMaxLines"], out var consoleMaxLines)
+                    ? consoleMaxLines
+                    : AppConfig.DefaultConsoleMaxLines;
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else

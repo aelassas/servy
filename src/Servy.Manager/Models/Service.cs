@@ -20,6 +20,10 @@ namespace Servy.Manager.Models
         private bool _isPidEnabled;
         private double? _cpuUsage;
         private long? _ramUsage;
+        private string _stdoutPath;
+        private string _stderrPath;
+        private string _activeStdoutPath;
+        private string _activeStderrPath;
 
         /// <summary>
         /// Gets or sets the service name.
@@ -114,6 +118,41 @@ namespace Servy.Manager.Models
         {
             get => _ramUsage;
             set => SetProperty(ref _ramUsage, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the file system path where standard output is redirected.
+        /// </summary>
+        public string StdoutPath
+        {
+            get => _stdoutPath;
+            set => SetProperty(ref _stdoutPath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the file system path where standard error output is redirected.
+        /// </summary>
+        public string StderrPath {
+            get => _stderrPath;
+            set => SetProperty(ref _stderrPath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the active file system path where standard output is redirected.
+        /// </summary>
+        public string ActiveStdoutPath
+        {
+            get => _activeStdoutPath;
+            set => SetProperty(ref _activeStdoutPath, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the active file system path where standard error output is redirected.
+        /// </summary>
+        public string ActiveStderrPath
+        {
+            get => _activeStderrPath;
+            set => SetProperty(ref _activeStderrPath, value);
         }
 
         #region INotifyPropertyChanged

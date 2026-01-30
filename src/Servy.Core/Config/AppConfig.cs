@@ -56,7 +56,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Service Release Folder.
         /// </summary>
-        public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
@@ -81,7 +81,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Manager App Publish Path.
@@ -112,6 +112,16 @@ namespace Servy.Core.Config
         /// Default performance (CPU/RAM graphs) refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
         public static readonly int DefaultPerformanceRefreshIntervalInMs = 800;
+
+        /// <summary>
+        /// Default console refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
+        
+        /// <summary>
+        /// Default maximum number of lines that can be displayed in the console output.
+        /// </summary>
+        public static readonly int DefaultConsoleMaxLines = 20_000;
 
         /// <summary>
         /// Servy's official documentation link.

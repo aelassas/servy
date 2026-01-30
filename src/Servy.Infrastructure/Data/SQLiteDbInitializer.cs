@@ -104,6 +104,10 @@ namespace Servy.Infrastructure.Data
                 new KeyValuePair<string, string>("StartTimeout", "ALTER TABLE Services ADD COLUMN StartTimeout INTEGER;"),
                 new KeyValuePair<string, string>("StopTimeout", "ALTER TABLE Services ADD COLUMN StopTimeout INTEGER;"),
                 new KeyValuePair<string, string>("PreviousStopTimeout", "ALTER TABLE Services ADD COLUMN PreviousStopTimeout INTEGER;"),
+
+                // Active stdout/stderr
+                new KeyValuePair<string, string>("ActiveStdoutPath", "ALTER TABLE Services ADD COLUMN ActiveStdoutPath TEXT;"),
+                new KeyValuePair<string, string>("ActiveStderrPath", "ALTER TABLE Services ADD COLUMN ActiveStderrPath TEXT;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

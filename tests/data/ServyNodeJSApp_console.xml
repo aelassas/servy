@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>ServyNodeJSApp</Name>
+  <DisplayName />
+  <Description>ServyNodeJSApp</Description>
+  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <Parameters>E:\dev\servy\src\tests\nodejs-app-env-vars\console.js</Parameters>
+  <StartupType>2</StartupType>
+  <Priority>2</Priority>
+  <StdoutPath>E:\dev\servy\nodeapp_stdout.log</StdoutPath>
+  <StderrPath>E:\dev\servy\nodeapp_stderr.log</StderrPath>
+  <EnableRotation>false</EnableRotation>
+  <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <EnvironmentVariables>var1=val1;var2=val2;var3=\=\;\"\\</EnvironmentVariables>
+  <RunAsLocalSystem>true</RunAsLocalSystem>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+</ServiceDto>

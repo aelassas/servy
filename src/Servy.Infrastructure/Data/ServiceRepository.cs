@@ -174,13 +174,15 @@ namespace Servy.Infrastructure.Data
 
                     StartTimeout = @StartTimeout,
                     StopTimeout = @StopTimeout,
-                    PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout)
+                    PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout),
+
+                    ActiveStdoutPath = @ActiveStdoutPath,
+                    ActiveStderrPath = @ActiveStderrPath
 
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, service);
         }
-
 
         /// <inheritdoc />
         public virtual async Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default)
@@ -554,6 +556,10 @@ namespace Servy.Infrastructure.Data
 
                 StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
                 StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
+
+                Pid = dto.Pid,
+                ActiveStdoutPath = dto.ActiveStdoutPath,
+                ActiveStderrPath = dto.ActiveStderrPath,
             };
         }
 

@@ -1,10 +1,32 @@
-﻿namespace Servy.UI.Helpers
+﻿using System.Windows;
+using System.Windows.Media;
+
+namespace Servy.UI.Helpers
 {
     /// <summary>
     /// Provides utility methods for formatting durations, numbers, and row information.
     /// </summary>
     public static class Helper
     {
+        /// <summary>
+        /// Recursively searches the WPF Visual Tree to find a child of a specific type.
+        /// Used here to extract the internal <see cref="ScrollViewer"/> from the <see cref="ListBox"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the visual child to find.</typeparam>
+        /// <param name="parent">The parent object to start the search from.</param>
+        /// <returns>The found child of type T, or null if not found.</returns>
+        public static T GetVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var res = GetVisualChild<T>(child);
+                if (res != null) return res;
+            }
+            return null;
+        }
+
         /// <summary>
         /// Formats a <see cref="TimeSpan"/> into a human-readable string.
         /// </summary>

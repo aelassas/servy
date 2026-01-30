@@ -77,6 +77,11 @@ namespace Servy.Manager.ViewModels
         public PerformanceViewModel PerformanceVM { get; }
 
         /// <summary>
+        /// Gets the console view model.
+        /// </summary>
+        public ConsoleViewModel ConsoleVM { get; }
+
+        /// <summary>
         /// Indicates whether a background operation is running.
         /// </summary>
         public bool IsBusy
@@ -153,6 +158,10 @@ namespace Servy.Manager.ViewModels
                 if (PerformanceVM != null)
                 {
                     PerformanceVM.ServiceCommands = value;
+                }
+                if (ConsoleVM != null)
+                {
+                    ConsoleVM.ServiceCommands = value;
                 }
             }
         }
@@ -329,6 +338,9 @@ namespace Servy.Manager.ViewModels
 
             // Create PerformanceVM only once
             PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands, _logger);
+
+            // Create ConsoleVM only once
+            ConsoleVM = new ConsoleViewModel(serviceRepository, serviceCommands, _logger);
 
             ServicesView = new ListCollectionView(_services);
 
