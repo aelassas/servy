@@ -24,7 +24,7 @@
  
 ## .NET Framework 4.8 Version
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
+Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
 This .NET Framework 4.8 version is designed for compatibility with older Windows operating systems, from Windows 7 SP1 to Windows 11 and Windows Server.
 
@@ -45,12 +45,14 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
 ## Features
-
+<!--
 When it comes to features, Servy brings together the best parts of tools like NSSM, WinSW, and FireDaemon Pro, all in one easy-to-use package. It combines the simplicity of open-source tools with the flexibility and power you'd expect from professional service managers. Below is a detailed list of all the features Servy supports.
+-->
 
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
+* Real-time service stdout and stderr output preview in Servy Console
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, and dependencies
@@ -59,6 +61,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
+* Run pre-stop and post-stop hooks before the application stops and after the application stops
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
 * Supports `Ctrl+C` propagation to descendant processes of the wrapped process
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
