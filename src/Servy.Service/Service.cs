@@ -1401,33 +1401,33 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
+                if (fireAndForget)
+                {
+                    // Fire-and-forget: start the process without waiting
+                    Process.Start(psi);
+                    _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                    return true;
+                }
+
                 using (var process = new Process { StartInfo = psi })
                 {
                     process.Start();
 
-                    if (fireAndForget)
+                    // Wait for pre-stop process to exit with timeout
+                    WaitForProcessWithScmHeartbeat(
+                        process,
+                        effectiveTimeout,
+                        WaitChunkMs,
+                        "Pre-stop");
+
+                    if (process.ExitCode == 0)
                     {
-                        _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                        _logger?.Info("Pre-stop process completed successfully.");
                         return true;
                     }
                     else
                     {
-                        // Wait for pre-lauch process to exit with timeout
-                        WaitForProcessWithScmHeartbeat(
-                            process,
-                            effectiveTimeout,
-                            WaitChunkMs,
-                            "Pre-stop");
-
-                        if (process.ExitCode == 0)
-                        {
-                            _logger?.Info("Pre-stop process completed successfully.");
-                            return true;
-                        }
-                        else
-                        {
-                            _logger?.Error($"Pre-stop process exited with code {process.ExitCode}.");
-                        }
+                        _logger?.Error($"Pre-stop process exited with code {process.ExitCode}.");
                     }
                 }
             }
@@ -1566,7 +1566,7 @@ namespace Servy.Service
 
                 _logger?.Info($"Running post-stop program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
 
-                // Fire-and-forget: start the process without disposing immediately
+                // Fire-and-forget: start the process without waiting
                 Process.Start(psi);
             }
             catch (Exception ex)
