@@ -195,6 +195,35 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
+        public async Task HistorySort_WithIdenticalTimestamps_ShouldPreserveArrivalOrder()
+        {
+            await Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var sameTime = new DateTime(2026, 1, 30, 10, 0, 0);
+
+                var line2 = new LogLine("Line 2", LogType.StdErr, sameTime);
+                var line1 = new LogLine("Line 1", LogType.StdOut, sameTime);
+
+                // Line 2 is at index 0, Line 1 is at index 1
+                var combinedHistory = new List<LogLine> { line2, line1 };
+
+                // Act
+                var sortedHistory = combinedHistory
+                    .Select((line, index) => new { line, index })
+                    .OrderBy(x => x.line.Timestamp)
+                    .ThenBy(x => x.index)
+                    .Select(x => x.line)
+                    .ToList();
+
+                // Assert
+                // Because timestamps are equal, index 0 (Line 2) must come before index 1 (Line 1)
+                Assert.Equal("Line 2", sortedHistory[0].Text);
+                Assert.Equal("Line 1", sortedHistory[1].Text);
+            }, createApp: true);
+        }
+        
+        [Fact]
         public async Task SwitchService_WithIdenticalTimestamps_ShouldKeepStdOutBeforeStdErr()
         {
             await Helper.RunOnSTA(async () =>
