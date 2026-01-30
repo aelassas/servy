@@ -246,6 +246,19 @@ namespace Servy.Core.DTOs
         /// </summary>
         public int? PreviousStopTimeout { get; set; }
 
+        /// <summary>
+        /// Gets or sets the absolute file path where standard output is currently being redirected.
+        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// </summary>
+        public string ActiveStdoutPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the absolute file path where standard error output is currently being redirected.
+        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// </summary>
+        public string ActiveStderrPath { get; set; }
+
+
         #region ShouldSerialize Methods
 
         public bool ShouldSerializeId() => false;
@@ -291,6 +304,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
         public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
         public bool ShouldSerializePreviousStopTimeout() => PreviousStopTimeout.HasValue;
+        public bool ShouldSerializeActiveStdoutPath() => !string.IsNullOrWhiteSpace(ActiveStdoutPath);
+        public bool ShouldSerializeActiveStderrPath() => !string.IsNullOrWhiteSpace(ActiveStderrPath);
 
         #endregion
     }

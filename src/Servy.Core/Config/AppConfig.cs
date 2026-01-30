@@ -101,6 +101,16 @@ namespace Servy.Core.Config
         public static readonly int DefaultPerformanceRefreshIntervalInMs = 800;
 
         /// <summary>
+        /// Default console refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
+
+        /// <summary>
+        /// Default maximum number of lines that can be displayed in the console output.
+        /// </summary>
+        public static readonly int DefaultConsoleMaxLines = 20_000;
+
+        /// <summary>
         /// Servy's official documentation link.
         /// </summary>
         public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";

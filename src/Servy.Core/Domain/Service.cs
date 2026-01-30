@@ -271,6 +271,18 @@ namespace Servy.Core.Domain
         /// </summary>
         public int StopTimeout { get; set; } = AppConfig.DefaultStopTimeout;
 
+        /// <summary>
+        /// Gets or sets the absolute file path where standard output is currently being redirected.
+        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// </summary>
+        public string ActiveStdoutPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the absolute file path where standard error output is currently being redirected.
+        /// Returns <see langword="null"/> if the service is not redirected or not running.
+        /// </summary>
+        public string ActiveStderrPath { get; set; }
+
         #endregion
 
         #region Public Methods

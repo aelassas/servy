@@ -125,6 +125,8 @@
   <ItemGroup>
     <Compile Include="Services\FakeService.cs" />
     <Compile Include="Helper.cs" />
+    <Compile Include="Utils\LogTailerTests.cs" />
+    <Compile Include="ViewModels\ConsoleViewModelTests.cs" />
     <Compile Include="ViewModels\LogsViewModelTests.cs" />
     <Compile Include="ViewModels\MainViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

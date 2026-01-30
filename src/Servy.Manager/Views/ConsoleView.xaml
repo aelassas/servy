@@ -1,0 +1,360 @@
+﻿<UserControl x:Class="Servy.Manager.Views.ConsoleView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             xmlns:local="clr-namespace:Servy.Manager"
+             xmlns:resx="clr-namespace:Servy.Manager.Resources"
+             xmlns:models="clr-namespace:Servy.Manager.Models"
+             xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
+             xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
+             Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="4*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT: SEARCH + SERVICES -->
+        <Border Grid.Column="0" Margin="10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search -->
+                <DockPanel Margin="6" Focusable="True" FocusVisualStyle="{x:Null}">
+                    <TextBox Width="164" Height="24" Margin="0,0,6,0"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="SearchTextBox_KeyDown" />
+                    <Button Width="92" Height="24"
+                            Content="{Binding SearchButtonText}"
+                            Command="{Binding SearchCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" />
+                </DockPanel>
+
+                <!-- Services list -->
+                <DataGrid x:Name="ServicesDataGrid"
+                          Grid.Row="1"
+                          ItemsSource="{Binding Services, IsAsync=True}"
+                          SelectedItem="{Binding SelectedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                          IsSynchronizedWithCurrentItem="False"
+                          CanUserReorderColumns="False"
+                          CanUserSortColumns="True"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                          VirtualizingStackPanel.ScrollUnit="Pixel"
+                          ScrollViewer.CanContentScroll="True"
+                          EnableRowVirtualization="True"
+                          EnableColumnVirtualization="True"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserResizeRows="False"
+                          IsReadOnly="True"
+                          SelectionUnit="FullRow"
+                          SelectionMode="Single"
+                          GridLinesVisibility="None"
+                          HeadersVisibility="Column"
+                          Background="Transparent"
+                          BorderThickness="1"
+                          BorderBrush="#757575"
+                          FocusVisualStyle="{x:Null}"
+                          >
+
+                    <DataGrid.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
+
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Padding" Value="10,7"/>
+                        </Style>
+
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="SnapsToDevicePixels" Value="True"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#F5F5F5"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Background="{TemplateBinding Background}" Padding="0">
+                                            <ContentPresenter VerticalAlignment="Center" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="BorderThickness" Value="0" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Resources>
+
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Width="*" SortMemberPath="Name" CanUserReorder="False" CanUserResize="False">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="{x:Static resx:Strings.Column_Service}" FontWeight="SemiBold"/>
+                            </DataGridTemplateColumn.Header>
+
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Background="Transparent" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="10,6">
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+            </Grid>
+        </Border>
+
+        <!-- RIGHT: CONSOLE -->
+        <Grid Grid.Column="1" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" >
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <!-- PID on the left -->
+                    <ColumnDefinition Width="Auto" />
+
+                    <!-- Spacer -->
+                    <ColumnDefinition Width="10" />
+
+                    <!-- Auto-Refresh -->
+                    <ColumnDefinition Width="Auto" />
+
+                    <!-- Spacer -->
+                    <ColumnDefinition Width="*" />
+
+                    <!-- INFO on the right -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!--PID-->
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="0,0,0,6" VerticalAlignment="Center">
+                    <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
+                                       Foreground="#1B7F9F" 
+                                       FontSize="11" 
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,5,0"/>
+                            <TextBlock Text="{Binding Pid}" 
+                                       Foreground="#1B7F9F" 
+                                       FontWeight="Bold" 
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
+
+                            <Button Command="{Binding CopyPidCommand}"
+                                    Margin="5,0,0,0"
+                                    Padding="4"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Cursor="Hand"
+                                    ToolTip="{x:Static resx:Strings.Button_CopyPid}"
+                                    FocusVisualStyle="{x:Null}">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Opacity" Value="0.5" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <Path Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" 
+                                      Fill="#1B7F9F" 
+                                      Stretch="Uniform" 
+                                      Width="12" 
+                                      Height="12" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!--Resume Auto-Scroll button-->
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
+                    <Button Command="{Binding ClearSelectionCommand}"
+                            Visibility="{Binding IsPaused, Converter={StaticResource BoolToVisibility}}"
+                            Margin="0,0,0,6"
+                            Padding="8,2"
+                            Foreground="White"
+                            Content="{x:Static resx:Strings.Button_Resume}"
+                            ToolTip="{x:Static resx:Strings.Tooltip_Resume}"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#1B7F9F"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" 
+                                                    Background="{TemplateBinding Background}" 
+                                                    BorderThickness="0" 
+                                                    CornerRadius="3" 
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#25A2C9"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#146078"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+                <!--INFO-->
+                <TextBlock Grid.Row="0"
+                           Grid.Column="4"
+                           Text="{x:Static resx:Strings.Console_Info}"
+                           FontSize="11"
+                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           Margin="0,0,0,6"
+                           />
+            </Grid>
+
+            <!--CONSOLE-->
+            <Grid Grid.Row="1" Background="#121212">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="#2D2D2D" Padding="5">
+                    <DockPanel>
+                        <TextBlock Text="🔍 Filter:" Foreground="Gray" VerticalAlignment="Center" Margin="5,0"/>
+                        <TextBox Text="{Binding ConsoleSearchText, UpdateSourceTrigger=PropertyChanged}" 
+                                 Background="#3C3C3C" Foreground="White" BorderThickness="0" Padding="3"/>
+                    </DockPanel>
+                </Border>
+
+                <ListBox x:Name="LogList"
+                         Grid.Row="1"
+                         ItemsSource="{Binding VisibleLines}"
+                         Background="Black"
+                         BorderThickness="0"
+                         SelectionMode="Extended"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Standard"
+                         PreviewKeyDown="LogList_PreviewKeyDown"
+                         SelectedIndex="-1"
+                         IsSynchronizedWithCurrentItem="False"
+                         ScrollViewer.ScrollChanged="LogList_ScrollChanged"
+                         >
+
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <!-- HARD RESET (prevents recycling leaks) -->
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Foreground" Value="#DDDDDD"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Background="{TemplateBinding Background}">
+                                            <ContentPresenter />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+
+                            <Style.Triggers>
+
+                                <!-- STDERR -->
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.StdErr}">
+                                    <Setter Property="Background" Value="#600000"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </DataTrigger>
+
+                                <!-- Selection -->
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#264F78"/>
+                                </Trigger>
+
+                                <!-- Hover (non-selected) -->
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsMouseOver" Value="True"/>
+                                        <Condition Property="IsSelected" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" Value="#1E1E1E"/>
+                                </MultiTrigger>
+
+                            </Style.Triggers>
+                        </Style>
+
+                    </ListBox.ItemContainerStyle>
+
+
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="{x:Static resx:Strings.Label_Copy}" Click="CopyMenuItem_Click"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Text}"
+                                       FontFamily="Consolas"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Padding="4,0"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem},
+                                                            Path=Foreground}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+
+                </ListBox>
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+</UserControl>

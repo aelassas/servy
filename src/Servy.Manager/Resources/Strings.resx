@@ -70,6 +70,23 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_PerformanceTab" xml:space="preserve">
     <value>Performance</value>
   </data>
+  <data name="Label_ConsoleTab" xml:space="preserve">
+    <value>Console</value>
+  </data>
+
+  <data name="Console_Info" xml:space="preserve">
+    <value>Enable service stdout/stderr redirection to live-monitor console output</value>
+  </data>
+  <data name="Label_Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="Button_Resume" xml:space="preserve">
+    <value>▶ Resume</value>
+  </data>
+  <data name="Tooltip_Resume" xml:space="preserve">
+    <value>Clear selection to resume live updates</value>
+  </data>
+
 
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">

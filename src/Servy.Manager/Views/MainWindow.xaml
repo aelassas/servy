@@ -443,6 +443,11 @@
                 <views:PerformanceView DataContext="{Binding PerformanceVM}" />
             </TabItem>
 
+            <!--Console Tab-->
+            <TabItem x:Name="ConsoleTab" Header="{x:Static resx:Strings.Label_ConsoleTab}" VirtualizingStackPanel.IsVirtualizing="False">
+                <views:ConsoleView DataContext="{Binding ConsoleVM}" />
+            </TabItem>
+
             <!--Logs Tab-->
             <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
                 <views:LogsView />
