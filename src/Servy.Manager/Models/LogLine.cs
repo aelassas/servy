@@ -18,6 +18,9 @@
     {
         private static long _nextId;
 
+        /// <summary>
+        /// Gets the unique identifier for the log line.
+        /// </summary>
         public long Id { get; }
 
         /// <summary>

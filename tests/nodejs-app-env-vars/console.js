@@ -80,16 +80,16 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 //   await wait(2000)
 // }
 
-const logCount = 2
-while (true) {
-  for (let i = 0; i < logCount; i++) {
-    process.stdout.write(`[stdout] App is running log ${i + 1}/${logCount}\n`)
-    // process.stderr.write(`[stderr] App is running log ${i + 1}/${logCount}\n`)
-  }
-  process.stdout.write(`[stdout] ${new Date().toISOString()} \n`)
-  process.stdout.write('--------------------------------\n')
-  await wait(2000)
-}
+// const logCount = 2
+// while (true) {
+//   for (let i = 0; i < logCount; i++) {
+//     process.stdout.write(`[stdout] App is running log ${i + 1}/${logCount}\n`)
+//     // process.stderr.write(`[stderr] App is running log ${i + 1}/${logCount}\n`)
+//   }
+//   process.stdout.write(`[stdout] ${new Date().toISOString()} \n`)
+//   process.stdout.write('--------------------------------\n')
+//   await wait(2000)
+// }
 
 // Handle Ctrl+C (SIGINT) and other termination signals
 for (const signal of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
