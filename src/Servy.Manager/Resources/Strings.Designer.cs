@@ -142,6 +142,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à ▶ Resume.
+        /// </summary>
+        public static string Button_Resume {
+            get {
+                return ResourceManager.GetString("Button_Resume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Search.
         /// </summary>
         public static string Button_Search {
@@ -349,6 +358,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable service stdout/stderr redirection to live-monitor console output.
+        /// </summary>
+        public static string Console_Info {
+            get {
+                return ResourceManager.GetString("Console_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à JSON Configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {
@@ -426,6 +444,24 @@ namespace Servy.Manager.Resources {
         public static string Label_AllLevel {
             get {
                 return ResourceManager.GetString("Label_AllLevel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Console.
+        /// </summary>
+        public static string Label_ConsoleTab {
+            get {
+                return ResourceManager.GetString("Label_ConsoleTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Copy.
+        /// </summary>
+        public static string Label_Copy {
+            get {
+                return ResourceManager.GetString("Label_Copy", resourceCulture);
             }
         }
         
@@ -1185,6 +1221,15 @@ namespace Servy.Manager.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Clear selection to resume live updates.
+        /// </summary>
+        public static string Tooltip_Resume {
+            get {
+                return ResourceManager.GetString("Tooltip_Resume", resourceCulture);
             }
         }
     }
