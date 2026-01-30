@@ -56,6 +56,14 @@ namespace Servy.Services
         /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
         /// <param name="startTimeout">The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</param>
         /// <param name="stopTimeout">The timeout in seconds to wait for the process to exit.</param>
+        /// <param name="preStopProgramPath">Pre-stop program path.</param>
+        /// <param name="preStopProgramWorkingDirectory">Pre-stop program working directory.</param>
+        /// <param name="preStopProgramArgs">Pre-stop program arguments.</param>
+        /// <param name="preStopTimeout">Pre-stop program timeout in seconds.</param>
+        /// <param name="preStopLogAsError">Log pre-stop program failures as errors.</param>
+        /// <param name="postStopProgramPath">Post-stop program path.</param>
+        /// <param name="postStopProgramWorkingDirectory">Post-stop program working directory.</param>
+        /// <param name="postStopProgramArgs">Post-stop program arguments.</param>
         Task InstallService(
             string serviceName,
             string serviceDescription,
@@ -100,7 +108,17 @@ namespace Servy.Services
             bool enableDateRotation,
             DateRotationType dateRotationType,
             string startTimeout,
-            string stopTimeout
+            string stopTimeout,
+
+            string preStopProgramPath,
+            string preStopProgramWorkingDirectory,
+            string preStopProgramArgs,
+            string preStopTimeout,
+            bool preStopLogAsError,
+
+            string postStopProgramPath,
+            string postStopProgramWorkingDirectory,
+            string postStopProgramArgs
             );
 
         /// <summary>

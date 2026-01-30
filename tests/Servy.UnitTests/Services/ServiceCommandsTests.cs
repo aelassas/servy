@@ -80,6 +80,16 @@ namespace Servy.UnitTests.Services
             var startTimeout = "11";
             var stopTimeout = "6";
 
+            var preStopExe = @"C:\pre-stop.exe";
+            var preStopDir = @"C:\preStopDir";
+            var preStopArgs = "preStopArgs";
+            var preStopTimeout = "10";
+            var preStopLogAsError = false;
+
+            var postStopExe = @"C:\post-stop.exe";
+            var postStopDir = @"C:\postStopDir";
+            var postStopArgs = "postStopArgs";
+
             // Act
             _mockServiceCommands.Object.InstallService(
                 serviceName,
@@ -131,7 +141,17 @@ namespace Servy.UnitTests.Services
                 dateRotationType,
 
                 startTimeout,
-                stopTimeout
+                stopTimeout,
+
+                preStopExe,
+                preStopDir,
+                preStopArgs,
+                preStopTimeout,
+                preStopLogAsError,
+
+                postStopExe,
+                postStopDir,
+                postStopArgs
                 );
 
             // Assert
@@ -185,7 +205,17 @@ namespace Servy.UnitTests.Services
                 dateRotationType,
 
                 startTimeout,
-                stopTimeout
+                stopTimeout,
+
+                preStopExe,
+                preStopDir,
+                preStopArgs,
+                preStopTimeout,
+                preStopLogAsError,
+
+                postStopExe,
+                postStopDir,
+                postStopArgs
 
                 ), Times.Once);
         }

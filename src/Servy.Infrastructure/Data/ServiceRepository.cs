@@ -75,6 +75,12 @@ namespace Servy.Infrastructure.Data
             if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
                 service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
 
+            if (!string.IsNullOrWhiteSpace(service.PreStopParameters))
+                service.PreStopParameters = _securePassword.Encrypt(service.PreStopParameters);
+
+            if (!string.IsNullOrWhiteSpace(service.PostStopParameters))
+                service.PostStopParameters = _securePassword.Encrypt(service.PostStopParameters);
+
             var sql = @"
                 INSERT INTO Services (
                     Name, Description, ExecutablePath, StartupDirectory, Parameters, 
@@ -85,7 +91,9 @@ namespace Servy.Infrastructure.Data
                     PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
                     FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
                     PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
-                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout
+                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
+                    PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -95,7 +103,9 @@ namespace Servy.Infrastructure.Data
                     @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
                     @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
                     @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
-                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout
+                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
+                    @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
                 );
                 SELECT last_insert_rowid();";
 
@@ -125,6 +135,12 @@ namespace Servy.Infrastructure.Data
 
             if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
                 service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
+
+            if (!string.IsNullOrWhiteSpace(service.PreStopParameters))
+                service.PreStopParameters = _securePassword.Encrypt(service.PreStopParameters);
+
+            if (!string.IsNullOrWhiteSpace(service.PostStopParameters))
+                service.PostStopParameters = _securePassword.Encrypt(service.PostStopParameters);
 
             var sql = @"
                 UPDATE Services SET
@@ -158,7 +174,7 @@ namespace Servy.Infrastructure.Data
                     PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
                     PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
                     PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,
-                    
+         
                     FailureProgramPath = @FailureProgramPath,
                     FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
                     FailureProgramParameters = @FailureProgramParameters,
@@ -183,7 +199,17 @@ namespace Servy.Infrastructure.Data
                     PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout),
 
                     ActiveStdoutPath = @ActiveStdoutPath,
-                    ActiveStderrPath = @ActiveStderrPath
+                    ActiveStderrPath = @ActiveStderrPath,
+
+                    PreStopExecutablePath = @PreStopExecutablePath,
+                    PreStopStartupDirectory = @PreStopStartupDirectory,
+                    PreStopParameters = @PreStopParameters,
+                    PreStopTimeoutSeconds = @PreStopTimeoutSeconds,
+                    PreStopLogAsError = @PreStopLogAsError,
+
+                    PostStopExecutablePath = @PostStopExecutablePath,
+                    PostStopStartupDirectory = @PostStopStartupDirectory,
+                    PostStopParameters = @PostStopParameters
 
                 WHERE Id = @Id;";
 
@@ -251,6 +277,12 @@ namespace Servy.Infrastructure.Data
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
                 dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
 
+            if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
+                dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+
+            if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
+                dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
+
             return dto;
         }
 
@@ -282,6 +314,12 @@ namespace Servy.Infrastructure.Data
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
                 dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+
+            if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
+                dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+
+            if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
+                dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
 
             return dto;
         }
@@ -319,6 +357,12 @@ namespace Servy.Infrastructure.Data
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
                     dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+
+                if (!string.IsNullOrEmpty(dto.PreStopParameters))
+                    dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+
+                if (!string.IsNullOrEmpty(dto.PostStopParameters))
+                    dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
             }
 
             return list;
@@ -368,6 +412,12 @@ namespace Servy.Infrastructure.Data
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
                     dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+
+                if (!string.IsNullOrEmpty(dto.PreStopParameters))
+                    dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+
+                if (!string.IsNullOrEmpty(dto.PostStopParameters))
+                    dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
             }
 
             return list;
@@ -566,6 +616,16 @@ namespace Servy.Infrastructure.Data
                 Pid = dto.Pid,
                 ActiveStdoutPath = dto.ActiveStdoutPath,
                 ActiveStderrPath = dto.ActiveStderrPath,
+
+                PreStopExecutablePath = dto.PreStopExecutablePath,
+                PreStopStartupDirectory = dto.PreStopStartupDirectory,
+                PreStopParameters = dto.PreStopParameters,
+                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = dto.PreStopLogAsError ?? false,
+
+                PostStopExecutablePath = dto.PostStopExecutablePath,
+                PostStopStartupDirectory = dto.PostStopStartupDirectory,
+                PostStopParameters = dto.PostStopParameters,
             };
         }
 
@@ -628,6 +688,16 @@ namespace Servy.Infrastructure.Data
 
                 StartTimeout = domain.StartTimeout,
                 StopTimeout = domain.StopTimeout,
+
+                PreStopExecutablePath = domain.PreStopExecutablePath,
+                PreStopStartupDirectory = domain.PreStopStartupDirectory,
+                PreStopParameters = domain.PreStopParameters,
+                PreStopTimeoutSeconds = domain.PreStopTimeoutSeconds,
+                PreStopLogAsError = domain.PreStopLogAsError,
+
+                PostStopExecutablePath = domain.PostStopExecutablePath,
+                PostStopStartupDirectory = domain.PostStopStartupDirectory,
+                PostStopParameters = domain.PostStopParameters,
             };
         }
 

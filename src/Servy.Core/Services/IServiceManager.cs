@@ -63,6 +63,14 @@ namespace Servy.Core.Services
         /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
         /// <param name="startTimeout">The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</param>
         /// <param name="stopTimeout">The timeout in seconds to wait for the process to exit.</param>
+        /// <param name="preStopExePath">The path to an executable that runs before the service stops.</param>
+        /// <param name="preStopWorkingDirectory">The startup directory for the pre-stop executable.</param>
+        /// <param name="preStopArgs">The parameters for the pre-stop executable.</param>
+        /// <param name="preStopTimeout">The maximum time in seconds to wait for the pre-stop executable to complete.</param>
+        /// <param name="preStopLogAsError">A flag to log pre-stop failure as error.</param>
+        /// <param name="postStopExePath">The path to an executable that runs after the service stops.</param>
+        /// <param name="postStopWorkingDirectory">The startup directory for the post-stop executable.</param>
+        /// <param name="postStopArgs">The parameters for the post-stop executable.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
@@ -109,7 +117,17 @@ namespace Servy.Core.Services
                 bool enableDateRotation = false,
                 DateRotationType dateRotationType = DateRotationType.Daily,
                 int? startTimeout = AppConfig.DefaultStartTimeout,
-                int? stopTimeout = AppConfig.DefaultStopTimeout
+                int? stopTimeout = AppConfig.DefaultStopTimeout,
+
+                string preStopExePath = null,
+                string preStopWorkingDirectory = null,
+                string preStopArgs = null,
+                int? preStopTimeout = AppConfig.DefaultPreStopTimeoutSeconds,
+                bool? preStopLogAsError = false,
+
+                string postStopExePath = null,
+                string postStopWorkingDirectory = null,
+                string postStopArgs = null
         );
 
         /// <summary>

@@ -110,6 +110,18 @@ namespace Servy.Infrastructure.Data
                 // Active stdout/stderr
                 new KeyValuePair<string, string>("ActiveStdoutPath", "ALTER TABLE Services ADD COLUMN ActiveStdoutPath TEXT;"),
                 new KeyValuePair<string, string>("ActiveStderrPath", "ALTER TABLE Services ADD COLUMN ActiveStderrPath TEXT;"),
+
+                // Pre-stop script columns
+                new KeyValuePair<string, string>("PreStopExecutablePath", "ALTER TABLE Services ADD COLUMN PreStopExecutablePath TEXT;"),
+                new KeyValuePair<string, string>("PreStopStartupDirectory", "ALTER TABLE Services ADD COLUMN PreStopStartupDirectory TEXT;"),
+                new KeyValuePair<string, string>("PreStopParameters", "ALTER TABLE Services ADD COLUMN PreStopParameters TEXT;"),
+                new KeyValuePair<string, string>("PreStopTimeoutSeconds", "ALTER TABLE Services ADD COLUMN PreStopTimeoutSeconds INTEGER;"),
+                new KeyValuePair<string, string>("PreStopLogAsError", "ALTER TABLE Services ADD COLUMN PreStopLogAsError INTEGER;"),
+
+                // Post-stop script columns
+                new KeyValuePair<string, string>("PostStopExecutablePath", "ALTER TABLE Services ADD COLUMN PostStopExecutablePath TEXT;"),
+                new KeyValuePair<string, string>("PostStopStartupDirectory", "ALTER TABLE Services ADD COLUMN PostStopStartupDirectory TEXT;"),
+                new KeyValuePair<string, string>("PostStopParameters", "ALTER TABLE Services ADD COLUMN PostStopParameters TEXT;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

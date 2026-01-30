@@ -120,7 +120,17 @@ namespace Servy.Services
             bool enableDateRotation,
             DateRotationType dateRotationType,
             string startTimeout,
-            string stopTimeout
+            string stopTimeout,
+
+            string preStopProgramPath,
+            string preStopProgramWorkingDirectory,
+            string preStopProgramArgs,
+            string preStopTimeout,
+            bool preStopLogAsError,
+
+            string postStopProgramPath,
+            string postStopProgramWorkingDirectory,
+            string postStopProgramArgs
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -178,6 +188,18 @@ namespace Servy.Services
 
                 StartTimeout = int.TryParse(startTimeout, out var st) ? st : -1,
                 StopTimeout = int.TryParse(stopTimeout, out var sot) ? sot : -1,
+
+                // Pre-Stop
+                PreStopExecutablePath = preStopProgramPath,
+                PreStopStartupDirectory = preStopProgramWorkingDirectory,
+                PreStopParameters = preStopProgramArgs,
+                PreStopTimeoutSeconds = int.TryParse(preStopTimeout, out var pst) ? pst : -1,
+                PreStopLogAsError = preStopLogAsError,
+
+                // Post-Stop
+                PostStopExecutablePath = postStopProgramPath,
+                PostStopStartupDirectory = postStopProgramWorkingDirectory,
+                PostStopParameters = postStopProgramArgs,
             };
 
             // Validate
@@ -210,6 +232,7 @@ namespace Servy.Services
 
                 var startTimeoutValue = int.Parse(startTimeout);
                 var stopTimeoutValue = int.Parse(stopTimeout);
+                var preStopTimeoutValue = int.Parse(preStopTimeout);
 
                 if (runAsLocalSystem)
                 {
@@ -260,7 +283,17 @@ namespace Servy.Services
                     enableDateRotation: enableDateRotation,
                     dateRotationType: dateRotationType,
                     startTimeout: startTimeoutValue,
-                    stopTimeout: stopTimeoutValue
+                    stopTimeout: stopTimeoutValue,
+
+                    preStopExePath: preStopProgramPath,
+                    preStopWorkingDirectory: preStopProgramWorkingDirectory,
+                    preStopArgs: preStopProgramArgs,
+                    preStopTimeout: preStopTimeoutValue,
+                    preStopLogAsError: preStopLogAsError,
+
+                    postStopExePath: postStopProgramPath,
+                    postStopWorkingDirectory: postStopProgramWorkingDirectory,
+                    postStopArgs: postStopProgramArgs
                 );
 
                 if (success)

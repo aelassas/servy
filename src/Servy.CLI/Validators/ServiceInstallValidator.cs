@@ -175,6 +175,30 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPostLaunchStartupDirectory);
             }
 
+            // Pre-Stop
+            if (!string.IsNullOrWhiteSpace(opts.PreStopPath) && (!ProcessHelper.ValidatePath(opts.PreStopPath)))
+                return CommandResult.Fail(Strings.Msg_InvalidPreStopPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.PreStopStartupDir) && !ProcessHelper.ValidatePath(opts.PreStopStartupDir, false))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreStopStartupDirectory);
+            }
+
+            int preStopTimeoutValue = AppConfig.DefaultPreStopTimeoutSeconds;
+            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && !int.TryParse(opts.PreStopTimeout, out preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds)
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPreStopTimeout);
+            }
+
+            // Post-Stop
+            if (!string.IsNullOrWhiteSpace(opts.PostStopPath) && (!ProcessHelper.ValidatePath(opts.PostStopPath)))
+                return CommandResult.Fail(Strings.Msg_InvalidPostStopPath);
+
+            if (!string.IsNullOrWhiteSpace(opts.PostStopStartupDir) && !ProcessHelper.ValidatePath(opts.PostStopStartupDir, false))
+            {
+                return CommandResult.Fail(Strings.Msg_InvalidPostStopStartupDirectory);
+            }
+
             return CommandResult.Ok("Validation passed.");
         }
 

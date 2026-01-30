@@ -222,6 +222,40 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
+            // Pre-stop validation
+            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath) &&
+                (!ProcessHelper.ValidatePath(dto.PreStopExecutablePath)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.PreStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreStopStartupDirectory, false))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopStartupDirectory, AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.PreStopTimeoutSeconds < Core.Config.AppConfig.MinPreStopTimeoutSeconds)
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopTimeout, AppConfig.Caption);
+                return false;
+            }
+
+            // Post-stop validation
+            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath) &&
+                (!ProcessHelper.ValidatePath(dto.PostStopExecutablePath)))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostStopPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.PostStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostStopStartupDirectory, false))
+            {
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostStopStartupDirectory, AppConfig.Caption);
+                return false;
+            }
+
             return true;
         }
     }
