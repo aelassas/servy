@@ -43,7 +43,7 @@
 
 # Servy
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
+Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
 
 Servy is digitally signed using a trusted code-signing certificate provided by the SignPath Foundation. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
 
@@ -96,6 +96,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Clean, simple UI
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
+* Real-time service stdout and stderr output preview in Servy Console
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, and dependencies
@@ -104,6 +105,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Redirect stdout/stderr to log files with automatic size-based and date-based rotations
 * Run pre-launch hook before starting the service, with retries, timeout, logging and failure handling
 * Run post-launch hook after the application starts successfully
+* Run pre-stop and post-stop hooks before the application stops and after the application stops
 * Supports `Ctrl+C` for command-line apps, close-window for GUI apps, and force kill if unresponsive
 * Supports `Ctrl+C` propagation to descendant processes of the wrapped process
 * Prevent orphaned/zombie processes with improved lifecycle management and ensuring resource cleanup
