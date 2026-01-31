@@ -38,7 +38,7 @@ jobs:
           badge_label: 'LoC prod'
           badge_color: green
           badge: ./output/loc-prod.svg
-          ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+          ignore: '.gitignore|*.txt|.github|setup|data|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
       # ----------------------------
       # Tests LoC
@@ -52,7 +52,7 @@ jobs:
           badge_label: 'LoC tests'
           badge_color: green
           badge: ./output/loc-tests.svg
-          ignore: '.gitignore|*.txt|.github|setup|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+          ignore: '.gitignore|*.txt|.github|setup|data|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
       # ----------------------------
       # Total LoC
