@@ -368,7 +368,7 @@ namespace Servy.CLI.Options
         /// Must be >= 5 seconds.
         /// Optional.
         /// </summary>
-        [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable.  Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.")]
+        [Option("preStopTimeout", HelpText = "Timeout for the pre-stop executable. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.")]
         public string PreStopTimeout { get; set; }
 
         /// <summary>
