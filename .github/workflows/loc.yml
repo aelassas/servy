@@ -80,8 +80,6 @@ jobs:
           echo "URL: ${URL}"
           curl -s -o ./output/loc-total.svg "${URL}"
 
-
-
       # ----------------------------
       # Summary
       # ----------------------------
@@ -95,7 +93,6 @@ jobs:
           echo "- Prod:  $PROD lines" >> $GITHUB_STEP_SUMMARY
           echo "- Tests: $TESTS lines" >> $GITHUB_STEP_SUMMARY
           echo "- Total: $TOTAL lines" >> $GITHUB_STEP_SUMMARY
-
 
       # ----------------------------
       # Deploy badges
