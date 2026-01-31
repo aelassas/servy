@@ -1,0 +1,54 @@
+# ===============================================
+# GitHub Actions Workflow - LOC
+# -----------------------------------------------
+# Calculates the total lines of code (LoC - tests) 
+# in the repository and generates a badge. The 
+# badge is then deployed to the "loc" branch for 
+# use in documentation or the project README.
+# ===============================================
+
+name: loc-tests
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  loc_job:
+    runs-on: ubuntu-latest
+    name: Run
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Create the badge
+        uses: shadowmoose/GHA-LoC-Badge@master
+        id: badge
+        with:
+          debug: true
+          directory: ./
+          badge_label: lines of code (tests)
+          badge_color: green
+          badge: ./output/loc-tests.svg
+          ignore: '.gitignore|*.txt|.github|setup|src|data|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+
+      - name: Print the output
+        run: |
+          echo "Scanned: ${{ steps.badge.outputs.counted_files }}";
+          echo "Line Count: ${{ steps.badge.outputs.total_lines }}";
+
+      - name: Deploy to loc branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_dir: ./output
+          publish_branch: loc
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Summary
+        run: |
+          echo "LOC Badge Generated: ${{ steps.badge.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+          

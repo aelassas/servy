@@ -129,8 +129,10 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 
 ## Stats for Nerds
 
-[![Lines Of Code](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/badge.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
-[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/aelassas/servy/total)](https://servy-win.github.io/stats)
+[![LOC – Production](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-prod.svg)](https://github.com/aelassas/servy/actions/workflows/loc-prod.yml)
+[![LOC – Tests](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-tests.svg)](https://github.com/aelassas/servy/actions/workflows/loc-tests.yml)
+[![LOC – Total](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-total.svg)](https://github.com/aelassas/servy/actions/workflows/loc-total.yml)
+[![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total)](https://servy-win.github.io/stats)
 
 ## License
 
