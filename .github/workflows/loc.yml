@@ -1,0 +1,91 @@
+# ===============================================
+# GitHub Actions Workflow - LOC
+# -----------------------------------------------
+# Calculates lines of code for:
+# - Production code
+# - Test code
+# - Total code
+# Generates badges and deploys them to the "loc"
+# branch for README / documentation usage.
+# ===============================================
+
+name: loc
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  loc_job:
+    runs-on: ubuntu-latest
+    name: Generate LOC badges
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # ----------------------------
+      # Production LOC
+      # ----------------------------
+      - name: Create prod LOC badge
+        uses: shadowmoose/GHA-LoC-Badge@master
+        id: loc_prod
+        with:
+          debug: true
+          directory: ./
+          badge_label: lines of code (prod)
+          badge_color: green
+          badge: ./output/loc-prod.svg
+          ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+
+      # ----------------------------
+      # Tests LOC
+      # ----------------------------
+      - name: Create tests LOC badge
+        uses: shadowmoose/GHA-LoC-Badge@master
+        id: loc_tests
+        with:
+          debug: true
+          directory: ./
+          badge_label: lines of code (tests)
+          badge_color: green
+          badge: ./output/loc-tests.svg
+          ignore: '.gitignore|*.txt|.github|setup|src|data|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+
+      # ----------------------------
+      # Total LOC
+      # ----------------------------
+      - name: Create total LOC badge
+        uses: shadowmoose/GHA-LoC-Badge@master
+        id: loc_total
+        with:
+          debug: true
+          directory: ./
+          badge_label: lines of code (total)
+          badge_color: green
+          badge: ./output/loc-total.svg
+          ignore: '.gitignore|*.txt|.github|setup|data|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+
+      # ----------------------------
+      # Summary
+      # ----------------------------
+      - name: Summary
+        run: |
+          echo "### LOC Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Prod:  ${{ steps.loc_prod.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: ${{ steps.loc_tests.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Total: ${{ steps.loc_total.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+
+      # ----------------------------
+      # Deploy badges
+      # ----------------------------
+      - name: Deploy to loc branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          publish_dir: ./output
+          publish_branch: loc
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
