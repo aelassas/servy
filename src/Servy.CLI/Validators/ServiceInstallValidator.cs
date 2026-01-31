@@ -14,12 +14,6 @@ namespace Servy.CLI.Validators
     /// </summary>
     public class ServiceInstallValidator : IServiceInstallValidator
     {
-        private const int MinRotationSize = 1; // 1 MB
-        private const int MinHeartbeatInterval = 5;
-        private const int MinMaxFailedChecks = 1;
-        private const int MinMaxRestartAttempts = 1;
-        private const int MinPreLaunchTimeoutSeconds = 5;
-        private const int MinPreLaunchRetryAttempts = 0;
 
         /// <summary>
         /// Validates the install service options.
@@ -77,7 +71,7 @@ namespace Servy.CLI.Validators
             }
 
             if (opts.EnableRotation
-                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < MinRotationSize)
+                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize)
                 )
             {
                 return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
@@ -93,16 +87,16 @@ namespace Servy.CLI.Validators
 
             if (opts.EnableHealthMonitoring)
             {
-                if (!int.TryParse(opts.HeartbeatInterval, out var hb) || hb < MinHeartbeatInterval)
+                if (!int.TryParse(opts.HeartbeatInterval, out var hb) || hb < AppConfig.MinHeartbeatInterval)
                     return CommandResult.Fail(Strings.Msg_InvalidHeartbeatInterval);
 
-                if (!int.TryParse(opts.MaxFailedChecks, out var failed) || failed < MinMaxFailedChecks)
+                if (!int.TryParse(opts.MaxFailedChecks, out var failed) || failed < AppConfig.MinMaxFailedChecks)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxFailedChecks);
 
                 if (!ValidateEnumOption<RecoveryAction>(opts.RecoveryAction))
                     return CommandResult.Fail(Strings.Msg_InvalidRecoveryAction);
 
-                if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < MinMaxRestartAttempts)
+                if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
 
@@ -154,13 +148,13 @@ namespace Servy.CLI.Validators
             }
 
             int preLaunchTimeoutValue = 30;
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && !int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < MinPreLaunchTimeoutSeconds)
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && !int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds)
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchTimeout);
             }
 
             int preLaunchRetryAttemptsValue = 0;
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && !int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < MinPreLaunchRetryAttempts)
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && !int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts)
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
             }
