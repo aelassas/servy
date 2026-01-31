@@ -4,7 +4,6 @@ using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
-using Servy.Core.Services;
 using Servy.Resources;
 using Servy.UI.Services;
 using System;
@@ -20,16 +19,6 @@ namespace Servy.Validators
     /// </summary>
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
     {
-        #region Constants
-
-        private const int MinRotationSize = 1;                     // 1 MB
-        private const int MinHeartbeatInterval = 5;                // 5 seconds
-        private const int MinMaxFailedChecks = 1;                  // 1 attempt
-        private const int MinMaxRestartAttempts = 1;               // 1 attempt
-        private const int MinPreLaunchTimeoutSeconds = 5;          // 5 seconds
-        private const int MinPreLaunchRetryAttempts = 0;           // 0 attempts
-
-        #endregion
 
         private readonly IMessageBoxService _messageBoxService;
 
@@ -110,7 +99,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.RotationSize < MinRotationSize)
+            if (dto.RotationSize < Core.Config.AppConfig.MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
                 return false;
@@ -122,19 +111,19 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.HeartbeatInterval < MinHeartbeatInterval)
+            if (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.MaxFailedChecks < MinMaxFailedChecks)
+            if (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.MaxRestartAttempts < MinMaxRestartAttempts)
+            if (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
                 return false;
@@ -222,13 +211,13 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.PreLaunchTimeoutSeconds < MinPreLaunchTimeoutSeconds)
+            if (dto.PreLaunchTimeoutSeconds < Core.Config.AppConfig.MinPreLaunchTimeoutSeconds)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.PreLaunchRetryAttempts < MinPreLaunchRetryAttempts)
+            if (dto.PreLaunchRetryAttempts < Core.Config.AppConfig.MinPreLaunchRetryAttempts)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.Caption);
                 return false;

@@ -79,6 +79,7 @@ namespace Servy.Service
         private StartOptions _options;
         private CancellationTokenSource _cancellationSource;
         private readonly IServiceRepository _serviceRepository;
+        private readonly List<Hook> _trackedHooks = new List<Hook>();
 
         #endregion
 
@@ -412,6 +413,10 @@ namespace Servy.Service
         /// If <see cref="StartOptions.PreLaunchIgnoreFailure"/> is <c>true</c>, the service will continue starting 
         /// even if all attempts fail. Otherwise, the service startup will be aborted.
         /// </para>
+        /// <para>
+        /// If <see cref="StartOptions.PreLaunchTimeout"/> is set to 0, the pre-launch hook runs in fire-and-forget 
+        /// mode and stdout/stderr redirection and retries are not available.
+        /// </para>
         /// </remarks>
         private bool StartPreLaunchProcess(StartOptions options)
         {
@@ -423,15 +428,12 @@ namespace Servy.Service
 
             _preLaunchEnabled = true;
 
-            const int MinPreLaunchTimeoutSeconds = 5;
-            int effectiveTimeout = Math.Max(options.PreLaunchTimeout, MinPreLaunchTimeoutSeconds) * 1000;
+            var effectiveTimeout = Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds) * 1000;
 
-            int attempt = 0;
-            do
+            var fireAndForget = effectiveTimeout == 0;
+
+            if (fireAndForget)
             {
-                attempt++;
-                _logger?.Info($"Starting pre-launch process (attempt {attempt}/{options.PreLaunchRetryAttempts + 1})...");
-
                 try
                 {
                     var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
@@ -445,28 +447,18 @@ namespace Servy.Service
 
                     LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
 
+                    var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
+                                    ? options.WorkingDirectory
+                                    : options.PreLaunchWorkingDirectory;
+
                     var psi = new ProcessStartInfo
                     {
                         FileName = options.PreLaunchExecutablePath,
                         Arguments = args,
-                        WorkingDirectory = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
-                            ? options.WorkingDirectory
-                            : options.PreLaunchWorkingDirectory,
+                        WorkingDirectory = workingDir,
                         UseShellExecute = false,
-                        RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
-                        RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
                         CreateNoWindow = true
                     };
-
-                    if (psi.RedirectStandardOutput)
-                    {
-                        psi.StandardOutputEncoding = Encoding.UTF8;
-                    }
-
-                    if (psi.RedirectStandardError)
-                    {
-                        psi.StandardErrorEncoding = Encoding.UTF8;
-                    }
 
                     // Apply environment variables
                     foreach (var envVar in expandedEnv)
@@ -474,83 +466,157 @@ namespace Servy.Service
                         psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
                     }
 
-                    // Ensure UTF-8 encoding and buffered mode for python
-                    EnsurePythonUTF8EncodingAndBufferedMode(psi);
-                    EnsureJavaUTF8Encoding(psi);
+                    _logger?.Info($"Running pre-launch program (fire-and-forget): {psi.FileName}");
+                    _logger?.Info("Pre-launch stdout/stderr redirection and retries are ignored in fire-and-forget mode.");
 
-                    using (var process = new Process { StartInfo = psi })
+                    // Fire-and-forget: start the process without waiting
+                    var process = Process.Start(psi);
+
+                    // Track the process so we can kill it if the Service stops
+                    if (process != null)
                     {
-                        var stdoutBuffer = new StringBuilder();
-                        var stderrBuffer = new StringBuilder();
-
-                        if (psi.RedirectStandardOutput)
+                        lock (_trackedHooks)
                         {
-                            process.OutputDataReceived += (_, e) =>
-                            {
-                                if (e.Data != null)
-                                    stdoutBuffer.AppendLine(e.Data);
-                            };
-                        }
-                        if (psi.RedirectStandardError)
-                        {
-                            process.ErrorDataReceived += (_, e) =>
-                            {
-                                if (e.Data != null)
-                                    stderrBuffer.AppendLine(e.Data);
-                            };
-                        }
-
-                        process.Start();
-
-                        if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
-                        if (psi.RedirectStandardError) process.BeginErrorReadLine();
-
-                        // Wait for pre-lauch process to exit with timeout
-                        WaitForProcessWithScmHeartbeat(
-                            process,
-                            effectiveTimeout,
-                            WaitChunkMs,
-                            "Pre-launch");
-
-                        // Ensure all async reads are finished
-                        process.WaitForExit();
-
-                        var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
-
-                        // Save logs if paths are set
-                        if (!string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath))
-                        {
-                            File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString(), encoding);
-                        }
-                        if (!string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath))
-                        {
-                            File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString(), encoding);
-                        }
-
-                        if (process.ExitCode == 0)
-                        {
-                            _logger?.Info("Pre-launch process completed successfully.");
-                            return true;
-                        }
-                        else
-                        {
-                            _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
+                            _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = process });
                         }
                     }
+
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
+                    _logger?.Error($"Failed to launch fire-and-forget pre-launch process: {ex.Message}");
+                    return options.PreLaunchIgnoreFailure; // Use the user's preference for failure
                 }
-
-            } while (attempt <= options.PreLaunchRetryAttempts);
-
-            _logger?.Error("Pre-launch process failed after all retry attempts.");
-
-            if (options.PreLaunchIgnoreFailure)
+            }
+            else
             {
-                _logger?.Warning("Ignoring pre-launch failure and continuing service start.");
-                return true;
+                int attempt = 0;
+                do
+                {
+                    attempt++;
+                    _logger?.Info($"Starting pre-launch process (attempt {attempt}/{options.PreLaunchRetryAttempts + 1})...");
+
+                    try
+                    {
+                        var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
+
+                        foreach (var kvp in expandedEnv)
+                        {
+                            LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
+                        }
+
+                        var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
+
+                        LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
+
+                        var psi = new ProcessStartInfo
+                        {
+                            FileName = options.PreLaunchExecutablePath,
+                            Arguments = args,
+                            WorkingDirectory = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
+                                ? options.WorkingDirectory
+                                : options.PreLaunchWorkingDirectory,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
+                            RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
+                            CreateNoWindow = true
+                        };
+
+                        if (psi.RedirectStandardOutput)
+                        {
+                            psi.StandardOutputEncoding = Encoding.UTF8;
+                        }
+
+                        if (psi.RedirectStandardError)
+                        {
+                            psi.StandardErrorEncoding = Encoding.UTF8;
+                        }
+
+                        // Apply environment variables
+                        foreach (var envVar in expandedEnv)
+                        {
+                            psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
+                        }
+
+                        // Ensure UTF-8 encoding and buffered mode for python
+                        EnsurePythonUTF8EncodingAndBufferedMode(psi);
+                        EnsureJavaUTF8Encoding(psi);
+
+                        using (var process = new Process { StartInfo = psi })
+                        {
+                            var stdoutBuffer = new StringBuilder();
+                            var stderrBuffer = new StringBuilder();
+
+                            if (psi.RedirectStandardOutput)
+                            {
+                                process.OutputDataReceived += (_, e) =>
+                                {
+                                    if (e.Data != null)
+                                        stdoutBuffer.AppendLine(e.Data);
+                                };
+                            }
+                            if (psi.RedirectStandardError)
+                            {
+                                process.ErrorDataReceived += (_, e) =>
+                                {
+                                    if (e.Data != null)
+                                        stderrBuffer.AppendLine(e.Data);
+                                };
+                            }
+
+                            process.Start();
+
+                            if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
+                            if (psi.RedirectStandardError) process.BeginErrorReadLine();
+
+                            // Wait for pre-lauch process to exit with timeout
+                            WaitForProcessWithScmHeartbeat(
+                                process,
+                                effectiveTimeout,
+                                WaitChunkMs,
+                                "Pre-launch");
+
+                            // Ensure all async reads are finished
+                            process.WaitForExit();
+
+                            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
+
+                            // Save logs if paths are set
+                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath))
+                            {
+                                File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString(), encoding);
+                            }
+                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath))
+                            {
+                                File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString(), encoding);
+                            }
+
+                            if (process.ExitCode == 0)
+                            {
+                                _logger?.Info("Pre-launch process completed successfully.");
+                                return true;
+                            }
+                            else
+                            {
+                                _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
+                    }
+
+                } while (attempt <= options.PreLaunchRetryAttempts);
+
+                _logger?.Error("Pre-launch process failed after all retry attempts.");
+
+                if (options.PreLaunchIgnoreFailure)
+                {
+                    _logger?.Warning("Ignoring pre-launch failure and continuing service start.");
+                    return true;
+                }
             }
 
             return false; // stop service start
@@ -880,10 +946,19 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
-                _logger?.Info($"Running post-launch program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+                _logger?.Info($"Running post-launch program: {psi.FileName}");
 
                 // Fire-and-forget: start the process without disposing immediately
-                Process.Start(psi);
+                var process = Process.Start(psi);
+
+                // Track the process so we can kill it if the Service stops
+                if (process != null)
+                {
+                    lock (_trackedHooks)
+                    {
+                        _trackedHooks.Add(new Hook { OperationName = "post-launch", Process = process });
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -931,7 +1006,7 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
-                _logger?.Info($"Running failure program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+                _logger?.Info($"Running failure program: {psi.FileName}");
 
                 // Fire-and-forget: start the process without disposing immediately
                 Process.Start(psi);
@@ -1326,7 +1401,40 @@ namespace Servy.Service
                     _childProcess.ErrorDataReceived -= OnErrorDataReceived;
                 }
 
-                // 4. Post-Stop Hook
+                // 4. Final Cleanup of all tracked processes
+                lock (_trackedHooks)
+                {
+                    foreach (var hook in _trackedHooks)
+                    {
+                        if (hook.Process == null) continue;
+
+                        try
+                        {
+                            // Always check HasExited first
+                            if (!hook.Process.HasExited)
+                            {
+                                // Note: p.Id is usually safe if cached, but p.ProcessName 
+                                // can throw if the process is in a weird state.
+                                var opName = string.IsNullOrWhiteSpace(hook.OperationName) ? "unnamed" : hook.OperationName;
+                                _logger?.Info($"Cleaning up orphaned {opName} hook process tree.");
+
+                                Helpers.ProcessHelper.KillProcessTree(hook.Process);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log locally for debug, but don't let it stop the loop
+                            Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                        }
+                        finally
+                        {
+                            try { hook.Process.Dispose(); } catch { /* ignore */ } // Important: Release the process handles!
+                        }
+                    }
+                    _trackedHooks.Clear();
+                }
+
+                // 5. Post-Stop Hook
                 StartPostStopProcess();
 
                 try
@@ -1564,7 +1672,7 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
-                _logger?.Info($"Running post-stop program: {psi.FileName} {psi.Arguments} (WorkingDir: {workingDir})");
+                _logger?.Info($"Running post-stop program: {psi.FileName}");
 
                 // Fire-and-forget: start the process without waiting
                 Process.Start(psi);

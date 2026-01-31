@@ -232,7 +232,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds..
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service’s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
