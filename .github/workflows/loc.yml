@@ -1,5 +1,5 @@
 # ===============================================
-# GitHub Actions Workflow - LOC
+# GitHub Actions Workflow - LoC
 # -----------------------------------------------
 # Calculates lines of code for:
 # - Production code
@@ -20,60 +20,61 @@ on:
 jobs:
   loc_job:
     runs-on: ubuntu-latest
-    name: Generate LOC badges
+    name: Generate LoC badges
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
       # ----------------------------
-      # Production LOC
+      # Production LoC
       # ----------------------------
-      - name: Create prod LOC badge
+      - name: Create prod LoC badge
         uses: shadowmoose/GHA-LoC-Badge@master
         id: loc_prod
         with:
           debug: true
           directory: ./
-          badge_label: lines of code (prod)
+          badge_label: 'LoC: prod'
           badge_color: green
           badge: ./output/loc-prod.svg
           ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
       # ----------------------------
-      # Tests LOC
+      # Tests LoC
       # ----------------------------
-      - name: Create tests LOC badge
+      - name: Create tests LoC badge
         uses: shadowmoose/GHA-LoC-Badge@master
         id: loc_tests
         with:
           debug: true
           directory: ./
-          badge_label: lines of code (tests)
+          badge_label: 'LoC: tests'
           badge_color: green
           badge: ./output/loc-tests.svg
           ignore: '.gitignore|*.txt|.github|setup|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
 
       # ----------------------------
-      # Total LOC
+      # Total LoC
       # ----------------------------
-      - name: Create total LOC badge
-        uses: shadowmoose/GHA-LoC-Badge@master
-        id: loc_total
-        with:
-          debug: true
-          directory: ./
-          badge_label: lines of code (total)
-          badge_color: green
-          badge: ./output/loc-total.svg
-          ignore: '.gitignore|*.txt|.github|setup|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
+      - name: Create total LoC badge
+        run: |
+          # Compute total
+          TOTAL=$(( ${{ steps.loc_prod.outputs.total_lines }} + ${{ steps.loc_tests.outputs.total_lines }} ))
+          echo "Total LoC: $TOTAL"
+
+          # Ensure output directory exists
+          mkdir -p ./output
+
+          # Use shields.io static badge generation
+          curl -s -o ./output/loc-total.svg "https://img.shields.io/badge/LoC-total-${TOTAL}-green"
 
       # ----------------------------
       # Summary
       # ----------------------------
       - name: Summary
         run: |
-          echo "### LOC Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### LoC Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Prod:  ${{ steps.loc_prod.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
           echo "- Tests: ${{ steps.loc_tests.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
           echo "- Total: ${{ steps.loc_total.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
