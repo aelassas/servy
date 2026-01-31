@@ -129,9 +129,9 @@ If you have suggestions, issues, or would like to contribute, feel free to [open
 
 ## Stats for Nerds
 
-[![LoC – Prod](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-prod.svg)](https://github.com/aelassas/servy/actions/workflows/loc-prod.yml)
-[![LoC – Tests](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-tests.svg)](https://github.com/aelassas/servy/actions/workflows/loc-tests.yml)
-[![LoC – Total](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-total.svg)](https://github.com/aelassas/servy/actions/workflows/loc-total.yml)
+[![LoC – Prod](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-prod.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
+[![LoC – Tests](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-tests.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
+[![LoC – Total](https://raw.githubusercontent.com/aelassas/servy/refs/heads/loc/loc-total.svg)](https://github.com/aelassas/servy/actions/workflows/loc.yml)
 [![GitHub Downloads](https://img.shields.io/github/downloads/aelassas/servy/total)](https://servy-win.github.io/stats)
 
 ## License
