@@ -64,7 +64,8 @@ jobs:
           TOTAL=$(( ${{ steps.loc_prod.outputs.total_lines }} + ${{ steps.loc_tests.outputs.total_lines }} ))
           echo "Total LoC: $TOTAL"
 
-          # Format with commas
+          # Force locale for printf to add commas
+          export LC_ALL=en_US.UTF-8
           TOTAL_COMMA=$(printf "%'d" $TOTAL)
           echo "Formatted total: $TOTAL_COMMA"
 
@@ -78,6 +79,7 @@ jobs:
           URL="https://img.shields.io/badge/LoC%20total-${TOTAL_COMMA}-3BC41C"
           echo "URL: ${URL}"
           curl -s -o ./output/loc-total.svg "${URL}"
+
 
 
       # ----------------------------
