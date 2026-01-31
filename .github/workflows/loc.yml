@@ -64,6 +64,10 @@ jobs:
           TOTAL=$(( ${{ steps.loc_prod.outputs.total_lines }} + ${{ steps.loc_tests.outputs.total_lines }} ))
           echo "Total LoC: $TOTAL"
 
+          # Format with commas
+          TOTAL_COMMA=$(printf "%'d" $TOTAL)
+          echo "Formatted total: $TOTAL_COMMA"
+
           # Set output for later steps
           echo "total_lines=$TOTAL" >> $GITHUB_OUTPUT
 
@@ -71,9 +75,10 @@ jobs:
           mkdir -p ./output
 
           # Use shields.io static badge generation with URL-encoded label
-          URL="https://img.shields.io/badge/LoC%20total-${TOTAL}-3BC41C"
+          URL="https://img.shields.io/badge/LoC%20total-${TOTAL_COMMA}-3BC41C"
           echo "URL: ${URL}"
           curl -s -o ./output/loc-total.svg "${URL}"
+
 
       # ----------------------------
       # Summary
