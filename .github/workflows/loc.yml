@@ -35,7 +35,7 @@ jobs:
         with:
           debug: true
           directory: ./
-          badge_label: 'LoC: prod'
+          badge_label: 'LoC prod'
           badge_color: green
           badge: ./output/loc-prod.svg
           ignore: '.gitignore|*.txt|.github|setup|tests|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
@@ -49,7 +49,7 @@ jobs:
         with:
           debug: true
           directory: ./
-          badge_label: 'LoC: tests'
+          badge_label: 'LoC tests'
           badge_color: green
           badge: ./output/loc-tests.svg
           ignore: '.gitignore|*.txt|.github|setup|src|bin|obj|*.ico|*.ps1|*.psm1|*.bat|*.csproj|*.sln|*.md|*.yml|*.pdb|*.dll|*.exe|*.Designer.cs|*.g.cs|*.resx|*.manifest|*.json|*.png'
@@ -58,26 +58,40 @@ jobs:
       # Total LoC
       # ----------------------------
       - name: Create total LoC badge
+        id: loc_total
         run: |
           # Compute total
           TOTAL=$(( ${{ steps.loc_prod.outputs.total_lines }} + ${{ steps.loc_tests.outputs.total_lines }} ))
           echo "Total LoC: $TOTAL"
 
+          # Set output for later steps
+          echo "total_lines=$TOTAL" >> $GITHUB_OUTPUT
+
           # Ensure output directory exists
           mkdir -p ./output
 
-          # Use shields.io static badge generation
-          curl -s -o ./output/loc-total.svg "https://img.shields.io/badge/LoC-total-${TOTAL}-green"
+          # URL-encode the label and message
+          LABEL=$(printf "LoC-total" | jq -s -R -r @uri)
+          MESSAGE=$(printf "$TOTAL" | jq -s -R -r @uri)
+
+          # Generate badge using shields.io
+          curl -s -o ./output/loc-total.svg "https://img.shields.io/badge/${LABEL}-${MESSAGE}-green"
+
 
       # ----------------------------
       # Summary
       # ----------------------------
       - name: Summary
         run: |
+          PROD=${{ steps.loc_prod.outputs.total_lines }}
+          TESTS=${{ steps.loc_tests.outputs.total_lines }}
+          TOTAL=${{ steps.loc_total.outputs.total_lines }}
+
           echo "### LoC Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Prod:  ${{ steps.loc_prod.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests: ${{ steps.loc_tests.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
-          echo "- Total: ${{ steps.loc_total.outputs.total_lines }} lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Prod:  $PROD lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: $TESTS lines" >> $GITHUB_STEP_SUMMARY
+          echo "- Total: $TOTAL lines" >> $GITHUB_STEP_SUMMARY
+
 
       # ----------------------------
       # Deploy badges
