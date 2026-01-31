@@ -77,6 +77,7 @@
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\Handle.cs" />
+    <Compile Include="ProcessManagement\Hook.cs" />
     <Compile Include="ProcessManagement\IProcessFactory.cs" />
     <Compile Include="ProcessManagement\IProcessWrapper.cs" />
     <Compile Include="Helpers\IServiceHelper.cs" />

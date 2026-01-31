@@ -110,7 +110,7 @@
     <value>The specified pre-launch stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds.</value>
+    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service’s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
   </data>
   <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
     <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>

@@ -11,6 +11,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy"
         MinWidth="640"
+        MinHeight="720"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         >

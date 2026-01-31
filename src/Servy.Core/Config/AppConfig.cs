@@ -222,6 +222,37 @@ namespace Servy.Core.Config
         /// </summary>
         public const int MinPreStopTimeoutSeconds = 0;
 
+        /// <summary>
+        /// Minimum rotation size in MB.
+        /// </summary>
+        public const int MinRotationSize = 1;
+
+        /// <summary>
+        /// Minimum heartbeat interval in seconds.
+        /// </summary>
+        public const int MinHeartbeatInterval = 5;
+
+        /// <summary>
+        /// Minimum max failed checks.
+        /// </summary>
+        public const int MinMaxFailedChecks = 1;
+
+        /// <summary>
+        /// Minimum max restart attempts.
+        /// </summary>
+        public const int MinMaxRestartAttempts = 1;
+
+        /// <summary>
+        /// Minimum pre-launch timeout in seconds.
+        /// Set to 0 to run the pre-launch  hook in fire-and-forget mode.
+        /// </summary>
+        public const int MinPreLaunchTimeoutSeconds = 0;
+
+        /// <summary>
+        /// Minimum pre-launch retry attempts.
+        /// </summary>
+        public const int MinPreLaunchRetryAttempts = 0;
+
         #endregion
 
         #region Public Methods

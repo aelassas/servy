@@ -268,7 +268,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service starts. This is useful for preparing configurations, fetching secrets, or other setup tasks. If the pre-launch script fails, the service will not start unless you enable &quot;Ignore Failure&quot;..
+        ///   Recherche une chaîne localisée semblable à Optional script to run before service start. If it fails, the service won&apos;t start unless Ignore Failure is enabled. Set timeout to 0 for fire-and-forget mode (disables retries and logging). Use only for tasks that don&apos;t affect service stability..
         /// </summary>
         public static string Info_PreLaunch {
             get {
@@ -1115,7 +1115,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 5 seconds..
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service’s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
