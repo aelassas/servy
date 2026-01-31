@@ -17,6 +17,7 @@
 * [x] Add support for DOMAIN\gMSA$ Group Managed Service Accounts
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
 * [x] Add support for post-launch script execution after the process starts successfully
+* [x] Add support for pre-stop and post-stop hooks ([#36](https://github.com/aelassas/servy/issues/36))
 * [x] Service status query command in CLI
 * [x] Export/import service configurations
 * [x] Add Help, Documentation, and Check for Updates menus
@@ -43,6 +44,7 @@
   * [ ] Add a health monitoring dashboard *(long-term)*
   * [x] Add PID column and copy PID action to services
   * [x] Add CPU and RAM monitoring in real time for services
+  * [x] Add a live Console tab for real-time stdout and stderr streaming
 
 <!--     
 * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
