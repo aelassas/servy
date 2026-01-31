@@ -70,13 +70,10 @@ jobs:
           # Ensure output directory exists
           mkdir -p ./output
 
-          # URL-encode the label and message
-          LABEL=$(printf "LoC-total" | jq -s -R -r @uri)
-          MESSAGE=$(printf "$TOTAL" | jq -s -R -r @uri)
-
-          # Generate badge using shields.io
-          curl -s -o ./output/loc-total.svg "https://img.shields.io/badge/${LABEL}-${MESSAGE}-green"
-
+          # Use shields.io static badge generation with URL-encoded label
+          URL="https://img.shields.io/badge/LoC%20total-${TOTAL}-green"
+          echo "URL: ${URL}"
+          curl -s -o ./output/loc-total.svg "${URL}"
 
       # ----------------------------
       # Summary
