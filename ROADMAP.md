@@ -30,11 +30,11 @@
 * [x] Add support for automatic delayed-start service startup type
 * [x] Upgrade to .NET 10 LTS
 * [x] Keep SCM responsive while stopping the main wrapped process and its process tree
-* [ ] Add a REST API for service management with no configuration modification, providing access to service status, health, metrics, and lifecycle actions (start/stop/restart only)
-* [ ] Add a web dashboard for operational control with the ability to start, stop, and restart services, and view real-time CPU and RAM graphs (no configuration changes, logs, or stdout/stderr output)
-* [ ] Remote management: introduce a "Servy Agent" mode that allows a single Servy Manager instance to connect to and manage multiple remote servers running Servy
-* [ ] Add resource-based restart policies (for example, restart a service if RAM usage exceeds a defined threshold or CPU usage remains at 100% for a configured duration)
-* [ ] Add service scheduling and maintenance mode support, allowing services to be started or stopped at specific times and temporarily disabling health checks and automatic recovery
+* [ ] Add a REST API for management-only API for status, health metrics, and lifecycle control (Start/Stop/Restart)
+* [ ] Add a web dashboard for Web-based ops console for remote service control and real-time performance graphs
+* [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
+* [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
+* [ ] Add scheduled uptime windows and "Maintenance Mode" to pause health checks
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
