@@ -421,7 +421,7 @@ function Install-ServyService {
         Timeout (seconds) for the pre-launch executable. Must be >= 0. 
         Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, 
         the hook is started and the service is launched immediately without waiting for completion. 
-        Use this only for tasks that do not affect the service’s ability to start or run correctly.
+        Use this only for tasks that do not affect the service's ability to start or run correctly.
         Stdout/Stderr redirection and retries are not available in fire-and-forget mode.
         Optional.
 
