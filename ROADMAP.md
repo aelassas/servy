@@ -16,6 +16,7 @@
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for DOMAIN\gMSA$ Group Managed Service Accounts
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
+* [x] Add support for fire-and-forget pre-launch hooks when timeout is set to 0
 * [x] Add support for post-launch script execution after the process starts successfully
 * [x] Add support for pre-stop and post-stop hooks ([#36](https://github.com/aelassas/servy/issues/36))
 * [x] Service status query command in CLI
@@ -29,6 +30,11 @@
 * [x] Add support for automatic delayed-start service startup type
 * [x] Upgrade to .NET 10 LTS
 * [x] Keep SCM responsive while stopping the main wrapped process and its process tree
+* [ ] Add a REST API for service management with no configuration modification, providing access to service status, health, metrics, and lifecycle actions (start/stop/restart only)
+* [ ] Add a web dashboard for operational control with the ability to start, stop, and restart services, and view real-time CPU and RAM graphs (no configuration changes, logs, or stdout/stderr output)
+* [ ] Remote management: introduce a "Servy Agent" mode that allows a single Servy Manager instance to connect to and manage multiple remote servers running Servy
+* [ ] Add resource-based restart policies (for example, restart a service if RAM usage exceeds a defined threshold or CPU usage remains at 100% for a configured duration)
+* [ ] Add service scheduling and maintenance mode support, allowing services to be started or stopped at specific times and temporarily disabling health checks and automatic recovery
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
@@ -43,8 +49,9 @@
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Add a health monitoring dashboard *(long-term)*
   * [x] Add PID column and copy PID action to services
-  * [x] Add CPU and RAM monitoring in real time for services
+  * [x] Add real-time CPU and RAM monitoring with live performance graphs for services
   * [x] Add a live Console tab for real-time stdout and stderr streaming
+  * [ ] Add dependencies tab for service dependency tree visualization
 
 <!--     
 * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
