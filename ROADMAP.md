@@ -31,10 +31,10 @@
 * [x] Upgrade to .NET 10 LTS
 * [x] Keep SCM responsive while stopping the main wrapped process and its process tree
 * [ ] Add a REST API for management-only API for status, health metrics, and lifecycle control (Start/Stop/Restart)
-* [ ] Add a web dashboard for Web-based ops console for remote service control and real-time performance graphs
+* [ ] Add a web dashboard for remote service control and real-time performance graphs
 * [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
 * [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
-* [ ] Add scheduled uptime windows and "Maintenance Mode" to pause health checks
+* [ ] Add scheduled uptime windows and Maintenance Mode to pause health checks
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
