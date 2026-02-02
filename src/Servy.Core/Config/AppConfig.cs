@@ -111,6 +111,11 @@ namespace Servy.Core.Config
         public static readonly int DefaultConsoleMaxLines = 20_000;
 
         /// <summary>
+        /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
+
+        /// <summary>
         /// Servy's official documentation link.
         /// </summary>
         public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";

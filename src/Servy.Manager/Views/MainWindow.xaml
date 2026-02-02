@@ -448,6 +448,11 @@
                 <views:ConsoleView DataContext="{Binding ConsoleVM}" />
             </TabItem>
 
+            <!--Dependencies Tab-->
+            <TabItem x:Name="DependenciesTab" Header="{x:Static resx:Strings.Label_DependenciesTab}" VirtualizingStackPanel.IsVirtualizing="False">
+                <views:DependenciesView DataContext="{Binding DependenciesVM}" />
+            </TabItem>
+
             <!--Logs Tab-->
             <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
                 <views:LogsView />

@@ -1850,6 +1850,12 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(c => c.GetDependencies())
                 .Returns(deps);
 
+            _mockWindowsServiceApi.Setup(p => p.GetServices())
+                 .Returns(new[]
+                 {
+                    new WindowsServiceInfo { ServiceName = "TestService", DisplayName = "TestServiceDisplayName" }
+                 });
+
             // Act
             var result = _serviceManager.GetDependencies("TestService");
 
@@ -1860,6 +1866,26 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(deps.DisplayName, result.DisplayName);
 
             _mockController.Verify(c => c.GetDependencies(), Times.Once);
+        }
+
+        [Fact]
+        public void GetDependencies_ShouldReturnNull()
+        {
+            // Arrange
+            var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
+
+            _mockController
+                .Setup(c => c.GetDependencies())
+                .Returns(deps);
+
+            _mockWindowsServiceApi.Setup(p => p.GetServices())
+                 .Returns(Array.Empty<WindowsServiceInfo>());
+
+            // Act
+            var result = _serviceManager.GetDependencies("TestService");
+
+            // Assert
+            Assert.Null(result);
         }
 
         [Theory]
@@ -1886,6 +1912,12 @@ namespace Servy.Core.UnitTests.Services
                 .Setup(c => c.GetDependencies())
                 .Throws(new InvalidOperationException("Boom!"));
 
+            _mockWindowsServiceApi.Setup(p => p.GetServices())
+                 .Returns(new[]
+                 {
+                    new WindowsServiceInfo { ServiceName = "TestService", DisplayName = "TestServiceDisplayName" }
+                 });
+
             // Act
             var result = _serviceManager.GetDependencies("TestService");
 
@@ -1902,6 +1934,12 @@ namespace Servy.Core.UnitTests.Services
             _mockController
                 .Setup(c => c.GetDependencies())
                 .Returns(new ServiceDependencyNode("S", "D"));
+
+            _mockWindowsServiceApi.Setup(p => p.GetServices())
+                 .Returns(new[]
+                 {
+                    new WindowsServiceInfo { ServiceName = "TestService", DisplayName = "TestServiceDisplayName" }
+                 });
 
             // Act
             _serviceManager.GetDependencies("TestService");
