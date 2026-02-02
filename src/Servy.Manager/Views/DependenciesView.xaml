@@ -329,15 +329,23 @@
                                 </StackPanel>
                             </HierarchicalDataTemplate>
 
+                            <Style x:Key="ChildItemStyle" TargetType="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="False" />
+                                <Setter Property="Padding" Value="2"/>
+                            </Style>
+                        </TreeView.Resources>
+
+                        <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="True" />
                                 <Setter Property="Padding" Value="2"/>
+                                <Setter Property="ItemContainerStyle" Value="{StaticResource ChildItemStyle}" />
                                 <Style.Resources>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#E5E5E5"/>
                                 </Style.Resources>
                             </Style>
-                        </TreeView.Resources>
+                        </TreeView.ItemContainerStyle>
                     </TreeView>
                 </Border>
 
@@ -355,7 +363,7 @@
                        FontStyle="Normal" 
                        Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                        TextWrapping="Wrap"/>
-                    
+
                     <TextBlock  Grid.Row="0" Grid.Column="2"
                                 Margin="10,3,0,0"
                                 Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}" 
