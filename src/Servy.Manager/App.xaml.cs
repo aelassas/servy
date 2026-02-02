@@ -71,6 +71,11 @@ namespace Servy.Manager
         /// </summary>
         public bool IsConfigurationAppAvailable { get; private set; }
 
+        /// <summary>
+        /// Dependencis tab refresh interval in seconds.
+        /// </summary>
+        public int DependenciesRefreshIntervalInMs { get; private set; }
+
         #endregion
 
         #region Events
@@ -144,6 +149,9 @@ namespace Servy.Manager
                 ConsoleMaxLines = int.TryParse(config["ConsoleMaxLines"], out var consoleMaxLines)
                     ? consoleMaxLines
                     : AppConfig.DefaultConsoleMaxLines;
+                DependenciesRefreshIntervalInMs = int.TryParse(config["DependenciesRefreshIntervalInMs"], out var drresult)
+                                    ? drresult
+                                    : AppConfig.DefaultDependenciesRefreshIntervalInMs;
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else

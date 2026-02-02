@@ -84,6 +84,21 @@ namespace Servy.Manager
         }
 
         /// <summary>
+        /// Converts a <see cref="DependencyService"/> instance to a <see cref="Service"/> model.
+        /// </summary>
+        /// <param name="service">The <see cref="DependencyService"/> instance to convert. Cannot be null.</param>
+        /// <returns>A new <see cref="Service"/> object populated with values from the specified <paramref name="service"/>.</returns>
+        public static Service ToModel(DependencyService service)
+        {
+            return new Service
+            {
+                Name = service.Name,
+                Pid = service.Pid,
+                IsPidEnabled = service.Pid != null,
+            };
+        }
+
+        /// <summary>
         /// Gets user session display name.
         /// </summary>
         /// <param name="userSession">User session.</param>

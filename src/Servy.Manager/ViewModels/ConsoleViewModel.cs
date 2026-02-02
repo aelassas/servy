@@ -65,12 +65,6 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Commands
-
-        public ICommand ClearSelectionCommand { get; }
-
-        #endregion
-
         #region Properties - Log Data
 
         /// <summary>
@@ -138,7 +132,7 @@ namespace Servy.Manager.ViewModels
 
                 SwitchService(_stdoutPath, _stderrPath);
 
-                StopMonitoring(false); // Pass false so we don't clear the zeros we just added
+                StopMonitoring(false); // Pass false so we don't clear the console
                 StartMonitoring();
             }
         }
@@ -205,6 +199,11 @@ namespace Servy.Manager.ViewModels
         /// Command to copy the current Process ID to the clipboard.
         /// </summary>
         public IAsyncCommand CopyPidCommand { get; set; }
+
+        /// <summary>
+        /// Command to clear selection.
+        /// </summary>
+        public ICommand ClearSelectionCommand { get; }
 
         #endregion
 
@@ -563,14 +562,14 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Disables the monitoring timer and optionally resets the console view.
         /// </summary>
-        /// <param name="clearPoints">If true, clears the console history and resets UI labels.</param>
-        public void StopMonitoring(bool clearPoints)
+        /// <param name="clearConsole">If true, clears the console history and resets UI labels.</param>
+        public void StopMonitoring(bool clearConsole)
         {
             _cancellationTokenSource?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
             _timer.Stop();
 
-            if (clearPoints)
+            if (clearConsole)
             {
                 ResetConsole(true);
             }

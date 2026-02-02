@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
 namespace Servy.Core.Services
@@ -64,8 +62,9 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public ServiceDependencyNode GetDependencies()
         {
-            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            return BuildDependencyTree(_serviceName, visited);
+            // Use a list to track the specific path from root to leaf
+            var currentPath = new List<string>();
+            return BuildDependencyTree(_serviceName, currentPath);
         }
 
         /// <summary>
@@ -83,29 +82,51 @@ namespace Servy.Core.Services
         /// and its dependencies. If a cycle is detected, a placeholder
         /// node is returned.
         /// </returns>
-        private static ServiceDependencyNode BuildDependencyTree(string serviceName, HashSet<string> visited)
+        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath)
         {
-            if (!visited.Add(serviceName))
-            {
-                // Cycle detected
-                return new ServiceDependencyNode(serviceName, "[cycle]");
-            }
+            // 1. Detect Cycle in the CURRENT branch
+            var isCycle = currentPath.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
 
-            using (var service = new ServiceController(serviceName))
+            try
             {
-                var node = new ServiceDependencyNode(
-                    service.ServiceName,
-                    service.DisplayName
-                );
-
-                foreach (var dependency in service.ServicesDependedOn)
+                using (var service = new ServiceController(serviceName))
                 {
-                    node.Dependencies.Add(
-                        BuildDependencyTree(dependency.ServiceName, visited)
+                    var isRunning = service.Status == ServiceControllerStatus.Running;
+                    var node = new ServiceDependencyNode(
+                        service.ServiceName,
+                        //isCycle ? $"{service.DisplayName} [Cycle]" : service.DisplayName,
+                        service.DisplayName,
+                        isRunning
                     );
-                }
 
-                return node;
+                    // If it's a cycle, we stop recursing here but return the node
+                    if (isCycle) return node;
+
+                    // 2. Add to path before diving deeper
+                    currentPath.Add(serviceName);
+
+                    var deps = service.ServicesDependedOn;
+                    foreach (var dep in deps)
+                    {
+                        try
+                        {
+                            node.Dependencies.Add(BuildDependencyTree(dep.ServiceName, currentPath));
+                        }
+                        finally
+                        {
+                            dep.Dispose();
+                        }
+                    }
+
+                    // 3. BACKTRACK: Remove from path so other branches can see this service
+                    currentPath.RemoveAt(currentPath.Count - 1);
+
+                    return node;
+                }
+            }
+            catch
+            {
+                return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false);
             }
         }
 

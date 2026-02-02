@@ -82,6 +82,11 @@ namespace Servy.Manager.ViewModels
         public ConsoleViewModel ConsoleVM { get; }
 
         /// <summary>
+        /// Get the dependencies view model.
+        /// </summary>
+        public DependenciesViewModel DependenciesVM { get; }
+
+        /// <summary>
         /// Indicates whether a background operation is running.
         /// </summary>
         public bool IsBusy
@@ -162,6 +167,10 @@ namespace Servy.Manager.ViewModels
                 if (ConsoleVM != null)
                 {
                     ConsoleVM.ServiceCommands = value;
+                }
+                if (DependenciesVM != null)
+                {
+                    DependenciesVM.ServiceCommands = value;
                 }
             }
         }
@@ -341,6 +350,9 @@ namespace Servy.Manager.ViewModels
 
             // Create ConsoleVM only once
             ConsoleVM = new ConsoleViewModel(serviceRepository, serviceCommands, _logger);
+
+            // Create DependenciesVM only once
+            DependenciesVM = new DependenciesViewModel(serviceRepository, serviceManager, serviceCommands, _logger);
 
             ServicesView = new ListCollectionView(_services);
 

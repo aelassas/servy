@@ -117,11 +117,16 @@ namespace Servy.Core.Config
         /// Default console refresh interval when not set in appsettings. Default is 800 ms.
         /// </summary>
         public static readonly int DefaultConsoleRefreshIntervalInMs = 800;
-        
+
         /// <summary>
         /// Default maximum number of lines that can be displayed in the console output.
         /// </summary>
         public static readonly int DefaultConsoleMaxLines = 20_000;
+
+        /// <summary>
+        /// Default dependencies tab refresh interval when not set in appsettings. Default is 800 ms.
+        /// </summary>
+        public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
 
         /// <summary>
         /// Servy's official documentation link.

@@ -881,6 +881,10 @@ namespace Servy.Core.Services
                 if (string.IsNullOrWhiteSpace(serviceName))
                     throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
 
+                if (!IsServiceInstalled(serviceName))
+                {
+                    return null;
+                }
 
                 using (var sc = _controllerFactory(serviceName))
                 {

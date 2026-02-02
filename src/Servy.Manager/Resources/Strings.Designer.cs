@@ -115,6 +115,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Refresh.
+        /// </summary>
+        public static string Button_Refresh {
+            get {
+                return ResourceManager.GetString("Button_Refresh", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Remove.
         /// </summary>
         public static string Button_Remove {
@@ -367,6 +376,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service dependency tree (via SCM).
+        /// </summary>
+        public static string Dependencies_Info {
+            get {
+                return ResourceManager.GetString("Dependencies_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à JSON Configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {
@@ -475,11 +493,38 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Status: Running (green), Stopped (red).
+        /// </summary>
+        public static string Label_Dependencies_Gear_Info {
+            get {
+                return ResourceManager.GetString("Label_Dependencies_Gear_Info", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Dependencies.
+        /// </summary>
+        public static string Label_DependenciesTab {
+            get {
+                return ResourceManager.GetString("Label_DependenciesTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh - Press F5 to refresh the full list.
         /// </summary>
         public static string Label_F5_Shortcut {
             get {
                 return ResourceManager.GetString("Label_F5_Shortcut", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Press F5 to refresh the dependency tree.
+        /// </summary>
+        public static string Label_F5_Shortcut_Dependencies {
+            get {
+                return ResourceManager.GetString("Label_F5_Shortcut_Dependencies", resourceCulture);
             }
         }
         
@@ -1270,7 +1315,16 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Clear selection to resume live updates.
+        ///   Recherche une chaîne localisée semblable à Refresh the service dependency tree.
+        /// </summary>
+        public static string Tooltip_Refresh {
+            get {
+                return ResourceManager.GetString("Tooltip_Refresh", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Resume live updates.
         /// </summary>
         public static string Tooltip_Resume {
             get {

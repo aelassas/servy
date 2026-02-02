@@ -77,6 +77,9 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Views\DependenciesView.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Views\ConsoleView.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
