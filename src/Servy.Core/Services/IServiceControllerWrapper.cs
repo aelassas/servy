@@ -34,5 +34,14 @@ namespace Servy.Core.Services
         /// <param name="desiredStatus">The status to wait for.</param>
         /// <param name="timeout">The maximum time to wait for the service to reach the desired status.</param>
         void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout);
+
+        /// <summary>
+        /// Builds and returns the dependency tree for a service.
+        /// </summary>
+        /// <returns>
+        /// The root node representing the service and its recursive
+        /// dependency hierarchy.
+        /// </returns>
+        ServiceDependencyNode GetDependencies();
     }
 }

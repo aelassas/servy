@@ -7,6 +7,7 @@ using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
@@ -293,9 +294,9 @@ namespace Servy.Core.Services
                 Helper.Quote(wrapperExePath),
                 //Helper.Quote(realExePath),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(realArgs ?? string.Empty),
+                                            //Helper.Quote(realArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //Helper.Quote(workingDirectory ?? string.Empty),
+                                            //Helper.Quote(workingDirectory ?? string.Empty),
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(processPriority.ToString()),
                 Helper.Quote(stdoutPath ?? string.Empty),
@@ -312,9 +313,9 @@ namespace Servy.Core.Services
                 // Pre-Launch
                 //Helper.Quote(preLaunchExePath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
+                                            //Helper.Quote(preLaunchWorkingDirectory ?? string.Empty),
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(preLaunchArgs ?? string.Empty),
+                                            //Helper.Quote(preLaunchArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
                                             //Helper.Quote(preLaunchEnvironmentVariables ?? string.Empty),
                 Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
@@ -327,17 +328,17 @@ namespace Servy.Core.Services
                 // Failure program
                 //Helper.Quote(failureProgramPath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(failureProgramWorkingDirectory ?? string.Empty),
+                                            //Helper.Quote(failureProgramWorkingDirectory ?? string.Empty),
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(failureProgramArgs ?? string.Empty),
+                                            //Helper.Quote(failureProgramArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
 
                 // Post-Launch
                 //Helper.Quote(postLaunchExePath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(postLaunchWorkingDirectory ?? string.Empty),
+                                            //Helper.Quote(postLaunchWorkingDirectory ?? string.Empty),
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                //Helper.Quote(postLaunchArgs ?? string.Empty),
+                                            //Helper.Quote(postLaunchArgs ?? string.Empty),
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
 
                 // Debug Logs
@@ -358,7 +359,7 @@ namespace Servy.Core.Services
                 // Pre-Stop
                 Helper.Quote((preStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds).ToString()),
                 Helper.Quote(preStopLogAsError.ToString())
-                
+
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
@@ -746,9 +747,10 @@ namespace Servy.Core.Services
                 var service = services.FirstOrDefault();
                 return service?["Description"]?.ToString();
             }
-            catch
+            catch (Exception ex)
             {
                 // Log or handle error
+                Debug.WriteLine($"Error getting service description for '{serviceName}': {ex.Message}");
             }
 
             return null;
@@ -871,6 +873,30 @@ namespace Servy.Core.Services
             return results.OrderBy(s => s.Name).ToList();
         }
 
+        /// <inheritdoc/>
+        public ServiceDependencyNode? GetDependencies(string serviceName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(serviceName))
+                    throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+
+                using (var sc = _controllerFactory(serviceName))
+                {
+                    return sc.GetDependencies();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // Error is intentionally swallowed to keep the API safe
+                // for UI and monitoring scenarios.
+                Debug.WriteLine($"Error getting service dependencies for '{serviceName}': {ex.Message}");
+            }
+
+            return null;
+        }
 
     }
 
