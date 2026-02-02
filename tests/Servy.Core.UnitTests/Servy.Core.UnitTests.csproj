@@ -135,6 +135,7 @@
     <Compile Include="ServiceDependencies\ServiceDependenciesParserTests.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesValidatorTests.cs" />
     <Compile Include="Domain\ServiceDomainTests.cs" />
+    <Compile Include="Services\ServiceDependencyNodeTests.cs" />
     <Compile Include="Services\ServiceExporterTests.cs" />
     <Compile Include="Services\ServiceManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

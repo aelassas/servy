@@ -73,6 +73,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_ConsoleTab" xml:space="preserve">
     <value>Console</value>
   </data>
+  <data name="Label_DependenciesTab" xml:space="preserve">
+    <value>Dependencies</value>
+  </data>
 
   <data name="Console_Info" xml:space="preserve">
     <value>Enable service stdout/stderr redirection to live-monitor console output</value>
@@ -84,9 +87,24 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>▶ Resume</value>
   </data>
   <data name="Tooltip_Resume" xml:space="preserve">
-    <value>Clear selection to resume live updates</value>
+    <value>Resume live updates</value>
   </data>
 
+  <data name="Dependencies_Info" xml:space="preserve">
+    <value>Service dependency tree (via SCM)</value>
+  </data>
+  <data name="Button_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Tooltip_Refresh" xml:space="preserve">
+    <value>Refresh the service dependency tree</value>
+  </data>
+  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
+    <value>Status: Running (green), Stopped (red)</value>
+  </data>
+  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
+    <value>Press F5 to refresh the dependency tree</value>
+  </data>
 
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">

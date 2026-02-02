@@ -97,6 +97,7 @@
     <Compile Include="Converters\StartupTypeConverter.cs" />
     <Compile Include="Converters\StatusConverter.cs" />
     <Compile Include="Models\ConsoleService.cs" />
+    <Compile Include="Models\DependencyService.cs" />
     <Compile Include="Models\LogLine.cs" />
     <Compile Include="Models\PerformanceService.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
@@ -114,12 +115,16 @@
     <Compile Include="Services\IServiceCommands.cs" />
     <Compile Include="Services\ServiceCommands.cs" />
     <Compile Include="ViewModels\ConsoleViewModel.cs" />
+    <Compile Include="ViewModels\DependenciesViewModel.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\PerformanceViewModel.cs" />
     <Compile Include="ViewModels\ServiceRowViewModel.cs" />
     <Compile Include="Views\ConsoleView.xaml.cs">
       <DependentUpon>ConsoleView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\DependenciesView.xaml.cs">
+      <DependentUpon>DependenciesView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\PerformanceView.xaml.cs">
       <DependentUpon>PerformanceView.xaml</DependentUpon>
@@ -128,6 +133,10 @@
       <DependentUpon>SplashWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\ConsoleView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\DependenciesView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

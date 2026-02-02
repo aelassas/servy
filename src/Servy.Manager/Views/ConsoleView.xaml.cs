@@ -213,5 +213,7 @@ namespace Servy.Manager.Views
                 await vm.SearchCommand.ExecuteAsync(null);
             }
         }
+
+
     }
 }
