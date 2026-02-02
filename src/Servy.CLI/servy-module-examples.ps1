@@ -42,110 +42,123 @@ Import-Module ".\Servy.psm1" -Force
 Show-ServyVersion -Quiet
 
 # ----------------------------------------------------------------
-# Display full help information for Servy CLI
+# Install a new Windows service using Servy (splatting)
 # ----------------------------------------------------------------
-# Show-ServyHelp
+$installParams = @{
+    Quiet                     = $true
+    Name                      = "DummyService"
+    DisplayName               = "Dummy Service"
+    Description               = "Dummy Service"
+    Path                      = "C:\Windows\System32\notepad.exe"
+    StartupDir                = "C:\Windows\Temp"
+    Params                    = "--param 2000"
+    StartupType               = "Manual"
+    Priority                  = "BelowNormal"
+    StartTimeout              = 15
+    StopTimeout               = 10
+
+    EnableSizeRotation        = $true
+    RotationSize              = 1
+    EnableDateRotation        = $true
+    DateRotationType          = "Weekly"
+    MaxRotations              = 3
+
+    Stdout                    = "C:\Windows\Temp\dummy-stdout.log"
+    Stderr                    = "C:\Windows\Temp\dummy-stderr.log"
+
+    EnableHealth              = $true
+    HeartbeatInterval         = 5
+    MaxFailedChecks           = 1
+    MaxRestartAttempts        = 2
+    RecoveryAction            = "RestartService"
+
+    FailureProgramPath        = "C:\Windows\System32\cmd.exe"
+    FailureProgramStartupDir  = "C:\Windows\Temp"
+    FailureProgramParams      = "/c exit 0 --param 2001"
+
+    Env                       = "var1=val1; var2=val2;"
+    Deps                      = "Tcpip;Dnscache"
+    # User                      = ".\DummySvc"
+    # Password                  = "ChangeMe!"
+
+    PreLaunchPath             = "C:\Windows\System32\cmd.exe"
+    PreLaunchStartupDir       = "C:\Windows\Temp"
+    PreLaunchParams           = "/c exit 0 --param 2002"
+    PreLaunchEnv              = "preVar1=val1; preVar2=val2;"
+    PreLaunchStdout           = "C:\Windows\Temp\dummy-pre-stdout.log"
+    PreLaunchStderr           = "C:\Windows\Temp\dummy-pre-stderr.log"
+    PreLaunchTimeout          = 5
+    PreLaunchRetryAttempts    = 1
+    PreLaunchIgnoreFailure    = $true
+
+    PostLaunchPath            = "C:\Windows\System32\cmd.exe"
+    PostLaunchStartupDir      = "C:\Windows\Temp"
+    PostLaunchParams          = "/c exit 0 --param 2003"
+
+    EnableDebugLogs           = $true
+
+    PreStopPath               = "C:\Windows\System32\cmd.exe"
+    PreStopStartupDir         = "C:\Windows\Temp"
+    PreStopParams             = "/c exit 0 --param 2004"
+    PreStopTimeout            = 10
+    PreStopLogAsError         = $true
+
+    PostStopPath              = "C:\Windows\System32\cmd.exe"
+    PostStopStartupDir        = "C:\Windows\Temp"
+    PostStopParams            = "/c exit 0 --param 2005"
+}
+
+Install-ServyService @installParams
 
 # ----------------------------------------------------------------
-# Install a new Windows service using Servy
+# Export the service configuration (XML)
 # ----------------------------------------------------------------
-Install-ServyService `
-  -Quiet `
-  -Name "DummyService" `
-  -Description "Dummy Service" `
-  -Path "C:\Windows\System32\notepad.exe" `
-  -StartupDir "C:\Windows\Temp" `
-  -Params "--param 2000" `
-  -StartupType "Manual" `
-  -Priority "BelowNormal" `
-  -StartTimeout 15 `
-  -StopTimeout 10 `
-  -EnableSizeRotation `
-  -RotationSize 1 `
-  -EnableDateRotation `
-  -DateRotationType "Weekly" `
-  -MaxRotations 3 `
-  -Stdout "C:\Windows\Temp\dummy-stdout.log" `
-  -Stderr "C:\Windows\Temp\dummy-stderr.log" `
-  -EnableHealth `
-  -HeartbeatInterval 5 `
-  -MaxFailedChecks 1 `
-  -MaxRestartAttempts 2 `
-  -RecoveryAction RestartService `
-  -FailureProgramPath "C:\Windows\System32\cmd.exe" `
-  -FailureProgramStartupDir "C:\Windows\Temp" `
-  -FailureProgramParams "/c exit 0 --param 2001" `
-  -Env "var1=val1; var2=val2;" `
-  -PreLaunchPath "C:\Windows\System32\cmd.exe" `
-  -PreLaunchStartupDir "C:\Windows\Temp" `
-  -PreLaunchParams "/c exit 0 --param 2002" `
-  -PreLaunchEnv "preVar1=val1; preVar2=val2;" `
-  -PreLaunchStdout "C:\Windows\Temp\dummy-pre-stdout.log" `
-  -PreLaunchStderr "C:\Windows\Temp\dummy-pre-stderr.log" `
-  -PreLaunchTimeout 5 `
-  -PreLaunchRetryAttempts 1 `
-  -PostLaunchPath "C:\Windows\System32\cmd.exe" `
-  -PostLaunchStartupDir "C:\Windows\Temp" `
-  -PostLaunchParams "/c exit 0 --param 2003" `
-  -EnableDebugLogs `
-  -PreStopPath "C:\Windows\System32\cmd.exe" `
-  -PreStopStartupDir "C:\Windows\Temp" `
-  -PreStopParams "/c exit 0 --param 2004" `
-  -PreStopTimeout 10 `
-  -PreStopLogAsError `
-  -PostStopPath "C:\Windows\System32\cmd.exe" `
-  -PostStopStartupDir "C:\Windows\Temp" `
-  -PostStopParams "/c exit 0 --param 2005"
+$exportXmlParams = @{
+    Quiet          = $true
+    Name           = "DummyService"
+    ConfigFileType = "xml"
+    Path           = "C:\DummyService.xml"
+}
+
+Export-ServyServiceConfig @exportXmlParams
 
 # ----------------------------------------------------------------
-# Export the service configuration to a file (XML)
+# Export the service configuration (JSON)
 # ----------------------------------------------------------------
-Export-ServyServiceConfig `
-  -Quiet `
-  -Name "DummyService" `
-  -ConfigFileType "xml" `
-  -Path "C:\DummyService.xml"
+$exportJsonParams = @{
+    Quiet          = $true
+    Name           = "DummyService"
+    ConfigFileType = "json"
+    Path           = "C:\DummyService.json"
+}
 
-# ----------------------------------------------------------------
-# Export the service configuration to a file (JSON)
-# ----------------------------------------------------------------
-Export-ServyServiceConfig `
-  -Quiet `
-  -Name "DummyService" `
-  -ConfigFileType "json" `
-  -Path "C:\DummyService.json"
+Export-ServyServiceConfig @exportJsonParams
 
 # ----------------------------------------------------------------
 # Import previously exported service configurations
 # ----------------------------------------------------------------
-Import-ServyServiceConfig `
-  -Quiet `
-  -ConfigFileType "xml" `
-  -Path "C:\DummyService.xml"
+$importXmlParams = @{
+    Quiet          = $true
+    ConfigFileType = "xml"
+    Path           = "C:\DummyService.xml"
+}
 
-Import-ServyServiceConfig `
-  -Quiet `
-  -ConfigFileType "json" `
-  -Path "C:\DummyService.json"
+Import-ServyServiceConfig @importXmlParams
+
+$importJsonParams = @{
+    Quiet          = $true
+    ConfigFileType = "json"
+    Path           = "C:\DummyService.json"
+}
+
+Import-ServyServiceConfig @importJsonParams
 
 # ----------------------------------------------------------------
-# Start the service
+# Service lifecycle
 # ----------------------------------------------------------------
-Start-ServyService -Name "DummyService" -Quiet
-
-# ----------------------------------------------------------------
-# Get the current status of the service
-# ----------------------------------------------------------------
+Start-ServyService   -Name "DummyService" -Quiet
 Get-ServyServiceStatus -Name "DummyService" -Quiet
-
-# ----------------------------------------------------------------
-# Stop the service
-# ----------------------------------------------------------------
-Stop-ServyService -Name "DummyService" -Quiet
-
-# ----------------------------------------------------------------
-# Restart the service
-# ----------------------------------------------------------------
+Stop-ServyService    -Name "DummyService" -Quiet
 Restart-ServyService -Name "DummyService" -Quiet
 
 # ----------------------------------------------------------------
