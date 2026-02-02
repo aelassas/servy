@@ -16,6 +16,7 @@
 * [x] Add "Log on as" configuration for Windows service
 * [x] Add support for DOMAIN\gMSA$ Group Managed Service Accounts
 * [x] Add support for pre-launch script execution before starting the service, with retries, timeout, and failure handling
+* [x] Add support for fire-and-forget pre-launch hooks when timeout is set to 0
 * [x] Add support for post-launch script execution after the process starts successfully
 * [x] Add support for pre-stop and post-stop hooks ([#36](https://github.com/aelassas/servy/issues/36))
 * [x] Service status query command in CLI
@@ -29,6 +30,11 @@
 * [x] Add support for automatic delayed-start service startup type
 * [x] Upgrade to .NET 10 LTS
 * [x] Keep SCM responsive while stopping the main wrapped process and its process tree
+* [ ] Add a REST API for management-only API for status, health metrics, and lifecycle control (start/stop/restart)
+* [ ] Add a web dashboard for remote service control and real-time performance graphs
+* [ ] Add Servy Agent mode to manage multiple remote servers from a single instance
+* [ ] Add resource-based restart policies (e.g., trigger restart on RAM/CPU usage thresholds)
+* [ ] Add scheduled uptime windows and maintenance mode at specific times (start/stop services and pause health checks)
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
   * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
@@ -43,11 +49,8 @@
   * [x] Add bulk service operations (start/stop/restart multiple services at once)
   * [ ] Add a health monitoring dashboard *(long-term)*
   * [x] Add PID column and copy PID action to services
-  * [x] Add CPU and RAM monitoring in real time for services
+  * [x] Add real-time CPU and RAM monitoring with live performance graphs for services
   * [x] Add a live Console tab for real-time stdout and stderr streaming
-
-<!--     
-* [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
-* [ ] Add `Certificates` tab to manage service-specific certificates
-* [ ] ~~Enable remote management of Servy services on other machines~~ *(not planned – too dangerous)*
--->  
+  * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
+  * [ ] Add `Certificates` tab to manage service-specific certificates
+  * [ ] Add `Dependencies` tab for service dependency tree visualization
