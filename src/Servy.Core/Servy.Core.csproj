@@ -132,6 +132,7 @@
     <Compile Include="Services\IWmiSearcher.cs" />
     <Compile Include="Services\ManagementObjectWrapper.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
+    <Compile Include="Services\ServiceDependencyNode.cs" />
     <Compile Include="Services\ServiceExporter.cs" />
     <Compile Include="Services\ServiceManager.cs" />
     <Compile Include="Enums\ServiceStartType.cs" />

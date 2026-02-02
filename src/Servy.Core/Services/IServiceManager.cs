@@ -218,5 +218,19 @@ namespace Servy.Core.Services
         /// and the WMI <c>StartMode</c> property to <see cref="ServiceStartType"/> enum.
         /// </remarks>
         List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default);
+
+        /// <inheritdoc/>
+        /// <summary>
+        /// Gets the dependency tree for the specified Windows service.
+        /// </summary>
+        /// <param name="serviceName">
+        /// The internal name of the service.
+        /// </param>
+        /// <returns>
+        /// A <see cref="ServiceDependencyNode"/> representing the service
+        /// dependency hierarchy, or <c>null</c> if the dependencies could
+        /// not be resolved.
+        /// </returns>
+        ServiceDependencyNode GetDependencies(string serviceName);
     }
 }

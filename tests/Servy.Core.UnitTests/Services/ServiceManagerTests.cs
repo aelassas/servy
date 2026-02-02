@@ -1836,6 +1836,79 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal("Stopped Service", stoppedService.Description);
         }
 
+        #endregion
+
+        #region GetDependencies
+
+        [Fact]
+        public void GetDependencies_ShouldReturnDependencies()
+        {
+            // Arrange
+            var deps = new ServiceDependencyNode("ServiceName", "ServiceDisplayName");
+
+            _mockController
+                .Setup(c => c.GetDependencies())
+                .Returns(deps);
+
+            // Act
+            var result = _serviceManager.GetDependencies("TestService");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(deps, result);
+            Assert.Equal(deps.ServiceName, result.ServiceName);
+            Assert.Equal(deps.DisplayName, result.DisplayName);
+
+            _mockController.Verify(c => c.GetDependencies(), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void GetDependencies_InvalidServiceName_ShouldReturnNull(string serviceName)
+        {
+            // Act
+            var result = _serviceManager.GetDependencies(serviceName);
+
+            // Assert
+            Assert.Null(result);
+
+            _mockController.Verify(
+                c => c.GetDependencies(),
+                Times.Never);
+        }
+
+        [Fact]
+        public void GetDependencies_ControllerThrows_ShouldReturnNull()
+        {
+            // Arrange
+            _mockController
+                .Setup(c => c.GetDependencies())
+                .Throws(new InvalidOperationException("Boom!"));
+
+            // Act
+            var result = _serviceManager.GetDependencies("TestService");
+
+            // Assert
+            Assert.Null(result);
+
+            _mockController.Verify(c => c.GetDependencies(), Times.Once);
+        }
+
+        [Fact]
+        public void GetDependencies_ShouldDisposeController()
+        {
+            // Arrange
+            _mockController
+                .Setup(c => c.GetDependencies())
+                .Returns(new ServiceDependencyNode("S", "D"));
+
+            // Act
+            _serviceManager.GetDependencies("TestService");
+
+            // Assert
+            _mockController.Verify(c => c.Dispose(), Times.Once);
+        }
 
         #endregion
 

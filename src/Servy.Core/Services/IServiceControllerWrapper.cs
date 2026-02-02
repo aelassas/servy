@@ -6,7 +6,7 @@ namespace Servy.Core.Services
     /// <summary>
     /// Defines an abstraction for controlling and monitoring the status of a Windows service.
     /// </summary>
-    public interface IServiceControllerWrapper: IDisposable
+    public interface IServiceControllerWrapper : IDisposable
     {
         /// <summary>
         /// Gets the current status of the Windows service.
@@ -35,5 +35,14 @@ namespace Servy.Core.Services
         /// <param name="desiredStatus">The status to wait for.</param>
         /// <param name="timeout">The maximum time to wait for the service to reach the desired status.</param>
         void WaitForStatus(ServiceControllerStatus desiredStatus, TimeSpan timeout);
+
+        /// <summary>
+        /// Builds and returns the dependency tree for a service.
+        /// </summary>
+        /// <returns>
+        /// The root node representing the service and its recursive
+        /// dependency hierarchy.
+        /// </returns>
+        ServiceDependencyNode GetDependencies();
     }
 }

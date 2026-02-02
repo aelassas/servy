@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -751,9 +752,10 @@ namespace Servy.Core.Services
                 var service = services.FirstOrDefault();
                 return service?["Description"]?.ToString();
             }
-            catch
+            catch (Exception ex)
             {
                 // Log or handle error
+                Debug.WriteLine($"Error getting service description for '{serviceName}': {ex.Message}");
             }
 
             return null;
@@ -876,6 +878,30 @@ namespace Servy.Core.Services
             return results.OrderBy(s => s.Name).ToList();
         }
 
+        /// <inheritdoc/>
+        public ServiceDependencyNode GetDependencies(string serviceName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(serviceName))
+                    throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
+
+
+                using (var sc = _controllerFactory(serviceName))
+                {
+                    return sc.GetDependencies();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                // Error is intentionally swallowed to keep the API safe
+                // for UI and monitoring scenarios.
+                Debug.WriteLine($"Error getting service dependencies for '{serviceName}': {ex.Message}");
+            }
+
+            return null;
+        }
 
     }
 
