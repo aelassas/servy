@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
@@ -374,8 +373,6 @@ namespace Servy.Manager.ViewModels
             {
                 // Get the root node
                 var root = _serviceManager.GetDependencies(_selectedService.Name);
-
-                // TODO calculate IsRunning for each service in tree and avoid duplicate calculations
 
                 if (root != null)
                 {
