@@ -61,6 +61,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Collapse All.
+        /// </summary>
+        public static string Button_CollapseAll {
+            get {
+                return ResourceManager.GetString("Button_CollapseAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Open Configuration.
         /// </summary>
         public static string Button_Config {
@@ -75,6 +84,15 @@ namespace Servy.Manager.Resources {
         public static string Button_CopyPid {
             get {
                 return ResourceManager.GetString("Button_CopyPid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Expand All.
+        /// </summary>
+        public static string Button_ExpandAll {
+            get {
+                return ResourceManager.GetString("Button_ExpandAll", resourceCulture);
             }
         }
         
@@ -1311,6 +1329,24 @@ namespace Servy.Manager.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Collapse all nodes in the dependency tree.
+        /// </summary>
+        public static string Tooltip_CollapseAll {
+            get {
+                return ResourceManager.GetString("Tooltip_CollapseAll", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Expand all nodes in the dependency tree.
+        /// </summary>
+        public static string Tooltip_ExpandAll {
+            get {
+                return ResourceManager.GetString("Tooltip_ExpandAll", resourceCulture);
             }
         }
         

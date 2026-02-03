@@ -8,6 +8,7 @@
              xmlns:resx="clr-namespace:Servy.Manager.Resources"
              xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
+             xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
              Loaded="UserControl_Loaded">
 
     <UserControl.Resources>
@@ -21,114 +22,14 @@
         </Grid.ColumnDefinitions>
 
         <!-- LEFT: SEARCH + SERVICES -->
-        <Border Grid.Column="0" Margin="10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Search -->
-                <DockPanel Margin="6" Focusable="True" FocusVisualStyle="{x:Null}">
-                    <TextBox Width="164" Height="24" Margin="0,0,6,0"
-                             VerticalContentAlignment="Center"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             KeyDown="SearchTextBox_KeyDown" />
-                    <Button Width="92" Height="24"
-                            Content="{Binding SearchButtonText}"
-                            Command="{Binding SearchCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" />
-                </DockPanel>
-
-                <!-- Services list -->
-                <DataGrid x:Name="ServicesDataGrid"
-                          Grid.Row="1"
-                          ItemsSource="{Binding Services, IsAsync=True}"
-                          SelectedItem="{Binding SelectedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          IsSynchronizedWithCurrentItem="False"
-                          CanUserReorderColumns="False"
-                          CanUserSortColumns="True"
-                          VirtualizingStackPanel.IsVirtualizing="True"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling"
-                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                          VirtualizingStackPanel.ScrollUnit="Pixel"
-                          ScrollViewer.CanContentScroll="True"
-                          EnableRowVirtualization="True"
-                          EnableColumnVirtualization="True"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          CanUserResizeRows="False"
-                          IsReadOnly="True"
-                          SelectionUnit="FullRow"
-                          SelectionMode="Single"
-                          GridLinesVisibility="None"
-                          HeadersVisibility="Column"
-                          Background="Transparent"
-                          BorderThickness="1"
-                          BorderBrush="#757575"
-                          FocusVisualStyle="{x:Null}"
-                          >
-
-                    <DataGrid.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
-
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Padding" Value="10,7"/>
-                        </Style>
-
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="SnapsToDevicePixels" Value="True"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#F5F5F5"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="DataGridCell">
-                                        <Border Background="{TemplateBinding Background}" Padding="0">
-                                            <ContentPresenter VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="BorderThickness" Value="0" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.Resources>
-
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Width="*" SortMemberPath="Name" CanUserReorder="False" CanUserResize="False">
-                            <DataGridTemplateColumn.Header>
-                                <TextBlock Text="{x:Static resx:Strings.Column_Service}" FontWeight="SemiBold"/>
-                            </DataGridTemplateColumn.Header>
-
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border Background="Transparent" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="10,6">
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    </Border>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-            </Grid>
-        </Border>
+        <controls:ServiceListControl
+            Grid.Column="0"
+            Services="{Binding Services}"
+            SelectedService="{Binding SelectedService}"
+            SearchText="{Binding SearchText}"
+            SearchButtonText="{Binding SearchButtonText}"
+            SearchCommand="{Binding SearchCommand}"
+            IsBusy="{Binding IsBusy}" />
 
         <!-- RIGHT: GRAPHS -->
         <Grid Grid.Column="1" Margin="10">

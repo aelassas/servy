@@ -52,7 +52,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Collection of services available for performance monitoring.
         /// </summary>
-        public ObservableCollection<PerformanceService> Services { get; } = new ObservableCollection<PerformanceService>();
+        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private PerformanceService _selectedService;
         /// <summary>
