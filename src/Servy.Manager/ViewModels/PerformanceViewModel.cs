@@ -5,6 +5,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
+using Servy.UI.Constants;
 using Servy.UI.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -25,11 +26,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class PerformanceViewModel : ViewModelBase
     {
-        #region Constants
-
-        private const string NotAvailableText = "N/A";
-
-        #endregion
 
         #region Fields
 
@@ -141,21 +137,21 @@ namespace Servy.Manager.ViewModels
             set => Set(ref _isBusy, value);
         }
 
-        private string _pid = NotAvailableText;
+        private string _pid = UiConstants.NotAvailable;
         public string Pid
         {
             get => _pid;
             set => Set(ref _pid, value);
         }
 
-        private string _cpuUsage = NotAvailableText;
+        private string _cpuUsage = UiConstants.NotAvailable;
         public string CpuUsage
         {
             get => _cpuUsage;
             set => Set(ref _cpuUsage, value);
         }
 
-        private string _ramUsage = NotAvailableText;
+        private string _ramUsage = UiConstants.NotAvailable;
         public string RamUsage
         {
             get => _ramUsage;
@@ -207,9 +203,9 @@ namespace Servy.Manager.ViewModels
             // 1. Reset display values
             if (resetLabels)
             {
-                Pid = NotAvailableText;
-                CpuUsage = NotAvailableText;
-                RamUsage = NotAvailableText;
+                Pid = UiConstants.NotAvailable;
+                CpuUsage = UiConstants.NotAvailable;
+                RamUsage = UiConstants.NotAvailable;
             }
 
             // 2. Clear and SEED the data history with 101 zeros
@@ -229,7 +225,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void SetPidText()
         {
-            var pidTxt = SelectedService.Pid?.ToString() ?? NotAvailableText;
+            var pidTxt = SelectedService.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
         }
 
