@@ -8,13 +8,14 @@ namespace Servy.Core.UnitTests.Services
         public void Constructor_ShouldInitializePropertiesCorrectly()
         {
             // Arrange & Act
-            var node = new ServiceDependencyNode("wuauserv", "Windows Update", true);
+            var node = new ServiceDependencyNode("wuauserv", "Windows Update", true, true);
             node.IsExpanded = true;
 
             // Assert
             Assert.Equal("wuauserv", node.ServiceName);
             Assert.Equal("Windows Update", node.DisplayName);
             Assert.True(node.IsRunning);
+            Assert.True(node.IsCycle);
             Assert.True(node.IsExpanded);
             Assert.NotNull(node.Dependencies);
             Assert.Empty(node.Dependencies);

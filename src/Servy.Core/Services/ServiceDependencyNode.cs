@@ -66,28 +66,32 @@ namespace Servy.Core.Services
         /// </summary>
         public ObservableCollection<ServiceDependencyNode> Dependencies { get; } = new ObservableCollection<ServiceDependencyNode>();
 
+        /// <summary>
+        /// Gets a value indicating whether this node represents a circular dependency 
+        /// that has already appeared higher in the current branch of the tree.
+        /// </summary>
+        public bool IsCycle { get; }
+
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the
-        /// <see cref="ServiceDependencyNode"/> class.
+        /// Initializes a new instance of the <see cref="ServiceDependencyNode"/> class.
         /// </summary>
-        /// <param name="serviceName">
-        /// The internal service name.
+        /// <param name="serviceName">The internal service name used by the system.</param>
+        /// <param name="displayName">The friendly display name of the service.</param>
+        /// <param name="isRunning">Indicates whether the service is currently in a running state.</param>
+        /// <param name="isCycle">
+        /// Set to <see langword="true"/> if this service creates a dependency loop; 
+        /// this prevents further recursive discovery of child dependencies.
         /// </param>
-        /// <param name="displayName">
-        /// The display name of the service.
-        /// </param>
-        /// <param name="isRunning">
-        /// Indicates if the service is running.
-        /// </param>
-        public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false)
+        public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCycle = false)
         {
             ServiceName = serviceName;
             DisplayName = displayName;
             IsRunning = isRunning;
+            IsCycle = isCycle;
         }
 
         #endregion
