@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.UI.Constants;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -65,8 +66,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.SelectedService = new PerformanceService { Name = "NewSvc", Pid = 456 };
 
                 // Assert
-                Assert.Equal("N/A", vm.CpuUsage);
-                Assert.Equal("N/A", vm.RamUsage);
+                Assert.Equal(UiConstants.NotAvailable, vm.CpuUsage);
+                Assert.Equal(UiConstants.NotAvailable, vm.RamUsage);
             }, createApp: true);
         }
 
