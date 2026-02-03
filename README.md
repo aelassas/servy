@@ -15,7 +15,7 @@
   ⭐ Don't forget to give us a star on GitHub. It costs nothing but means a lot and helps the project grow!
 </p>
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=JpmzZEJd4f0" target="_blank">
+  <a href="https://www.youtube.com/watch?v=biHq17j4RbI" target="_blank">
     <img src="https://img.shields.io/badge/Watch%20Demo-0C0C0C?style=for-the-badge&logo=youtube" alt="Watch Demo on YouTube" />
   </a>
 </p>
@@ -53,6 +53,7 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Monitor and manage all installed services with Servy Manager
 * Real-time CPU and RAM monitoring with live performance graphs for installed services
 * Real-time service stdout and stderr output preview in Servy Console
+* Service dependency tree visualization with status indicators
 * CLI and PowerShell module for full scripting and automated deployments
 * Run any executable as a Windows service
 * Set service name, description, startup type, priority, working directory, environment variables, and dependencies
