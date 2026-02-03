@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.ServiceProcess;
 using System.Linq;
+using System.ServiceProcess;
 
 namespace Servy.Core.Services
 {
@@ -71,7 +71,8 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Recursively builds a dependency tree for the specified service.
+        /// Recursively builds a dependency tree for the specified service
+        /// sorted alphabetically by Display Name.
         /// </summary>
         /// <param name="serviceName">
         /// The internal name of the service whose dependencies are resolved.
@@ -95,25 +96,29 @@ namespace Servy.Core.Services
                 using (var service = new ServiceController(serviceName))
                 {
                     var isRunning = service.Status == ServiceControllerStatus.Running;
+
                     var node = new ServiceDependencyNode(
                         service.ServiceName,
-                        //isCycle ? $"{service.DisplayName} [Cycle]" : service.DisplayName,
                         service.DisplayName,
-                        isRunning
+                        isRunning,
+                        isCycle
                     );
 
-                    // If it's a cycle, we stop recursing here but return the node
+                    // If it's a cycle, we stop recursing here
                     if (isCycle) return node;
 
                     // 2. Add to path before diving deeper
                     currentPath.Add(serviceName);
+
+                    // Collect children in a temporary list to sort them before adding to the TreeView
+                    var childNodes = new List<ServiceDependencyNode>();
 
                     var deps = service.ServicesDependedOn;
                     foreach (var dep in deps)
                     {
                         try
                         {
-                            node.Dependencies.Add(BuildDependencyTree(dep.ServiceName, currentPath));
+                            childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath));
                         }
                         finally
                         {
@@ -121,7 +126,14 @@ namespace Servy.Core.Services
                         }
                     }
 
-                    // 3. BACKTRACK: Remove from path so other branches can see this service
+                    // 3. SORT and ADD: Order alphabetically by DisplayName
+                    var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
+                    foreach (var child in sortedChildren)
+                    {
+                        node.Dependencies.Add(child);
+                    }
+
+                    // 4. BACKTRACK: Remove from path
                     currentPath.RemoveAt(currentPath.Count - 1);
 
                     return node;
@@ -129,6 +141,7 @@ namespace Servy.Core.Services
             }
             catch
             {
+                // Unavailable services are still returned so the user sees the broken link
                 return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false);
             }
         }
