@@ -53,4 +53,4 @@
   * [x] Add a live Console tab for real-time stdout and stderr streaming
   * [ ] Add `Security/Permissions` tab to view service ACLs and account privileges
   * [ ] Add `Certificates` tab to manage service-specific certificates
-  * [ ] Add `Dependencies` tab for service dependency tree visualization
+  * [x] Add `Dependencies` tab for service dependency tree visualization
