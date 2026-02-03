@@ -112,11 +112,21 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Collapse all nodes in the dependency tree</value>
   </data>
   <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
-    <value>Status: Running (green), Stopped (red)</value>
+    <value>Status: Running (green), Stopped (red), Cycle (orange)</value>
   </data>
   <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
     <value>Press F5 to refresh the dependency tree</value>
   </data>
+  <data name="Tooltip_Cycle" xml:space="preserve">
+    <value>Circular dependency detected</value>
+  </data>
+  <data name="Tooltip_ServiceRunning" xml:space="preserve">
+    <value>This service is running</value>
+  </data>
+  <data name="Tooltip_ServiceStopped" xml:space="preserve">
+    <value>This service is stopped</value>
+  </data>
+
 
   <!-- Search -->
   <data name="Button_Search" xml:space="preserve">

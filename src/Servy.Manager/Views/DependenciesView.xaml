@@ -289,11 +289,13 @@
                                         <Path.Style>
                                             <Style TargetType="Path">
                                                 <Setter Property="Fill" Value="#E74C3C" />
-                                                <Setter Property="ToolTip" Value="Stopped" />
+                                                <Setter Property="Visibility" Value="Visible" />
                                                 <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                         <Setter Property="Fill" Value="#2ECC71" />
-                                                        <Setter Property="ToolTip" Value="Running" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
                                                         <Setter Property="Fill" Value="White" />
@@ -303,7 +305,49 @@
                                         </Path.Style>
                                     </Path>
 
-                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
+                                    <Path Data="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15V18M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z"
+                                          Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center" Stretch="Uniform">
+                                        <Path.Style>
+                                            <Style TargetType="Path">
+                                                <Setter Property="Fill" Value="#F39C12" />
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
+                                                        <Setter Property="Fill" Value="White" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Path.Style>
+                                    </Path>
+
+                                    <TextBlock x:Name="NodeText" Text="{Binding DisplayName}" VerticalAlignment="Center">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="Black" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                        <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_ServiceRunning}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsRunning}" Value="False">
+                                                        <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_ServiceStopped}" />
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                        <Setter Property="FontStyle" Value="Normal" />
+                                                        <Setter Property="Foreground" Value="#F39C12" />
+                                                        <Setter Property="ToolTip" Value="{x:Static resx:Strings.Tooltip_Cycle}" />
+                                                    </DataTrigger>
+
+                                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
+                                                        <Setter Property="Foreground" Value="White" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
 
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,0,0">
                                         <StackPanel.Resources>
@@ -313,6 +357,18 @@
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True">
                                                         <Setter Property="Foreground" Value="White" />
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsCycle}" Value="True">
+                                                        <Setter Property="Foreground" Value="#F39C12" />
+                                                        <Setter Property="Opacity" Value="0.8" />
+                                                    </DataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsCycle}" Value="True" />
+                                                            <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TreeViewItem}}" Value="True" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Foreground" Value="White" />
+                                                        <Setter Property="Opacity" Value="1.0" />
+                                                    </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </StackPanel.Resources>
@@ -326,7 +382,6 @@
                             <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                 <Setter Property="Padding" Value="2"/>
-
                                 <Style.Resources>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#E5E5E5"/>
@@ -337,7 +392,6 @@
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem" BasedOn="{StaticResource BaseTreeViewItemStyle}">
                                 <Setter Property="IsExpanded" Value="True" />
-
                                 <Setter Property="ItemContainerStyle" Value="{StaticResource BaseTreeViewItemStyle}" />
                             </Style>
                         </TreeView.ItemContainerStyle>

@@ -511,7 +511,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Status: Running (green), Stopped (red).
+        ///   Recherche une chaîne localisée semblable à Status: Running (green), Stopped (red), Cycle (orange).
         /// </summary>
         public static string Label_Dependencies_Gear_Info {
             get {
@@ -1342,6 +1342,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Circular dependency detected.
+        /// </summary>
+        public static string Tooltip_Cycle {
+            get {
+                return ResourceManager.GetString("Tooltip_Cycle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Expand all nodes in the dependency tree.
         /// </summary>
         public static string Tooltip_ExpandAll {
@@ -1365,6 +1374,24 @@ namespace Servy.Manager.Resources {
         public static string Tooltip_Resume {
             get {
                 return ResourceManager.GetString("Tooltip_Resume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à This service is running.
+        /// </summary>
+        public static string Tooltip_ServiceRunning {
+            get {
+                return ResourceManager.GetString("Tooltip_ServiceRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à This service is stopped.
+        /// </summary>
+        public static string Tooltip_ServiceStopped {
+            get {
+                return ResourceManager.GetString("Tooltip_ServiceStopped", resourceCulture);
             }
         }
     }
