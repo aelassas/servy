@@ -115,7 +115,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets the collection of services available for console viewing and monitoring.
         /// </summary>
-        public ObservableCollection<ConsoleService> Services { get; } = new ObservableCollection<ConsoleService>();
+        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private ConsoleService _selectedService;
         /// <summary>

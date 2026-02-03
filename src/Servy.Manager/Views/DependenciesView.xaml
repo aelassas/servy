@@ -10,6 +10,7 @@
              xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
              xmlns:core="clr-namespace:Servy.Core.Services;assembly=Servy.Core"
+             xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
              Loaded="UserControl_Loaded">
 
     <UserControl.Resources>
@@ -24,114 +25,14 @@
         </Grid.ColumnDefinitions>
 
         <!-- LEFT: SEARCH + SERVICES -->
-        <Border Grid.Column="0" Margin="10">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <!-- Search -->
-                <DockPanel Margin="6" Focusable="True" FocusVisualStyle="{x:Null}">
-                    <TextBox Width="164" Height="24" Margin="0,0,6,0"
-                             VerticalContentAlignment="Center"
-                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             KeyDown="SearchTextBox_KeyDown" />
-                    <Button Width="92" Height="24"
-                            Content="{Binding SearchButtonText}"
-                            Command="{Binding SearchCommand}"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}" />
-                </DockPanel>
-
-                <!-- Services list -->
-                <DataGrid x:Name="ServicesDataGrid"
-                          Grid.Row="1"
-                          ItemsSource="{Binding Services, IsAsync=True}"
-                          SelectedItem="{Binding SelectedService, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          IsSynchronizedWithCurrentItem="False"
-                          CanUserReorderColumns="False"
-                          CanUserSortColumns="True"
-                          VirtualizingStackPanel.IsVirtualizing="True"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling"
-                          VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                          VirtualizingStackPanel.ScrollUnit="Pixel"
-                          ScrollViewer.CanContentScroll="True"
-                          EnableRowVirtualization="True"
-                          EnableColumnVirtualization="True"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          CanUserDeleteRows="False"
-                          CanUserResizeRows="False"
-                          IsReadOnly="True"
-                          SelectionUnit="FullRow"
-                          SelectionMode="Single"
-                          GridLinesVisibility="None"
-                          HeadersVisibility="Column"
-                          Background="Transparent"
-                          BorderThickness="1"
-                          BorderBrush="#757575"
-                          FocusVisualStyle="{x:Null}"
-                          >
-
-                    <DataGrid.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
-
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Padding" Value="10,7"/>
-                        </Style>
-
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="SnapsToDevicePixels" Value="True"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#F5F5F5"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="DataGridCell">
-                                        <Border Background="{TemplateBinding Background}" Padding="0">
-                                            <ContentPresenter VerticalAlignment="Center" />
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="BorderThickness" Value="0" />
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.Resources>
-
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Width="*" SortMemberPath="Name" CanUserReorder="False" CanUserResize="False">
-                            <DataGridTemplateColumn.Header>
-                                <TextBlock Text="{x:Static resx:Strings.Column_Service}" FontWeight="SemiBold"/>
-                            </DataGridTemplateColumn.Header>
-
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Border Background="Transparent" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="10,6">
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    </Border>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-
-            </Grid>
-        </Border>
+        <controls:ServiceListControl
+            Grid.Column="0"
+            Services="{Binding Services}"
+            SelectedService="{Binding SelectedService}"
+            SearchText="{Binding SearchText}"
+            SearchButtonText="{Binding SearchButtonText}"
+            SearchCommand="{Binding SearchCommand}"
+            IsBusy="{Binding IsBusy}" />
 
         <!-- RIGHT: DEPENDENCIES -->
         <Grid Grid.Column="1" Margin="10">
@@ -149,10 +50,13 @@
                     <!-- PID on the left -->
                     <ColumnDefinition Width="Auto" />
 
-                    <!-- Spacer -->
-                    <ColumnDefinition Width="10" />
+                    <!-- Refresh -->
+                    <ColumnDefinition Width="Auto" />
 
-                    <!-- Auto-Refresh -->
+                    <!-- Expand all -->
+                    <ColumnDefinition Width="Auto" />
+
+                    <!-- Collapse all -->
                     <ColumnDefinition Width="Auto" />
 
                     <!-- Spacer -->
@@ -163,7 +67,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!--PID-->
-                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="0,0,0,6" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="0,0,6,6" VerticalAlignment="Center">
                     <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{x:Static resx:Strings.Label_Pid}" 
@@ -206,7 +110,7 @@
                 </StackPanel>
 
                 <!--Refresh button-->
-                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center">
                     <Button Command="{Binding RefreshCommand}"
                             Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
                             ToolTip="{x:Static resx:Strings.Tooltip_Refresh}"
@@ -258,6 +162,96 @@
                     </Button>
                 </StackPanel>
 
+                <!--Expand All button-->
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <Button Command="{Binding ExpandAllCommand}"
+                           Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                           ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
+                           Margin="0,0,0,6" 
+                           Padding="6,1" 
+                           FontSize="10.5"
+                           Height="20"
+                           Foreground="White"
+                           Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#1B7F9F"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" 
+                                                   Background="{TemplateBinding Background}" 
+                                                   CornerRadius="2" 
+                                                   Padding="{TemplateBinding Padding}">
+                                                <StackPanel Orientation="Horizontal" 
+                                                           HorizontalAlignment="Center" 
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,0,1">
+
+                                                    <TextBlock Text="{x:Static resx:Strings.Button_ExpandAll}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#25A2C9"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#146078"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
+                <!--Collapse All button-->
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="3" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <Button Command="{Binding CollapseAllCommand}"
+                           Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                           ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
+                           Margin="0,0,0,6" 
+                           Padding="6,1" 
+                           FontSize="10.5"
+                           Height="20"
+                           Foreground="White"
+                           Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#1B7F9F"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="border" 
+                                                   Background="{TemplateBinding Background}" 
+                                                   CornerRadius="2" 
+                                                   Padding="{TemplateBinding Padding}">
+                                                <StackPanel Orientation="Horizontal" 
+                                                           HorizontalAlignment="Center" 
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,0,1">
+
+                                                    <TextBlock Text="{x:Static resx:Strings.Button_CollapseAll}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#25A2C9"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="border" Property="Background" Value="#146078"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+
                 <!--INFO-->
                 <TextBlock Grid.Row="0"
                            Grid.Column="4"
@@ -288,10 +282,10 @@
 
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type core:ServiceDependencyNode}"
-                          ItemsSource="{Binding Dependencies}">
+                                  ItemsSource="{Binding Dependencies}">
                                 <StackPanel Orientation="Horizontal" Margin="0,2">
                                     <Path Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.97 19.05,5.05L16.56,6.05C16.04,5.66 15.47,5.34 14.85,5.08L14.47,2.44C14.43,2.19 14.22,2 13.97,2H9.97C9.72,2 9.5,2.19 9.47,2.44L9.09,5.08C8.47,5.34 7.9,5.66 7.38,6.05L4.89,5.05C4.67,4.97 4.4,5.05 4.28,5.27L2.28,8.73C2.16,8.95 2.21,9.22 2.4,9.37L4.5,11C4.47,11.34 4.44,11.67 4.44,12C4.44,12.33 4.47,12.65 4.5,12.97L2.4,14.63C2.21,14.78 2.16,15.05 2.28,15.27L4.28,18.73C4.4,18.95 4.67,19.03 4.89,18.95L7.38,17.95C7.9,18.34 8.47,18.66 9.09,18.92L9.47,21.56C9.5,21.81 9.72,22 9.97,22H13.97C14.22,22 14.43,21.81 14.47,21.56L14.85,18.92C15.47,18.66 16.04,18.34 16.56,17.95L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" 
-              Stretch="Uniform" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center">
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,6,0" VerticalAlignment="Center">
                                         <Path.Style>
                                             <Style TargetType="Path">
                                                 <Setter Property="Fill" Value="#E74C3C" />
@@ -329,21 +323,22 @@
                                 </StackPanel>
                             </HierarchicalDataTemplate>
 
-                            <Style x:Key="ChildItemStyle" TargetType="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="False" />
+                            <Style x:Key="BaseTreeViewItemStyle" TargetType="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                 <Setter Property="Padding" Value="2"/>
-                            </Style>
-                        </TreeView.Resources>
 
-                        <TreeView.ItemContainerStyle>
-                            <Style TargetType="TreeViewItem">
-                                <Setter Property="IsExpanded" Value="True" />
-                                <Setter Property="Padding" Value="2"/>
-                                <Setter Property="ItemContainerStyle" Value="{StaticResource ChildItemStyle}" />
                                 <Style.Resources>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
                                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#E5E5E5"/>
                                 </Style.Resources>
+                            </Style>
+                        </TreeView.Resources>
+
+                        <TreeView.ItemContainerStyle>
+                            <Style TargetType="TreeViewItem" BasedOn="{StaticResource BaseTreeViewItemStyle}">
+                                <Setter Property="IsExpanded" Value="True" />
+
+                                <Setter Property="ItemContainerStyle" Value="{StaticResource BaseTreeViewItemStyle}" />
                             </Style>
                         </TreeView.ItemContainerStyle>
                     </TreeView>
@@ -357,19 +352,19 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock  Grid.Row="0" Grid.Column="1"
-                       Margin="10,3,0,0"
-                       Text="{x:Static resx:Strings.Label_Dependencies_Gear_Info}" 
-                       FontStyle="Normal" 
-                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                       TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1"
+                               Margin="10,3,0,0"
+                               Text="{x:Static resx:Strings.Label_Dependencies_Gear_Info}" 
+                               FontStyle="Normal" 
+                               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                               TextWrapping="Wrap"/>
 
-                    <TextBlock  Grid.Row="0" Grid.Column="2"
-                                Margin="10,3,0,0"
-                                Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}" 
-                                FontStyle="Normal" 
-                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                TextWrapping="Wrap"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2"
+                               Margin="10,3,0,0"
+                               Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}" 
+                               FontStyle="Normal" 
+                               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                               TextWrapping="Wrap"/>
                 </Grid>
             </Grid>
 

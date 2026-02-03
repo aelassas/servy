@@ -100,6 +100,7 @@
     <Compile Include="Models\DependencyService.cs" />
     <Compile Include="Models\LogLine.cs" />
     <Compile Include="Models\PerformanceService.cs" />
+    <Compile Include="Models\ServiceItemBase.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
     <Compile Include="Utils\LogTailer.cs" />
     <Compile Include="Validators\IServiceConfigurationValidator.cs" />
@@ -123,6 +124,9 @@
     <Compile Include="Views\ConsoleView.xaml.cs">
       <DependentUpon>ConsoleView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\Controls\ServiceListControl.xaml.cs">
+      <DependentUpon>ServiceListControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\DependenciesView.xaml.cs">
       <DependentUpon>DependenciesView.xaml</DependentUpon>
     </Compile>
@@ -133,6 +137,10 @@
       <DependentUpon>SplashWindow.xaml</DependentUpon>
     </Compile>
     <Page Include="Views\ConsoleView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\Controls\ServiceListControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

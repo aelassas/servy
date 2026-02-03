@@ -9,6 +9,7 @@ using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading;
@@ -64,7 +65,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets the collection of services available for console viewing and monitoring.
         /// </summary>
-        public ObservableCollection<DependencyService> Services { get; } = new ObservableCollection<DependencyService>();
+        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private DependencyService _selectedService;
         /// <summary>
@@ -174,6 +175,16 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public ICommand RefreshCommand { get; }
 
+        /// <summary>
+        /// Command to expand all depdency treer.
+        /// </summary>
+        public ICommand ExpandAllCommand { get; }
+
+        /// <summary>
+        /// Command to collapse all depdency treer.
+        /// </summary>
+        public ICommand CollapseAllCommand { get; }
+
         #endregion
 
         #region Constructor
@@ -197,6 +208,8 @@ namespace Servy.Manager.ViewModels
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());
+            ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
+            CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
             _logger = logger;
 
             var app = (App)Application.Current;
@@ -208,6 +221,28 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Recursively sets the expansion state of the specified collection of dependency nodes and all their children.
+        /// </summary>
+        /// <param name="nodes">The collection of <see cref="ServiceDependencyNode"/> to process.</param>
+        /// <param name="isExpanded">
+        /// <see langword="true"/> to expand the nodes; <see langword="false"/> to collapse them.
+        /// </param>
+        /// <remarks>
+        /// This method performs a deep traversal of the dependency tree. 
+        /// Ensure that the UI is bound to the <see cref="ServiceDependencyNode.IsExpanded"/> 
+        /// property for the changes to reflect visually.
+        /// </remarks>
+        private void SetExpansion(IEnumerable<ServiceDependencyNode> nodes, bool isExpanded)
+        {
+            if (nodes == null) return;
+            foreach (var node in nodes)
+            {
+                node.IsExpanded = isExpanded;
+                SetExpansion(node.Dependencies, isExpanded);
+            }
+        }
 
         /// <summary>
         /// Updates the PID display text based on the selected service's current state.

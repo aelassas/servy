@@ -99,6 +99,18 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Tooltip_Refresh" xml:space="preserve">
     <value>Refresh the service dependency tree</value>
   </data>
+  <data name="Button_ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="Tooltip_ExpandAll" xml:space="preserve">
+    <value>Expand all nodes in the dependency tree</value>
+  </data>
+  <data name="Button_CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="Tooltip_CollapseAll" xml:space="preserve">
+    <value>Collapse all nodes in the dependency tree</value>
+  </data>
   <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
     <value>Status: Running (green), Stopped (red)</value>
   </data>
