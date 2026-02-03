@@ -72,6 +72,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Views\Controls\ServiceListControl.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Resources\Strings.Designer.cs">
       <DependentUpon>Strings.resx</DependentUpon>
       <DesignTime>True</DesignTime>

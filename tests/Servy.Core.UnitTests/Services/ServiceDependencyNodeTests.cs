@@ -9,11 +9,13 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange & Act
             var node = new ServiceDependencyNode("wuauserv", "Windows Update", true);
+            node.IsExpanded = true;
 
             // Assert
             Assert.Equal("wuauserv", node.ServiceName);
             Assert.Equal("Windows Update", node.DisplayName);
             Assert.True(node.IsRunning);
+            Assert.True(node.IsExpanded);
             Assert.NotNull(node.Dependencies);
             Assert.Empty(node.Dependencies);
         }
