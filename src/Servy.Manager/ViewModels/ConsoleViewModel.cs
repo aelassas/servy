@@ -7,6 +7,7 @@ using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
+using Servy.UI.Constants;
 using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -24,12 +25,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class ConsoleViewModel : ViewModelBase
     {
-
-        #region Constants
-
-        private const string NotAvailableText = "N/A";
-
-        #endregion
 
         #region Fields
 
@@ -171,7 +166,7 @@ namespace Servy.Manager.ViewModels
             set => Set(ref _isBusy, value);
         }
 
-        private string _pid = NotAvailableText;
+        private string _pid = UiConstants.NotAvailable;
         /// <summary>
         /// Gets or sets the Process ID string for display in the UI.
         /// </summary>
@@ -344,7 +339,7 @@ namespace Servy.Manager.ViewModels
         {
             if (resetLabels)
             {
-                Pid = NotAvailableText;
+                Pid = UiConstants.NotAvailable;
                 _stdoutPath = null; // Clear these so Resume doesn't re-trigger
                 _stderrPath = null;
             }
@@ -395,7 +390,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void SetPidText()
         {
-            var pidTxt = SelectedService.Pid?.ToString() ?? NotAvailableText;
+            var pidTxt = SelectedService.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
         }
 

@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Helpers;
+using Servy.UI.Constants;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -12,7 +13,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// CPU usage not available.
         /// </summary>
-        const string UnknownCpuUsage = "N/A";
+        const string UnknownCpuUsage = UiConstants.NotAvailable;
 
         /// <summary>
         /// Returns the CPU usage as string in percentage.

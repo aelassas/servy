@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Helpers;
+using Servy.UI.Constants;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -12,7 +13,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// RAM usage not available.
         /// </summary>
-        const string UnknownRamUsage = "N/A";
+        const string UnknownRamUsage = UiConstants.NotAvailable;
 
         /// <summary>
         /// Returns the RAM usage as string.

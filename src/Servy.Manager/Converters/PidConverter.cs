@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Servy.UI.Constants;
+using System.Globalization;
 using System.Windows.Data;
 
 namespace Servy.Manager.Converters
@@ -11,7 +12,7 @@ namespace Servy.Manager.Converters
         /// <summary>
         /// PID not available string.
         /// </summary>
-        const string UnknownPid = "N/A";
+        const string UnknownPid = UiConstants.NotAvailable;
 
         /// <summary>
         /// Returns the PID as string.

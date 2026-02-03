@@ -5,6 +5,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
+using Servy.UI.Constants;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
@@ -158,7 +159,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.StopMonitoring(true);
 
                 // Assert
-                Assert.Equal("N/A", vm.Pid);
+                Assert.Equal(UiConstants.NotAvailable, vm.Pid);
                 Assert.Empty(vm.RawLines);
             }, createApp: true);
         }
