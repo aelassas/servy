@@ -50,6 +50,18 @@ namespace Servy.Core.Native
             public bool fDelayedAutostart;
         }
 
+        /// <summary>
+        /// Contains the pre-shutdown timeout setting for a service.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ServicePreShutdownInfo
+        {
+            /// <summary>
+            /// The time-out value, in milliseconds.
+            /// </summary>
+            public uint dwPreshutdownTimeout;
+        }
+
         /// <summary>Access right to all control manager operations.</summary>
         public const int SC_MANAGER_ALL_ACCESS = 0xF003F;
 
@@ -220,6 +232,15 @@ namespace Servy.Core.Native
               IntPtr hService,
               int dwInfoLevel,
               ref ServiceDelayedAutoStartInfo lpInfo);
+
+        /// <summary>
+        /// Changes the optional configuration parameters of a service (e.g. pre-shutdown timeout).
+        /// </summary>
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern bool ChangeServiceConfig2(
+              IntPtr hService,
+              int dwInfoLevel,
+              IntPtr lpInfo);
 
         /// <summary>
         /// Attempts to log a user on to the local computer using the specified credentials.

@@ -38,6 +38,7 @@ namespace Servy.Core.Services
         private const uint SERVICE_STOP = 0x0020;
         private const uint SERVICE_DELETE = 0x00010000;
         private const int SERVICE_CONFIG_DESCRIPTION = 1;
+        private const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
 
@@ -224,6 +225,52 @@ namespace Servy.Core.Services
                 ref delayedInfo
             );
             return success;
+        }
+
+        /// <summary>
+        /// Configures the service to accept pre-shutdown notifications and sets the maximum timeout 
+        /// the Service Control Manager (SCM) will wait for this service to stop during a system shutdown.
+        /// </summary>
+        /// <param name="serviceHandle">
+        /// A handle to the service. This handle must have the <c>SERVICE_CHANGE_CONFIG</c> (0x0002) access right.
+        /// </param>
+        /// <param name="timeoutMs">
+        /// The duration, in milliseconds, that the SCM should wait for the service to finish its cleanup.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if the configuration was successfully updated; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method uses <c>Marshal.AllocHGlobal</c> to provide a raw pointer to the native 
+        /// <c>ChangeServiceConfig2</c> function. This configuration change is persistent in the 
+        /// Windows Service database.
+        /// </remarks>
+        private bool EnablePreShutdown(IntPtr serviceHandle, uint timeoutMs)
+        {
+            var info = new ServicePreShutdownInfo
+            {
+                dwPreshutdownTimeout = timeoutMs
+            };
+
+            IntPtr ptr = IntPtr.Zero;
+            try
+            {
+                // Allocate unmanaged memory for the structure to satisfy the void* requirement of the API
+                ptr = Marshal.AllocHGlobal(Marshal.SizeOf(info));
+                Marshal.StructureToPtr(info, ptr, false);
+
+                return _windowsServiceApi.ChangeServiceConfig2(
+                    serviceHandle,
+                    SERVICE_CONFIG_PRESHUTDOWN_INFO,
+                    ptr
+                );
+            }
+            finally
+            {
+                // Always free the unmanaged memory to prevent memory leaks
+                if (ptr != IntPtr.Zero)
+                    Marshal.FreeHGlobal(ptr);
+            }
         }
 
         #endregion
@@ -477,14 +524,35 @@ namespace Servy.Core.Services
                 var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
                 dto.Pid = serviceDto?.Pid;
 
-                // Set delayed auto-start if necessary
-                if (serviceHandle != IntPtr.Zero && startType == ServiceStartType.AutomaticDelayedStart)
+                // Request PreShutdown timeout
+                var bufferTimeInSeconds = 15;
+                var totalWaitTime = (stopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
+                if (!string.IsNullOrEmpty(preStopExePath))
                 {
-                    var success = ChangeServiceConfig2(serviceHandle, true);
+                    totalWaitTime += preStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                }
+                uint finalTimeoutMs = (uint)totalWaitTime * 1000;
 
-                    if (!success)
+                if (serviceHandle != IntPtr.Zero)
+                {
+                    var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle, finalTimeoutMs);
+
+                    if (!enablePreShutdownConfigSuccess)
                     {
                         return false;
+                    }
+
+                    // Set delayed auto-start if necessary
+                    if (startType == ServiceStartType.AutomaticDelayedStart)
+                    {
+                        var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle, true);
+
+                        if (!delayedAutoStartConfigSuccess)
+                        {
+                            return false;
+                        }
                     }
                 }
 
@@ -637,6 +705,10 @@ namespace Servy.Core.Services
 
                     int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + 15;
                     totalWaitTime = Math.Max(totalWaitTime, ServiceStartTimeoutSeconds);
+                    if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
+                    {
+                        totalWaitTime += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
+                    }
 
                     sc.Start();
                     sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(totalWaitTime));
@@ -669,6 +741,10 @@ namespace Servy.Core.Services
                     var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
                     var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
                     totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
+                    if (!string.IsNullOrEmpty(service.PreStopExecutablePath))
+                    {
+                        totalWaitTime += service.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                    }
 
                     sc.Stop();
                     sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(totalWaitTime));

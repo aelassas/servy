@@ -161,6 +161,13 @@ namespace Servy.Core.UnitTests.Services
                 ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
 
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()
+               ))
+               .Returns(true);
+
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
             var result = await _serviceManager.InstallService(
@@ -343,6 +350,13 @@ namespace Servy.Core.UnitTests.Services
                 It.IsAny<int>(),
                 ref It.Ref<ServiceDescription>.IsAny))
                 .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()
+               ))
+               .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
@@ -634,6 +648,175 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task InstallService_RequestPreShutdownTimeout()
+        {
+            var scmHandle = new IntPtr(123);
+            var serviceName = "TestService";
+            var description = "";
+            var gMSA = @"TEST\gMSA$";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            var serviceHandle = new IntPtr(456);
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                It.IsAny<string>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                gMSA,
+                null))
+                .Returns(serviceHandle);
+
+            // Setup OpenService for UpdateServiceConfig
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny)).Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()))
+               .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
+
+            var result = await _serviceManager.InstallService(
+                serviceName,
+                description,
+                "wrapper.exe",
+                "real.exe",
+                "workingDir",
+                "args",
+                ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority.Normal,
+                null,
+                null,
+                false,
+                0,
+                false,
+                0,
+                0,
+                RecoveryAction.None,
+                0,
+                string.Empty,
+                null,
+                gMSA,
+                null,
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true,
+                preStopExePath: @"C:\Apps\pre-stop.exe"
+                );
+
+            Assert.True(result);
+
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, gMSA, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<IntPtr>(), It.IsAny<int>(), It.IsAny<IntPtr>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task InstallService_RequestPreShutdownTimeout_Error()
+        {
+            var scmHandle = new IntPtr(123);
+            var serviceName = "TestService";
+            var description = "";
+
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+                .Returns(scmHandle);
+
+            var serviceHandle = new IntPtr(456);
+            _mockWindowsServiceApi.Setup(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                It.IsAny<string>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceManager.LocalSystemAccount,
+                null))
+                .Returns(serviceHandle);
+
+            // Setup OpenService for UpdateServiceConfig
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
+                .Returns(serviceHandle);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny)).Returns(false);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()
+               ))
+               .Returns(false);
+
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
+            _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
+
+            var result = await _serviceManager.InstallService(
+                serviceName,
+                description,
+                "wrapper.exe",
+                "real.exe",
+                "workingDir",
+                "args",
+                ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority.Normal,
+                null,
+                null,
+                false,
+                0,
+                false,
+                0,
+                0,
+                RecoveryAction.None,
+                0,
+                string.Empty,
+                null,
+                null,
+                null,
+
+                "pre-launch.exe",
+                "preLaunchDir",
+                "preLaunchArgs",
+                "var1=val1;var2=val2;",
+                "pre-launch-stdout.log",
+                "pre-launch-stderr.log",
+                30,
+                0,
+                true
+                );
+
+            Assert.False(result);
+
+            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<IntPtr>(), It.IsAny<int>(), It.IsAny<IntPtr>()), Times.Once);
+        }
+
+        [Fact]
         public async Task InstallService_DelayedAutoStart()
         {
             var scmHandle = new IntPtr(123);
@@ -672,6 +855,13 @@ namespace Servy.Core.UnitTests.Services
                It.IsAny<IntPtr>(),
                It.IsAny<int>(),
                ref It.Ref<ServiceDescription>.IsAny))
+               .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()
+               ))
                .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
@@ -755,6 +945,13 @@ namespace Servy.Core.UnitTests.Services
                It.IsAny<IntPtr>(),
                It.IsAny<int>(),
                ref It.Ref<ServiceDescription>.IsAny))
+               .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+               It.IsAny<IntPtr>(),
+               It.IsAny<int>(),
+               It.IsAny<IntPtr>()
+               ))
                .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
@@ -1236,7 +1433,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe" });
 
             var result = await _serviceManager.StartService("TestService");
 
@@ -1324,7 +1521,7 @@ namespace Servy.Core.UnitTests.Services
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
+                .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", PreStopExecutablePath = @"C:\Apps\pre-stop.exe" });
 
             var result = await _serviceManager.StopService("TestService");
 
