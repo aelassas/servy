@@ -101,6 +101,13 @@ namespace Servy.Core.Services
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
+        /// <inheritdoc />
+        public bool ChangeServiceConfig2(
+            IntPtr hService,
+            int dwInfoLevel,
+            IntPtr lpInfo
+            ) => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
+
         /// <inheritdoc/>
         public bool QueryServiceConfig2(
          IntPtr hService,
