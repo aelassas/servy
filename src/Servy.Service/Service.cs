@@ -117,7 +117,7 @@ namespace Servy.Service
         private CancellationTokenSource? _cancellationSource;
         private readonly IServiceRepository _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
-        private int _preShutdownTimeoutSeconds = AppConfig.DefaultPreShutdownTimeoutSeconds;
+        private readonly int _preShutdownTimeoutSeconds;
 
         #endregion
 
