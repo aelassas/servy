@@ -16,6 +16,7 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Diagnostics;
+using System.Reflection;
 using System.ServiceProcess;
 using System.Text;
 using System.Timers;
@@ -25,6 +26,33 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase
     {
+
+        #region Enums
+
+        /// <summary>
+        /// Specifies the reason the service teardown sequence was initiated.
+        /// </summary>
+        private enum TeardownReason
+        {
+            /// <summary>
+            /// The service was stopped manually via the Service Control Manager or a stop command.
+            /// </summary>
+            Stop,
+
+            /// <summary>
+            /// The system is preparing to shut down. This provides an early notification 
+            /// with an extended timeout window before the standard shutdown begins.
+            /// </summary>
+            PreShutdown,
+
+            /// <summary>
+            /// The system is shutting down. This is the standard final notification 
+            /// and typically has a very short timeout window.
+            /// </summary>
+            Shutdown,
+        }
+
+        #endregion
 
         #region Constants
 
@@ -39,6 +67,20 @@ namespace Servy.Service
         /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
         /// Windows Service Control Manager to account for potential processing overhead.</remarks>
         private const int ScmAdditionalTime = 15_000;
+
+        /// <summary>
+        /// The service can perform cleanup tasks during a system shutdown. 
+        /// Setting this flag in the 'acceptedCommands' bitmask enables the service 
+        /// to receive the SERVICE_CONTROL_PRESHUTDOWN notification.
+        /// </summary>
+        private const int SERVICE_ACCEPT_PRESHUTDOWN = 0x00000100;
+
+        /// <summary>
+        /// The control code sent by the SCM to notify a service that the system is 
+        /// about to shut down. This notification provides a longer timeout window 
+        /// than the standard SERVICE_CONTROL_SHUTDOWN signal.
+        /// </summary>
+        private const int SERVICE_CONTROL_PRESHUTDOWN = 0x0000000F;
 
         #endregion
 
@@ -63,6 +105,7 @@ namespace Servy.Service
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
         private readonly object _healthCheckLock = new();
+        private readonly object _teardownLock = new();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
@@ -74,6 +117,7 @@ namespace Servy.Service
         private CancellationTokenSource? _cancellationSource;
         private readonly IServiceRepository _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
+        private int _preShutdownTimeoutSeconds = AppConfig.DefaultPreShutdownTimeoutSeconds;
 
         #endregion
 
@@ -164,6 +208,8 @@ namespace Servy.Service
             var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
             var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
+            _preShutdownTimeoutSeconds = int.TryParse(config["PreShutdownTimeoutSeconds"], out var pst) ? pst : AppConfig.DefaultPreShutdownTimeoutSeconds;
+
             // Initialize database and helpers
             var dbContext = new AppDbContext(connectionString);
             DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
@@ -174,6 +220,53 @@ namespace Servy.Service
             var xmlSerializer = new XmlServiceSerializer();
 
             _serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+
+            // Enable Shutdown Notifications
+            CanShutdown = true;
+
+            // Tell Windows we accept PreShutdown
+            InitializePreShutdownHook();
+        }
+
+        /// <summary>
+        /// Configures the service to intercept the Windows Pre-Shutdown notification.
+        /// </summary>
+        /// <remarks>
+        /// This method uses reflection to access the private <c>acceptedCommands</c> field of the 
+        /// <see cref="ServiceBase"/> class. By injecting the <c>SERVICE_ACCEPT_PRESHUTDOWN</c> (0x100) 
+        /// bitmask, the service informs the Service Control Manager (SCM) that it should receive 
+        /// control code 15 (Pre-Shutdown) before the standard shutdown sequence begins. 
+        /// This allows the service more time to clean up child processes or flush logs.
+        /// </remarks>
+        private void InitializePreShutdownHook()
+        {
+            try
+            {
+                // Modern .NET uses "_acceptedCommands", Legacy uses "acceptedCommands"
+                string[] fieldNames = { "_acceptedCommands", "acceptedCommands" };
+                FieldInfo? acceptedField = null;
+
+                foreach (var name in fieldNames)
+                {
+                    acceptedField = typeof(ServiceBase).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    if (acceptedField != null) break;
+                }
+
+                if (acceptedField != null)
+                {
+                    int val = (int)(acceptedField.GetValue(this) ?? 0);
+                    acceptedField.SetValue(this, val | SERVICE_ACCEPT_PRESHUTDOWN);
+                }
+                else
+                {
+                    _logger?.Error("[Pre-Shutdown] Hook Failed: Neither '_acceptedCommands' nor 'acceptedCommands' found.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"[Pre-Shutdown] Reflection Hook Error: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -206,8 +299,12 @@ namespace Servy.Service
 
                 _options = options;
 
+                _logger?.Info(
+                    $"Pre-shutdown watchdog timeout: {_preShutdownTimeoutSeconds}s (Windows hard limit applies)."
+                );
+
                 // Ensure working directory is valid
-                _serviceHelper.EnsureValidWorkingDirectory(options, _logger);
+                _serviceHelper.EnsureValidWorkingDirectory(options, _logger!);
 
                 _serviceName = options.ServiceName;
                 _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
@@ -216,7 +313,7 @@ namespace Servy.Service
                 // Request timeout for startup to accommodate slow process
                 if (_options.StartTimeout > 20) // Use a lower threshold to be safe
                 {
-                    _serviceHelper.RequestAdditionalTime(this, (_options.StartTimeout + 10) * 1000, _logger);
+                    _serviceHelper.RequestAdditionalTime(this, (_options.StartTimeout + 10) * 1000, _logger!);
                 }
 
                 // Set up attempts file
@@ -1338,26 +1435,103 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Called when the service receives a Stop command from the SCM.
-        /// Triggers cancellation and begins the teardown sequence.
+        /// Called when the service receives a Stop command from the Service Control Manager (SCM).
+        /// Triggers the standardized teardown sequence.
         /// </summary>
         protected override void OnStop()
         {
-            try
-            {
-                _cancellationSource?.Cancel();
-                OnStoppedForTest?.Invoke();
-
-                Cleanup();
-            }
-            finally
-            {
-                _cancellationSource?.Dispose();
-                _cancellationSource = null;
-            }
-
+            ExecuteTeardown(TeardownReason.Stop);
             base.OnStop();
-            _logger?.Info("Stopped child process.");
+        }
+
+        /// <summary>
+        /// Handles custom control commands sent to the service by the Service Control Manager (SCM).
+        /// </summary>
+        /// <param name="command">The command code sent by the SCM. System codes are typically 1-127, while user-defined codes are 128-255.</param>
+        /// <remarks>
+        /// This override specifically intercepts the <c>SERVICE_CONTROL_PRESHUTDOWN</c> (0x0000000F) signal.
+        /// Note: Standard <see cref="ServiceBase"/> behavior often filters out system codes below 128; 
+        /// this implementation assumes the service has been successfully configured to accept and route 
+        /// Pre-Shutdown notifications via <c>SERVICE_ACCEPT_PRESHUTDOWN</c>.
+        /// </remarks>
+        protected override void OnCustomCommand(int command)
+        {
+            if (command == SERVICE_CONTROL_PRESHUTDOWN)
+            {
+                _logger?.Info("Pre-Shutdown received. Starting orchestrated teardown.");
+
+                Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
+
+                // Wait in 2-second pulses
+                var hardLimit = _preShutdownTimeoutSeconds * 1000;
+                int waited = 0;
+                int interval = 2000;
+
+                while (!stopTask.Wait(interval) && waited < hardLimit)
+                {
+                    waited += interval;
+                    // Request additional time from SCM
+                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+                }
+
+                if (waited >= hardLimit && _childProcess != null)
+                {
+                    _logger?.Warning("Process exceeded safe window during pre-shutdown. Forcing Kill.");
+                    _childProcess.Kill(entireProcessTree: true);
+                }
+
+                return; // This is the signal to SCM
+            }
+
+            base.OnCustomCommand(command);
+        }
+
+        /// <summary>
+        /// Called when the system is shutting down. 
+        /// Mimics the Stop command to ensure child processes and hooks are cleaned up before the OS terminates the process.
+        /// </summary>
+        /// <remarks>
+        /// This requires <see cref="ServiceBase.CanShutdown"/> to be set to <see langword="true"/> in the service constructor.
+        /// </remarks>
+        protected override void OnShutdown()
+        {
+            ExecuteTeardown(TeardownReason.Shutdown);
+            base.OnShutdown();
+        }
+
+        /// <summary>
+        /// Orchestrates the shared teardown logic for both service stops and system shutdowns.
+        /// Handles cancellation, event invocation, and resource cleanup.
+        /// </summary>
+        /// <param name="reason">The context of the teardown (e.g., "Stop" or "Shutdown") used for logging purposes.</param>
+        private bool ExecuteTeardown(TeardownReason reason)
+        {
+            lock (_teardownLock)
+            {
+                if (_disposed) return true;
+
+                try
+                {
+                    _logger?.Info($"Executing {reason} cleanup...");
+                    _cancellationSource?.Cancel();
+                    OnStoppedForTest?.Invoke();
+
+                    Cleanup();
+
+                    _disposed = true; // Mark as done inside the lock
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Teardown error: {ex.Message}");
+                    return false;
+                }
+                finally
+                {
+                    _cancellationSource?.Dispose();
+                    _cancellationSource = null;
+                }
+            }
         }
 
         /// <summary>

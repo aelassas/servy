@@ -119,6 +119,13 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
+        public bool ChangeServiceConfig2(
+            IntPtr hService,
+            int dwInfoLevel,
+            IntPtr lpInfo
+            ) => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
+
+        /// <inheritdoc />
         public IEnumerable<IManagementObject> QueryService(string wmiQuery)
         {
             using (var searcher = new ManagementObjectSearcher(wmiQuery))

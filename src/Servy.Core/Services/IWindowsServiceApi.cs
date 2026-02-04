@@ -138,6 +138,34 @@ namespace Servy.Core.Services
         );
 
         /// <summary>
+        /// Changes the optional configuration parameters of a service.
+        /// </summary>
+        /// <param name="hService">
+        /// A handle to the service. This handle must be returned by the OpenService or CreateService function 
+        /// and must have the SERVICE_CHANGE_CONFIG access right.
+        /// </param>
+        /// <param name="dwInfoLevel">
+        /// The configuration information to be changed. Use SERVICE_CONFIG_PRESHUTDOWN_INFO (7) 
+        /// to configure the pre-shutdown timeout.
+        /// </param>
+        /// <param name="lpInfo">
+        /// A pointer to the buffer that contains the new value for the configuration information. 
+        /// The format depends on the value of the <paramref name="dwInfoLevel"/> parameter. 
+        /// For pre-shutdown, this should be a pointer to a SERVICE_PRESHUTDOWN_INFO structure.
+        /// </param>
+        /// <returns>
+        /// Returns true if the function succeeds; otherwise, false. To get extended error information, call <see cref="Marshal.GetLastWin32Error"/>.
+        /// </returns>
+        /// <remarks>
+        /// Changes made by this function are persistent and remain in effect until the service is reconfigured.
+        /// </remarks>
+        bool ChangeServiceConfig2(
+           IntPtr hService,
+           int dwInfoLevel,
+           IntPtr lpInfo
+           );
+
+        /// <summary>
         /// Changes the optional configuration parameters of an existing Windows service.
         /// </summary>
         /// <param name="hService">
