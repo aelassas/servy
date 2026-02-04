@@ -300,7 +300,7 @@ namespace Servy.Service
                 _options = options;
 
                 _logger?.Info(
-                    $"Pre-shutdown watchdog timeout: {_preShutdownTimeoutSeconds}s (Windows hard limit applies)."
+                    $"Pre-shutdown watchdog timeout: {_preShutdownTimeoutSeconds}s (Windows hard limit applies)"
                 );
 
                 // Ensure working directory is valid
@@ -1460,6 +1460,9 @@ namespace Servy.Service
             {
                 _logger?.Info("Pre-Shutdown received. Starting orchestrated teardown.");
 
+                // 1. Tell SCM IMMEDIATELY that we are busy
+                _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
                 // Wait in 2-second pulses
@@ -1467,18 +1470,36 @@ namespace Servy.Service
                 int waited = 0;
                 int interval = 2000;
 
-                while (!stopTask.Wait(interval) && waited < hardLimit)
+                while (waited < hardLimit && !stopTask.Wait(interval))
                 {
                     waited += interval;
                     // Request additional time from SCM
                     _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
                 }
 
-                if (waited >= hardLimit && _childProcess != null)
+                // 2. Handle results
+                if (stopTask.IsFaulted)
                 {
-                    _logger?.Warning("Process exceeded safe window during pre-shutdown. Forcing Kill.");
-                    _childProcess.Kill(entireProcessTree: true);
+                    _logger?.Error($"Teardown task failed: {stopTask.Exception?.InnerException?.Message}");
                 }
+
+                if (!stopTask.IsCompleted && waited >= hardLimit)
+                {
+                    try
+                    {
+                        if (_childProcess != null)
+                        {
+                            _logger?.Warning("Process exceeded safe window during pre-shutdown. Forcing Kill.");
+                            _childProcess.Kill(entireProcessTree: true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Error($"Failed to force kill child process: {ex.Message}");
+                    }
+                }
+
+                _logger?.Info("Pre-Shutdown handling complete.");
 
                 return; // This is the signal to SCM
             }
@@ -1512,22 +1533,22 @@ namespace Servy.Service
 
                 try
                 {
-                    _logger?.Info($"Executing {reason} cleanup...");
+                    _logger?.Info($"Executing teardown for reason: {reason}");
                     _cancellationSource?.Cancel();
                     OnStoppedForTest?.Invoke();
 
                     Cleanup();
 
-                    _disposed = true; // Mark as done inside the lock
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Teardown error: {ex.Message}");
+                    _logger?.Error($"Teardown error during {reason}: {ex.Message}", ex);
                     return false;
                 }
                 finally
                 {
+                    _disposed = true;
                     _cancellationSource?.Dispose();
                     _cancellationSource = null;
                 }
@@ -1540,8 +1561,7 @@ namespace Servy.Service
         /// </summary>
         private void Cleanup()
         {
-            if (_disposed)
-                return;
+            if (_disposed) return;
 
             // reset PID
             ResetPid();
@@ -1638,7 +1658,6 @@ namespace Servy.Service
                 //GC.SuppressFinalize(this);
             }
 
-            _disposed = true;
         }
 
         /// <summary>
