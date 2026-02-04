@@ -271,11 +271,6 @@ namespace Servy.Core.Config
         /// </summary>
         public const int MinPreLaunchRetryAttempts = 0;
 
-        /// <summary>
-        /// Default Pre-shutdown service timeout in seconds.
-        /// </summary>
-        public const int DefaultPreShutdownTimeoutSeconds = 20;
-
         #endregion
 
         #region Public Methods

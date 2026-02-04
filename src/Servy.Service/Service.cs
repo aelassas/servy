@@ -21,6 +21,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
+using System.Runtime.InteropServices;
 
 namespace Servy.Service
 {
@@ -82,6 +83,70 @@ namespace Servy.Service
         /// </summary>
         private const int SERVICE_CONTROL_PRESHUTDOWN = 0x0000000F;
 
+        /// <summary>
+        /// The service is stopping. This corresponds to the <c>SERVICE_STOP_PENDING</c> state.
+        /// </summary>
+        private const int SERVICE_STOP_PENDING = 0x00000003;
+
+        /// <summary>
+        /// The service is not running. This corresponds to the <c>SERVICE_STOPPED</c> state.
+        /// </summary>
+        private const int SERVICE_STOPPED = 0x00000001;
+
+        /// <summary>
+        /// The service can be stopped. This control code allows the SCM to send the <c>SERVICE_CONTROL_STOP</c> request.
+        /// </summary>
+        private const int SERVICE_ACCEPT_STOP = 0x00000001;
+
+        /// <summary>
+        /// The service runs in its own process. Corresponds to <c>SERVICE_WIN32_OWN_PROCESS</c>.
+        /// </summary>
+        private const int SERVICE_WIN32_OWN_PROCESS = 0x00000010;
+
+        #endregion
+
+        #region P/Invoke and Structs
+
+        /// <summary>
+        /// Updates the service control manager's status information for the calling service.
+        /// </summary>
+        /// <param name="hServiceStatus">A handle to the status information structure for the current service.</param>
+        /// <param name="lpServiceStatus">A pointer to the <see cref="SERVICE_STATUS"/> structure containing the latest status information.</param>
+        /// <returns>If the function succeeds, the return value is true.</returns>
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool SetServiceStatus(IntPtr hServiceStatus, ref SERVICE_STATUS lpServiceStatus);
+
+        /// <summary>
+        /// Contains status information for a service.
+        /// </summary>
+        /// <remarks>
+        /// See <see href="https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_status">SERVICE_STATUS documentation</see> for details.
+        /// </remarks>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SERVICE_STATUS
+        {
+            /// <summary>The type of service.</summary>
+            public int dwServiceType;
+
+            /// <summary>The current state of the service (e.g., STARTING, RUNNING, STOPPING).</summary>
+            public int dwCurrentState;
+
+            /// <summary>The control codes the service accepts and processes in its handler function.</summary>
+            public int dwControlsAccepted;
+
+            /// <summary>The error code the service uses to report an error that occurs when it is starting or stopping.</summary>
+            public int dwWin32ExitCode;
+
+            /// <summary>A service-specific error code that the service returns when an error occurs while the service is starting or stopping.</summary>
+            public int dwServiceSpecificExitCode;
+
+            /// <summary>The check-point value that the service increments periodically to report its progress during a lengthy start, stop, pause, or continue operation.</summary>
+            public int dwCheckPoint;
+
+            /// <summary>The estimated time required for a pending start, stop, pause, or continue operation, in milliseconds.</summary>
+            public int dwWaitHint;
+        }
+
         #endregion
 
         #region Private Fields
@@ -117,7 +182,8 @@ namespace Servy.Service
         private CancellationTokenSource? _cancellationSource;
         private readonly IServiceRepository _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
-        private readonly int _preShutdownTimeoutSeconds;
+        private IntPtr _serviceHandle;
+        private uint _checkPoint = 0;
 
         #endregion
 
@@ -208,8 +274,6 @@ namespace Servy.Service
             var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
             var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-            _preShutdownTimeoutSeconds = int.TryParse(config["PreShutdownTimeoutSeconds"], out var pst) ? pst : AppConfig.DefaultPreShutdownTimeoutSeconds;
-
             // Initialize database and helpers
             var dbContext = new AppDbContext(connectionString);
             DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
@@ -299,9 +363,51 @@ namespace Servy.Service
 
                 _options = options;
 
-                _logger?.Info(
-                    $"Pre-shutdown watchdog timeout: {_preShutdownTimeoutSeconds}s (Windows hard limit applies)"
-                );
+                try
+                {
+                    // List of possible field names across different .NET versions
+                    string[] possibleFieldNames = new[]
+                    {
+                        "serviceStatusHandle",  // .NET Framework
+                        "statusHandle",         // Alternative .NET Framework
+                        "_statusHandle",        // Modern .NET (private with underscore)
+                        "_serviceStatusHandle", // Modern .NET variant
+                        "m_statusHandle",       // Older naming convention
+                        "m_serviceStatusHandle" // Older naming convention
+                    };
+
+                    FieldInfo? serviceHandleField = null;
+
+                    foreach (var fieldName in possibleFieldNames)
+                    {
+                        serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                        if (serviceHandleField != null)
+                        {
+                            //_logger?.Info($"Found service handle field: {fieldName}");
+                            break;
+                        }
+                    }
+
+                    if (serviceHandleField != null)
+                    {
+                        var handleValue = serviceHandleField.GetValue(this);
+                        _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
+                        _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
+                    }
+                    else
+                    {
+                        _logger?.Error("Could not find service status handle field via reflection!");
+
+                        // Log all available fields for debugging
+                        var allFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+                        _logger?.Info($"Available private fields in ServiceBase: {string.Join(", ", allFields.Select(f => f.Name))}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Failed to get service handle: {ex.Message}", ex);
+                }
 
                 // Ensure working directory is valid
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger!);
@@ -1446,65 +1552,94 @@ namespace Servy.Service
 
         /// <summary>
         /// Handles custom control commands sent to the service by the Service Control Manager (SCM).
+        /// Specifically intercepts the Pre-Shutdown signal to begin an orchestrated teardown.
         /// </summary>
-        /// <param name="command">The command code sent by the SCM. System codes are typically 1-127, while user-defined codes are 128-255.</param>
-        /// <remarks>
-        /// This override specifically intercepts the <c>SERVICE_CONTROL_PRESHUTDOWN</c> (0x0000000F) signal.
-        /// Note: Standard <see cref="ServiceBase"/> behavior often filters out system codes below 128; 
-        /// this implementation assumes the service has been successfully configured to accept and route 
-        /// Pre-Shutdown notifications via <c>SERVICE_ACCEPT_PRESHUTDOWN</c>.
-        /// </remarks>
+        /// <param name="command">The control code sent by the SCM.</param>
         protected override void OnCustomCommand(int command)
         {
             if (command == SERVICE_CONTROL_PRESHUTDOWN)
             {
-                _logger?.Info("Pre-Shutdown received. Starting orchestrated teardown.");
+                _logger?.Info("Pre-Shutdown received. Starting orchestrated teardown...");
 
-                // 1. Tell SCM IMMEDIATELY that we are busy
-                _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+                if (_serviceHandle == IntPtr.Zero)
+                {
+                    _logger?.Error("Service handle is null!");
+                    return;
+                }
+
+                // 1. Immediately tell SCM we are transitioning to a stop state and need a 30s window.
+                // This moves the service into the STOP_PENDING state in the eyes of the OS.
+                UpdateServiceStatus(SERVICE_STOP_PENDING, 30000);
 
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
-                // Wait in 2-second pulses
-                var hardLimit = _preShutdownTimeoutSeconds * 1000;
-                int waited = 0;
+                // 2. Wait in 2-second pulses. 
+                // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
                 int interval = 2000;
-
-                while (waited < hardLimit && !stopTask.Wait(interval))
+                while (!stopTask.Wait(interval))
                 {
-                    waited += interval;
-                    // Request additional time from SCM
-                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+                    _checkPoint++;
+                    UpdateServiceStatus(SERVICE_STOP_PENDING, 30000);
                 }
 
-                // 2. Handle results
+                // 3. Handle task completion results
                 if (stopTask.IsFaulted)
                 {
                     _logger?.Error($"Teardown task failed: {stopTask.Exception?.InnerException?.Message}");
                 }
 
-                if (!stopTask.IsCompleted && waited >= hardLimit)
-                {
-                    try
-                    {
-                        if (_childProcess != null)
-                        {
-                            _logger?.Warning("Process exceeded safe window during pre-shutdown. Forcing Kill.");
-                            _childProcess.Kill(entireProcessTree: true);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.Error($"Failed to force kill child process: {ex.Message}");
-                    }
-                }
+                // 4. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
+                _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
+                UpdateServiceStatus(SERVICE_STOPPED, 0);
 
-                _logger?.Info("Pre-Shutdown handling complete.");
-
-                return; // This is the signal to SCM
+                return;
             }
 
             base.OnCustomCommand(command);
+        }
+
+        /// <summary>
+        /// Updates the service status by calling the Win32 SetServiceStatus API.
+        /// This informs the SCM of the service's current state and expected wait times.
+        /// </summary>
+        /// <param name="state">The current state of the service (e.g., <c>SERVICE_STOP_PENDING</c> or <c>SERVICE_STOPPED</c>).</param>
+        /// <param name="waitHint">The estimated time for the pending operation in milliseconds.</param>
+        private void UpdateServiceStatus(int state, int waitHint)
+        {
+            try
+            {
+                if (_serviceHandle == IntPtr.Zero)
+                {
+                    _logger?.Error("Service handle is null, cannot update status");
+                    return;
+                }
+
+                // Construct the Win32 status structure.
+                SERVICE_STATUS status = new SERVICE_STATUS
+                {
+                    dwServiceType = SERVICE_WIN32_OWN_PROCESS,
+                    dwCurrentState = state,
+                    // If stopped, we accept nothing. Otherwise, we maintain our acceptance of Stop and Preshutdown.
+                    dwControlsAccepted = state == SERVICE_STOPPED
+                        ? 0
+                        : (SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN),
+                    dwWin32ExitCode = 0,
+                    dwServiceSpecificExitCode = 0,
+                    dwCheckPoint = (int)_checkPoint,
+                    dwWaitHint = waitHint
+                };
+
+                // Invoke the P/Invoke method to update the SCM
+                if (!SetServiceStatus(_serviceHandle, ref status))
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    _logger?.Error($"SetServiceStatus failed with Win32 error code: {error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Exception in UpdateServiceStatus: {ex.Message}");
+            }
         }
 
         /// <summary>
