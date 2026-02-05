@@ -1511,7 +1511,6 @@ namespace Servy.Service
         /// </remarks>
         private void InitiateRecovery()
         {
-            bool performRecovery = false;
             bool shouldStop = false;
             int currentAttempts = 0;
 
@@ -1535,7 +1534,6 @@ namespace Servy.Service
                     SaveRestartAttempts(currentAttempts);
                     _failedChecks = 0;
                     _isRecovering = true; // Set flag to block other health checks
-                    performRecovery = true;
                 }
             }
 
@@ -1546,23 +1544,20 @@ namespace Servy.Service
                 return;
             }
 
-            if (performRecovery)
+            try
             {
-                try
+                // The actual logic (RestartService, RestartProcess, etc.)
+                ExecuteRecoveryAction(currentAttempts);
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+            }
+            finally
+            {
+                lock (_healthCheckLock)
                 {
-                    // The actual logic (RestartService, RestartProcess, etc.)
-                    ExecuteRecoveryAction(currentAttempts);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Error($"Critical error during recovery execution: {ex.Message}");
-                }
-                finally
-                {
-                    lock (_healthCheckLock)
-                    {
-                        _isRecovering = false; // RELEASE the gatekeeper
-                    }
+                    _isRecovering = false; // RELEASE the gatekeeper
                 }
             }
         }
@@ -1650,7 +1645,7 @@ namespace Servy.Service
                 if (isFailed)
                 {
                     int? exitCode = null;
-                    try { exitCode = _childProcess?.ExitCode; } catch { }
+                    try { exitCode = _childProcess?.ExitCode; } catch { /* Ignore Error */ }
 
                     if (exitCode == 0)
                     {
