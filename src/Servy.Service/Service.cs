@@ -83,6 +83,11 @@ namespace Servy.Service
         private const int SERVICE_ACCEPT_PRESHUTDOWN = 0x00000100;
 
         /// <summary>
+        /// The service is running. This corresponds to the <c>SERVICE_RUNNING</c> state.
+        /// </summary>
+        private const int SERVICE_RUNNING = 0x00000004;
+
+        /// <summary>
         /// The control code sent by the SCM to notify a service that the system is 
         /// about to shut down. This notification provides a longer timeout window 
         /// than the standard SERVICE_CONTROL_SHUTDOWN signal.
@@ -180,7 +185,6 @@ namespace Servy.Service
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
-        private bool _disposed = false; // Tracks whether Dispose has been called
         private bool _recoveryActionEnabled = false;
         private string _restartAttemptsFile;
         private bool _preLaunchEnabled;
@@ -190,6 +194,7 @@ namespace Servy.Service
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
+        private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
 
         #endregion
@@ -393,7 +398,15 @@ namespace Servy.Service
                     {
                         var handleValue = serviceHandleField.GetValue(this);
                         _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
-                        _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
+
+                        if (_serviceHandle != IntPtr.Zero)
+                        {
+                            _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
+                        }
+                        else
+                        {
+                            _logger?.Error("Service handle obtained but is zero/invalid");
+                        }
                     }
                     else
                     {
@@ -447,6 +460,31 @@ namespace Servy.Service
 
                 // Enable service health monitoring
                 SetupHealthMonitoring(options);
+
+                // Final step: Inform SCM we are running and specifically that we accept PRESHUTDOWN
+                if (_serviceHandle != IntPtr.Zero)
+                {
+                    SERVICE_STATUS status = new SERVICE_STATUS
+                    {
+                        dwServiceType = SERVICE_WIN32_OWN_PROCESS,
+                        dwCurrentState = SERVICE_RUNNING,
+                        dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN,
+                        dwWin32ExitCode = 0,
+                        dwServiceSpecificExitCode = 0, // Add this for completeness
+                        dwCheckPoint = 0,
+                        dwWaitHint = 0
+                    };
+
+                    if (!SetServiceStatus(_serviceHandle, ref status))
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        _logger?.Error($"Failed to register PRESHUTDOWN support. Win32 Error: {error}");
+                    }
+                    else
+                    {
+                        _logger?.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support enabled.");
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -1437,12 +1475,15 @@ namespace Servy.Service
         /// <param name="e">Elapsed event data.</param>
         private void CheckHealth(object sender, ElapsedEventArgs e)
         {
+            // Fast path: exit early if service is shutting down
+            // These reads are safe because the fields are volatile
             if (_isTearingDown || _disposed)
                 return;
 
             lock (_healthCheckLock)
             {
-                if (_isRecovering)
+                // Double-check inside lock if needed for critical logic
+                if (_disposed || _isTearingDown || _isRecovering)
                     return;
 
                 try
@@ -1670,6 +1711,17 @@ namespace Servy.Service
 
                 _isTearingDown = true;
 
+                // Stop health check timer IMMEDIATELY to prevent interference
+                try
+                {
+                    _healthCheckTimer?.Stop();
+                    _logger?.Info("Health check timer disabled during teardown");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warning($"Error stopping health check timer: {ex.Message}");
+                }
+
                 try
                 {
                     _logger?.Info($"Executing teardown for reason: {reason}");
@@ -1785,8 +1837,16 @@ namespace Servy.Service
             }
             finally
             {
-                _healthCheckTimer?.Dispose();
-                _healthCheckTimer = null;
+                try
+                {
+                    _healthCheckTimer?.Stop();
+                    _healthCheckTimer?.Dispose();
+                    _healthCheckTimer = null;
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warning($"Error disposing health check timer: {ex.Message}");
+                }
 
                 if (_childProcess != null)
                 {
