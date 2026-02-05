@@ -168,11 +168,11 @@ namespace Servy.Service.UnitTests
 
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully."))), Times.Once);
+            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Child process exited successfully (Code 0)."))), Times.Once);
         }
 
         [Fact]
-        public void OnProcessExited_ExitCodeNonZero_LogsWarning()
+        public void OnProcessExited_ExitCodeNonZero_LogsError()
         {
             // Arrange
             var service = CreateService(
@@ -192,7 +192,7 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Warning("Child process exited with code 42."), Times.Once);
+            logger.Verify(l => l.Error("Process exited with code 42 and recovery is disabled.", It.IsAny<Exception>()), Times.Once);
         }
 
         [Fact]
