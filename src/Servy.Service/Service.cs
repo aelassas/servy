@@ -190,6 +190,7 @@ namespace Servy.Service
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
+        private volatile bool _isTearingDown = false;
 
         #endregion
 
@@ -385,11 +386,7 @@ namespace Servy.Service
                     {
                         serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
 
-                        if (serviceHandleField != null)
-                        {
-                            //_logger?.Info($"Found service handle field: {fieldName}");
-                            break;
-                        }
+                        if (serviceHandleField != null) break;
                     }
 
                     if (serviceHandleField != null)
@@ -1440,7 +1437,7 @@ namespace Servy.Service
         /// <param name="e">Elapsed event data.</param>
         private void CheckHealth(object sender, ElapsedEventArgs e)
         {
-            if (_disposed)
+            if (_isTearingDown || _disposed)
                 return;
 
             lock (_healthCheckLock)
@@ -1648,6 +1645,19 @@ namespace Servy.Service
         }
 
         /// <summary>
+        /// Called when the system is shutting down. 
+        /// Mimics the Stop command to ensure child processes and hooks are cleaned up before the OS terminates the process.
+        /// </summary>
+        /// <remarks>
+        /// This requires <see cref="ServiceBase.CanShutdown"/> to be set to <see langword="true"/> in the service constructor.
+        /// </remarks>
+        protected override void OnShutdown()
+        {
+            ExecuteTeardown(TeardownReason.Shutdown);
+            base.OnShutdown();
+        }
+
+        /// <summary>
         /// Orchestrates the shared teardown logic for both service stops and system shutdowns.
         /// Handles cancellation, event invocation, and resource cleanup.
         /// </summary>
@@ -1657,6 +1667,8 @@ namespace Servy.Service
             lock (_teardownLock)
             {
                 if (_disposed) return true;
+
+                _isTearingDown = true;
 
                 try
                 {
