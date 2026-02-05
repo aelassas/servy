@@ -1360,64 +1360,101 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Handles the event when the monitored child process exits.
-        /// Logs the exit code and whether the process ended successfully or with an error.
-        /// If recovery is disabled and the process exits with a non-zero code, stops the service.
-        /// If recovery is disabled and the process exits successfully, the service continues running
-        /// (unless configured otherwise).
-        /// If recovery is enabled, logs that recovery/restart logic will be applied.
-        /// If the process fails to start and recovery actions are disabled, the configured failure program (if any)
-        /// will be executed. When recovery actions are enabled, the failure program will only be executed if all 
-        /// retries are exhausted.
+        /// Event handler for the child process's Exited event. 
+        /// Evaluates the exit code and determines whether to perform a graceful shutdown 
+        /// or trigger the recovery sequence based on failure thresholds.
         /// </summary>
-        private void OnProcessExited(object? sender, EventArgs e)
+        /// <param name="sender">The source of the event (the child process).</param>
+        /// <param name="e">Event data containing no specific exit information.</param>
+        private void OnProcessExited(object sender, EventArgs e)
         {
+            if (_isTearingDown || _disposed) return;
+
+            _logger?.Warning("Child process exit detected via event.");
+            ResetPid();
+
+            bool needsRecovery = false;
+            bool shouldStop = false;
+            int exitCode = -1;
+
             lock (_healthCheckLock)
             {
                 try
                 {
-                    // reset PID
-                    ResetPid();
-
-                    var code = _childProcess!.ExitCode;
-                    if (code == 0)
-                    {
-                        _logger.Info("Child process exited successfully.");
-                    }
-                    else
-                    {
-                        _logger.Warning($"Child process exited with code {code}.");
-                    }
-
-                    if (!_recoveryActionEnabled)
-                    {
-                        if (code != 0)
-                        {
-                            _logger.Error("Recovery disabled and child process failed. Stopping service.");
-
-                            RunFailureProgram();
-
-                            Stop();
-                        }
-                        else
-                        {
-                            _logger.Info("Recovery disabled but child process exited successfully. Service continues.");
-                        }
-                    }
-                    else
-                    {
-                        _logger.Info("Recovery enabled, child process exited. Restart logic expected.");
-                    }
+                    exitCode = _childProcess?.ExitCode ?? -1;
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warning($"[Exited] Failed to get exit code: {ex.Message}");
+                    _logger?.Warning($"Failed to get exit code: {ex.Message}");
+                }
 
-                    if (!_recoveryActionEnabled)
+                if (exitCode == 0)
+                {
+                    _logger?.Info("Child process exited successfully (Code 0).");
+                    shouldStop = true;
+                }
+                else if (_recoveryActionEnabled)
+                {
+                    // If we are already recovering, don't increment or log more failures
+                    if (_isRecovering) return;
+
+                    _failedChecks++;
+                    // Identical log format to CheckHealth
+                    _logger?.Warning($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+
+                    if (_failedChecks >= _maxFailedChecks)
                     {
-                        _logger?.Error("Recovery disabled and exit code unknown. Stopping service.");
-                        Stop();
+                        needsRecovery = true;
+
+                        // Set this immediately to block the Timer from logging (2/1) 
+                        // while we are waiting for our Task.Delay to finish.
+                        _isRecovering = true;
                     }
+                }
+                else
+                {
+                    _logger?.Error($"Process exited with code {exitCode} and recovery is disabled.");
+                    shouldStop = true;
+                }
+            }
+
+            // Actions outside the lock
+            if (shouldStop)
+            {
+                if (exitCode != 0) RunFailureProgram();
+                Stop();
+            }
+            else if (needsRecovery)
+            {
+                // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
+                var delayMs = Math.Max((_options!.HeartbeatInterval * 1000) - 5000, 5000);
+                _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
+
+                // Fire-and-forget the recovery task safely
+                _ = ScheduleRecoveryAsync(delayMs);
+            }
+
+            // Helper local function to handle the asynchronous wait and safety checks
+            async Task ScheduleRecoveryAsync(int delay)
+            {
+                try
+                {
+                    // Use the cancellation token to allow the delay to be aborted during service shutdown
+                    await Task.Delay(delay, _cancellationSource?.Token ?? CancellationToken.None);
+
+                    // Re-check state after the delay to ensure we aren't mid-shutdown
+                    if (!_isTearingDown && !_disposed)
+                    {
+                        InitiateRecovery();
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger?.Info("Scheduled recovery cancelled due to service shutdown.");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Unexpected error during scheduled recovery: {ex.Message}");
                 }
             }
         }
@@ -1454,7 +1491,7 @@ namespace Servy.Service
             if (options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
             {
                 _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
-                _healthCheckTimer.Elapsed += CheckHealth;
+                _healthCheckTimer.Elapsed += CheckHealth!;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
 
@@ -1463,119 +1500,193 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Handles the periodic health check triggered by the timer.
-        /// Compares the last received heartbeat timestamp with the current time,
-        /// and performs the configured recovery action if the heartbeat is missed.
+        /// Orchestrates the recovery sequence when the child process is deemed unhealthy.
+        /// Handles restart quota management, persistence of attempts, and execution of the recovery strategy.
         /// </summary>
-        /// <param name="sender">The timer object that raised the event.</param>
-        /// <param name="e">Elapsed event data.</param>
-        private void CheckHealth(object? sender, ElapsedEventArgs? e)
+        /// <remarks>
+        /// This method uses a "Gatekeeper" pattern via the <c>_isRecovering</c> flag to ensure that 
+        /// only one recovery action is executed at a time, even if multiple health checks fail 
+        /// simultaneously. The flag is reset in a <c>finally</c> block to guarantee that 
+        /// monitoring can resume regardless of whether the recovery succeeded or threw an exception.
+        /// </remarks>
+        private void InitiateRecovery()
         {
-            // Fast path: exit early if service is shutting down
-            // These reads are safe because the fields are volatile
-            if (_isTearingDown || _disposed)
-                return;
+            bool performRecovery = false;
+            bool shouldStop = false;
+            int currentAttempts = 0;
 
             lock (_healthCheckLock)
             {
-                // Double-check inside lock if needed for critical logic
-                if (_disposed || _isTearingDown || _isRecovering)
+                // Guard: prevent concurrent recovery attempts
+                if (_isTearingDown || _disposed)
                     return;
 
+                currentAttempts = GetRestartAttempts();
+
+                if (currentAttempts >= _maxRestartAttempts)
+                {
+                    _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
+                    SaveRestartAttempts(0); // Reset for next manual start
+                    shouldStop = true;
+                }
+                else
+                {
+                    currentAttempts++;
+                    SaveRestartAttempts(currentAttempts);
+                    _failedChecks = 0;
+                    _isRecovering = true; // Set flag to block other health checks
+                    performRecovery = true;
+                }
+            }
+
+            if (shouldStop)
+            {
+                RunFailureProgram();
+                Stop();
+                return;
+            }
+
+            if (performRecovery)
+            {
                 try
                 {
-                    if (_childProcess == null || _childProcess.HasExited)
-                    {
-                        _failedChecks++;
-
-                        _logger?.Warning(
-                            $"Health check failed ({_failedChecks}/{_maxFailedChecks}). Child process is not running."
-                        );
-
-                        if (_failedChecks >= _maxFailedChecks)
-                        {
-                            var restartAttempts = GetRestartAttempts();
-
-                            if (restartAttempts >= _maxRestartAttempts)
-                            {
-                                _logger?.Error(
-                                    $"Maximum restart attempts reached ({_maxRestartAttempts}). Recovery actions stopped."
-                                );
-
-                                // No more retries -> reset counter so next session starts fresh
-                                SaveRestartAttempts(0);
-
-                                RunFailureProgram();
-
-                                Stop();
-
-                                return;
-                            }
-
-                            restartAttempts++;
-                            SaveRestartAttempts(restartAttempts);
-                            _failedChecks = 0;
-                            _isRecovering = true;
-
-                            try
-                            {
-                                _logger?.Warning(
-                                    $"Performing recovery action ({restartAttempts}/{_maxRestartAttempts})."
-                                );
-
-                                switch (_recoveryAction)
-                                {
-                                    case RecoveryAction.None:
-                                        _logger?.Info("Recovery action is set to 'None'. No action taken.");
-                                        break;
-
-                                    case RecoveryAction.RestartService:
-                                        _serviceHelper.RestartService(_logger!, _serviceName!);
-                                        break;
-
-                                    case RecoveryAction.RestartProcess:
-                                        _serviceHelper.RestartProcess(
-                                            _childProcess!,
-                                            StartProcess,
-                                            _realExePath!,
-                                            _realArgs!,
-                                            _workingDir!,
-                                            _environmentVariables,
-                                            _logger!,
-                                            (_options?.StopTimeout ?? AppConfig.DefaultStopTimeout) * 1000
-                                        );
-                                        break;
-
-                                    case RecoveryAction.RestartComputer:
-                                        _serviceHelper.RestartComputer(_logger!);
-                                        break;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger?.Error($"Error during recovery action: {ex}");
-                            }
-                            finally
-                            {
-                                _isRecovering = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (_failedChecks > 0)
-                        {
-                            _logger?.Info("Child process is healthy again. Resetting failure count and restart attempts.");
-                            _failedChecks = 0;
-                            SaveRestartAttempts(0);
-                        }
-                    }
+                    // The actual logic (RestartService, RestartProcess, etc.)
+                    ExecuteRecoveryAction(currentAttempts);
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Unexpected error in health check: {ex}");
+                    _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                }
+                finally
+                {
+                    lock (_healthCheckLock)
+                    {
+                        _isRecovering = false; // RELEASE the gatekeeper
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Orchestrates the recovery process when health check thresholds are exceeded.
+        /// Handles restart attempt persistence, quota enforcement, and state synchronization.
+        /// </summary>
+        /// <remarks>
+        /// This method uses <see cref="_isRecovering"/> to prevent concurrent recovery executions.
+        /// If the maximum number of restart attempts is reached, it will trigger a full service stop.
+        /// </remarks>
+        private void ExecuteRecoveryAction(int attemptCount)
+        {
+            try
+            {
+                _logger?.Warning($"Performing recovery action ({attemptCount}/{_maxRestartAttempts}).");
+
+                switch (_recoveryAction)
+                {
+                    case RecoveryAction.RestartService:
+                        _serviceHelper.RestartService(_logger!, _serviceName!);
+                        break;
+
+                    case RecoveryAction.RestartProcess:
+                        _serviceHelper.RestartProcess(
+                            _childProcess!,
+                            StartProcess,
+                            _realExePath!,
+                            _realArgs!,
+                            _workingDir!,
+                            _environmentVariables,
+                            _logger!,
+                            (_options?.StopTimeout ?? AppConfig.DefaultStopTimeout) * 1000
+                        );
+                        break;
+
+                    case RecoveryAction.RestartComputer:
+                        _serviceHelper.RestartComputer(_logger!);
+                        break;
+
+                    default:
+                        _logger?.Info($"Recovery action '{_recoveryAction}' requires no specific logic.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Error during recovery execution: {ex.Message}");
+            }
+            finally
+            {
+                lock (_healthCheckLock)
+                {
+                    _isRecovering = false; // Reset the gatekeeper
+                }
+            }
+        }
+
+        /// <summary>
+        /// Periodically evaluates the health of the child process.
+        /// Increments failure counters if the process is missing or crashed, and triggers recovery logic 
+        /// when the maximum failure threshold is reached.
+        /// </summary>
+        /// <param name="sender">The timer instance that triggered the health check.</param>
+        /// <param name="e">Event data containing the time the check was triggered.</param>
+        /// <remarks>
+        /// This method implements a thread-safe "gatekeeper" pattern using <see cref="_isRecovering"/>.
+        /// If a recovery is already in progress (triggered by this timer or a process exit event), 
+        /// the check exits immediately to prevent duplicate logs and redundant recovery attempts.
+        /// </remarks>
+        private void CheckHealth(object sender, ElapsedEventArgs e)
+        {
+            if (_isTearingDown || _disposed) return;
+
+            bool needsRecovery = false;
+            bool shouldStop = false;
+
+            lock (_healthCheckLock)
+            {
+                // If we are already recovering, we don't want to increment restartAttempts again
+                if (_isTearingDown || _disposed || _isRecovering) return;
+
+                bool isFailed = _childProcess == null || _childProcess.HasExited;
+                if (isFailed)
+                {
+                    int? exitCode = null;
+                    try { exitCode = _childProcess?.ExitCode; } catch { }
+
+                    if (exitCode == 0)
+                    {
+                        _logger?.Info("Child process exited successfully. Service will stop.");
+                        shouldStop = true;
+                    }
+                    else
+                    {
+                        _failedChecks++;
+                        _logger?.Warning($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+
+                        if (_failedChecks >= _maxFailedChecks)
+                        {
+                            needsRecovery = true;
+
+                            // LOCK THE GATE HERE
+                            // This prevents threads waiting for the lock from 
+                            // logging "Health check failed (4/3)" etc.
+                            _isRecovering = true;
+                        }
+                    }
+                }
+                else if (_failedChecks > 0)
+                {
+                    _logger?.Info("Child process is healthy again. Resetting failure count.");
+                    _failedChecks = 0;
+                    SaveRestartAttempts(0);
+                }
+            }
+
+            if (shouldStop) Stop();
+
+            // InitiateRecovery will now find _isRecovering is already true.
+            // Ensure InitiateRecovery's internal guard allows it to run if 
+            // it's the one performing the recovery!
+            if (needsRecovery) InitiateRecovery();
         }
 
         /// <summary>

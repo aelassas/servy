@@ -1,13 +1,17 @@
 ﻿using Moq;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
-using Servy.Service.ProcessManagement;
 using Servy.Service.Helpers;
+using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
-using Servy.Core.Data;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -58,6 +62,8 @@ namespace Servy.Service.UnitTests
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
+            // Ensure it doesn't look like a success exit (Code 0)
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
 
             service.SetChildProcess(mockProcess.Object);
             service.SetMaxFailedChecks(3);
@@ -68,8 +74,13 @@ namespace Servy.Service.UnitTests
             service.InvokeCheckHealth(null, null);
 
             // Assert
+            // Verify the internal counter incremented
             Assert.Equal(1, service.GetFailedChecks());
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Child process is not running"))), Times.Once);
+
+            // Verify the log matches the new unified format "Health check failed (1/3)."
+            logger.Verify(l => l.Warning(It.Is<string>(s =>
+                s.Contains("Health check failed") && s.Contains("(1/3)"))),
+                Times.Once);
         }
 
         [Fact]
@@ -85,19 +96,29 @@ namespace Servy.Service.UnitTests
                 out var pathValidator,
                 out var serviceRepository);
 
+            // Setup the mock process to appear crashed
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1); // Non-zero exit code
 
             service.SetChildProcess(mockProcess.Object);
             service.SetMaxFailedChecks(1);
+            service.SetMaxRestartAttempts(3); // Ensure limit isn't hit
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
-            service.SetFailedChecks(0); // Changed from 1 to 0
+            service.SetFailedChecks(0);
 
             // Act
             service.InvokeCheckHealth(null, null);
 
-            // Assert recovery action invoked and logged
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains($"Health check failed ("))), Times.AtLeastOnce);
+            // Assert 
+
+            // Verify the failure was logged
+            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed (1/1)"))), Times.Once);
+
+            // Verify the recovery log from ExecuteRecoveryAction
+            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Performing recovery action (1/3)"))), Times.Once);
+
+            // Verify the helper was actually called to perform the restart
             helper.Verify(h => h.RestartProcess(
                 It.IsAny<IProcessWrapper>(),
                 It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
@@ -108,8 +129,6 @@ namespace Servy.Service.UnitTests
                 It.IsAny<ILogger>(),
                 It.IsAny<int>()),
                 Times.Once);
-
-            // We might want to verify process restart logic (mock process kill/start etc.)
         }
 
         [Theory]
@@ -148,6 +167,7 @@ namespace Servy.Service.UnitTests
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
 
             service.SetChildProcess(mockProcess.Object);
             service.SetMaxFailedChecks(1);
@@ -189,7 +209,6 @@ namespace Servy.Service.UnitTests
             }
         }
 
-
         [Fact]
         public void CheckHealth_ProcessHealthy_ResetsFailedChecks_AndLogs()
         {
@@ -221,39 +240,58 @@ namespace Servy.Service.UnitTests
         public async Task CheckHealth_ThreadSafety_MultipleConcurrentCalls()
         {
             // Arrange
-            var service = CreateService(
-                out var logger,
-                out var helper,
-                out var swFactory,
-                out var timerFactory,
-                out var processFactory,
-                out var pathValidator,
-                out var serviceRepository);
+            var service = CreateService(out var logger, out var helper, out var swFactory,
+                                       out var timerFactory, out var processFactory,
+                                       out var pathValidator, out var serviceRepository);
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
+            mockProcess.Setup(p => p.ExitCode).Returns(-1);
+
+            // Use this to control when the recovery "finishes"
+            var recoveryStartedSignal = new TaskCompletionSource<bool>();
+            var recoveryBlockSignal = new TaskCompletionSource<bool>();
+
+            helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<ILogger>(), It.IsAny<int>()))
+                  .Callback(() => {
+                      recoveryStartedSignal.TrySetResult(true);
+                      recoveryBlockSignal.Task.Wait(); // HANG the thread here to keep _isRecovering = true
+                  });
 
             service.SetChildProcess(mockProcess.Object);
             service.SetMaxFailedChecks(3);
             service.SetRecoveryAction(RecoveryAction.RestartProcess);
             service.SetFailedChecks(0);
 
-            int calls = 10;
-            var tasks = new Task[calls];
-
-            // Act - run multiple concurrent CheckHealth calls to test thread safety
+            // Act
+            int calls = 20;
+            var tasks = new List<Task>();
             for (int i = 0; i < calls; i++)
             {
-                tasks[i] = Task.Run(() => service.InvokeCheckHealth(null, null), TestContext.Current.CancellationToken);
+                tasks.Add(Task.Run(() => service.InvokeCheckHealth(null, null), TestContext.Current.CancellationToken));
             }
+
+            // Wait until at least one thread has entered the recovery block
+            await recoveryStartedSignal.Task;
+
+            // Give other threads a moment to attempt to enter the lock and get blocked
+            await Task.Delay(100, TestContext.Current.CancellationToken);
+
+            // Release the recovery mock so it can finish
+            recoveryBlockSignal.SetResult(true);
             await Task.WhenAll(tasks);
 
-            // Assert - failedChecks should not exceed maxFailedChecks (3)
-            Assert.InRange(service.GetFailedChecks(), 1, 3);
+            // Assert
+            // Now it should be exactly 3. Threads 4-20 will have hit 'if (_isRecovering) return'
+            // because Thread 3 was stuck in the helper mock, keeping the flag true.
+            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed"))), Times.Exactly(3));
 
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed"))), Times.AtLeast(calls));
-
-            logger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Max failed health checks reached"))), Times.AtMostOnce());
+            helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
+                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<ILogger>(), It.IsAny<int>()),
+                          Times.Once);
         }
     }
 }
