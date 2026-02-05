@@ -184,6 +184,7 @@ namespace Servy.Service
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
         private uint _checkPoint = 0;
+        private volatile bool _isTearingDown = false;
 
         #endregion
 
@@ -1437,7 +1438,7 @@ namespace Servy.Service
 
             lock (_healthCheckLock)
             {
-                if (_isRecovering)
+                if (_isTearingDown || _disposed)
                     return;
 
                 try
@@ -1661,6 +1662,8 @@ namespace Servy.Service
             lock (_teardownLock)
             {
                 if (_disposed) return true;
+
+                _isTearingDown = true;
 
                 try
                 {
