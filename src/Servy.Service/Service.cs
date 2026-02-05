@@ -1433,12 +1433,12 @@ namespace Servy.Service
         /// <param name="e">Elapsed event data.</param>
         private void CheckHealth(object? sender, ElapsedEventArgs? e)
         {
-            if (_disposed)
+            if (_isTearingDown || _disposed)
                 return;
 
             lock (_healthCheckLock)
             {
-                if (_isTearingDown || _disposed)
+                if (_isRecovering)
                     return;
 
                 try
