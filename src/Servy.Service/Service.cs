@@ -627,11 +627,14 @@ namespace Servy.Service
                 systemBootTimeUtc = DateTime.UtcNow;
             }
 
-            // 1. The Reboot Check
-            // If the file was written BEFORE the current OS session started
+            // 1. Session Persistence Check
+            // If the file's last modification occurred before the current system boot, 
+            // the service is starting in a new OS session. We maintain the existing counter 
+            // to ensure recovery quotas (like RestartComputer) are respected across reboots.
+            // This also handles cases where the service has been stable for long periods.
             if (lastWriteUtc < systemBootTimeUtc)
             {
-                _logger.Info($"Detected start after system reboot. (Last Attempt: {lastWriteUtc:G}, Boot Time: {systemBootTimeUtc:G}). Maintaining counter.");
+                _logger.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
                 return;
             }
 
