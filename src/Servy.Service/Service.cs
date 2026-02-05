@@ -190,6 +190,7 @@ namespace Servy.Service
         private uint _checkPoint = 0;
         private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
+        private bool _isRebooting = false;
 
         #endregion
 
@@ -585,41 +586,67 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Resets the restart attempts counter if the last recorded restart attempt
-        /// occurred more than a calculated threshold ago, treating the current start as a fresh session.
+        /// Evaluates whether the persistent restart attempts counter should be reset to zero.
         /// </summary>
-        /// <param name="options">The service startup options containing heartbeat, recovery, and pre-launch settings.</param>
+        /// <param name="options">The startup options containing heartbeat and timeout configurations used to calculate the stability threshold.</param>
         /// <remarks>
-        /// This method helps prevent the service from getting stuck in an infinite restart loop
-        /// by only resetting the restart attempts counter when sufficient time has elapsed
-        /// since the last attempt. The threshold is calculated based on the configured
-        /// heartbeat interval, maximum allowed failed health checks, and an added buffer
-        /// to accommodate timing variations and any configured pre-launch script timeout.
-        /// <para>
-        /// Rapid restarts occurring within this threshold will continue incrementing the restart attempts,
-        /// allowing the service to eventually stop restarting after reaching the max allowed attempts.
-        /// </para>
-        /// <para>
-        /// Use this method in <see cref="OnStart"/> to ensure that restart attempts are only reset
-        /// when the service truly restarts after a stable downtime.
-        /// </para>
+        /// This method performs two distinct checks:
+        /// <list type="number">
+        /// <item>
+        /// <description>
+        /// <b>Reboot Detection:</b> Compares the last write time of the restart file against the system boot time 
+        /// (calculated via <see cref="GetTickCount64"/>). If the file was modified before the current OS session, 
+        /// the count is maintained because the service is likely starting due to a "Restart Computer" recovery action.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// <b>Stability Reset:</b> If within the same OS session, it resets the counter only if the time elapsed 
+        /// since the last failure exceeds a calculated threshold (heartbeat interval + failed check allowance + buffer). 
+        /// This ensures that stable runs clear the "punishment" history, while rapid crash loops continue to increment it.
+        /// </description>
+        /// </item>
+        /// </list>
         /// </remarks>
         private void ConditionalResetRestartAttempts(StartOptions options)
         {
-            double resetThresholdMinutes = ((options.HeartbeatInterval * options.MaxFailedChecks) + 30) / 60.0; // adding 30 seconds buffer
+            if (!File.Exists(_restartAttemptsFile)) return;
 
-            if (_preLaunchEnabled)
+            DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
+            DateTime systemBootTimeUtc;
+
+            try
             {
-                resetThresholdMinutes += options.PreLaunchTimeout / 60.0; // Convert seconds to minutes
+                // Environment.TickCount64 is a long (int64), representing milliseconds since boot.
+                systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning($"Failed to calculate system boot time: {ex.Message}");
+                // Safety: If we can't determine boot time, assume same session to avoid accidental reset
+                systemBootTimeUtc = DateTime.UtcNow;
             }
 
-            var lastWrite = File.Exists(_restartAttemptsFile)
-                ? File.GetLastWriteTimeUtc(_restartAttemptsFile)
-                : DateTime.MinValue;
-
-            if ((DateTime.UtcNow - lastWrite).TotalMinutes > resetThresholdMinutes)
+            // 1. The Reboot Check
+            // If the file was written BEFORE the current OS session started
+            if (lastWriteUtc < systemBootTimeUtc)
             {
-                _logger.Info("Resetting restart attempts counter due to sufficient downtime since last attempt.");
+                _logger.Info($"Detected start after system reboot. (Last Attempt: {lastWriteUtc:G}, Boot Time: {systemBootTimeUtc:G}). Maintaining counter.");
+                return;
+            }
+
+            // 2. Standard same-session reset logic
+            int resetThresholdSeconds = (options.HeartbeatInterval * options.MaxFailedChecks) + 30;
+            if (_preLaunchEnabled)
+            {
+                resetThresholdSeconds += options.PreLaunchTimeout;
+            }
+
+            double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
+
+            if (secondsSinceLastAttempt > resetThresholdSeconds)
+            {
+                _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
                 SaveRestartAttempts(0);
             }
         }
@@ -1574,7 +1601,7 @@ namespace Servy.Service
         {
             try
             {
-                _logger?.Warning($"Performing recovery action ({attemptCount}/{_maxRestartAttempts}).");
+                _logger?.Warning($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{_maxRestartAttempts}).");
 
                 switch (_recoveryAction)
                 {
@@ -1596,6 +1623,7 @@ namespace Servy.Service
                         break;
 
                     case RecoveryAction.RestartComputer:
+                        _isRebooting = true;
                         _serviceHelper.RestartComputer(_logger!);
                         break;
 
@@ -1703,6 +1731,14 @@ namespace Servy.Service
         {
             if (command == SERVICE_CONTROL_PRESHUTDOWN)
             {
+                if (_isRebooting)
+                {
+                    _logger?.Info("Pre-Shutdown bypassed: System reboot initiated by recovery logic.");
+                    // Signal stopped immediately so the OS doesn't wait for us
+                    UpdateServiceStatus(SERVICE_STOPPED, 0);
+                    return;
+                }
+
                 _logger?.Info("Pre-Shutdown received. Starting orchestrated teardown...");
 
                 if (_serviceHandle == IntPtr.Zero)
@@ -1795,6 +1831,11 @@ namespace Servy.Service
         /// </remarks>
         protected override void OnShutdown()
         {
+            if (_isRebooting)
+            {
+                _logger?.Info("Shutdown bypassed: System reboot initiated by recovery logic.");
+                return;
+            }
             ExecuteTeardown(TeardownReason.Shutdown);
             base.OnShutdown();
         }

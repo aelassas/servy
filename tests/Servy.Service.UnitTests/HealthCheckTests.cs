@@ -116,7 +116,7 @@ namespace Servy.Service.UnitTests
             logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed (1/1)"))), Times.Once);
 
             // Verify the recovery log from ExecuteRecoveryAction
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Performing recovery action (1/3)"))), Times.Once);
+            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)"))), Times.Once);
 
             // Verify the helper was actually called to perform the restart
             helper.Verify(h => h.RestartProcess(
