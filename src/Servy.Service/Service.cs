@@ -382,11 +382,7 @@ namespace Servy.Service
                     {
                         serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-                        if (serviceHandleField != null)
-                        {
-                            //_logger?.Info($"Found service handle field: {fieldName}");
-                            break;
-                        }
+                        if (serviceHandleField != null) break;
                     }
 
                     if (serviceHandleField != null)
