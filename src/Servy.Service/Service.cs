@@ -678,14 +678,21 @@ namespace Servy.Service
             }
 
             // 2. Standard same-session reset logic
-            int resetThresholdSeconds = (options.HeartbeatInterval * options.MaxFailedChecks) + 30;
+            int detectionWindowSeconds = options.HeartbeatInterval * options.MaxFailedChecks;
+
+            // Base threshold: detection window + buffer (min 30s or the detection window itself)
+            int bufferSeconds = Math.Max(detectionWindowSeconds, 30);
+            int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
+
+            // Cap at 1 hour, but ensure we always wait at least one full detection cycle
+            resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, 3600), detectionWindowSeconds);
+
             if (_preLaunchEnabled)
             {
                 resetThresholdSeconds += options.PreLaunchTimeout;
             }
 
             double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
-
             if (secondsSinceLastAttempt > resetThresholdSeconds)
             {
                 _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
