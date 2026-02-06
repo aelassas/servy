@@ -643,6 +643,10 @@ namespace Servy.Service
         /// </remarks>
         private void ConditionalResetRestartAttempts(StartOptions options)
         {
+            // If the counter is already 0, there is no need to check timestamps or files.
+            // This keeps the health check efficient.
+            if (GetRestartAttempts() == 0) return;
+
             if (!File.Exists(_restartAttemptsFile)) return;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
@@ -1736,11 +1740,21 @@ namespace Servy.Service
                         }
                     }
                 }
-                else if (_failedChecks > 0)
+                else
                 {
-                    _logger?.Info("Child process is healthy again. Resetting failure count.");
-                    _failedChecks = 0;
-                    SaveRestartAttempts(0);
+                    // PROCESS IS HEALTHY
+                    if (_failedChecks > 0)
+                    {
+                        _logger?.Info("Child process is healthy again. Resetting transient failure count.");
+
+                        // Always reset memory count immediately so we don't trigger recovery again unnecessarily
+                        _failedChecks = 0;
+                    }
+
+                    // STABILITY CHECK
+                    // This is where we check if we've been healthy long enough to reset the 
+                    // PERSISTENT restart counter (the one that survives reboots).
+                    ConditionalResetRestartAttempts(_options);
                 }
             }
 
