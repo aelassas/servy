@@ -627,6 +627,10 @@ namespace Servy.Service
         /// </remarks>
         private void ConditionalResetRestartAttempts(StartOptions options)
         {
+            // If the counter is already 0, there is no need to check timestamps or files.
+            // This keeps the health check efficient.
+            if (GetRestartAttempts() == 0) return;
+
             if (!File.Exists(_restartAttemptsFile)) return;
 
             DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
@@ -1538,7 +1542,7 @@ namespace Servy.Service
             if (options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
             {
                 _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
-                _healthCheckTimer.Elapsed += CheckHealth!;
+                _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
 
@@ -1677,7 +1681,7 @@ namespace Servy.Service
         /// If a recovery is already in progress (triggered by this timer or a process exit event), 
         /// the check exits immediately to prevent duplicate logs and redundant recovery attempts.
         /// </remarks>
-        private void CheckHealth(object sender, ElapsedEventArgs e)
+        private void CheckHealth(object? sender, ElapsedEventArgs e)
         {
             if (_isTearingDown || _disposed) return;
 
@@ -1716,11 +1720,21 @@ namespace Servy.Service
                         }
                     }
                 }
-                else if (_failedChecks > 0)
+                else
                 {
-                    _logger?.Info("Child process is healthy again. Resetting failure count.");
-                    _failedChecks = 0;
-                    SaveRestartAttempts(0);
+                    // PROCESS IS HEALTHY
+                    if (_failedChecks > 0)
+                    {
+                        _logger?.Info("Child process is healthy again. Resetting transient failure count.");
+
+                        // Always reset memory count immediately so we don't trigger recovery again unnecessarily
+                        _failedChecks = 0;
+                    }
+
+                    // STABILITY CHECK
+                    // This is where we check if we've been healthy long enough to reset the 
+                    // PERSISTENT restart counter (the one that survives reboots).
+                    ConditionalResetRestartAttempts(_options!);
                 }
             }
 
