@@ -174,8 +174,9 @@ namespace Servy.Service
         private int _maxFailedChecks;
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
-        private readonly object _healthCheckLock = new();
-        private readonly object _teardownLock = new();
+        private readonly object _healthCheckLock = new object();
+        private readonly object _teardownLock = new object();
+        private readonly object _fileLock = new object();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
@@ -528,6 +529,7 @@ namespace Servy.Service
 
         /// <summary>
         /// Reads the current restart attempts count from the persistent file storage.
+        /// Uses a lock to prevent concurrent access corruption.
         /// </summary>
         /// <remarks>
         /// This method ensures that the restart attempts counter is always retrieved from disk,
@@ -546,42 +548,57 @@ namespace Servy.Service
         /// </returns>
         private int GetRestartAttempts()
         {
-            try
-            {
-                if (File.Exists(_restartAttemptsFile))
-                {
-                    var content = File.ReadAllText(_restartAttemptsFile).Trim();
-                    if (int.TryParse(content, out var attempts) && attempts >= 0)
-                        return attempts;
+            if (string.IsNullOrEmpty(_restartAttemptsFile)) return 0;
 
-                    File.WriteAllText(_restartAttemptsFile, "0");
-                    _logger.Warning("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
-                    return 0;
-                }
-                else
-                {
-                    File.WriteAllText(_restartAttemptsFile!, "0");
-                    _logger.Warning("Restart attempts file not found. Initializing counter to 0.");
-                    return 0;
-                }
-            }
-            catch (Exception ex)
+            lock (_fileLock)
             {
-                _logger.Warning($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
-                return 0;
+                try
+                {
+                    if (File.Exists(_restartAttemptsFile))
+                    {
+                        var content = File.ReadAllText(_restartAttemptsFile).Trim();
+                        if (int.TryParse(content, out var attempts) && attempts >= 0)
+                            return attempts;
+
+                        File.WriteAllText(_restartAttemptsFile, "0");
+                        _logger.Warning("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+                        return 0;
+                    }
+                    else
+                    {
+                        File.WriteAllText(_restartAttemptsFile, "0");
+                        _logger.Warning("Restart attempts file not found. Initializing counter to 0.");
+                        return 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                    return 0;
+                }
             }
         }
 
         /// <summary>
         /// Saves the current number of restart attempts to the persistent attempts file.
+        /// Updates the Last Write Time, which is critical for session persistence checks.
         /// Does nothing if the attempts file path is null or empty.
         /// </summary>
         /// <param name="attempts">The restart attempts count to save.</param>
         private void SaveRestartAttempts(int attempts)
         {
-            if (!string.IsNullOrEmpty(_restartAttemptsFile))
+            if (string.IsNullOrEmpty(_restartAttemptsFile)) return;
+
+            lock (_fileLock)
             {
-                File.WriteAllText(_restartAttemptsFile, attempts.ToString());
+                try
+                {
+                    File.WriteAllText(_restartAttemptsFile, attempts.ToString());
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error($"Failed to save restart attempts to file: {ex.Message}");
+                }
             }
         }
 
