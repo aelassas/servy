@@ -86,6 +86,7 @@ scoop install servy
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
 * [Overview](https://github.com/aelassas/servy/wiki/Overview)
 * [Usage](https://github.com/aelassas/servy/wiki/Usage)
+* [Health Monitoring & Recovery](https://github.com/aelassas/servy/wiki/Health-Monitoring-&-Recovery)
 * [FAQ](https://github.com/aelassas/servy/wiki/FAQ)
 * [Full Documentation](https://github.com/aelassas/servy/wiki)
 
