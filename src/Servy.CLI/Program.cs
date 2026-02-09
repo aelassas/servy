@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using static Servy.CLI.Helpers.Helper;
 
@@ -207,7 +207,7 @@ namespace Servy.CLI
         /// <returns>
         /// A handle to the window used by the console, or <see cref="IntPtr.Zero"/> if there is no such associated window.
         /// </returns>
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll")]
         private static extern IntPtr GetConsoleWindow();
 
         /// <summary>
