@@ -11,6 +11,7 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using static Servy.CLI.Helpers.Helper;
 #if !DEBUG
 using System.Diagnostics;
@@ -49,8 +50,7 @@ namespace Servy.CLI
 
                 args[0] = args[0].ToLowerInvariant();
 
-                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase)
-                    || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
+                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
                     || !IsRealConsole();
 
                 // Ensure event source exists
@@ -189,7 +189,7 @@ namespace Servy.CLI
         /// <returns>
         /// A handle to the window used by the console, or <see cref="IntPtr.Zero"/> if there is no such associated window.
         /// </returns>
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll")]
         private static extern IntPtr GetConsoleWindow();
 
         /// <summary>
