@@ -51,8 +51,14 @@ namespace Servy.CLI
 
                 args[0] = args[0].ToLowerInvariant();
 
-                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) ||
-                 a.Equals("-q", StringComparison.OrdinalIgnoreCase));
+                var isInteractive = Environment.UserInteractive;
+                var isRedirected = Console.IsOutputRedirected;
+                bool canAccessHeight = false;
+                try { canAccessHeight = Console.WindowHeight > 0; } catch { }
+
+                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) 
+                    || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
+                    || !IsRealConsole();
 
                 // Ensure event source exists
                 Core.Helpers.Helper.EnsureEventSourceExists();
@@ -193,6 +199,65 @@ namespace Servy.CLI
             {
                 Console.WriteLine($"An unexpected error occurred: {e.Message}");
                 return 1;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the window handle used by the console associated with the calling process.
+        /// </summary>
+        /// <returns>
+        /// A handle to the window used by the console, or <see cref="IntPtr.Zero"/> if there is no such associated window.
+        /// </returns>
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow();
+
+        /// <summary>
+        /// Performs a multi-layered check to determine if the current process is running in a real, 
+        /// interactive console window.
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if a physical or emulated terminal is attached that supports interactive 
+        /// features (like cursor manipulation); <c>false</c> if the output is redirected, 
+        /// running in Session 0 (SYSTEM account), or headless.
+        /// </returns>
+        /// <remarks>
+        /// This method validates the environment using four distinct checks:
+        /// <list type="number">
+        /// <item>
+        /// <description><b>Session 0 Check:</b> Uses <see cref="Environment.UserInteractive"/> to see if the process can interact with a desktop.</description>
+        /// </item>
+        /// <item>
+        /// <description><b>Redirection Check:</b> Checks if standard output or error has been piped to a file or another process.</description>
+        /// </item>
+        /// <item>
+        /// <description><b>Win32 Handle Check:</b> Verifies a window handle exists via <c>GetConsoleWindow</c> to catch "ghost" consoles.</description>
+        /// </item>
+        /// <item>
+        /// <description><b>Buffer Access Check:</b> Attempts to read <see cref="Console.WindowHeight"/> to ensure the console buffer is actually reachable.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        public static bool IsRealConsole()
+        {
+            // 1. Session 0 check (detects Services/SYSTEM account)
+            if (!Environment.UserInteractive) return false;
+
+            // 2. Standard redirection check (detects '>' or '|')
+            if (Console.IsOutputRedirected || Console.IsErrorRedirected) return false;
+
+            // 3. Win32 check: Is there actually a window handle?
+            // This catches scenarios where a console is allocated but not visible or interactive.
+            if (GetConsoleWindow() == IntPtr.Zero) return false;
+
+            try
+            {
+                // 4. Property check: Accessing buffer properties on a redirected 
+                // handle will throw an IOException (Invalid Descriptor).
+                return Console.WindowHeight > 0;
+            }
+            catch
+            {
+                return false;
             }
         }
 
