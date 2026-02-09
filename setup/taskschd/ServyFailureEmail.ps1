@@ -64,15 +64,15 @@ $lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -De
 if ($lastError) {
     $message = $lastError.Message
     if ($message -match "^\[(.+?)\]\s*(.+)$") {
-        $ServiceName = $matches[1]
-        $LogText = $matches[2]
+        $serviceName = $matches[1]
+        $logText = $matches[2]
     } else {
-        $ServiceName = "Unknown Service"
-        $LogText = $message
+        $serviceName = "Unknown Service"
+        $logText = $message
     }
 
-    $subject = "Servy - $ServiceName Failure"
-    $body    = "A failure has been detected in service '$ServiceName'." + [Environment]::NewLine + "Details: $LogText"
+    $subject = "Servy - $serviceName Failure"
+    $body    = "A failure has been detected in service '$serviceName'." + [Environment]::NewLine + "Details: $logText"
     $htmlBody = $body -replace "`r?`n", "<br>"
 
     Send-NotificationEmail -Subject $subject -Body $htmlBody
