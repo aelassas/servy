@@ -42,47 +42,47 @@ param(
 # ----------------------------------------------------------------------
 # Resolve script directory (absolute path to this script's location)
 # ----------------------------------------------------------------------
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$ServiceProject   = Join-Path $ScriptDir "..\Servy.Service\Servy.Service.csproj" | Resolve-Path
-$Platform         = "x64"
-$BuildOutput      = Join-Path $ScriptDir "..\Servy.Service\bin\$Platform\$BuildConfiguration"
-$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$serviceProject   = Join-Path $scriptDir "..\Servy.Service\Servy.Service.csproj" | Resolve-Path
+$platform         = "x64"
+$buildOutput      = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$BuildConfiguration"
+$signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish resources first
 # ---------------------------------------------------------------------------------
-$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
+$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$publishResScript = Join-Path $scriptDir $publishResScriptName
 
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
+if (-not (Test-Path $publishResScript)) {
+    Write-Error "Required script not found: $publishResScript"
     exit 1
 }
 
-Write-Host "=== Running $PublishResScriptName ==="
-& $PublishResScript
+Write-Host "=== Running $publishResScriptName ==="
+& $publishResScript
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$PublishResScriptName failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $PublishResScriptName ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ----------------------------------------------------------------------
 # Step 2: Build Servy.Service
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
-& msbuild $ServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
+& msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
 
 # ----------------------------------------------------------------------
 # Step 3: Sign the executable only in Release mode
 # ----------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $ExePath = Join-Path $BuildOutput "Servy.Service.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $exePath = Join-Path $buildOutput "Servy.Service.exe" | Resolve-Path
+    & $signPath $exePath
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Signing Servy.CLI.exe failed."

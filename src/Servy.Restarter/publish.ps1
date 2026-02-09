@@ -42,28 +42,28 @@ param(
 # ----------------------------------------------------------------------
 # Resolve script directory (absolute path to this script's location)
 # ----------------------------------------------------------------------
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
-$Platform         = "x64"
-$RestarterProject = Join-Path $ScriptDir "..\Servy.Restarter\Servy.Restarter.csproj" | Resolve-Path
-$BuildOutput      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Platform\$BuildConfiguration"
-$SignPath         = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$platform         = "x64"
+$restarterProject = Join-Path $scriptDir "..\Servy.Restarter\Servy.Restarter.csproj" | Resolve-Path
+$buildOutput      = Join-Path $scriptDir "..\Servy.Restarter\bin\$platform\$BuildConfiguration"
+$signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Restarter in $BuildConfiguration mode..."
-& msbuild $RestarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
+& msbuild $restarterProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
 
 # ----------------------------------------------------------------------
 # Step 2: Sign the executable only in Release mode
 # ----------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $ExePath = Join-Path $BuildOutput "Servy.Restarter.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $exePath = Join-Path $buildOutput "Servy.Restarter.exe" | Resolve-Path
+    & $signPath $exePath
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Signing Servy.Restarter.exe failed."

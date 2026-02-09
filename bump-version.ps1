@@ -30,58 +30,58 @@ param(
 )
 
 # Convert short version to full versions
-$FullVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0" } else { $Version }
-$FileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Version.0.0" }
+$fullVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0" } else { $Version }
+$fileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Version.0.0" }
 
 Write-Host "Updating Servy version to $Version..."
 
 # Base directory of the script
-$BaseDir = $PSScriptRoot
+$baseDir = $PSScriptRoot
 
 # 1. Update setup\publish.ps1
-$PublishPath = Join-Path $BaseDir "setup\publish.ps1"
-if (-Not (Test-Path $PublishPath)) { Write-Error "File not found: $PublishPath"; exit 1 }
-$Content = [System.IO.File]::ReadAllText($PublishPath)
-$Content = [regex]::Replace(
-    $Content,
-    '(\$Version\s*=\s*")[^"]*(")',
+$publishPath = Join-Path $baseDir "setup\publish.ps1"
+if (-Not (Test-Path $publishPath)) { Write-Error "File not found: $publishPath"; exit 1 }
+$content = [System.IO.File]::ReadAllText($publishPath)
+$content = [regex]::Replace(
+    $content,
+    '(\$version\s*=\s*")[^"]*(")',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($PublishPath, $Content)
-Write-Host "Updated $PublishPath"
+[System.IO.File]::WriteAllText($publishPath, $content)
+Write-Host "Updated $publishPath"
 
 # 2. Update src\Servy.Core\Config\AppConfig.cs
-$AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
-if (-Not (Test-Path $AppConfigPath)) { Write-Error "File not found: $AppConfigPath"; exit 1 }
-$Content = [System.IO.File]::ReadAllText($AppConfigPath)
-$Content = [regex]::Replace(
-    $Content,
+$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
+if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
+$content = [System.IO.File]::ReadAllText($appConfigPath)
+$content = [regex]::Replace(
+    $content,
     '(public static readonly string Version\s*=\s*")[^"]*(";)',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($AppConfigPath, $Content)
-Write-Host "Updated $AppConfigPath"
+[System.IO.File]::WriteAllText($appConfigPath, $content)
+Write-Host "Updated $appConfigPath"
 
 # 4. Update all AssemblyInfo.cs files recursively
-Get-ChildItem -Path $BaseDir -Recurse -Filter AssemblyInfo.cs | ForEach-Object {
+Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs | ForEach-Object {
     $assemblyInfo = $_.FullName
-    $Content = [System.IO.File]::ReadAllText($assemblyInfo)
+    $content = [System.IO.File]::ReadAllText($assemblyInfo)
 
     # Update [assembly: AssemblyVersion("1.0.0.0")]
-    $Content = [regex]::Replace(
-        $Content,
+    $content = [regex]::Replace(
+        $content,
         '(\[assembly:\s*AssemblyVersion\(")[^"]*("\)\])',
-        { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
+        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
     )
 
     # Update [assembly: AssemblyFileVersion("1.0.0.0")]
-    $Content = [regex]::Replace(
-        $Content,
+    $content = [regex]::Replace(
+        $content,
         '(\[assembly:\s*AssemblyFileVersion\(")[^"]*("\)\])',
-        { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
+        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
     )
 
-    [System.IO.File]::WriteAllText($assemblyInfo, $Content)
+    [System.IO.File]::WriteAllText($assemblyInfo, $content)
     Write-Host "Updated $assemblyInfo"
 }
 

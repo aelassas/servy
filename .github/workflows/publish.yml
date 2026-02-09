@@ -43,7 +43,7 @@ jobs:
         run: |
           $publishFile = "setup/publish.ps1"
           if (-not (Test-Path $publishFile)) { throw "cannot find publish.ps1" }
-          $line = Get-Content $publishFile | Where-Object { $_ -match '^\s*\$Version\s*=\s*"(.*)"' }
+          $line = Get-Content $publishFile | Where-Object { $_ -match '^\s*\$version\s*=\s*"(.*)"' }
           if (-not $line) { throw "Version line not found in $publishFile" }
           $v = ([regex]::Match($line, '"(.*)"')).Groups[1].Value
           if (-not $v) { throw "Failed to extract version" }
@@ -207,14 +207,14 @@ jobs:
       - name: Build Servy.Restarter.exe
         shell: pwsh
         run: |
-          $BuildConfiguration = $env:BUILD_CONFIG
-          $Platform           = $env:PLATFORM
-          $ProjectPath        = "src/Servy.Restarter/Servy.Restarter.csproj"
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy.Restarter/Servy.Restarter.csproj"
 
-          msbuild $ProjectPath `
+          msbuild $projectPath `
             /t:Clean,Rebuild `
-            /p:Configuration=$BuildConfiguration `
-            /p:Platform=$Platform `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
@@ -254,14 +254,14 @@ jobs:
       - name: Build Servy.Service.exe
         shell: pwsh
         run: |
-          $BuildConfiguration = $env:BUILD_CONFIG
-          $Platform           = $env:PLATFORM
-          $ProjectPath        = "src/Servy.Service/Servy.Service.csproj"
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy.Service/Servy.Service.csproj"
 
-          msbuild $ProjectPath `
+          msbuild $projectPath `
             /t:Clean,Rebuild `
-            /p:Configuration=$BuildConfiguration `
-            /p:Platform=$Platform `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
@@ -314,14 +314,14 @@ jobs:
       - name: Build Servy.exe
         shell: pwsh
         run: |
-          $BuildConfiguration = $env:BUILD_CONFIG
-          $Platform           = $env:PLATFORM
-          $ProjectPath        = "src/Servy/Servy.csproj"
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy/Servy.csproj"
 
-          msbuild $ProjectPath `
+          msbuild $projectPath `
             /t:Clean,Rebuild `
-            /p:Configuration=$BuildConfiguration `
-            /p:Platform=$Platform `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
@@ -361,14 +361,14 @@ jobs:
       - name: Build Servy.Manager.exe
         shell: pwsh
         run: |
-          $BuildConfiguration = $env:BUILD_CONFIG
-          $Platform           = $env:PLATFORM
-          $ProjectPath        = "src/Servy.Manager/Servy.Manager.csproj"
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy.Manager/Servy.Manager.csproj"
 
-          msbuild $ProjectPath `
+          msbuild $projectPath `
             /t:Clean,Rebuild `
-            /p:Configuration=$BuildConfiguration `
-            /p:Platform=$Platform `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------
@@ -408,14 +408,14 @@ jobs:
       - name: Build Servy.CLI.exe
         shell: pwsh
         run: |
-          $BuildConfiguration = $env:BUILD_CONFIG
-          $Platform           = $env:PLATFORM
-          $ProjectPath        = "src/Servy.CLI/Servy.CLI.csproj"
+          $buildConfiguration = $env:BUILD_CONFIG
+          $platform           = $env:PLATFORM
+          $projectPath        = "src/Servy.CLI/Servy.CLI.csproj"
 
-          msbuild $ProjectPath `
+          msbuild $projectPath `
             /t:Clean,Rebuild `
-            /p:Configuration=$BuildConfiguration `
-            /p:Platform=$Platform `
+            /p:Configuration=$buildConfiguration `
+            /p:Platform=$platform `
             /p:AllowUnsafeBlocks=true
 
       # -----------------------------------------------------

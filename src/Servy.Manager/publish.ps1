@@ -43,42 +43,42 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Get the directory of the current script
-$ScriptDir             = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir             = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Configuration
-$Platform              = "x64"
-$SignPath              = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$PublishFolder         = Join-Path $ScriptDir "bin\$Platform\$BuildConfiguration"
+$platform              = "x64"
+$signPath              = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$publishFolder         = Join-Path $scriptDir "bin\$platform\$BuildConfiguration"
 
 # Paths
-$ProjectPath = Join-Path $ScriptDir "Servy.Manager.csproj"
+$projectPath = Join-Path $scriptDir "Servy.Manager.csproj"
 
 # Step 1: Run publish-res-release.ps1
-$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
+$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$publishResScript = Join-Path $scriptDir $publishResScriptName
 
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
+if (-not (Test-Path $publishResScript)) {
+    Write-Error "Required script not found: $publishResScript"
     exit 1
 }
 
-Write-Host "=== Running $PublishResScriptName ==="
-& $PublishResScript -tfm $tfm
+Write-Host "=== Running $publishResScriptName ==="
+& $publishResScript -tfm $tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$PublishResScriptName failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $PublishResScriptName ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # Step 2: Build project with MSBuild
 Write-Host "Building Servy.Manager project in $BuildConfiguration mode..."
-& msbuild $ProjectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$Platform
+& msbuild $projectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
 Write-Host "Build completed."
 
 # Step 3: Sign the published executable if signing is enabled
 if ($BuildConfiguration -eq "Release") {
-    $ExePath = Join-Path $PublishFolder "Servy.Manager.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $exePath = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
+    & $signPath $exePath
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Signing Servy.Manager.exe failed."

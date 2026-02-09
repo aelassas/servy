@@ -33,29 +33,29 @@ $ErrorActionPreference = "Stop"
 # -------------------------------------------------------------------------------------------------
 # Paths & Configuration
 # -------------------------------------------------------------------------------------------------
-$ScriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
-$CliProject           = Join-Path $ScriptDir "..\Servy.CLI\Servy.CLI.csproj" | Resolve-Path
-$ServicePublishScript = Join-Path $ScriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-$ResourcesFolder      = Join-Path $ScriptDir "..\Servy.CLI\Resources" | Resolve-Path
-$BuildConfiguration   = "Debug"
-$Platform             = "x64"
-$BuildOutput          = Join-Path $ScriptDir "..\Servy.Service\bin\$BuildConfiguration"
-$ResourcesBuildOutput = Join-Path $ScriptDir "..\Servy.CLI\bin\$Platform\$BuildConfiguration"
+$scriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
+$cliProject           = Join-Path $scriptDir "..\Servy.CLI\Servy.CLI.csproj" | Resolve-Path
+$servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
+$resourcesFolder      = Join-Path $scriptDir "..\Servy.CLI\Resources" | Resolve-Path
+$buildConfiguration   = "Debug"
+$platform             = "x64"
+$buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$buildConfiguration"
+$resourcesBuildOutput = Join-Path $scriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
 
 # ------------------------------------------------------------------------
 # Step 0: Build Servy to ensure x86 and x64 resources exist
 # ------------------------------------------------------------------------
-& msbuild $CliProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:Platform=$Platform
+& msbuild $cliProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
 
 # -------------------------------------------------------------------------------------------------
 # Step 1: Build the project in Debug mode
 # -------------------------------------------------------------------------------------------------
-& $ServicePublishScript -BuildConfiguration $BuildConfiguration
+& $servicePublishScript -BuildConfiguration $buildConfiguration
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy
 # ------------------------------------------------------------------------
-$FilesToCopy = @(
+$filesToCopy = @(
     @{ Source = "Servy.Service.exe"; Destination = "Servy.Service.Net48.CLI.exe" },
     @{ Source = "Servy.Service.pdb"; Destination = "Servy.Service.Net48.CLI.pdb" },
     @{ Source = "*.dll"; Destination = "*.dll" }
@@ -64,15 +64,15 @@ $FilesToCopy = @(
 # ------------------------------------------------------------------------
 # 3. Copy files to Resources folder
 # ------------------------------------------------------------------------
-foreach ($File in $FilesToCopy) {
-    $SourcePath = Join-Path $BuildOutput $File.Source
+foreach ($File in $filesToCopy) {
+    $sourcePath = Join-Path $buildOutput $File.Source
 
     if ($File.Source -like "*.dll") {
-        Copy-Item -Path $SourcePath -Destination $ResourcesFolder -Force
-        Write-Host "Copied $($File.Source) -> $ResourcesFolder"
+        Copy-Item -Path $sourcePath -Destination $resourcesFolder -Force
+        Write-Host "Copied $($File.Source) -> $resourcesFolder"
     } else {
-        $DestPath = Join-Path $ResourcesFolder $File.Destination
-        Copy-Item -Path $SourcePath -Destination $DestPath -Force
+        $destPath = Join-Path $resourcesFolder $File.Destination
+        Copy-Item -Path $sourcePath -Destination $destPath -Force
         Write-Host "Copied $($File.Source) -> $($File.Destination)"
     }
 }
@@ -81,14 +81,14 @@ foreach ($File in $FilesToCopy) {
 # Step 4 - Copy Servy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
-$InfraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$InfraSourcePath     = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$BuildConfiguration\Servy.Infrastructure.pdb"
-$InfraDestPath       = Join-Path $ResourcesFolder "Servy.Infrastructure.pdb"
+$InfraServiceProject = Join-Path $scriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$InfraSourcePath     = Join-Path $scriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
+$InfraDestPath       = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
-& msbuild $InfraServiceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration
+& msbuild $InfraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 
 Copy-Item -Path $InfraSourcePath -Destination $InfraDestPath -Force
 Write-Host "Copied Servy.Infrastructure.pdb"
 #>
 
-Write-Host "$BuildConfiguration build published successfully to Resources."
+Write-Host "$buildConfiguration build published successfully to Resources."
