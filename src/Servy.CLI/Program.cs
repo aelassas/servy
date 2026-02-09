@@ -56,8 +56,7 @@ namespace Servy.CLI
                 bool canAccessHeight = false;
                 try { canAccessHeight = Console.WindowHeight > 0; } catch { }
 
-                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) 
-                    || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
+                var quiet = args.Any(a => a.Equals("--quiet", StringComparison.OrdinalIgnoreCase) || a.Equals("-q", StringComparison.OrdinalIgnoreCase))
                     || !IsRealConsole();
 
                 // Ensure event source exists
