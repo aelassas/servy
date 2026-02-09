@@ -49,62 +49,62 @@ $ErrorActionPreference = "Stop"
 # Step 0: Setup variables
 # ---------------------------------------------------------------------------------
 # Script directory
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-$SignPath      = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$AppName       = "Servy.Service"
+$signPath      = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$appName       = "Servy.Service"
 
 # Project path (relative to script location)
-$ProjectPath = Join-Path $ScriptDir "$AppName.csproj" | Resolve-Path
+$projectPath = Join-Path $scriptDir "$appName.csproj" | Resolve-Path
 
 # Output folder
-$PublishDir = Join-Path $ScriptDir "bin\$Configuration\$Tfm\$Runtime\publish"
+$publishDir = Join-Path $scriptDir "bin\$Configuration\$Tfm\$Runtime\publish"
 
 # ---------------------------------------------------------------------------------
 # Step 1:Publish resources first
 # ---------------------------------------------------------------------------------
-$PublishResScriptName = if ($Configuration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
+$publishResScriptName = if ($Configuration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$publishResScript = Join-Path $scriptDir $publishResScriptName
 
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
+if (-not (Test-Path $publishResScript)) {
+    Write-Error "Required script not found: $publishResScript"
     exit 1
 }
 
-Write-Host "=== Running $PublishResScriptName ==="
-& $PublishResScript -Tfm $Tfm -Runtime $Runtime -Configuration $Configuration
+Write-Host "=== Running $publishResScriptName ==="
+& $publishResScript -Tfm $Tfm -Runtime $Runtime -Configuration $Configuration
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$PublishResScriptName failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $PublishResScriptName ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Clean previous build artifacts
 # ---------------------------------------------------------------------------------
-if (Test-Path $PublishDir) {
-    Remove-Item $PublishDir -Recurse -Force
+if (Test-Path $publishDir) {
+    Remove-Item $publishDir -Recurse -Force
 }
 
 # ---------------------------------------------------------------------------------
 # Step 3: Build and publish
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $ProjectPath)) {
-    Write-Error "Project file not found: $ProjectPath"
+if (-not (Test-Path $projectPath)) {
+    Write-Error "Project file not found: $projectPath"
     exit 1
 }
 
-Write-Host "=== Publishing $AppName ==="
+Write-Host "=== Publishing $appName ==="
 Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : $Configuration"
 Write-Host "Runtime          : $Runtime"
 
-& dotnet restore $ProjectPath -r $Runtime
+& dotnet restore $projectPath -r $Runtime
 
-& dotnet publish $ProjectPath `
+& dotnet publish $projectPath `
     -c $Configuration `
     -r $Runtime `
-    -o $PublishDir `
+    -o $publishDir `
     --force `
     /p:DeleteExistingFiles=true
 
@@ -117,8 +117,8 @@ if ($LASTEXITCODE -ne 0) {
 # Step 4: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
 if ($Configuration -eq "Release") {
-    $ExePath = Join-Path $PublishDir "Servy.Service.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $exePath = Join-Path $publishDir "Servy.Service.exe" | Resolve-Path
+    & $signPath $exePath
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Signing Servy.Service.exe failed."
@@ -134,4 +134,4 @@ if ($Pause) {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
-Write-Host "=== $AppName published successfully to $PublishDir ==="
+Write-Host "=== $appName published successfully to $publishDir ==="

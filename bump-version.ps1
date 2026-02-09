@@ -36,73 +36,73 @@ param(
 # -----------------------------
 # Convert short version to full versions
 # -----------------------------
-$FullVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0" } else { $Version }
-$FileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Version.0.0" }
+$fullVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0" } else { $Version }
+$fileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Version.0.0" }
 
 Write-Host "Updating Servy version to $Version..."
 
 # Base directory of the script
-$BaseDir = $PSScriptRoot
+$baseDir = $PSScriptRoot
 
 # -----------------------------
 # 1. Update setup\publish.ps1
 # -----------------------------
-$PublishPath = Join-Path $BaseDir "setup\publish.ps1"
-if (-Not (Test-Path $PublishPath)) { Write-Error "File not found: $PublishPath"; exit 1 }
+$publishPath = Join-Path $baseDir "setup\publish.ps1"
+if (-Not (Test-Path $publishPath)) { Write-Error "File not found: $publishPath"; exit 1 }
 
-$Content = [System.IO.File]::ReadAllText($PublishPath)
-$Content = [regex]::Replace(
-    $Content,
+$content = [System.IO.File]::ReadAllText($publishPath)
+$content = [regex]::Replace(
+    $content,
     '(\[string\]\$Version\s*=\s*")[^"]*(")',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($PublishPath, $Content)
-Write-Host "Updated $PublishPath"
+[System.IO.File]::WriteAllText($publishPath, $content)
+Write-Host "Updated $publishPath"
 
 # -----------------------------
 # 2. Update src\Servy.Core\Config\AppConfig.cs
 # -----------------------------
-$AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
-if (-Not (Test-Path $AppConfigPath)) { Write-Error "File not found: $AppConfigPath"; exit 1 }
+$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
+if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
 
-$Content = [System.IO.File]::ReadAllText($AppConfigPath)
-$Content = [regex]::Replace(
-    $Content,
+$content = [System.IO.File]::ReadAllText($appConfigPath)
+$content = [regex]::Replace(
+    $content,
     '(public static readonly string Version\s*=\s*")[^"]*(";)',
     { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($AppConfigPath, $Content)
-Write-Host "Updated $AppConfigPath"
+[System.IO.File]::WriteAllText($appConfigPath, $content)
+Write-Host "Updated $appConfigPath"
 
 # -----------------------------
 # 3. Update all *.csproj files recursively
 # -----------------------------
-Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj | ForEach-Object {
+Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj | ForEach-Object {
     $csproj = $_.FullName
-    $Content = [System.IO.File]::ReadAllText($csproj)
+    $content = [System.IO.File]::ReadAllText($csproj)
 
     # Update <Version>
-    $Content = [regex]::Replace(
-        $Content,
+    $content = [regex]::Replace(
+        $content,
         '(<Version>)[^<]*(</Version>)',
-        { param($m) "$($m.Groups[1].Value)$FullVersion$($m.Groups[2].Value)" }
+        { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
     )
 
     # Update <FileVersion>
-    $Content = [regex]::Replace(
-        $Content,
+    $content = [regex]::Replace(
+        $content,
         '(<FileVersion>)[^<]*(</FileVersion>)',
-        { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
+        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
     )
 
     # Update <AssemblyVersion>
-    $Content = [regex]::Replace(
-        $Content,
+    $content = [regex]::Replace(
+        $content,
         '(<AssemblyVersion>)[^<]*(</AssemblyVersion>)',
-        { param($m) "$($m.Groups[1].Value)$FileVersion$($m.Groups[2].Value)" }
+        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
     )
 
-    [System.IO.File]::WriteAllText($csproj, $Content)
+    [System.IO.File]::WriteAllText($csproj, $content)
     Write-Host "Updated $csproj"
 }
 

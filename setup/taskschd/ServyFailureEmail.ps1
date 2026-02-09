@@ -37,17 +37,17 @@ function Send-NotificationEmail {
     )
 
     # Configure your SMTP settings
-    $SmtpServer = "smtp.example.com"
-    $SmtpPort   = 587
-    $SmtpUser   = "username@example.com"
-    $SmtpPass   = "password"
-    $From       = "servy.notifications@example.com"
-    $To         = "admin@example.com"
+    $smtpServer = "smtp.example.com"
+    $smtpPort   = 587
+    $smtpUser   = "username@example.com"
+    $smtpPass   = "password"
+    $from       = "servy.notifications@example.com"
+    $to         = "admin@example.com"
 
-    $SecurePass = ConvertTo-SecureString $SmtpPass -AsPlainText -Force
-    $Cred = New-Object System.Management.Automation.PSCredential ($SmtpUser, $SecurePass)
+    $securePass = ConvertTo-SecureString $smtpPass -AsPlainText -Force
+    $cred = New-Object System.Management.Automation.PSCredential ($smtpUser, $securePass)
 
-    Send-MailMessage -From $From -To $To -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $SmtpServer -Port $SmtpPort -Credential $Cred -UseSsl
+    Send-MailMessage -From $from -To $to -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -Credential $cred -UseSsl
 }
 
 # -------------------------------
@@ -59,23 +59,23 @@ $filter = @{
     Level = 2  # Error
 }
 
-$LastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
+$lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
 
-if ($LastError) {
-    $Message = $LastError.Message
-    if ($Message -match "^\[(.+?)\]\s*(.+)$") {
+if ($lastError) {
+    $message = $lastError.Message
+    if ($message -match "^\[(.+?)\]\s*(.+)$") {
         $ServiceName = $matches[1]
         $LogText = $matches[2]
     } else {
         $ServiceName = "Unknown Service"
-        $LogText = $Message
+        $LogText = $message
     }
 
-    $Subject = "Servy - $ServiceName Failure"
-    $Body    = "A failure has been detected in service '$ServiceName'." + [Environment]::NewLine + "Details: $LogText"
-    $HtmlBody = $Body -replace "`r?`n", "<br>"
+    $subject = "Servy - $ServiceName Failure"
+    $body    = "A failure has been detected in service '$ServiceName'." + [Environment]::NewLine + "Details: $LogText"
+    $htmlBody = $body -replace "`r?`n", "<br>"
 
-    Send-NotificationEmail -Subject $Subject -Body $HtmlBody
+    Send-NotificationEmail -Subject $subject -Body $htmlBody
 } else {
     Write-Host "No Servy error events found."
 }

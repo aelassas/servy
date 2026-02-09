@@ -171,17 +171,17 @@ jobs:
       - name: Build Servy.Restarter.exe
         shell: pwsh
         run: |
-          $Configuration = $env:CONFIGURATION
-          $Runtime       = $env:RUNTIME
-          $Tfm           = $env:TFM
-          $ProjectPath   = Resolve-Path "src\Servy.Restarter\Servy.Restarter.csproj"
-          $PublishDir    = "src\Servy.Restarter\bin\$Configuration\$Tfm\$Runtime\publish"
+          $configuration = $env:CONFIGURATION
+          $runtime       = $env:RUNTIME
+          $tfm           = $env:TFM
+          $projectPath   = Resolve-Path "src\Servy.Restarter\Servy.Restarter.csproj"
+          $publishDir    = "src\Servy.Restarter\bin\$configuration\$tfm\$runtime\publish"
 
-          dotnet publish $ProjectPath `
-              -c $Configuration `
-              -r $Runtime `
-              -f $Tfm `
-              -o $PublishDir `
+          dotnet publish $projectPath `
+              -c $configuration `
+              -r $runtime `
+              -f $tfm `
+              -o $publishDir `
               --force `
               /p:DeleteExistingFiles=true
 
@@ -222,17 +222,17 @@ jobs:
       - name: Build Servy.Service.exe
         shell: pwsh
         run: |
-          $Configuration = $env:CONFIGURATION
-          $Runtime       = $env:RUNTIME
-          $Tfm           = $env:TFM
-          $ProjectPath   = Resolve-Path "src\Servy.Service\Servy.Service.csproj"
-          $PublishDir    = "src\Servy.Service\bin\$Configuration\$Tfm\$Runtime\publish"
+          $configuration = $env:CONFIGURATION
+          $runtime       = $env:RUNTIME
+          $tfm           = $env:TFM
+          $projectPath   = Resolve-Path "src\Servy.Service\Servy.Service.csproj"
+          $publishDir    = "src\Servy.Service\bin\$configuration\$tfm\$runtime\publish"
 
-          dotnet publish $ProjectPath `
-              -c $Configuration `
-              -r $Runtime `
-              -f $Tfm `
-              -o $PublishDir `
+          dotnet publish $projectPath `
+              -c $configuration `
+              -r $runtime `
+              -f $tfm `
+              -o $publishDir `
               --force `
               /p:DeleteExistingFiles=true
 
@@ -284,17 +284,17 @@ jobs:
       - name: Build Servy.exe
         shell: pwsh
         run: |
-          $Configuration = $env:CONFIGURATION
-          $Runtime       = $env:RUNTIME
-          $Tfm           = $env:TFM
-          $ProjectPath   = Resolve-Path "src\Servy\Servy.csproj"
-          $PublishDir    = "src\Servy\bin\$Configuration\$Tfm\$Runtime\publish"
+          $configuration = $env:CONFIGURATION
+          $runtime       = $env:RUNTIME
+          $tfm           = $env:TFM
+          $projectPath   = Resolve-Path "src\Servy\Servy.csproj"
+          $publishDir    = "src\Servy\bin\$configuration\$tfm\$runtime\publish"
 
-          dotnet publish $ProjectPath `
-              -c $Configuration `
-              -r $Runtime `
-              -f $Tfm `
-              -o $PublishDir `
+          dotnet publish $projectPath `
+              -c $configuration `
+              -r $runtime `
+              -f $tfm `
+              -o $publishDir `
               --force `
               /p:DeleteExistingFiles=true
 
@@ -335,17 +335,17 @@ jobs:
       - name: Build Servy.Manager.exe
         shell: pwsh
         run: |
-          $Configuration = $env:CONFIGURATION
-          $Runtime       = $env:RUNTIME
-          $Tfm           = $env:TFM
-          $ProjectPath   = Resolve-Path "src\Servy.Manager\Servy.Manager.csproj"
-          $PublishDir    = "src\Servy.Manager\bin\$Configuration\$Tfm\$Runtime\publish"
+          $configuration = $env:CONFIGURATION
+          $runtime       = $env:RUNTIME
+          $tfm           = $env:TFM
+          $projectPath   = Resolve-Path "src\Servy.Manager\Servy.Manager.csproj"
+          $publishDir    = "src\Servy.Manager\bin\$configuration\$tfm\$runtime\publish"
 
-          dotnet publish $ProjectPath `
-              -c $Configuration `
-              -r $Runtime `
-              -f $Tfm `
-              -o $PublishDir `
+          dotnet publish $projectPath `
+              -c $configuration `
+              -r $runtime `
+              -f $tfm `
+              -o $publishDir `
               --force `
               /p:DeleteExistingFiles=true
 
@@ -386,17 +386,17 @@ jobs:
       - name: Build Servy.CLI.exe
         shell: pwsh
         run: |
-          $Configuration = $env:CONFIGURATION
-          $Runtime       = $env:RUNTIME
-          $Tfm           = $env:TFM
-          $ProjectPath   = Resolve-Path "src\Servy.CLI\Servy.CLI.csproj"
-          $PublishDir    = "src\Servy.CLI\bin\$Configuration\$Tfm\$Runtime\publish"
+          $configuration = $env:CONFIGURATION
+          $runtime       = $env:RUNTIME
+          $tfm           = $env:TFM
+          $projectPath   = Resolve-Path "src\Servy.CLI\Servy.CLI.csproj"
+          $publishDir    = "src\Servy.CLI\bin\$configuration\$tfm\$runtime\publish"
 
-          dotnet publish $ProjectPath `
-              -c $Configuration `
-              -r $Runtime `
-              -f $Tfm `
-              -o $PublishDir `
+          dotnet publish $projectPath `
+              -c $configuration `
+              -r $runtime `
+              -f $tfm `
+              -o $publishDir `
               --force `
               /p:DeleteExistingFiles=true
 

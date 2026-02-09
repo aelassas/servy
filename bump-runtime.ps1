@@ -47,19 +47,19 @@ param(
 # -----------------------------
 # Variables
 # -----------------------------
-$CurrentVersionRegex = "net\d+\.\d+"
-$NetVersion = "net$Version"
-$BaseDir = $PSScriptRoot
+$currentVersionRegex = "net\d+\.\d+"
+$netVersion = "net$Version"
+$baseDir = $PSScriptRoot
 
-Write-Host "Updating .NET runtime to $NetVersion..." -ForegroundColor Cyan
+Write-Host "Updating .NET runtime to $netVersion..." -ForegroundColor Cyan
 if ($DryRun) {
     Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow
 }
 
 # Statistics counters
-$global:TotalFilesScanned = 0
-$global:FilesModified     = 0
-$global:TotalReplacements = 0
+$global:totalFilesScanned = 0
+$global:filesModified     = 0
+$global:totalReplacements = 0
 
 # -----------------------------
 # Helper function
@@ -80,48 +80,48 @@ function Update-Files {
     )
 
     foreach ($file in $Files) {
-        $Path = $file.FullName
-        $global:TotalFilesScanned++
+        $path = $file.FullName
+        $global:totalFilesScanned++
 
         try {
             # --- Detect encoding ---
-            $Stream = [System.IO.File]::Open($Path, 'Open', 'Read')
+            $stream = [System.IO.File]::Open($path, 'Open', 'Read')
             try {
-                $Reader = New-Object System.IO.StreamReader($Stream, $true)
-                $Content = $Reader.ReadToEnd()
-                $Encoding = $Reader.CurrentEncoding
+                $reader = New-Object System.IO.StreamReader($stream, $true)
+                $content = $reader.ReadToEnd()
+                $encoding = $reader.CurrentEncoding
             }
             finally {
-                $Reader.Close()
-                $Stream.Close()
+                $reader.Close()
+                $stream.Close()
             }
 
             # --- Count matches ---
-            $RegexMatches  = [regex]::Matches($Content, $Pattern)
-            $MatchCount = $RegexMatches.Count
+            $regexMatches  = [regex]::Matches($content, $Pattern)
+            $matchCount = $regexMatches.Count
 
-            if ($MatchCount -gt 0) {
-                $global:FilesModified++
-                $global:TotalReplacements += $MatchCount
+            if ($matchCount -gt 0) {
+                $global:filesModified++
+                $global:totalReplacements += $matchCount
 
                 if ($DryRun) {
-                    Write-Host "DRY-RUN: Would update $Path ($MatchCount replacements)"
+                    Write-Host "DRY-RUN: Would update $path ($matchCount replacements)"
                 } else {
-                    $NewContent = [regex]::Replace($Content, $Pattern, $Replacement)
+                    $NewContent = [regex]::Replace($content, $Pattern, $Replacement)
 
                     # Write using SAME encoding
-                    $Bytes = $Encoding.GetBytes($NewContent)
-                    [System.IO.File]::WriteAllBytes($Path, $Bytes)
+                    $Bytes = $encoding.GetBytes($NewContent)
+                    [System.IO.File]::WriteAllBytes($path, $Bytes)
 
-                    Write-Host "UPDATED: $Path ($MatchCount replacements)"
+                    Write-Host "UPDATED: $path ($matchCount replacements)"
                 }
             }
             else {
-                Write-Host "NO-CHANGE: $Path"
+                Write-Host "NO-CHANGE: $path"
             }
         }
         catch {
-            Write-Error "Failed to update file: $Path. $_"
+            Write-Error "Failed to update file: $path. $_"
             exit 1
         }
     }
@@ -130,17 +130,17 @@ function Update-Files {
 # -----------------------------
 # Process files
 # -----------------------------
-$Ps1Files      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.ps1
-$IssFiles      = Get-ChildItem -Path $BaseDir -Recurse -Filter *.iss
-$CsprojFiles   = Get-ChildItem -Path $BaseDir -Recurse -Filter *.csproj
-$AppConfigPath = Join-Path $BaseDir "src\Servy.Core\Config\AppConfig.cs"
-$PublishPath   = Join-Path $BaseDir ".github\workflows\publish.yml"
+$ps1Files      = Get-ChildItem -Path $baseDir -Recurse -Filter *.ps1
+$issFiles      = Get-ChildItem -Path $baseDir -Recurse -Filter *.iss
+$csprojFiles   = Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj
+$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
+$publishPath   = Join-Path $baseDir ".github\workflows\publish.yml"
 
-Update-Files -Files $Ps1Files    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files $IssFiles    -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files $CsprojFiles -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files (Get-Item $AppConfigPath) -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
-Update-Files -Files (Get-Item $PublishPath)   -Pattern $CurrentVersionRegex -Replacement $NetVersion -DryRun:$DryRun
+Update-Files -Files $ps1Files    -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+Update-Files -Files $issFiles    -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+Update-Files -Files $csprojFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+Update-Files -Files (Get-Item $appConfigPath) -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+Update-Files -Files (Get-Item $publishPath)   -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
 
 # -----------------------------
 # Summary
@@ -150,12 +150,12 @@ Write-Host "========================================="
 Write-Host "              SUMMARY"
 Write-Host "========================================="
 
-Write-Host "Files scanned:      $global:TotalFilesScanned"
-Write-Host "Files modified:     $global:FilesModified"
-Write-Host "Total replacements: $global:TotalReplacements"
+Write-Host "Files scanned:      $global:totalFilesScanned"
+Write-Host "Files modified:     $global:filesModified"
+Write-Host "Total replacements: $global:totalReplacements"
 
 if ($DryRun) {
     Write-Host "`nDry run complete. No files were modified." -ForegroundColor Yellow
 } else {
-    Write-Host "`n.NET runtime updated to $NetVersion" -ForegroundColor Green
+    Write-Host "`n.NET runtime updated to $netVersion" -ForegroundColor Green
 }

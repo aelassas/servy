@@ -38,18 +38,18 @@ param(
     [string]$Version = "6.4"
 )
 
-$Tfm = "$Fm-windows"
+$tfm = "$Fm-windows"
 
 $ErrorActionPreference = "Stop"
 
-$ScriptHadError = $false
+$scriptHadError = $false
 
 try {
     # Record start time
-    $StartTime = Get-Date
+    $startTime = Get-Date
 
     # Script directory (so we can run from anywhere)
-    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
     function Invoke-Script {
         param(
@@ -57,17 +57,17 @@ try {
             [hashtable]$Params
         )
 
-        $FullPath = Join-Path $ScriptDir $ScriptPath
+        $fullPath = Join-Path $scriptDir $ScriptPath
 
-        if (-not (Test-Path $FullPath)) {
-            Write-Error "Script not found: $FullPath"
+        if (-not (Test-Path $fullPath)) {
+            Write-Error "Script not found: $fullPath"
             exit 1
         }
 
-        Write-Host "`n=== Running: $FullPath ==="
-        & $FullPath @Params
+        Write-Host "`n=== Running: $fullPath ==="
+        & $fullPath @Params
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Script failed: $FullPath"
+            Write-Error "Script failed: $fullPath"
             exit $LASTEXITCODE
         }
     }
@@ -87,17 +87,17 @@ try {
     #>
 
     # Calculate and display elapsed time
-    $elapsed = (Get-Date) - $StartTime
+    $elapsed = (Get-Date) - $startTime
     Write-Host "`n=== Build complete in $($elapsed.ToString("hh\:mm\:ss")) ==="
 }
 catch {
-    $ScriptHadError = $true
+    $scriptHadError = $true
     Write-Host "`nERROR OCCURRED:" -ForegroundColor Red
     Write-Host $_
 }
 finally {
     # Pause by default (for double-click usage)
-    if ($ScriptHadError) {
+    if ($scriptHadError) {
         Write-Host "`nBuild failed. Press any key to exit..."
     }
     else {

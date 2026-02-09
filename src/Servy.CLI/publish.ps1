@@ -54,39 +54,39 @@ $ErrorActionPreference = "Stop"
 # ---------------------------------------------------------------------------------
 # Script directory (so it works regardless of the current working directory)
 # ---------------------------------------------------------------------------------
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ---------------------------------------------------------------------------------
 # SignPath script path
 # ---------------------------------------------------------------------------------
-$SignPath = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$signPath = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
 
 # ---------------------------------------------------------------------------------
 # Step 0: Publish resources
 # ---------------------------------------------------------------------------------
-$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
+$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$publishResScript = Join-Path $scriptDir $publishResScriptName
 
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
+if (-not (Test-Path $publishResScript)) {
+    Write-Error "Required script not found: $publishResScript"
     exit 1
 }
 
-Write-Host "=== Running $PublishResScriptName ==="
-& $PublishResScript -Tfm $Tfm
+Write-Host "=== Running $publishResScriptName ==="
+& $publishResScript -Tfm $Tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$PublishResScriptName failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $PublishResScriptName ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.CLI.csproj (Self-contained, win-x64)
 # ---------------------------------------------------------------------------------
-$ProjectPath = Join-Path $ScriptDir "Servy.CLI.csproj" | Resolve-Path
+$projectPath = Join-Path $scriptDir "Servy.CLI.csproj" | Resolve-Path
 
-if (-not (Test-Path $ProjectPath)) {
-    Write-Error "Project file not found: $ProjectPath"
+if (-not (Test-Path $projectPath)) {
+    Write-Error "Project file not found: $projectPath"
     exit 1
 }
 
@@ -95,11 +95,11 @@ Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : $BuildConfiguration"
 Write-Host "Runtime          : $Runtime"
 
-& dotnet restore $ProjectPath -r $Runtime
+& dotnet restore $projectPath -r $Runtime
 
-& dotnet clean $ProjectPath -c $BuildConfiguration
+& dotnet clean $projectPath -c $BuildConfiguration
 
-& dotnet publish $ProjectPath `
+& dotnet publish $projectPath `
     -c $BuildConfiguration `
     -r $Runtime `
     --force `
@@ -114,10 +114,10 @@ if ($LASTEXITCODE -ne 0) {
 # Step 2: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $BasePath      = Join-Path $ScriptDir "..\Servy.CLI\bin\$BuildConfiguration\$Tfm\$Runtime"
-    $PublishFolder = Join-Path $BasePath "publish"
-    $ExePath       = Join-Path $PublishFolder "Servy.CLI.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $basePath      = Join-Path $scriptDir "..\Servy.CLI\bin\$BuildConfiguration\$Tfm\$Runtime"
+    $publishFolder = Join-Path $basePath "publish"
+    $exePath       = Join-Path $publishFolder "Servy.CLI.exe" | Resolve-Path
+    & $signPath $exePath
 
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Signing Servy.CLI.exe failed."

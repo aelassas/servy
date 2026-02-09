@@ -39,28 +39,28 @@ param(
     [switch]$Pause
 )
 
-if (-not $Tfm) {
-    $Tfm = "$Fm-windows"
+if (-not $tfm) {
+    $tfm = "$Fm-windows"
 }
 
 # ========================
 # Configuration
 # ========================
-$BuildConfiguration = "Release"
-$Runtime            = "win-x64"
+$buildConfiguration = "Release"
+$runtime            = "win-x64"
 $innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$SevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
+$sevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
 
 # Directories
-$ScriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
-$RootDir            = (Resolve-Path (Join-Path $ScriptDir "..")).Path
-$ServyDir           = Join-Path $RootDir "src\Servy"
-$CliDir             = Join-Path $RootDir "src\Servy.CLI"
-$ManagerDir         = Join-Path $RootDir "src\Servy.Manager"
-$SignPath           = Join-Path $RootDir "setup\signpath.ps1" | Resolve-Path
+$scriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
+$rootDir            = (Resolve-Path (Join-Path $scriptDir "..")).Path
+$servyDir           = Join-Path $rootDir "src\Servy"
+$cliDir             = Join-Path $rootDir "src\Servy.CLI"
+$managerDir         = Join-Path $rootDir "src\Servy.Manager"
+$signPath           = Join-Path $rootDir "setup\signpath.ps1" | Resolve-Path
 
 # Inno Setup file
-$issFile            = Join-Path $ScriptDir "servy.iss"
+$issFile            = Join-Path $scriptDir "servy.iss"
 
 # ========================
 # Functions
@@ -80,13 +80,13 @@ function Remove-FileOrFolder {
 # Step 1: Build Applications
 # ========================
 Write-Host "Building Servy WPF app..."
-& (Join-Path $ServyDir "publish.ps1") -Tfm $Tfm
+& (Join-Path $servyDir "publish.ps1") -Tfm $tfm
 
 Write-Host "Building Servy CLI app..."
-& (Join-Path $CliDir "publish.ps1") -Tfm $Tfm
+& (Join-Path $cliDir "publish.ps1") -Tfm $tfm
 
 Write-Host "Building Servy.Manager app..."
-& (Join-Path $ManagerDir "publish.ps1") -Tfm $Tfm
+& (Join-Path $managerDir "publish.ps1") -Tfm $tfm
 
 # ========================
 # Step 2: Build Installer
@@ -97,8 +97,8 @@ Write-Host "Building installer from $issFile..."
 # ========================
 # Step 3: Sign Installer if signing is enabled
 # ========================
-$InstallerPath = Join-Path $RootDir "setup\servy-$Version-x64-installer.exe" | Resolve-Path
-& $SignPath $InstallerPath
+$InstallerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe" | Resolve-Path
+& $signPath $InstallerPath
 
 # ========================
 # Step 4: Build Self-Contained ZIP
@@ -106,12 +106,12 @@ $InstallerPath = Join-Path $RootDir "setup\servy-$Version-x64-installer.exe" | R
 Write-Host "Building self-contained ZIP..."
 
 # Paths to executables
-$servyExe    = Join-Path $ServyDir   "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.exe"
-$cliExe      = Join-Path $CliDir     "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.CLI.exe"
-$managerExe  = Join-Path $ManagerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.Manager.exe"
+$servyExe    = Join-Path $servyDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
+$cliExe      = Join-Path $cliDir     "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
+$managerExe  = Join-Path $managerDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.Manager.exe"
 
 # Package folder
-$packageFolder = Join-Path $ScriptDir "servy-$Version-x64-portable"
+$packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
 $outputZip     = "$packageFolder.7z"
 
 # Clean old artifacts
@@ -120,8 +120,8 @@ Remove-FileOrFolder -path $packageFolder
 New-Item -ItemType Directory -Path $packageFolder | Out-Null
 
 # Copy executables with versioned names
-# Copy-Item $servyExe (Join-Path $packageFolder "servy-$Version-$Tfm-x64.exe") -Force
-# Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$Version-$Tfm-x64.exe") -Force
+# Copy-Item $servyExe (Join-Path $packageFolder "servy-$Version-$tfm-x64.exe") -Force
+# Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$Version-$tfm-x64.exe") -Force
 Copy-Item $servyExe (Join-Path $packageFolder "Servy.exe") -Force
 Copy-Item $cliExe (Join-Path $packageFolder "servy-cli.exe") -Force
 Copy-Item $managerExe (Join-Path $packageFolder "Servy.Manager.exe") -Force
@@ -133,10 +133,10 @@ $folderName = Split-Path $packageFolder -Leaf
 
 Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
 
-Copy-Item -Path (Join-Path $CliDir "Servy.psm1") -Destination "$packageFolder" -Force
-Copy-Item -Path (Join-Path $CliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
+Copy-Item -Path (Join-Path $cliDir "Servy.psm1") -Destination "$packageFolder" -Force
+Copy-Item -Path (Join-Path $cliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
 
-$ZipArgs = @(
+$zipArgs = @(
     "a",
     "-t7z",
     "-m0=lzma2",
@@ -148,9 +148,9 @@ $ZipArgs = @(
     "$packageFolder"
 )
 
-$Process = Start-Process -FilePath $SevenZipExe -ArgumentList $ZipArgs -Wait -NoNewWindow -PassThru
+$process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
 
-if ($Process.ExitCode -ne 0) {
+if ($process.ExitCode -ne 0) {
     Write-Error "ERROR: 7z compression failed."
     exit 1
 }

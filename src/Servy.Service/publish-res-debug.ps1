@@ -35,29 +35,29 @@ $ErrorActionPreference = "Stop"
 # ---------------------------------------------------------------------------------
 # Script directory (ensures relative paths work)
 # ---------------------------------------------------------------------------------
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
-$RestarterDir       = Join-Path $ScriptDir "..\Servy.Restarter" | Resolve-Path
-$ResourcesFolder    = Join-Path $ScriptDir "..\Servy.Service\Resources" | Resolve-Path
-$BuildConfiguration = "Debug"
-$Runtime            = "win-x64"
-$SelfContained      = $true
+$restarterDir       = Join-Path $scriptDir "..\Servy.Restarter" | Resolve-Path
+$resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources" | Resolve-Path
+$buildConfiguration = "Debug"
+$runtime            = "win-x64"
+$selfContained      = $true
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Restarter project
 # ---------------------------------------------------------------------------------
-$PublishRestarterScript = Join-Path $RestarterDir "publish.ps1"
+$publishRestarterScript = Join-Path $restarterDir "publish.ps1"
 
-if (-not (Test-Path $PublishRestarterScript)) {
-    Write-Error "Project file not found: $PublishRestarterScript"
+if (-not (Test-Path $publishRestarterScript)) {
+    Write-Error "Project file not found: $publishRestarterScript"
     exit 1
 }
 
 Write-Host "=== [restarter] Running publish.ps1 ==="
-& $PublishRestarterScript -Tfm $Tfm -Runtime $Runtime -Configuration $BuildConfiguration
+& $publishRestarterScript -Tfm $Tfm -Runtime $runtime -Configuration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[restarter] publish.ps1 failed."
     exit $LASTEXITCODE
@@ -67,40 +67,40 @@ Write-Host "=== [restarter] Completed publish.ps1 ===`n"
 # ---------------------------------------------------------------------------------
 # Step 2: Locate publish and build output folders
 # ---------------------------------------------------------------------------------
-$BasePath      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$BuildConfiguration\$Tfm\$Runtime"
-$PublishFolder = Join-Path $BasePath "publish"
-$BuildFolder   = $BasePath
+$basePath      = Join-Path $scriptDir "..\Servy.Restarter\bin\$buildConfiguration\$Tfm\$runtime"
+$publishFolder = Join-Path $basePath "publish"
+$buildFolder   = $basePath
 
 # ---------------------------------------------------------------------------------
 # Step 3: Ensure resources folder exists
 # ---------------------------------------------------------------------------------
-if (-not (Test-Path $ResourcesFolder)) {
-    New-Item -ItemType Directory -Path $ResourcesFolder | Out-Null
+if (-not (Test-Path $resourcesFolder)) {
+    New-Item -ItemType Directory -Path $resourcesFolder | Out-Null
 }
 
 # ---------------------------------------------------------------------------------
 # Step 4: Copy artifacts (renaming as needed)
 # ---------------------------------------------------------------------------------
-Copy-Item -Path (Join-Path $PublishFolder "Servy.Restarter.exe") `
-          -Destination (Join-Path $ResourcesFolder "Servy.Restarter.exe") -Force
+Copy-Item -Path (Join-Path $publishFolder "Servy.Restarter.exe") `
+          -Destination (Join-Path $resourcesFolder "Servy.Restarter.exe") -Force
 
-Copy-Item -Path (Join-Path $BuildFolder "Servy.Restarter.pdb") `
-          -Destination (Join-Path $ResourcesFolder "Servy.Restarter.pdb") -Force
+Copy-Item -Path (Join-Path $buildFolder "Servy.Restarter.pdb") `
+          -Destination (Join-Path $resourcesFolder "Servy.Restarter.pdb") -Force
 <#
-Copy-Item -Path (Join-Path $BuildFolder "Servy.Core.pdb") `
-          -Destination (Join-Path $ResourcesFolder "Servy.Core.pdb") -Force
+Copy-Item -Path (Join-Path $buildFolder "Servy.Core.pdb") `
+          -Destination (Join-Path $resourcesFolder "Servy.Core.pdb") -Force
 #>
 # ----------------------------------------------------------------------
 # Step 5 - CopyServy.Infrastructure.pdb
 # ----------------------------------------------------------------------
 <#
-$InfraServiceProject = Join-Path $ScriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
-$InfraSourcePath = Join-Path $ScriptDir "..\Servy.Infrastructure\bin\$BuildConfiguration\$Tfm\$Runtime\Servy.Infrastructure.pdb"
-$InfraDestPath   = Join-Path $ResourcesFolder "Servy.Infrastructure.pdb"
+$InfraServiceProject = Join-Path $scriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
+$InfraSourcePath = Join-Path $scriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\$Tfm\$runtime\Servy.Infrastructure.pdb"
+$InfraDestPath   = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
 dotnet publish $InfraServiceProject `
-    -c $BuildConfiguration `
-    -r $Runtime `
+    -c $buildConfiguration `
+    -r $runtime `
     --self-contained false `
     /p:TargetFramework=$Tfm `
     /p:PublishSingleFile=false `
@@ -119,4 +119,4 @@ Write-Host "Copied Servy.Infrastructure.pdb"
 # ---------------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------------
-Write-Host "=== $BuildConfiguration build ($Tfm) published successfully to Resources ==="
+Write-Host "=== $buildConfiguration build ($Tfm) published successfully to Resources ==="

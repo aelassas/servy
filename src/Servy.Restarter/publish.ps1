@@ -42,43 +42,43 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Project and directories
-$ProjectName = "Servy.Restarter"
-$ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$SignPath    = Join-Path $ScriptDir "..\..\setup\signpath.ps1" | Resolve-Path
-$ProjectPath = Join-Path $ScriptDir "$ProjectName.csproj" | Resolve-Path
+$projectName = "Servy.Restarter"
+$scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$signPath    = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$projectPath = Join-Path $scriptDir "$projectName.csproj" | Resolve-Path
 
-$BasePath      = Join-Path $ScriptDir "..\Servy.Restarter\bin\$Configuration\$Tfm\$Runtime"
-$PublishFolder = Join-Path $BasePath "publish"
+$basePath      = Join-Path $scriptDir "..\Servy.Restarter\bin\$Configuration\$Tfm\$Runtime"
+$publishFolder = Join-Path $basePath "publish"
 
 # Publish output folder
-$PublishDir = Join-Path $ScriptDir "bin\$Configuration\$Tfm\$Runtime\publish"
+$publishDir = Join-Path $scriptDir "bin\$Configuration\$Tfm\$Runtime\publish"
 
 # Step 0: Clean previous publish folder
-if (Test-Path $PublishDir) {
-    Write-Host "Cleaning previous publish folder: $PublishDir"
-    Remove-Item $PublishDir -Recurse -Force
+if (Test-Path $publishDir) {
+    Write-Host "Cleaning previous publish folder: $publishDir"
+    Remove-Item $publishDir -Recurse -Force
 }
 
 # Step 1: Publish project
-Write-Host "Publishing $ProjectName..."
+Write-Host "Publishing $projectName..."
 
-& dotnet restore $ProjectPath -r $Runtime
+& dotnet restore $projectPath -r $Runtime
 
-dotnet publish $ProjectPath `
+dotnet publish $projectPath `
     -c $Configuration `
     -r $Runtime `
     -f $Tfm `
-    -o $PublishDir `
+    -o $publishDir `
     --force `
     /p:DeleteExistingFiles=true
 
 # Step 2: Sign the published executable if signing is enabled
 if ($Configuration -eq "Release") {
-    $ExePath = Join-Path $PublishFolder "Servy.Restarter.exe" | Resolve-Path
-    & $SignPath $ExePath
+    $exePath = Join-Path $publishFolder "Servy.Restarter.exe" | Resolve-Path
+    & $signPath $exePath
 }
 
-Write-Host "Publish completed for $ProjectName."
+Write-Host "Publish completed for $projectName."
 
 if ($Pause) { 
     Write-Host "`nPress any key to exit..."

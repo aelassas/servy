@@ -29,42 +29,42 @@ $ErrorActionPreference = "Stop"
 # ---------------------------------------------------------------------------------
 # Script directory (so the script can be run from anywhere)
 # ---------------------------------------------------------------------------------
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # ---------------------------------------------------------------------------------
 # Step 0: Run publish-res-release.ps1 (resource publishing step)
 # ---------------------------------------------------------------------------------
-$PublishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
-$PublishResScript = Join-Path $ScriptDir $PublishResScriptName
+$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$publishResScript = Join-Path $scriptDir $publishResScriptName
 
-if (-not (Test-Path $PublishResScript)) {
-    Write-Error "Required script not found: $PublishResScript"
+if (-not (Test-Path $publishResScript)) {
+    Write-Error "Required script not found: $publishResScript"
     exit 1
 }
 
-Write-Host "=== Running $PublishResScriptName ==="
-& $PublishResScript -Tfm $Tfm
+Write-Host "=== Running $publishResScriptName ==="
+& $publishResScript -Tfm $Tfm
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "$PublishResScriptName failed."
+    Write-Error "$publishResScriptName failed."
     exit $LASTEXITCODE
 }
-Write-Host "=== Completed $PublishResScriptName ===`n"
+Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
 # Step 1: Clean and publish Servy.Manager.csproj (Framework-dependent, win-x64)
 # ---------------------------------------------------------------------------------
-$ProjectPath   = Join-Path $ScriptDir "Servy.Manager.csproj" | Resolve-Path
-$PublishFolder = Join-Path $ScriptDir "bin\Release\$Tfm\win-x64\publish"
+$projectPath   = Join-Path $scriptDir "Servy.Manager.csproj" | Resolve-Path
+$publishFolder = Join-Path $scriptDir "bin\Release\$Tfm\win-x64\publish"
 
-if (-not (Test-Path $ProjectPath)) {
-    Write-Error "Project file not found: $ProjectPath"
+if (-not (Test-Path $projectPath)) {
+    Write-Error "Project file not found: $projectPath"
     exit 1
 }
 
 # Remove old publish output if it exists
-if (Test-Path $PublishFolder) {
-    Write-Host "Removing old publish folder: $PublishFolder"
-    Remove-Item -Recurse -Force $PublishFolder
+if (Test-Path $publishFolder) {
+    Write-Host "Removing old publish folder: $publishFolder"
+    Remove-Item -Recurse -Force $publishFolder
 }
 
 Write-Host "=== Publishing Servy.Manager.csproj ==="
@@ -74,7 +74,7 @@ Write-Host "Runtime          : win-x64"
 Write-Host "Self-contained   : false"
 Write-Host "Single File      : false"
 
-& dotnet publish $ProjectPath `
+& dotnet publish $projectPath `
     -c Release `
     -r win-x64 `
     --self-contained false `
