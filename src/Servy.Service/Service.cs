@@ -644,7 +644,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger.Warning($"Failed to calculate system boot time: {ex.Message}");
-                // Safety: If we can't determine boot time, assume same session to avoid accidental reset
+                // Safety: If we can't determine boot time, assume previous session to prevent accidental reset
                 systemBootTimeUtc = DateTime.UtcNow;
             }
 
@@ -1307,7 +1307,6 @@ namespace Servy.Service
             }
         }
 
-
         /// <summary>
         /// Logs a warning for any unexpanded environment variable placeholders found in the given string.
         /// Placeholders are identified as text surrounded by '%' signs (e.g., %VAR_NAME%).
@@ -1591,7 +1590,7 @@ namespace Servy.Service
                     currentAttempts++;
                     SaveRestartAttempts(currentAttempts);
                     _failedChecks = 0;
-                    _isRecovering = true; // Set flag to block other health checks
+                    _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
                 }
             }
 
@@ -1615,7 +1614,7 @@ namespace Servy.Service
             {
                 lock (_healthCheckLock)
                 {
-                    _isRecovering = false; // RELEASE the gatekeeper
+                    _isRecovering = false; // RELEASE the gatekeeper: GATE OPENED
                 }
             }
         }
@@ -1666,13 +1665,6 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error($"Error during recovery execution: {ex.Message}");
-            }
-            finally
-            {
-                lock (_healthCheckLock)
-                {
-                    _isRecovering = false; // Reset the gatekeeper
-                }
             }
         }
 
