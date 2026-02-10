@@ -662,7 +662,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger.Warning($"Failed to calculate system boot time: {ex.Message}");
-                // Safety: If we can't determine boot time, assume previous session to prevent accidental reset
+                // Safety: If we can't determine boot time, assume boot just happened now to prevent accidental reset
                 systemBootTimeUtc = DateTime.UtcNow;
             }
 
