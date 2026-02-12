@@ -36,19 +36,20 @@ namespace Servy.Core.Security
         {
             _protectedKeyProvider = protectedKeyProvider ?? throw new ArgumentNullException(nameof(protectedKeyProvider));
 
-            byte[] masterKey = _protectedKeyProvider.GetKey();
-            _v1MasterKey = (byte[])masterKey.Clone();
-            _v1StaticIv = _protectedKeyProvider.GetIV();
-
+            byte[]? masterKey = null;
             try
             {
+                masterKey = _protectedKeyProvider.GetKey();
+                _v1StaticIv = _protectedKeyProvider.GetIV();
+
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
+
+                _v1MasterKey = (byte[])masterKey.Clone();
             }
             finally
             {
-                // Ensure the master key is wiped from memory immediately after derivation
-                Array.Clear(masterKey, 0, masterKey.Length);
+                if (masterKey != null) Array.Clear(masterKey, 0, masterKey.Length);
             }
         }
 
@@ -135,7 +136,7 @@ namespace Servy.Core.Security
             try
             {
                 if (payload.StartsWith("v2:")) return DecryptV2(payload.Substring(3));
-                
+
                 if (payload.StartsWith("v1:")) return DecryptV1(payload.Substring(3));
 
                 // Fallback for legacy payloads that were encrypted but not version-tagged
