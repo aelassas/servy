@@ -2,6 +2,7 @@
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public ServiceRepositoryStub(bool returnNullDto = false)
             : base(
                 new DapperExecutorStub(),       // replace with stub or mock
-                new SecurePasswordStub(),       // replace with stub or mock
+                new SecureDataStub(),       // replace with stub or mock
                 new XmlServiceSerializerStub()  // replace with stub or mock
             )
         {
@@ -120,7 +121,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
     }
-    public class SecurePasswordStub : ISecurePassword
+    public class SecureDataStub : ISecureData
     {
         public string Encrypt(string value) => value;
         public string Decrypt(string value) => value;

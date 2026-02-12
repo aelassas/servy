@@ -288,10 +288,10 @@ namespace Servy.Service
 
             var dapperExecutor = new DapperExecutor(dbContext);
             var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-            var securePassword = new SecurePassword(protectedKeyProvider);
+            var secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
 
-            _serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+            _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
             // Enable Shutdown Notifications
             CanShutdown = true;
