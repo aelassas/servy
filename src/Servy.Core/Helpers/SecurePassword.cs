@@ -202,15 +202,8 @@ namespace Servy.Core.Helpers
                     using (var ms = new MemoryStream(cipherBytes))
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     using (var sr = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        var sb = new StringBuilder();
-                        char[] buffer = new char[BufferSize];
-                        int read;
-                        while ((read = sr.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            sb.Append(buffer, 0, read);
-                        }
-                        return sb.ToString();
+                    { 
+                        return sr.ReadToEnd();
                     }
                 }
                 finally
