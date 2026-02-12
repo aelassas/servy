@@ -38,19 +38,21 @@ namespace Servy.Core.Security
         {
             _protectedKeyProvider = protectedKeyProvider ?? throw new ArgumentNullException(nameof(protectedKeyProvider));
 
-            byte[] masterKey = _protectedKeyProvider.GetKey();
-            _v1MasterKey = (byte[])masterKey.Clone();
-            _v1StaticIv = _protectedKeyProvider.GetIV();
-
+            byte[] masterKey = null;
             try
             {
+                masterKey = _protectedKeyProvider.GetKey();
+                _v1StaticIv = _protectedKeyProvider.GetIV();
+
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
+
+                // This is still in RAM, but at least we fixed the finally block logic
+                _v1MasterKey = (byte[])masterKey.Clone();
             }
             finally
             {
-                // Ensure the master key is wiped from memory immediately after derivation
-                Array.Clear(masterKey, 0, masterKey.Length);
+                if (masterKey != null) Array.Clear(masterKey, 0, masterKey.Length);
             }
         }
 
