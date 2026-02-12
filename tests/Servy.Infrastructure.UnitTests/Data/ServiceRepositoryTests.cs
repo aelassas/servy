@@ -6,6 +6,7 @@ using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using System;
@@ -19,7 +20,7 @@ namespace Servy.Infrastructure.UnitTests.Data
     public class ServiceRepositoryTests
     {
         private readonly Mock<IDapperExecutor> _mockDapper;
-        private readonly Mock<ISecurePassword> _mockSecurePassword;
+        private readonly Mock<ISecureData> _mockSecureData;
         private readonly Mock<IXmlServiceSerializer> _mockXmlServiceSerializer;
         private readonly IServiceRepository _serviceRepository;
         private readonly ServiceRepository _repository;
@@ -28,27 +29,27 @@ namespace Servy.Infrastructure.UnitTests.Data
         public ServiceRepositoryTests()
         {
             _mockDapper = new Mock<IDapperExecutor>();
-            _mockSecurePassword = new Mock<ISecurePassword>(MockBehavior.Loose);
+            _mockSecureData = new Mock<ISecureData>(MockBehavior.Loose);
             _mockXmlServiceSerializer = new Mock<IXmlServiceSerializer>();
             _serviceRepository = new ServiceRepositoryStub();
 
-            _repository = new ServiceRepository(_mockDapper.Object, _mockSecurePassword.Object, _mockXmlServiceSerializer.Object); // ignore dependencies for this test
+            _repository = new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object); // ignore dependencies for this test
             _serviceManagerMock = new Mock<IServiceManager>();
         }
 
         private ServiceRepository CreateRepository()
         {
-            return new ServiceRepository(_mockDapper.Object, _mockSecurePassword.Object, _mockXmlServiceSerializer.Object);
+            return new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object);
         }
 
         [Fact]
         public void Constructor_NullDapper_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null, _mockSecurePassword.Object, _mockXmlServiceSerializer.Object));
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null, _mockSecureData.Object, _mockXmlServiceSerializer.Object));
         }
 
         [Fact]
-        public void Constructor_NullSecurePassword_Throws()
+        public void Constructor_NullSecureData_Throws()
         {
             Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null, _mockXmlServiceSerializer.Object));
         }
@@ -56,7 +57,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public void Constructor_NullXmlServiceSerializer_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecurePassword.Object, null));
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null));
         }
 
         [Fact]
@@ -75,15 +76,15 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PreStopParameters = "pre-stop-params",
                 PostStopParameters = "post-stop-params",
             };
-            _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
-            _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
-            _mockSecurePassword.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
-            _mockSecurePassword.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
+            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            _mockSecureData.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
+            _mockSecureData.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
+            _mockSecureData.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
+            _mockSecureData.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
+            _mockSecureData.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
+            _mockSecureData.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
+            _mockSecureData.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
+            _mockSecureData.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
 
             var repo = CreateRepository();
@@ -117,15 +118,15 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PreStopParameters = "pre-stop-params",
                 PostStopParameters = "post-stop-params",
             };
-            _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
-            _mockSecurePassword.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
-            _mockSecurePassword.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
-            _mockSecurePassword.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
-            _mockSecurePassword.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
+            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            _mockSecureData.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
+            _mockSecureData.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
+            _mockSecureData.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
+            _mockSecureData.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
+            _mockSecureData.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
+            _mockSecureData.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
+            _mockSecureData.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
+            _mockSecureData.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
@@ -150,7 +151,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1", Pid = 123 });
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
-            _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
+            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
             var rows = await repo.UpsertAsync(dto);
@@ -174,7 +175,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var dto = new ServiceDto { Name = "NewService" };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto)null);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(7);
-            _mockSecurePassword.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
+            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
             var rows = await repo.UpsertAsync(dto);
@@ -187,7 +188,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             // Arrange
             var dto = new ServiceDto { Name = "NewService", Password = "plain" };
-            _mockSecurePassword.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
 
             // Service does not exist
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto)null);
@@ -258,15 +259,15 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostStopParameters = "encrypted_post_stop_params",
             };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted")).Returns("plain");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByIdAsync(1);
@@ -323,15 +324,15 @@ namespace Servy.Infrastructure.UnitTests.Data
                 PostStopParameters = "encrypted_post_stop_params",
             };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted")).Returns("plain");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted")).Returns("plain");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
             var result = await repo.GetByNameAsync("S");
@@ -382,24 +383,24 @@ namespace Servy.Infrastructure.UnitTests.Data
                 .Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync(list);
 
-            _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
-            _mockSecurePassword.Setup(s => s.Decrypt("e2")).Returns("p2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars1")).Returns("vars1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars2")).Returns("vars2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars1")).Returns("pre_vars1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars2")).Returns("pre_vars2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params1")).Returns("params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params1")).Returns("failure-prog-params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params1")).Returns("pre-launch-params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params1")).Returns("post-launch-params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params2")).Returns("params2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params2")).Returns("failure-prog-params2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params2")).Returns("pre-launch-params2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params2")).Returns("post-launch-params2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params1")).Returns("pre_stop_params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params2")).Returns("pre_stop_params2");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params1")).Returns("post_stop_params1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params2")).Returns("post_stop_params2");
+            _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
+            _mockSecureData.Setup(s => s.Decrypt("e2")).Returns("p2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars1")).Returns("vars1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars2")).Returns("vars2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars1")).Returns("pre_vars1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars2")).Returns("pre_vars2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params1")).Returns("params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params1")).Returns("failure-prog-params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params1")).Returns("pre-launch-params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params1")).Returns("post-launch-params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params2")).Returns("params2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params2")).Returns("failure-prog-params2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params2")).Returns("pre-launch-params2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params2")).Returns("post-launch-params2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params1")).Returns("pre_stop_params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params2")).Returns("pre_stop_params2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params1")).Returns("post_stop_params1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params2")).Returns("post_stop_params2");
 
             var repo = CreateRepository();
             var result = (await repo.GetAllAsync()).ToList();
@@ -437,7 +438,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var list = new List<ServiceDto> { new ServiceDto { Name = "A", Password = "e1" } };
             _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
-            _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
+            _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
             var result = (await repo.Search("A")).ToList();
@@ -465,15 +466,15 @@ namespace Servy.Infrastructure.UnitTests.Data
                 }
             };
             _mockDapper.Setup(d => d.QueryAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(list);
-            _mockSecurePassword.Setup(s => s.Decrypt("e1")).Returns("p1");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_vars")).Returns("vars");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("pre_vars");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre_stop_params");
-            _mockSecurePassword.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post_stop_params");
+            _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("vars");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("pre_vars");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre_stop_params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post_stop_params");
 
             var repo = CreateRepository();
             var result = (await repo.Search(null)).ToList();
@@ -513,7 +514,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 .Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
                 .ReturnsAsync(dto);
 
-            _mockSecurePassword
+            _mockSecureData
                 .Setup(s => s.Decrypt("p1"))
                 .Returns("p1"); // return the same value or "plain" if you prefer
 

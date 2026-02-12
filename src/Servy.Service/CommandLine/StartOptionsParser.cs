@@ -52,10 +52,10 @@ namespace Servy.Service.CommandLine
 
             var dapperExecutor = new DapperExecutor(dbContext);
             var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-            var securePassword = new SecurePassword(protectedKeyProvider);
+            var secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
 
-            IServiceRepository serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+            IServiceRepository serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
             var serviceDto = serviceRepository
                 .GetByNameAsync(serviceName)

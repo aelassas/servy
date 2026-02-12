@@ -1,5 +1,4 @@
 ﻿using Moq;
-using Servy.Core.Helpers;
 using Servy.Core.Security;
 using System;
 using System.IO;
@@ -7,22 +6,24 @@ using System.Security.Cryptography;
 using System.Text;
 using Xunit;
 
-namespace Servy.Core.UnitTests.Helpers
+namespace Servy.Core.UnitTests.Security
 {
-    public class SecurePasswordTests
+    public class SecureDataTests
     {
         private readonly byte[] _key = new byte[32]; // AES-256
         private readonly byte[] _iv = new byte[16];  // AES block size
         private readonly Mock<IProtectedKeyProvider> _mockProvider;
 
-        public SecurePasswordTests()
+        public SecureDataTests()
         {
             for (var i = 0; i < _key.Length; i++) _key[i] = (byte)i;
             for (var i = 0; i < _iv.Length; i++) _iv[i] = (byte)(i + 1);
 
             _mockProvider = new Mock<IProtectedKeyProvider>();
-            _mockProvider.Setup(p => p.GetKey()).Returns(_key);
-            _mockProvider.Setup(p => p.GetIV()).Returns(_iv);
+
+            // Use .Clone() so the class clearing the array doesn't wipe the test's key
+            _mockProvider.Setup(x => x.GetKey()).Returns(() => (byte[])_key.Clone());
+            _mockProvider.Setup(x => x.GetIV()).Returns(() => (byte[])_iv.Clone());
         }
 
         #region Initialization & Constraints
@@ -30,16 +31,23 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void Constructor_NullProvider_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new SecurePassword(null));
+            Assert.Throws<ArgumentNullException>(() => new SecureData(null));
         }
 
         [Theory]
         [InlineData(null)]
-        [InlineData("")]
-        public void Encrypt_NullOrEmpty_Throws(string input)
+        public void Encrypt_Null_Throws(string input)
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             Assert.Throws<ArgumentNullException>(() => sp.Encrypt(input));
+        }
+
+        [Theory]
+        [InlineData("")]
+        public void Encrypt_Empty_Throws(string input)
+        {
+            var sp = new SecureData(_mockProvider.Object);
+            Assert.Throws<ArgumentException>(() => sp.Encrypt(input));
         }
 
         #endregion
@@ -49,7 +57,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void EncryptV2_HandlesComplexCharacters_Successfully()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             // Testing multi-byte character boundary safety (Emoji uses 4 bytes)
             var original = "Security is key! 🛡️🔐";
 
@@ -63,7 +71,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void DecryptedV1_WithExplicitPrefix_Works()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
             string v1Encrypted;
@@ -94,7 +102,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void DecryptedV1_WithoutPrefix_Works()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
             string v1Encrypted;
@@ -122,10 +130,11 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(secret, decrypted);
         }
 
+
         [Fact]
         public void DecryptedV1_WithoutAllPrefixes_Works()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             var secret = "LegacySecret";
 
             string v1Encrypted;
@@ -159,11 +168,10 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Theory]
         [InlineData(null)]
-        [InlineData("")]
-        public void Decrypt_NullOrEmpty_ThrowsArgumentNullException(string input)
+        public void Decrypt_Null_ThrowsArgumentNullException(string input)
         {
             // Arrange
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
 
             // Act & Assert
             var ex = Assert.Throws<ArgumentNullException>(() => sp.Decrypt(input));
@@ -173,11 +181,25 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        // Branch: !IsBase64(payload) -> returns raw payload
+        [InlineData("")]
+        public void Decrypt_Empty_ThrowsArgumentNullException(string input)
+        {
+            // Arrange
+            var sp = new SecureData(_mockProvider.Object);
+
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentException>(() => sp.Decrypt(input));
+
+            // Verify the parameter name matches for extra precision
+            Assert.Equal("cipherText", ex.ParamName);
+        }
+
+        [Theory]
+        // Branch: !IsStrictBase64(payload) -> returns raw payload
         // This covers the 'return payload' line.
         [InlineData("Plain_Legacy_Password_123!", "Plain_Legacy_Password_123!")]
 
-        // Branch: IsBase64(payload) -> calls DecryptV1(payload)
+        // Branch: IsStrictBase64(payload) -> calls DecryptV1(payload)
         // This covers the 'return DecryptV1(payload)' line.
         // We provide a valid V1 Base64 string (encrypted with static _key and _iv)
         [InlineData("SGVsbG8=", "DecryptedValueFromV1")]
@@ -186,7 +208,7 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             // If testing the V1 fallback, we must ensure the mock provider returns 
             // the keys needed for DecryptV1 to work without throwing.
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
 
             // Act
             var result = sp.Decrypt(input);
@@ -211,14 +233,14 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("SERVY_ENC:NotBase64!", "NotBase64!")] // Path: Marker, not Base64 -> return substring
         public void Decrypt_RawFallbacks_ReturnsInput(string input, string expected)
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             Assert.Equal(expected, sp.Decrypt(input));
         }
 
         [Fact]
         public void Decrypt_TamperedV2_ReturnsJunkInsteadOfOriginal()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             var original = "MySecret123";
             var encrypted = sp.Encrypt(original); // Result: "SERVY_ENC:v2:SGVsbG8..."
 
@@ -248,7 +270,7 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void Decrypt_InvalidBase64_ReturnsRawPayload_DueToCatchBlock()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             // This string is valid enough to pass the marker check but will fail Base64 decoding
             var tampered = "SERVY_ENC:v2:!!!NotBase64!!!";
 
@@ -261,10 +283,10 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void DecryptV2_Internal_InvalidBase64_Throws()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
             var invalidBase64 = "!!!NotBase64!!!";
 
-            var method = typeof(SecurePassword).GetMethod("DecryptV2",
+            var method = typeof(SecureData).GetMethod("DecryptV2",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // Reflection wraps the real exception in a TargetInvocationException
@@ -277,14 +299,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void DecryptV2_PayloadTooShort_Throws()
         {
-            var sp = new SecurePassword(_mockProvider.Object);
+            var sp = new SecureData(_mockProvider.Object);
 
             // A v2 payload must be at least 48 bytes (16 IV + 32 HMAC + Ciphertext)
             // We provide only 10 bytes here.
             var shortPayloadBase64 = Convert.ToBase64String(new byte[10]);
 
             // 1. Get the private method via Reflection
-            var method = typeof(SecurePassword).GetMethod("DecryptV2",
+            var method = typeof(SecureData).GetMethod("DecryptV2",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             // 2. Invoke and catch the wrapper exception
@@ -293,7 +315,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             // 3. Assert the inner exception is what we expect
             Assert.IsType<CryptographicException>(ex.InnerException);
-            Assert.Contains("length is too short", ex.InnerException.Message);
+            Assert.Contains("V2 payload length is insufficient.", ex.InnerException.Message);
         }
 
         #endregion
@@ -305,9 +327,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("   ", false)]
         [InlineData("Invalid!", false)]
         [InlineData("SGVsbG8=", true)]
-        public void IsBase64_Internal_MatchesExpected(string input, bool expected)
+        public void IsStrictBase64_Internal_MatchesExpected(string input, bool expected)
         {
-            var method = typeof(SecurePassword).GetMethod("IsBase64",
+            var method = typeof(SecureData).GetMethod("IsStrictBase64",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             var result = (bool)method.Invoke(null, new object[] { input });
@@ -347,10 +369,10 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("SGVsbG82", true)]   // 0 padding
         [InlineData("SGVsbA==", true)]   // 2 padding
         [InlineData("YQ==", true)]       // Short valid string
-        public void IsBase64_ShouldCoverAllBranches(string input, bool expected)
+        public void IsStrictBase64_ShouldCoverAllBranches(string input, bool expected)
         {
             // Arrange
-            var method = typeof(SecurePassword).GetMethod("IsBase64",
+            var method = typeof(SecureData).GetMethod("IsStrictBase64",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act
@@ -366,9 +388,9 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData("abc=", true)]   // Valid padding (end)
         [InlineData("ab==", true)]   // Valid double padding (end)
         [InlineData("SGVsbG8=", true)] // Standard valid Base64
-        public void IsBase64_BranchCoverage(string input, bool expected)
+        public void IsStrictBase64_BranchCoverage(string input, bool expected)
         {
-            var method = typeof(SecurePassword).GetMethod("IsBase64",
+            var method = typeof(SecureData).GetMethod("IsStrictBase64",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             var result = (bool)method.Invoke(null, new object[] { input });
@@ -376,20 +398,23 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        // Branch 1: Length Mismatch (Immediate False)
+        // Branch 1: null (Immediate False)
+        [InlineData(null, new byte[] { 1, 2, 3 }, false)]
+
+        // Branch 2: Length Mismatch (Immediate False)
         [InlineData(new byte[] { 1, 2 }, new byte[] { 1, 2, 3 }, false)]
 
-        // Branch 2: Identical Arrays (True)
+        // Branch 3: Identical Arrays (True)
         [InlineData(new byte[] { 0, 15, 255 }, new byte[] { 0, 15, 255 }, true)]
 
-        // Branch 3: Same Length, Different Content
+        // Branch 4: Same Length, Different Content
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 4 }, false)] // Difference at end
         [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 9, 2, 3 }, false)] // Difference at start
         [InlineData(new byte[] { 0, 0, 0 }, new byte[] { 0, 1, 0 }, false)] // Difference in middle
         public void CryptographicEquals_ShouldCoverAllBranches(byte[] a, byte[] b, bool expected)
         {
             // Arrange
-            var method = typeof(SecurePassword).GetMethod("CryptographicEquals",
+            var method = typeof(SecureData).GetMethod("CryptographicEquals",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             // Act

@@ -56,10 +56,10 @@ namespace Servy.Service
 
             var dapperExecutor = new DapperExecutor(dbContext);
             var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-            var securePassword = new SecurePassword(protectedKeyProvider);
+            var secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
 
-            var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+            var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
             var resourceHelper = new ResourceHelper(serviceRepository);
 
             if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false))

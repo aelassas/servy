@@ -6,6 +6,7 @@ using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace Servy.Infrastructure.Data
     public class ServiceRepository : IServiceRepository
     {
         private readonly IDapperExecutor _dapper;
-        private readonly ISecurePassword _securePassword;
+        private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
 
         /// <summary>
@@ -33,19 +34,19 @@ namespace Servy.Infrastructure.Data
         /// <param name="dapper">
         /// The Dapper executor used to perform database operations. Must not be null.
         /// </param>
-        /// <param name="securePassword">
+        /// <param name="secureData">
         /// The service responsible for securely encrypting and decrypting passwords. Must not be null.
         /// </param>
         /// <param name="xmlServiceSerializer">
         /// The service responsible for serializing XML. Must not be null.
         /// </param>
         /// <exception cref="ArgumentNullException">
-        /// Thrown if <paramref name="dapper"/> or <paramref name="securePassword"/> or <paramref name="xmlServiceSerializer"/> is null.
+        /// Thrown if <paramref name="dapper"/> or <paramref name="secureData"/> or <paramref name="xmlServiceSerializer"/> is null.
         /// </exception>
-        public ServiceRepository(IDapperExecutor dapper, ISecurePassword securePassword, IXmlServiceSerializer xmlServiceSerializer)
+        public ServiceRepository(IDapperExecutor dapper, ISecureData secureData, IXmlServiceSerializer xmlServiceSerializer)
         {
             _dapper = dapper ?? throw new ArgumentNullException(nameof(dapper));
-            _securePassword = securePassword ?? throw new ArgumentNullException(nameof(securePassword));
+            _secureData = secureData ?? throw new ArgumentNullException(nameof(secureData));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
         }
 
@@ -55,31 +56,31 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int> AddAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
             if (!string.IsNullOrWhiteSpace(service.Parameters))
-                service.Parameters = _securePassword.Encrypt(service.Parameters);
+                service.Parameters = _secureData.Encrypt(service.Parameters);
 
             if (!string.IsNullOrWhiteSpace(service.FailureProgramParameters))
-                service.FailureProgramParameters = _securePassword.Encrypt(service.FailureProgramParameters);
+                service.FailureProgramParameters = _secureData.Encrypt(service.FailureProgramParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PreLaunchParameters))
-                service.PreLaunchParameters = _securePassword.Encrypt(service.PreLaunchParameters);
+                service.PreLaunchParameters = _secureData.Encrypt(service.PreLaunchParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PostLaunchParameters))
-                service.PostLaunchParameters = _securePassword.Encrypt(service.PostLaunchParameters);
+                service.PostLaunchParameters = _secureData.Encrypt(service.PostLaunchParameters);
 
             if (!string.IsNullOrWhiteSpace(service.Password))
-                service.Password = _securePassword.Encrypt(service.Password);
+                service.Password = _secureData.Encrypt(service.Password);
 
             if (!string.IsNullOrWhiteSpace(service.EnvironmentVariables))
-                service.EnvironmentVariables = _securePassword.Encrypt(service.EnvironmentVariables);
+                service.EnvironmentVariables = _secureData.Encrypt(service.EnvironmentVariables);
 
             if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
-                service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
+                service.PreLaunchEnvironmentVariables = _secureData.Encrypt(service.PreLaunchEnvironmentVariables);
 
             if (!string.IsNullOrWhiteSpace(service.PreStopParameters))
-                service.PreStopParameters = _securePassword.Encrypt(service.PreStopParameters);
+                service.PreStopParameters = _secureData.Encrypt(service.PreStopParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PostStopParameters))
-                service.PostStopParameters = _securePassword.Encrypt(service.PostStopParameters);
+                service.PostStopParameters = _secureData.Encrypt(service.PostStopParameters);
 
             var sql = @"
                 INSERT INTO Services (
@@ -116,31 +117,31 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int> UpdateAsync(ServiceDto service, CancellationToken cancellationToken = default)
         {
             if (!string.IsNullOrWhiteSpace(service.Parameters))
-                service.Parameters = _securePassword.Encrypt(service.Parameters);
+                service.Parameters = _secureData.Encrypt(service.Parameters);
 
             if (!string.IsNullOrWhiteSpace(service.FailureProgramParameters))
-                service.FailureProgramParameters = _securePassword.Encrypt(service.FailureProgramParameters);
+                service.FailureProgramParameters = _secureData.Encrypt(service.FailureProgramParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PreLaunchParameters))
-                service.PreLaunchParameters = _securePassword.Encrypt(service.PreLaunchParameters);
+                service.PreLaunchParameters = _secureData.Encrypt(service.PreLaunchParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PostLaunchParameters))
-                service.PostLaunchParameters = _securePassword.Encrypt(service.PostLaunchParameters);
+                service.PostLaunchParameters = _secureData.Encrypt(service.PostLaunchParameters);
 
             if (!string.IsNullOrWhiteSpace(service.Password))
-                service.Password = _securePassword.Encrypt(service.Password);
+                service.Password = _secureData.Encrypt(service.Password);
 
             if (!string.IsNullOrWhiteSpace(service.EnvironmentVariables))
-                service.EnvironmentVariables = _securePassword.Encrypt(service.EnvironmentVariables);
+                service.EnvironmentVariables = _secureData.Encrypt(service.EnvironmentVariables);
 
             if (!string.IsNullOrWhiteSpace(service.PreLaunchEnvironmentVariables))
-                service.PreLaunchEnvironmentVariables = _securePassword.Encrypt(service.PreLaunchEnvironmentVariables);
+                service.PreLaunchEnvironmentVariables = _secureData.Encrypt(service.PreLaunchEnvironmentVariables);
 
             if (!string.IsNullOrWhiteSpace(service.PreStopParameters))
-                service.PreStopParameters = _securePassword.Encrypt(service.PreStopParameters);
+                service.PreStopParameters = _secureData.Encrypt(service.PreStopParameters);
 
             if (!string.IsNullOrWhiteSpace(service.PostStopParameters))
-                service.PostStopParameters = _securePassword.Encrypt(service.PostStopParameters);
+                service.PostStopParameters = _secureData.Encrypt(service.PostStopParameters);
 
             var sql = @"
                 UPDATE Services SET
@@ -257,31 +258,31 @@ namespace Servy.Infrastructure.Data
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
             if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
-                dto.Parameters = _securePassword.Decrypt(dto.Parameters);
+                dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
-                dto.FailureProgramParameters = _securePassword.Decrypt(dto.FailureProgramParameters);
+                dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
-                dto.PreLaunchParameters = _securePassword.Decrypt(dto.PreLaunchParameters);
+                dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
-                dto.PostLaunchParameters = _securePassword.Decrypt(dto.PostLaunchParameters);
+                dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
-                dto.Password = _securePassword.Decrypt(dto.Password);
+                dto.Password = _secureData.Decrypt(dto.Password);
 
             if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
-                dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+                dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+                dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
-                dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+                dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
-                dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
+                dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
 
             return dto;
         }
@@ -295,31 +296,31 @@ namespace Servy.Infrastructure.Data
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
             if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
-                dto.Parameters = _securePassword.Decrypt(dto.Parameters);
+                dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
-                dto.FailureProgramParameters = _securePassword.Decrypt(dto.FailureProgramParameters);
+                dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
-                dto.PreLaunchParameters = _securePassword.Decrypt(dto.PreLaunchParameters);
+                dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
-                dto.PostLaunchParameters = _securePassword.Decrypt(dto.PostLaunchParameters);
+                dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.Password))
-                dto.Password = _securePassword.Decrypt(dto.Password);
+                dto.Password = _secureData.Decrypt(dto.Password);
 
             if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
-                dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+                dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+                dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
-                dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+                dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
             if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
-                dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
+                dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
 
             return dto;
         }
@@ -338,31 +339,31 @@ namespace Servy.Infrastructure.Data
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (!string.IsNullOrEmpty(dto.Parameters))
-                    dto.Parameters = _securePassword.Decrypt(dto.Parameters);
+                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
                 if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
-                    dto.FailureProgramParameters = _securePassword.Decrypt(dto.FailureProgramParameters);
+                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
-                    dto.PreLaunchParameters = _securePassword.Decrypt(dto.PreLaunchParameters);
+                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
                 if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
-                    dto.PostLaunchParameters = _securePassword.Decrypt(dto.PostLaunchParameters);
+                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
                 if (!string.IsNullOrEmpty(dto.Password))
-                    dto.Password = _securePassword.Decrypt(dto.Password);
+                    dto.Password = _secureData.Decrypt(dto.Password);
 
                 if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
-                    dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                    dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
                 if (!string.IsNullOrEmpty(dto.PreStopParameters))
-                    dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
                 if (!string.IsNullOrEmpty(dto.PostStopParameters))
-                    dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
+                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
             }
 
             return list;
@@ -393,31 +394,31 @@ namespace Servy.Infrastructure.Data
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (!string.IsNullOrEmpty(dto.Parameters))
-                    dto.Parameters = _securePassword.Decrypt(dto.Parameters);
+                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
                 if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
-                    dto.FailureProgramParameters = _securePassword.Decrypt(dto.FailureProgramParameters);
+                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
-                    dto.PreLaunchParameters = _securePassword.Decrypt(dto.PreLaunchParameters);
+                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
                 if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
-                    dto.PostLaunchParameters = _securePassword.Decrypt(dto.PostLaunchParameters);
+                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
                 if (!string.IsNullOrEmpty(dto.Password))
-                    dto.Password = _securePassword.Decrypt(dto.Password);
+                    dto.Password = _secureData.Decrypt(dto.Password);
 
                 if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
-                    dto.EnvironmentVariables = _securePassword.Decrypt(dto.EnvironmentVariables);
+                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
                 if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                    dto.PreLaunchEnvironmentVariables = _securePassword.Decrypt(dto.PreLaunchEnvironmentVariables);
+                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
                 if (!string.IsNullOrEmpty(dto.PreStopParameters))
-                    dto.PreStopParameters = _securePassword.Decrypt(dto.PreStopParameters);
+                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
                 if (!string.IsNullOrEmpty(dto.PostStopParameters))
-                    dto.PostStopParameters = _securePassword.Decrypt(dto.PostStopParameters);
+                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
             }
 
             return list;

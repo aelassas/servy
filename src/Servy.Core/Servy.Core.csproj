@@ -104,13 +104,13 @@
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
-    <Compile Include="Helpers\ISecurePassword.cs" />
+    <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Helpers\IXmlServiceSerializer.cs" />
     <Compile Include="Helpers\JsonServiceValidator.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
-    <Compile Include="Helpers\SecurePassword.cs" />
+    <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Helpers\XmlServiceSerializer.cs" />

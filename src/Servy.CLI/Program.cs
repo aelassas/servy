@@ -72,9 +72,9 @@ namespace Servy.CLI
                 var dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                var securePassword = new SecurePassword(protectedKeyProvider);
+                var secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
-                var serviceRepository = new ServiceRepository(dapperExecutor, securePassword, xmlSerializer);
+                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
                 var serviceManager = new ServiceManager(
                     name => new ServiceControllerWrapper(name),

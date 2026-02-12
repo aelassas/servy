@@ -34,9 +34,9 @@ namespace Servy.Infrastructure.Helpers
             try
             {
                 var appContext = new AppDbContext(connString);
-                var securePassword = new SecurePassword(new ProtectedKeyProvider("aes.dat", "iv.dat"));
+                var secureData = new SecureData(new ProtectedKeyProvider("aes.dat", "iv.dat"));
                 var xmlServiceSerializer = new XmlServiceSerializer();
-                var serviceRepository = new ServiceRepository(new DapperExecutor(appContext), securePassword, xmlServiceSerializer);
+                var serviceRepository = new ServiceRepository(new DapperExecutor(appContext), secureData, xmlServiceSerializer);
 
                 for (int i = 1; i <= count; i++)
                 {
