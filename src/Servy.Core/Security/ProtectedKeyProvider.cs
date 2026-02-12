@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Servy.Core.Security
 {
@@ -12,6 +13,7 @@ namespace Servy.Core.Security
     {
         private readonly string _keyFilePath;
         private readonly string _ivFilePath;
+
         private static readonly object FileLock = new object(); // Prevents race conditions
 
         /// <summary>
@@ -19,10 +21,19 @@ namespace Servy.Core.Security
         /// </summary>
         /// <param name="keyFilePath">The file path to store the protected AES key.</param>
         /// <param name="ivFilePath">The file path to store the protected AES IV.</param>
+        /// <exception cref="ArgumentException">Thrown if paths are invalid or identical.</exception>
         public ProtectedKeyProvider(string keyFilePath, string ivFilePath)
         {
-            _keyFilePath = keyFilePath ?? throw new ArgumentNullException(nameof(keyFilePath));
-            _ivFilePath = ivFilePath ?? throw new ArgumentNullException(nameof(ivFilePath));
+            if (string.IsNullOrWhiteSpace(keyFilePath))
+                throw new ArgumentException("Key file path cannot be null or empty", nameof(keyFilePath));
+            if (string.IsNullOrWhiteSpace(ivFilePath))
+                throw new ArgumentException("IV file path cannot be null or empty", nameof(ivFilePath));
+
+            _keyFilePath = Path.GetFullPath(keyFilePath);
+            _ivFilePath = Path.GetFullPath(ivFilePath);
+
+            if (string.Equals(_keyFilePath, _ivFilePath, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Key and IV must use different file paths");
         }
 
         ///<inheritdoc/>
@@ -63,9 +74,10 @@ namespace Servy.Core.Security
                 }
             }
 
+            byte[]? encrypted = null;
             try
             {
-                var encrypted = File.ReadAllBytes(path);
+                encrypted = File.ReadAllBytes(path);
                 // DataProtectionScope.LocalMachine allows any process on this computer to unprotect the data.
                 return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.LocalMachine);
             }
@@ -73,6 +85,10 @@ namespace Servy.Core.Security
             {
                 // DPAPI is machine-specific; moving the file to another server will trigger this exception.
                 throw new InvalidOperationException($"Failed to unprotect key at {path}. The file may have been moved from another machine.", ex);
+            }
+            finally
+            {
+                if (encrypted != null) Array.Clear(encrypted, 0, encrypted.Length);
             }
         }
 
@@ -83,15 +99,23 @@ namespace Servy.Core.Security
         /// <param name="data">The data to protect.</param>
         private void SaveProtected(string path, byte[] data)
         {
-            // Ensure the target folder exists before writing
-            var directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
+            byte[]? encrypted = null;
+            try
             {
-                Directory.CreateDirectory(directory);
-            }
+                // Ensure the target folder exists before writing
+                var directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
-            var encrypted = ProtectedData.Protect(data, null, DataProtectionScope.LocalMachine);
-            File.WriteAllBytes(path, encrypted);
+                encrypted = ProtectedData.Protect(data, null, DataProtectionScope.LocalMachine);
+                File.WriteAllBytes(path, encrypted);
+            }
+            finally
+            {
+                if (encrypted != null) Array.Clear(encrypted, 0, encrypted.Length);
+            }
         }
 
         /// <summary>
