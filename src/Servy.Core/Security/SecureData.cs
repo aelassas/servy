@@ -47,7 +47,6 @@ namespace Servy.Core.Security
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
 
-                // This is still in RAM, but at least we fixed the finally block logic
                 _v1MasterKey = (byte[])masterKey.Clone();
             }
             finally
