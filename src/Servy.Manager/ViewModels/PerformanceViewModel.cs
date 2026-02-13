@@ -238,6 +238,7 @@ namespace Servy.Manager.ViewModels
             }
 
             _timer.Stop();
+
             try
             {
                 await OnTickAsync();
