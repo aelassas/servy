@@ -34,9 +34,9 @@
     <AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy</Product>
-    <Version>6.6.0</Version>
-    <FileVersion>6.6.0.0</FileVersion>
-    <AssemblyVersion>6.6.0.0</AssemblyVersion>
+    <Version>6.7.0</Version>
+    <FileVersion>6.7.0.0</FileVersion>
+    <AssemblyVersion>6.7.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
