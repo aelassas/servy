@@ -11,6 +11,7 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
@@ -595,6 +596,22 @@ namespace Servy.Manager.Views
                 source = VisualTreeHelper.GetParent(source);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Ensures the entire application process is terminated when the main window is closed.
+        /// </summary>
+        /// <param name="e">
+        /// Provides data for the closing event.
+        /// </param>
+        /// <remarks>
+        /// This explicitly calls <see cref="Application.Current.Shutdown"/> to guarantee
+        /// that no background threads, timers, or hidden windows keep the process alive.
+        /// </remarks>
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            Application.Current.Shutdown();
         }
 
     }

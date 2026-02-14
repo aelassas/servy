@@ -57,22 +57,22 @@ namespace Servy.Infrastructure.UnitTests.Data
             return Task.FromResult(1);
         }
 
-        public override Task<ServiceDto> GetByIdAsync(int id, CancellationToken token = default)
+        public override Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken token = default)
         {
             return _returnNullDto ? Task.FromResult<ServiceDto>(null) : Task.FromResult<ServiceDto>(new ServiceDto { Id = id, Name = "StubService" });
         }
 
-        public override Task<ServiceDto> GetByNameAsync(string name, CancellationToken token = default)
+        public override Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken token = default)
         {
             return _returnNullDto ? Task.FromResult<ServiceDto>(null) : Task.FromResult<ServiceDto>(new ServiceDto { Name = name });
         }
 
-        public override Task<IEnumerable<ServiceDto>> GetAllAsync( CancellationToken token = default)
+        public override Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken token = default)
         {
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { new ServiceDto { Name = "StubService" } });
         }
 
-        public override Task<IEnumerable<ServiceDto>> Search(string keyword, CancellationToken token = default)
+        public override Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken token = default)
         {
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { new ServiceDto { Name = "StubService" } });
         }

@@ -250,127 +250,135 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public virtual async Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services WHERE Id = @Id;";
 
             var cmd = new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
-                dto.Parameters = _secureData.Decrypt(dto.Parameters);
+            if (decrypt)
+            {
+                if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
+                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
-                dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
+                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
-                dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
+                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
-                dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
+                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.Password))
-                dto.Password = _secureData.Decrypt(dto.Password);
+                if (dto != null && !string.IsNullOrEmpty(dto.Password))
+                    dto.Password = _secureData.Decrypt(dto.Password);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
-                dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
+                if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
+                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
-                dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
+                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
-                dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
+                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+            }
 
             return dto;
         }
 
         /// <inheritdoc />
-        public virtual async Task<ServiceDto> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
             var cmd = new CommandDefinition(sql, new { Name = name.Trim() }, cancellationToken: cancellationToken);
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
-                dto.Parameters = _secureData.Decrypt(dto.Parameters);
+            if (decrypt)
+            {
+                if (dto != null && !string.IsNullOrEmpty(dto.Parameters))
+                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
-                dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.FailureProgramParameters))
+                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
-                dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchParameters))
+                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
-                dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PostLaunchParameters))
+                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.Password))
-                dto.Password = _secureData.Decrypt(dto.Password);
+                if (dto != null && !string.IsNullOrEmpty(dto.Password))
+                    dto.Password = _secureData.Decrypt(dto.Password);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
-                dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
+                if (dto != null && !string.IsNullOrEmpty(dto.EnvironmentVariables))
+                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
-                dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PreStopParameters))
+                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
-            if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
-                dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                if (dto != null && !string.IsNullOrEmpty(dto.PostStopParameters))
+                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+            }
 
             return dto;
         }
 
         /// <inheritdoc />
-        public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services;";
 
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-
-            foreach (var dto in list)
+            if (decrypt)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var dto in list)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                if (!string.IsNullOrEmpty(dto.Parameters))
-                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
+                    if (!string.IsNullOrEmpty(dto.Parameters))
+                        dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
-                if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
-                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
+                    if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
+                        dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
-                if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
-                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
+                    if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
+                        dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
-                if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
-                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
+                    if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
+                        dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
-                if (!string.IsNullOrEmpty(dto.Password))
-                    dto.Password = _secureData.Decrypt(dto.Password);
+                    if (!string.IsNullOrEmpty(dto.Password))
+                        dto.Password = _secureData.Decrypt(dto.Password);
 
-                if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
-                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
+                    if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
+                        dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
-                if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
+                    if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                        dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
-                if (!string.IsNullOrEmpty(dto.PreStopParameters))
-                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
+                    if (!string.IsNullOrEmpty(dto.PreStopParameters))
+                        dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
-                if (!string.IsNullOrEmpty(dto.PostStopParameters))
-                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                    if (!string.IsNullOrEmpty(dto.PostStopParameters))
+                        dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                }
             }
 
             return list;
         }
 
         /// <inheritdoc />
-        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword, CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = @"
                 SELECT *
@@ -389,36 +397,39 @@ namespace Servy.Infrastructure.Data
             var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
-            foreach (var dto in list)
+            if (decrypt)
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                foreach (var dto in list)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                if (!string.IsNullOrEmpty(dto.Parameters))
-                    dto.Parameters = _secureData.Decrypt(dto.Parameters);
+                    if (!string.IsNullOrEmpty(dto.Parameters))
+                        dto.Parameters = _secureData.Decrypt(dto.Parameters);
 
-                if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
-                    dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
+                    if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
+                        dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
 
-                if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
-                    dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
+                    if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
+                        dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
 
-                if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
-                    dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
+                    if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
+                        dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
 
-                if (!string.IsNullOrEmpty(dto.Password))
-                    dto.Password = _secureData.Decrypt(dto.Password);
+                    if (!string.IsNullOrEmpty(dto.Password))
+                        dto.Password = _secureData.Decrypt(dto.Password);
 
-                if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
-                    dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
+                    if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
+                        dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
 
-                if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                    dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
+                    if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
+                        dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
 
-                if (!string.IsNullOrEmpty(dto.PreStopParameters))
-                    dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
+                    if (!string.IsNullOrEmpty(dto.PreStopParameters))
+                        dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
 
-                if (!string.IsNullOrEmpty(dto.PostStopParameters))
-                    dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                    if (!string.IsNullOrEmpty(dto.PostStopParameters))
+                        dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+                }
             }
 
             return list;
@@ -510,30 +521,30 @@ namespace Servy.Infrastructure.Data
         public async Task<int> DeleteDomainServiceAsync(string name, CancellationToken cancellationToken = default) => await DeleteAsync(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id, CancellationToken cancellationToken = default)
+        public async Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var dto = await GetByIdAsync(id, cancellationToken);
+            var dto = await GetByIdAsync(id, decrypt, cancellationToken);
             return dto != null ? MapToDomain(serviceManager, dto) : null;
         }
 
         /// <inheritdoc />
-        public async Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name, CancellationToken cancellationToken = default)
+        public async Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var dto = await GetByNameAsync(name, cancellationToken);
+            var dto = await GetByNameAsync(name, decrypt, cancellationToken);
             return dto != null ? MapToDomain(serviceManager, dto) : null;
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var dtos = await GetAllAsync(cancellationToken);
+            var dtos = await GetAllAsync(decrypt, cancellationToken);
             return dtos.Select(dto => MapToDomain(serviceManager, dto));
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var dtos = await Search(keyword, cancellationToken);
+            var dtos = await Search(keyword, decrypt, cancellationToken);
             return dtos.Select(dto => MapToDomain(serviceManager, dto));
         }
 

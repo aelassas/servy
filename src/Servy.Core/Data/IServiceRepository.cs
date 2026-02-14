@@ -63,7 +63,7 @@ namespace Servy.Core.Data
         /// <param name="id">The ID of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
-        Task<ServiceDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<ServiceDto> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves a <see cref="ServiceDto"/> by its unique name.
@@ -71,14 +71,14 @@ namespace Servy.Core.Data
         /// <param name="name">The name of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
-        Task<ServiceDto> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+        Task<ServiceDto> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.
         /// </summary>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of all service DTOs.</returns>
-        Task<IEnumerable<ServiceDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Searches for <see cref="ServiceDto"/> records containing the specified keyword
@@ -87,7 +87,7 @@ namespace Servy.Core.Data
         /// <param name="keyword">The keyword to search for.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of matching <see cref="ServiceDto"/> records.</returns>
-        Task<IEnumerable<ServiceDto>> Search(string keyword, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports a <see cref="ServiceDto"/> to an XML string.
@@ -172,7 +172,7 @@ namespace Servy.Core.Data
         /// <param name="id">The ID of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="Service"/> or <c>null</c> if not found.</returns>
-        Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id, CancellationToken cancellationToken = default);
+        Task<Service> GetDomainServiceByIdAsync(IServiceManager serviceManager, int id, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves a domain <see cref="Service"/> by name.
@@ -181,7 +181,7 @@ namespace Servy.Core.Data
         /// <param name="name">The name of the service.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="Service"/> or <c>null</c> if not found.</returns>
-        Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name, CancellationToken cancellationToken = default);
+        Task<Service> GetDomainServiceByNameAsync(IServiceManager serviceManager, string name, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all domain <see cref="Service"/> objects.
@@ -189,7 +189,7 @@ namespace Servy.Core.Data
         /// <param name="serviceManager">The service manager used to manage services.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of all domain services.</returns>
-        Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Service>> GetAllDomainServicesAsync(IServiceManager serviceManager, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Searches for domain <see cref="Service"/> objects containing the specified keyword
@@ -199,7 +199,7 @@ namespace Servy.Core.Data
         /// <param name="keyword">The keyword to search for.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of matching domain services.</returns>
-        Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports a domain <see cref="Service"/> to an XML string.
