@@ -83,7 +83,7 @@ namespace Servy.Manager.UnitTests.Services
             var sut = CreateServiceCommands();
             var service = new Models.Service { Name = "FakeService" };
             _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(_serviceManagerMock.Object, "FakeService", It.IsAny<CancellationToken>()))
+                .Setup(r => r.SearchDomainServicesAsync(_serviceManagerMock.Object, "FakeService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Core.Domain.Service>());
 
             // Act
@@ -106,7 +106,7 @@ namespace Servy.Manager.UnitTests.Services
             var domain = new FakeService(serviceManagerMock.Object, "TestService", stopResult: true);
 
             _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<CancellationToken>()))
+                .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<Core.Domain.Service> { domain });
 
             _messageBoxServiceMock
@@ -181,7 +181,7 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption))
                 .ReturnsAsync(true);
             _serviceRepositoryMock
-                 .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<CancellationToken>()))
+                 .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                  .ReturnsAsync(new List<Core.Domain.Service> { domain });
             _serviceRepositoryMock.Setup(r => r.DeleteAsync("S1", It.IsAny<CancellationToken>())).ReturnsAsync(1);
 

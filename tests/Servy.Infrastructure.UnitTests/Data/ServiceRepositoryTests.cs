@@ -9,11 +9,6 @@ using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
@@ -270,7 +265,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
+            var result = await repo.GetByIdAsync(1, true, TestContext.Current.CancellationToken);
 
             Assert.Equal("params", result!.Parameters);
             Assert.Equal("failure-prog-params", result!.FailureProgramParameters);
@@ -290,7 +285,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
+            var result = await repo.GetByIdAsync(1, true, TestContext.Current.CancellationToken);
 
             Assert.Null(result!.Password);
         }
@@ -302,7 +297,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var result = await repo.GetByIdAsync(1, TestContext.Current.CancellationToken);
+            var result = await repo.GetByIdAsync(1, true, TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -335,7 +330,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
 
             var repo = CreateRepository();
-            var result = await repo.GetByNameAsync("S", TestContext.Current.CancellationToken);
+            var result = await repo.GetByNameAsync("S", true, TestContext.Current.CancellationToken);
 
             Assert.Equal("params", result!.Parameters);
             Assert.Equal("failure-prog-params", result!.FailureProgramParameters);
@@ -403,7 +398,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params2")).Returns("post_stop_params2");
 
             var repo = CreateRepository();
-            var result = (await repo.GetAllAsync(TestContext.Current.CancellationToken)).ToList();
+            var result = (await repo.GetAllAsync(true, TestContext.Current.CancellationToken)).ToList();
 
             Assert.Collection(result,
                 r =>
@@ -441,7 +436,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
-            var result = (await repo.Search("A", TestContext.Current.CancellationToken)).ToList();
+            var result = (await repo.Search("A", true, TestContext.Current.CancellationToken)).ToList();
 
             Assert.Single(result);
             Assert.Equal("p1", result[0].Password);
@@ -477,7 +472,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post_stop_params");
 
             var repo = CreateRepository();
-            var result = (await repo.Search(null!, TestContext.Current.CancellationToken)).ToList();
+            var result = (await repo.Search(null!, true, TestContext.Current.CancellationToken)).ToList();
 
             Assert.Single(result);
             Assert.Equal("params", result[0].Parameters);
@@ -691,7 +686,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetDomainServiceByIdAsync_ReturnsMappedService()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, TestContext.Current.CancellationToken);
+            var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, true, TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("StubService", result.Name);
         }
@@ -701,7 +696,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, TestContext.Current.CancellationToken);
+            var result = await serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, true, TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -709,7 +704,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetDomainServiceByNameAsync_ReturnsMappedService()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await _serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", TestContext.Current.CancellationToken);
+            var result = await _serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", true, TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("TestService", result.Name);
         }
@@ -719,7 +714,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var serviceRepository = new ServiceRepositoryStub(returnNullDto: true);
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = await serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", TestContext.Current.CancellationToken);
+            var result = await serviceRepository.GetDomainServiceByNameAsync(serviceManager, "TestService", true, TestContext.Current.CancellationToken);
             Assert.Null(result);
         }
 
@@ -727,7 +722,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task GetAllDomainServicesAsync_ReturnsMappedServices()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = (await _serviceRepository.GetAllDomainServicesAsync(serviceManager, TestContext.Current.CancellationToken)).ToList();
+            var result = (await _serviceRepository.GetAllDomainServicesAsync(serviceManager, true, TestContext.Current.CancellationToken)).ToList();
             Assert.Single(result);
             Assert.Equal("StubService", result[0].Name);
         }
@@ -736,7 +731,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         public async Task SearchDomainServicesAsync_ReturnsMappedServices()
         {
             var serviceManager = new Mock<IServiceManager>().Object;
-            var result = (await _serviceRepository.SearchDomainServicesAsync(serviceManager, "StubService", TestContext.Current.CancellationToken)).ToList();
+            var result = (await _serviceRepository.SearchDomainServicesAsync(serviceManager, "StubService", true, TestContext.Current.CancellationToken)).ToList();
             Assert.Single(result);
             Assert.Equal("StubService", result[0].Name);
         }

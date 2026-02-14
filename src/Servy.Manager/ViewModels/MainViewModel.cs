@@ -450,7 +450,7 @@ namespace Servy.Manager.ViewModels
             };
 
             // Subscribe to the tick event
-            timer.Tick += RefreshTimer_Tick;
+            timer.Tick += OnTick;
 
             return timer;
         }
@@ -462,7 +462,7 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="sender">The <see cref="DispatcherTimer"/> that raised the event.</param>
         /// <param name="e">Event data associated with the tick.</param>
-        private async void RefreshTimer_Tick(object sender, EventArgs e)
+        private async void OnTick(object sender, EventArgs e)
         {
             // Atomically check if 0, and if so, set to 1.
             // If it was already 1, return immediately.
@@ -831,7 +831,7 @@ namespace Servy.Manager.ViewModels
             if (_refreshTimer != null)
             {
                 _refreshTimer.Stop();           // Stop the timer
-                _refreshTimer.Tick -= RefreshTimer_Tick; // Unsubscribe event
+                _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
             }
         }
@@ -881,7 +881,7 @@ namespace Servy.Manager.ViewModels
                 var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 3. Fetch all Repository DTOs in bulk
-                var allDtosList = await _serviceRepository.GetAllAsync(token);
+                var allDtosList = await _serviceRepository.GetAllAsync(false, token);
                 var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 4. Process in parallel using the semaphore

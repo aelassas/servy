@@ -3,16 +3,10 @@ using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 using static Servy.Core.Native.NativeMethods;
 
 #pragma warning disable CS8625
@@ -127,7 +121,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(scmHandle);
 
-            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto
                 {
                     Name = serviceName,
@@ -204,7 +198,7 @@ namespace Servy.Core.UnitTests.Services
                  );
 
             Assert.True(result);
-            _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
+            _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -1416,7 +1410,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
             // Act
@@ -1431,7 +1425,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StartService_ShouldStartAndWait_WhenNotRunning()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe" });
 
             var result = await _serviceManager.StartService("TestService");
@@ -1445,7 +1439,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StartService_ShouldStartAndWaitSpecificTime_WhenNotRunning()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StartTimeout = 10 });
 
             var result = await _serviceManager.StartService("TestService");
@@ -1460,7 +1454,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(null as DTOs.ServiceDto);
 
             // Act
@@ -1475,7 +1469,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StartService_ShouldReturnFalse_WhenExceptionIsThrown()
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
             var result = await _serviceManager.StartService("TestService");
@@ -1488,7 +1482,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
             // Act
@@ -1504,7 +1498,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Arrange
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(null as DTOs.ServiceDto);
 
             // Act
@@ -1519,7 +1513,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StopService_ShouldStopAndWait_WhenNotStopped()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", PreStopExecutablePath = @"C:\Apps\pre-stop.exe" });
 
             var result = await _serviceManager.StopService("TestService");
@@ -1533,7 +1527,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StopService_ShouldStopAndWaitSpecificTime_WhenNotStopped()
         {
             _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Running);
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
             var result = await _serviceManager.StopService("TestService");
@@ -1547,7 +1541,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task StopService_ShouldReturnFalse_WhenExceptionIsThrown()
         {
             _mockController.Setup(c => c.Status).Throws<InvalidOperationException>();
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
             var result = await _serviceManager.StopService("TestService");
@@ -1563,7 +1557,7 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(ServiceControllerStatus.Stopped)
                 .Returns(ServiceControllerStatus.Running);
 
-            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new DTOs.ServiceDto { Name = "TestService" });
 
             var result = await _serviceManager.RestartService("TestService");

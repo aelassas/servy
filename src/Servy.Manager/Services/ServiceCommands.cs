@@ -69,7 +69,7 @@ namespace Servy.Manager.Services
         public async Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             var results = await _serviceRepository.SearchDomainServicesAsync(
-                _serviceManager, searchText ?? string.Empty, cancellationToken);
+                _serviceManager, searchText ?? string.Empty, false, cancellationToken);
 
             // Map all domain services to Service models in parallel
             var tasks = results.Select( r => ServiceMapper.ToModelAsync(r, calculatePerf));
@@ -272,7 +272,7 @@ namespace Servy.Manager.Services
 #if DEBUG
                 if (wrapperExeDir == null)
                 {
-                    wrapperExeDir = System.IO.Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+                    wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
                 }
                 if (!Directory.Exists(wrapperExeDir))
                 {
@@ -521,7 +521,7 @@ namespace Servy.Manager.Services
         /// <returns>The domain service if found; otherwise, <c>null</c>.</returns>
         private async Task<Core.Domain.Service> GetServiceDomain(string serviceName)
         {
-            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, serviceName);
+            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, serviceName, true);
             return results.FirstOrDefault();
         }
 

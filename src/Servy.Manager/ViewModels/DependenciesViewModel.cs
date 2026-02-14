@@ -296,7 +296,7 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name);
+                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, false);
 
                 if (serviceDto?.Pid == null)
                 {
