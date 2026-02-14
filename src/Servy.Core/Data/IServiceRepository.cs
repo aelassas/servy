@@ -58,6 +58,7 @@ namespace Servy.Core.Data
         /// Retrieves a <see cref="ServiceDto"/> by its database ID.
         /// </summary>
         /// <param name="id">The ID of the service.</param>
+        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto?> GetByIdAsync(int id, bool decrypt = true, CancellationToken cancellationToken = default);
@@ -66,6 +67,7 @@ namespace Servy.Core.Data
         /// Retrieves a <see cref="ServiceDto"/> by its unique name.
         /// </summary>
         /// <param name="name">The name of the service.</param>
+        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto?> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default);
@@ -73,6 +75,7 @@ namespace Servy.Core.Data
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.
         /// </summary>
+        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of all service DTOs.</returns>
         Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default);
@@ -82,6 +85,7 @@ namespace Servy.Core.Data
         /// in their name or description.
         /// </summary>
         /// <param name="keyword">The keyword to search for.</param>
+        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of matching <see cref="ServiceDto"/> records.</returns>
         Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken cancellationToken = default);
