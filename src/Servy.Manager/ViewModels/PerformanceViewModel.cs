@@ -287,7 +287,7 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, false);
+                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, decrypt: false);
 
                 if (serviceDto?.Pid == null)
                 {
@@ -524,5 +524,6 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
+
     }
 }

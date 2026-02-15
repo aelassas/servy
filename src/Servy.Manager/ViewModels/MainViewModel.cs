@@ -886,7 +886,7 @@ namespace Servy.Manager.ViewModels
                 var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 3. Fetch all Repository DTOs in bulk
-                var allDtosList = await _serviceRepository.GetAllAsync(true, token);
+                var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
                 var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 4. Process in parallel using the semaphore

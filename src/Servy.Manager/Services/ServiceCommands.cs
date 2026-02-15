@@ -74,7 +74,7 @@ namespace Servy.Manager.Services
         public async Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
             var results = await _serviceRepository.SearchDomainServicesAsync(
-                _serviceManager, searchText ?? string.Empty, false, cancellationToken);
+                _serviceManager, searchText ?? string.Empty, decrypt: false, cancellationToken);
 
             // Map all domain services to Service models in parallel
             var tasks = results.Select(r => ServiceMapper.ToModelAsync(r, calculatePerf));
@@ -526,7 +526,7 @@ namespace Servy.Manager.Services
         /// <returns>The domain service if found; otherwise, <c>null</c>.</returns>
         private async Task<Core.Domain.Service> GetServiceDomain(string serviceName)
         {
-            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, serviceName, true);
+            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, serviceName, decrypt: true);
             return results.FirstOrDefault();
         }
 
