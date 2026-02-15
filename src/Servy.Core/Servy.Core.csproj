@@ -14,9 +14,9 @@
     <AssemblyDescription>Shared functionality, utilities, and data models</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Core</Product>
-    <Version>6.7.0</Version>
-    <FileVersion>6.7.0.0</FileVersion>
-    <AssemblyVersion>6.7.0.0</AssemblyVersion>
+    <Version>6.8.0</Version>
+    <FileVersion>6.8.0.0</FileVersion>
+    <AssemblyVersion>6.8.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
 
