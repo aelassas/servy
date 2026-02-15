@@ -33,8 +33,13 @@ jobs:
       - name: Build solution
         run: msbuild Servy.sln /p:Configuration=Debug /p:AllowUnsafeBlocks=true /p:Platform=x64
 
+      - name: Setup .NET SDK 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
       - name: Install Coverlet global tool
-        run: dotnet tool install --global coverlet.console
+        run: dotnet tool install --global coverlet.console --version 3.2.0
 
       - name: Add dotnet tools to PATH
         run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'"  
