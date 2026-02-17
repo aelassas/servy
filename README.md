@@ -30,9 +30,7 @@ This .NET Framework 4.8 version is designed for compatibility with older Windows
 
 Servy is digitally signed using a trusted code-signing certificate provided by the SignPath Foundation. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
 
-Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time. The service dependency tree visualization is the cherry on top for enterprise users who manage complex stacks where the order of failure matters.
-
-If you've ever struggled with the built-in `sc.exe` tool or found NSSM lacking in features or UI, Servy might be exactly what you need. It addresses those limitations, including the ability to set a custom working directory so apps behave exactly as if launched from a shortcut or command prompt.
+Servy offers a desktop app, a CLI, and a PowerShell module that let you create, configure, and manage Windows services interactively or through scripts and CI/CD pipelines. It also includes a Manager app for easily monitoring and managing all installed services in real time.
 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
