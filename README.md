@@ -58,11 +58,7 @@ Servy continuously monitors your app, restarting it automatically if it crashes,
 See the [project notes](NOTES.md).
 
 ## Getting Started
-You have two options to install Servy. Download and [install manually](https://github.com/aelassas/servy/wiki/Installation-Guide#manual-download-and-install) or use a package manager such as WinGet, Chocolatey, or Scoop.
-
-Make sure you have [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/), [Chocolatey](https://chocolatey.org/install), or [Scoop](https://scoop.sh/) installed.
-
-Run one of the following commands as administrator from Command Prompt or PowerShell:
+Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
 
 **WinGet**
 ```powershell
