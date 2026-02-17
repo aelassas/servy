@@ -51,7 +51,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Service Debug Folder.
         /// </summary>
-        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Debug\net10.0-windows\win-x64\");
+        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Debug\net10.0-windows\");
 
         /// <summary>
         /// Servy Service Release Folder.
@@ -61,7 +61,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Service Debug Folder (Manager).
         /// </summary>
-        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\win-x64\");
+        public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\");
 
         /// <summary>
         /// Servy Service Release Folder (Manager).

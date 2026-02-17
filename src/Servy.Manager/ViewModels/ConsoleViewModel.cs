@@ -298,12 +298,15 @@ namespace Servy.Manager.ViewModels
                 // Stable sort: 
                 // 1. By Time (Primary)
                 // 2. Instead of using l.Id (which is raced), we use the list index as the tie-breaker.
-                var sortedHistory = combinedHistory
-                    .Select((line, index) => new { line, index })
-                    .OrderBy(x => x.line.Timestamp)
-                    .ThenBy(x => x.index)
-                    .Select(x => x.line)
-                    .ToList();
+                // 3. Move the heavy lifting off the UI thread
+                var sortedHistory = await Task.Run(() =>
+                    combinedHistory
+                        .Select((line, index) => new { line, index })
+                        .OrderBy(x => x.line.Timestamp)
+                        .ThenBy(x => x.index)
+                        .Select(x => x.line)
+                        .ToList()
+                );
 
                 if (sortedHistory.Any())
                 {
