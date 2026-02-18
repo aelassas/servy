@@ -162,9 +162,11 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public IServiceCommands ServiceCommands
         {
-            get => _serviceCommands; set
+            get => _serviceCommands;
+            set
             {
                 _serviceCommands = value;
+
                 if (PerformanceVM != null)
                 {
                     PerformanceVM.ServiceCommands = value;
