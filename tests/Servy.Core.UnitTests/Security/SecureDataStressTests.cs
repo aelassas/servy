@@ -38,8 +38,9 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Theory]
-        [InlineData(1)]  // 1 MB
-        [InlineData(10)] // 10 MB
+        [InlineData(1)]  // 1 MB: 1,048,576 chars, ~2 MB of RAM
+        [InlineData(10)] // 10 MB: 10,485,760 chars, ~20 MB of RAM
+        [InlineData(50)] // 50 MB: 52,428,800 chars, ~100 MB of RAM
         public void StressTest_V2_EncryptionDecryption_LargePayload(int sizeInMb)
         {
             // Arrange
