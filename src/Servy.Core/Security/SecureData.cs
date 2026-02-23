@@ -82,7 +82,7 @@ namespace Servy.Core.Security
         public string Encrypt(string plainText)
         {
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
-            if (plainText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(plainText));
+            if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
 
