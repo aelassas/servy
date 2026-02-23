@@ -380,7 +380,6 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Theory]
-        [InlineData("abc=", false)]  // Misplaced padding (end)
         [InlineData("ab=c", false)]  // Misplaced padding (middle) - Now fails correctly
         [InlineData("=abc", false)]  // Misplaced padding (start)
         [InlineData("abc=", true)]   // Valid padding (end)
