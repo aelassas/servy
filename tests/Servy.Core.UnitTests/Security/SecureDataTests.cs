@@ -380,6 +380,7 @@ namespace Servy.Core.UnitTests.Security
         }
 
         [Theory]
+        [InlineData("abc=", false)]  // Misplaced padding (end)
         [InlineData("ab=c", false)]  // Misplaced padding (middle) - Now fails correctly
         [InlineData("=abc", false)]  // Misplaced padding (start)
         [InlineData("abc=", true)]   // Valid padding (end)
@@ -391,33 +392,6 @@ namespace Servy.Core.UnitTests.Security
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
             var result = (bool)method!.Invoke(null, new object[] { input })!;
-            Assert.Equal(expected, result);
-        }
-
-        [Theory]
-        // Branch 1: null (Immediate False)
-        [InlineData(null, new byte[] { 1, 2, 3 }, false)]
-
-        // Branch 2: Length Mismatch (Immediate False)
-        [InlineData(new byte[] { 1, 2 }, new byte[] { 1, 2, 3 }, false)]
-
-        // Branch 3: Identical Arrays (True)
-        [InlineData(new byte[] { 0, 15, 255 }, new byte[] { 0, 15, 255 }, true)]
-
-        // Branch 4: Same Length, Different Content
-        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 1, 2, 4 }, false)] // Difference at end
-        [InlineData(new byte[] { 1, 2, 3 }, new byte[] { 9, 2, 3 }, false)] // Difference at start
-        [InlineData(new byte[] { 0, 0, 0 }, new byte[] { 0, 1, 0 }, false)] // Difference in middle
-        public void CryptographicEquals_ShouldCoverAllBranches(byte[]? a, byte[] b, bool expected)
-        {
-            // Arrange
-            var method = typeof(SecureData).GetMethod("CryptographicEquals",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-            // Act
-            var result = (bool)method!.Invoke(null, new object[] { a!, b })!;
-
-            // Assert
             Assert.Equal(expected, result);
         }
 

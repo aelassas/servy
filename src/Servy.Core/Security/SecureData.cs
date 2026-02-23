@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Buffers.Text;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Servy.Core.Security
@@ -51,14 +52,14 @@ namespace Servy.Core.Security
                 masterKey = _protectedKeyProvider.GetKey();
                 _v1StaticIv = _protectedKeyProvider.GetIV();
 
-                _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
-                _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
+                _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION"));
+                _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION"));
 
                 _v1MasterKey = (byte[])masterKey.Clone();
             }
             finally
             {
-                if (masterKey != null) Array.Clear(masterKey, 0, masterKey.Length);
+                if (masterKey != null) Array.Clear(masterKey);
             }
         }
 
@@ -66,77 +67,59 @@ namespace Servy.Core.Security
         /// Encrypts the specified plain text using AES-256-CBC and secures it with an HMAC-SHA256 signature.
         /// </summary>
         /// <remarks>
-        /// This method implements the <b>v2 (Authenticated Encryption)</b> format using an "Encrypt-then-MAC" (EtM) approach:
+        /// This method implements high-performance <b>v2 (Authenticated Encryption)</b>:
         /// <list type="number">
-        /// <item><description>Generates a cryptographically strong random Initialization Vector (IV).</description></item>
-        /// <item><description>Encrypts the UTF-8 encoded <paramref name="plainText"/> using AES-256 in CBC mode with PKCS7 padding.</description></item>
-        /// <item><description>Calculates an HMAC-SHA256 signature over both the IV and the resulting ciphertext to ensure integrity and authenticity.</description></item>
-        /// <item><description>Packages the result into a versioned, Base64-encoded string prefixed with the service marker.</description></item>
+        /// <item><description>Pre-calculates required buffer sizes to avoid intermediate allocations.</description></item>
+        /// <item><description>Uses <see cref="Span{T}"/> for zero-copy slicing of the payload buffer.</description></item>
+        /// <item><description>Encrypts using <c>EncryptCbc</c> for direct OS-level cryptographic execution.</description></item>
+        /// <item><description>Computes HMAC-SHA256 over the [IV + Ciphertext] for integrity (Encrypt-then-MAC).</description></item>
         /// </list>
-        /// <para><b>Memory Management:</b> Uses chunked stream processing to avoid Large Object Heap (LOH) fragmentation and 
-        /// performs explicit <see cref="Array.Clear(Array, int, int)"/> on all sensitive buffers before the method returns.</para>
         /// </remarks>
         /// <param name="plainText">The sensitive string to be encrypted.</param>
-        /// <returns>A string formatted as: {Marker}v2:{Base64(IV + Ciphertext + HMAC)}</returns>
+        /// <returns>A versioned string formatted as: {Marker}v2:{Base64(IV + Ciphertext + HMAC)}</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="plainText"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="plainText"/> is empty.</exception>
         public string Encrypt(string plainText)
         {
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
-            if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
+            if (plainText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(plainText));
 
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
-            byte[] iv = new byte[IvSize];
-            byte[]? payload = null;
 
-            using (var rng = RandomNumberGenerator.Create()) { rng.GetBytes(iv); }
+            using var aes = Aes.Create();
+            aes.Key = _v2EncryptionKey;
+
+            // Use the .NET helper to get the exact ciphertext size (including PKCS7 padding)
+            int ciphertextLen = aes.GetCiphertextLengthCbc(plainBytes.Length, PaddingMode.PKCS7);
+
+            int binaryPayloadLen = IvSize + ciphertextLen + HmacSize;
+            byte[] binaryPayload = new byte[binaryPayloadLen];
 
             try
             {
-                using (var aes = Aes.Create())
+                // 1. Encrypt and Hash as before
+                Span<byte> payloadSpan = binaryPayload;
+                RandomNumberGenerator.Fill(payloadSpan.Slice(0, IvSize));
+                aes.EncryptCbc(plainBytes, payloadSpan.Slice(0, IvSize), payloadSpan.Slice(IvSize, ciphertextLen), PaddingMode.PKCS7);
+                HMACSHA256.HashData(_v2HmacKey, payloadSpan.Slice(0, IvSize + ciphertextLen), payloadSpan.Slice(IvSize + ciphertextLen, HmacSize));
+
+                string marker = $"{EncryptMarker}v2:";
+
+                // Exact Base64 length: every 3 input bytes -> 4 output chars, always padded to multiple of 4
+                int exactBase64Len = ((binaryPayloadLen + 2) / 3) * 4;
+
+                return string.Create(marker.Length + exactBase64Len, (binaryPayload, marker), (chars, state) =>
                 {
-                    aes.Key = _v2EncryptionKey;
-                    aes.IV = iv;
-                    aes.Mode = CipherMode.CBC;
-                    aes.Padding = PaddingMode.PKCS7;
-
-                    int maxCipherLen = ((plainBytes.Length / IvSize) + 1) * IvSize;
-                    payload = new byte[IvSize + maxCipherLen + HmacSize];
-                    Buffer.BlockCopy(iv, 0, payload, 0, IvSize);
-
-                    int actualCipherLen;
-                    using (var encryptor = aes.CreateEncryptor())
-                    using (var ms = new MemoryStream(payload, IvSize, maxCipherLen))
-                    using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    {
-                        // Chunked write to prevent Large Object Heap (LOH) fragmentation for large strings
-                        int offset = 0;
-                        while (offset < plainBytes.Length)
-                        {
-                            int count = Math.Min(BufferSize, plainBytes.Length - offset);
-                            cs.Write(plainBytes, offset, count);
-                            offset += count;
-                        }
-                        cs.FlushFinalBlock();
-                        actualCipherLen = (int)ms.Position;
-                    }
-
-                    using (var hmacSha = new HMACSHA256(_v2HmacKey))
-                    {
-                        int totalToHash = IvSize + actualCipherLen;
-                        hmacSha.TransformBlock(payload, 0, totalToHash, null, 0);
-                        hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                        Buffer.BlockCopy(hmacSha.Hash!, 0, payload, totalToHash, HmacSize);
-
-                        return $"{EncryptMarker}v2:{Convert.ToBase64String(payload, 0, totalToHash + HmacSize)}";
-                    }
-                }
+                    state.marker.AsSpan().CopyTo(chars);
+                    // TryToBase64Chars writes exactly exactBase64Len chars (with '=' padding) — no nulls, no trim needed
+                    Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.marker.Length), out _);
+                });
             }
             finally
             {
-                Array.Clear(plainBytes, 0, plainBytes.Length);
-                Array.Clear(iv, 0, iv.Length);
-                if (payload != null) Array.Clear(payload, 0, payload.Length);
+                // Security hygiene: Wipe sensitive buffers from the heap
+                Array.Clear(plainBytes);
+                Array.Clear(binaryPayload);
             }
         }
 
@@ -173,21 +156,26 @@ namespace Servy.Core.Security
         {
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
+            
+            // Use Spans for routing to avoid Substring() allocations
+            ReadOnlySpan<char> textSpan = cipherText.AsSpan();
+            ReadOnlySpan<char> markerSpan = EncryptMarker.AsSpan();
 
-            bool hasMarker = cipherText.StartsWith(EncryptMarker, StringComparison.Ordinal);
-            string payload = hasMarker ? cipherText.Substring(EncryptMarker.Length) : cipherText;
+            bool hasMarker = textSpan.StartsWith(markerSpan, StringComparison.Ordinal);
+            ReadOnlySpan<char> payload = hasMarker ? textSpan.Slice(markerSpan.Length) : textSpan;
 
             try
             {
-                if (payload.StartsWith("v2:")) return DecryptV2(payload.Substring(3));
+                if (payload.StartsWith("v2:")) return DecryptV2(payload.Slice(3).ToString());
 
-                if (payload.StartsWith("v1:")) return DecryptV1(payload.Substring(3));
+                if (payload.StartsWith("v1:")) return DecryptV1(payload.Slice(3).ToString());
 
                 // Fallback for legacy payloads that were encrypted but not version-tagged
-                return IsStrictBase64(payload) ? DecryptV1(payload) : payload;
+                string rawPayload = payload.ToString();
+                return IsStrictBase64(rawPayload) ? DecryptV1(rawPayload) : rawPayload;
             }
-            catch (FormatException) { return payload; }
-            catch (CryptographicException) { return payload; }
+            catch (FormatException) { return payload.ToString(); }
+            catch (CryptographicException) { return payload.ToString(); }
         }
 
         /// <summary>
@@ -225,7 +213,7 @@ namespace Servy.Core.Security
                     }
                 }
             }
-            finally { Array.Clear(cipherBytes, 0, cipherBytes.Length); }
+            finally { Array.Clear(cipherBytes); }
         }
 
         /// <summary>
@@ -248,125 +236,53 @@ namespace Servy.Core.Security
         /// </exception>
         private string DecryptV2(string payload)
         {
+            // 1. Decode Base64 to a byte array (Still requires one allocation)
             byte[] combined = Convert.FromBase64String(payload);
-            if (combined.Length < (IvSize + HmacSize))
-                throw new CryptographicException("V2 payload length is insufficient.");
-
-            byte[] iv = new byte[IvSize];
-            byte[] expectedHmac = new byte[HmacSize];
 
             try
             {
-                int ciphertextLen = combined.Length - IvSize - HmacSize;
-                Buffer.BlockCopy(combined, 0, iv, 0, IvSize);
-                Buffer.BlockCopy(combined, combined.Length - HmacSize, expectedHmac, 0, HmacSize);
+                if (combined.Length < (IvSize + HmacSize))
+                    throw new CryptographicException("V2 payload length is insufficient.");
 
-                // Constant-time HMAC verification
-                using (var hmacSha = new HMACSHA256(_v2HmacKey))
-                {
-                    int totalToHash = IvSize + ciphertextLen;
-                    hmacSha.TransformBlock(combined, 0, totalToHash, null, 0);
-                    hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                // Create ReadOnlySpans - these are "views" into the 'combined' array (0 copies)
+                ReadOnlySpan<byte> combinedSpan = combined;
+                ReadOnlySpan<byte> iv = combinedSpan.Slice(0, IvSize);
+                ReadOnlySpan<byte> expectedHmac = combinedSpan.Slice(combinedSpan.Length - HmacSize);
+                ReadOnlySpan<byte> ciphertext = combinedSpan.Slice(IvSize, combinedSpan.Length - IvSize - HmacSize);
+                ReadOnlySpan<byte> dataToHash = combinedSpan.Slice(0, IvSize + ciphertext.Length);
 
-                    if (!CryptographicEquals(expectedHmac, hmacSha.Hash!))
-                        throw new CryptographicException("HMAC integrity check failed.");
-                }
+                // 2. High-speed HMAC Verification
+                Span<byte> computedHash = stackalloc byte[HmacSize];
+                HMACSHA256.TryHashData(_v2HmacKey, dataToHash, computedHash, out _);
+                if (!CryptographicOperations.FixedTimeEquals(computedHash, expectedHmac))
+                    throw new CryptographicException("HMAC integrity check failed.");
 
+                // 3. Direct AES Decryption (No Streams)
                 using (var aes = Aes.Create())
                 {
                     aes.Key = _v2EncryptionKey;
-                    aes.IV = iv;
-                    using (var decryptor = aes.CreateDecryptor())
-                    using (var ms = new MemoryStream(combined, IvSize, ciphertextLen))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var sr = new StreamReader(cs, Encoding.UTF8))
+
+                    // Pre-allocate the exact output buffer size
+                    // In CBC/PKCS7, the plaintext is at most the size of the ciphertext
+                    byte[] outputBuffer = new byte[ciphertext.Length];
+                    try
                     {
-                        return sr.ReadToEnd();
+                        // DecryptCbc is a high-performance Span-based method
+                        int bytesWritten = aes.DecryptCbc(ciphertext, iv, outputBuffer, PaddingMode.PKCS7);
+
+                        // Convert bytes directly to string without StreamReader overhead
+                        return Encoding.UTF8.GetString(outputBuffer, 0, bytesWritten);
+                    }
+                    finally
+                    {
+                        Array.Clear(outputBuffer);
                     }
                 }
             }
             finally
             {
-                Array.Clear(combined, 0, combined.Length);
-                Array.Clear(iv, 0, iv.Length);
-                Array.Clear(expectedHmac, 0, expectedHmac.Length);
+                Array.Clear(combined);
             }
-        }
-
-        /// <summary>
-        /// Implements HKDF-Extract-and-Expand (RFC 5869) to derive cryptographically strong sub-keys from a master key.
-        /// </summary>
-        /// <remarks>
-        /// This implementation provides key separation by ensuring that even if one derived key is compromised, 
-        /// the others remain secure. 
-        /// <para>
-        /// 1. <b>Extract:</b> Mixes the Input Keying Material (IKM) with a salt to produce a fixed-length Pseudorandom Key (PRK).
-        /// </para>
-        /// <para>
-        /// 2. <b>Expand:</b> Uses the PRK and a context-specific 'info' string to generate the final output key. 
-        /// This specific implementation is simplified for a single-iteration expansion (suitable for outputs ≤ 32 bytes).
-        /// </para>
-        /// </remarks>
-        /// <param name="ikm">The Input Keying Material (the master secret).</param>
-        /// <param name="salt">A non-secret random value (salt) to improve the extraction quality.</param>
-        /// <param name="info">Context-specific string (e.g., "V2_AES_ENCRYPTION") to ensure unique keys per use case.</param>
-        /// <returns>A 32-byte derived key.</returns>
-        private static byte[] DeriveHkdf(byte[] ikm, byte[] salt, string info)
-        {
-            byte[]? prk = null;
-            byte[]? infoBytes = null;
-            byte[]? buffer = null;
-
-            try
-            {
-                infoBytes = Encoding.UTF8.GetBytes(info);
-                buffer = new byte[infoBytes.Length + 1];
-
-                // HKDF-Extract
-                using (var hmacExtract = new HMACSHA256(salt))
-                {
-                    prk = hmacExtract.ComputeHash(ikm);
-                }
-
-                // HKDF-Expand
-                using (var hmacExpand = new HMACSHA256(prk))
-                {
-                    Buffer.BlockCopy(infoBytes, 0, buffer, 0, infoBytes.Length);
-                    buffer[buffer.Length - 1] = 0x01; // First iteration
-                    return hmacExpand.ComputeHash(buffer);
-                }
-            }
-            finally
-            {
-                if (prk != null) Array.Clear(prk, 0, prk.Length);
-                if (infoBytes != null) Array.Clear(infoBytes, 0, infoBytes.Length);
-                if (buffer != null) Array.Clear(buffer, 0, buffer.Length);
-            }
-        }
-
-        /// <summary>
-        /// Performs a bitwise comparison of two byte arrays in constant time to prevent timing attacks.
-        /// </summary>
-        /// <param name="a">The first byte array to compare (e.g., the expected HMAC).</param>
-        /// <param name="b">The second byte array to compare (e.g., the provided HMAC).</param>
-        /// <returns>
-        /// True if the arrays are non-null and identical in content; otherwise, false. 
-        /// Note: Returns false if both are null to prevent null-bypass vulnerabilities.
-        /// </returns>
-        private static bool CryptographicEquals(byte[] a, byte[] b)
-        {
-            // Fail closed: If either array is missing, or if lengths differ, they are not 'equal' 
-            // in a cryptographic sense. We return false for dual-nulls to ensure an explicit 
-            // signature is always required for authentication.
-            if (a == null || b == null || a.Length != b.Length) return false;
-            
-            int diff = 0;
-
-            // Constant-time loop: We iterate through the entire length regardless of where 
-            // a difference is found to prevent side-channel timing attacks.
-            for (int i = 0; i < a.Length; i++) { diff |= a[i] ^ b[i]; }
-
-            return diff == 0;
         }
 
         /// <summary>
