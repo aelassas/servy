@@ -230,6 +230,7 @@ namespace Servy.Core.Security
                 {
                     aes.Key = _v1MasterKey;
                     aes.IV = _v1StaticIv;
+
                     using (var decryptor = aes.CreateDecryptor())
                     using (var ms = new MemoryStream(cipherBytes))
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
