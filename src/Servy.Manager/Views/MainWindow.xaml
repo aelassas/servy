@@ -166,7 +166,7 @@
                         </DataGrid.CellStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Width="32" CanUserResize="False" CanUserReorder="False">
+                            <DataGridTemplateColumn Width="32" MinWidth="32" CanUserResize="False" CanUserReorder="False">
                                 <!--Check all checkbox in header-->
                                 <DataGridTemplateColumn.Header>
                                     <CheckBox IsThreeState="True"
