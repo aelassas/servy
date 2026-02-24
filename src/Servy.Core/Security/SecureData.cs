@@ -10,14 +10,13 @@ namespace Servy.Core.Security
     /// </summary>
     public class SecureData : ISecureData
     {
-        private readonly IProtectedKeyProvider _protectedKeyProvider;
         private readonly byte[] _v1MasterKey;
         private readonly byte[] _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
 
-        private const int BufferSize = 4096;
         private const string EncryptMarker = "SERVY_ENC:";
+        private const string V2Marker = EncryptMarker + "v2:";
         private const int HmacSize = 32;
         private const int IvSize = 16;
 
@@ -43,22 +42,26 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="protectedKeyProvider"/> is null.</exception>
         public SecureData(IProtectedKeyProvider protectedKeyProvider)
         {
-            _protectedKeyProvider = protectedKeyProvider ?? throw new ArgumentNullException(nameof(protectedKeyProvider));
+            if (protectedKeyProvider == null)
+                throw new ArgumentNullException(nameof(protectedKeyProvider));
 
             byte[]? masterKey = null;
+            byte[]? v1StaticIv = null;
             try
             {
-                masterKey = _protectedKeyProvider.GetKey();
-                _v1StaticIv = _protectedKeyProvider.GetIV();
+                masterKey = protectedKeyProvider.GetKey();
+                v1StaticIv = protectedKeyProvider.GetIV();
 
                 _v2EncryptionKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_AES_ENCRYPTION"));
                 _v2HmacKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, masterKey, 32, HkdfSalt, Encoding.UTF8.GetBytes("V2_HMAC_AUTHENTICATION"));
 
                 _v1MasterKey = (byte[])masterKey.Clone();
+                _v1StaticIv = (byte[])v1StaticIv.Clone();
             }
             finally
             {
                 if (masterKey != null) Array.Clear(masterKey);
+                if (v1StaticIv != null) Array.Clear(v1StaticIv);
             }
         }
 
@@ -115,20 +118,18 @@ namespace Servy.Core.Security
                 HMACSHA256.HashData(_v2HmacKey, payloadSpan.Slice(0, IvSize + ciphertextLen), payloadSpan.Slice(IvSize + ciphertextLen, HmacSize));
 
                 // 3. MATERIALIZATION: Optimized String Construction
-                string marker = $"{EncryptMarker}v2:";
-
                 // Exact Base64 formula: every 3 input bytes -> 4 output chars, always padded to multiple of 4
                 int exactBase64Len = ((binaryPayloadLen + 2) / 3) * 4;
 
                 // Allocate the final string object once and write marker + base64 data directly into it
-                return string.Create(marker.Length + exactBase64Len, (binaryPayload, marker), (chars, state) =>
+                return string.Create(V2Marker.Length + exactBase64Len, (binaryPayload, V2Marker), (chars, state) =>
                 {
                     // Copy the "SERVY_ENC:v2:" marker into the start of the string
-                    state.marker.AsSpan().CopyTo(chars);
+                    state.V2Marker.AsSpan().CopyTo(chars);
 
                     // Encode the binary payload into the remaining space
                     // TryToBase64Chars writes exactly exactBase64Len chars (with '=' padding if needed)
-                    Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.marker.Length), out _);
+                    Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.V2Marker.Length), out _);
                 });
             }
             finally
