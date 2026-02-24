@@ -320,7 +320,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
 
   <!-- Pre-Launch -->
   <data name="Info_PreLaunch" xml:space="preserve">
-    <value>Optional script to run before service start. If it fails, the service won't start unless Ignore Failure is enabled. Set timeout to 0 for fire-and-forget mode (disables retries and logging). Use only for tasks that don't affect service stability.</value>
+    <value>Optional script to run before service start. If it fails, the service won't start unless Ignore Failure is enabled.</value>
   </data>
   <data name="Label_ProcessPathNotRequired" xml:space="preserve">
     <value>Process Path</value>
@@ -336,6 +336,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
     <value>Ignore Failure</value>
+  </data>
+  <data name="Info_PreLaunchTimeout" xml:space="preserve">
+    <value>Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging).</value>
   </data>
   <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
     <value>The pre-launch process path is invalid.</value>
@@ -543,7 +546,7 @@ If the service is disabled and marked for deletion, the installation will fail u
 
   <!-- Pre-Stop -->
   <data name="Info_PreStop" xml:space="preserve">
-    <value>Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
+    <value>Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0.</value>
   </data>
   <data name="Info_PreStopStartupDirectory" xml:space="preserve">
     <value>Optional. If not set, defaults to the directory of the pre-stop program.</value>
@@ -553,6 +556,9 @@ If the service is disabled and marked for deletion, the installation will fail u
   </data>
   <data name="Label_PreStopLogAsError" xml:space="preserve">
     <value>Log pre-stop failure as error</value>
+  </data>
+  <data name="Info_PreStopTimeout" xml:space="preserve">
+    <value>Set the timeout to 0 to run in fire-and-forget mode.</value>
   </data>
   <data name="Msg_InvalidPreStopPath" xml:space="preserve">
     <value>The pre-stop process path is invalid.</value>

@@ -268,7 +268,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Optional script to run before service start. If it fails, the service won&apos;t start unless Ignore Failure is enabled. Set timeout to 0 for fire-and-forget mode (disables retries and logging). Use only for tasks that don&apos;t affect service stability..
+        ///   Recherche une chaîne localisée semblable à Optional script to run before service start. If it fails, the service won&apos;t start unless Ignore Failure is enabled..
         /// </summary>
         public static string Info_PreLaunch {
             get {
@@ -286,7 +286,16 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service stops. This can be used for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while it is running. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        ///   Recherche une chaîne localisée semblable à Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging)..
+        /// </summary>
+        public static string Info_PreLaunchTimeout {
+            get {
+                return ResourceManager.GetString("Info_PreLaunchTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0..
         /// </summary>
         public static string Info_PreStop {
             get {
@@ -300,6 +309,15 @@ namespace Servy.Resources {
         public static string Info_PreStopStartupDirectory {
             get {
                 return ResourceManager.GetString("Info_PreStopStartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Set the timeout to 0 to run in fire-and-forget mode..
+        /// </summary>
+        public static string Info_PreStopTimeout {
+            get {
+                return ResourceManager.GetString("Info_PreStopTimeout", resourceCulture);
             }
         }
         
