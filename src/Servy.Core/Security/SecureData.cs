@@ -1,5 +1,4 @@
-﻿using System.Buffers.Text;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace Servy.Core.Security
@@ -64,60 +63,78 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Encrypts the specified plain text using AES-256-CBC and secures it with an HMAC-SHA256 signature.
+        /// Encrypts the specified plain text using AES-256-CBC and secures it with an HMAC-SHA256 signature (v2).
         /// </summary>
         /// <remarks>
-        /// This method implements high-performance <b>v2 (Authenticated Encryption)</b>:
-        /// <list type="number">
-        /// <item><description>Pre-calculates required buffer sizes to avoid intermediate allocations.</description></item>
-        /// <item><description>Uses <see cref="Span{T}"/> for zero-copy slicing of the payload buffer.</description></item>
-        /// <item><description>Encrypts using <c>EncryptCbc</c> for direct OS-level cryptographic execution.</description></item>
-        /// <item><description>Computes HMAC-SHA256 over the [IV + Ciphertext] for integrity (Encrypt-then-MAC).</description></item>
+        /// This method implements an <b>Encrypt-then-MAC (EtM)</b> pattern with zero-copy optimizations:
+        /// <list type="bullet">
+        /// <item><description>Uses <see cref="Span{T}"/> to manipulate a single contiguous buffer for IV, Ciphertext, and HMAC.</description></item>
+        /// <item><description>Leverages <c>string.Create</c> to materialize the final Base64 string directly into memory without intermediate allocations.</description></item>
+        /// <item><description>Calculates exact Base64 length to avoid costly post-processing like <c>.Trim()</c>.</description></item>
         /// </list>
         /// </remarks>
-        /// <param name="plainText">The sensitive string to be encrypted.</param>
-        /// <returns>A versioned string formatted as: {Marker}v2:{Base64(IV + Ciphertext + HMAC)}</returns>
+        /// <param name="plainText">The sensitive string to encrypt.</param>
+        /// <returns>A versioned string formatted as: <c>SERVY_ENC:v2:{Base64(IV + Ciphertext + HMAC)}</c></returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="plainText"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="plainText"/> is empty.</exception>
         public string Encrypt(string plainText)
         {
+            // Validation: Ensure we have data to work with
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
+            // Convert string to UTF-8 bytes for cryptographic processing
             byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
 
+            // Initialize AES-256 with the derived V2 encryption key
             using var aes = Aes.Create();
             aes.Key = _v2EncryptionKey;
 
-            // Use the .NET helper to get the exact ciphertext size (including PKCS7 padding)
+            // 1. PRE-CALCULATION: Determine exact buffer requirements
+            // Get the exact ciphertext size (including PKCS7 padding)
             int ciphertextLen = aes.GetCiphertextLengthCbc(plainBytes.Length, PaddingMode.PKCS7);
 
+            // Total binary payload: [IV (16 bytes)] + [Ciphertext (Variable)] + [HMAC (32 bytes)]
             int binaryPayloadLen = IvSize + ciphertextLen + HmacSize;
             byte[] binaryPayload = new byte[binaryPayloadLen];
 
             try
             {
-                // 1. Encrypt and Hash as before
+                // 2. CRYPTOGRAPHIC OPERATIONS: Direct buffer manipulation via Spans
                 Span<byte> payloadSpan = binaryPayload;
+
+                // A. Generate a random IV directly into the head of the buffer
                 RandomNumberGenerator.Fill(payloadSpan.Slice(0, IvSize));
+
+                // B. Encrypt directly into the body of the buffer
+                // Slice is [IV size] ... [ciphertext size]
                 aes.EncryptCbc(plainBytes, payloadSpan.Slice(0, IvSize), payloadSpan.Slice(IvSize, ciphertextLen), PaddingMode.PKCS7);
+
+                // C. Authenticate the data (IV + Ciphertext)
+                // Store the resulting 32-byte HMAC at the tail of the buffer
                 HMACSHA256.HashData(_v2HmacKey, payloadSpan.Slice(0, IvSize + ciphertextLen), payloadSpan.Slice(IvSize + ciphertextLen, HmacSize));
 
+                // 3. MATERIALIZATION: Optimized String Construction
                 string marker = $"{EncryptMarker}v2:";
 
-                // Exact Base64 length: every 3 input bytes -> 4 output chars, always padded to multiple of 4
+                // Exact Base64 formula: every 3 input bytes -> 4 output chars, always padded to multiple of 4
                 int exactBase64Len = ((binaryPayloadLen + 2) / 3) * 4;
 
+                // Allocate the final string object once and write marker + base64 data directly into it
                 return string.Create(marker.Length + exactBase64Len, (binaryPayload, marker), (chars, state) =>
                 {
+                    // Copy the "SERVY_ENC:v2:" marker into the start of the string
                     state.marker.AsSpan().CopyTo(chars);
-                    // TryToBase64Chars writes exactly exactBase64Len chars (with '=' padding) — no nulls, no trim needed
+
+                    // Encode the binary payload into the remaining space
+                    // TryToBase64Chars writes exactly exactBase64Len chars (with '=' padding if needed)
                     Convert.TryToBase64Chars(state.binaryPayload, chars.Slice(state.marker.Length), out _);
                 });
             }
             finally
             {
-                // Security hygiene: Wipe sensitive buffers from the heap
+                // 4. SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
+                // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
                 Array.Clear(plainBytes);
                 Array.Clear(binaryPayload);
             }
@@ -127,55 +144,63 @@ namespace Servy.Core.Security
         /// Decrypts a ciphertext string by automatically detecting the encryption version (v2, v1, or legacy raw).
         /// </summary>
         /// <remarks>
-        /// This method acts as a router for different decryption strategies:
+        /// This method implements a high-performance routing logic using <see cref="ReadOnlySpan{T}"/>:
         /// <list type="bullet">
-        /// <item>
-        /// <term>v2:</term>
-        /// <description>Identified by the "v2:" prefix. Uses authenticated AES-256-CBC with HMAC-SHA256 verification.</description>
-        /// </item>
-        /// <item>
-        /// <term>v1:</term>
-        /// <description>Identified by the "v1:" prefix. Uses legacy AES decryption with a static IV.</description>
-        /// </item>
-        /// <item>
-        /// <term>Fallback:</term>
-        /// <description>If no version prefix is present, the method checks if the string is valid Base64. 
-        /// If it is, it attempts v1 decryption. If not, it returns the input as-is (assuming it is already plaintext).</description>
-        /// </item>
+        /// <item><term>v2:</term><description>Authenticated AES-256-CBC (Encrypt-then-MAC).</description></item>
+        /// <item><term>v1:</term><description>Legacy AES-256-CBC with static IV (No authentication).</description></item>
+        /// <item><term>Fallback:</term><description>Validates if the input is raw Base64; if so, attempts v1 decryption. Otherwise, returns input as-is.</description></item>
         /// </list>
-        /// Defensive programming: Any <see cref="FormatException"/> or <see cref="CryptographicException"/> 
-        /// encountered during the process is caught, and the method gracefully returns the original input.
+        /// Defensive posture: All cryptographic or formatting failures are caught, returning the original payload to prevent service disruption.
         /// </remarks>
         /// <param name="cipherText">The versioned ciphertext (with marker) or a raw legacy string.</param>
-        /// <returns>
-        /// The decrypted plain text if successful; otherwise, the original <paramref name="cipherText"/>.
-        /// </returns>
+        /// <returns>The decrypted plain text if successful; otherwise, the original <paramref name="cipherText"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="cipherText"/> is null.</exception>
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         public string Decrypt(string cipherText)
         {
+            // Initial validation
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
-            
-            // Use Spans for routing to avoid Substring() allocations
+
+            // PERF: Create a span of the input string to perform prefix checks and slicing 
+            // without allocating new string objects on the heap.
             ReadOnlySpan<char> textSpan = cipherText.AsSpan();
             ReadOnlySpan<char> markerSpan = EncryptMarker.AsSpan();
 
+            // Check for the "SERVY_ENC:" prefix
             bool hasMarker = textSpan.StartsWith(markerSpan, StringComparison.Ordinal);
+
+            // Slice the payload (either stripping the marker or using the whole string)
             ReadOnlySpan<char> payload = hasMarker ? textSpan.Slice(markerSpan.Length) : textSpan;
 
             try
             {
-                if (payload.StartsWith("v2:")) return DecryptV2(payload.Slice(3).ToString());
+                // Version 2 Routing: Authenticated Encryption
+                if (payload.StartsWith("v2:", StringComparison.Ordinal))
+                    return DecryptV2(payload.Slice(3).ToString());
 
-                if (payload.StartsWith("v1:")) return DecryptV1(payload.Slice(3).ToString());
+                // Version 1 Routing: Legacy Encryption
+                if (payload.StartsWith("v1:", StringComparison.Ordinal))
+                    return DecryptV1(payload.Slice(3).ToString());
 
-                // Fallback for legacy payloads that were encrypted but not version-tagged
+                // FALLBACK LOGIC: Handle legacy data that lacks markers or version tags.
+                // Convert the span to a string once for use in legacy methods.
                 string rawPayload = payload.ToString();
+
+                // If it looks like Base64, we treat it as an unversioned v1 encrypted string.
+                // Otherwise, it is assumed to be already plaintext.
                 return IsStrictBase64(rawPayload) ? DecryptV1(rawPayload) : rawPayload;
             }
-            catch (FormatException) { return payload.ToString(); }
-            catch (CryptographicException) { return payload.ToString(); }
+            catch (FormatException)
+            {
+                // Graceful fallback for Base64 decoding errors
+                return payload.ToString();
+            }
+            catch (CryptographicException)
+            {
+                // Graceful fallback for key mismatches or corrupted ciphertext
+                return payload.ToString();
+            }
         }
 
         /// <summary>
@@ -220,67 +245,75 @@ namespace Servy.Core.Security
         /// Internal logic for v2 decryption. Validates the HMAC-SHA256 signature before attempting AES decryption.
         /// </summary>
         /// <remarks>
-        /// This follows the "Encrypt-then-MAC" (EtM) security best practice. 
-        /// 1. The payload is decomposed into the IV, Ciphertext, and HMAC.
-        /// 2. A new HMAC is computed over the IV and Ciphertext and compared against the provided HMAC in constant time.
-        /// 3. If integrity is verified, the ciphertext is decrypted using AES-256-CBC.
-        /// <para>
-        /// <b>Security Note:</b> Decryption only occurs if the HMAC is valid. This prevents "Padding Oracle" attacks 
-        /// by treating any manipulation of the ciphertext as an integrity failure rather than a decryption error.
-        /// </para>
+        /// This follows the <b>Encrypt-then-MAC (EtM)</b> security best practice:
+        /// <list type="number">
+        /// <item><description>The payload is decomposed into IV, Ciphertext, and HMAC using zero-copy <see cref="ReadOnlySpan{T}"/> slices.</description></item>
+        /// <item><description>A new HMAC is computed over the [IV + Ciphertext] using <c>stackalloc</c> for zero heap allocation.</description></item>
+        /// <item><description>The HMAC is verified in constant-time via <see cref="CryptographicOperations.FixedTimeEquals"/>.</description></item>
+        /// <item><description>Only if integrity is verified, the ciphertext is decrypted using AES-256-CBC.</description></item>
+        /// </list>
         /// </remarks>
         /// <param name="payload">The Base64-encoded v2 encrypted string (excluding the version prefix).</param>
         /// <returns>The decrypted UTF-8 string.</returns>
         /// <exception cref="CryptographicException">
-        /// Thrown if the payload is truncated, the HMAC is invalid, or decryption fails.
+        /// Thrown if the payload is truncated, the HMAC is invalid, or AES decryption fails.
         /// </exception>
         private string DecryptV2(string payload)
         {
-            // 1. Decode Base64 to a byte array (Still requires one allocation)
+            // 1. DECODING: Convert Base64 back to raw bytes
+            // Note: This remains the primary allocation in the decryption path.
             byte[] combined = Convert.FromBase64String(payload);
 
             try
             {
+                // Minimum size check: must contain at least an IV (16) and an HMAC (32)
                 if (combined.Length < (IvSize + HmacSize))
                     throw new CryptographicException("V2 payload length is insufficient.");
 
-                // Create ReadOnlySpans - these are "views" into the 'combined' array (0 copies)
+                // Create Spans: These are lightweight "views" into the 'combined' array (0 copies)
                 ReadOnlySpan<byte> combinedSpan = combined;
                 ReadOnlySpan<byte> iv = combinedSpan.Slice(0, IvSize);
                 ReadOnlySpan<byte> expectedHmac = combinedSpan.Slice(combinedSpan.Length - HmacSize);
                 ReadOnlySpan<byte> ciphertext = combinedSpan.Slice(IvSize, combinedSpan.Length - IvSize - HmacSize);
                 ReadOnlySpan<byte> dataToHash = combinedSpan.Slice(0, IvSize + ciphertext.Length);
 
-                // 2. High-speed HMAC Verification
+                // 2. AUTHENTICATION: High-speed HMAC Verification
+                // stackalloc allocates 32 bytes on the stack, bypassing the Garbage Collector entirely.
                 Span<byte> computedHash = stackalloc byte[HmacSize];
+
+                // Compute the hash over [IV + Ciphertext]
                 HMACSHA256.TryHashData(_v2HmacKey, dataToHash, computedHash, out _);
+
+                // Security Critical: Constant-time comparison prevents side-channel timing attacks.
                 if (!CryptographicOperations.FixedTimeEquals(computedHash, expectedHmac))
                     throw new CryptographicException("HMAC integrity check failed.");
 
-                // 3. Direct AES Decryption (No Streams)
+                // 3. DECRYPTION: Direct AES execution
                 using (var aes = Aes.Create())
                 {
                     aes.Key = _v2EncryptionKey;
 
-                    // Pre-allocate the exact output buffer size
-                    // In CBC/PKCS7, the plaintext is at most the size of the ciphertext
+                    // Pre-allocate the output buffer for plaintext. 
+                    // In PKCS7, plaintext length is always <= ciphertext length.
                     byte[] outputBuffer = new byte[ciphertext.Length];
                     try
                     {
-                        // DecryptCbc is a high-performance Span-based method
+                        // DecryptCbc is a high-performance Span-based method that avoids CryptoStream overhead.
                         int bytesWritten = aes.DecryptCbc(ciphertext, iv, outputBuffer, PaddingMode.PKCS7);
 
-                        // Convert bytes directly to string without StreamReader overhead
+                        // Materialize the final string directly from the buffer.
                         return Encoding.UTF8.GetString(outputBuffer, 0, bytesWritten);
                     }
                     finally
                     {
+                        // Wipe the plaintext buffer from memory immediately.
                         Array.Clear(outputBuffer);
                     }
                 }
             }
             finally
             {
+                // Security hygiene: Wipe the combined buffer (containing IV and Ciphertext) from the heap.
                 Array.Clear(combined);
             }
         }
