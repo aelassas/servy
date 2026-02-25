@@ -19,6 +19,7 @@ namespace Servy.Core.Security
 
         private const int BufferSize = 4096;
         private const string EncryptMarker = "SERVY_ENC:";
+        private const string V2Marker = EncryptMarker + "v2:";
         private const int HmacSize = 32;
         private const int IvSize = 16;
 
@@ -133,7 +134,7 @@ namespace Servy.Core.Security
                         hmacSha.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
                         Buffer.BlockCopy(hmacSha.Hash, 0, payload, totalToHash, HmacSize);
 
-                        return $"{EncryptMarker}v2:{Convert.ToBase64String(payload, 0, totalToHash + HmacSize)}";
+                        return $"{V2Marker}{Convert.ToBase64String(payload, 0, totalToHash + HmacSize)}";
                     }
                 }
             }
