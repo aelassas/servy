@@ -12,7 +12,6 @@ namespace Servy.Core.Security
     /// </summary>
     public class SecureData : ISecureData
     {
-        private readonly IProtectedKeyProvider _protectedKeyProvider;
         private readonly byte[] _v1MasterKey;
         private readonly byte[] _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
@@ -45,22 +44,26 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="protectedKeyProvider"/> is null.</exception>
         public SecureData(IProtectedKeyProvider protectedKeyProvider)
         {
-            _protectedKeyProvider = protectedKeyProvider ?? throw new ArgumentNullException(nameof(protectedKeyProvider));
+            if (protectedKeyProvider == null)
+                throw new ArgumentNullException(nameof(protectedKeyProvider));
 
             byte[] masterKey = null;
+            byte[] v1StaticIv = null;
             try
             {
-                masterKey = _protectedKeyProvider.GetKey();
-                _v1StaticIv = _protectedKeyProvider.GetIV();
+                masterKey = protectedKeyProvider.GetKey();
+                v1StaticIv = protectedKeyProvider.GetIV();
 
                 _v2EncryptionKey = DeriveHkdf(masterKey, HkdfSalt, "V2_AES_ENCRYPTION");
                 _v2HmacKey = DeriveHkdf(masterKey, HkdfSalt, "V2_HMAC_AUTHENTICATION");
 
                 _v1MasterKey = (byte[])masterKey.Clone();
+                _v1StaticIv = (byte[])v1StaticIv.Clone();
             }
             finally
             {
                 if (masterKey != null) Array.Clear(masterKey, 0, masterKey.Length);
+                if (v1StaticIv != null) Array.Clear(v1StaticIv, 0, v1StaticIv.Length);
             }
         }
 
