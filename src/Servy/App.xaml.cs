@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
@@ -68,39 +69,28 @@ namespace Servy
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
+            Logger.Initialize("Servy.log");
+
             // Tier 0 = No hardware acceleration
             // Tier 1 = Partial (DirectX 7/8)
             // Tier 2 = Full (DirectX 9+)
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
 
-            // 1. Log to Debug (Internal)
-            Debug.WriteLine($"[STARTUP] RenderingTier={renderingTier}, RemoteSession={isRemote}");
+            // 1. Log RenderingTier and RemoteSession
+            Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}");
 
-            // 2. Safe Logging to File (External)
-            try
-            {
-                // Ensure directory exists before writing
-                if (!Directory.Exists(AppConfig.ProgramDataPath))
-                    Directory.CreateDirectory(AppConfig.ProgramDataPath);
-
-                string logPath = Path.Combine(AppConfig.ProgramDataPath, "Servy.log");
-                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] RenderingTier={renderingTier}, RemoteSession={isRemote}{Environment.NewLine}";
-
-                File.AppendAllText(logPath, logEntry);
-            }
-            catch { /* Never let a logger crash the app startup */ }
-
-            // 3. Rendering Fallback
+            // 2. Rendering Fallback
+            // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
             if (renderingTier == 0 || isRemote)
             {
+                Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
             }
 
             base.OnStartup(e);
 
-            // 4. Fire-and-forget with safety net
+            // 3. Fire-and-forget with safety net
             _ = InitializeApp(e).ContinueWith(t =>
             {
                 if (t.IsFaulted)
@@ -205,10 +195,6 @@ namespace Servy
 #else
                 ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
 #endif
-                //if (!File.Exists(ManagerAppPublishPath))
-                //{
-                //    MessageBox.Show($"Manager App not found: {ManagerAppPublishPath}");
-                //}
 
                 IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
 

@@ -104,6 +104,7 @@
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Logging\Logger.cs" />
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Helpers\IXmlServiceSerializer.cs" />
     <Compile Include="Helpers\JsonServiceValidator.cs" />
