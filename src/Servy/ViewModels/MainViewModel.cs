@@ -752,6 +752,26 @@ namespace Servy.ViewModels
         /// </summary>
         public ICommand BrowsePostLaunchStartupDirectoryCommand { get; }
 
+        /// <summary>
+        /// Command to browse and select the pre-stop executable process path.
+        /// </summary>
+        public ICommand BrowsePreStopProcessPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the pre-stop startup directory.
+        /// </summary>
+        public ICommand BrowsePreStopStartupDirectoryCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the post-stop executable process path.
+        /// </summary>
+        public ICommand BrowsePostStopProcessPathCommand { get; }
+
+        /// <summary>
+        /// Command to browse and select the post-stop startup directory.
+        /// </summary>
+        public ICommand BrowsePostStopStartupDirectoryCommand { get; }
+
         #endregion
 
         #region Constructors
@@ -852,6 +872,12 @@ namespace Servy.ViewModels
 
             BrowsePostLaunchProcessPathCommand = new RelayCommand<object>(_ => BrowsePostLaunchProcessPath());
             BrowsePostLaunchStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostLaunchStartupDirectory());
+
+            BrowsePreStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePreStopProcessPath());
+            BrowsePreStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePreStopStartupDirectory());
+
+            BrowsePostStopProcessPathCommand = new RelayCommand<object>(_ => BrowsePostStopProcessPath());
+            BrowsePostStopStartupDirectoryCommand = new RelayCommand<object>(_ => BrowsePostStopStartupDirectory());
 
             OpenDocumentationCommand = new RelayCommand<object>(_ => OpenDocumentation());
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
@@ -1023,6 +1049,42 @@ namespace Servy.ViewModels
         {
             var folder = _dialogService.OpenFolder();
             if (!string.IsNullOrEmpty(folder)) PostLaunchStartupDirectory = folder;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a pre-stop executable file and sets <see cref="PreStopExecutablePath"/>.
+        /// </summary>
+        private void BrowsePreStopProcessPath()
+        {
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) PreStopExecutablePath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a pre-stop folder and sets <see cref="PreStopStartupDirectory"/>.
+        /// </summary>
+        private void BrowsePreStopStartupDirectory()
+        {
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) PreStopStartupDirectory = folder;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a post-stop executable file and sets <see cref="PostStopExecutablePath"/>.
+        /// </summary>
+        private void BrowsePostStopProcessPath()
+        {
+            var path = _dialogService.OpenExecutable();
+            if (!string.IsNullOrEmpty(path)) PostStopExecutablePath = path;
+        }
+
+        /// <summary>
+        /// Opens a dialog to browse for a post-stop folder and sets <see cref="PostStopStartupDirectory"/>.
+        /// </summary>
+        private void BrowsePostStopStartupDirectory()
+        {
+            var folder = _dialogService.OpenFolder();
+            if (!string.IsNullOrEmpty(folder)) PostStopStartupDirectory = folder;
         }
 
         #endregion
