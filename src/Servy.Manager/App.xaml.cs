@@ -5,13 +5,11 @@ using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Manager.Views;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Runtime.Remoting;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -93,7 +91,7 @@ namespace Servy.Manager
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
             // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
             // Tier 0 = No hardware acceleration
@@ -102,8 +100,24 @@ namespace Servy.Manager
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
 
-            Debug.WriteLine($"RenderingTier={renderingTier}, RemoteSession={isRemote}");
+            // 1. Log to Debug (Internal)
+            Debug.WriteLine($"[STARTUP] RenderingTier={renderingTier}, RemoteSession={isRemote}");
 
+            // 2. Safe Logging to File (External)
+            try
+            {
+                // Ensure directory exists before writing
+                if (!Directory.Exists(AppConfig.ProgramDataPath))
+                    Directory.CreateDirectory(AppConfig.ProgramDataPath);
+
+                string logPath = Path.Combine(AppConfig.ProgramDataPath, "Servy.Manager.log");
+                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] RenderingTier={renderingTier}, RemoteSession={isRemote}{Environment.NewLine}";
+
+                File.AppendAllText(logPath, logEntry);
+            }
+            catch { /* Never let a logger crash the app startup */ }
+
+            // 3. Rendering Fallback
             if (renderingTier == 0 || isRemote)
             {
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
@@ -111,15 +125,15 @@ namespace Servy.Manager
 
             base.OnStartup(e);
 
-            // Start the sequence without blocking the UI thread
+            // 4. Fire-and-forget with safety net
             _ = InitializeApp(e).ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
-                    // This runs if an exception escaped the internal try/catch
+                    var ex = t.Exception?.Flatten().InnerException;
                     Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show("Critical Startup Fault: " + t.Exception?.Flatten().InnerException?.Message);
+                        MessageBox.Show($"Critical Startup Fault: {ex?.Message}");
                         Shutdown();
                     });
                 }

@@ -9,9 +9,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.Remoting;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -77,8 +75,24 @@ namespace Servy
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
 
-            Debug.WriteLine($"RenderingTier={renderingTier}, RemoteSession={isRemote}");
+            // 1. Log to Debug (Internal)
+            Debug.WriteLine($"[STARTUP] RenderingTier={renderingTier}, RemoteSession={isRemote}");
 
+            // 2. Safe Logging to File (External)
+            try
+            {
+                // Ensure directory exists before writing
+                if (!Directory.Exists(AppConfig.ProgramDataPath))
+                    Directory.CreateDirectory(AppConfig.ProgramDataPath);
+
+                string logPath = Path.Combine(AppConfig.ProgramDataPath, "Servy.log");
+                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] RenderingTier={renderingTier}, RemoteSession={isRemote}{Environment.NewLine}";
+
+                File.AppendAllText(logPath, logEntry);
+            }
+            catch { /* Never let a logger crash the app startup */ }
+
+            // 3. Rendering Fallback
             if (renderingTier == 0 || isRemote)
             {
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
@@ -86,15 +100,15 @@ namespace Servy
 
             base.OnStartup(e);
 
-            // Start the sequence without blocking the UI thread
+            // 4. Fire-and-forget with safety net
             _ = InitializeApp(e).ContinueWith(t =>
             {
                 if (t.IsFaulted)
                 {
-                    // This runs if an exception escaped the internal try/catch
+                    var ex = t.Exception?.Flatten().InnerException;
                     Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show("Critical Startup Fault: " + t.Exception?.Flatten().InnerException?.Message);
+                        MessageBox.Show($"Critical Startup Fault: {ex?.Message}");
                         Shutdown();
                     });
                 }
