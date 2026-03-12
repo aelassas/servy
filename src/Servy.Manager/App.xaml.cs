@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace Servy.Manager
 {
@@ -86,10 +88,67 @@ namespace Servy.Manager
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
+            // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
+            // Tier 0 = No hardware acceleration
+            // Tier 1 = Partial (DirectX 7/8)
+            // Tier 2 = Full (DirectX 9+)
+            var renderingTier = RenderCapability.Tier >> 16;
+            var isRemote = SystemParameters.IsRemoteSession;
+
+            Debug.WriteLine($"RenderingTier={renderingTier}, RemoteSession={isRemote}");
+
+            if (renderingTier == 0 || isRemote)
+            {
+                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+            }
+
             base.OnStartup(e);
 
+            // Start the sequence without blocking the UI thread
+            _ = InitializeApp(e).ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    // This runs if an exception escaped the internal try/catch
+                    Current.Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show("Critical Startup Fault: " + t.Exception?.Flatten().InnerException?.Message);
+                        Shutdown();
+                    });
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        /// <summary>
+        /// Orchestrates the asynchronous application initialization sequence.
+        /// </summary>
+        /// <remarks>
+        /// This method performs the following operations:
+        /// <list type="bullet">
+        /// <item>Configures global exception handlers for the <see cref="AppDomain"/> and <see cref="Application.DispatcherUnhandledException"/>.</item>
+        /// <item>Displays the <see cref="SplashWindow"/> (unless suppressed via command-line arguments).</item>
+        /// <item>Initializes system event sources and loads configuration from <c>appsettings.manager.json</c>.</item>
+        /// <item>Spawns a background task to handle high-latency operations:
+        ///     <list type="number">
+        ///         <item>Ensures required directory structures exist.</item>
+        ///         <item>Initializes the SQLite database and underlying schema.</item>
+        ///         <item>Extracts embedded executables (Servy UI and Handle utility) to the local file system.</item>
+        ///     </list>
+        /// </item>
+        /// <item>Instantiates and displays the <see cref="MainWindow"/> before dismissing the splash screen.</item>
+        /// </list>
+        /// </remarks>
+        /// <param name="e">The <see cref="StartupEventArgs"/> containing command-line arguments. 
+        /// If the first argument is "false", the splash screen will be disabled.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
+        private async Task InitializeApp(StartupEventArgs e)
+        {
             // Subscribe to unhandled exceptions
             AppDomain.CurrentDomain.UnhandledException += (s, args2) =>
             {
@@ -110,17 +169,18 @@ namespace Servy.Manager
                 bool.TryParse(e.Args[0], out showSplash);
             }
 
-            var splash = new SplashWindow();
-
-            if (showSplash)
-            {
-                splash.Show();
-
-                await Task.Yield(); // let UI render
-            }
-
+            SplashWindow splash = null;
             try
             {
+                splash = new SplashWindow();
+
+                if (showSplash)
+                {
+                    splash.Show();
+
+                    await Task.Yield(); // let UI render
+                }
+
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
 
@@ -215,10 +275,7 @@ namespace Servy.Manager
                     // Delay on UI thread if elapsed time is too short
                     if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
                     {
-                        Current.Dispatcher.Invoke(async () =>
-                        {
-                            await Task.Delay(500);
-                        }).Wait(); // Wait synchronously inside background thread
+                        await Task.Delay(500);
                     }
 
                 });
@@ -235,14 +292,12 @@ namespace Servy.Manager
             }
             finally
             {
-                if (showSplash && splash.IsVisible)
+                if (showSplash && splash?.IsVisible == true)
                 {
                     splash.Close();
                 }
             }
-
         }
-
 
         #endregion
 

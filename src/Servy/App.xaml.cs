@@ -9,6 +9,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace Servy
 {
@@ -61,9 +63,74 @@ namespace Servy
         /// subscribes to unhandled exception handlers, and extracts required embedded resources.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
+            // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
+            // Tier 0 = No hardware acceleration
+            // Tier 1 = Partial (DirectX 7/8)
+            // Tier 2 = Full (DirectX 9+)
+            var renderingTier = RenderCapability.Tier >> 16;
+            var isRemote = SystemParameters.IsRemoteSession;
+
+            Debug.WriteLine($"RenderingTier={renderingTier}, RemoteSession={isRemote}");
+
+            if (renderingTier == 0 || isRemote)
+            {
+                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+            }
+
             base.OnStartup(e);
+
+            // Start the sequence without blocking the UI thread
+            _ = InitializeApp(e).ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    // This runs if an exception escaped the internal try/catch
+                    Current.Dispatcher.Invoke(() =>
+                    {
+                        MessageBox.Show("Critical Startup Fault: " + t.Exception?.Flatten().InnerException?.Message);
+                        Shutdown();
+                    });
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        /// <summary>
+        /// Asynchronously handles the application initialization lifecycle, including configuration loading, 
+        /// resource extraction, and UI orchestration.
+        /// </summary>
+        /// <remarks>
+        /// The initialization sequence performs the following:
+        /// <list type="number">
+        ///     <item>Attaches global exception handlers to capture unhandled background and UI thread errors.</item>
+        ///     <item>Parses command-line arguments to determine splash screen visibility and target service deep-linking.</item>
+        ///     <item>Displays the <see cref="SplashWindow"/> and yields to the UI thread to ensure it renders correctly.</item>
+        ///     <item>Initializes the <see cref="IConfiguration"/> provider, supporting environment-specific JSON settings.</item>
+        ///     <item>Offloads heavy I/O and database operations to a background task:
+        ///         <list type="bullet">
+        ///             <item>Verifies file system prerequisites (database and security folders).</item>
+        ///             <item>Initializes the SQLite database schema.</item>
+        ///             <item>Extracts embedded binaries (service UI and Sysinternals utilities) to the application directory.</item>
+        ///         </list>
+        ///     </item>
+        ///     <item>Instantiates the <see cref="MainWindow"/>, optionally loading a specific service configuration if a <paramref name="serviceName"/> was provided.</item>
+        ///     <item>Dismisses the splash screen and cleans up startup resources.</item>
+        /// </list>
+        /// </remarks>
+        /// <param name="e">The <see cref="StartupEventArgs"/> containing:
+        /// <list type="bullet">
+        ///     <item><c>Args[0]</c>: A boolean string to toggle the splash screen.</item>
+        ///     <item><c>Args[1]</c>: (Optional) The name of a service to load automatically on startup.</item>
+        /// </list>
+        /// </param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous startup operation.</returns>
+        private async Task InitializeApp(StartupEventArgs e)
+        {
 
             // Subscribe to unhandled exceptions
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
@@ -93,17 +160,18 @@ namespace Servy
                 }
             }
 
-            var splash = new SplashWindow();
-
-            if (showSplash)
-            {
-                splash.Show();
-
-                await Task.Yield(); // let UI render
-            }
-
+            SplashWindow splash = null;
             try
             {
+                splash = new SplashWindow();
+
+                if (showSplash)
+                {
+                    splash.Show();
+
+                    await Task.Yield(); // let UI render
+                }
+
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
 
@@ -186,10 +254,7 @@ namespace Servy
                     // Delay on UI thread if elapsed time is too short
                     if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
                     {
-                        Current.Dispatcher.Invoke(async () =>
-                        {
-                            await Task.Delay(500);
-                        }).Wait(); // Wait synchronously inside background thread
+                        await Task.Delay(500);
                     }
 
                 });
@@ -210,7 +275,7 @@ namespace Servy
             }
             finally
             {
-                if (showSplash && splash.IsVisible)
+                if (showSplash && splash?.IsVisible == true)
                 {
                     splash.Close();
                 }
