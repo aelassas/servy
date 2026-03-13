@@ -14,7 +14,7 @@ try {
     $startTime = Get-Date
 
     # === CONFIGURATION ===
-    $version      = "6.9"
+    $version      = "7.0"
     $appName      = "servy"
     $buildConfig  = "Release"
     $platform     = "x64"
