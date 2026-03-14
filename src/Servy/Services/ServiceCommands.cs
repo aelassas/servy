@@ -644,13 +644,15 @@ namespace Servy.Services
                 return;
             }
 
+            var forceFlag = app.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = app.ManagerAppPublishPath,
                     UseShellExecute = true,
-                    Arguments = $"\"false\" {(app.ForceSoftwareRendering ? AppConfig.ForceSoftwareRenderingArg : string.Empty)}", // Pass false to skip splash screen
+                    Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                 }
             };
 
