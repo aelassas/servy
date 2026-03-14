@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,6 +32,10 @@ namespace Servy.Manager
         /// Used for locating and extracting files such as the service executable.
         /// </summary>
         public const string ResourcesNamespace = "Servy.Manager.Resources";
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Connection string.
@@ -82,6 +87,16 @@ namespace Servy.Manager
         /// </summary>
         public int DependenciesRefreshIntervalInMs { get; private set; }
 
+        /// <summary>
+        /// Gets a value indicating whether software rendering has been forced for the current session.
+        /// </summary>
+        /// <remarks>
+        /// This property is typically set during application startup if the system detects 
+        /// a remote session, low-tier graphics hardware, or if the <see cref="AppConfig.ForceSoftwareRenderingArg"/> 
+        /// command-line argument is present.
+        /// </remarks>
+        public bool ForceSoftwareRendering { get; private set; }
+
         #endregion
 
         #region Events
@@ -96,18 +111,22 @@ namespace Servy.Manager
         {
             Logger.Initialize("Servy.Manager.log");
 
+            // Bit-shift to get the major tier (0, 1, or 2)
             // Tier 0 = No hardware acceleration
             // Tier 1 = Partial (DirectX 7/8)
             // Tier 2 = Full (DirectX 9+)
             var renderingTier = RenderCapability.Tier >> 16;
             var isRemote = SystemParameters.IsRemoteSession;
 
+            // Check for manual override flag
+            ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
+
             // 1. Log RenderingTier and RemoteSession
-            Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}");
+            Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}, ForceSoftwareRendering={ForceSoftwareRendering}");
 
             // 2. Rendering Fallback
             // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
-            if (renderingTier == 0 || isRemote)
+            if (renderingTier == 0 || isRemote || ForceSoftwareRendering)
             {
                 Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
                 RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
@@ -221,7 +240,13 @@ namespace Servy.Manager
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else
+                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigrationAppPublishPath;
+                // If the path is relative, combine it with the base directory
+                if (!Path.IsPathRooted(ConfigurationAppPublishPath))
+                {
+                    ConfigurationAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ConfigurationAppPublishPath));
+                }
 #endif
 
                 IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
