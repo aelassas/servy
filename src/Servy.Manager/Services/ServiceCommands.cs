@@ -212,12 +212,14 @@ namespace Servy.Manager.Services
                     return;
                 }
 
+                var forceFlag = app.ForceSoftwareRendering ? $" {Core.Config.AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+
                 var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = app.ConfigurationAppPublishPath,
-                        Arguments = "\"false\"", // Pass false to skip splash screen
+                        Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
                 };
@@ -236,7 +238,7 @@ namespace Servy.Manager.Services
                 }
 
                 // Pass false to skip splash screen
-                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\" {(app.ForceSoftwareRendering ? Core.Config.AppConfig.ForceSoftwareRenderingArg : string.Empty)}";
+                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\"{forceFlag}";
 
                 process.Start();
             }
