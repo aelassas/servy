@@ -650,7 +650,7 @@ namespace Servy.Services
                 {
                     FileName = app.ManagerAppPublishPath,
                     UseShellExecute = true,
-                    Arguments = "\"false\"", // Pass false to skip splash screen
+                    Arguments = $"\"false\" {(app.ForceSoftwareRendering ? AppConfig.ForceSoftwareRenderingArg : string.Empty)}", // Pass false to skip splash screen
                 }
             };
 

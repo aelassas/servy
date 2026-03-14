@@ -230,7 +230,8 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\""; // Pass false to skip splash screen
+                // Pass false to skip splash screen
+                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\" {(app.ForceSoftwareRendering ? Core.Config.AppConfig.ForceSoftwareRenderingArg : string.Empty)}";
 
                 process.Start();
             }

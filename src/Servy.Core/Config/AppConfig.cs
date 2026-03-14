@@ -271,6 +271,17 @@ namespace Servy.Core.Config
         /// </summary>
         public const int MinPreLaunchRetryAttempts = 0;
 
+        /// <summary>
+        /// Command-line argument used to bypass hardware acceleration and force 
+        /// the application to use software-based rendering.
+        /// </summary>
+        /// <remarks>
+        /// This is primarily used to resolve "blank UI" issues in remote management 
+        /// environments (like MeshCentral or specialized RDP configurations) where 
+        /// the hardware DirectX pipeline cannot be correctly captured.
+        /// </remarks>
+        public const string ForceSoftwareRenderingArg = "--force-sr";
+
         #endregion
 
         #region Public Methods
