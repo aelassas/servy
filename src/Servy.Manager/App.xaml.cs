@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.ServiceProcess;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -193,9 +194,15 @@ namespace Servy.Manager
             // Initialize and show splash screen if enabled
             var showSplash = true;
 
-            if (e.Args != null && e.Args.Length > 0)
+            if (e.Args != null)
             {
-                bool.TryParse(e.Args[0], out showSplash);
+                var positionalArgs = e.Args.Where(arg => !arg.StartsWith("-")).ToList();
+
+                // First positional argument: Splash Screen (true/false)
+                if (positionalArgs.Count > 0)
+                {
+                    bool.TryParse(positionalArgs[0], out showSplash);
+                }
             }
 
             SplashWindow splash = null;

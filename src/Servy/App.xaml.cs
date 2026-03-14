@@ -178,13 +178,18 @@ namespace Servy
 
             if (e.Args != null)
             {
-                if (e.Args.Length > 0)
+                var positionalArgs = e.Args.Where(arg => !arg.StartsWith("-")).ToList();
+
+                // First positional argument: Splash Screen (true/false)
+                if (positionalArgs.Count > 0)
                 {
-                    bool.TryParse(e.Args[0], out showSplash);
+                    bool.TryParse(positionalArgs[0], out showSplash);
                 }
-                if (e.Args.Length > 1)
+
+                // Second positional argument: Service Name
+                if (positionalArgs.Count > 1)
                 {
-                    serviceName = e.Args[1];
+                    serviceName = positionalArgs[1];
                 }
             }
 
