@@ -196,7 +196,7 @@ namespace Servy.Manager
 
             if (e.Args != null)
             {
-                var positionalArgs = e.Args.Where(arg => !arg.StartsWith("-")).ToList();
+                var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
 
                 // First positional argument: Splash Screen (true/false)
                 if (positionalArgs.Count > 0)
