@@ -194,7 +194,7 @@ jobs:
             --output-file "servy-$env:VERSION-$env:FRAMEWORK-sbom.xml"
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom
           path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-sbom.xml
@@ -222,7 +222,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Restarter.exe (unsigned)
         id: unsigned-restarter
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-restarter
           path: src/Servy.Restarter/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Restarter.exe
@@ -269,7 +269,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Service.exe (unsigned)
         id: unsigned-service
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-service
           path: src/Servy.Service/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Service.exe
@@ -329,7 +329,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.exe (unsigned)
         id: unsigned-servy
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-servy
           path: src/Servy/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.exe
@@ -376,7 +376,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.Manager.exe (unsigned)
         id: unsigned-manager
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-manager
           path: src/Servy.Manager/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.Manager.exe
@@ -423,7 +423,7 @@ jobs:
       # -----------------------------------------------------
       - name: Upload Servy.CLI.exe (unsigned)
         id: unsigned-cli
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-cli
           path: src/Servy.CLI/bin/${{ env.PLATFORM }}/${{ env.BUILD_CONFIG }}/Servy.CLI.exe
@@ -472,7 +472,7 @@ jobs:
 
       - name: Upload installer (unsigned)
         id: unsigned-installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: unsigned-installer
           path: setup/servy-x64-installer.exe
@@ -500,7 +500,7 @@ jobs:
           Rename-Item -Path $source -NewName $target -Force
 
       - name: Upload signed installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: signed-installer
           path: signed/installer/servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-installer.exe
@@ -568,7 +568,7 @@ jobs:
           Remove-Item $pkg -Recurse -Force
 
       - name: Upload portable package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: portable-7z
           path: servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-portable.7z
