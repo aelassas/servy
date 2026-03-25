@@ -142,7 +142,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("Configuration output file type is required", result.Message);
+            Assert.Contains("Configuration input file type is required", result.Message);
         }
 
         // Helpers for mocking static validators
