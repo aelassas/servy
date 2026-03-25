@@ -581,7 +581,7 @@ jobs:
       - name: Scan Signed Installer with VirusTotal
         id: vt_installer
         uses: cssnr/virustotal-action@v1
-        continue-on-error: true # Optional: Don't kill the whole CI if VT is down
+        continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
@@ -597,9 +597,15 @@ jobs:
         shell: powershell
 
       - name: Scan Portable Package with VirusTotal
+        id: vt_portable
         uses: cssnr/virustotal-action@v1
+        continue-on-error: true # Don't kill the whole CI if VT is down
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
           file_globs: | 
             servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-portable.7z
+
+      - name: Check VT Status
+        if: steps.vt_portable.outcome == 'failure'
+        run: echo "::warning::VirusTotal scan for portable failed or timed out."
