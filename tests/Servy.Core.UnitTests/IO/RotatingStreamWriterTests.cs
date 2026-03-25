@@ -320,67 +320,98 @@ namespace Servy.Core.UnitTests.IO
         {
             // Arrange
             string baseLog = Path.Combine(_testDir, "service.log");
-            File.WriteAllText(baseLog, "base"); // the main file
+            File.WriteAllText(baseLog, "base");
 
             var writer = CreateWriter(baseLog, true, 1000);
+            var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+            var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            // Get private fields/methods
-            var enforceMethod = typeof(RotatingStreamWriter)
-                .GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(enforceMethod);
+            // ---- BRANCH 1: _maxRotations <= 0 ----
+            maxRotField.SetValue(writer, 0);
+            enforceMethod.Invoke(writer, null); // Coverage: return early
 
-            var maxRotField = typeof(RotatingStreamWriter)
-                .GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(maxRotField);
+            // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
+            // f1: Valid rotated file
+            string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
+            // noise1: Starts with "service" but NO DOT (e.g., service_backup.log) 
+            // This hits the false side of: StartsWith($"{fileNameWithoutExt}.")
+            string noise1 = Path.Combine(_testDir, "service_backup.log");
+            // noise2: Starts with "service." but wrong extension (e.g., service.2026.txt)
+            // This hits the false side of: EndsWith(extension)
+            string noise2 = Path.Combine(_testDir, "service.20260325.txt");
 
-            // ---- BRANCH 1: _maxRotations <= 0 -> return ----
-            maxRotField.SetValue(writer, 0); // unlimited
-            var ex1 = Record.Exception(() => enforceMethod.Invoke(writer, null));
-            Assert.Null(ex1); // should simply return
+            File.WriteAllText(f1, "valid");
+            File.WriteAllText(noise1, "noise");
+            File.WriteAllText(noise2, "noise");
 
-            // ---- Create rotated files ----
-            string f1 = Path.Combine(_testDir, "service.log.1");
-            string f2 = Path.Combine(_testDir, "service.log.2");
-            string f3 = Path.Combine(_testDir, "service.log.3");
-
-            File.WriteAllText(f1, "1");
-            File.WriteAllText(f2, "2");
-            File.WriteAllText(f3, "3");
-
-            // Make timestamps predictable (f1 newest, f3 oldest)
-            File.SetLastWriteTimeUtc(f1, DateTime.Now.AddMinutes(0));
-            File.SetLastWriteTimeUtc(f2, DateTime.Now.AddMinutes(-1));
-            File.SetLastWriteTimeUtc(f3, DateTime.Now.AddMinutes(-2));
-
-            // ---- BRANCH 2: rotatedFiles.Count <= _maxRotations -> return ----
-            maxRotField.SetValue(writer, 3);
-            var ex2 = Record.Exception(() => enforceMethod.Invoke(writer, null));
-            Assert.Null(ex2);
-            Assert.True(File.Exists(f1) && File.Exists(f2) && File.Exists(f3));
-
-            // ---- BRANCH 3: rotatedFiles.Count > _maxRotations -> deletion happens ----
-            maxRotField.SetValue(writer, 1); // keep only newest (f1)
+            // ---- BRANCH 3: rotatedFiles.Count <= _maxRotations ----
+            maxRotField.SetValue(writer, 5);
             enforceMethod.Invoke(writer, null);
 
-            Assert.True(File.Exists(f1));     // newest kept
-            Assert.False(File.Exists(f2));    // deleted
-            Assert.False(File.Exists(f3));    // deleted
+            Assert.True(File.Exists(f1));
+            Assert.True(File.Exists(noise1)); // Noise should never be deleted
+            Assert.True(File.Exists(noise2));
 
-            // ---- BRANCH 4: deletion failure is swallowed ----
-            // Recreate files
-            File.WriteAllText(f2, "x");
-            File.WriteAllText(f3, "x");
+            // ---- BRANCH 4: Deletion happens (rotatedFiles.Count > _maxRotations) ----
+            maxRotField.SetValue(writer, 0); // Force deletion of all detected rotated files
+                                             // Note: we can't set it to 0 because the method returns early if <= 0. 
+                                             // So we use 1 and provide 2 valid files.
+            string f2 = Path.Combine(_testDir, "service.20260325_000002.log");
+            File.WriteAllText(f2, "valid2");
+            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10)); // Oldest
+            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);               // Newest
 
-            // Lock f2 so deletion throws
-            using (var locked = new FileStream(f2, FileMode.Open, FileAccess.Read, FileShare.None))
+            maxRotField.SetValue(writer, 1);
+            enforceMethod.Invoke(writer, null);
+
+            Assert.True(File.Exists(f2));     // Kept (newest)
+            Assert.False(File.Exists(f1));    // Deleted (valid rotated)
+            Assert.True(File.Exists(noise1)); // Kept (filter rejected it)
+            Assert.True(File.Exists(noise2)); // Kept (filter rejected it)
+
+            // ---- BRANCH 5: Deletion Failure (IOException) ----
+            File.WriteAllText(f1, "recreate");
+            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+            using (var locked = new FileStream(f1, FileMode.Open, FileAccess.Read, FileShare.None))
             {
-                maxRotField.SetValue(writer, 1);
-
-                var ex3 = Record.Exception(() => enforceMethod.Invoke(writer, null));
-                Assert.Null(ex3); // must swallow deletion exception
+                var ex = Record.Exception(() => enforceMethod.Invoke(writer, null));
+                Assert.Null(ex); // Resilience check
             }
 
-            // Cleanup
+            writer.Dispose();
+        }
+
+        [Fact]
+        public void EnforceMaxRotations_NoExtension_CoversIsNullOrEmpty()
+        {
+            // Arrange: File with NO extension
+            string baseLog = Path.Combine(_testDir, "plainfile");
+            File.WriteAllText(baseLog, "base");
+
+            var writer = CreateWriter(baseLog, true, 1000);
+            var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+            var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Create a rotated file for a no-extension base
+            // Pattern: plainfile.timestamp
+            string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
+            File.WriteAllText(f1, "rotated");
+            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+
+            // Act: Set max rotations to 0 (effectively 1 in logic since we skip)
+            maxRotField.SetValue(writer, 1); // Keep 1
+
+            // To trigger deletion, we need 2 files
+            string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
+            File.WriteAllText(f2, "rotated2");
+            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
+
+            // This hits the (string.IsNullOrEmpty(extension)) branch!
+            enforceMethod.Invoke(writer, null);
+
+            Assert.True(File.Exists(f2));
+            Assert.False(File.Exists(f1));
+
             writer.Dispose();
         }
 

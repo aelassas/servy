@@ -275,31 +275,52 @@ namespace Servy.Core.IO
         /// <summary>
         /// Deletes older rotated log files to enforce the maximum rotation limit.
         /// If <see cref="_maxRotations"/> is set to <c>0</c>, rotation cleanup is disabled.
-        /// Only files matching the rotated filename pattern of the current log file
-        /// are considered. 
         /// </summary>
         /// <remarks>
-        /// This method never throws exceptions. Any deletion failure is silently ignored
-        /// to ensure logging remains fully resilient.
+        /// Rotated files follow the pattern: {name}.{timestamp}.{ext} or {name}.{timestamp}.(n).{ext}
+        /// This method never throws exceptions; deletion failures are silently ignored.
         /// </remarks>
         private void EnforceMaxRotations()
         {
             if (_maxRotations <= 0)
-                return; // unlimited
+                return;
 
             string directory = _file.Directory.FullName;
-            string baseName = Path.GetFileName(_file.FullName);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
+            string extension = Path.GetExtension(_file.FullName);
 
-            // Rotated files follow: logfile.20251208_104539.log or logfile.20251208_104539.(1).log or
-            // logfile.20251208_104539 or logfile.(1).20251208_104539
-            var rotatedFiles = Directory.GetFiles(directory, $"{baseName}.*")
-                .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
+            // 1. Search for all files starting with the base name.
+            // We use a broader glob because the timestamp is now injected before the extension.
+            var allPotentialFiles = Directory.GetFiles(directory, $"{fileNameWithoutExt}*");
+
+            var rotatedFiles = allPotentialFiles
+                .Where(f =>
+                {
+                    // 2. Exclude the currently active log file
+                    if (f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
+                        return false;
+
+                    // 3. Ensure it matches our specific rotated patterns:
+                    // - MyApplication.20260325_120000.log
+                    // - MyApplication.20260325_120000.(1).log
+                    // - MyApplication.20260325_120000 (if no extension)
+                    // - MyApplication.20260325_120000.(1)
+                    string name = Path.GetFileName(f);
+
+                    if (!name.StartsWith($"{fileNameWithoutExt}.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    return string.IsNullOrEmpty(extension) || name.EndsWith(extension, StringComparison.OrdinalIgnoreCase);
+                })
                 .OrderByDescending(File.GetLastWriteTimeUtc)
                 .ToList();
 
             if (rotatedFiles.Count <= _maxRotations)
                 return;
 
+            // Delete the oldest files (those beyond the max count)
             foreach (var file in rotatedFiles.Skip(_maxRotations))
             {
                 try
@@ -308,8 +329,7 @@ namespace Servy.Core.IO
                 }
                 catch
                 {
-                    // Do NOT crash logging if deletion fails.
-                    // Silently ignore. Logging must be resilient.
+                    // Silently ignore to ensure logging resilience.
                 }
             }
         }
