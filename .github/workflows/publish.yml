@@ -142,11 +142,11 @@ jobs:
         shell: pwsh
         run: |
           $version = "$env:VERSION.0"
-          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml"
-          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml"
-          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml"
-          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml"
-          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml"
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml" --sv 1.5
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml" --sv 1.5
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml" --sv 1.5
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml" --sv 1.5
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml" --sv 1.5
           
           # Merge into servy-$env:VERSION-sbom.xml
           cyclonedx merge --input-files `
