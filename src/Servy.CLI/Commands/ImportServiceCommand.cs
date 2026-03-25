@@ -175,7 +175,7 @@ namespace Servy.CLI.Commands
             try
             {
                 // Attempt service installation
-                var installed = await serviceDomain.Install();
+                var installed = await serviceDomain.Install(isCLI: true);
                 if (installed)
                     return CommandResult.Ok($"{format} configuration saved and service installed successfully.");
                 else

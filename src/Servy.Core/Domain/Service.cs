@@ -417,6 +417,7 @@ namespace Servy.Core.Domain
         /// otherwise, <c>false</c>.
         /// </returns>
         /// <param name="wrapperExeDir">Wrapper exe parent directory.</param>
+        /// <param name="isCLI">Indicates if install is from the CLI.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if required properties such as <see cref="Name"/> or 
         /// <see cref="ExecutablePath"/> are null or empty.
@@ -425,12 +426,12 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service 
         /// cannot be created/updated.
         /// </exception>
-        public async Task<bool> Install(string? wrapperExeDir = null)
+        public async Task<bool> Install(string? wrapperExeDir = null, bool isCLI = false)
         {
 #if DEBUG
-            var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, AppConfig.ServyServiceUIExe);
+            var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe);
 #else
-            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, AppConfig.ServyServiceUIExe);
+            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe);
 #endif
 
             return await _serviceManager.InstallService(
