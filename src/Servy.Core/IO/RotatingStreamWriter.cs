@@ -215,26 +215,56 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
-        /// Generates a unique file path by appending a numeric suffix if the file already exists.
-        /// For example, if "log.txt" exists, it will try "log(1).txt", "log(2).txt", etc., until a free name is found.
+        /// Generates a unique file path by inserting a numeric suffix before the file extension if the file already exists.
+        /// <para>
+        /// Example (with extension): If "app.20260325.log" exists, it returns "app.20260325.(1).log".
+        /// </para>
+        /// <para>
+        /// Example (no extension): If "app.20260325" exists, it returns "app.20260325.(1)".
+        /// </para>
         /// </summary>
-        /// <param name="basePath">The initial file path to check.</param>
-        /// <returns>A unique file path that does not exist yet.</returns>
+        /// <param name="basePath">The initial file path (potentially containing a timestamp) to check for existence.</param>
+        /// <returns>A unique file path that does not currently exist on disk.</returns>
         private static string GenerateUniqueFileName(string basePath)
         {
             if (!File.Exists(basePath))
                 return basePath;
 
             string directory = Path.GetDirectoryName(basePath);
+            string fileName = Path.GetFileName(basePath);
 
-            string filenameWithoutExt = Path.GetFileNameWithoutExtension(basePath);
-            string extension = Path.GetExtension(basePath);
+            // Path.GetExtension gets everything from the LAST dot to the end
+            string extension = Path.GetExtension(fileName); // e.g., ".log" or ".20260325_001611"
+            string namePart;
+
+            // A "Solid" check: 
+            // If the extension is exactly the length of your timestamp (+1 for the dot)
+            // and consists of digits/underscores, it's NOT a real file extension.
+            // Timestamp: .yyyyMMdd_HHmmss (16 characters)
+            bool isTimestamp = extension.Length == 16 &&
+                               extension.StartsWith(".") &&
+                               extension.Substring(1).All(c => char.IsDigit(c) || c == '_');
+
+            if (string.IsNullOrEmpty(extension) || isTimestamp)
+            {
+                // Case: MyApplication_Output.20260325_001611
+                // Treat the whole thing as the name, so we append .(1) at the very end.
+                namePart = fileName;
+                extension = "";
+            }
+            else
+            {
+                // Case: MyApplication_Output.20260325_001611.log
+                // Treat .log as the extension, so .(1) goes before it.
+                namePart = Path.GetFileNameWithoutExtension(fileName);
+            }
 
             int count = 1;
             string newPath;
             do
             {
-                newPath = Path.Combine(directory, $"{filenameWithoutExt}.({count}){extension}");
+                // Result: namePart.(count).extension
+                newPath = Path.Combine(directory, $"{namePart}.({count}){extension}");
                 count++;
             }
             while (File.Exists(newPath));
@@ -260,7 +290,7 @@ namespace Servy.Core.IO
             string directory = _file.Directory.FullName;
             string baseName = Path.GetFileName(_file.FullName);
 
-            // Rotated files follow: logfile.log.20251208_104539 or logfile.log.(1).20251208_104539 or
+            // Rotated files follow: logfile.20251208_104539.log or logfile.20251208_104539.(1).log or
             // logfile.20251208_104539 or logfile.(1).20251208_104539
             var rotatedFiles = Directory.GetFiles(directory, $"{baseName}.*")
                 .Where(f => !f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
@@ -285,9 +315,13 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
-        /// Rotates the current log file by renaming it with a timestamp suffix.
-        /// If a file with the target name exists, a numeric suffix is appended to generate a unique filename.
-        /// After rotation, a new log file is created.
+        /// Rotates the current log file by inserting a local timestamp before the file extension.
+        /// <para>
+        /// Example: 'app.log' becomes 'app.20260325_001611.log'. 
+        /// If no extension is present, the timestamp is appended to the end.
+        /// </para>
+        /// If a file with the generated name already exists, a numeric suffix is added (e.g., '.(1)') to ensure uniqueness.
+        /// This method closes the current writer, renames the file, enforces retention policies, and initializes a new log file.
         /// </summary>
         private void Rotate()
         {
@@ -297,10 +331,19 @@ namespace Servy.Core.IO
                 _writer.Dispose();
             }
 
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            string rotatedPath = $"{_file.FullName}.{timestamp}";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            // Generate unique rotated filename if it already exists
+            // 1. Deconstruct the path
+            var directory = Path.GetDirectoryName(_file.FullName);
+            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
+            var extension = Path.GetExtension(_file.FullName); // Includes the dot, e.g., ".log"
+
+            // 2. Reconstruct with the timestamp inside
+            // If extension is empty, Path.Combine still works perfectly.
+            var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
+            var rotatedPath = Path.Combine(directory, newFileName);
+
+            // 3. Generate unique rotated filename if it already exists
             rotatedPath = GenerateUniqueFileName(rotatedPath);
 
             File.Move(_file.FullName, rotatedPath);

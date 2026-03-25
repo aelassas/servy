@@ -430,10 +430,11 @@ namespace Servy.Core.Domain
         /// </exception>
         public async Task<bool> Install(string wrapperExeDir = null, bool isCLI = false)
         {
+            var servyServiceFilename = isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe;
 #if DEBUG
-            var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe);
+            var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, servyServiceFilename);
 #else
-            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe);
+            var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, servyServiceFilename);
 #endif
 
             return await _serviceManager.InstallService(
