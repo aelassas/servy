@@ -553,7 +553,7 @@ jobs:
 
       - name: Check VT Status
         if: steps.vt_installer.outcome == 'failure'
-        run: echo "::warning ::VirusTotal scan for installer failed or timed out."
+        run: echo "::warning::VirusTotal scan for installer failed or timed out."
 
       - name: Cool down API
         run: Start-Sleep -s 15
