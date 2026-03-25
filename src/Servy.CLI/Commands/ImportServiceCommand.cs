@@ -86,7 +86,7 @@ namespace Servy.CLI.Commands
             if (string.IsNullOrWhiteSpace(input) || !Enum.TryParse(input, true, out fileType))
             {
                 fileType = default;
-                error = "Configuration output file type is required (xml or json).";
+                error = "Configuration input file type is required (xml or json).";
                 return false;
             }
 
