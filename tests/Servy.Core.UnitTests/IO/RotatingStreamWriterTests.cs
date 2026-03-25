@@ -295,9 +295,9 @@ namespace Servy.Core.UnitTests.IO
             File.WriteAllText(f3, "3");
 
             // Make timestamps predictable (f1 newest, f3 oldest)
-            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(0));
-            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow.AddMinutes(-1));
-            File.SetLastWriteTimeUtc(f3, DateTime.UtcNow.AddMinutes(-2));
+            File.SetLastWriteTimeUtc(f1, DateTime.Now.AddMinutes(0));
+            File.SetLastWriteTimeUtc(f2, DateTime.Now.AddMinutes(-1));
+            File.SetLastWriteTimeUtc(f3, DateTime.Now.AddMinutes(-2));
 
             // ---- BRANCH 2: rotatedFiles.Count <= _maxRotations -> return ----
             maxRotField.SetValue(writer, 3);
@@ -343,8 +343,8 @@ namespace Servy.Core.UnitTests.IO
             var rotated2 = Path.Combine(_testDir, "service.log.2");
             File.WriteAllText(rotated2, "old");
 
-            File.SetLastWriteTimeUtc(rotated1, DateTime.UtcNow.AddMinutes(0));
-            File.SetLastWriteTimeUtc(rotated2, DateTime.UtcNow.AddMinutes(-1));
+            File.SetLastWriteTimeUtc(rotated1, DateTime.Now.AddMinutes(0));
+            File.SetLastWriteTimeUtc(rotated2, DateTime.Now.AddMinutes(-1));
 
             var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1); // keep 1
 
@@ -369,8 +369,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Daily, 0))
             {
                 // Force last rotation to yesterday
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddDays(-1));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddDays(-1));
 
                 writer.WriteLine("rotate on daily boundary");
                 writer.Flush();
@@ -387,8 +387,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
                 // Set last rotation to 8 days ago to ensure previous ISO week
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddDays(-8));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddDays(-8));
 
                 writer.WriteLine("rotate on weekly boundary");
                 writer.Flush();
@@ -405,8 +405,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
                 // Set last rotation to previous month
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddMonths(-1));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddMonths(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -423,8 +423,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
                 // Set last rotation to previous month
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddYears(-1));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddYears(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -443,8 +443,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, true, 5, true, DateRotationType.Daily, 0))
             {
                 // Set last rotation to yesterday to make date eligible too
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddDays(-1));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddDays(-1));
 
                 // Write to exceed size threshold -> size rotation should happen and date rotation skipped for that write
                 writer.Write("123456"); // >5
@@ -471,8 +471,8 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, true, 1024, true, DateRotationType.Daily, 0))
             {
                 // make date eligible
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDateUtc", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField!.SetValue(writer, DateTime.UtcNow.AddDays(-1));
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField!.SetValue(writer, DateTime.Now.AddDays(-1));
 
                 // Do small write that won't exceed size -> should rotate by date
                 writer.WriteLine("date rotation hit");
