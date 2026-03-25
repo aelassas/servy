@@ -97,6 +97,54 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void ReturnsOriginalPath_WhenFileDoesNotExist()
+        {
+            var path = Path.Combine(_testDir, "fresh_file.log");
+            var result = InvokeGenerateUniqueFileName(path);
+            Assert.Equal(path, result);
+        }
+
+        [Theory]
+        [InlineData("App.20260325_001611.log", "App.20260325_001611.(1).log")] // Sandwich case
+        [InlineData("App.20260325_001611", "App.20260325_001611.(1)")]         // Suffix case
+        [InlineData("data.txt", "data.(1).txt")]                               // Standard file
+        [InlineData("archive.123", "archive.(1).123")]                         // Short numeric ext (not timestamp)
+        public void HandlesCollisions_BasedOnExtensionType(string fileName, string expectedName)
+        {
+            // Arrange
+            var basePath = Path.Combine(_testDir, fileName);
+            var expectedPath = Path.Combine(_testDir, expectedName);
+            File.WriteAllText(basePath, "dummy"); // Create the collision
+
+            // Act
+            var result = InvokeGenerateUniqueFileName(basePath);
+
+            // Assert
+            Assert.Equal(expectedPath, result);
+        }
+
+        [Fact]
+        public void IncrementsCounter_WhenMultipleCollisionsExist()
+        {
+            // Arrange
+            var fileName = "App.20260325_001611.log";
+            var basePath = Path.Combine(_testDir, fileName);
+
+            // Create: .log AND .(1).log
+            File.WriteAllText(basePath, "orig");
+            File.WriteAllText(Path.Combine(_testDir, "App.20260325_001611.(1).log"), "coll1");
+
+            var expectedPath = Path.Combine(_testDir, "App.20260325_001611.(2).log");
+
+            // Act
+            var result = InvokeGenerateUniqueFileName(basePath);
+
+            // Assert
+            Assert.Equal(expectedPath, result);
+        }
+
+
+        [Fact]
         public void Rotate_CreatesRotatedFileAndNewWriter()
         {
             var filePath = Path.Combine(_testDir, "rotate.txt");
@@ -111,12 +159,13 @@ namespace Servy.Core.UnitTests.IO
                 Assert.True(File.Exists(filePath));
 
                 // There is at least one rotated file
-                var rotatedFiles = Directory.GetFiles(_testDir, "rotate.txt.*");
+                var rotatedFiles = Directory.GetFiles(_testDir, "rotate.*.txt").Where(f => !f.EndsWith("rotate.txt")).ToList();
                 Assert.NotEmpty(rotatedFiles);
+                Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotatedFiles[0]);
             }
 
             // Find the latest rotated file by timestamp
-            var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.txt.*")
+            var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.*.txt")
                     .Select(f => new FileInfo(f))
                     .Where(f => !f.Name.Equals("rotate.txt"))
                     .OrderByDescending(f => f.LastWriteTimeUtc)
@@ -376,8 +425,9 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "daily.log.*").Where(f => !f.EndsWith("daily.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "daily.*.log").Where(f => !f.EndsWith("daily.log")).ToArray();
             Assert.NotEmpty(rotated);
+            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -394,8 +444,9 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "weekly.log.*").Where(f => !f.EndsWith("weekly.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "weekly.*.log").Where(f => !f.EndsWith("weekly.log")).ToArray();
             Assert.NotEmpty(rotated);
+            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -412,8 +463,9 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "monthly.log.*").Where(f => !f.EndsWith("monthly.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
+            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -430,8 +482,9 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "monthly.log.*").Where(f => !f.EndsWith("monthly.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
+            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -451,12 +504,12 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "sizeDate.log.*").Where(f => !f.EndsWith("sizeDate.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "sizeDate.*.log").Where(f => !f.EndsWith("sizeDate.log")).ToArray();
             Assert.NotEmpty(rotated);
 
             // Read rotated content to ensure size-based content exists
             var latest = new DirectoryInfo(_testDir)
-                .GetFiles("sizeDate.log.*")
+                .GetFiles("sizeDate.*.log")
                 .Where(fi => !fi.Name.Equals("sizeDate.log"))
                 .OrderByDescending(fi => fi.LastWriteTimeUtc)
                 .First();
@@ -479,7 +532,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "dateOnlyWhenSizeNotExceeded.log.*").Where(f => !f.EndsWith("dateOnlyWhenSizeNotExceeded.log")).ToArray();
+            var rotated = Directory.GetFiles(_testDir, "dateOnlyWhenSizeNotExceeded.*.log").Where(f => !f.EndsWith("dateOnlyWhenSizeNotExceeded.log")).ToArray();
             Assert.NotEmpty(rotated);
         }
 
@@ -511,7 +564,6 @@ namespace Servy.Core.UnitTests.IO
                 Assert.False(result);
             }
         }
-
 
         public void Dispose()
         {
