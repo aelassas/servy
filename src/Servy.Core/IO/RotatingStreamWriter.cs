@@ -20,7 +20,7 @@ namespace Servy.Core.IO
         private readonly long _rotationSize;
         private readonly bool _enableDateRotation;
         private readonly DateRotationType _dateRotationType;
-        private DateTime _lastRotationDateUtc;
+        private DateTime _lastRotationDate;
         private readonly int _maxRotations; // 0 = unlimited
         private readonly object _lock = new object();
 
@@ -68,7 +68,7 @@ namespace Servy.Core.IO
             _rotationSize = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
-            _lastRotationDateUtc = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.UtcNow; // baseline for date rotation
+            _lastRotationDate = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.UtcNow; // baseline for date rotation
             _maxRotations = maxRotations;
             _writer = CreateWriter();
         }
@@ -121,12 +121,12 @@ namespace Servy.Core.IO
         /// based on the configured <see cref="DateRotationType"/>.
         /// </summary>
         /// <returns>
-        /// <c>true</c> if the current UTC date has crossed the rotation boundary
+        /// <c>true</c> if the current local date has crossed the rotation boundary
         /// (day, week, or month) since the last rotation; otherwise <c>false</c>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Daily rotation triggers when the calendar date changes (UTC).
+        /// Daily rotation triggers when the calendar date changes (local).
         /// </para>
         /// <para>
         /// Weekly rotation uses ISO week numbering (Monday as first day of week).
@@ -137,22 +137,22 @@ namespace Servy.Core.IO
         /// </remarks>
         private bool ShouldRotateByDate()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             switch (_dateRotationType)
             {
                 case DateRotationType.Daily:
-                    return now.Date > _lastRotationDateUtc.Date;
+                    return now.Date > _lastRotationDate.Date;
 
                 case DateRotationType.Weekly:
                     var lastWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
-                        _lastRotationDateUtc, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+                        _lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
                     return thisWeek != lastWeek;
 
                 case DateRotationType.Monthly:
-                    return now.Month != _lastRotationDateUtc.Month || now.Year != _lastRotationDateUtc.Year;
+                    return now.Month != _lastRotationDate.Month || now.Year != _lastRotationDate.Year;
 
                 default:
                     return false;
@@ -197,7 +197,7 @@ namespace Servy.Core.IO
             if (rotateBySize)
             {
                 Rotate();
-                _lastRotationDateUtc = DateTime.UtcNow;
+                _lastRotationDate = DateTime.UtcNow;
                 return;
             }
 
@@ -210,7 +210,7 @@ namespace Servy.Core.IO
             if (rotateByDate)
             {
                 Rotate();
-                _lastRotationDateUtc = DateTime.UtcNow;
+                _lastRotationDate = DateTime.UtcNow;
             }
         }
 
