@@ -85,7 +85,7 @@ jobs:
       - name: Install CycloneDX CLI
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.29.2/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.30.0/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Install Inno Setup
@@ -142,11 +142,11 @@ jobs:
         shell: pwsh
         run: |
           $version = "$env:VERSION.0"
-          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml" --sv 1.5
-          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml" --sv 1.5
-          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml" --sv 1.5
-          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml" --sv 1.5
-          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml" --sv 1.5
+          dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml"
+          dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml"
+          dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml"
+          dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml"
+          dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml"
           
           # Merge into servy-$env:VERSION-sbom.xml
           cyclonedx merge --input-files `
