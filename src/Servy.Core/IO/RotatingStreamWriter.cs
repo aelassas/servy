@@ -65,7 +65,7 @@ namespace Servy.Core.IO
             _rotationSize = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
-            _lastRotationDate = File.Exists(path) ? File.GetLastWriteTimeUtc(path) : DateTime.UtcNow; // baseline for date rotation
+            _lastRotationDate = File.Exists(path) ? File.GetLastWriteTime(path) : DateTime.Now; // baseline for date rotation
             _maxRotations = maxRotations;
             _writer = CreateWriter();
         }
@@ -194,7 +194,7 @@ namespace Servy.Core.IO
             if (rotateBySize)
             {
                 Rotate();
-                _lastRotationDate = DateTime.UtcNow;
+                _lastRotationDate = DateTime.Now;
                 return;
             }
 
@@ -207,7 +207,7 @@ namespace Servy.Core.IO
             if (rotateByDate)
             {
                 Rotate();
-                _lastRotationDate = DateTime.UtcNow;
+                _lastRotationDate = DateTime.Now;
             }
         }
 
@@ -311,7 +311,7 @@ namespace Servy.Core.IO
 
                     return string.IsNullOrEmpty(extension) || name.EndsWith(extension, StringComparison.OrdinalIgnoreCase);
                 })
-                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .OrderByDescending(File.GetLastWriteTime)
                 .ToList();
 
             if (rotatedFiles.Count <= _maxRotations)
