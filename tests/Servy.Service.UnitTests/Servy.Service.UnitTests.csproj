@@ -17,9 +17,9 @@
     <AssemblyDescription>Servy.Service unit tests</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy.Service.UnitTests</Product>
-    <Version>7.2.0</Version>
-    <FileVersion>7.2.0.0</FileVersion>
-    <AssemblyVersion>7.2.0.0</AssemblyVersion>
+    <Version>7.3.0</Version>
+    <FileVersion>7.3.0.0</FileVersion>
+    <AssemblyVersion>7.3.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
