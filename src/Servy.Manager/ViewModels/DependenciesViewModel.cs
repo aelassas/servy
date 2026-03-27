@@ -409,6 +409,7 @@ namespace Servy.Manager.ViewModels
 
                 if (root != null)
                 {
+                    root.IsExpanded = true;
                     DependencyTree.Add(root); // Wrap the single root in the collection
                 }
             }
