@@ -391,7 +391,6 @@
 
                         <TreeView.ItemContainerStyle>
                             <Style TargetType="TreeViewItem" BasedOn="{StaticResource BaseTreeViewItemStyle}">
-                                <Setter Property="IsExpanded" Value="True" />
                                 <Setter Property="ItemContainerStyle" Value="{StaticResource BaseTreeViewItemStyle}" />
                             </Style>
                         </TreeView.ItemContainerStyle>
