@@ -75,6 +75,30 @@ scoop update innounp
 scoop install servy
 ```
 
+## Quick Example
+
+You can manage services using the desktop app (GUI), the CLI (`servy-cli`), or PowerShell.
+
+Here's a minimal example using the CLI to turn a Node.js app into a Windows service:
+
+```powershell
+servy-cli install `
+--name="MyService" `
+--path="C:\Program Files\nodejs\node.exe" `
+--startupDir="C:\MyServer" `
+--params="C:\MyServer\server.js"    
+```
+
+This creates a service named `MyService` that runs your Node.js server in the background and starts automatically with Windows.
+
+Then start the service:
+
+```powershell
+servy-cli start --name="MyService"    
+```
+
+Explore more [examples and recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes) for Python, Java, Go, and other popular frameworks.
+
 ## Quick Links
 * [Download](https://github.com/aelassas/servy/releases/latest)
 * [Installation Guide](https://github.com/aelassas/servy/wiki/Installation-Guide)
