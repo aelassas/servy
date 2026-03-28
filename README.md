@@ -77,7 +77,7 @@ scoop install servy
 
 ## Quick Example
 
-You can manage services using the desktop app (GUI), the CLI (`servy-cli`), or PowerShell.
+You can manage services using the [desktop app (GUI)](https://github.com/aelassas/servy/wiki/Servy-Desktop-App), the [CLI](https://github.com/aelassas/servy/wiki/Servy-CLI), or [PowerShell](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module).
 
 Here's a minimal example using the CLI to turn a Node.js app into a Windows service:
 
