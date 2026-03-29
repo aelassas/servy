@@ -434,3 +434,5 @@ coveragereport/
 # signpath
 .signpath
 .signpath*
+
+repomix-output.xml
