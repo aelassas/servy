@@ -1,6 +1,4 @@
 ﻿using Servy.Core.DTOs;
-using System;
-using Xunit;
 
 namespace Servy.Core.UnitTests.DTOs
 {
