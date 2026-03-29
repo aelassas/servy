@@ -815,21 +815,32 @@ namespace Servy.Core.UnitTests.IO
         public void Rotate_WhenDisposed_BranchSkipped_WriterNotNull()
         {
             var filePath = Path.Combine(_testDir, "dead_not_null.txt");
-            var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0);
-            writer.Write("test");
 
-            // Force the "Zombie" state: Disposed but writer still exists
-            SetPrivateField(writer, "_disposed", true);
+            using (var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("test");
+                var originalWriter = GetPrivateWriter(writer);
 
-            // Inside finally: 
-            // (_writer == null) is FALSE
-            // (_disposed == false) is FALSE
-            // Condition (false || false) == FALSE. Branch is SKIPPED.
-            InvokeRotate(writer);
+                // 1. Ghost the file path so 'File.Exists' returns false
+                var fileField = typeof(RotatingStreamWriter).GetField("_file", BindingFlags.NonPublic | BindingFlags.Instance);
+                var originalFileInfo = (FileInfo)fileField!.GetValue(writer)!;
+                fileField.SetValue(writer, new FileInfo(Path.Combine(_testDir, "does_not_exist.txt")));
 
-            // Cleanup so the test doesn't leak
-            SetPrivateField(writer, "_disposed", false);
-            writer.Dispose();
+                // 2. Force the "Zombie" state
+                SetPrivateField(writer, "_disposed", true);
+
+                // 3. Act: Trigger Rotate
+                // Logic: Hits the File.Exists guard -> returns early to finally block.
+                InvokeRotate(writer);
+
+                // 4. Assert
+                var currentWriter = GetPrivateWriter(writer);
+                Assert.Same(originalWriter, currentWriter);
+
+                // 5. Restore state for proper 'using' cleanup
+                SetPrivateField(writer, "_disposed", false);
+                fileField.SetValue(writer, originalFileInfo);
+            }
         }
 
         private void InvokeRotate(RotatingStreamWriter instance)
@@ -859,36 +870,38 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "ghost_branch.txt");
 
-            // 1. Initialize and write to ensure _writer is NOT null
             using (var writer = new RotatingStreamWriter(filePath, true, 500, false, DateRotationType.Daily, 0))
             {
                 writer.Write("initial_data");
 
-                // 2. "Ghost" the file path using Reflection.
-                // We temporarily point the internal FileInfo to a path that doesn't exist.
-                var fileField = typeof(RotatingStreamWriter).GetField("_file",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                var originalFileInfo = (FileInfo)fileField!.GetValue(writer)!;
-                fileField.SetValue(writer, new FileInfo(Path.Combine(_testDir, "non_existent.txt")));
+                // Capture the "Live" writer to ensure it isn't replaced
+                var originalWriter = GetPrivateWriter(writer);
 
-                // 3. Force 'disposed' state to true
-                var disposedField = typeof(RotatingStreamWriter).GetField("_disposed",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
+                // 1. "Ghost" the file path using Reflection.
+                var fileField = typeof(RotatingStreamWriter).GetField("_file", BindingFlags.NonPublic | BindingFlags.Instance);
+                var originalFileInfo = (FileInfo)fileField!.GetValue(writer)!;
+                var ghostFileInfo = new FileInfo(Path.Combine(_testDir, "non_existent.txt"));
+                fileField.SetValue(writer, ghostFileInfo);
+
+                // 2. Force 'disposed' state to true
+                var disposedField = typeof(RotatingStreamWriter).GetField("_disposed", BindingFlags.NonPublic | BindingFlags.Instance);
                 disposedField!.SetValue(writer, true);
 
-                // 4. Invoke Rotate()
-                var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // LOGIC FLOW:
-                // - hits if (!File.Exists(_file.FullName)) return; -> RETURNS EARLY
-                // - jumps to finally block
-                // - (_writer == null) is FALSE
-                // - (_disposed == false) is FALSE
-                // - Result: False Path covered!
+                // 3. Act: Invoke Rotate()
+                var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
                 rotateMethod!.Invoke(writer, null);
 
-                // 5. Restore state so Dispose() can clean up correctly
+                // 4. Assert: Verify the 'False' path logic
+                var currentWriter = GetPrivateWriter(writer);
+
+                // Assert that the writer was NOT recreated (Proves the IF branch was skipped)
+                Assert.Same(originalWriter, currentWriter);
+
+                // Assert that the file reference is still the ghost (Proves we exited early before the Move logic)
+                var currentFile = (FileInfo)fileField.GetValue(writer)!;
+                Assert.Equal(ghostFileInfo.FullName, currentFile.FullName);
+
+                // 5. Cleanup
                 disposedField.SetValue(writer, false);
                 fileField.SetValue(writer, originalFileInfo);
             }

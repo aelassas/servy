@@ -5,7 +5,7 @@ namespace Servy.Core.DTOs
     /// <summary>
     /// Data Transfer Object for persisting a Windows service configuration in SQLite.
     /// </summary>
-    public class ServiceDto: ICloneable
+    public class ServiceDto : ICloneable
     {
 
         #region Properties
@@ -100,7 +100,7 @@ namespace Servy.Core.DTOs
         /// Maximum number of rotated log files to keep. 
         /// Set to 0 for unlimited.
         /// </summary>
-        public int? MaxRotations{ get; set; }
+        public int? MaxRotations { get; set; }
 
         /// <summary>
         /// Whether health monitoring is enabled.
@@ -316,7 +316,7 @@ namespace Servy.Core.DTOs
         /// </remarks>
         public object Clone()
         {
-            return new ServiceDto
+            var dto = new ServiceDto
             {
                 Id = Id,
                 Pid = Pid,
@@ -375,6 +375,8 @@ namespace Servy.Core.DTOs
                 PostStopStartupDirectory = PostStopStartupDirectory,
                 PostStopParameters = PostStopParameters,
             };
+
+            return dto;
         }
 
         #endregion
@@ -436,6 +438,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostStopParameters() => !string.IsNullOrWhiteSpace(PostStopParameters);
 
         #endregion
-    
+
     }
 }
