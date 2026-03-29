@@ -630,7 +630,7 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error($"Error installing service '{serviceName}'.", ex);
-                return false;
+                throw;
             }
             finally
             {
