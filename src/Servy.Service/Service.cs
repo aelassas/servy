@@ -2276,19 +2276,29 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Releases all resources used by the current instance and performs necessary cleanup operations.
+        /// Releases the unmanaged resources used by the <see cref="Service"/> and optionally releases the managed resources.
         /// </summary>
-        /// <remarks>Call this method when the instance is no longer needed to free unmanaged resources
-        /// and perform any required teardown logic. After calling this method, the instance should not be
-        /// used.</remarks>
-        public new void Dispose()
+        /// <param name="disposing">
+        /// <c>true</c> to release both managed and unmanaged resources; 
+        /// <c>false</c> to release only unmanaged resources.
+        /// </param>
+        /// <remarks>
+        /// This method follows the standard .NET Dispose pattern. It ensures that 
+        /// <see cref="ExecuteTeardown(TeardownReason)"/> is called to gracefully 
+        /// stop background processes and cleanup orchestration state before the 
+        /// object is destroyed.
+        /// </remarks>
+        protected override void Dispose(bool disposing)
         {
-            // Reuse the existing orchestration logic
-            ExecuteTeardown(TeardownReason.Dispose);
+            if (disposing)
+            {
+                // 1. Reuse existing orchestration logic to stop the service
+                // This is called while managed resources are still valid.
+                ExecuteTeardown(TeardownReason.Dispose);
+            }
 
-            // Standard IDisposable requirement
-            base.Dispose(true);
-            GC.SuppressFinalize(this);
+            // 2. Call the base class implementation to complete the chain
+            base.Dispose(disposing);
         }
 
     }
