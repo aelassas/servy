@@ -2318,9 +2318,15 @@ namespace Servy.Service
                 // 1. Reuse existing orchestration logic to stop the service
                 // This is called while managed resources are still valid.
                 ExecuteTeardown(TeardownReason.Dispose);
+
+                // 2. Existing designer cleanup for components (timers, etc.)
+                if (components != null)
+                {
+                    components.Dispose();
+                }
             }
 
-            // 2. Call the base class implementation to complete the chain
+            // 3. Call the base class implementation to complete the chain
             base.Dispose(disposing);
         }
 
