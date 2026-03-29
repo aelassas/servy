@@ -17,7 +17,6 @@ namespace Servy.Core.Logging
     {
         private static readonly object _lock = new object();
         private static RotatingStreamWriter _writer;
-        private static string _logFileName = "Servy.log";
 
         /// <summary>
         /// The maximum size a log file can reach before rotation is triggered.
@@ -40,8 +39,6 @@ namespace Servy.Core.Logging
         {
             lock (_lock)
             {
-                _logFileName = fileName;
-
                 try
                 {
                     if (!Directory.Exists(AppConfig.ProgramDataPath))
@@ -49,7 +46,7 @@ namespace Servy.Core.Logging
                         Directory.CreateDirectory(AppConfig.ProgramDataPath);
                     }
 
-                    string logPath = Path.Combine(AppConfig.ProgramDataPath, _logFileName);
+                    string logPath = Path.Combine(AppConfig.ProgramDataPath, fileName);
 
                     // Clean up existing writer if Initialize is called multiple times
                     _writer?.Dispose();

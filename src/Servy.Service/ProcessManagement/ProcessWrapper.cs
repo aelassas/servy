@@ -318,7 +318,6 @@ namespace Servy.Service.ProcessManagement
             }
 
             _logger?.Info($"Process '{process.Format()}' terminated.");
-            return;
         }
 
         /// <summary>
