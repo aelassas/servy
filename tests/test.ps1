@@ -64,7 +64,7 @@ foreach ($Proj in $TestProjects) {
     # Build the test project in Debug mode
     Write-Host "Building $($Proj)..."
     $Platform = "x64"
-    & $MsbuildPath $Proj /p:Configuration=Debug /verbosity:minimal /p:Platform=$Platform
+    & $MsbuildPath $Proj /p:Configuration=Debug /p:Platform=$Platform /p:DebugType=portable /p:DebugSymbols=true /verbosity:minimal
 
     # Get project name without extension
     $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
@@ -84,13 +84,15 @@ foreach ($Proj in $TestProjects) {
             --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
             --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
             --format "cobertura" `
+            --include-directory "$ProjDir" `
             --exclude "[Servy.Core]*"
     } else {
         coverlet "$DllPath" `
             --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
             --targetargs "`"$DllPath`" --ResultsDirectory:`"$TestResultsDir`"" `
             --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
-            --format "cobertura"
+            --format "cobertura" `
+            --include-directory "$ProjDir"
     }
 
 }

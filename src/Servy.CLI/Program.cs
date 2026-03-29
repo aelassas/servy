@@ -5,6 +5,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -198,6 +199,10 @@ namespace Servy.CLI
             {
                 Console.WriteLine($"An unexpected error occurred: {e.Message}");
                 return 1;
+            }
+            finally
+            {
+                Logger.Shutdown();
             }
         }
 

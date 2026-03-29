@@ -57,14 +57,6 @@ namespace Servy.Service
             /// and typically has a very short timeout window.
             /// </summary>
             Shutdown,
-
-            /// <summary>
-            /// Releases all resources used by the current instance of the service.
-            /// </summary>
-            /// <remarks>Call this method when you are finished using the service to free unmanaged
-            /// resources and perform other cleanup operations. After calling this method, the object should not be used
-            /// further.</remarks>
-            Dispose,
         }
 
         #endregion
@@ -1347,7 +1339,10 @@ namespace Servy.Service
                 _logger?.Info($"Running failure program: {psi.FileName}");
 
                 // Fire-and-forget: start the process without disposing immediately
-                Process.Start(psi);
+                using (var process = Process.Start(psi))
+                {
+                    // The OS process continues running, but the managed handle is freed.
+                }
             }
             catch (Exception ex)
             {
@@ -2057,6 +2052,8 @@ namespace Servy.Service
                 {
                     _logger?.Warning($"Failed to dispose output writers: {ex.Message}");
                 }
+
+                Logger.Shutdown();
             }
             catch (Exception ex)
             {
@@ -2290,7 +2287,10 @@ namespace Servy.Service
                 _logger?.Info($"Running post-stop program: {psi.FileName}");
 
                 // Fire-and-forget: start the process without waiting
-                Process.Start(psi);
+                using (var process = Process.Start(psi))
+                {
+                    // The OS process continues running, but the managed handle is freed.
+                }
             }
             catch (Exception ex)
             {
@@ -2317,7 +2317,7 @@ namespace Servy.Service
             {
                 // 1. Reuse existing orchestration logic to stop the service
                 // This is called while managed resources are still valid.
-                ExecuteTeardown(TeardownReason.Dispose);
+                ExecuteTeardown(TeardownReason.Stop);
 
                 // 2. Existing designer cleanup for components (timers, etc.)
                 if (components != null)
