@@ -771,7 +771,7 @@ namespace Servy.Core.Services
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to start service '{serviceName}'.", ex);
+                Logger.Error($"Failed to stop service '{serviceName}'.", ex);
                 return false;
             }
         }
