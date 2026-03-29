@@ -90,7 +90,7 @@
     <Compile Include="Commands\ExportServiceCommand.cs" />
     <Compile Include="Commands\ImportServiceCommand.cs" />
     <Compile Include="Commands\InstallServiceCommand.cs" />
-    <Compile Include="Commands\RestartServiceCommand .cs" />
+    <Compile Include="Commands\RestartServiceCommand.cs" />
     <Compile Include="Commands\ServiceStatusCommand.cs" />
     <Compile Include="Commands\StartServiceCommand.cs" />
     <Compile Include="Commands\StopServiceCommand.cs" />

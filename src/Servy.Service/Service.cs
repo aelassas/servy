@@ -31,7 +31,7 @@ using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service
 {
-    public partial class Service : ServiceBase
+    public partial class Service : ServiceBase, IDisposable
     {
 
         #region Enums
@@ -57,6 +57,14 @@ namespace Servy.Service
             /// and typically has a very short timeout window.
             /// </summary>
             Shutdown,
+
+            /// <summary>
+            /// Releases all resources used by the current instance of the service.
+            /// </summary>
+            /// <remarks>Call this method when you are finished using the service to free unmanaged
+            /// resources and perform other cleanup operations. After calling this method, the object should not be used
+            /// further.</remarks>
+            Dispose,
         }
 
         #endregion
@@ -281,39 +289,50 @@ namespace Servy.Service
             IProcessFactory processFactory,
             IPathValidator pathValidator)
         {
-            ServiceName = AppConfig.ServiceNameEventSource;
+            Logger.Initialize("Servy.Service.log");
 
-            _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
-            _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
-            _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
-            _pathValidator = pathValidator;
-            _options = null;
+            try
+            {
+                ServiceName = AppConfig.ServiceNameEventSource;
 
-            // Load configuration
-            var config = ConfigurationManager.AppSettings;
+                _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
+                _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+                _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
+                _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
+                _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
+                _pathValidator = pathValidator;
+                _options = null;
 
-            var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+                // Load configuration
+                var config = ConfigurationManager.AppSettings;
 
-            // Initialize database and helpers
-            var dbContext = new AppDbContext(connectionString);
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-            var dapperExecutor = new DapperExecutor(dbContext);
-            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-            var secureData = new SecureData(protectedKeyProvider);
-            var xmlSerializer = new XmlServiceSerializer();
+                // Initialize database and helpers
+                var dbContext = new AppDbContext(connectionString);
+                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
 
-            _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                var secureData = new SecureData(protectedKeyProvider);
+                var xmlSerializer = new XmlServiceSerializer();
 
-            // Enable Shutdown Notifications
-            CanShutdown = true;
+                _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
-            // Tell Windows we accept PreShutdown
-            InitializePreShutdownHook();
+                // Enable Shutdown Notifications
+                CanShutdown = true;
+
+                // Tell Windows we accept PreShutdown
+                InitializePreShutdownHook();
+            }
+            catch (Exception ex)
+            {
+                // Without Logger.Initialize in the constructor, this would be lost.
+                Logger.Error("Fatal error during service construction.", ex);
+                throw; // Re-throw to let SCM know the service cannot start
+            }
         }
 
         /// <summary>
@@ -331,6 +350,7 @@ namespace Servy.Service
             try
             {
                 // Modern .NET uses "_acceptedCommands", Legacy uses "acceptedCommands"
+                // Minimum tested .NET version: .NET Framework 4.8
                 string[] fieldNames = { "_acceptedCommands", "acceptedCommands" };
                 FieldInfo acceptedField = null;
 
@@ -377,7 +397,7 @@ namespace Servy.Service
                 _ = NativeMethods.SetConsoleCtrlHandler(null, true);
 
                 // Load and validate service startup options
-                var options = _serviceHelper.InitializeStartup(_logger);
+                var options = _serviceHelper.InitializeStartup(_serviceRepository, _logger);
                 if (options == null)
                 {
                     // Set a non-zero exit code so Windows knows it failed
@@ -390,6 +410,7 @@ namespace Servy.Service
                 try
                 {
                     // List of possible field names across different .NET versions
+                    // Minimum tested .NET version: .NET Framework 4.8
                     string[] possibleFieldNames = new[]
                     {
                         "serviceStatusHandle",  // .NET Framework
@@ -741,22 +762,13 @@ namespace Servy.Service
 
             var effectiveTimeout = Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds) * 1000;
 
-            var fireAndForget = effectiveTimeout == 0;
+            var fireAndForget = options.PreLaunchTimeout == 0;
 
             if (fireAndForget)
             {
                 try
                 {
-                    var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
-
-                    foreach (var kvp in expandedEnv)
-                    {
-                        LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
-                    }
-
-                    var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
-
-                    LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
+                    var (expandedEnv, args) = PreparePreLaunchEnv(options);
 
                     var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
                                     ? options.WorkingDirectory
@@ -810,16 +822,7 @@ namespace Servy.Service
 
                     try
                     {
-                        var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
-
-                        foreach (var kvp in expandedEnv)
-                        {
-                            LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
-                        }
-
-                        var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
-
-                        LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
+                        var (expandedEnv, args) = PreparePreLaunchEnv(options);
 
                         var psi = new ProcessStartInfo
                         {
@@ -931,6 +934,30 @@ namespace Servy.Service
             }
 
             return false; // stop service start
+        }
+
+        /// <summary>
+        /// Prepares and expands environment variables and command-line arguments for the pre-launch process.
+        /// </summary>
+        private (Dictionary<string, string> env, string args) PreparePreLaunchEnv(StartOptions options)
+        {
+            // 1. Expand environment variables list
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
+
+            // 2. Audit expanded variables for leftover placeholders
+            foreach (var kvp in expandedEnv)
+            {
+                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Launch] Environment Variable '{kvp.Key}'");
+            }
+
+            // 3. Expand command-line arguments using the expanded environment
+            var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreLaunchExecutableArgs ?? string.Empty, expandedEnv);
+
+            // 4. Audit arguments for leftover placeholders
+            LogUnexpandedPlaceholders(args, "[Pre-Launch] Arguments");
+
+            return (expandedEnv, args);
         }
 
         /// <summary>
@@ -1150,7 +1177,7 @@ namespace Servy.Service
             {
                 try
                 {
-                    if (await _childProcess.WaitUntilHealthyAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
+                    if (await _childProcess.WaitUntilRunningAsync(TimeSpan.FromSeconds(_options.StartTimeout), cts.Token))
                     {
                         StartPostLaunchProcess();
                     }
@@ -1901,9 +1928,12 @@ namespace Servy.Service
         /// <param name="reason">The context of the teardown (e.g., "Stop" or "Shutdown") used for logging purposes.</param>
         private bool ExecuteTeardown(TeardownReason reason)
         {
+            // Use a local flag to track if we actually performed the work
+            bool performedCleanup = false;
+
             lock (_teardownLock)
             {
-                if (_disposed) return true;
+                if (_disposed || _isTearingDown) return true;
 
                 _isTearingDown = true;
 
@@ -1926,12 +1956,11 @@ namespace Servy.Service
 
                     Cleanup();
 
-                    return true;
+                    performedCleanup = true;
                 }
                 catch (Exception ex)
                 {
                     _logger?.Error($"Teardown error during {reason}: {ex.Message}", ex);
-                    return false;
                 }
                 finally
                 {
@@ -1940,6 +1969,8 @@ namespace Servy.Service
                     _cancellationSource = null;
                 }
             }
+
+            return performedCleanup;
         }
 
         /// <summary>
@@ -2001,7 +2032,7 @@ namespace Servy.Service
                         catch (Exception ex)
                         {
                             // Log locally for debug, but don't let it stop the loop
-                            Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                            Logger.Error("Cleanup failed.", ex);
                         }
                         finally
                         {
@@ -2265,6 +2296,22 @@ namespace Servy.Service
             {
                 _logger?.Error($"Failed to run post-stop program: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Releases all resources used by the current instance and performs necessary cleanup operations.
+        /// </summary>
+        /// <remarks>Call this method when the instance is no longer needed to free unmanaged resources
+        /// and perform any required teardown logic. After calling this method, the instance should not be
+        /// used.</remarks>
+        public new void Dispose()
+        {
+            // Reuse the existing orchestration logic
+            ExecuteTeardown(TeardownReason.Dispose);
+
+            // Standard IDisposable requirement
+            base.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
     }

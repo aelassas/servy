@@ -1,7 +1,7 @@
 ﻿using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
-using Servy.Helpers;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using Servy.Services;
@@ -128,7 +128,7 @@ namespace Servy.Views
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error killing child processes: {ex}");
+                Logger.Error("Error killing child processes.", ex);
             }
 
             base.OnClosed(e);

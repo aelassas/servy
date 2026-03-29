@@ -94,7 +94,7 @@ namespace Servy.Service.UnitTests
                 MaxRestartAttempts = 2
             };
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object))
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object))
                 .Returns(options);
 
             _mockServiceHelper.Setup(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object));
@@ -131,7 +131,7 @@ namespace Servy.Service.UnitTests
                 MaxRestartAttempts = 1
             };
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns(options);
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Returns(options);
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
 
             // Act
@@ -150,7 +150,7 @@ namespace Servy.Service.UnitTests
             bool stopped = false;
             _service.OnStoppedForTest += () => stopped = true;
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Returns((StartOptions)null);
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Returns((StartOptions)null);
 
             _service.StartForTest(new string[] { });
 
@@ -163,7 +163,7 @@ namespace Servy.Service.UnitTests
             bool stopped = false;
             _service.OnStoppedForTest += () => stopped = true;
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockLogger.Object)).Throws(new Exception("Boom"));
+            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Throws(new Exception("Boom"));
 
             _service.StartForTest(new string[] { });
 

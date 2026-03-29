@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using Servy.Core.Data;
 
 namespace Servy.Service.Helpers
 {
@@ -218,11 +219,11 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public StartOptions InitializeStartup(ILogger logger)
+        public StartOptions InitializeStartup(IServiceRepository serviceRepository, ILogger logger)
         {
             //var fullArgs = GetSanitizedArgs();
             var fullArgs = _commandLineProvider.GetArgs();
-            var options = StartOptionsParser.Parse(fullArgs);
+            var options = StartOptionsParser.Parse(serviceRepository, fullArgs);
 
             LogStartupArguments(logger, fullArgs, options);
 

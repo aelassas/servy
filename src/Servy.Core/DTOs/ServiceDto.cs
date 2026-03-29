@@ -1,11 +1,12 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace Servy.Core.DTOs
 {
     /// <summary>
     /// Data Transfer Object for persisting a Windows service configuration in SQLite.
     /// </summary>
-    public class ServiceDto
+    public class ServiceDto : ICloneable
     {
         /// <summary>
         /// Primary key of the service record.
@@ -297,6 +298,20 @@ namespace Servy.Core.DTOs
         /// Optional parameters for the post-stop executable.
         /// </summary>
         public string PostStopParameters { get; set; }
+
+
+        /// <summary>
+        /// Creates a shallow copy of the current <see cref="ServiceDto"/>.
+        /// </summary>
+        /// <returns>A new <see cref="ServiceDto"/> object with the same property values.</returns>
+        /// <remarks>
+        /// Since all properties are value types or strings, a shallow copy is sufficient 
+        /// to prevent side-effects when encrypting fields for database persistence.
+        /// </remarks>
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
 
         #region ShouldSerialize Methods
 

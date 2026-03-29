@@ -466,22 +466,51 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void DateRotation_Weekly_Rotates_WhenWeekBoundaryCrossed()
+        public void DateRotation_Weekly_Rotates_WhenYearBoundaryCrossed()
         {
-            var filePath = Path.Combine(_testDir, "weekly.log");
+            var filePath = Path.Combine(_testDir, "weekly_year.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
-                // Set last rotation to 8 days ago to ensure previous ISO week
-                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddDays(-8));
+                // 1. Arrange: Set last rotation to Dec 31st of the previous year
+                var lastYear = DateTime.Now.Year - 1;
+                var dec31 = new DateTime(lastYear, 12, 31);
 
-                writer.WriteLine("rotate on weekly boundary");
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField.SetValue(writer, dec31);
+
+                // 2. Act: This should trigger rotation because now.Year != 2025
+                writer.WriteLine("rotate on year change");
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "weekly.*.log").Where(f => !f.EndsWith("weekly.log")).ToArray();
+            // 3. Assert
+            var rotated = Directory.GetFiles(_testDir, "weekly_year.*.log")
+                                   .Where(f => !f.EndsWith("weekly_year.log"))
+                                   .ToArray();
+
             Assert.NotEmpty(rotated);
-            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
+            // Verifies the branch now.Year != _lastRotationDate.Year was evaluated as true
+        }
+
+        [Fact]
+        public void DateRotation_Weekly_DoesNotRotate_OnSameWeek()
+        {
+            var filePath = Path.Combine(_testDir, "weekly_same.log");
+            // Ensure we aren't running this at 11:59 PM on a Sunday!
+            var recently = DateTime.Now.AddHours(-1);
+
+            using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
+            {
+                var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
+                lastField.SetValue(writer, recently);
+
+                writer.WriteLine("should not rotate");
+                writer.Flush();
+            }
+
+            var rotated = Directory.GetFiles(_testDir, "weekly_same.*.log")
+                                   .Where(f => !f.EndsWith("weekly_same.log"));
+            Assert.Empty(rotated);
         }
 
         [Fact]

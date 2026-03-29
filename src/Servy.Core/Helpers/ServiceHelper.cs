@@ -3,7 +3,6 @@ using Servy.Core.Data;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Management;
 using System.ServiceProcess;
 using System.Threading.Tasks;

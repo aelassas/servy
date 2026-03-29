@@ -55,7 +55,23 @@ namespace Servy.Infrastructure.Data
 
             connection.Execute(createTableSql);
 
-            var createIndexSql = "CREATE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
+            // 1. Get the list of indices for the Services table
+            var indices = connection.Query("PRAGMA index_list('Services');");
+
+            // 2. Check if the index exists AND if it is NOT unique (0 means non-unique)
+            // Using .Any() is safe: if no index matches, it simply returns false.
+            bool needsUpgrade = indices.Any(i =>
+                (string)i.name == "idx_services_name_lower" && (long)i.unique == 0);
+
+            if (needsUpgrade)
+            {
+                // Drop the old non-unique index so we can replace it
+                connection.Execute("DROP INDEX IF EXISTS idx_services_name_lower;");
+            }
+
+            // 3. Create the UNIQUE functional index
+            // This is required for the ON CONFLICT(LOWER(Name)) clause to work.
+            var createIndexSql = "CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
             connection.Execute(createIndexSql);
 
             EnsureColumns(connection);

@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
@@ -400,9 +401,10 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new string[] { "ignored.exe" }); // no valid args
             var mockLog = new Mock<ILogger>();
+            var mockServiceRepo = new Mock<IServiceRepository>();
 
             // Assert
-            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockLog.Object));
+            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockServiceRepo.Object, mockLog.Object));
         }
     }
 }

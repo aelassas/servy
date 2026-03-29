@@ -508,7 +508,7 @@ namespace Servy.Manager.Views
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error killing child processes: {ex}");
+                Logger.Error("Error killing child processes.", ex);
             }
 
             base.OnClosed(e);

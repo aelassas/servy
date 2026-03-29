@@ -3,13 +3,13 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -70,10 +70,9 @@ namespace Servy.Core.Services
         /// <param name="win32ErrorProvider">
         /// Provider for retrieving the last Win32 error codes.
         /// </param>
-        /// <param name="_serviceRepository">
+        /// <param name="serviceRepository">
         /// Service repository.
         /// </param>
-        /// <param name="serviceRepository">Service Repository.</param>
         /// <param name="searcher">WMI searcher.</param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
@@ -175,18 +174,32 @@ namespace Servy.Core.Services
             if (string.IsNullOrEmpty(description))
                 return;
 
-            var desc = new ServiceDescription
+            IntPtr pDescription = IntPtr.Zero;
+            try
             {
-                lpDescription = Marshal.StringToHGlobalUni(description)
-            };
+                // Allocate unmanaged memory
+                pDescription = Marshal.StringToHGlobalUni(description);
 
-            if (!_windowsServiceApi.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref desc))
-            {
-                int err = _win32ErrorProvider.GetLastWin32Error();
-                throw new Win32Exception(err, "Failed to set service description.");
+                var desc = new ServiceDescription
+                {
+                    lpDescription = pDescription
+                };
+
+                // Attempt to update the service configuration
+                if (!_windowsServiceApi.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref desc))
+                {
+                    int err = _win32ErrorProvider.GetLastWin32Error();
+                    throw new Win32Exception(err, "Failed to set service description.");
+                }
             }
-
-            Marshal.FreeHGlobal(desc.lpDescription);
+            finally
+            {
+                // GUARANTEE: Free the unmanaged memory even if an exception was thrown above.
+                if (pDescription != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(pDescription);
+                }
+            }
         }
 
         /// <summary>
@@ -541,6 +554,7 @@ namespace Servy.Core.Services
 
                     if (!enablePreShutdownConfigSuccess)
                     {
+                        Logger.Error($"Failed to enable pre-shutdown for service '{serviceName}' during installation.");
                         return false;
                     }
 
@@ -551,6 +565,7 @@ namespace Servy.Core.Services
 
                         if (!delayedAutoStartConfigSuccess)
                         {
+                            Logger.Error($"Failed to set delayed auto-start for service '{serviceName}' during installation.");
                             return false;
                         }
                     }
@@ -590,6 +605,7 @@ namespace Servy.Core.Services
 
                                 if (!success)
                                 {
+                                    Logger.Error($"Failed to set delayed auto-start for existing service '{serviceName}'.");
                                     return false;
                                 }
                             }
@@ -610,6 +626,11 @@ namespace Servy.Core.Services
                 await _serviceRepository.UpsertAsync(dto);
 
                 return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error installing service '{serviceName}'.", ex);
+                return false;
             }
             finally
             {
@@ -797,7 +818,11 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
 
-            var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+            // Manually escape single quotes to prevent injection
+            // In WMI, single quotes are escaped by doubling them (' becomes '')
+            var escapedName = serviceName.Replace("'", "''");
+
+            var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{escapedName}'", cancellationToken);
             var service = services.FirstOrDefault();
             var startMode = service?["StartMode"]?.ToString() ?? string.Empty;
 
@@ -824,14 +849,17 @@ namespace Servy.Core.Services
         {
             try
             {
-                var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+                // Manually escape single quotes to prevent injection
+                // In WMI, single quotes are escaped by doubling them (' becomes '')
+                var escapedName = serviceName.Replace("'", "''");
+                var services = _searcher.Get($"SELECT * FROM Win32_Service WHERE Name = '{escapedName}'", cancellationToken);
                 var service = services.FirstOrDefault();
                 return service?["Description"]?.ToString();
             }
             catch (Exception ex)
             {
                 // Log or handle error
-                Debug.WriteLine($"Error getting service description for '{serviceName}': {ex.Message}");
+                Logger.Error($"Error getting service description for '{serviceName}'.", ex);
             }
 
             return null;
@@ -842,7 +870,10 @@ namespace Servy.Core.Services
         {
             string account = null;
 
-            var services = _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{serviceName}'", cancellationToken);
+            // Manually escape single quotes to prevent injection
+            // In WMI, single quotes are escaped by doubling them (' becomes '')
+            var escapedName = serviceName.Replace("'", "''");
+            var services = _searcher.Get($"SELECT StartName FROM Win32_Service WHERE Name = '{escapedName}'", cancellationToken);
             var service = services.FirstOrDefault();
             account = service?["StartName"]?.ToString();
 
@@ -977,12 +1008,11 @@ namespace Servy.Core.Services
             {
                 // Error is intentionally swallowed to keep the API safe
                 // for UI and monitoring scenarios.
-                Debug.WriteLine($"Error getting service dependencies for '{serviceName}': {ex.Message}");
+                Logger.Error($"Error getting service dependencies for '{serviceName}'.", ex);
             }
 
             return null;
         }
-
 
     }
 

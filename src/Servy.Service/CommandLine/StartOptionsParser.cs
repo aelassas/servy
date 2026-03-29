@@ -3,11 +3,7 @@ using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
-using Servy.Core.Security;
-using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using System;
-using System.Configuration;
 using System.Diagnostics;
 
 namespace Servy.Service.CommandLine
@@ -20,12 +16,13 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Parses the specified array of command-line arguments into a <see cref="StartOptions"/> instance.
         /// </summary>
+        /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
         /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object populated with values parsed from the input arguments.
         /// Missing or invalid values will be set to default values.
         /// </returns>
-        public static StartOptions Parse(string[] fullArgs)
+        public static StartOptions Parse(IServiceRepository serviceRepository, string[] fullArgs)
         {
             //fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
 
@@ -38,24 +35,6 @@ namespace Servy.Service.CommandLine
             {
                 throw new ArgumentException("Service name is empty!");
             }
-
-            // Load configuration
-            var config = ConfigurationManager.AppSettings;
-
-            var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
-            var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-            var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
-
-            // Initialize database and helpers
-            var dbContext = new AppDbContext(connectionString);
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
-            var dapperExecutor = new DapperExecutor(dbContext);
-            var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-            var secureData = new SecureData(protectedKeyProvider);
-            var xmlSerializer = new XmlServiceSerializer();
-
-            IServiceRepository serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
             var serviceDto = serviceRepository
                 .GetByNameAsync(serviceName)
