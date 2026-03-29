@@ -146,7 +146,7 @@ namespace Servy.Core.IO
                         _lastRotationDate, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
                     var thisWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
                         now, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-                    return thisWeek != lastWeek;
+                    return thisWeek != lastWeek || now.Year != _lastRotationDate.Year;
 
                 case DateRotationType.Monthly:
                     return now.Month != _lastRotationDate.Month || now.Year != _lastRotationDate.Year;
@@ -369,7 +369,10 @@ namespace Servy.Core.IO
             EnforceMaxRotations();
 
             // Recreate writer for new log file
-            _writer = new StreamWriter(new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+            _writer = new StreamWriter(
+                new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
+                )
             {
                 AutoFlush = true
             };

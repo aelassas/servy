@@ -1,4 +1,5 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Data;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
@@ -48,9 +49,10 @@ namespace Servy.Service.Helpers
         /// Initializes startup options by parsing command line arguments,
         /// logging them, and validating the resulting options.
         /// </summary>
+        /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
         /// <param name="eventLog">The event log to write logs and errors to.</param>
         /// <returns>The initialized and validated <see cref="StartOptions"/>, or null if invalid.</returns>
-        StartOptions? InitializeStartup(ILogger logger);
+        StartOptions? InitializeStartup(IServiceRepository serviceRepository, ILogger logger);
 
         /// <summary>
         /// Attempts to restart the given process by:

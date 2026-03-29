@@ -6,6 +6,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -40,6 +41,8 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
+            Logger.Initialize("Servy.CLI.log");
+
             try
             {
                 var verbs = GetVerbs();
@@ -179,6 +182,7 @@ namespace Servy.CLI
             catch (Exception e)
             {
                 Console.WriteLine($"An unexpected error occurred: {e.Message}");
+                Logger.Error("An unexpected error occurred in the main execution flow.", e);
                 return 1;
             }
         }

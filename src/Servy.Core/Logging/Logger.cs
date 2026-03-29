@@ -1,70 +1,47 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Enums;
+using Servy.Core.IO;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Core.Logging
 {
     /// <summary>
     /// Provides a thread-safe, fail-silent static logging utility for the Servy ecosystem.
+    /// Uses <see cref="RotatingStreamWriter"/> to ensure logs are rotated based on size 
+    /// while preventing unbounded file growth.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public static class Logger
     {
         private static readonly object _lock = new object();
+        private static RotatingStreamWriter? _writer;
         private static string _logFileName = "Servy.log";
 
         /// <summary>
-        /// Initializes the logger with a specific file name. 
-        /// Should be called at the very beginning of the application lifecycle.
+        /// The maximum size a log file can reach before rotation is triggered.
+        /// Defaults to 10MB.
+        /// </summary>
+        private const long MaxLogSizeBuffer = 10 * 1024 * 1024;
+
+        /// <summary>
+        /// The maximum number of backup log files to keep. 
+        /// Set to 0 to allow an unlimited number of backup files.
+        /// </summary>
+        private const int MaxBackupFiles = 0;
+
+        /// <summary>
+        /// Initializes the logger with a specific file name and sets up the rotating stream. 
+        /// This should be called once at the beginning of the application lifecycle.
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
         public static void Initialize(string fileName)
         {
-            _logFileName = fileName;
-        }
-
-        /// <summary>
-        /// Logs a message at the DEBUG level. Use for high-verbosity diagnostic information.
-        /// </summary>
-        /// <param name="message">The diagnostic message to log.</param>
-        public static void Debug(string message) => Log("DEBUG", message);
-
-        /// <summary>
-        /// Logs a message at the INFO level. Use for general operational milestones.
-        /// </summary>
-        /// <param name="message">The operational message to log.</param>
-        public static void Info(string message) => Log("INFO", message);
-
-        /// <summary>
-        /// Logs a message at the WARN level. Use for non-critical issues or unexpected states 
-        /// that do not halt execution.
-        /// </summary>
-        /// <param name="message">The warning message to log.</param>
-        public static void Warn(string message) => Log("WARN", message);
-
-        /// <summary>
-        /// Logs an error message and optional exception details at the ERROR level.
-        /// </summary>
-        /// <param name="message">The error description.</param>
-        /// <param name="ex">The optional <see cref="Exception"/> to include in the log trace.</param>
-        public static void Error(string message, Exception? ex = null)
-            => Log("ERROR", ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
-
-        /// <summary>
-        /// Core logging logic that handles directory creation, thread synchronization, and I/O.
-        /// </summary>
-        /// <remarks>
-        /// This method is wrapped in a broad try-catch to ensure that logging failures 
-        /// never crash the calling application.
-        /// </remarks>
-        /// <param name="level">The severity level string.</param>
-        /// <param name="message">The message body.</param>
-        private static void Log(string level, string message)
-        {
-            try
+            lock (_lock)
             {
-                lock (_lock)
+                _logFileName = fileName;
+
+                try
                 {
-                    // Ensure the ProgramData path exists (e.g., C:\ProgramData\Servy)
                     if (!Directory.Exists(AppConfig.ProgramDataPath))
                     {
                         Directory.CreateDirectory(AppConfig.ProgramDataPath);
@@ -72,10 +49,75 @@ namespace Servy.Core.Logging
 
                     string logPath = Path.Combine(AppConfig.ProgramDataPath, _logFileName);
 
-                    // Format: [2026-03-12 22:00:00] [INFO] Message text
-                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}{Environment.NewLine}";
+                    // Clean up existing writer if Initialize is called multiple times
+                    _writer?.Dispose();
 
-                    File.AppendAllText(logPath, logEntry);
+                    // Initialize the rotating stream using named parameters for clarity.
+                    // We enable size-based rotation and disable date-based rotation by default.
+                    _writer = new RotatingStreamWriter(
+                        path: logPath,
+                        enableSizeRotation: true,
+                        rotationSizeInBytes: MaxLogSizeBuffer,
+                        enableDateRotation: false,
+                        dateRotationType: DateRotationType.Daily,
+                        maxRotations: MaxBackupFiles
+                    );
+                }
+                catch
+                {
+                    // Fail-silent: If stream cannot be initialized, Logger will bypass I/O
+                }
+            }
+        }
+
+        /// <summary>
+        /// Logs a message at the DEBUG level. 
+        /// Use this for high-verbosity diagnostic information useful during development.
+        /// </summary>
+        /// <param name="message">The diagnostic message to log.</param>
+        public static void Debug(string message) => Log("DEBUG", message);
+
+        /// <summary>
+        /// Logs a message at the INFO level. 
+        /// Use this for general operational milestones and state changes.
+        /// </summary>
+        /// <param name="message">The operational message to log.</param>
+        public static void Info(string message) => Log("INFO", message);
+
+        /// <summary>
+        /// Logs a message at the WARN level. 
+        /// Use this for non-critical issues or unexpected states that do not halt execution.
+        /// </summary>
+        /// <param name="message">The warning message to log.</param>
+        public static void Warn(string message) => Log("WARN", message);
+
+        /// <summary>
+        /// Logs an error message and optional exception details at the ERROR level.
+        /// </summary>
+        /// <param name="message">The description of the error.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        public static void Error(string message, Exception? ex = null)
+            => Log("ERROR", ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+
+        /// <summary>
+        /// Core logging logic that handles thread synchronization and delegated I/O via the rotating writer.
+        /// </summary>
+        /// <param name="level">The severity level (e.g., INFO, ERROR).</param>
+        /// <param name="message">The content of the log entry.</param>
+        private static void Log(string level, string message)
+        {
+            // Fail-fast if the writer wasn't initialized
+            if (_writer == null) return;
+
+            try
+            {
+                lock (_lock)
+                {
+                    // Format: [2026-03-12 22:00:00] [INFO] Message text
+                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}";
+
+                    // RotatingStreamWriter handles the rotation logic and size checks internally
+                    _writer.WriteLine(logEntry);
                 }
             }
             catch

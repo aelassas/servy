@@ -185,7 +185,7 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public async Task<bool> WaitUntilHealthyAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+        public async Task<bool> WaitUntilRunningAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
 
@@ -266,15 +266,22 @@ namespace Servy.Service.ProcessManagement
         {
             _logger?.Info($"Stopping process '{process.Format()}'...");
 
+            void LogProcessExited()
+            {
+                _logger?.Info($"Process '{process.Format()}' has already exited.");
+            }
+
             if (process.HasExited)
             {
-                goto Exited;
+                LogProcessExited();
+                return;
             }
 
             bool? sent = SendCtrlC(process);
             if (!sent.HasValue)
             {
-                goto Exited;
+                LogProcessExited();
+                return;
             }
 
             if (!sent.Value)
@@ -285,7 +292,8 @@ namespace Servy.Service.ProcessManagement
                 }
                 catch (InvalidOperationException)
                 {
-                    goto Exited;
+                    LogProcessExited();
+                    return;
                 }
             }
 
@@ -307,9 +315,6 @@ namespace Servy.Service.ProcessManagement
 
             _logger?.Info($"Process '{process.Format()}' terminated.");
             return;
-
-        Exited:
-            _logger?.Info($"Process '{process.Format()}' has already exited.");
         }
 
         /// <summary>

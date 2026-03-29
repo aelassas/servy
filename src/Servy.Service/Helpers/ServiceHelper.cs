@@ -10,6 +10,7 @@ using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.ServiceProcess;
+using Servy.Core.Data;
 
 namespace Servy.Service.Helpers
 {
@@ -214,11 +215,11 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public StartOptions? InitializeStartup(ILogger logger)
+        public StartOptions? InitializeStartup(IServiceRepository serviceRepository, ILogger logger)
         {
             //var fullArgs = GetSanitizedArgs();
             var fullArgs = _commandLineProvider.GetArgs();
-            var options = StartOptionsParser.Parse(fullArgs);
+            var options = StartOptionsParser.Parse(serviceRepository, fullArgs);
 
             LogStartupArguments(logger, fullArgs, options);
 

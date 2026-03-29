@@ -29,7 +29,7 @@ namespace Servy.Service.UnitTests
             var serviceRepository = new Mock<IServiceRepository>();
 
             mockHelper
-                .Setup(h => h.InitializeStartup(mockLogger.Object))
+                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
                 .Returns(expectedOptions);
 
             var service = new TestableService(mockHelper.Object, mockLogger.Object, 
@@ -41,7 +41,7 @@ namespace Servy.Service.UnitTests
             service.TestOnStart((new string []{}));
 
             // Assert
-            mockHelper.Verify(h => h.InitializeStartup(mockLogger.Object), Times.Once);
+            mockHelper.Verify(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object), Times.Once);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockLogger.Object), Times.Once);
         }
 
@@ -58,7 +58,7 @@ namespace Servy.Service.UnitTests
             var serviceRepository = new Mock<IServiceRepository>();
 
             mockHelper
-                .Setup(h => h.InitializeStartup(mockLogger.Object))
+                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
                 .Returns((StartOptions?)null);
 
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,
@@ -69,7 +69,7 @@ namespace Servy.Service.UnitTests
             service.TestOnStart((new string []{}));
 
             // Assert
-            mockHelper.Verify(h => h.InitializeStartup(mockLogger.Object), Times.Once);
+            mockHelper.Verify(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object), Times.Once);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), mockLogger.Object), Times.Never);
         }
 
@@ -88,7 +88,7 @@ namespace Servy.Service.UnitTests
             var exception = new InvalidOperationException("Test exception");
 
             mockHelper
-                .Setup(h => h.InitializeStartup(mockLogger.Object))
+                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
                 .Throws(exception);
 
             var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,

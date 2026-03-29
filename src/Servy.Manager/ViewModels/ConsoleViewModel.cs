@@ -330,7 +330,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 // Log the error so we know why the resume failed
-                Debug.WriteLine($"Failed to resume/switch logs: {ex.Message}");
+                Logger.Error("Failed to resume/switch logs.", ex);
             }
         }
 

@@ -9,6 +9,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
+using System.Data;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
@@ -37,6 +38,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             return new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object);
         }
 
+        private string? GetPropertyValue(object obj, string propName)
+        {
+            return obj.GetType().GetProperty(propName)?.GetValue(obj, null)?.ToString();
+        }
+
         [Fact]
         public void Constructor_NullDapper_Throws()
         {
@@ -56,112 +62,163 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task AddAsync_EncryptsPasswordAndInserts_ReturnsId()
+        public async Task AddAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
+            // 1. Arrange - Define unique plain-text values for every sensitive field
             var dto = new ServiceDto
             {
-                Name = "S1",
-                Parameters = "params",
-                FailureProgramParameters = "failure-prog-params",
-                PreLaunchParameters = "pre-launch-params",
-                PostLaunchParameters = "post-launch-params",
-                Password = "plain",
-                EnvironmentVariables = "v1=val1;v2=val2",
-                PreLaunchEnvironmentVariables = "v3=val3",
-                PreStopParameters = "pre-stop-params",
-                PostStopParameters = "post-stop-params",
+                Name = "AuditService",
+                Password = "p_plain",
+                Parameters = "args_plain",
+                EnvironmentVariables = "env_plain",
+                FailureProgramParameters = "fail_args_plain",
+                PreLaunchParameters = "pre_args_plain",
+                PreLaunchEnvironmentVariables = "pre_env_plain",
+                PostLaunchParameters = "post_args_plain",
+                PreStopParameters = "pre_stop_plain",
+                PostStopParameters = "post_stop_plain"
             };
-            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
-            _mockSecureData.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
-            _mockSecureData.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
-            _mockSecureData.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
-            _mockSecureData.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
-            _mockSecureData.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
-            _mockSecureData.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
-            _mockSecureData.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
-            _mockSecureData.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(42);
+
+            // 2. Setup Mocks - One-to-one mapping for verification
+            _mockSecureData.Setup(s => s.Encrypt("p_plain")).Returns("p_enc");
+            _mockSecureData.Setup(s => s.Encrypt("args_plain")).Returns("args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("env_plain")).Returns("env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("fail_args_plain")).Returns("fail_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_args_plain")).Returns("pre_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_env_plain")).Returns("pre_env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_args_plain")).Returns("post_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
+
+            // AddAsync typically uses ExecuteScalarAsync to return the new Row ID
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>()))
+                       .ReturnsAsync(99);
 
             var repo = CreateRepository();
+
+            // 3. Act
             var result = await repo.AddAsync(dto, TestContext.Current.CancellationToken);
 
-            Assert.Equal(42, result);
-            Assert.Equal("encrypted_params", dto.Parameters);
-            Assert.Equal("encrypted_failure_prog_params", dto.FailureProgramParameters);
-            Assert.Equal("encrypted_pre_launch_params", dto.PreLaunchParameters);
-            Assert.Equal("encrypted_post_launch_params", dto.PostLaunchParameters);
-            Assert.Equal("encrypted", dto.Password);
-            Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
-            Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
-            Assert.Equal("encrypted_pre_stop_params", dto.PreStopParameters);
-            Assert.Equal("encrypted_post_stop_params", dto.PostStopParameters);
+            // 4. Assert - Functional Result
+            Assert.Equal(99, result);
+            Assert.Equal(99, dto.Id);
+
+            // 5. Assert - Side-Effect Protection
+            // Ensure the original DTO was NOT mutated (remains plain-text for the UI/User)
+            Assert.Equal("p_plain", dto.Password);
+            Assert.Equal("env_plain", dto.EnvironmentVariables);
+            Assert.Equal("pre_stop_plain", dto.PreStopParameters);
+
+            // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
+            _mockDapper.Verify(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.Is<object>(obj =>
+                    GetPropertyValue(obj, "Password") == "p_enc" &&
+                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
+                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
+                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
+                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
+                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
+                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
+                )), Times.Once);
         }
 
         [Fact]
-        public async Task UpdateAsync_EncryptsPasswordAndExecutes_ReturnsAffectedRows()
+        public async Task UpdateAsync_FullSecurityAudit_EncryptsAllNineSensitiveFields()
         {
+            // 1. Arrange - Unique plain-text values for every sensitive field
             var dto = new ServiceDto
             {
-                Id = 1,
-                Parameters = "params",
-                FailureProgramParameters = "failure-prog-params",
-                PreLaunchParameters = "pre-launch-params",
-                PostLaunchParameters = "post-launch-params",
-                Password = "plain",
-                EnvironmentVariables = "v1=val1;v2=val2",
-                PreLaunchEnvironmentVariables = "v3=val3",
-                PreStopParameters = "pre-stop-params",
-                PostStopParameters = "post-stop-params",
+                Id = 123,
+                Name = "UpdateAuditService",
+                Password = "p_plain",
+                Parameters = "args_plain",
+                EnvironmentVariables = "env_plain",
+                FailureProgramParameters = "fail_args_plain",
+                PreLaunchParameters = "pre_args_plain",
+                PreLaunchEnvironmentVariables = "pre_env_plain",
+                PostLaunchParameters = "post_args_plain",
+                PreStopParameters = "pre_stop_plain",
+                PostStopParameters = "post_stop_plain"
             };
-            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
-            _mockSecureData.Setup(s => s.Encrypt("v1=val1;v2=val2")).Returns("encrypted_vars");
-            _mockSecureData.Setup(s => s.Encrypt("v3=val3")).Returns("encrypted_pre_vars");
-            _mockSecureData.Setup(s => s.Encrypt("params")).Returns("encrypted_params");
-            _mockSecureData.Setup(s => s.Encrypt("failure-prog-params")).Returns("encrypted_failure_prog_params");
-            _mockSecureData.Setup(s => s.Encrypt("pre-launch-params")).Returns("encrypted_pre_launch_params");
-            _mockSecureData.Setup(s => s.Encrypt("post-launch-params")).Returns("encrypted_post_launch_params");
-            _mockSecureData.Setup(s => s.Encrypt("pre-stop-params")).Returns("encrypted_pre_stop_params");
-            _mockSecureData.Setup(s => s.Encrypt("post-stop-params")).Returns("encrypted_post_stop_params");
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+
+            // 2. Setup Mocks - One-to-one mapping for verification
+            _mockSecureData.Setup(s => s.Encrypt("p_plain")).Returns("p_enc");
+            _mockSecureData.Setup(s => s.Encrypt("args_plain")).Returns("args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("env_plain")).Returns("env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("fail_args_plain")).Returns("fail_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_args_plain")).Returns("pre_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_env_plain")).Returns("pre_env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_args_plain")).Returns("post_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
+
+            // ExecuteAsync returns the number of rows affected (usually 1)
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()))
+                       .ReturnsAsync(1);
 
             var repo = CreateRepository();
-            var rows = await repo.UpdateAsync(dto, TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, rows);
-            Assert.Equal("encrypted_params", dto.Parameters);
-            Assert.Equal("encrypted_failure_prog_params", dto.FailureProgramParameters);
-            Assert.Equal("encrypted_pre_launch_params", dto.PreLaunchParameters);
-            Assert.Equal("encrypted_post_launch_params", dto.PostLaunchParameters);
-            Assert.Equal("encrypted", dto.Password);
-            Assert.Equal("encrypted_vars", dto.EnvironmentVariables);
-            Assert.Equal("encrypted_pre_vars", dto.PreLaunchEnvironmentVariables);
-            Assert.Equal("encrypted_pre_stop_params", dto.PreStopParameters);
-            Assert.Equal("encrypted_post_stop_params", dto.PostStopParameters);
+            // 3. Act
+            var rowsAffected = await repo.UpdateAsync(dto, TestContext.Current.CancellationToken);
+
+            // 4. Assert - Functional Results
+            Assert.Equal(1, rowsAffected);
+
+            // 5. Assert - Side-Effect Protection
+            // The original object MUST NOT be mutated (remains plain-text for the UI)
+            Assert.Equal("p_plain", dto.Password);
+            Assert.Equal("env_plain", dto.EnvironmentVariables);
+            Assert.Equal("pre_stop_plain", dto.PreStopParameters);
+
+            // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
+            _mockDapper.Verify(d => d.ExecuteAsync(
+                It.IsAny<string>(),
+                It.Is<object>(obj =>
+                    GetPropertyValue(obj, "Id")!.Equals("123") &&
+                    GetPropertyValue(obj, "Password") == "p_enc" &&
+                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
+                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
+                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
+                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
+                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
+                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
+                )), Times.Once);
         }
 
         [Fact]
-        public async Task UpsertAsync_ExistingService_Updates()
+        public async Task UpsertAsync_ExistingService_UpdatesAndReturnsId()
         {
+            // Arrange
             var dto = new ServiceDto { Name = "S1" };
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1", Pid = 123 });
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            const int expectedId = 5;
+
+            // We now mock ExecuteScalarAsync because that's what the atomic UPSERT calls.
+            // It returns the ID of the inserted or updated row.
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
+                    It.IsAny<string>(),
+                    It.IsAny<object>()))
+                .ReturnsAsync(expectedId);
+
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
-            var rows = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, rows);
-            Assert.Equal(5, dto.Id);
-            Assert.Equal(123, dto.Pid);
+            // Act
+            var resultId = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>()))
-                .ReturnsAsync(new ServiceDto { Id = 5, Name = "S1" });
-            rows = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
+            // Assert
+            Assert.Equal(expectedId, resultId);
+            Assert.Equal(expectedId, dto.Id);
 
-            Assert.Equal(1, rows);
-            Assert.Equal(5, dto.Id);
-            Assert.Null(dto.Pid);
+            // Note: dto.Pid will NOT be 123 here unless your Upsert SQL 
+            // explicitly selects it and you assign it to the DTO.
+            // In Servy, Pid is volatile/runtime data, so usually, we don't 
+            // sync it during a configuration 'Upsert'.
         }
 
         [Fact]
@@ -179,19 +236,20 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task UpsertAsync_WithPassword_EncryptsPassword()
+        public async Task UpsertAsync_WithPassword_UsesEncryptedPasswordInSql()
         {
             // Arrange
             var dto = new ServiceDto { Name = "NewService", Password = "plain" };
-            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns("encrypted");
+            const string encryptedValue = "encrypted_secret";
+            const int generatedId = 7;
 
-            // Service does not exist
-            _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto?>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto?)null);
+            _mockSecureData.Setup(s => s.Encrypt("plain")).Returns(encryptedValue);
 
-            // AddAsync returns 7
+            // Mock ExecuteScalarAsync (The Atomic Upsert)
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
-                It.IsAny<string>(), It.IsAny<object>()))
-                .ReturnsAsync(7);
+                It.IsAny<string>(),
+                It.IsAny<object>()))
+                .ReturnsAsync(generatedId);
 
             var repo = CreateRepository();
 
@@ -199,10 +257,19 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await repo.UpsertAsync(dto, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(7, result);
-            Assert.Equal("encrypted", dto.Password); // DTO updated correctly
-        }
+            Assert.Equal(generatedId, result);
+            Assert.Equal(generatedId, dto.Id);
 
+            // IMPORTANT: The original DTO password remains "plain" because we 
+            // encrypted a CLONE for the DB. This is safer for the UI/caller.
+            Assert.Equal("plain", dto.Password);
+
+            // Verify that the object passed to Dapper actually contained the encrypted value
+            _mockDapper.Verify(d => d.ExecuteScalarAsync<int>(
+                It.IsAny<string>(),
+                It.Is<object>(obj => GetPropertyValue(obj, "Password") == encryptedValue)
+                ), Times.Once);
+        }
 
         [Fact]
         public async Task DeleteAsync_ById_ReturnsAffectedRows()

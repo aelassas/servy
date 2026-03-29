@@ -1,5 +1,5 @@
 ﻿using Servy.Core.Data;
-using System.Diagnostics;
+using Servy.Core.Logging;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 #if !DEBUG
@@ -92,7 +92,7 @@ namespace Servy.Core.Helpers
                     Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
                     if (resourceStream == null)
                     {
-                        Debug.WriteLine("Embedded resource not found: " + resourceName);
+                        Logger.Error($"Embedded resource not found: {resourceName}");
                         return false;
                     }
 
@@ -116,7 +116,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Failed to copy embedded resource " + fileName + ": " + ex);
+                Logger.Error($"Failed to copy embedded resource '{fileName}'.", ex);
                 return false;
             }
         }
