@@ -163,7 +163,6 @@ namespace Servy.Infrastructure.Data
         /// </summary>
         private ServiceDto CreateEncryptedClone(ServiceDto source)
         {
-            // Use MemberwiseClone for a fast shallow copy
             var clone = (ServiceDto)source.Clone();
 
             if (!string.IsNullOrWhiteSpace(clone.Parameters))

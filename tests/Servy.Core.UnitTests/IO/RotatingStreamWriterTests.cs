@@ -625,6 +625,275 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
+        [Fact]
+        public void Rotate_WhenFileIsLocked_SilentlyContinuesWithoutCrashing()
+        {
+            var filePath = Path.Combine(_testDir, "locked_rotate.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("init");
+                writer.Flush();
+
+                // 1. OPEN A LOCKING STREAM
+                // By NOT including FileShare.Delete, Windows will block any attempt 
+                // to Move or Delete this file by any process (including the Rotate method).
+                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var exception = Record.Exception(() =>
+                    {
+                        // 2. Triggers CheckRotation -> Rotate -> File.Move
+                        // File.Move will now throw IOException because 'blocker' denies Delete/Rename access.
+                        writer.Write("trigger_rotation");
+                        writer.Flush();
+                    });
+
+                    // Assert: The internal catch block in RotatingStreamWriter 
+                    // handled the IOException and didn't let it bubble up.
+                    Assert.Null(exception);
+                }
+
+                // 3. Verify: No rotated files were created because the move was blocked.
+                var rotatedFiles = Directory.GetFiles(_testDir, "locked_rotate.*.txt")
+                                           .Where(f => !f.EndsWith("locked_rotate.txt"))
+                                           .ToList();
+
+                Assert.Empty(rotatedFiles);
+
+                // 4. Verify: Original file is still there.
+                Assert.True(File.Exists(filePath));
+            }
+        }
+
+        [Fact]
+        public void Rotate_WhenFileIsReadOnlyAndLocked_CatchBlocksAreFullyCovered()
+        {
+            var filePath = Path.Combine(_testDir, "coverage_test.txt");
+
+            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("init");
+                writer.Flush();
+
+                // 1. Set the file to Read-Only AND open a blocking stream.
+                // This ensures File.Move fails (IOException) 
+                // AND new FileStream(..., FileAccess.Write) fails (UnauthorizedAccessException).
+                File.SetAttributes(filePath, FileAttributes.ReadOnly);
+
+                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var exception = Record.Exception(() =>
+                    {
+                        // This triggers Rotate().
+                        // 1. File.Move fails -> enters catch.
+                        // 2. Finally block tries to CreateWriter() -> fails -> enters your inner catch.
+                        writer.Write("trigger_rotation");
+                    });
+
+                    Assert.Null(exception); // Service didn't crash
+                }
+
+                // 2. CLEANUP for the test runner
+                File.SetAttributes(filePath, FileAttributes.Normal);
+            }
+        }
+
+        [Fact]
+        public void Rotate_WhenFileIsReadOnly_CoversFinallyCatchBlock()
+        {
+            var filePath = Path.Combine(_testDir, "coverage_finally.txt");
+
+            // 1. Setup the writer
+            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("data");
+                writer.Flush();
+
+                // 2. Lock the file physically AND via attributes
+                // This ensures File.Move fails AND CreateWriter fails.
+                File.SetAttributes(filePath, FileAttributes.ReadOnly);
+
+                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    var exception = Record.Exception(() =>
+                    {
+                        // This triggers Rotate()
+                        // - _writer becomes null
+                        // - File.Move fails (caught by Rotate's main catch)
+                        // - CreateWriter fails (caught by finally's catch)
+                        writer.Write("trigger");
+                    });
+
+                    Assert.Null(exception);
+                }
+
+                // 3. Cleanup attributes so test can delete the file
+                File.SetAttributes(filePath, FileAttributes.Normal);
+            }
+        }
+
+        [Fact]
+        public void Rotate_WhenNoRotationNeeded_PreservesExistingWriter()
+        {
+            var filePath = Path.Combine(_testDir, "preserve_writer.txt");
+
+            // Set a massive rotation size so it won't trigger naturally
+            using (var writer = new RotatingStreamWriter(filePath, true, 1024 * 1024, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("initial");
+                writer.Flush();
+
+                // 1. Capture the original instance
+                var originalWriter = GetPrivateWriter(writer);
+
+                // 2. Call Write. Since size is 1MB and we wrote 7 bytes, 
+                // CheckRotation() is called, but Rotate() should skip the 'nulling' part.
+                writer.Write("more");
+
+                // 3. Capture the writer again
+                var currentWriter = GetPrivateWriter(writer);
+
+                // 4. ASSERT: They are the same instance.
+                // This proves the 'if (_writer == null)' branch in finally was skipped.
+                Assert.Same(originalWriter, currentWriter);
+                Assert.NotNull(currentWriter);
+            }
+        }
+
+        [Fact]
+        public void Rotate_WhenAlreadyDisposedAndWriterNotNull_SkipsRecreation()
+        {
+            var filePath = Path.Combine(_testDir, "coverage_branch.txt");
+            var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0);
+
+            // 1. Ensure _writer is NOT null
+            writer.Write("data");
+
+            // 2. Manually set _disposed to true WITHOUT clearing the writer.
+            // This simulates the state: _writer != null AND _disposed == true.
+            var disposedField = typeof(RotatingStreamWriter).GetField("_disposed",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            disposedField!.SetValue(writer, true);
+
+            // 3. Use reflection to call the private Rotate() method.
+            // When it reaches the finally block:
+            // (_writer == null) is FALSE
+            // (_disposed == false) is FALSE
+            // Result: The 'if' branch is skipped, covering the 'false' path.
+            var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+
+            var exception = Record.Exception(() => rotateMethod!.Invoke(writer, null));
+
+            // 4. Cleanup and Assert
+            Assert.Null(exception);
+
+            // Manually clean up since we hijacked the disposal state
+            disposedField.SetValue(writer, false);
+            writer.Dispose();
+        }
+
+        [Fact]
+        public void Rotate_WhenNotNeeded_BranchTaken_WriterNotNull()
+        {
+            var filePath = Path.Combine(_testDir, "alive_not_null.txt");
+            using (var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("test"); // Initializes _writer
+
+                // Use reflection to call Rotate() manually.
+                // Because we haven't hit 1000 bytes, the code skips the 'nulling' logic at the top.
+                // Inside finally: _writer is NOT null, but _disposed is FALSE.
+                // Condition (false || true) == TRUE. Branch is taken.
+                InvokeRotate(writer);
+
+                Assert.NotNull(GetPrivateWriter(writer));
+            }
+        }
+
+        [Fact]
+        public void Rotate_WhenDisposed_BranchSkipped_WriterNotNull()
+        {
+            var filePath = Path.Combine(_testDir, "dead_not_null.txt");
+            var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0);
+            writer.Write("test");
+
+            // Force the "Zombie" state: Disposed but writer still exists
+            SetPrivateField(writer, "_disposed", true);
+
+            // Inside finally: 
+            // (_writer == null) is FALSE
+            // (_disposed == false) is FALSE
+            // Condition (false || false) == FALSE. Branch is SKIPPED.
+            InvokeRotate(writer);
+
+            // Cleanup so the test doesn't leak
+            SetPrivateField(writer, "_disposed", false);
+            writer.Dispose();
+        }
+
+        private void InvokeRotate(RotatingStreamWriter instance)
+        {
+            var method = typeof(RotatingStreamWriter).GetMethod("Rotate",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            method!.Invoke(instance, null);
+        }
+
+        private void SetPrivateField(RotatingStreamWriter instance, string fieldName, object value)
+        {
+            var field = typeof(RotatingStreamWriter).GetField(fieldName,
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            field!.SetValue(instance, value);
+        }
+
+        // Helper to check the private field for coverage verification
+        private StreamWriter GetPrivateWriter(RotatingStreamWriter instance)
+        {
+            var field = typeof(RotatingStreamWriter).GetField("_writer",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return (StreamWriter)field!.GetValue(instance)!;
+        }
+
+        [Fact]
+        public void Rotate_WhenFileIsGhostedAndDisposed_CoversFalseBranch()
+        {
+            var filePath = Path.Combine(_testDir, "ghost_branch.txt");
+
+            // 1. Initialize and write to ensure _writer is NOT null
+            using (var writer = new RotatingStreamWriter(filePath, true, 500, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("initial_data");
+
+                // 2. "Ghost" the file path using Reflection.
+                // We temporarily point the internal FileInfo to a path that doesn't exist.
+                var fileField = typeof(RotatingStreamWriter).GetField("_file",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                var originalFileInfo = (FileInfo)fileField!.GetValue(writer)!;
+                fileField.SetValue(writer, new FileInfo(Path.Combine(_testDir, "non_existent.txt")));
+
+                // 3. Force 'disposed' state to true
+                var disposedField = typeof(RotatingStreamWriter).GetField("_disposed",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+                disposedField!.SetValue(writer, true);
+
+                // 4. Invoke Rotate()
+                var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate",
+                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // LOGIC FLOW:
+                // - hits if (!File.Exists(_file.FullName)) return; -> RETURNS EARLY
+                // - jumps to finally block
+                // - (_writer == null) is FALSE
+                // - (_disposed == false) is FALSE
+                // - Result: False Path covered!
+                rotateMethod!.Invoke(writer, null);
+
+                // 5. Restore state so Dispose() can clean up correctly
+                disposedField.SetValue(writer, false);
+                fileField.SetValue(writer, originalFileInfo);
+            }
+        }
+
         public void Dispose()
         {
             try

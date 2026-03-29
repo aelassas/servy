@@ -122,5 +122,33 @@ namespace Servy.Core.Logging
                 // Fail-silent: Logging should never be a breaking point for the application.
             }
         }
+
+        /// <summary>
+        /// Gracefully shuts down the logger by disposing the underlying stream writer.
+        /// This should be called during the application exit sequence to ensure 
+        /// all file handles are released immediately.
+        /// </summary>
+        public static void Shutdown()
+        {
+            lock (_lock)
+            {
+                if (_writer != null)
+                {
+                    try
+                    {
+                        _writer.Dispose();
+                    }
+                    catch
+                    {
+                        // Fail-silent during shutdown
+                    }
+                    finally
+                    {
+                        _writer = null;
+                    }
+                }
+            }
+        }
+
     }
 }

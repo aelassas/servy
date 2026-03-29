@@ -185,6 +185,10 @@ namespace Servy.CLI
                 Logger.Error("An unexpected error occurred in the main execution flow.", e);
                 return 1;
             }
+            finally
+            {
+                Logger.Shutdown();
+            }
         }
 
         /// <summary>

@@ -732,8 +732,9 @@ namespace Servy.Core.Services
                     return true;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to start service '{serviceName}'.", ex);
                 return false;
             }
         }
@@ -768,8 +769,9 @@ namespace Servy.Core.Services
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to start service '{serviceName}'.", ex);
                 return false;
             }
         }

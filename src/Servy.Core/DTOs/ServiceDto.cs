@@ -7,6 +7,9 @@ namespace Servy.Core.DTOs
     /// </summary>
     public class ServiceDto: ICloneable
     {
+
+        #region Properties
+
         /// <summary>
         /// Primary key of the service record.
         /// </summary>
@@ -298,19 +301,83 @@ namespace Servy.Core.DTOs
         /// </summary>
         public string? PostStopParameters { get; set; }
 
+        #endregion
+
+        #region ICloneable Implementation
 
         /// <summary>
-        /// Creates a shallow copy of the current <see cref="ServiceDto"/>.
+        /// Creates a deep copy of the current <see cref="ServiceDto"/>.
         /// </summary>
-        /// <returns>A new <see cref="ServiceDto"/> object with the same property values.</returns>
+        /// <returns>A new <see cref="ServiceDto"/> object with copied property values.</returns>
         /// <remarks>
-        /// Since all properties are value types or strings, a shallow copy is sufficient 
-        /// to prevent side-effects when encrypting fields for database persistence.
+        /// We use explicit property-by-property copying instead of <c>MemberwiseClone</c> 
+        /// to ensure that any future mutable reference types are handled safely and to 
+        /// make the cloning contract explicit for maintainers.
         /// </remarks>
         public object Clone()
         {
-            return MemberwiseClone();
+            return new ServiceDto
+            {
+                Id = Id,
+                Pid = Pid,
+                Name = Name,
+                DisplayName = DisplayName,
+                Description = Description,
+                ExecutablePath = ExecutablePath,
+                StartupDirectory = StartupDirectory,
+                Parameters = Parameters,
+                StartupType = StartupType,
+                Priority = Priority,
+                StdoutPath = StdoutPath,
+                StderrPath = StderrPath,
+                EnableRotation = EnableRotation,
+                RotationSize = RotationSize,
+                EnableDateRotation = EnableDateRotation,
+                DateRotationType = DateRotationType,
+                MaxRotations = MaxRotations,
+                EnableHealthMonitoring = EnableHealthMonitoring,
+                HeartbeatInterval = HeartbeatInterval,
+                MaxFailedChecks = MaxFailedChecks,
+                RecoveryAction = RecoveryAction,
+                MaxRestartAttempts = MaxRestartAttempts,
+                FailureProgramPath = FailureProgramPath,
+                FailureProgramStartupDirectory = FailureProgramStartupDirectory,
+                FailureProgramParameters = FailureProgramParameters,
+                EnvironmentVariables = EnvironmentVariables,
+                ServiceDependencies = ServiceDependencies,
+                RunAsLocalSystem = RunAsLocalSystem,
+                UserAccount = UserAccount,
+                Password = Password,
+                PreLaunchExecutablePath = PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = PreLaunchStartupDirectory,
+                PreLaunchParameters = PreLaunchParameters,
+                PreLaunchEnvironmentVariables = PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = PreLaunchStdoutPath,
+                PreLaunchStderrPath = PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = PreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = PreLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = PreLaunchIgnoreFailure,
+                PostLaunchExecutablePath = PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = PostLaunchStartupDirectory,
+                PostLaunchParameters = PostLaunchParameters,
+                EnableDebugLogs = EnableDebugLogs,
+                StartTimeout = StartTimeout,
+                StopTimeout = StopTimeout,
+                PreviousStopTimeout = PreviousStopTimeout,
+                ActiveStdoutPath = ActiveStdoutPath,
+                ActiveStderrPath = ActiveStderrPath,
+                PreStopExecutablePath = PreStopExecutablePath,
+                PreStopStartupDirectory = PreStopStartupDirectory,
+                PreStopParameters = PreStopParameters,
+                PreStopTimeoutSeconds = PreStopTimeoutSeconds,
+                PreStopLogAsError = PreStopLogAsError,
+                PostStopExecutablePath = PostStopExecutablePath,
+                PostStopStartupDirectory = PostStopStartupDirectory,
+                PostStopParameters = PostStopParameters,
+            };
         }
+
+        #endregion
 
         #region ShouldSerialize Methods
 
@@ -369,5 +436,6 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePostStopParameters() => !string.IsNullOrWhiteSpace(PostStopParameters);
 
         #endregion
+    
     }
 }

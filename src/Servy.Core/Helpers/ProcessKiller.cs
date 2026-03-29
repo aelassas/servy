@@ -59,13 +59,17 @@ namespace Servy.Core.Helpers
         {
             try
             {
+                // 1. Evaluate selfPid EXACTLY ONCE at the top-level entry point
+                int selfPid = Process.GetCurrentProcess().Id;
+
                 DateTime parentStartTime;
                 using (var parent = Process.GetProcessById(parentPid))
                 {
                     parentStartTime = parent.StartTime;
                 }
 
-                KillChildrenInternal(parentPid, parentStartTime);
+                // 2. Pass selfPid into the recursive chain
+                KillChildrenInternal(parentPid, parentStartTime, selfPid);
             }
             catch
             {
@@ -78,23 +82,12 @@ namespace Servy.Core.Helpers
         /// their identity against the parent's start time to prevent PID-reuse accidents.
         /// </summary>
         /// <param name="parentPid">The process ID of the parent currently being processed.</param>
-        /// <param name="parentStartTime">
-        /// The <see cref="DateTime"/> when the parent process started. 
-        /// Children are only terminated if they were created after this timestamp.
-        /// </param>
-        /// <remarks>
-        /// This method uses WMI to query the <c>Win32_Process</c> table. It performs a 
-        /// "Temporal Guard" check: if a process with a matching <c>ParentProcessId</c> 
-        /// actually started before the <paramref name="parentStartTime"/>, it is 
-        /// considered a recycled PID and is ignored to prevent killing unrelated processes.
-        /// </remarks>
-        private static void KillChildrenInternal(int parentPid, DateTime parentStartTime)
+        /// <param name="parentStartTime">The start time of the parent for identity validation.</param>
+        /// <param name="selfPid">The PID of the current process to prevent accidental self-termination.</param>
+        private static void KillChildrenInternal(int parentPid, DateTime parentStartTime, int selfPid)
         {
             try
             {
-                // Cache the current PID once to avoid overhead inside the loop
-                int selfPid = Process.GetCurrentProcess().Id;
-
                 using (var searcher = new ManagementObjectSearcher(
                     $"SELECT ProcessId, CreationDate FROM Win32_Process WHERE ParentProcessId={parentPid.ToString(CultureInfo.InvariantCulture)}"
                 ))
@@ -114,8 +107,8 @@ namespace Servy.Core.Helpers
                         if (childPid == selfPid)
                             continue;
 
-                        // Pass the child's start time down for its own children
-                        KillChildrenInternal(childPid, childStartTime);
+                        // Pass the child's start time and selfPid down for its own children
+                        KillChildrenInternal(childPid, childStartTime, selfPid);
 
                         using (var child = Process.GetProcessById(childPid))
                         {

@@ -342,40 +342,66 @@ namespace Servy.Core.IO
         /// </summary>
         private void Rotate()
         {
-            if (_writer != null)
+            try
             {
-                _writer.Flush();
-                _writer.Dispose();
+                // GUARD: If the file doesn't exist anymore or isn't ready, 
+                // we don't null the writer. This preserves the existing instance.
+                if (!File.Exists(_file.FullName)) return;
+
+                if (_writer != null)
+                {
+                    _writer.Flush();
+                    _writer.Dispose();
+                    _writer = null; // Critical: Mark as null immediately
+                }
+
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+                // 1. Deconstruct the path
+                var directory = Path.GetDirectoryName(_file.FullName)!;
+                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
+                var extension = Path.GetExtension(_file.FullName); // Includes the dot, e.g., ".log"
+
+                // 2. Reconstruct with the timestamp inside
+                // If extension is empty, Path.Combine still works perfectly.
+                var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
+                var rotatedPath = Path.Combine(directory, newFileName);
+
+                // 3. Generate unique rotated filename if it already exists
+                rotatedPath = GenerateUniqueFileName(rotatedPath);
+
+                File.Move(_file.FullName, rotatedPath);
+
+                // Enforce retention
+                EnforceMaxRotations();
             }
-
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-
-            // 1. Deconstruct the path
-            var directory = Path.GetDirectoryName(_file.FullName)!;
-            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-            var extension = Path.GetExtension(_file.FullName); // Includes the dot, e.g., ".log"
-
-            // 2. Reconstruct with the timestamp inside
-            // If extension is empty, Path.Combine still works perfectly.
-            var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
-            var rotatedPath = Path.Combine(directory, newFileName);
-
-            // 3. Generate unique rotated filename if it already exists
-            rotatedPath = GenerateUniqueFileName(rotatedPath);
-
-            File.Move(_file.FullName, rotatedPath);
-
-            // Enforce retention
-            EnforceMaxRotations();
-
-            // Recreate writer for new log file
-            _writer = new StreamWriter(
-                new FileStream(_file.FullName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite),
-                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
-                )
+            catch
             {
-                AutoFlush = true
-            };
+                // Silently catch I/O errors (e.g., file locked). 
+                // We will just overwrite/append to the existing file below.
+            }
+            finally
+            {
+                try
+                {
+                    if (_writer == null || _disposed == false)
+                    {
+                        // ALWAYS recreate the writer so logging doesn't permanently die
+                        _writer = new StreamWriter(
+                            new FileStream(_file.FullName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite),
+                            new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
+                            )
+                        {
+                            AutoFlush = true
+                        };
+                    }
+                }
+                catch
+                {
+                    // If even the fallback fails (e.g. permission changed to ReadOnly), 
+                    // we can't do much, but we shouldn't crash the whole service.
+                }
+            }
         }
 
         /// <summary>
