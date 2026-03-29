@@ -317,7 +317,7 @@ namespace Servy.Core.DTOs
         /// </remarks>
         public object Clone()
         {
-            return new ServiceDto
+            var dto = new ServiceDto
             {
                 Id = Id,
                 Pid = Pid,
@@ -376,6 +376,8 @@ namespace Servy.Core.DTOs
                 PostStopStartupDirectory = PostStopStartupDirectory,
                 PostStopParameters = PostStopParameters,
             };
+
+            return dto;
         }
 
         #endregion

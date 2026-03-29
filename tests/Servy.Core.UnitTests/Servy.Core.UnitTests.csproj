@@ -123,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\AppConfigTests.cs" />
+    <Compile Include="DTOs\ServiceDtoTests.cs" />
     <Compile Include="Helpers\AppFoldersHelperTests.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariableParserTests.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidatorTests.cs" />
