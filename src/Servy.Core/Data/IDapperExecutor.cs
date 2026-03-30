@@ -1,6 +1,4 @@
 ﻿using Dapper;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace Servy.Core.Data
 {
@@ -11,6 +9,18 @@ namespace Servy.Core.Data
     /// </summary>
     public interface IDapperExecutor
     {
+        /// <summary>Executes a SQL command returning a scalar value.</summary>
+        T? ExecuteScalar<T>(string sql, object? param = null);
+
+        /// <summary>Executes a SQL command (INSERT, UPDATE, DELETE).</summary>
+        int Execute(string sql, object? param = null);
+
+        /// <summary>Executes a query returning a collection.</summary>
+        IEnumerable<T> Query<T>(string sql, object? param = null);
+
+        /// <summary>Executes a query returning a single entity or default.</summary>
+        T? QuerySingleOrDefault<T>(string sql, object? param = null);
+
         /// <summary>
         /// Executes a SQL command that returns a scalar value.
         /// </summary>

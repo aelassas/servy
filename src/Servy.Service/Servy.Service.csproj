@@ -66,9 +66,9 @@
     <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <FrameworkReference Include="Microsoft.NETCore.App" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <PropertyGroup Condition="'$(Configuration)' != 'Release'">
     <RuntimeIdentifier></RuntimeIdentifier>

@@ -23,8 +23,6 @@ namespace Servy.Service.CommandLine
         /// </returns>
         public static StartOptions Parse(IServiceRepository serviceRepository, string[] fullArgs)
         {
-            //fullArgs = fullArgs.Select(a => a.Trim(' ', '"')).ToArray();
-
             if (fullArgs == null || fullArgs.Length == 0)
                 return new StartOptions();
 
@@ -47,13 +45,10 @@ namespace Servy.Service.CommandLine
             return new StartOptions
             {
                 // Process path is no longer passed from binary path and is retrived from DB instead
-                //ExecutablePath = fullArgs.Length > 1 ? fullArgs[1] : string.Empty,
                 ExecutablePath = ProcessHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
                 // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //ExecutableArgs = Helper.EscapeBackslashes(fullArgs.Length > 2 ? fullArgs[2] : string.Empty),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
                 // Working directory is no longer passed from binary path and is retrived from DB instead
-                //WorkingDirectory = fullArgs.Length > 3 ? fullArgs[3] : string.Empty,
                 WorkingDirectory = ProcessHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
                 Priority = fullArgs.Length > 4 && Enum.TryParse(fullArgs[4], true, out ProcessPriorityClass p) ? p : ProcessPriorityClass.Normal,
                 StdOutPath = fullArgs.Length > 5 ? fullArgs[5] : string.Empty,
@@ -65,21 +60,16 @@ namespace Servy.Service.CommandLine
                 ServiceName = serviceName,
                 MaxRestartAttempts = fullArgs.Length > 12 && int.TryParse(fullArgs[12], out int mra) ? mra : 3,
                 // Environment variables are no longer passed from binary path and are retrived from DB instead
-                // EnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 13 ? fullArgs[13] : string.Empty),
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 
                 // Pre-Launch args
                 // Process path is no longer passed from binary path and is retrived from DB instead
-                //PreLaunchExecutablePath = fullArgs.Length > 14 ? fullArgs[14] : string.Empty,
                 PreLaunchExecutablePath = ProcessHelper.ResolvePath(serviceDto.PreLaunchExecutablePath ?? string.Empty),
                 // Working directory is no longer passed from binary path and is retrived from DB instead
-                //PreLaunchWorkingDirectory = fullArgs.Length > 15 ? fullArgs[15] : string.Empty,
                 PreLaunchWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PreLaunchStartupDirectory ?? string.Empty),
                 // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //PreLaunchExecutableArgs = Helper.EscapeBackslashes(fullArgs.Length > 16 ? fullArgs[16] : string.Empty),
                 PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters ?? string.Empty),
                 // Environment variables are no longer passed from binary path and are retrived from DB instead
-                //PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(fullArgs.Length > 17 ? fullArgs[17] : string.Empty),
                 PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.PreLaunchEnvironmentVariables ?? string.Empty),
                 PreLaunchStdOutPath = fullArgs.Length > 18 ? fullArgs[18] : string.Empty,
                 PreLaunchStdErrPath = fullArgs.Length > 19 ? fullArgs[19] : string.Empty,
@@ -89,24 +79,18 @@ namespace Servy.Service.CommandLine
 
                 // Failure program
                 // Process path is no longer passed from binary path and is retrived from DB instead
-                //FailureProgramPath = fullArgs.Length > 23 ? fullArgs[23] : string.Empty,
                 FailureProgramPath = ProcessHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
                 // Working directory is no longer passed from binary path and is retrived from DB instead
-                //FailureProgramWorkingDirectory = fullArgs.Length > 24 ? fullArgs[24] : string.Empty,
                 FailureProgramWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.FailureProgramStartupDirectory ?? string.Empty),
                 // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //FailureProgramArgs = Helper.EscapeBackslashes(fullArgs.Length > 25 ? fullArgs[25] : string.Empty),
                 FailureProgramArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
                 // Post-Launch args
                 // Process path is no longer passed from binary path and is retrived from DB instead
-                //PostLaunchExecutablePath = fullArgs.Length > 26 ? fullArgs[26] : string.Empty,
                 PostLaunchExecutablePath = ProcessHelper.ResolvePath(serviceDto.PostLaunchExecutablePath ?? string.Empty),
                 // Working directory is no longer passed from binary path and is retrived from DB instead
-                //PostLaunchWorkingDirectory = fullArgs.Length > 27 ? fullArgs[27] : string.Empty,
                 PostLaunchWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PostLaunchStartupDirectory ?? string.Empty),
                 // Process parameters are no longer passed from binary path and are retrived from DB instead
-                //PostLaunchExecutableArgs = Helper.EscapeBackslashes(fullArgs.Length > 28 ? fullArgs[28] : string.Empty),
                 PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
 
                 // Debug Logs

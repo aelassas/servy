@@ -31,6 +31,13 @@ namespace Servy.Core.Data
         Task<int> UpdateAsync(ServiceDto service, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Updates an existing <see cref="ServiceDto"/> record.
+        /// </summary>
+        /// <param name="service">The DTO containing updated values.</param>
+        /// <returns>The number of affected records.</returns>
+        int Update(ServiceDto service);
+
+        /// <summary>
         /// Adds or updates a <see cref="ServiceDto"/> record depending on whether it exists.
         /// </summary>
         /// <param name="service">The DTO to upsert.</param>
@@ -71,6 +78,14 @@ namespace Servy.Core.Data
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         Task<ServiceDto?> GetByNameAsync(string name, bool decrypt = true, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Retrieves a <see cref="ServiceDto"/> by its unique name.
+        /// </summary>
+        /// <param name="name">The name of the service.</param>
+        /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
+        /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
+        ServiceDto? GetByName(string name, bool decrypt = true);
 
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.

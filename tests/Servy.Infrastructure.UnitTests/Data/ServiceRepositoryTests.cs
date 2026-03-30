@@ -191,6 +191,71 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
+        public void Update_FullSecurityAudit_EncryptsAllNineSensitiveFields()
+        {
+            // 1. Arrange - Unique plain-text values for every sensitive field
+            var dto = new ServiceDto
+            {
+                Id = 123,
+                Name = "UpdateAuditService",
+                Password = "p_plain",
+                Parameters = "args_plain",
+                EnvironmentVariables = "env_plain",
+                FailureProgramParameters = "fail_args_plain",
+                PreLaunchParameters = "pre_args_plain",
+                PreLaunchEnvironmentVariables = "pre_env_plain",
+                PostLaunchParameters = "post_args_plain",
+                PreStopParameters = "pre_stop_plain",
+                PostStopParameters = "post_stop_plain"
+            };
+
+            // 2. Setup Mocks - One-to-one mapping for verification
+            _mockSecureData.Setup(s => s.Encrypt("p_plain")).Returns("p_enc");
+            _mockSecureData.Setup(s => s.Encrypt("args_plain")).Returns("args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("env_plain")).Returns("env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("fail_args_plain")).Returns("fail_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_args_plain")).Returns("pre_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_env_plain")).Returns("pre_env_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_args_plain")).Returns("post_args_enc");
+            _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
+            _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
+
+            // ExecuteAsync returns the number of rows affected (usually 1)
+            _mockDapper.Setup(d => d.Execute(It.IsAny<string>(), It.IsAny<object>()))
+                       .Returns(1);
+
+            var repo = CreateRepository();
+
+            // 3. Act
+            var rowsAffected = repo.Update(dto);
+
+            // 4. Assert - Functional Results
+            Assert.Equal(1, rowsAffected);
+
+            // 5. Assert - Side-Effect Protection
+            // The original object MUST NOT be mutated (remains plain-text for the UI)
+            Assert.Equal("p_plain", dto.Password);
+            Assert.Equal("env_plain", dto.EnvironmentVariables);
+            Assert.Equal("pre_stop_plain", dto.PreStopParameters);
+
+            // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
+            _mockDapper.Verify(d => d.Execute(
+                It.IsAny<string>(),
+                It.Is<object>(obj =>
+                    GetPropertyValue(obj, "Id")!.Equals("123") &&
+                    GetPropertyValue(obj, "Password") == "p_enc" &&
+                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
+                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
+                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
+                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
+                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
+                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
+                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
+                )), Times.Once);
+        }
+
+        [Fact]
         public async Task UpsertAsync_ExistingService_UpdatesAndReturnsId()
         {
             // Arrange
@@ -398,6 +463,47 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             var repo = CreateRepository();
             var result = await repo.GetByNameAsync("S", true, TestContext.Current.CancellationToken);
+
+            Assert.Equal("params", result!.Parameters);
+            Assert.Equal("failure-prog-params", result!.FailureProgramParameters);
+            Assert.Equal("pre-launch-params", result!.PreLaunchParameters);
+            Assert.Equal("post-launch-params", result!.PostLaunchParameters);
+            Assert.Equal("plain", result!.Password);
+            Assert.Equal("v1=val1;v2=val2", result!.EnvironmentVariables);
+            Assert.Equal("v3=val3", result!.PreLaunchEnvironmentVariables);
+            Assert.Equal("pre-stop-params", result!.PreStopParameters);
+            Assert.Equal("post-stop-params", result!.PostStopParameters);
+        }
+
+        [Fact]
+        public void GetByName_DecryptsPassword()
+        {
+            var dto = new ServiceDto
+            {
+                Name = "S",
+                Parameters = "encrypted_params",
+                FailureProgramParameters = "encrypted_failure_prog_params",
+                PreLaunchParameters = "encrypted_pre_launch_params",
+                PostLaunchParameters = "encrypted_post_launch_params",
+                Password = "encrypted",
+                EnvironmentVariables = "encrypted_vars",
+                PreLaunchEnvironmentVariables = "encrypted_pre_vars",
+                PreStopParameters = "encrypted_pre_stop_params",
+                PostStopParameters = "encrypted_post_stop_params",
+            };
+            _mockDapper.Setup(d => d.QuerySingleOrDefault<ServiceDto>(It.IsAny<string>(), It.IsAny<object>())).Returns(dto);
+            _mockSecureData.Setup(s => s.Decrypt("encrypted")).Returns("plain");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_vars")).Returns("v1=val1;v2=val2");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_vars")).Returns("v3=val3");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_params")).Returns("params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_failure_prog_params")).Returns("failure-prog-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_launch_params")).Returns("pre-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_launch_params")).Returns("post-launch-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_pre_stop_params")).Returns("pre-stop-params");
+            _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post-stop-params");
+
+            var repo = CreateRepository();
+            var result = repo.GetByName("S", true);
 
             Assert.Equal("params", result!.Parameters);
             Assert.Equal("failure-prog-params", result!.FailureProgramParameters);

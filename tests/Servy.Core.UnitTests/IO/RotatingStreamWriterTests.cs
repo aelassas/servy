@@ -219,17 +219,27 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void Dispose_ClosesWriter()
+        public void Dispose_IsIdempotent_AndDoesNotCrashOnSubsequentCalls()
         {
-            var writer = CreateWriter(_logFilePath, true, 1000);
-            writer.WriteLine("Test line");
+            // Arrange
+            var writer = new RotatingStreamWriter(_logFilePath, true, 1000, false, DateRotationType.Daily, 0);
+            writer.WriteLine("Initial log entry");
+
+            // Act
             writer.Dispose();
 
-            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
+            // Assert
+            // In xUnit, we just invoke the method. If it throws NullReferenceException, the test fails.
+            var ex1 = Record.Exception(() => writer.WriteLine("Line after disposal"));
+            Assert.Null(ex1);
 
-            // Try dispose again to cover all branches of Dispose method
-            writer.Dispose();
-            Assert.Throws<NullReferenceException>(() => writer.WriteLine("Another line"));
+            // Act: Dispose again to cover the (if (_disposed) return;) branch
+            var ex2 = Record.Exception(writer.Dispose);
+            Assert.Null(ex2);
+
+            // Final check: ensure WriteLine still doesn't crash after a second disposal
+            var ex3 = Record.Exception(() => writer.WriteLine("Line after double disposal"));
+            Assert.Null(ex3);
         }
 
         [Fact]

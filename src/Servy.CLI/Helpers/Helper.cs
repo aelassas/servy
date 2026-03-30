@@ -26,7 +26,9 @@ namespace Servy.CLI.Helpers
         /// Gets all verb names defined by <see cref="VerbAttribute"/> on all types in the current assembly.
         /// </summary>
         /// <returns>An array of verb names.</returns>
-        [RequiresUnreferencedCode("Reflection is used to load types from the assembly.")]
+        [UnconditionalSuppressMessage("Trimming", 
+            "IL2026:Members annotated with 'RequiresUnreferencedCode' require dynamic access otherwise can break functionality when trimming application code",
+            Justification = "Verb types are manually preserved via the main Parser configuration.")]
         public static string[] GetVerbs()
         {
             var verbs = Assembly.GetExecutingAssembly()
@@ -71,8 +73,6 @@ namespace Servy.CLI.Helpers
             Console.WriteLine(result.Message);
             return result.Success ? 0 : 1;
         }
-
-
 
     }
 }

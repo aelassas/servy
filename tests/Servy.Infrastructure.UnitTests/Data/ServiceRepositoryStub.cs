@@ -97,7 +97,17 @@ namespace Servy.Infrastructure.UnitTests.Data
     // Dummy stubs for the constructor dependencies
     public class DapperExecutorStub : IDapperExecutor
     {
+        public int Execute(string sql, object? param = null)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<int> ExecuteAsync(string sql, object? param = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T? ExecuteScalar<T>(string sql, object? param = null)
         {
             throw new NotImplementedException();
         }
@@ -107,7 +117,17 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
+        public IEnumerable<T> Query<T>(string sql, object? param = null)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
+        {
+            throw new NotImplementedException();
+        }
+
+        public T? QuerySingleOrDefault<T>(string sql, object? param = null)
         {
             throw new NotImplementedException();
         }
@@ -117,11 +137,13 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
     }
+
     public class SecureDataStub : ISecureData
     {
         public string Encrypt(string value) => value;
         public string Decrypt(string value) => value;
     }
+
     public class XmlServiceSerializerStub : IXmlServiceSerializer
     {
         public ServiceDto Deserialize(string xml) => new ServiceDto { Name = "StubService" };

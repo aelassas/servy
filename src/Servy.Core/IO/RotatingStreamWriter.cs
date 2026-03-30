@@ -93,7 +93,8 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
-                _writer!.WriteLine(line);
+                if (_writer == null) return;
+                _writer.WriteLine(line);
                 _writer.Flush();
                 CheckRotation();
 
