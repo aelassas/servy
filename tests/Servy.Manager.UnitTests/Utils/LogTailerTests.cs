@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Servy.Manager.Models;
+using Servy.Manager.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Servy.Manager.Models;
-using Servy.Manager.Utils;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.Utils
@@ -23,7 +22,15 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Note: We avoid deleting here if tests didn't clean up their tasks
             // to prevent the "File in use" error in Dispose.
-            try { if (File.Exists(_tempFilePath)) File.Delete(_tempFilePath); } catch { }
+            try
+            {
+                if (File.Exists(_tempFilePath))
+                    File.Delete(_tempFilePath);
+            }
+            catch
+            {
+                // Ignore exceptions during cleanup, especially if the file is still in use by a running test.
+            }
         }
 
         [Fact]
@@ -54,7 +61,8 @@ namespace Servy.Manager.UnitTests.Utils
             var fileInfo = new FileInfo(initialPath);
 
             var capturedLines = new List<LogLine>();
-            tailer.OnNewLines += (lines) => {
+            tailer.OnNewLines += (lines) =>
+            {
                 lock (capturedLines) capturedLines.AddRange(lines);
             };
 
