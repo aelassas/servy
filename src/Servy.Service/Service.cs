@@ -1315,12 +1315,15 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
-                _logger?.Info($"Running failure program: {psi.FileName}");
-
-                // Fire-and-forget: start the process without disposing immediately
-                using (var process = Process.Start(psi))
+                // Fire-and-forget: start the process without waiting
+                var process = Process.Start(psi);
+                if (process != null)
                 {
-                    // The OS process continues running, but the managed handle is freed.
+                    using (process)
+                    {
+                        _logger?.Info($"Running failure program: {psi.FileName}");
+                        // The OS process continues running, but the managed handle is freed.
+                    }
                 }
             }
             catch (Exception ex)
@@ -2257,12 +2260,15 @@ namespace Servy.Service
                     CreateNoWindow = true
                 };
 
-                _logger?.Info($"Running post-stop program: {psi.FileName}");
-
                 // Fire-and-forget: start the process without waiting
-                using (var process = Process.Start(psi))
+                var process = Process.Start(psi);
+                if (process != null)
                 {
-                    // The OS process continues running, but the managed handle is freed.
+                    using (process)
+                    {
+                        _logger?.Info($"Running post-stop program: {psi.FileName}");
+                        // The OS process continues running, but the managed handle is freed.
+                    }
                 }
             }
             catch (Exception ex)
