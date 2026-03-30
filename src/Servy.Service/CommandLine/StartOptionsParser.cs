@@ -34,9 +34,7 @@ namespace Servy.Service.CommandLine
                 throw new ArgumentException("Service name is empty!");
             }
 
-            var serviceDto = serviceRepository
-                .GetByNameAsync(serviceName)
-                .ConfigureAwait(false).GetAwaiter().GetResult();
+            var serviceDto = serviceRepository.GetByName(serviceName);
 
             if (serviceDto == null)
             {

@@ -1443,7 +1443,7 @@ namespace Servy.Service
                     serviceDto.ActiveStderrPath = _options?.StdErrPath;
                 }
 
-                _ = _serviceRepository.UpdateAsync(serviceDto);
+                _serviceRepository.Update(serviceDto);
             }
         }
 

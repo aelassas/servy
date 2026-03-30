@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -382,7 +381,7 @@ namespace Servy.Manager.ViewModels
                         return;
 
                     RawLines.AddRange(lines);
-                    while (RawLines.Count > _maxLines) RawLines.RemoveAt(0);
+                    RawLines.TrimToSize(_maxLines);
 
                     // Signal the View to "Restore it now!"
                     RequestStatePreservation?.Invoke(false);
