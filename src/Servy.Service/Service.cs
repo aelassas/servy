@@ -1338,13 +1338,20 @@ namespace Servy.Service
 
                 // Fire-and-forget: start the process without waiting
                 var process = Process.Start(psi);
+
                 if (process != null)
                 {
+                    // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
+                    // because it's meant to run independently after we've stopped the main process tree.
                     using (process)
                     {
                         _logger?.Info($"Running failure program: {psi.FileName}");
                         // The OS process continues running, but the managed handle is freed.
                     }
+                }
+                else
+                {
+                    _logger?.Error($"Failed to run failure program: {psi.FileName}");
                 }
             }
             catch (Exception ex)
@@ -2285,13 +2292,20 @@ namespace Servy.Service
 
                 // Fire-and-forget: start the process without waiting
                 var process = Process.Start(psi);
+
                 if (process != null)
                 {
+                    // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
+                    // because it's meant to run independently after we've stopped the main process tree.
                     using (process)
                     {
                         _logger?.Info($"Running post-stop program: {psi.FileName}");
                         // The OS process continues running, but the managed handle is freed.
                     }
+                }
+                else
+                {
+                    _logger?.Error($"Failed to start post-stop program: {psi.FileName}");
                 }
             }
             catch (Exception ex)
