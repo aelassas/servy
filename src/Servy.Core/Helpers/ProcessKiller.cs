@@ -57,24 +57,23 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public static void KillChildren(int parentPid)
         {
+            // 1. Get self PID to prevent suicide
+            int selfPid = Process.GetCurrentProcess().Id;
+
+            // 2. Try to get parent start time, but DON'T FAIL if the parent is already dead.
+            // If the parent is dead, we use a fallback time (DateTime.MinValue) 
+            // to allow the first level of children to be found.
+            DateTime parentStartTime = DateTime.MinValue;
             try
             {
-                // 1. Evaluate selfPid EXACTLY ONCE at the top-level entry point
-                int selfPid = Process.GetCurrentProcess().Id;
-
-                DateTime parentStartTime;
                 using (var parent = Process.GetProcessById(parentPid))
                 {
                     parentStartTime = parent.StartTime;
                 }
+            }
+            catch { /* Parent already exited, proceed with MinValue */ }
 
-                // 2. Pass selfPid into the recursive chain
-                KillChildrenInternal(parentPid, parentStartTime, selfPid);
-            }
-            catch
-            {
-                // Parent already gone, nothing to kill
-            }
+            KillChildrenInternal(parentPid, parentStartTime, selfPid);
         }
 
         /// <summary>
@@ -88,52 +87,53 @@ namespace Servy.Core.Helpers
         {
             try
             {
-                using (var searcher = new ManagementObjectSearcher(
-                    $"SELECT ProcessId, CreationDate FROM Win32_Process WHERE ParentProcessId={parentPid.ToString(CultureInfo.InvariantCulture)}"
-                ))
+                // Optimization: Only select what we need. WMI is expensive.
+                string query = $"SELECT ProcessId, CreationDate FROM Win32_Process WHERE ParentProcessId={parentPid}";
+
+                using (var searcher = new ManagementObjectSearcher(query))
+                using (var results = searcher.Get())
                 {
-                    foreach (var obj in searcher.Get())
+                    foreach (var obj in results)
                     {
                         int childPid = Convert.ToInt32(obj["ProcessId"]);
+                        if (childPid == selfPid) continue;
 
-                        // WMI dates are strings; ManagementDateTimeConverter handles the conversion
-                        DateTime childStartTime = ManagementDateTimeConverter.ToDateTime(obj["CreationDate"].ToString());
+                        // Safely parse WMI date
+                        DateTime childStartTime = DateTime.MinValue;
+                        try
+                        {
+                            childStartTime = ManagementDateTimeConverter.ToDateTime(obj["CreationDate"].ToString());
+                        }
+                        catch { /* Ignore malformed dates */ }
 
-                        // SAFETY CHECK: The child must have started AFTER the parent
-                        if (childStartTime < parentStartTime)
+                        // Validation: Only skip if we are SURE it's a PID reuse (child older than parent)
+                        // We add a 2-second buffer for clock skew between WMI and KERNEL32
+                        if (parentStartTime != DateTime.MinValue && childStartTime < parentStartTime.AddSeconds(-2))
+                        {
                             continue;
+                        }
 
-                        // Skip the current process to avoid a self-kill scenario
-                        if (childPid == selfPid)
-                            continue;
-
-                        // Pass the child's start time and selfPid down for its own children
+                        // Recursion: Kill grandchildren first (Leaf-to-Root)
                         KillChildrenInternal(childPid, childStartTime, selfPid);
 
-                        using (var child = Process.GetProcessById(childPid))
+                        // Final Kill
+                        try
                         {
-                            try
+                            using (var child = Process.GetProcessById(childPid))
                             {
-                                // Double-check StartTime via Process object for maximum accuracy 
-                                // before the final kill
-                                if (!child.HasExited && child.StartTime == childStartTime)
+                                if (!child.HasExited)
                                 {
                                     child.Kill();
-                                    child.WaitForExit();
+                                    // Do not wait indefinitely; 2s is plenty of time
+                                    child.WaitForExit(2000);
                                 }
                             }
-                            catch
-                            {
-                                // Already exited or Access Denied
-                            }
                         }
+                        catch { /* Process gone or Access Denied */ }
                     }
                 }
             }
-            catch
-            {
-                // Handle WMI or enumeration errors
-            }
+            catch (ManagementException) { /* WMI Service is stopping or busy */ }
         }
 
         /// <summary>
@@ -156,48 +156,43 @@ namespace Servy.Core.Helpers
                 if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
                     processName = processName.Substring(0, processName.Length - 4);
 
-                // Capture the process snapshot once for the entire operation
                 var allProcesses = Process.GetProcesses();
+                // CRITICAL: Identify the current process and its ancestors to avoid IDE suicide
+                var protectedPids = GetAncestorPids();
 
-                // Filter the initial targets. Use ToList() to avoid re-evaluating 
-                // the LINQ expression if the underlying process state changes.
-                var targetProcesses = allProcesses
-                    .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (targetProcesses.Count == 0)
-                    return true;
-
-                // 1. Kill the tree (children and the process itself)
-                foreach (var proc in targetProcesses)
+                try
                 {
-                    KillProcessTree(proc, allProcesses);
-                }
+                    var targetProcesses = allProcesses
+                        .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => !protectedPids.Contains(p.Id)) // Never kill protected processes
+                        .ToList();
 
-                // 2. Kill the parents if requested
-                if (killParents)
-                {
+                    if (targetProcesses.Count == 0)
+                        return true;
+
                     foreach (var proc in targetProcesses)
                     {
-                        // Note: We pass the target proc even if it was killed in step 1.
-                        // Our updated KillParentProcesses uses the cached StartTime 
-                        // and PID from the 'proc' object to safely identify parents.
-                        KillParentProcesses(proc, allProcesses);
+                        KillProcessTree(proc, allProcesses, protectedPids);
                     }
-                }
 
-                return true;
+                    if (killParents)
+                    {
+                        foreach (var proc in targetProcesses)
+                        {
+                            KillParentProcesses(proc, allProcesses, protectedPids);
+                        }
+                    }
+
+                    return true;
+                }
+                finally
+                {
+                    foreach (var p in allProcesses) p.Dispose();
+                }
             }
             catch
             {
-                // General fallback to ensure the service manager doesn't crash 
-                // during cleanup operations.
                 return false;
-            }
-            finally
-            {
-                // Optional: Clean up process handles from the snapshot if needed, 
-                // though GC handles this well for the Process class.
             }
         }
 
@@ -287,32 +282,28 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="process">The process to kill.</param>
         /// <param name="allProcesses">All currently running processes.</param>
-        private static void KillProcessTree(Process process, Process[] allProcesses)
+        private static void KillProcessTree(Process process, Process[] allProcesses, HashSet<int> protectedPids)
         {
             try
             {
-                // Get the parent's start time once to compare against all potential children
+                if (protectedPids.Contains(process.Id)) return;
+
+                int parentId = process.Id;
                 DateTime parentStartTime = process.StartTime;
 
                 var children = allProcesses.Where(p =>
                 {
                     try
                     {
-                        // SAFETY CHECK: Identity = PID + StartTime
-                        // 1. Does the PID match?
-                        // 2. Did this 'child' start AFTER the parent? 
-                        // If it started before, it's a recycled PID from a previous process.
-                        return GetParentProcessId(p) == process.Id && p.StartTime >= parentStartTime;
+                        return GetParentProcessId(p) == parentId &&
+                               p.StartTime >= parentStartTime.AddSeconds(-2);
                     }
-                    catch
-                    {
-                        return false;
-                    }
-                });
+                    catch { return false; }
+                }).ToArray();
 
                 foreach (var child in children)
                 {
-                    KillProcessTree(child, allProcesses);
+                    KillProcessTree(child, allProcesses, protectedPids);
                 }
 
                 if (!process.HasExited)
@@ -321,10 +312,7 @@ namespace Servy.Core.Helpers
                     process.WaitForExit(10_000);
                 }
             }
-            catch
-            {
-                // Ignore if the process has already exited or access is denied
-            }
+            catch { }
         }
 
         /// <summary>
@@ -332,43 +320,64 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="process">The process whose parents to kill.</param>
         /// <param name="allProcesses">All currently running processes.</param>
-        private static void KillParentProcesses(Process process, Process[] allProcesses)
+        private static void KillParentProcesses(Process process, Process[] allProcesses, HashSet<int> protectedPids)
         {
             try
             {
                 int parentId = GetParentProcessId(process);
-                if (parentId <= 0) return;
+
+                // Stop at System/Idle or if the parent is part of the current execution chain
+                if (parentId <= 4 || protectedPids.Contains(parentId)) return;
 
                 var parent = allProcesses.FirstOrDefault(p => p.Id == parentId);
                 if (parent == null) return;
 
-                // SAFETY CHECK: PID REUSE PROTECTION
-                // Verify the parent's StartTime is earlier than the child's StartTime.
-                // If the "parent" started after the child, the PID has been recycled 
-                // and this is an unrelated process.
                 try
                 {
-                    if (parent.StartTime >= process.StartTime)
-                    {
-                        return;
-                    }
+                    if (parent.StartTime > process.StartTime.AddSeconds(2)) return;
                 }
-                catch
+                catch (System.ComponentModel.Win32Exception) { return; }
+
+                // Move up first
+                KillParentProcesses(parent, allProcesses, protectedPids);
+
+                if (!parent.HasExited)
                 {
-                    // If we can't access StartTime (Access Denied), it's safer to 
-                    // abort the parent-kill chain to avoid collateral damage.
-                    return;
+                    parent.Kill();
+                    parent.WaitForExit(5000);
                 }
-
-                KillParentProcesses(parent, allProcesses);
-
-                parent.Kill();
-                parent.WaitForExit();
             }
-            catch
-            {
-                // Ignore if the process has already exited.
-            }
+            catch { }
         }
+
+        /// <summary>
+        /// Gets the PID of the current process and all its ancestors.
+        /// </summary>
+        private static HashSet<int> GetAncestorPids()
+        {
+            var ancestors = new HashSet<int>();
+            try
+            {
+                var current = Process.GetCurrentProcess();
+                ancestors.Add(current.Id);
+
+                int parentId = GetParentProcessId(current);
+                while (parentId > 4)
+                {
+                    ancestors.Add(parentId);
+                    try
+                    {
+                        using (var parent = Process.GetProcessById(parentId))
+                        {
+                            parentId = GetParentProcessId(parent);
+                        }
+                    }
+                    catch { break; }
+                }
+            }
+            catch { }
+            return ancestors;
+        }
+
     }
 }

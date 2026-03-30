@@ -120,18 +120,6 @@ namespace Servy
             }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
-        /// <summary>
-        /// Performs application cleanup tasks when the application is exiting.
-        /// </summary>
-        /// <remarks>This method ensures that logging resources are properly released before the
-        /// application shuts down. It is called automatically during the application exit sequence.</remarks>
-        /// <param name="e">An object that contains the exit event data.</param>
-        protected override void OnExit(ExitEventArgs e)
-        {
-            Logger.Shutdown();
-            base.OnExit(e);
-        }
-
         #endregion
 
         #region Helpers
