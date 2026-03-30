@@ -102,7 +102,7 @@ jobs:
       - name: Install 7zip
         shell: pwsh
         run: |
-          $url = "https://www.7-zip.org/a/7z2501-x64.exe"
+          $url = "https://github.com/ip7z/7zip/releases/download/26.00/7z2600-x64.exe"
           Invoke-WebRequest -Uri $url -OutFile "7z.exe" -ErrorAction Stop
           Start-Process ".\7z.exe" -ArgumentList "/S" -Wait
           if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
