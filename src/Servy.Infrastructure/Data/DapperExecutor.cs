@@ -77,46 +77,46 @@ namespace Servy.Infrastructure.Data
         #region Asynchronous Methods
 
         ///<inheritdoc/>
-        public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null)
+        public async Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.ExecuteScalarAsync<T?>(sql, param);
+                return await connection.ExecuteScalarAsync<T?>(sql, param).ConfigureAwait(false);
             }
         }
 
         ///<inheritdoc/>
-        public Task<int> ExecuteAsync(string sql, object? param = null)
+        public async Task<int> ExecuteAsync(string sql, object? param = null)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.ExecuteAsync(sql, param);
+                return await connection.ExecuteAsync(sql, param).ConfigureAwait(false);
             }
         }
 
         ///<inheritdoc/>
-        public Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
+        public async Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
         {
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.QueryAsync<T>(command);
+                return await connection.QueryAsync<T>(command).ConfigureAwait(false);
             }
         }
 
         ///<inheritdoc/>
-        public Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
+        public async Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
             using (var connection = _dbContext.CreateConnection())
             {
                 connection.Open();
-                return connection.QuerySingleOrDefaultAsync<T>(command);
+                return await connection.QuerySingleOrDefaultAsync<T>(command).ConfigureAwait(false);
             }
         }
 

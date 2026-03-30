@@ -25,6 +25,23 @@ namespace Servy.UI
             if (!_suppressNotification)
                 base.OnCollectionChanged(e);
         }
+
+        public void TrimToSize(int maxItems)
+        {
+            if (Items.Count <= maxItems) return;
+
+            _suppressNotification = true;
+
+            // Remove from the underlying IList<T> without triggering events
+            while (Items.Count > maxItems)
+            {
+                Items.RemoveAt(0);
+            }
+
+            _suppressNotification = false;
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
+
     }
 
 }
