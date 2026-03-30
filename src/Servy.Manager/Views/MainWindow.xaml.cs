@@ -485,35 +485,6 @@ namespace Servy.Manager.Views
                 await logsVm.SearchCommand.ExecuteAsync(null);
         }
 
-
-        /// <summary>
-        /// Handles the <see cref="Window.Closed"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
-        /// <remarks>
-        /// This override ensures that when the main window is closed, all child processes
-        /// spawned by the current process are terminated. This prevents orphaned processes
-        /// from remaining in the system after the application exits.
-        /// 
-        /// The method retrieves the current process ID and passes it to
-        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
-        /// Any exceptions thrown during this cleanup are caught and logged for debugging.
-        /// </remarks>
-        protected override void OnClosed(EventArgs e)
-        {
-            try
-            {
-                var currentPID = Process.GetCurrentProcess().Id;
-                ProcessKiller.KillChildren(currentPID);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Error killing child processes.", ex);
-            }
-
-            base.OnClosed(e);
-        }
-
         /// <summary>
         /// Handles the PreviewMouseLeftButtonDown event for the DataGrid "Check All" header checkbox.
         /// Toggles the SelectAll property in the MainViewModel when the user clicks the header checkbox.
@@ -596,6 +567,36 @@ namespace Servy.Manager.Views
                 source = VisualTreeHelper.GetParent(source);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Handles the <see cref="Window.Closed"/> event.
+        /// </summary>
+        /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
+        /// <remarks>
+        /// This override ensures that when the main window is closed, all child processes
+        /// spawned by the current process are terminated. This prevents orphaned processes
+        /// from remaining in the system after the application exits.
+        /// 
+        /// The method retrieves the current process ID and passes it to
+        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
+        /// Any exceptions thrown during this cleanup are caught and logged for debugging.
+        /// </remarks>
+        protected override void OnClosed(EventArgs e)
+        {
+            try
+            {
+                var currentPID = Process.GetCurrentProcess().Id;
+                ProcessKiller.KillChildren(currentPID);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error killing child processes.", ex);
+            }
+
+            Logger.Shutdown();
+
+            base.OnClosed(e);
         }
 
         /// <summary>

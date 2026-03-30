@@ -128,6 +128,7 @@
     <Compile Include="EnvironmentVariables\EnvironmentVariableParserTests.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidatorTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
+    <Compile Include="Helpers\ProcessKillerTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
