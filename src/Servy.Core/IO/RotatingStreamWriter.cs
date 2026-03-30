@@ -96,6 +96,7 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
+                if (_writer == null) return;
                 _writer.WriteLine(line);
                 _writer.Flush();
                 CheckRotation();

@@ -1,10 +1,7 @@
 ﻿using CommandLine;
 using Servy.CLI.Models;
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Management;
 using System.Reflection;
 using System.Threading.Tasks;
 

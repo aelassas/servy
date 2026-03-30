@@ -59,32 +59,32 @@ namespace Servy.Infrastructure.Data
             var encryptedService = CreateEncryptedClone(service);
 
             var sql = @"
-        INSERT INTO Services (
-            Name, Description, ExecutablePath, StartupDirectory, Parameters, 
-            StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
-            EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
-            EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
-            PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
-            PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
-            FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-            PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
-            EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
-            PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
-            PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
-        ) VALUES (
-            @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
-            @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
-            @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
-            @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
-            @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
-            @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
-            @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-            @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
-            @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
-            @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
-            @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
-        );
-        SELECT last_insert_rowid();";
+                INSERT INTO Services (
+                    Name, Description, ExecutablePath, StartupDirectory, Parameters, 
+                    StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
+                    EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
+                    EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
+                    PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
+                    PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
+                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
+                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
+                    PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
+                ) VALUES (
+                    @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
+                    @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
+                    @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
+                    @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
+                    @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
+                    @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
+                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
+                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
+                    @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
+                );
+                SELECT last_insert_rowid();";
 
             // 2. Capture the generated ID from the database
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService);
@@ -102,65 +102,133 @@ namespace Servy.Infrastructure.Data
             var encryptedService = CreateEncryptedClone(service);
 
             var sql = @"
-        UPDATE Services SET
-            Name = @Name,
-            Description = @Description,
-            ExecutablePath = @ExecutablePath,
-            StartupDirectory = @StartupDirectory,
-            Parameters = @Parameters,
-            StartupType = @StartupType,
-            Priority = @Priority,
-            StdoutPath = @StdoutPath,
-            StderrPath = @StderrPath,
-            EnableRotation = @EnableRotation,
-            RotationSize = @RotationSize,
-            EnableHealthMonitoring = @EnableHealthMonitoring,
-            HeartbeatInterval = @HeartbeatInterval,
-            MaxFailedChecks = @MaxFailedChecks,
-            RecoveryAction = @RecoveryAction,
-            MaxRestartAttempts = @MaxRestartAttempts,
-            EnvironmentVariables = @EnvironmentVariables,
-            ServiceDependencies = @ServiceDependencies,
-            RunAsLocalSystem = @RunAsLocalSystem,
-            UserAccount = @UserAccount,
-            Password = @Password,
-            PreLaunchExecutablePath = @PreLaunchExecutablePath,
-            PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
-            PreLaunchParameters = @PreLaunchParameters,
-            PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
-            PreLaunchStdoutPath = @PreLaunchStdoutPath,
-            PreLaunchStderrPath = @PreLaunchStderrPath,
-            PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
-            PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
-            PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,                     
-            FailureProgramPath = @FailureProgramPath,
-            FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
-            FailureProgramParameters = @FailureProgramParameters,
-            PostLaunchExecutablePath = @PostLaunchExecutablePath,
-            PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
-            PostLaunchParameters = @PostLaunchParameters,
-            Pid = @Pid,
-            EnableDebugLogs = @EnableDebugLogs,
-            DisplayName = @DisplayName,
-            MaxRotations = @MaxRotations,
-            EnableDateRotation = @EnableDateRotation,
-            DateRotationType = @DateRotationType,
-            StartTimeout = @StartTimeout,
-            StopTimeout = @StopTimeout,
-            PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout),
-            ActiveStdoutPath = @ActiveStdoutPath,
-            ActiveStderrPath = @ActiveStderrPath,
-            PreStopExecutablePath = @PreStopExecutablePath,
-            PreStopStartupDirectory = @PreStopStartupDirectory,
-            PreStopParameters = @PreStopParameters,
-            PreStopTimeoutSeconds = @PreStopTimeoutSeconds,
-            PreStopLogAsError = @PreStopLogAsError,
-            PostStopExecutablePath = @PostStopExecutablePath,
-            PostStopStartupDirectory = @PostStopStartupDirectory,
-            PostStopParameters = @PostStopParameters
-        WHERE Id = @Id;";
+                UPDATE Services SET
+                    Name = @Name,
+                    Description = @Description,
+                    ExecutablePath = @ExecutablePath,
+                    StartupDirectory = @StartupDirectory,
+                    Parameters = @Parameters,
+                    StartupType = @StartupType,
+                    Priority = @Priority,
+                    StdoutPath = @StdoutPath,
+                    StderrPath = @StderrPath,
+                    EnableRotation = @EnableRotation,
+                    RotationSize = @RotationSize,
+                    EnableHealthMonitoring = @EnableHealthMonitoring,
+                    HeartbeatInterval = @HeartbeatInterval,
+                    MaxFailedChecks = @MaxFailedChecks,
+                    RecoveryAction = @RecoveryAction,
+                    MaxRestartAttempts = @MaxRestartAttempts,
+                    EnvironmentVariables = @EnvironmentVariables,
+                    ServiceDependencies = @ServiceDependencies,
+                    RunAsLocalSystem = @RunAsLocalSystem,
+                    UserAccount = @UserAccount,
+                    Password = @Password,
+                    PreLaunchExecutablePath = @PreLaunchExecutablePath,
+                    PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
+                    PreLaunchParameters = @PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = @PreLaunchStdoutPath,
+                    PreLaunchStderrPath = @PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,                     
+                    FailureProgramPath = @FailureProgramPath,
+                    FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
+                    FailureProgramParameters = @FailureProgramParameters,
+                    PostLaunchExecutablePath = @PostLaunchExecutablePath,
+                    PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
+                    PostLaunchParameters = @PostLaunchParameters,
+                    Pid = @Pid,
+                    EnableDebugLogs = @EnableDebugLogs,
+                    DisplayName = @DisplayName,
+                    MaxRotations = @MaxRotations,
+                    EnableDateRotation = @EnableDateRotation,
+                    DateRotationType = @DateRotationType,
+                    StartTimeout = @StartTimeout,
+                    StopTimeout = @StopTimeout,
+                    PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout),
+                    ActiveStdoutPath = @ActiveStdoutPath,
+                    ActiveStderrPath = @ActiveStderrPath,
+                    PreStopExecutablePath = @PreStopExecutablePath,
+                    PreStopStartupDirectory = @PreStopStartupDirectory,
+                    PreStopParameters = @PreStopParameters,
+                    PreStopTimeoutSeconds = @PreStopTimeoutSeconds,
+                    PreStopLogAsError = @PreStopLogAsError,
+                    PostStopExecutablePath = @PostStopExecutablePath,
+                    PostStopStartupDirectory = @PostStopStartupDirectory,
+                    PostStopParameters = @PostStopParameters
+                WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, encryptedService);
+        }
+
+        /// <inheritdoc />
+        public virtual int Update(ServiceDto service)
+        {
+            // Create a shallow copy to avoid mutating the caller's object
+            var encryptedService = CreateEncryptedClone(service);
+
+            var sql = @"
+                UPDATE Services SET
+                    Name = @Name,
+                    Description = @Description,
+                    ExecutablePath = @ExecutablePath,
+                    StartupDirectory = @StartupDirectory,
+                    Parameters = @Parameters,
+                    StartupType = @StartupType,
+                    Priority = @Priority,
+                    StdoutPath = @StdoutPath,
+                    StderrPath = @StderrPath,
+                    EnableRotation = @EnableRotation,
+                    RotationSize = @RotationSize,
+                    EnableHealthMonitoring = @EnableHealthMonitoring,
+                    HeartbeatInterval = @HeartbeatInterval,
+                    MaxFailedChecks = @MaxFailedChecks,
+                    RecoveryAction = @RecoveryAction,
+                    MaxRestartAttempts = @MaxRestartAttempts,
+                    EnvironmentVariables = @EnvironmentVariables,
+                    ServiceDependencies = @ServiceDependencies,
+                    RunAsLocalSystem = @RunAsLocalSystem,
+                    UserAccount = @UserAccount,
+                    Password = @Password,
+                    PreLaunchExecutablePath = @PreLaunchExecutablePath,
+                    PreLaunchStartupDirectory = @PreLaunchStartupDirectory,
+                    PreLaunchParameters = @PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = @PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = @PreLaunchStdoutPath,
+                    PreLaunchStderrPath = @PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = @PreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = @PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = @PreLaunchIgnoreFailure,                     
+                    FailureProgramPath = @FailureProgramPath,
+                    FailureProgramStartupDirectory = @FailureProgramStartupDirectory,
+                    FailureProgramParameters = @FailureProgramParameters,
+                    PostLaunchExecutablePath = @PostLaunchExecutablePath,
+                    PostLaunchStartupDirectory = @PostLaunchStartupDirectory,
+                    PostLaunchParameters = @PostLaunchParameters,
+                    Pid = @Pid,
+                    EnableDebugLogs = @EnableDebugLogs,
+                    DisplayName = @DisplayName,
+                    MaxRotations = @MaxRotations,
+                    EnableDateRotation = @EnableDateRotation,
+                    DateRotationType = @DateRotationType,
+                    StartTimeout = @StartTimeout,
+                    StopTimeout = @StopTimeout,
+                    PreviousStopTimeout = COALESCE(@PreviousStopTimeout, PreviousStopTimeout),
+                    ActiveStdoutPath = @ActiveStdoutPath,
+                    ActiveStderrPath = @ActiveStderrPath,
+                    PreStopExecutablePath = @PreStopExecutablePath,
+                    PreStopStartupDirectory = @PreStopStartupDirectory,
+                    PreStopParameters = @PreStopParameters,
+                    PreStopTimeoutSeconds = @PreStopTimeoutSeconds,
+                    PreStopLogAsError = @PreStopLogAsError,
+                    PostStopExecutablePath = @PostStopExecutablePath,
+                    PostStopStartupDirectory = @PostStopStartupDirectory,
+                    PostStopParameters = @PostStopParameters
+                WHERE Id = @Id;";
+
+            return _dapper.Execute(sql, encryptedService);
         }
 
         /// <summary>
@@ -209,84 +277,84 @@ namespace Servy.Infrastructure.Data
 
             // 2. The conflict target must match the functional index definition: LOWER(Name)
             var sql = @"
-        INSERT INTO Services (
-            Name, Description, ExecutablePath, StartupDirectory, Parameters, 
-            StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
-            EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
-            EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
-            PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
-            PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
-            FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
-            PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
-            EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
-            PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
-            PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
-        ) VALUES (
-            @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
-            @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
-            @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
-            @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
-            @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
-            @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
-            @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
-            @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
-            @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
-            @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
-            @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
-        )
-        ON CONFLICT(LOWER(Name)) DO UPDATE SET
-            Description = excluded.Description,
-            ExecutablePath = excluded.ExecutablePath,
-            StartupDirectory = excluded.StartupDirectory,
-            Parameters = excluded.Parameters,
-            StartupType = excluded.StartupType,
-            Priority = excluded.Priority,
-            StdoutPath = excluded.StdoutPath,
-            StderrPath = excluded.StderrPath,
-            EnableRotation = excluded.EnableRotation,
-            RotationSize = excluded.RotationSize,
-            EnableHealthMonitoring = excluded.EnableHealthMonitoring,
-            HeartbeatInterval = excluded.HeartbeatInterval,
-            MaxFailedChecks = excluded.MaxFailedChecks,
-            RecoveryAction = excluded.RecoveryAction,
-            MaxRestartAttempts = excluded.MaxRestartAttempts,
-            EnvironmentVariables = excluded.EnvironmentVariables,
-            ServiceDependencies = excluded.ServiceDependencies,
-            RunAsLocalSystem = excluded.RunAsLocalSystem,
-            UserAccount = excluded.UserAccount,
-            Password = excluded.Password,
-            PreLaunchExecutablePath = excluded.PreLaunchExecutablePath,
-            PreLaunchStartupDirectory = excluded.PreLaunchStartupDirectory,
-            PreLaunchParameters = excluded.PreLaunchParameters,
-            PreLaunchEnvironmentVariables = excluded.PreLaunchEnvironmentVariables,
-            PreLaunchStdoutPath = excluded.PreLaunchStdoutPath,
-            PreLaunchStderrPath = excluded.PreLaunchStderrPath,
-            PreLaunchTimeoutSeconds = excluded.PreLaunchTimeoutSeconds,
-            PreLaunchRetryAttempts = excluded.PreLaunchRetryAttempts,
-            PreLaunchIgnoreFailure = excluded.PreLaunchIgnoreFailure,
-            FailureProgramPath = excluded.FailureProgramPath,
-            FailureProgramStartupDirectory = excluded.FailureProgramStartupDirectory,
-            FailureProgramParameters = excluded.FailureProgramParameters,
-            PostLaunchExecutablePath = excluded.PostLaunchExecutablePath,
-            PostLaunchStartupDirectory = excluded.PostLaunchStartupDirectory,
-            PostLaunchParameters = excluded.PostLaunchParameters,
-            EnableDebugLogs = excluded.EnableDebugLogs,
-            DisplayName = excluded.DisplayName,
-            MaxRotations = excluded.MaxRotations,
-            EnableDateRotation = excluded.EnableDateRotation,
-            DateRotationType = excluded.DateRotationType,
-            StartTimeout = excluded.StartTimeout,
-            StopTimeout = excluded.StopTimeout,
-            PreStopExecutablePath = excluded.PreStopExecutablePath,
-            PreStopStartupDirectory = excluded.PreStopStartupDirectory,
-            PreStopParameters = excluded.PreStopParameters,
-            PreStopTimeoutSeconds = excluded.PreStopTimeoutSeconds,
-            PreStopLogAsError = excluded.PreStopLogAsError,
-            PostStopExecutablePath = excluded.PostStopExecutablePath,
-            PostStopStartupDirectory = excluded.PostStopStartupDirectory,
-            PostStopParameters = excluded.PostStopParameters;
+                INSERT INTO Services (
+                    Name, Description, ExecutablePath, StartupDirectory, Parameters, 
+                    StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
+                    EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
+                    EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
+                    PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
+                    PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
+                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
+                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
+                    PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
+                ) VALUES (
+                    @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
+                    @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
+                    @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
+                    @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
+                    @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
+                    @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
+                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
+                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
+                    @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
+                )
+                ON CONFLICT(LOWER(Name)) DO UPDATE SET
+                    Description = excluded.Description,
+                    ExecutablePath = excluded.ExecutablePath,
+                    StartupDirectory = excluded.StartupDirectory,
+                    Parameters = excluded.Parameters,
+                    StartupType = excluded.StartupType,
+                    Priority = excluded.Priority,
+                    StdoutPath = excluded.StdoutPath,
+                    StderrPath = excluded.StderrPath,
+                    EnableRotation = excluded.EnableRotation,
+                    RotationSize = excluded.RotationSize,
+                    EnableHealthMonitoring = excluded.EnableHealthMonitoring,
+                    HeartbeatInterval = excluded.HeartbeatInterval,
+                    MaxFailedChecks = excluded.MaxFailedChecks,
+                    RecoveryAction = excluded.RecoveryAction,
+                    MaxRestartAttempts = excluded.MaxRestartAttempts,
+                    EnvironmentVariables = excluded.EnvironmentVariables,
+                    ServiceDependencies = excluded.ServiceDependencies,
+                    RunAsLocalSystem = excluded.RunAsLocalSystem,
+                    UserAccount = excluded.UserAccount,
+                    Password = excluded.Password,
+                    PreLaunchExecutablePath = excluded.PreLaunchExecutablePath,
+                    PreLaunchStartupDirectory = excluded.PreLaunchStartupDirectory,
+                    PreLaunchParameters = excluded.PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = excluded.PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = excluded.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = excluded.PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = excluded.PreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = excluded.PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = excluded.PreLaunchIgnoreFailure,
+                    FailureProgramPath = excluded.FailureProgramPath,
+                    FailureProgramStartupDirectory = excluded.FailureProgramStartupDirectory,
+                    FailureProgramParameters = excluded.FailureProgramParameters,
+                    PostLaunchExecutablePath = excluded.PostLaunchExecutablePath,
+                    PostLaunchStartupDirectory = excluded.PostLaunchStartupDirectory,
+                    PostLaunchParameters = excluded.PostLaunchParameters,
+                    EnableDebugLogs = excluded.EnableDebugLogs,
+                    DisplayName = excluded.DisplayName,
+                    MaxRotations = excluded.MaxRotations,
+                    EnableDateRotation = excluded.EnableDateRotation,
+                    DateRotationType = excluded.DateRotationType,
+                    StartTimeout = excluded.StartTimeout,
+                    StopTimeout = excluded.StopTimeout,
+                    PreStopExecutablePath = excluded.PreStopExecutablePath,
+                    PreStopStartupDirectory = excluded.PreStopStartupDirectory,
+                    PreStopParameters = excluded.PreStopParameters,
+                    PreStopTimeoutSeconds = excluded.PreStopTimeoutSeconds,
+                    PreStopLogAsError = excluded.PreStopLogAsError,
+                    PostStopExecutablePath = excluded.PostStopExecutablePath,
+                    PostStopStartupDirectory = excluded.PostStopStartupDirectory,
+                    PostStopParameters = excluded.PostStopParameters;
 
-        SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+                SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
             var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService);
 
@@ -337,6 +405,22 @@ namespace Servy.Infrastructure.Data
             var dto = await _dapper.QuerySingleOrDefaultAsync<ServiceDto>(cmd);
 
             if (decrypt)
+            {
+                DecryptDto(dto);
+            }
+
+            return dto;
+        }
+
+        /// <inheritdoc />
+        public virtual ServiceDto GetByName(string name, bool decrypt = true)
+        {
+            const string sql = "SELECT * FROM Services WHERE LOWER(Name) = LOWER(@Name);";
+
+            // Using synchronous QuerySingleOrDefault
+            var dto = _dapper.QuerySingleOrDefault<ServiceDto>(sql, new { Name = name.Trim() });
+
+            if (dto != null && decrypt)
             {
                 DecryptDto(dto);
             }

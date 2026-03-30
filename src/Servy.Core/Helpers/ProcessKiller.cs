@@ -321,7 +321,7 @@ namespace Servy.Core.Helpers
                 if (!process.HasExited)
                 {
                     process.Kill();
-                    process.WaitForExit();
+                    process.WaitForExit(10_000);
                 }
             }
             catch

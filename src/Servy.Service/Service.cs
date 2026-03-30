@@ -1424,9 +1424,7 @@ namespace Servy.Service
             if (string.IsNullOrWhiteSpace(_serviceName))
                 return;
 
-            var serviceDto = _serviceRepository
-                .GetByNameAsync(_serviceName)
-                .ConfigureAwait(false).GetAwaiter().GetResult();
+            var serviceDto = _serviceRepository.GetByName(_serviceName);
 
             if (serviceDto != null)
             {
@@ -1445,9 +1443,7 @@ namespace Servy.Service
                     serviceDto.ActiveStderrPath = _options?.StdErrPath;
                 }
 
-                _ = _serviceRepository
-                    .UpdateAsync(serviceDto)
-                    .ConfigureAwait(false).GetAwaiter().GetResult();
+                _ = _serviceRepository.UpdateAsync(serviceDto);
             }
         }
 
