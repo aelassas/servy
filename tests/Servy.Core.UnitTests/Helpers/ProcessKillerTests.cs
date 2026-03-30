@@ -29,7 +29,9 @@ namespace Servy.Core.UnitTests.Helpers
                     }
                 }
             }
-            catch { }
+            catch {
+                // In a real test environment, we might want to log this or handle it more gracefully
+            }
         }
 
         #region Unit Tests (Validation & Logic)
@@ -91,8 +93,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
-
-        public void KillProcessTreeAndParents_MultipleInstances_SuccessfullyTerminatesAll()
+        public async Task KillProcessTreeAndParents_MultipleInstances_SuccessfullyTerminatesAll()
         {
             // Arrange: Spawn 3 separate instances of the sacrificial process
             int count = 3;
@@ -110,7 +111,7 @@ namespace Servy.Core.UnitTests.Helpers
                     processes.Add(p!);
                 }
 
-                Thread.Sleep(500); // Wait for OS to register processes
+                await Task.Delay(500, TestContext.Current.CancellationToken); // Wait for OS to register processes
 
                 // Act
                 bool result = ProcessKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: false);
@@ -134,7 +135,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
-        public void KillChildren_DeepAndWideTree_TerminatesAllDescendants()
+        public async Task KillChildren_DeepAndWideTree_TerminatesAllDescendants()
         {
             // Arrange: Create a tree: Parent (cmd) -> [Child (cmd) -> Grandchild (timeout)], [Child (timeout)]
             // We use cmd.exe to bridge and spawn background children
@@ -150,7 +151,7 @@ namespace Servy.Core.UnitTests.Helpers
                 {
                     Assert.NotNull(parent);
                     // Give WMI and the shell time to spawn the nested tree
-                    Thread.Sleep(2000);
+                    await Task.Delay(2000, TestContext.Current.CancellationToken);
 
                     // Capture a snapshot of all timeout processes currently running
                     var timeoutsBefore = Process.GetProcessesByName(SacrificialProcessName).Select(p => p.Id).ToList();
@@ -161,7 +162,7 @@ namespace Servy.Core.UnitTests.Helpers
 
                     // Assert
                     // Verify that the timeout processes spawned as descendants are gone
-                    Thread.Sleep(1000); // Allow termination to ripple
+                    await Task.Delay(1000, TestContext.Current.CancellationToken); // Allow termination to ripple
                     var timeoutsAfter = Process.GetProcessesByName(SacrificialProcessName).Select(p => p.Id).ToList();
 
                     // None of the specific PIDs we found earlier should still be running
@@ -180,7 +181,7 @@ namespace Servy.Core.UnitTests.Helpers
 
         [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
-        public void KillProcessTreeAndParents_WithParents_TerminatesUpwardChain()
+        public async Task KillProcessTreeAndParents_WithParents_TerminatesUpwardChain()
         {
             // Arrange: Start a chain where the leaf is 'timeout.exe'
             // We want to see if KillProcessTreeAndParents(timeout, true) kills the cmd.exe parent
@@ -194,7 +195,7 @@ namespace Servy.Core.UnitTests.Helpers
             {
                 try
                 {
-                    Thread.Sleep(1000); // Wait for timeout.exe to spawn
+                    await Task.Delay(1000, TestContext.Current.CancellationToken); // Wait for timeout.exe to spawn
 
                     // Act
                     bool result = ProcessKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: true);

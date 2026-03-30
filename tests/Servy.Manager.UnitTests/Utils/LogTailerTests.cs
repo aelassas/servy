@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Servy.Manager.Models;
+using Servy.Manager.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Servy.Manager.Models;
-using Servy.Manager.Utils;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.Utils
@@ -23,7 +22,15 @@ namespace Servy.Manager.UnitTests.Utils
         {
             // Note: We avoid deleting here if tests didn't clean up their tasks
             // to prevent the "File in use" error in Dispose.
-            try { if (File.Exists(_tempFilePath)) File.Delete(_tempFilePath); } catch { }
+            try
+            {
+                if (File.Exists(_tempFilePath))
+                    File.Delete(_tempFilePath);
+            }
+            catch
+            {
+                // Ignore exceptions during cleanup, especially if the file is still in use by a running test.
+            }
         }
 
         [Fact]
@@ -54,43 +61,46 @@ namespace Servy.Manager.UnitTests.Utils
             var fileInfo = new FileInfo(initialPath);
 
             var capturedLines = new List<LogLine>();
-            tailer.OnNewLines += (lines) => {
+            tailer.OnNewLines += (lines) =>
+            {
                 lock (capturedLines) capturedLines.AddRange(lines);
             };
 
-            using var cts = new CancellationTokenSource();
-
-            // Act
-            // Start tailing from the end of the "Old content"
-            var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
-
-            // Wait for the tailer to actually enter its inner loop
-            await Task.Delay(300, TestContext.Current.CancellationToken);
-
-            // Simulate Rotation: Truncate and write fresh content
-            // We use a specific string "ROTATED_CONTENT" to avoid partial match issues
-            using (var fs = new FileStream(initialPath, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
-            using (var sw = new StreamWriter(fs) { AutoFlush = true })
+            using (var cts = new CancellationTokenSource())
             {
-                await sw.WriteLineAsync("ROTATED_CONTENT");
-            }
 
-            // Give the polling loop (150ms) and ReadLineAsync enough time to process the truncation
-            await Task.Delay(1000, TestContext.Current.CancellationToken);
+                // Act
+                // Start tailing from the end of the "Old content"
+                var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
-            cts.Cancel();
+                // Wait for the tailer to actually enter its inner loop
+                await Task.Delay(300, TestContext.Current.CancellationToken);
 
-            try
-            {
-                await tailTask;
-            }
-            catch (OperationCanceledException) { }
+                // Simulate Rotation: Truncate and write fresh content
+                // We use a specific string "ROTATED_CONTENT" to avoid partial match issues
+                using (var fs = new FileStream(initialPath, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
+                using (var sw = new StreamWriter(fs) { AutoFlush = true })
+                {
+                    await sw.WriteLineAsync("ROTATED_CONTENT");
+                }
 
-            // Assert
-            lock (capturedLines)
-            {
-                Assert.NotEmpty(capturedLines);
-                Assert.Contains(capturedLines, l => l.Text.Contains("ROTATED_CONTENT"));
+                // Give the polling loop (150ms) and ReadLineAsync enough time to process the truncation
+                await Task.Delay(1000, TestContext.Current.CancellationToken);
+
+                cts.Cancel();
+
+                try
+                {
+                    await tailTask;
+                }
+                catch (OperationCanceledException) { }
+
+                // Assert
+                lock (capturedLines)
+                {
+                    Assert.NotEmpty(capturedLines);
+                    Assert.Contains(capturedLines, l => l.Text.Contains("ROTATED_CONTENT"));
+                }
             }
         }
 

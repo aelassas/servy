@@ -312,7 +312,10 @@ namespace Servy.Core.Helpers
                     process.WaitForExit(10_000);
                 }
             }
-            catch { }
+            catch
+            {
+                // We catch all exceptions to ensure that a failure in killing one process does not prevent attempts to kill others.
+            }
         }
 
         /// <summary>
@@ -347,7 +350,10 @@ namespace Servy.Core.Helpers
                     parent.WaitForExit(5000);
                 }
             }
-            catch { }
+            catch
+            {
+                // We catch all exceptions to ensure that a failure in killing one parent does not prevent attempts to kill others.
+            }
         }
 
         /// <summary>
@@ -375,7 +381,10 @@ namespace Servy.Core.Helpers
                     catch { break; }
                 }
             }
-            catch { }
+            catch
+            {
+                // In the unlikely event that we cannot get the current process or its parents, we return an empty set, which means no protection.
+            }
             return ancestors;
         }
 
