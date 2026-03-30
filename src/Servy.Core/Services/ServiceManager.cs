@@ -371,7 +371,6 @@ namespace Servy.Core.Services
                 Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
 
                 // Pre-Launch
-                //Helper.Quote(preLaunchExePath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
@@ -383,13 +382,11 @@ namespace Servy.Core.Services
                 Helper.Quote(preLaunchIgnoreFailure.ToString()),
 
                 // Failure program
-                //Helper.Quote(failureProgramPath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
 
                 // Post-Launch
-                //Helper.Quote(postLaunchExePath ?? string.Empty),
                 Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
                 Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
