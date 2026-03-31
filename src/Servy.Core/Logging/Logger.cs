@@ -19,7 +19,9 @@ namespace Servy.Core.Logging
         /// <summary> Non-critical issues or unexpected states. </summary>
         Warn = 2,
         /// <summary> Critical failures and exceptions. </summary>
-        Error = 3
+        Error = 3,
+        /// <summary> Disables all logging. </summary>
+        None = 4,
     }
 
     /// <summary>
