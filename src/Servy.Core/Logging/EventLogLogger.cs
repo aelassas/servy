@@ -56,9 +56,9 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Error(string message, Exception ex = null)
         {
-            var fullMessage = ex != null ? $"{message}\n{ex}" : message;
-            _eventLog.WriteEntry(Format(fullMessage), EventLogEntryType.Error, ErrorEventId);
-            Logger.Error(Format(message), ex);
+            var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
+            _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error, ErrorEventId);
+            Logger.Error(fullMessage, ex);
         }
 
         #region Private Helpers

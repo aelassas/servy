@@ -13,15 +13,17 @@ namespace Servy.Core.Logging
         ///<inheritdoc/>
         public IEnumerable<EventRecord> ReadEvents(EventLogQuery query)
         {
-            var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query);
-            var results = new List<EventRecord>();
-
-            for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
+            using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))
             {
-                results.Add(evt);
-            }
+                var results = new List<EventRecord>();
 
-            return results;
+                for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
+                {
+                    results.Add(evt);
+                }
+
+                return results;
+            }
         }
     }
 }
