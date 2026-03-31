@@ -70,26 +70,33 @@ namespace Servy.Core.Services
 
                 foreach (var evt in records)
                 {
-                    token.ThrowIfCancellationRequested();
-
-                    var message = evt.FormatDescription() ?? string.Empty;
-
-                    // Only include Servy service logs: messages with [..]
-                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
-                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
-                        continue;
-
-                    if (!string.IsNullOrEmpty(keyword) &&
-                        message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
-                        continue;
-
-                    results.Add(new EventLogEntry
+                    using (evt)
                     {
-                        EventId = evt.Id,
-                        Time = evt.TimeCreated ?? DateTime.MinValue,
-                        Level = ParseLevel(evt.Level ?? 0),
-                        Message = message
-                    });
+                        //
+                        // All evt.* accesses must stay inside the using block to avoid ObjectDisposedException
+                        //
+
+                        token.ThrowIfCancellationRequested();
+
+                        var message = evt.FormatDescription() ?? string.Empty;
+
+                        // Only include Servy service logs: messages with [..]
+                        if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
+                            message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        if (!string.IsNullOrEmpty(keyword) &&
+                            message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        results.Add(new EventLogEntry
+                        {
+                            EventId = evt.Id,
+                            Time = evt.TimeCreated ?? DateTime.MinValue,
+                            Level = ParseLevel(evt.Level ?? 0),
+                            Message = message
+                        });
+                    }
                 }
 
                 return results
