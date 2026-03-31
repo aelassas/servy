@@ -224,6 +224,15 @@ namespace Servy
                 }
                 Logger.SetLogLevel(logLevel);
 
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                {
+                    Logger.SetLogRotationSize(size);
+                }
+                else
+                {
+                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+                }
+
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else
