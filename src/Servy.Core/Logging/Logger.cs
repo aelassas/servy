@@ -6,6 +6,21 @@ using System.Diagnostics.CodeAnalysis;
 namespace Servy.Core.Logging
 {
     /// <summary>
+    /// Defines the severity levels for log entries.
+    /// </summary>
+    public enum LogLevel
+    {
+        /// <summary> High-verbosity diagnostic information. </summary>
+        Debug = 0,
+        /// <summary> General operational milestones. </summary>
+        Info = 1,
+        /// <summary> Non-critical issues or unexpected states. </summary>
+        Warn = 2,
+        /// <summary> Critical failures and exceptions. </summary>
+        Error = 3
+    }
+
+    /// <summary>
     /// Provides a thread-safe, fail-silent static logging utility for the Servy ecosystem.
     /// Uses <see cref="RotatingStreamWriter"/> to ensure logs are rotated based on size 
     /// while preventing unbounded file growth.
@@ -15,7 +30,7 @@ namespace Servy.Core.Logging
     {
         private static readonly object _lock = new object();
         private static RotatingStreamWriter? _writer;
-        private static bool _enableDebug = false;
+        private static LogLevel _currentLogLevel = LogLevel.Info;
 
         /// <summary>
         /// The maximum size a log file can reach before rotation is triggered.
@@ -34,8 +49,8 @@ namespace Servy.Core.Logging
         /// This should be called once at the beginning of the application lifecycle.
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
-        /// <param name="enableDebug">If true, enables DEBUG level logging. Defaults to false.</param>
-        public static void Initialize(string fileName, bool enableDebug = false)
+        /// <param name="initialLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
+        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info)
         {
             lock (_lock)
             {
@@ -49,13 +64,11 @@ namespace Servy.Core.Logging
 
                     string logPath = Path.Combine(logDir, fileName);
 
-                    _enableDebug = enableDebug;
+                    _currentLogLevel = initialLevel;
 
                     // Clean up existing writer if Initialize is called multiple times
                     _writer?.Dispose();
 
-                    // Initialize the rotating stream using named parameters for clarity.
-                    // We enable size-based rotation and disable date-based rotation by default.
                     _writer = new RotatingStreamWriter(
                         path: logPath,
                         enableSizeRotation: true,
@@ -69,7 +82,6 @@ namespace Servy.Core.Logging
                 {
                     try
                     {
-                        // Fail-silent: If stream cannot be initialized, Logger will bypass I/O
                         var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
                         if (!Directory.Exists(logDir))
                         {
@@ -81,17 +93,31 @@ namespace Servy.Core.Logging
                     }
                     catch
                     {
-                        // If even the fallback logging fails, we silently ignore to prevent cascading failures.
+                        // Fail-silent
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Enables or disables DEBUG level logging at runtime. When disabled, calls to Logger.Debug() will be no-ops.
+        /// Sets the minimum log level to be recorded. 
+        /// Messages below this level will be ignored.
         /// </summary>
-        /// <param name="enable">True to enable DEBUG logging; false to disable it.</param>
-        public static void EnableDebug(bool enable) => _enableDebug = enable;
+        /// <param name="level">The new <see cref="LogLevel"/>.</param>
+        public static void SetLogLevel(LogLevel level)
+        {
+            lock (_lock)
+            {
+                _currentLogLevel = level;
+            }
+        }
+
+        /// <summary>
+        /// Enables or disables DEBUG level logging at runtime. 
+        /// Provided for backward compatibility with binary flags.
+        /// </summary>
+        /// <param name="enable">True to set level to DEBUG; false to set level to INFO.</param>
+        public static void EnableDebug(bool enable) => SetLogLevel(enable ? LogLevel.Debug : LogLevel.Info);
 
         /// <summary>
         /// Logs a debug message and optional exception details at the DEBUG level.
@@ -100,9 +126,9 @@ namespace Servy.Core.Logging
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Debug(string message, Exception? ex = null)
         {
-            if (_enableDebug)
+            if (_currentLogLevel <= LogLevel.Debug)
             {
-                Log("DEBUG", ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+                Log(LogLevel.Debug, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
             }
         }
 
@@ -111,14 +137,26 @@ namespace Servy.Core.Logging
         /// Use this for general operational milestones and state changes.
         /// </summary>
         /// <param name="message">The operational message to log.</param>
-        public static void Info(string message) => Log("INFO", message);
+        public static void Info(string message)
+        {
+            if (_currentLogLevel <= LogLevel.Info)
+            {
+                Log(LogLevel.Info, message);
+            }
+        }
 
         /// <summary>
         /// Logs a message at the WARN level. 
         /// Use this for non-critical issues or unexpected states that do not halt execution.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
-        public static void Warn(string message) => Log("WARN", message);
+        public static void Warn(string message)
+        {
+            if (_currentLogLevel <= LogLevel.Warn)
+            {
+                Log(LogLevel.Warn, message);
+            }
+        }
 
         /// <summary>
         /// Logs an error message and optional exception details at the ERROR level.
@@ -126,16 +164,20 @@ namespace Servy.Core.Logging
         /// <param name="message">The description of the error.</param>
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
         public static void Error(string message, Exception? ex = null)
-            => Log("ERROR", ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+        {
+            if (_currentLogLevel <= LogLevel.Error)
+            {
+                Log(LogLevel.Error, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+            }
+        }
 
         /// <summary>
         /// Core logging logic that handles thread synchronization and delegated I/O via the rotating writer.
         /// </summary>
-        /// <param name="level">The severity level (e.g., INFO, ERROR).</param>
+        /// <param name="level">The severity level enum.</param>
         /// <param name="message">The content of the log entry.</param>
-        private static void Log(string level, string message)
+        private static void Log(LogLevel level, string message)
         {
-            // Fail-fast if the writer wasn't initialized
             if (_writer == null) return;
 
             try
@@ -143,26 +185,20 @@ namespace Servy.Core.Logging
                 lock (_lock)
                 {
                     // Format: [2026-03-12 22:00:00] [INFO] Message text
-                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}";
+                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}] {message}";
 
-                    // RotatingStreamWriter handles the rotation logic and size checks internally
                     _writer.WriteLine(logEntry);
-
-                    // Force a flush if RotatingStreamWriter doesn't have AutoFlush enabled.
-                    // This prevents NULL holes if the service is killed suddenly.
                     _writer.Flush();
                 }
             }
             catch
             {
-                // Fail-silent: Logging should never be a breaking point for the application.
+                // Fail-silent
             }
         }
 
         /// <summary>
         /// Gracefully shuts down the logger by disposing the underlying stream writer.
-        /// This should be called during the application exit sequence to ensure 
-        /// all file handles are released immediately.
         /// </summary>
         public static void Shutdown()
         {
@@ -176,7 +212,7 @@ namespace Servy.Core.Logging
                     }
                     catch
                     {
-                        // Fail-silent during shutdown
+                        // Fail-silent
                     }
                     finally
                     {
@@ -185,6 +221,5 @@ namespace Servy.Core.Logging
                 }
             }
         }
-
     }
 }

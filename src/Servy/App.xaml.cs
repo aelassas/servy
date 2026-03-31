@@ -218,8 +218,11 @@ namespace Servy
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
-                Logger.EnableDebug(enabledDebugLogs);
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+                {
+                    logLevel = LogLevel.Info;
+                }
+                Logger.SetLogLevel(logLevel);
 
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
