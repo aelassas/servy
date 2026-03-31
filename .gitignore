@@ -422,6 +422,7 @@ setup/**/*.exe
 setup/**/*.zip
 setup/**/*.7z
 setup/**/*.dll
+setup/**/servy-*-x64-portable
 
 # tests
 coveragereport/
