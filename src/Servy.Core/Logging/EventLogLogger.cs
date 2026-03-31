@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
 
 namespace Servy.Core.Logging
 {
@@ -58,7 +57,7 @@ namespace Servy.Core.Logging
         {
             var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
             _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error, ErrorEventId);
-            Logger.Error(fullMessage, ex);
+            Logger.Error(fullMessage);
         }
 
         #region Private Helpers
