@@ -71,8 +71,11 @@ namespace Servy.CLI
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
-                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
-                Logger.EnableDebug(enabledDebugLogs);
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+                {
+                    logLevel = LogLevel.Info;
+                }
+                Logger.SetLogLevel(logLevel);
 
                 // Initialize shared dependencies
                 var dbContext = new AppDbContext(connectionString);

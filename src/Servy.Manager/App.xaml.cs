@@ -243,8 +243,11 @@ namespace Servy.Manager
                                     ? drresult
                                     : AppConfig.DefaultDependenciesRefreshIntervalInMs;
 
-                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
-                Logger.EnableDebug(enabledDebugLogs);
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+                {
+                    logLevel = LogLevel.Info;
+                }
+                Logger.SetLogLevel(logLevel);
 
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
