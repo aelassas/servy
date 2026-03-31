@@ -47,6 +47,11 @@ namespace Servy.Restarter
                 logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
                 Environment.Exit(1);
             }
+            finally
+            {
+                Logger.Shutdown();
+            }
+
         }
     }
 }

@@ -67,9 +67,22 @@ namespace Servy.Core.Logging
                 }
                 catch (Exception ex)
                 {
-                    // Fail-silent: If stream cannot be initialized, Logger will bypass I/O
-                    File.AppendAllText(Path.Combine(AppConfig.ProgramDataPath, "logs", "LoggerInitializationErrors.log"),
-                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{fileName}'. Exception: {ex}{Environment.NewLine}");
+                    try
+                    {
+                        // Fail-silent: If stream cannot be initialized, Logger will bypass I/O
+                        var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
+                        if (!Directory.Exists(logDir))
+                        {
+                            Directory.CreateDirectory(logDir);
+                        }
+
+                        File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
+                            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{fileName}'. Exception: {ex}{Environment.NewLine}");
+                    }
+                    catch
+                    {
+                        // If even the fallback logging fails, we silently ignore to prevent cascading failures.
+                    }
                 }
             }
         }
