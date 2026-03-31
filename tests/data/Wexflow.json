@@ -1,5 +1,6 @@
 {
   "Name": "WexflowServer",
+  "DisplayName": "",
   "Description": "Wexflow Workflow Automation Engine",
   "ExecutablePath": "C:\\Program Files\\dotnet\\dotnet.exe",
   "StartupDirectory": "C:\\Program Files\\Wexflow Server\\Wexflow.Server\\",

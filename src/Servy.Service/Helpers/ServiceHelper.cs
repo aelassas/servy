@@ -144,7 +144,7 @@ namespace Servy.Service.Helpers
             {
                 var system32 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32");
                 options.WorkingDirectory = Path.GetDirectoryName(options.ExecutablePath) ?? system32;
-                logger?.Warning($"Working directory fallback applied: {options.WorkingDirectory}");
+                logger?.Warn($"Working directory fallback applied: {options.WorkingDirectory}");
             }
         }
 
@@ -259,7 +259,7 @@ namespace Servy.Service.Helpers
                     catch (Exception ex)
                     {
                         /* Process already dead, can't get children anyway */
-                        logger?.Warning($"RestartProcess error while getting process PID and StartTime: {ex.Message}");
+                        logger?.Warn($"RestartProcess error while getting process PID and StartTime: {ex.Message}");
                     }
 
                     process.Stop(stopTimeoutMs);

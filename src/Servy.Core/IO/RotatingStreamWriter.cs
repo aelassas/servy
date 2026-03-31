@@ -1,5 +1,11 @@
 ﻿using Servy.Core.Enums;
+using System;
 using System.Globalization;
+using System.IO;
+using System.IO.Pipes;
+using System.Linq;
+using System.Security.AccessControl;
+using System.Text;
 
 namespace Servy.Core.IO
 {
@@ -13,8 +19,9 @@ namespace Servy.Core.IO
         private bool _disposed;
         private readonly FileInfo _file;
         private StreamWriter? _writer;
+        private FileStream? _baseStream;
         private readonly bool _enableSizeRotation;
-        private readonly long _rotationSize;
+        private readonly long _rotationSizeInBytes;
         private readonly bool _enableDateRotation;
         private readonly DateRotationType _dateRotationType;
         private DateTime _lastRotationDate;
@@ -62,24 +69,43 @@ namespace Servy.Core.IO
             }
             _file = new FileInfo(path);
             _enableSizeRotation = enableSizeRotation;
-            _rotationSize = rotationSizeInBytes;
+            _rotationSizeInBytes = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
             _lastRotationDate = File.Exists(path) ? File.GetLastWriteTime(path) : DateTime.Now; // baseline for date rotation
             _maxRotations = maxRotations;
-            _writer = CreateWriter();
+            InitializeWriter();
         }
 
         /// <summary>
-        /// Creates a new <see cref="StreamWriter"/> in append mode with read/write sharing.
+        /// Initializes the underlying <see cref="FileStream"/> and <see cref="StreamWriter"/>.
         /// </summary>
-        /// <returns>A new <see cref="StreamWriter"/> instance.</returns>
-        private StreamWriter CreateWriter()
+        /// <remarks>
+        /// <para>
+        /// Uses <see cref="FileMode.Append"/> to ensure that the file pointer is always positioned 
+        /// at the true end-of-file, preventing "NULL holes" during concurrent access or process restarts.
+        /// </para>
+        /// <para>
+        /// The <see cref="StreamWriter"/> is configured with <see cref="StreamWriter.AutoFlush"/> enabled 
+        /// and uses UTF-8 encoding without a Byte Order Mark (BOM) for compatibility with Unix-style log viewers.
+        /// </para>
+        /// </remarks>
+        private void InitializeWriter()
         {
-            return new StreamWriter(
-                _file.Open(FileMode.Append, FileAccess.Write, FileShare.ReadWrite),
-                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
-                )
+            // Native Win32 Atomic Append:
+            // Explicitly using FileSystemRights.AppendData forces the Win32 kernel to drop FILE_WRITE_DATA.
+            // The OS will now physically reject any write that doesn't go to the true EOF,
+            // completely eliminating NULL holes even if an external process clears the file.
+            _baseStream = FileSystemAclExtensions.Create(
+                fileInfo: _file,
+                mode: FileMode.Append,
+                rights: FileSystemRights.AppendData, // The strict Win32 flag FileSystemRights.AppendData
+                share: FileShare.ReadWrite,
+                bufferSize: 4096,
+                options: FileOptions.None,
+                fileSecurity: null);
+
+            _writer = new StreamWriter(_baseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) // UTF-8 without BOM
             {
                 AutoFlush = true
             };
@@ -94,6 +120,7 @@ namespace Servy.Core.IO
             lock (_lock)
             {
                 if (_writer == null) return;
+
                 _writer.WriteLine(line);
                 _writer.Flush();
                 CheckRotation();
@@ -108,7 +135,9 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
-                _writer!.Write(text);
+                if (_writer == null) return;
+
+                _writer.Write(text);
                 _writer.Flush();
                 CheckRotation();
             }
@@ -181,12 +210,13 @@ namespace Servy.Core.IO
         private void CheckRotation()
         {
             _file.Refresh();
+            long currentLength = _file.Length;
 
             bool rotateBySize = false;
             bool rotateByDate = false;
 
             // --- SIZE ROTATION ---
-            if (_enableSizeRotation && _rotationSize > 0 && _file.Length >= _rotationSize)
+            if (_enableSizeRotation && _rotationSizeInBytes > 0 && currentLength >= _rotationSizeInBytes)
             {
                 rotateBySize = true;
             }
@@ -347,13 +377,13 @@ namespace Servy.Core.IO
             {
                 // GUARD: If the file doesn't exist anymore or isn't ready, 
                 // we don't null the writer. This preserves the existing instance.
-                if (!File.Exists(_file.FullName)) return;
+                _file.Refresh();
+                if (!_file.Exists || _file.Length == 0) return;
 
-                if (_writer != null)
+                // Use the helper to ensure both _writer and _baseStream are disposed AND nulled
+                lock (_lock)
                 {
-                    _writer.Flush();
-                    _writer.Dispose();
-                    _writer = null; // Critical: Mark as null immediately
+                    CloseWriter();
                 }
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
@@ -385,16 +415,10 @@ namespace Servy.Core.IO
             {
                 try
                 {
-                    if (_writer == null || _disposed == false)
+                    if (_writer == null && !_disposed)
                     {
                         // ALWAYS recreate the writer so logging doesn't permanently die
-                        _writer = new StreamWriter(
-                            new FileStream(_file.FullName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite),
-                            new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false) // UTF-8 without BOM
-                            )
-                        {
-                            AutoFlush = true
-                        };
+                        InitializeWriter();
                     }
                 }
                 catch
@@ -402,6 +426,28 @@ namespace Servy.Core.IO
                     // If even the fallback fails (e.g. permission changed to ReadOnly), 
                     // we can't do much, but we shouldn't crash the whole service.
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gracefully closes and disposes of the <see cref="StreamWriter"/> and the underlying <see cref="FileStream"/>.
+        /// </summary>
+        /// <remarks>
+        /// This method ensures all buffered data is flushed to the stream before the handles are released. 
+        /// It sets the internal references to <c>null</c> to prevent accidental reuse of disposed objects.
+        /// </remarks>
+        private void CloseWriter()
+        {
+            if (_writer != null)
+            {
+                _writer.Flush();
+                _writer.Dispose();
+                _writer = null;
+            }
+            if (_baseStream != null)
+            {
+                _baseStream.Dispose();
+                _baseStream = null;
             }
         }
 
@@ -417,9 +463,12 @@ namespace Servy.Core.IO
         {
             lock (_lock)
             {
-                if (_writer != null)
+                _writer?.Flush();
+
+                // Only force a heavy disk flush if the stream has data
+                if (_baseStream != null && _baseStream.Length > 0)
                 {
-                    _writer.Flush();
+                    _baseStream.Flush(true);
                 }
             }
         }
@@ -446,13 +495,7 @@ namespace Servy.Core.IO
             {
                 lock (_lock)
                 {
-                    if (_writer != null)
-                    {
-                        _writer.Flush();
-                        _writer.Close();
-                        _writer.Dispose();
-                        _writer = null;
-                    }
+                    CloseWriter();
                 }
             }
 

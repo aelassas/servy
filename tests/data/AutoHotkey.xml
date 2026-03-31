@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-16"?>
-<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<ServiceDto xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>AutoHotkeyService</Name>
+  <DisplayName />
   <Description>AutoHotkeyService</Description>
   <ExecutablePath>C:\Program Files\AutoHotkey\v2\AutoHotkey.exe</ExecutablePath>
   <Parameters>E:\dev\AutoHotkey\AutoHotkey.ahk</Parameters>
@@ -8,6 +9,9 @@
   <Priority>2</Priority>
   <EnableRotation>false</EnableRotation>
   <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
   <EnableHealthMonitoring>false</EnableHealthMonitoring>
   <HeartbeatInterval>30</HeartbeatInterval>
   <MaxFailedChecks>3</MaxFailedChecks>
@@ -18,4 +22,8 @@
   <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
   <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
   <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+  <PreStopTimeoutSeconds>5</PreStopTimeoutSeconds>
+  <PreStopLogAsError>false</PreStopLogAsError>
 </ServiceDto>

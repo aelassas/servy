@@ -246,12 +246,12 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                _logger?.Warning($"Kill failed: {ex.Message}");
+                _logger?.Warn($"Kill failed: {ex.Message}");
             }
 
             if (!_process.WaitForExit(timeoutMs))
             {
-                _logger?.Warning($"Process did not exit within {timeoutMs / 1000.0} seconds after forced kill.");
+                _logger?.Warn($"Process did not exit within {timeoutMs / 1000.0} seconds after forced kill.");
             }
 
             return false;
@@ -310,7 +310,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                _logger?.Warning($"Kill failed: {ex.Message}");
+                _logger?.Warn($"Kill failed: {ex.Message}");
             }
 
             _logger?.Info($"Process '{process.Format()}' terminated.");
@@ -334,7 +334,7 @@ namespace Servy.Service.ProcessManagement
             catch (Exception ex)
             {
                 /* Process already dead, can't get children anyway */
-                _logger?.Warning($"StopTree error while getting process PID and StartTime: {ex.Message}");
+                _logger?.Warn($"StopTree error while getting process PID and StartTime: {ex.Message}");
             }
 
             StopPrivate(process, timeoutMs);
@@ -382,7 +382,7 @@ namespace Servy.Service.ProcessManagement
             }
             catch (Exception ex)
             {
-                _logger?.Warning($"Kill failed: {ex.Message}");
+                _logger?.Warn($"Kill failed: {ex.Message}");
             }
         }
 
@@ -481,7 +481,7 @@ namespace Servy.Service.ProcessManagement
 
                     // The calling process is already attached to a console.
                     default:
-                        _logger?.Warning($"Sending Ctrl+C: Failed to attach the child process '{process.Format()}' to console: {new Win32Exception(error).Message}");
+                        _logger?.Warn($"Sending Ctrl+C: Failed to attach the child process '{process.Format()}' to console: {new Win32Exception(error).Message}");
                         return false;
                 }
             }

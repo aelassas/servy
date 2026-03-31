@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Servy.Core.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
 namespace Servy.Core.Security
@@ -83,6 +84,7 @@ namespace Servy.Core.Security
             catch (CryptographicException ex)
             {
                 // DPAPI is machine-specific; moving the file to another server will trigger this exception.
+                Logger.Error($"Failed to unprotect key at {path}. The file may have been moved from another machine.", ex);
                 throw new InvalidOperationException($"Failed to unprotect key at {path}. The file may have been moved from another machine.", ex);
             }
             finally

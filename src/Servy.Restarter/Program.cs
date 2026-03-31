@@ -24,21 +24,27 @@ namespace Servy.Restarter
             if (args.Length == 0)
                 return;
 
+            Logger.Initialize("Servy.Restarter.log");
+
             var serviceName = args[0];
             IServiceRestarter restarter = new ServiceRestarter();
             ILogger logger = new EventLogLogger(AppConfig.ServiceNameEventSource) { Prefix = serviceName };
 
             try
             {
+                logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
 
                 restarter.RestartService(serviceName);
+                logger.Info($"Successfully restarted service '{serviceName}'.");
+
                 Environment.Exit(0);
             }
             catch (Exception ex)
             {
-                logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}");
+                logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
                 Environment.Exit(1);
             }
         }

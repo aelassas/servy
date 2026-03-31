@@ -138,15 +138,17 @@ namespace Servy.Core.Services
         /// Starts the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
+        /// <param name="logSuccessfulStart">Indicates whether to log a message when the service starts successfully.</param>
         /// <returns>True if the service was started; otherwise false.</returns>
-        Task<bool> StartService(string serviceName);
+        Task<bool> StartService(string serviceName, bool logSuccessfulStart = true);
 
         /// <summary>
         /// Stops the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
+        /// <param name="logSuccessfulStop">Indicates whether to log a message when the service stops successfully.</param>
         /// <returns>True if the service was stopped; otherwise false.</returns>
-        Task<bool> StopService(string serviceName);
+        Task<bool> StopService(string serviceName, bool logSuccessfulStop = true);
 
         /// <summary>
         /// Restarts the specified service.

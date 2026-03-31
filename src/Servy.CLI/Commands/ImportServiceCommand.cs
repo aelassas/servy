@@ -5,6 +5,7 @@ using Servy.CLI.Options;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 using System.Diagnostics.CodeAnalysis;
 
@@ -61,12 +62,29 @@ namespace Servy.CLI.Commands
                 {
                     case ConfigFileType.Xml:
                         result = await ProcessXmlAsync(opts);
+                        if (result.Success)
+                        {
+                            Logger.Info($"Successfully imported XML configuration from {opts.Path}.");
+                        }
+                        else
+                        {
+                            Logger.Error($"Failed to import XML configuration from {opts.Path}. Error: {result.Message}");
+                        }
                         break;
                     case ConfigFileType.Json:
                         result = await ProcessJsonAsync(opts);
+                        if (result.Success)
+                        {
+                            Logger.Info($"Successfully imported JSON configuration from {opts.Path}.");
+                        }
+                        else
+                        {
+                            Logger.Error($"Failed to import JSON configuration from {opts.Path}. Error: {result.Message}");
+                        }
                         break;
                     default:
                         result = CommandResult.Fail("Unsupported configuration file type.");
+                        Logger.Error($"Unsupported configuration file type: {opts.ConfigFileType}");
                         break;
                 }
 
@@ -170,21 +188,32 @@ namespace Servy.CLI.Commands
             // Retrieve the service domain object
             var serviceDomain = await _serviceRepository.GetDomainServiceByNameAsync(_serviceManager, serviceName);
             if (serviceDomain == null)
+            {
+                Logger.Error($"Service imported but failed to find the service for installation. Service name: {serviceName}");
                 return CommandResult.Fail($"Service imported but failed to find the service for installation.");
+            }
 
             try
             {
                 // Attempt service installation
                 var installed = await serviceDomain.Install(isCLI: true);
                 if (installed)
+                {
+                    Logger.Info($"Service imported and installed successfully. Service name: {serviceName}");
                     return CommandResult.Ok($"{format} configuration saved and service installed successfully.");
+                }
                 else
+                {
+                    Logger.Error($"Service imported but failed to install the service. Service name: {serviceName}");
                     return CommandResult.Fail("Service imported but failed to install the service.");
+                }
             }
             catch (Exception ex)
             {
+                Logger.Error($"Service imported but failed to install the service. Error: {ex}");
                 return CommandResult.Fail($"Service imported but failed to install the service. Error: {ex.Message}");
             }
         }
+
     }
 }

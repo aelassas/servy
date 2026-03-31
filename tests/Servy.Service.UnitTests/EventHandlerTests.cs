@@ -216,7 +216,7 @@ namespace Servy.Service.UnitTests
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
             // Assert
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
         }
 
         [Fact]
@@ -240,7 +240,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeOnProcessExited(null, EventArgs.Empty);
 
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Failed to get exit code"))), Times.Once);
         }
     }
 }

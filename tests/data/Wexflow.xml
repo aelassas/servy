@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-16"?>
-<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<ServiceDto xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>WexflowServer</Name>
+  <DisplayName />
   <Description>Wexflow Workflow Automation Engine</Description>
   <ExecutablePath>C:\Program Files\dotnet\dotnet.exe</ExecutablePath>
   <StartupDirectory>C:\Program Files\Wexflow Server\Wexflow.Server\</StartupDirectory>

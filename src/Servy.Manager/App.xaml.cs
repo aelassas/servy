@@ -242,6 +242,10 @@ namespace Servy.Manager
                 DependenciesRefreshIntervalInMs = int.TryParse(config["DependenciesRefreshIntervalInMs"], out var drresult)
                                     ? drresult
                                     : AppConfig.DefaultDependenciesRefreshIntervalInMs;
+
+                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
+                Logger.EnableDebug(enabledDebugLogs);
+
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else
@@ -318,6 +322,7 @@ namespace Servy.Manager
             }
             catch (Exception ex)
             {
+                Logger.Error("Startup error", ex);
                 MessageBox.Show("Startup error: " + ex.Message);
                 Shutdown();
             }

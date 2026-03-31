@@ -112,7 +112,7 @@ namespace Servy.Service.UnitTests
 
             service.InvokeSafeKillProcess(mockProcess.Object);
 
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("SafeKillProcess error"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("SafeKillProcess error"))), Times.Once);
         }
     }
 }

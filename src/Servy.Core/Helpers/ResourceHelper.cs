@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Logging;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 #if !DEBUG
@@ -15,6 +16,8 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public class ResourceHelper
     {
+        private const int DeltaMinutes = 20; // Time delta in minutes to consider an embedded resource as "newer" than an existing file
+
         private readonly ServiceHelper _serviceHelper;
 
         /// <summary>
@@ -61,7 +64,17 @@ namespace Servy.Core.Helpers
                 {
                     DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                     DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-                    shouldCopy = embeddedResourceTime > existingFileTime;
+
+                    Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                    Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+
+                    // Only copy if the embedded resource is newer by more than DeltaMinutes
+                    shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
+
+                    if (!shouldCopy && embeddedResourceTime > existingFileTime)
+                    {
+                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                    }
                 }
 
                 if (!shouldCopy)
@@ -81,7 +94,11 @@ namespace Servy.Core.Helpers
                 try
                 {
                     if (stopServices)
+                    {
+                        if (runningServices.Count > 0)
+                            Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StopServices(runningServices);
+                    }
 
                     if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                         return false;
@@ -108,9 +125,13 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices)
                     {
+                        if (runningServices.Count > 0)
+                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StartServices(runningServices);
                     }
                 }
+
+                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
 
                 return true;
             }
@@ -135,28 +156,35 @@ namespace Servy.Core.Helpers
         /// </returns>
         public DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
-#pragma warning disable IL3000
-            var assemblyPath = assembly.Location;
-#pragma warning restore IL3000
-
-            if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
-            {
-                return File.GetLastWriteTimeUtc(assemblyPath);
-            }
-
-            // Fallback: try to get the executable's last write time
+            // Try to get the executable's last write time
             try
             {
-                var exeName = AppDomain.CurrentDomain.FriendlyName;
-                var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
-                if (File.Exists(exePath))
+                using (var process = Process.GetCurrentProcess())
                 {
-                    return File.GetLastWriteTimeUtc(exePath);
+                    var exePath = process.MainModule?.FileName;
+
+                    if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                    {
+                        return File.GetLastWriteTimeUtc(exePath);
+                    }
                 }
             }
             catch
             {
-                // Ignore exceptions and fallback to UtcNow
+                // Fallback to AppContext if Process access is restricted (rare on Windows)
+                try
+                {
+                    var exeName = AppDomain.CurrentDomain.FriendlyName;
+                    var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
+                    if (File.Exists(exePath))
+                    {
+                        return File.GetLastWriteTimeUtc(exePath);
+                    }
+                }
+                catch
+                {
+                    // Ignore exceptions and fallback to UtcNow
+                }
             }
 
             return DateTime.UtcNow;

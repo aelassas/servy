@@ -22,12 +22,12 @@
   "FailureProgramPath": "C:\\Windows\\System32\\cmd.exe",
   "FailureProgramStartupDirectory": "C:\\Windows\\Temp",
   "FailureProgramParameters": "/c exit 0 --param 2001",
-  "EnvironmentVariables": "var1=val1; var2=val2;",
+  "EnvironmentVariables": "var1=val1;var2=val2",
   "RunAsLocalSystem": true,
   "PreLaunchExecutablePath": "C:\\Windows\\System32\\cmd.exe",
   "PreLaunchStartupDirectory": "C:\\Windows\\Temp",
   "PreLaunchParameters": "/c exit 0 --param 2002",
-  "PreLaunchEnvironmentVariables": "preVar1=val1; preVar2=val2;",
+  "PreLaunchEnvironmentVariables": "preVar1=val1;preVar2=val2",
   "PreLaunchStdoutPath": "C:\\Windows\\Temp\\dummy-pre-stdout.log",
   "PreLaunchStderrPath": "C:\\Windows\\Temp\\dummy-pre-stderr.log",
   "PreLaunchTimeoutSeconds": 5,
@@ -36,5 +36,9 @@
   "PostLaunchExecutablePath": "C:\\Windows\\System32\\cmd.exe",
   "PostLaunchStartupDirectory": "C:\\Windows\\Temp",
   "PostLaunchParameters": "/c exit 0 --param 2003",
-  "EnableDebugLogs": true
+  "EnableDebugLogs": true,
+  "StartTimeout": 10,
+  "StopTimeout": 5,
+  "PreStopTimeoutSeconds": 5,
+  "PreStopLogAsError": false
 }

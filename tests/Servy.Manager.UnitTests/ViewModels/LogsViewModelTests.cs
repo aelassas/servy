@@ -129,7 +129,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 await vm.SearchCommand.ExecuteAsync(null);
 
-                _loggerMock.Verify(l => l.Warning(It.Is<string>(msg => msg.Contains("boom"))), Times.Once);
+                _loggerMock.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("boom"))), Times.Once);
             }, createApp: true);
         }
 
@@ -152,7 +152,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await vm.SearchCommand.ExecuteAsync(null);
 
                 // No warning should be logged on cancellation
-                _loggerMock.Verify(l => l.Warning(It.IsAny<string>()), Times.Never);
+                _loggerMock.Verify(l => l.Warn(It.IsAny<string>()), Times.Never);
             }, createApp: true);
         }
 

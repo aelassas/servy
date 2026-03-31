@@ -3,6 +3,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;
@@ -929,9 +930,11 @@ namespace Servy.ViewModels
                 }
 
                 BindServiceDtoToModel(dto);
+                Logger.Info($"Loaded configuration for service '{serviceName}'");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
         }

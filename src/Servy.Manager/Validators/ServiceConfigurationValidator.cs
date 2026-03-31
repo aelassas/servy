@@ -1,6 +1,7 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Manager.Config;
@@ -130,6 +131,7 @@ namespace Servy.Manager.Helpers
                 }
                 catch (Exception ex)
                 {
+                    Logger.Error("Credential validation failed", ex);
                     await _messageBoxService.ShowErrorAsync(ex.Message, AppConfig.Caption);
                     return false;
                 }

@@ -369,7 +369,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to search logs: {ex}");
+                _logger.Warn($"Failed to search logs: {ex}");
             }
             finally
             {

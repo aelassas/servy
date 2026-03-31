@@ -286,6 +286,9 @@ namespace Servy.Service
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
+                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
+                Logger.EnableDebug(enabledDebugLogs);
+
                 // Initialize database and helpers
                 var dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
@@ -574,19 +577,19 @@ namespace Servy.Service
                             return attempts;
 
                         File.WriteAllText(_restartAttemptsFile, "0");
-                        _logger.Warning("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+                        _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
                         return 0;
                     }
                     else
                     {
                         File.WriteAllText(_restartAttemptsFile, "0");
-                        _logger.Warning("Restart attempts file not found. Initializing counter to 0.");
+                        _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
                         return 0;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                    _logger.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
                     return 0;
                 }
             }
@@ -656,7 +659,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to calculate system boot time: {ex.Message}");
+                _logger.Warn($"Failed to calculate system boot time: {ex.Message}");
                 // Safety: If we can't determine boot time, assume boot just happened now to prevent accidental reset
                 systemBootTimeUtc = DateTime.UtcNow;
             }
@@ -902,7 +905,7 @@ namespace Servy.Service
 
                 if (options.PreLaunchIgnoreFailure)
                 {
-                    _logger?.Warning("Ignoring pre-launch failure and continuing service start.");
+                    _logger?.Warn("Ignoring pre-launch failure and continuing service start.");
                     return true;
                 }
             }
@@ -971,7 +974,7 @@ namespace Servy.Service
                     }
                     catch (Exception ex)
                     {
-                        _logger?.Warning(
+                        _logger?.Warn(
                             $"Failed to kill {operationName} process: {ex.Message}");
                     }
 
@@ -1367,7 +1370,7 @@ namespace Servy.Service
                     string placeholder = input.Substring(start, end - start + 1);
                     if (!string.IsNullOrEmpty(placeholder))
                     {
-                        _logger?.Warning($"Unexpanded environment variable {placeholder} in {context}");
+                        _logger?.Warn($"Unexpanded environment variable {placeholder} in {context}");
                     }
                     start = input.IndexOf('%', end + 1);
                 }
@@ -1455,7 +1458,7 @@ namespace Servy.Service
         {
             if (_isTearingDown || _disposed) return;
 
-            _logger?.Warning("Child process exit detected via event.");
+            _logger?.Warn("Child process exit detected via event.");
             ResetPid();
 
             bool needsRecovery = false;
@@ -1470,7 +1473,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warning($"Failed to get exit code: {ex.Message}");
+                    _logger?.Warn($"Failed to get exit code: {ex.Message}");
                 }
 
                 if (exitCode == 0)
@@ -1485,7 +1488,7 @@ namespace Servy.Service
 
                     _failedChecks++;
                     // Identical log format to CheckHealth
-                    _logger?.Warning($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+                    _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
 
                     if (_failedChecks >= _maxFailedChecks)
                     {
@@ -1558,7 +1561,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Warning($"Failed to set priority: {ex.Message}");
+                _logger?.Warn($"Failed to set priority: {ex.Message}");
             }
         }
 
@@ -1659,7 +1662,7 @@ namespace Servy.Service
         {
             try
             {
-                _logger?.Warning($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{_maxRestartAttempts}).");
+                _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{_maxRestartAttempts}).");
 
                 switch (_recoveryAction)
                 {
@@ -1734,7 +1737,7 @@ namespace Servy.Service
                     else
                     {
                         _failedChecks++;
-                        _logger?.Warning($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+                        _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
 
                         if (_failedChecks >= _maxFailedChecks)
                         {
@@ -1925,7 +1928,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warning($"Error stopping health check timer: {ex.Message}");
+                    _logger?.Warn($"Error stopping health check timer: {ex.Message}");
                 }
 
                 try
@@ -2035,7 +2038,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warning($"Failed to dispose output writers: {ex.Message}");
+                    _logger?.Warn($"Failed to dispose output writers: {ex.Message}");
                 }
 
                 Logger.Shutdown();
@@ -2054,7 +2057,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warning($"Error disposing health check timer: {ex.Message}");
+                    _logger?.Warn($"Error disposing health check timer: {ex.Message}");
                 }
 
                 if (_childProcess != null)
@@ -2141,7 +2144,7 @@ namespace Servy.Service
 
             if (!options.PreStopLogAsError)
             {
-                _logger?.Warning("Ignoring pre-stop failure and continuing service stop.");
+                _logger?.Warn("Ignoring pre-stop failure and continuing service stop.");
                 return true;
             }
 
@@ -2183,7 +2186,7 @@ namespace Servy.Service
                     catch (Exception ex)
                     {
                         /* Process already dead, can't get children anyway */
-                        _logger?.Warning($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
+                        _logger?.Warn($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
                     }
 
                     // 1. Stop the main process
@@ -2213,7 +2216,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger?.Warning("SafeKillProcess error: " + ex.Message);
+                _logger?.Warn("SafeKillProcess error: " + ex.Message);
             }
         }
 

@@ -4,6 +4,12 @@
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
 
+  <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
+  <assembly fullname="System.IO.FileSystem" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
+  <assembly fullname="System.IO.FileSystem.Watcher" preserve="all" />
+
   <assembly fullname="System.Management" preserve="all" />
 
   <assembly fullname="Newtonsoft.Json" preserve="all" />

@@ -19,7 +19,8 @@
 
     <IsTrimmable>true</IsTrimmable>
     <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>partial</TrimMode>    
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <TrimMode>partial</TrimMode>
     <DebuggerSupport>false</DebuggerSupport>
     <PublishReadyToRun>false</PublishReadyToRun>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>

@@ -5,6 +5,7 @@ using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Native;
 
 namespace Servy.CLI.Validators
@@ -116,6 +117,7 @@ namespace Servy.CLI.Validators
                 }
                 catch (Exception ex)
                 {
+                    Logger.Error("Credential validation failed.", ex);
                     return CommandResult.Fail(ex.Message);
                 }
             }

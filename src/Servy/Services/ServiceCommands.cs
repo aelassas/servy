@@ -4,6 +4,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Resources;
@@ -474,10 +475,12 @@ namespace Servy.Services
                 ServiceExporter.ExportXml(dto, path);
 
                 // Show success message
+                Logger.Info($"Service configuration exported to XML at: {path}");
                 await _messageBoxService.ShowInfoAsync(Strings.ExportXml_Success, Caption);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to export service configuration to XML.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
@@ -506,10 +509,12 @@ namespace Servy.Services
                 ServiceExporter.ExportJson(dto, path);
 
                 // Show success message
+                Logger.Info($"Service configuration exported to JSON at: {path}");
                 await _messageBoxService.ShowInfoAsync(Strings.ExportJson_Success, Caption);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to export service configuration to JSON.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
@@ -566,10 +571,12 @@ namespace Servy.Services
                 }
 
                 // Map to MainViewModel
+                Logger.Info($"Service configuration imported from XML at: {path}");
                 _bindServiceDtoToModel(dto);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to import service configuration from XML.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }
@@ -625,10 +632,12 @@ namespace Servy.Services
                 }
 
                 // Map to MainViewModel
+                Logger.Info($"Service configuration imported from JSON at: {path}");
                 _bindServiceDtoToModel(dto);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error($"Failed to import service configuration from JSON.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
             }
         }

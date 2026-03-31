@@ -1,4 +1,5 @@
 ﻿using Servy.Core.DTOs;
+using Servy.Core.Logging;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -35,6 +36,7 @@ namespace Servy.Core.Helpers
             catch (XmlException ex)
             {
                 errorMessage = $"Invalid XML format: {ex.Message}";
+                Logger.Error("XML parsing error", ex);
                 return false;
             }
 
@@ -51,12 +53,14 @@ namespace Servy.Core.Helpers
             catch (Exception ex)
             {
                 errorMessage = $"XML does not match ServiceDto format: {ex.Message}";
+                Logger.Error("XML deserialization error", ex);
                 return false;
             }
 
             if (dto == null)
             {
                 errorMessage = "Failed to deserialize XML to ServiceDto.";
+                Logger.Error("Deserialization resulted in null ServiceDto.");
                 return false;
             }
 
@@ -64,12 +68,14 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(dto.Name))
             {
                 errorMessage = "Service name is required.";
+                Logger.Error("Validation failed: Service name is missing.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
                 errorMessage = "Executable path is required.";
+                Logger.Error("Validation failed: Executable path is missing.");
                 return false;
             }
 

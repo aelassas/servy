@@ -218,6 +218,9 @@ namespace Servy
                 AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
+                var enabledDebugLogs = bool.TryParse(config["EnableDebugLogs"] ?? "false", out var res) && res;
+                Logger.EnableDebug(enabledDebugLogs);
+
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else
@@ -301,6 +304,7 @@ namespace Servy
             }
             catch (Exception ex)
             {
+                Logger.Error("Startup error", ex);
                 MessageBox.Show("Startup error: " + ex.Message);
                 Shutdown();
             }
