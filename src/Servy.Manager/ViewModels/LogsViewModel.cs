@@ -337,33 +337,28 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
 
                 // Step 2: Run search in background
-                var results = await Task.Run(() =>
-                    _eventLogService.SearchAsync(SelectedLevel, FromDate, ToDate, Keyword, token), token);
+                var results = await _eventLogService.SearchAsync(SelectedLevel, FromDate, ToDate, Keyword, token);
 
                 // Step 3: Update UI safely
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                token.ThrowIfCancellationRequested();
+
+                _logs.Clear();
+
+                foreach (var result in results)
                 {
-                    token.ThrowIfCancellationRequested();
-
-                    _logs.Clear();
-
-                    foreach (var result in results)
+                    var entry = new LogEntryModel
                     {
-                        var entry = new LogEntryModel
-                        {
-                            Time = result.Time,
-                            Level = result.Level.ToString(),
-                            EventId = result.EventId,
-                            Message = result.Message,
-                        };
+                        Time = result.Time,
+                        Level = result.Level.ToString(),
+                        EventId = result.EventId,
+                        Message = result.Message,
+                    };
 
-                        _logs.Add(entry);
-                    }
+                    _logs.Add(entry);
+                }
 
-                    // Scroll DataGrid to Top
-                    ScrollLogsToTopRequested?.Invoke();
-
-                });
+                // Scroll DataGrid to Top
+                ScrollLogsToTopRequested?.Invoke();
 
                 stopwatch.Stop();
                 FooterText = Helper.GetRowsInfo(_logs.Count, stopwatch.Elapsed, Strings.Footer_LogRowText);
