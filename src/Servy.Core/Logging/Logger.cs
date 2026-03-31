@@ -41,12 +41,13 @@ namespace Servy.Core.Logging
             {
                 try
                 {
-                    if (!Directory.Exists(AppConfig.ProgramDataPath))
+                    var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
+                    if (!Directory.Exists(logDir))
                     {
-                        Directory.CreateDirectory(AppConfig.ProgramDataPath);
+                        Directory.CreateDirectory(logDir);
                     }
 
-                    string logPath = Path.Combine(AppConfig.ProgramDataPath, fileName);
+                    string logPath = Path.Combine(logDir, fileName);
 
                     // Clean up existing writer if Initialize is called multiple times
                     _writer?.Dispose();
@@ -62,9 +63,11 @@ namespace Servy.Core.Logging
                         maxRotations: MaxBackupFiles
                     );
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Fail-silent: If stream cannot be initialized, Logger will bypass I/O
+                    File.AppendAllText(Path.Combine(AppConfig.ProgramDataPath, "logs", "LoggerInitializationErrors.log"),
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{fileName}'. Exception: {ex}{Environment.NewLine}");
                 }
             }
         }
@@ -117,6 +120,10 @@ namespace Servy.Core.Logging
 
                     // RotatingStreamWriter handles the rotation logic and size checks internally
                     _writer.WriteLine(logEntry);
+
+                    // Force a flush if RotatingStreamWriter doesn't have AutoFlush enabled.
+                    // This prevents NULL holes if the service is killed suddenly.
+                    _writer.Flush();
                 }
             }
             catch

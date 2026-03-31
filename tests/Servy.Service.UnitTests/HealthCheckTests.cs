@@ -78,7 +78,7 @@ namespace Servy.Service.UnitTests
             Assert.Equal(1, service.GetFailedChecks());
 
             // Verify the log matches the new unified format "Health check failed (1/3)."
-            logger.Verify(l => l.Warning(It.Is<string>(s =>
+            logger.Verify(l => l.Warn(It.Is<string>(s =>
                 s.Contains("Health check failed") && s.Contains("(1/3)"))),
                 Times.Once);
         }
@@ -113,10 +113,10 @@ namespace Servy.Service.UnitTests
             // Assert 
 
             // Verify the failure was logged
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed (1/1)"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed (1/1)"))), Times.Once);
 
             // Verify the recovery log from ExecuteRecoveryAction
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)"))), Times.Once);
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains($"Performing recovery action '{RecoveryAction.RestartProcess}' (1/3)"))), Times.Once);
 
             // Verify the helper was actually called to perform the restart
             helper.Verify(h => h.RestartProcess(
@@ -286,7 +286,7 @@ namespace Servy.Service.UnitTests
             // Assert
             // Now it should be exactly 3. Threads 4-20 will have hit 'if (_isRecovering) return'
             // because Thread 3 was stuck in the helper mock, keeping the flag true.
-            logger.Verify(l => l.Warning(It.Is<string>(s => s.Contains("Health check failed"))), Times.Exactly(3));
+            logger.Verify(l => l.Warn(It.Is<string>(s => s.Contains("Health check failed"))), Times.Exactly(3));
 
             helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                           It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),

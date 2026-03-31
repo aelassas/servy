@@ -2,6 +2,7 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.Core.Data;
+using Servy.Core.Logging;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -55,10 +56,12 @@ namespace Servy.CLI.Commands
                         case ConfigFileType.Xml:
                             var xml = await _serviceRepository.ExportXML(opts.ServiceName);
                             SaveFile(opts.Path, xml);
+                            Logger.Info($"XML configuration file saved successfully to: {opts.Path}");
                             return CommandResult.Ok($"XML configuration file saved successfully to: {opts.Path}");
                         case ConfigFileType.Json:
                             var json = await _serviceRepository.ExportJSON(opts.ServiceName);
                             SaveFile(opts.Path, json);
+                            Logger.Info($"JSON configuration file saved successfully to: {opts.Path}");
                             return CommandResult.Ok($"JSON configuration file saved successfully to: {opts.Path}");
                     }
 
@@ -66,6 +69,7 @@ namespace Servy.CLI.Commands
                 }
                 catch (Exception ex)
                 {
+                    Logger.Error($"Error exporting service configuration for '{opts.ServiceName}': {ex.Message}", ex);
                     return CommandResult.Fail($"An unhandled error occured: {ex.Message}");
                 }
             });

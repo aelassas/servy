@@ -30,6 +30,9 @@ namespace Servy.Manager.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
+
+        #region Private Fields
+
         private readonly ServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
@@ -38,6 +41,10 @@ namespace Servy.Manager.Services
         private readonly Action<string> _removeServiceCallback;
         private readonly Func<Task> _refreshCallback;
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
+
+        #endregion
+
+        #region Constructor
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
@@ -69,6 +76,10 @@ namespace Servy.Manager.Services
             _refreshCallback = refreshCallback;
             _serviceConfigurationValidator = serviceConfigurationValidator;
         }
+
+        #endregion
+
+        #region IServiceCommands Implementation
 
         /// <inheritdoc />
         public async Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
@@ -119,8 +130,8 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to start {service.Name}: {ex}");
                 if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to start {service.Name}: {ex}");
                 return false;
             }
         }
@@ -152,8 +163,8 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to stop {service.Name}: {ex}");
                 if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to stop {service.Name}: {ex}");
                 return false;
             }
         }
@@ -194,8 +205,8 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to restart {service.Name}: {ex}");
                 if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to restart {service.Name}: {ex}");
                 return false;
             }
         }
@@ -245,8 +256,8 @@ namespace Servy.Manager.Services
             catch (Exception ex)
             {
                 string serviceName = service?.Name ?? "<unknown>";
+                _logger.Warn($"Failed to configure {serviceName}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to configure {serviceName}: {ex}");
             }
         }
 
@@ -303,8 +314,8 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to install {service.Name}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to install {service.Name}: {ex}");
                 return false;
             }
         }
@@ -333,8 +344,8 @@ namespace Servy.Manager.Services
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to uninstall {service.Name}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to uninstall {service.Name}: {ex}");
                 return false;
             }
         }
@@ -359,12 +370,24 @@ namespace Servy.Manager.Services
                 var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
                 if (res > 0) RemoveService(service);
 
-                return res > 0;
+                var success = res > 0;
+
+                if (success)
+                {
+                    Logger.Info($"Service {service.Name} removed successfully.");
+                }
+                else
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    Logger.Error($"Failed to remove service {service.Name} from repository.");
+                }
+
+                return success;
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to remove {service.Name}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to remove {service.Name}: {ex}");
                 return false;
             }
         }
@@ -386,11 +409,12 @@ namespace Servy.Manager.Services
 
                 ServiceExporter.ExportXml(dto, path);
                 await _messageBoxService.ShowInfoAsync(Strings.ExportXml_Success, AppConfig.Caption);
+                Logger.Info($"Service configuration exported to XML at: {path}");
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to export XML of {service.Name}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to export XML of {service.Name}: {ex}");
             }
         }
 
@@ -411,11 +435,12 @@ namespace Servy.Manager.Services
 
                 ServiceExporter.ExportJson(dto, path);
                 await _messageBoxService.ShowInfoAsync(Strings.ExportJson_Success, AppConfig.Caption);
+                Logger.Info($"Service configuration exported to JSON at: {path}");
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to export JSON of {service.Name}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to export JSON of {service.Name}: {ex}");
             }
         }
 
@@ -449,16 +474,18 @@ namespace Servy.Manager.Services
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.ImportXml_Success, AppConfig.Caption);
                     RefreshServices();
+                    Logger.Info($"Service configuration imported from XML at: {path}");
                 }
                 else
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.ImportXml_Error, AppConfig.Caption);
+                    Logger.Error($"Failed to import XML config from {path}");
                 }
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to import XML config from {path}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to import XML config from {path}: {ex}");
             }
         }
 
@@ -491,16 +518,18 @@ namespace Servy.Manager.Services
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.ImportJson_Success, AppConfig.Caption);
                     RefreshServices();
+                    Logger.Info($"Service configuration imported from JSON at: {path}");
                 }
                 else
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.ImportJson_Error, AppConfig.Caption);
+                    Logger.Error($"Failed to import JSON config from {path}");
                 }
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to import JSON config from {path}: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to import JSON config from {path}: {ex}");
             }
         }
 
@@ -512,13 +541,16 @@ namespace Servy.Manager.Services
                 if (service.Pid == null) return;
                 Clipboard.SetText(service.Pid.ToString());
                 await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
+                Logger.Info($"PID {service.Pid} of service {service.Name} copied to clipboard.");
             }
             catch (Exception ex)
             {
+                _logger.Warn($"Failed to copy PID to clipboard: {ex}");
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                _logger.Warning($"Failed to copy PID to clipboard: {ex}");
             }
         }
+
+        #endregion
 
         #region Helpers
 
@@ -551,5 +583,6 @@ namespace Servy.Manager.Services
         }
 
         #endregion
+
     }
 }

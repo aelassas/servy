@@ -438,6 +438,7 @@ namespace Servy.Core.Services
                 if (!isLocalSystem && !isGmsa)
                 {
                     _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
+                    Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{serviceName}'.");
                 }
 
                 // Create the service if it does not exist
@@ -537,7 +538,11 @@ namespace Servy.Core.Services
                 {
                     var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle, finalTimeoutMs);
 
-                    if (!enablePreShutdownConfigSuccess)
+                    if (enablePreShutdownConfigSuccess)
+                    {
+                        Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{serviceName}' during installation.");
+                    }
+                    else
                     {
                         Logger.Error($"Failed to enable pre-shutdown for service '{serviceName}' during installation.");
                         return false;
@@ -552,6 +557,10 @@ namespace Servy.Core.Services
                         {
                             Logger.Error($"Failed to set delayed auto-start for service '{serviceName}' during installation.");
                             return false;
+                        }
+                        else
+                        {
+                            Logger.Info($"Delayed auto-start enabled for service '{serviceName}' during installation.");
                         }
                     }
                 }
@@ -588,7 +597,11 @@ namespace Servy.Core.Services
                                 var delayedAutostart = startType == ServiceStartType.AutomaticDelayedStart;
                                 var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
 
-                                if (!success)
+                                if (success)
+                                {
+                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{serviceName}'.");
+                                }
+                                else
                                 {
                                     Logger.Error($"Failed to set delayed auto-start for existing service '{serviceName}'.");
                                     return false;
@@ -601,6 +614,8 @@ namespace Servy.Core.Services
                         }
 
                         await _serviceRepository.UpsertAsync(dto);
+                        Logger.Info($"Service '{serviceName}' already exists. Updated its configuration.");
+
                         return true;
                     }
                 }
@@ -609,6 +624,7 @@ namespace Servy.Core.Services
                 SetServiceDescription(serviceHandle, description);
 
                 await _serviceRepository.UpsertAsync(dto);
+                Logger.Info($"Service '{serviceName}' installed successfully.");
 
                 return true;
             }
@@ -678,10 +694,12 @@ namespace Servy.Core.Services
                     if (res)
                     {
                         await _serviceRepository.DeleteAsync(serviceName);
+                        Logger.Info($"Service '{serviceName}' uninstalled successfully.");
                         return true;
                     }
                     else
                     {
+                        Logger.Error($"Failed to uninstall service '{serviceName}'.");
                         return false;
                     }
                 }
@@ -690,13 +708,19 @@ namespace Servy.Core.Services
                     _windowsServiceApi.CloseServiceHandle(serviceHandle);
                 }
             }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error uninstalling service '{serviceName}'.", ex);
+                throw;
+            }
             finally
             {
                 _windowsServiceApi.CloseServiceHandle(scmHandle);
             }
         }
 
-        public async Task<bool> StartService(string serviceName)
+        ///<inheritdoc/>
+        public async Task<bool> StartService(string serviceName, bool logSuccessfulStart = true)
         {
             try
             {
@@ -716,8 +740,14 @@ namespace Servy.Core.Services
                         totalWaitTime += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
                     }
 
+                    Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {totalWaitTime} seconds.");
                     sc.Start();
                     sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(totalWaitTime));
+
+                    if (logSuccessfulStart)
+                    {
+                        Logger.Info($"Service '{serviceName}' started successfully.");
+                    }
 
                     return true;
                 }
@@ -730,7 +760,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> StopService(string serviceName)
+        public async Task<bool> StopService(string serviceName, bool logSuccessfulStop = true)
         {
             try
             {
@@ -753,8 +783,14 @@ namespace Servy.Core.Services
                         totalWaitTime += service.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds;
                     }
 
+                    Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {totalWaitTime} seconds.");
                     sc.Stop();
                     sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(totalWaitTime));
+
+                    if (logSuccessfulStop)
+                    {
+                        Logger.Info($"Service '{serviceName}' stopped successfully.");
+                    }
 
                     return true;
                 }
@@ -769,10 +805,21 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<bool> RestartService(string serviceName)
         {
-            if (!await StopService(serviceName))
+            if (!await StopService(serviceName, logSuccessfulStop: false))
                 return false;
 
-            return await StartService(serviceName);
+            var res = await StartService(serviceName, logSuccessfulStart: false);
+
+            if (res)
+            {
+                Logger.Info($"Service '{serviceName}' restarted successfully.");
+            }
+            else
+            {
+                Logger.Error($"Failed to restart service '{serviceName}'.");
+            }
+
+            return res;
         }
 
         /// <inheritdoc />

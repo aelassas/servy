@@ -42,6 +42,8 @@ namespace Servy.CLI
         /// <returns>Returns 0 on success; non-zero on error.</returns>
         public static async Task<int> Main(string[] args)
         {
+            Logger.Initialize("Servy.CLI.log");
+
             try
             {
                 var verbs = GetVerbs();
@@ -195,9 +197,10 @@ namespace Servy.CLI
 
                 return exitCode;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine($"An unexpected error occurred: {e.Message}");
+                Logger.Error("An unexpected error occurred in the main execution flow.", ex);
+                Console.WriteLine($"An unexpected error occurred: {ex.Message}");
                 return 1;
             }
             finally

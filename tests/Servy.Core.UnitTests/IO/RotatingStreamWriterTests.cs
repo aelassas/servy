@@ -326,6 +326,18 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void Write_WhenWriterIsNull_DoesNothing()
+        {
+            // Create writer and immediately dispose so _writer becomes null
+            var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10);
+            writer.Dispose(); // _writer is now null
+
+            // Calling Write should not throw
+            var exception = Record.Exception(() => writer.Write("12345"));
+            Assert.Null(exception);
+        }
+
+        [Fact]
         public void EnforceMaxRotations_CoversAllBranches()
         {
             // Arrange

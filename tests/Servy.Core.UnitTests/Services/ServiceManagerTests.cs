@@ -1167,6 +1167,18 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
+        public async Task UninstallService_Throws_Win32Exception()
+        {
+            _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
+             .Returns(new IntPtr(2));
+
+            _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<uint>()))
+                .Throws(new Win32Exception("Boom!"));
+
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallService("ServiceName"));
+        }
+
+        [Fact]
         public async Task UninstallService_ReturnsFalse_WhenOpenServiceFails()
         {
             var scmHandle = new IntPtr(123);
@@ -1594,8 +1606,13 @@ namespace Servy.Core.UnitTests.Services
         public async Task RestartService_ShouldReturnFalse_WhenStartServiceFails()
         {
             // Arrange
-            // Simulate the service is already stopped so StopService returns true
-            _mockController.Setup(c => c.Status).Returns(ServiceControllerStatus.Stopped);
+            _mockController.SetupSequence(c => c.Status)
+               .Returns(ServiceControllerStatus.Running)
+               .Returns(ServiceControllerStatus.Stopped)
+               .Returns(ServiceControllerStatus.Running);
+
+            _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
 
             // Simulate StartService throwing an exception, which should trigger catch and return false
             _mockController.Setup(c => c.Start()).Throws(new Exception("Boom!"));

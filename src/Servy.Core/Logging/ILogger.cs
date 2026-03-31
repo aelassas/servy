@@ -22,7 +22,7 @@ namespace Servy.Core.Logging
         /// Logs a warning message.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
-        void Warning(string message);
+        void Warn(string message);
 
         /// <summary>
         /// Logs an error message and optional exception.

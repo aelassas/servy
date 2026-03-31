@@ -31,24 +31,24 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Start_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StartService("TestService")).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.StartService("TestService", It.IsAny<bool>())).ReturnsAsync(true);
 
             var result = await service.Start();
 
             Assert.True(result);
-            _serviceManagerMock.Verify(s => s.StartService("TestService"), Times.Once);
+            _serviceManagerMock.Verify(s => s.StartService("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
         public async Task Stop_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StopService("TestService")).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.StopService("TestService", It.IsAny<bool>())).ReturnsAsync(true);
 
             var result = await service.Stop();
 
             Assert.True(result);
-            _serviceManagerMock.Verify(s => s.StopService("TestService"), Times.Once);
+            _serviceManagerMock.Verify(s => s.StopService("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]

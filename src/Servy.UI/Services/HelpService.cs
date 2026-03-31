@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using System;
 using System.Diagnostics;
 using System.Net.Http;
@@ -88,6 +89,7 @@ namespace Servy.UI.Services
             }
             catch (Exception ex)
             {
+                Logger.Error("Failed to check for updates", ex);
                 await _messageBoxService.ShowErrorAsync("Failed to check updates: " + ex.Message, caption);
             }
         }

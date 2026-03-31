@@ -237,7 +237,7 @@ namespace Servy.Service.UnitTests
             service.InvokeSetProcessPriority(ProcessPriorityClass.High);
 
             // Assert
-            mockLogger.Verify(l => l.Warning(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error"))), Times.Once);
+            mockLogger.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("Failed to set priority") && msg.Contains("Priority error"))), Times.Once);
         }
 
         [Fact]

@@ -21,6 +21,8 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public class ResourceHelper
     {
+        private const int DeltaMinutes = 20; // Time delta in minutes to consider an embedded resource as "newer" than an existing file
+
         private readonly ServiceHelper _serviceHelper;
 
         /// <summary>
@@ -73,7 +75,17 @@ namespace Servy.Core.Helpers
                 {
                     DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                     DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-                    shouldCopy = embeddedResourceTime > existingFileTime;
+
+                    //Logger.Info($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                    //Logger.Info($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+
+                    // Only copy if the embedded resource is newer by more than DeltaMinutes
+                    shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
+
+                    if (!shouldCopy && embeddedResourceTime > existingFileTime)
+                    {
+                        Logger.Info($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                    }
                 }
 
                 if (!shouldCopy)
@@ -92,7 +104,10 @@ namespace Servy.Core.Helpers
                 try
                 {
                     if (stopServices)
+                    {
+                        Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StopServices(runningServices);
+                    }
 
                     if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                         return false;
@@ -125,9 +140,12 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices)
                     {
+                        Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StartServices(runningServices);
                     }
                 }
+
+                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
 
                 return true;
             }
@@ -219,7 +237,17 @@ namespace Servy.Core.Helpers
                     {
                         DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                         DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-                        resourceItem.ShouldCopy = embeddedResourceTime > existingFileTime;
+
+                        //Logger.Info($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                        //Logger.Info($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+
+                        // Only copy if the embedded resource is newer by more than DeltaMinutes
+                        resourceItem.ShouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
+
+                        if (!resourceItem.ShouldCopy && embeddedResourceTime > existingFileTime)
+                        {
+                            Logger.Info($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                        }
                     }
                 }
 
@@ -230,6 +258,8 @@ namespace Servy.Core.Helpers
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
+                    if (runningServices.Count > 0)
+                        Logger.Info($"Stopping running services before copying resources: {string.Join(", ", _serviceHelper.GetRunningServyServices())}");
                     runningServices = _serviceHelper.GetRunningServyServices();
                 }
 
@@ -263,7 +293,7 @@ namespace Servy.Core.Helpers
                             Stream resourceStream = assembly.GetManifestResourceStream(resourceItem.ResourceName);
                             if (resourceStream == null)
                             {
-                                Debug.WriteLine("Embedded resource not found: " + resourceItem.ResourceName);
+                                Logger.Error($"Embedded resource not found: {resourceItem.ResourceName}");
                                 res = false;
                                 continue;
                             }
@@ -279,12 +309,13 @@ namespace Servy.Core.Helpers
                                 using (FileStream fileStream = new FileStream(resourceItem.TagetPath, FileMode.Create, FileAccess.Write))
                                 {
                                     resourceStream.CopyTo(fileStream);
+                                    Logger.Info($"Successfully copied embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TagetPath}'.");
                                 }
                             }
                         }
                         catch(Exception ex)
                         {
-                            Debug.WriteLine("Failed to copy embedded resource " + resourceItem.FileNameWithoutExtension + ": " + ex);
+                            Logger.Error($"Failed to copy embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TagetPath}'.", ex);
                             res = false;
                         }
                     }
@@ -293,14 +324,16 @@ namespace Servy.Core.Helpers
                 {
                     if (stopServices)
                     {
+                        if (runningServices.Count > 0)
+                            Logger.Info($"Starting stopped services after copying resources: {string.Join(", ", runningServices)}");
                         await _serviceHelper.StartServices(runningServices);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Failed to copy embedded resources: " + ex);
-                res= false;
+                Logger.Error("Failed to copy embedded resources.", ex); 
+                res = false;
             }
 
             return res;
@@ -320,28 +353,35 @@ namespace Servy.Core.Helpers
         /// </returns>
         public DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
         {
-#pragma warning disable IL3000
-            var assemblyPath = assembly.Location;
-#pragma warning restore IL3000
-
-            if (!string.IsNullOrEmpty(assemblyPath) && File.Exists(assemblyPath))
-            {
-                return File.GetLastWriteTimeUtc(assemblyPath);
-            }
-
-            // Fallback: try to get the executable's last write time
+            // Try to get the executable's last write time
             try
             {
-                var exeName = AppDomain.CurrentDomain.FriendlyName;
-                var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
-                if (File.Exists(exePath))
+                using (var process = Process.GetCurrentProcess())
                 {
-                    return File.GetLastWriteTimeUtc(exePath);
+                    var exePath = process.MainModule?.FileName;
+
+                    if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                    {
+                        return File.GetLastWriteTimeUtc(exePath);
+                    }
                 }
             }
             catch
             {
-                // Ignore exceptions and fallback to UtcNow
+                // Fallback to AppContext if Process access is restricted (rare on Windows)
+                try
+                {
+                    var exeName = AppDomain.CurrentDomain.FriendlyName;
+                    var exePath = Path.Combine(AppContext.BaseDirectory, exeName);
+                    if (File.Exists(exePath))
+                    {
+                        return File.GetLastWriteTimeUtc(exePath);
+                    }
+                }
+                catch
+                {
+                    // Ignore exceptions and fallback to UtcNow
+                }
             }
 
             return DateTime.UtcNow;

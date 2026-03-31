@@ -40,13 +40,17 @@ namespace Servy.Core.Logging
         /// <inheritdoc/>
         public void Info(string message)
         {
-            _eventLog.WriteEntry(Format(message), EventLogEntryType.Information, InfoEventId);
+            var formattedMessage = Format(message);
+            _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Information, InfoEventId);
+            Logger.Info(formattedMessage);
         }
 
         /// <inheritdoc/>
-        public void Warning(string message)
+        public void Warn(string message)
         {
-            _eventLog.WriteEntry(Format(message), EventLogEntryType.Warning, WarningEventId);
+            var formattedMessage = Format(message);
+            _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Warning, WarningEventId);
+            Logger.Warn(formattedMessage);
         }
 
         /// <inheritdoc/>
@@ -54,6 +58,7 @@ namespace Servy.Core.Logging
         {
             var fullMessage = ex != null ? $"{message}\n{ex}" : message;
             _eventLog.WriteEntry(Format(fullMessage), EventLogEntryType.Error, ErrorEventId);
+            Logger.Error(Format(message), ex);
         }
 
         #region Private Helpers

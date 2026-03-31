@@ -264,7 +264,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Service command failed for {Service?.Name}: {ex}");
+                _logger.Warn($"Service command failed for {Service?.Name}: {ex}");
             }
         }
 

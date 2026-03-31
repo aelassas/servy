@@ -1,5 +1,6 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 using System;
 
@@ -36,10 +37,12 @@ namespace Servy.CLI.Commands
                 try
                 {
                     var status = _serviceManager.GetServiceStatus(opts.ServiceName);
+                    Logger.Info($"Service status for '{opts.ServiceName}': {status}");
                     return CommandResult.Ok($"Service status: {status}");
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    Logger.Error($"Error getting service status for '{opts.ServiceName}': {ex.Message}");
                     return CommandResult.Fail("Failed to get service status.");
                 }
             });

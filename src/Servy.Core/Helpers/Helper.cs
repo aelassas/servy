@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -320,6 +321,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
+                Logger.Error($"Error ensuring Event Log source '{sourceName}' exists: {ex.Message}", ex);
                 throw new InvalidOperationException(
                     $"Failed to ensure Event Log source '{sourceName}' on log '{logName}'.", ex);
             }

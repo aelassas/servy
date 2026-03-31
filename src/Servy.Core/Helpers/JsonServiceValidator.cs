@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
+using Servy.Core.Logging;
 using System;
 
 namespace Servy.Core.Helpers
@@ -33,24 +34,28 @@ namespace Servy.Core.Helpers
             catch (Exception ex)
             {
                 errorMessage = $"Invalid JSON format: {ex.Message}";
+                Logger.Error("JSON deserialization error", ex);
                 return false;
             }
 
             if (dto == null)
             {
                 errorMessage = "Failed to deserialize JSON to ServiceDto.";
+                Logger.Error("Deserialization resulted in null ServiceDto.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(dto.Name))
             {
                 errorMessage = "Service name is required.";
+                Logger.Error("Validation failed: Service name is missing.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
                 errorMessage = "Executable path is required.";
+                Logger.Error("Validation failed: Executable path is missing.");
                 return false;
             }
 

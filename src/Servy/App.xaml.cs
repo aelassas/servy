@@ -316,6 +316,7 @@ namespace Servy
             }
             catch (Exception ex)
             {
+                Logger.Error("Startup error", ex);
                 MessageBox.Show("Startup error: " + ex.Message);
                 Shutdown();
             }

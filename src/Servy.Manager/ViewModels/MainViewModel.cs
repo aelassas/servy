@@ -493,7 +493,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed background refresh: {ex.Message}");
+                _logger.Warn($"Failed background refresh: {ex.Message}");
             }
             finally
             {
@@ -580,7 +580,7 @@ namespace Servy.Manager.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        _logger.Warning($"RefreshAllServicesAsync failed: {ex}");
+                        _logger.Warn($"RefreshAllServicesAsync failed: {ex}");
                     }
                 }, _cancellationTokenSource.Token);
             }
@@ -673,7 +673,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to start selected services: {ex}");
+                _logger.Warn($"Failed to start selected services: {ex}");
             }
             finally
             {
@@ -728,7 +728,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to start selected services: {ex}");
+                _logger.Warn($"Failed to start selected services: {ex}");
             }
             finally
             {
@@ -781,7 +781,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to start selected services: {ex}");
+                _logger.Warn($"Failed to start selected services: {ex}");
             }
             finally
             {
@@ -927,7 +927,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to refresh all services: {ex}");
+                _logger.Warn($"Failed to refresh all services: {ex}");
             }
         }
 
@@ -1017,7 +1017,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warning($"Failed to refresh {service.Name}: {ex}");
+                _logger.Warn($"Failed to refresh {service.Name}: {ex}");
             }
         }
 
