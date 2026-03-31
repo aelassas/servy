@@ -308,6 +308,15 @@ namespace Servy.Service
                 }
                 Logger.SetLogLevel(logLevel);
 
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                {
+                    Logger.SetLogRotationSize(size);
+                }
+                else
+                {
+                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+                }
+
                 // Initialize database and helpers
                 var dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);

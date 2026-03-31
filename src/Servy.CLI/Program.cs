@@ -77,6 +77,15 @@ namespace Servy.CLI
                 }
                 Logger.SetLogLevel(logLevel);
 
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                {
+                    Logger.SetLogRotationSize(size);
+                }
+                else
+                {
+                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+                }
+
                 // Initialize shared dependencies
                 var dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);

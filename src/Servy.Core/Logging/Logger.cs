@@ -30,15 +30,16 @@ namespace Servy.Core.Logging
     [ExcludeFromCodeCoverage]
     public static class Logger
     {
+        /// <summary>
+        /// Default log rotation size in Megabytes. When the log file exceeds this size, it will be rotated.
+        /// </summary>
+        public const int DefaultLogRotationSizeMB = 10;
+
         private static readonly object _lock = new object();
         private static RotatingStreamWriter _writer;
         private static LogLevel _currentLogLevel = LogLevel.Info;
-
-        /// <summary>
-        /// The maximum size a log file can reach before rotation is triggered.
-        /// Defaults to 10MB.
-        /// </summary>
-        private const long MaxLogSizeBuffer = 10 * 1024 * 1024;
+        private static string _fileName;
+        private static long _logRotationSizeMB = DefaultLogRotationSizeMB;
 
         /// <summary>
         /// The maximum number of backup log files to keep. 
@@ -52,9 +53,52 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
         /// <param name="initialLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
-        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info)
+        /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation. Defaults to 10MB.</param>
+        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info, int logRotationSizeMB = 10)
         {
             lock (_lock)
+            {
+                _fileName = fileName;
+                _currentLogLevel = initialLevel;
+                _logRotationSizeMB = logRotationSizeMB;
+
+                InternalInitialize();
+            }
+        }
+
+        /// <summary>
+        /// Core initialization logic. Assumes lock is already acquired.
+        /// </summary>
+        private static void InternalInitialize()
+        {
+            if (string.IsNullOrEmpty(_fileName)) return;
+
+            try
+            {
+                var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
+                if (!Directory.Exists(logDir))
+                {
+                    Directory.CreateDirectory(logDir);
+                }
+
+                string logPath = Path.Combine(logDir, _fileName);
+
+                // Clean up existing writer if re-initializing or changing size
+                _writer?.Dispose();
+
+                // Convert MB to Bytes for the underlying writer
+                long rotationSizeInBytes = (long)_logRotationSizeMB * 1024 * 1024;
+
+                _writer = new RotatingStreamWriter(
+                    path: logPath,
+                    enableSizeRotation: true,
+                    rotationSizeInBytes: rotationSizeInBytes,
+                    enableDateRotation: false,
+                    dateRotationType: DateRotationType.Daily,
+                    maxRotations: MaxBackupFiles
+                );
+            }
+            catch (Exception ex)
             {
                 try
                 {
@@ -64,38 +108,33 @@ namespace Servy.Core.Logging
                         Directory.CreateDirectory(logDir);
                     }
 
-                    string logPath = Path.Combine(logDir, fileName);
-
-                    _currentLogLevel = initialLevel;
-
-                    // Clean up existing writer if Initialize is called multiple times
-                    _writer?.Dispose();
-
-                    _writer = new RotatingStreamWriter(
-                        path: logPath,
-                        enableSizeRotation: true,
-                        rotationSizeInBytes: MaxLogSizeBuffer,
-                        enableDateRotation: false,
-                        dateRotationType: DateRotationType.Daily,
-                        maxRotations: MaxBackupFiles
-                    );
+                    File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                 }
-                catch (Exception ex)
+                catch
                 {
-                    try
-                    {
-                        var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                        if (!Directory.Exists(logDir))
-                        {
-                            Directory.CreateDirectory(logDir);
-                        }
+                    // Fail-silent
+                }
+            }
+        }
 
-                        File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
-                            $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{fileName}'. Exception: {ex}{Environment.NewLine}");
-                    }
-                    catch
+        /// <summary>
+        /// Sets the maximum size for log rotation in Megabytes.
+        /// If the logger is already initialized, the underlying writer is recreated to apply the new limit.
+        /// </summary>
+        /// <param name="sizeMB">The size in MB. Must be greater than 0.</param>
+        public static void SetLogRotationSize(int sizeMB)
+        {
+            lock (_lock)
+            {
+                if (sizeMB > 0 && _logRotationSizeMB != sizeMB)
+                {
+                    _logRotationSizeMB = sizeMB;
+
+                    // If we have an active writer, recreate it to apply the new size constraint
+                    if (_writer != null)
                     {
-                        // Fail-silent
+                        InternalInitialize();
                     }
                 }
             }
