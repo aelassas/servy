@@ -81,13 +81,6 @@ namespace Servy.Core.Logging
         public static void EnableDebug(bool enable) => _enableDebug = enable;
 
         /// <summary>
-        /// Logs a message at the DEBUG level. 
-        /// Use this for high-verbosity diagnostic information useful during development.
-        /// </summary>
-        /// <param name="message">The diagnostic message to log.</param>
-        public static void Debug(string message) => Debug(message, null);
-
-        /// <summary>
         /// Logs a debug message and optional exception details at the DEBUG level.
         /// </summary>
         /// <param name="message">The operational message to log.</param>
