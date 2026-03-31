@@ -85,7 +85,7 @@ namespace Servy.Core.Logging
                 _writer?.Dispose();
 
                 // Convert MB to Bytes for the underlying writer
-                long rotationSizeInBytes = (long)_logRotationSizeMB * 1024 * 1024;
+                long rotationSizeInBytes = _logRotationSizeMB * 1024L * 1024;
 
                 _writer = new RotatingStreamWriter(
                     path: logPath,
