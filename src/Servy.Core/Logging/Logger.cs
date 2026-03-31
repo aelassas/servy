@@ -17,6 +17,7 @@ namespace Servy.Core.Logging
     {
         private static readonly object _lock = new object();
         private static RotatingStreamWriter _writer;
+        private static bool _enableDebug = false;
 
         /// <summary>
         /// The maximum size a log file can reach before rotation is triggered.
@@ -35,7 +36,8 @@ namespace Servy.Core.Logging
         /// This should be called once at the beginning of the application lifecycle.
         /// </summary>
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
-        public static void Initialize(string fileName)
+        /// <param name="enableDebug">If true, enables DEBUG level logging. Defaults to false.</param>
+        public static void Initialize(string fileName, bool enableDebug = false)
         {
             lock (_lock)
             {
@@ -48,6 +50,8 @@ namespace Servy.Core.Logging
                     }
 
                     string logPath = Path.Combine(logDir, fileName);
+
+                    _enableDebug = enableDebug;
 
                     // Clean up existing writer if Initialize is called multiple times
                     _writer?.Dispose();
@@ -73,11 +77,30 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
+        /// Enables or disables DEBUG level logging at runtime. When disabled, calls to Logger.Debug() will be no-ops.
+        /// </summary>
+        /// <param name="enable">True to enable DEBUG logging; false to disable it.</param>
+        public static void EnableDebug(bool enable) => _enableDebug = enable;
+
+        /// <summary>
         /// Logs a message at the DEBUG level. 
         /// Use this for high-verbosity diagnostic information useful during development.
         /// </summary>
         /// <param name="message">The diagnostic message to log.</param>
-        public static void Debug(string message) => Log("DEBUG", message);
+        public static void Debug(string message) => Debug(message, null);
+
+        /// <summary>
+        /// Logs a debug message and optional exception details at the DEBUG level.
+        /// </summary>
+        /// <param name="message">The operational message to log.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        public static void Debug(string message, Exception ex = null)
+        {
+            if (_enableDebug)
+            {
+                Log("DEBUG", ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
+            }
+        }
 
         /// <summary>
         /// Logs a message at the INFO level. 

@@ -76,15 +76,15 @@ namespace Servy.Core.Helpers
                     DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                     DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
 
-                    //Logger.Info($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
-                    //Logger.Info($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+                    Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                    Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
 
                     // Only copy if the embedded resource is newer by more than DeltaMinutes
                     shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
 
                     if (!shouldCopy && embeddedResourceTime > existingFileTime)
                     {
-                        Logger.Info($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
                     }
                 }
 
@@ -238,15 +238,15 @@ namespace Servy.Core.Helpers
                         DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
                         DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
 
-                        //Logger.Info($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
-                        //Logger.Info($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+                        Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                        Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
 
                         // Only copy if the embedded resource is newer by more than DeltaMinutes
                         resourceItem.ShouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
 
                         if (!resourceItem.ShouldCopy && embeddedResourceTime > existingFileTime)
                         {
-                            Logger.Info($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                            Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
                         }
                     }
                 }
