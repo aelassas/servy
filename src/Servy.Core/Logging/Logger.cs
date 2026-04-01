@@ -137,13 +137,6 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Enables or disables DEBUG level logging at runtime. 
-        /// Provided for backward compatibility with binary flags.
-        /// </summary>
-        /// <param name="enable">True to set level to DEBUG; false to set level to INFO.</param>
-        public static void EnableDebug(bool enable) => SetLogLevel(enable ? LogLevel.Debug : LogLevel.Info);
-
-        /// <summary>
         /// Logs a debug message and optional exception details at the DEBUG level.
         /// </summary>
         /// <param name="message">The operational message to log.</param>

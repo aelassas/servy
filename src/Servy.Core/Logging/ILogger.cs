@@ -18,6 +18,13 @@
         void SetLogLevel(LogLevel level);
 
         /// <summary>
+        /// Logs a debug message and optional exception details at the DEBUG level.
+        /// </summary>
+        /// <param name="message">The operational message to log.</param>
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        void Debug(string message, Exception? ex = null);
+
+        /// <summary>
         /// Logs an informational message.
         /// </summary>
         /// <param name="message">The message to log.</param>
