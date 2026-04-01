@@ -344,14 +344,14 @@ namespace Servy.Service
                 var asm = Assembly.GetExecutingAssembly();
                 var resourceHelper = new ResourceHelper(_serviceRepository);
 
-                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {
                     _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
                 {
                     _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
                 }

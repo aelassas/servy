@@ -157,6 +157,103 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Copies an embedded resource from the assembly to disk.
+        /// </summary>
+        /// <param name="assembly">The assembly containing the resource.</param>
+        /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
+        /// <param name="fileName">The filename of the resource without extension.</param>
+        /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
+        /// <param name="subfolder">Optional subfolder within the target directory.</param>
+        /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
+        public bool CopyEmbeddedResourceSync(Assembly assembly, string resourceNamespace, string fileName, string extension, string subfolder = null)
+        {
+            try
+            {
+                var targetFileName = fileName + "." + extension;
+#if DEBUG
+                var dir = Path.GetDirectoryName(assembly.Location);
+                var targetPath = string.IsNullOrEmpty(subfolder)
+                    ? Path.Combine(dir, targetFileName)
+                    : Path.Combine(dir, subfolder, targetFileName);
+#else
+                var targetPath = string.IsNullOrEmpty(subfolder)
+                    ? Path.Combine(AppConfig.ProgramDataPath, targetFileName)
+                    : Path.Combine(AppConfig.ProgramDataPath, subfolder, targetFileName);
+#endif
+
+                var targetPathDir = Path.GetDirectoryName(targetPath);
+                if (!Directory.Exists(targetPathDir))
+                {
+                    Directory.CreateDirectory(targetPathDir);
+                }
+
+                var resourceName = string.IsNullOrEmpty(subfolder)
+                    ? $"{resourceNamespace}.{fileName}.{extension}"
+                    : $"{resourceNamespace}.{subfolder}.{fileName}.{extension}";
+
+                var shouldCopy = true;
+                if (File.Exists(targetPath))
+                {
+                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
+
+                    Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                    Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+
+                    // Only copy if the embedded resource is newer by more than DeltaMinutes
+                    shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
+
+                    if (!shouldCopy && embeddedResourceTime > existingFileTime)
+                    {
+                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                    }
+                }
+
+                if (!shouldCopy)
+                    return true;
+
+                var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
+                var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
+
+                if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
+                    return false;
+
+                if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+                    return false;
+
+                Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
+                if (resourceStream == null)
+                {
+                    Logger.Error($"Embedded resource not found: {resourceName}");
+                    return false;
+                }
+
+                var dirPath = Path.GetDirectoryName(targetPath);
+                if (!Directory.Exists(dirPath))
+                {
+                    Directory.CreateDirectory(dirPath);
+                }
+
+                using (resourceStream)
+                {
+                    using (FileStream fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write))
+                    {
+                        resourceStream.CopyTo(fileStream);
+                    }
+                }
+
+                Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to copy embedded resource '{fileName}'.", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Copies embedded resources (such as DLLs and EXEs) from the specified assembly to target paths.
         /// </summary>
         /// <param name="assembly">
@@ -313,7 +410,7 @@ namespace Servy.Core.Helpers
                                 }
                             }
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             Logger.Error($"Failed to copy embedded resource '{resourceItem.ResourceName}' to '{resourceItem.TagetPath}'.", ex);
                             res = false;
@@ -332,7 +429,7 @@ namespace Servy.Core.Helpers
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to copy embedded resources.", ex); 
+                Logger.Error("Failed to copy embedded resources.", ex);
                 res = false;
             }
 
