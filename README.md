@@ -43,7 +43,7 @@
 
 # Servy
 
-Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters. It's designed to be a full-featured alternative to NSSM, WinSW, and FireDaemon Pro.
+Servy lets you run any app as a native Windows service with full control over the working directory, startup type, process priority, logging, health checks, environment variables, dependencies, pre-launch and post-launch hooks, pre-stop and post-stop hooks, and parameters. It's designed to be a modern alternative to NSSM, WinSW, and FireDaemon Pro, with built-in logging, real-time monitoring, and automatic recovery.
 
 Servy is digitally signed using a trusted code-signing certificate provided by the SignPath Foundation. This ensures that all Servy executables and installers are verified and secure, giving you peace of mind when using the tool.
 
