@@ -75,7 +75,7 @@ namespace Servy.Restarter
                 {
                     // Dispose loggers
                     Logger.Shutdown();
-                    logger?.Dispose();
+                    logger.Dispose();
                 }
                 catch
                 {
