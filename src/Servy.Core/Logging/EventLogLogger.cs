@@ -56,6 +56,17 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
+        public void Debug(string message, Exception ex = null)
+        {
+            if (_currentLogLevel <= LogLevel.Debug)
+            {
+                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
+                // We skip the Event Log for Debug, but keep the File Log
+                Logger.Debug(fullMessage);
+            }
+        }
+
+        /// <inheritdoc/>
         public void Info(string message)
         {
             if (_currentLogLevel <= LogLevel.Info)
