@@ -270,7 +270,7 @@ jobs:
         run: |
           $file = "signed/Servy.Restarter/Servy.Restarter.exe"
           if (-not (Test-Path $file)) { throw "Signed Servy.Restarter.exe not found!" }
-          Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.exe -Force
+          Copy-Item $file src/Servy.Service/Resources/Servy.Restarter.Net48.exe -Force
 
       # -----------------------------------------------------
       # Build UNSIGNED Servy.Service.exe

@@ -291,11 +291,11 @@ namespace Servy.Service.Helpers
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
-                var restarter = Path.Combine(dir, "Servy.Restarter.exe");
+                var restarter = Path.Combine(dir, "Servy.Restarter.Net48.exe");
 
                 if (!File.Exists(restarter))
                 {
-                    logger?.Error("Servy.Restarter.exe not found.");
+                    logger?.Error("Servy.Restarter.Net48.exe not found.");
                     return;
                 }
 
@@ -309,7 +309,7 @@ namespace Servy.Service.Helpers
                 {
                     if (process == null)
                     {
-                        logger?.Error("Failed to start Servy.Restarter.exe.");
+                        logger?.Error("Failed to start Servy.Restarter.Net48.exe.");
                         return;
                     }
 
@@ -321,7 +321,7 @@ namespace Servy.Service.Helpers
 
                     if (process.ExitCode != 0)
                     {
-                        logger?.Error($"Servy.Restarter.exe exited with code {process.ExitCode}.");
+                        logger?.Error($"Servy.Restarter.Net48.exe exited with code {process.ExitCode}.");
                     }
                 }
             }

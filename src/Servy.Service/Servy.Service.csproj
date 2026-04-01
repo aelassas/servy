@@ -123,10 +123,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.exe" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.exe" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\Servy.Restarter.pdb" />
+    <EmbeddedResource Include="Resources\Servy.Restarter.Net48.pdb" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

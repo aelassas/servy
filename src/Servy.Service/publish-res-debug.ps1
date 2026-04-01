@@ -46,8 +46,8 @@ $buildOutput            = Join-Path $scriptDir "..\Servy.Restarter\bin\$platform
 # Step 2: Files to copy (with renamed outputs where applicable)
 # ----------------------------------------------------------------------
 $FilesToCopy = @(
-    @{ Source = "Servy.Restarter.exe"; Destination = "Servy.Restarter.exe" },
-    @{ Source = "Servy.Restarter.pdb"; Destination = "Servy.Restarter.pdb" }
+    @{ Source = "Servy.Restarter.exe"; Destination = "Servy.Restarter.Net48.exe" },
+    @{ Source = "Servy.Restarter.pdb"; Destination = "Servy.Restarter.Net48.pdb" }
     #@{ Source = "Dapper.dll";          Destination = "Dapper.dll" }
     #@{ Source = "Newtonsoft.Json.dll"; Destination = "Newtonsoft.Json.dll" }
     #@{ Source = "Servy.Core.dll";      Destination = "Servy.Core.dll" }

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -62,6 +63,16 @@ namespace Servy.Service
         #endregion
 
         #region Constants
+
+        /// <summary>
+        /// The namespace in the assembly where the embedded service resources are located.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.Service.Resources";
+
+        /// <summary>
+        /// The base file name (without extension) of the embedded Servy Restarter executable.
+        /// </summary>
+        private const string ServyRestarterExeFileName = "Servy.Restarter.Net48";
 
         /// <summary>
         /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
@@ -329,6 +340,23 @@ namespace Servy.Service
 
                 _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
+                // Copy service executable from embedded resources
+                var asm = Assembly.GetExecutingAssembly();
+                var resourceHelper = new ResourceHelper(_serviceRepository);
+
+                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                {
+                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
+                }
+
+#if DEBUG
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                {
+                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
+                }
+#endif
+
                 // Enable Shutdown Notifications
                 CanShutdown = true;
 
@@ -393,7 +421,7 @@ namespace Servy.Service
         /// <para>
         /// This method now resets the restart attempt counter at startup to ensure that
         /// previous restart limits do not persist across service restarts (including
-        /// restarts triggered by <c>Servy.Restarter.exe</c>).
+        /// restarts triggered by <c>Servy.Restarter.Net48.exe</c>).
         /// </para>
         /// </summary>
         /// <param name="args">Command-line arguments passed to the service by the Service Control Manager.</param>
