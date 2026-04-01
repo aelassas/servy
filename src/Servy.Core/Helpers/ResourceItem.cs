@@ -32,12 +32,12 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Gets or sets the target file name (with extension).
         /// </summary>
-        public string TagetFileName { get; set; }
+        public string TargetFileName { get; set; }
 
         /// <summary>
         /// Gets or sets the full target path where the file should be copied.
         /// </summary>
-        public string TagetPath { get; set; }
+        public string TargetPath { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the resource should be copied 
