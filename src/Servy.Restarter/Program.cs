@@ -64,17 +64,23 @@ namespace Servy.Restarter
 
                 restarter.RestartService(serviceName);
                 logger.Info($"Successfully restarted service '{serviceName}'.");
-
-                Environment.Exit(0);
             }
             catch (Exception ex)
             {
                 logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
-                Environment.Exit(1);
             }
             finally
             {
-                Logger.Shutdown();
+                try
+                {
+                    // Dispose loggers
+                    Logger.Shutdown();
+                    logger?.Dispose();
+                }
+                catch
+                {
+                    // Fail-silent
+                }
             }
 
         }

@@ -51,7 +51,6 @@ namespace Servy.Core.Logging
         public void SetLogLevel(LogLevel level)
         {
             _currentLogLevel = level;
-            Logger.SetLogLevel(level);
         }
 
         /// <inheritdoc/>
