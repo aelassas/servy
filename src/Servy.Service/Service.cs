@@ -16,12 +16,13 @@ using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
-using System.Runtime.InteropServices;
 
 namespace Servy.Service
 {
@@ -56,6 +57,16 @@ namespace Servy.Service
         #endregion
 
         #region Constants
+
+        /// <summary>
+        /// The namespace in the assembly where the embedded service resources are located.
+        /// </summary>
+        private const string ResourcesNamespace = "Servy.Service.Resources";
+
+        /// <summary>
+        /// The base file name (without extension) of the embedded Servy Restarter executable.
+        /// </summary>
+        private const string ServyRestarterExeFileName = "Servy.Restarter";
 
         /// <summary>
         /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
@@ -312,6 +323,23 @@ namespace Servy.Service
                 var xmlSerializer = new XmlServiceSerializer();
 
                 _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+
+                // Copy service executable from embedded resources
+                var asm = Assembly.GetExecutingAssembly();
+                var resourceHelper = new ResourceHelper(_serviceRepository);
+
+                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                {
+                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
+                }
+
+#if DEBUG
+                // Copy debug symbols from embedded resources (only in debug builds)
+                if (!resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb", false).ConfigureAwait(false).GetAwaiter().GetResult())
+                {
+                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
+                }
+#endif
 
                 // Enable Shutdown Notifications
                 CanShutdown = true;
