@@ -39,71 +39,35 @@ namespace Servy.Core.Helpers
         /// <param name="stopServices">Whether to stop services before copying the resource.</param>
         /// <param name="isCli">Whether we are in CLI or not.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public async Task<bool> CopyEmbeddedResource(Assembly assembly, string resourceNamespace, string fileName, string extension, bool stopServices = true, bool isCli = false)
+        public async Task<bool> CopyEmbeddedResource(
+            Assembly assembly, 
+            string resourceNamespace, 
+            string fileName, 
+            string extension, 
+            bool stopServices = true, 
+            bool isCli = false)
         {
             try
             {
-                var targetFileName = fileName + "." + extension;
-#if DEBUG
-                var dir = Path.GetDirectoryName(assembly.Location);
-                var targetPath = Path.Combine(dir!, targetFileName);
-#else
-                var targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
-#endif
-
-                var targetPathDir = Path.GetDirectoryName(targetPath);
-                if (!Directory.Exists(targetPathDir))
-                {
-                    Directory.CreateDirectory(targetPathDir!);
-                }
-
-                var resourceName = resourceNamespace + "." + fileName + "." + extension;
-
-                var shouldCopy = true;
-                if (File.Exists(targetPath))
-                {
-                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-
-                    Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
-                    Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
-
-                    // Only copy if the embedded resource is newer by more than DeltaMinutes
-                    shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
-
-                    if (!shouldCopy && embeddedResourceTime > existingFileTime)
-                    {
-                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
-                    }
-                }
-
-                if (!shouldCopy)
+                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
-
-                var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
-                var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
 
                 // Get running services
                 var runningServices = new List<string>();
                 if (stopServices)
                 {
-                    //runningServices = ServiceHelper.GetRunningServyServices();
                     runningServices = isCli ? _serviceHelper.GetRunningServyCLIServices() : _serviceHelper.GetRunningServyUIServices();
                 }
 
                 try
                 {
-                    if (stopServices)
+                    if (stopServices && runningServices.Count > 0)
                     {
-                        if (runningServices.Count > 0)
-                            Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                        Logger.Info($"Stopping services before copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StopServices(runningServices);
                     }
 
-                    if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
-                        return false;
-
-                    if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+                    if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                         return false;
 
                     Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -123,16 +87,14 @@ namespace Servy.Core.Helpers
                 }
                 finally
                 {
-                    if (stopServices)
+                    if (stopServices && runningServices.Count > 0)
                     {
-                        if (runningServices.Count > 0)
-                            Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
+                        Logger.Info($"Starting stopped services after copying resource '{resourceName}': {string.Join(", ", runningServices)}");
                         await _serviceHelper.StartServices(runningServices);
                     }
                 }
 
                 Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
-
                 return true;
             }
             catch (Exception ex)
@@ -150,54 +112,18 @@ namespace Servy.Core.Helpers
         /// <param name="fileName">The filename of the resource without extension.</param>
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
-        public bool CopyEmbeddedResourceSync(Assembly assembly, string resourceNamespace, string fileName, string extension)
+        public bool CopyEmbeddedResourceSync(
+            Assembly assembly, 
+            string resourceNamespace, 
+            string fileName, 
+            string extension)
         {
             try
             {
-                var targetFileName = fileName + "." + extension;
-#if DEBUG
-                var dir = Path.GetDirectoryName(assembly.Location);
-                var targetPath = Path.Combine(dir!, targetFileName);
-#else
-                var targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
-#endif
-
-                var targetPathDir = Path.GetDirectoryName(targetPath);
-                if (!Directory.Exists(targetPathDir))
-                {
-                    Directory.CreateDirectory(targetPathDir!);
-                }
-
-                var resourceName = resourceNamespace + "." + fileName + "." + extension;
-
-                var shouldCopy = true;
-                if (File.Exists(targetPath))
-                {
-                    DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
-                    DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTime(assembly);
-
-                    Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
-                    Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
-
-                    // Only copy if the embedded resource is newer by more than DeltaMinutes
-                    shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
-
-                    if (!shouldCopy && embeddedResourceTime > existingFileTime)
-                    {
-                        Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
-                    }
-                }
-
-                if (!shouldCopy)
+                if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
 
-                var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
-                var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
-
-                if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
-                    return false;
-
-                if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+                if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
                     return false;
 
                 Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -216,7 +142,6 @@ namespace Servy.Core.Helpers
                 }
 
                 Logger.Info($"Successfully copied embedded resource '{resourceName}' to '{targetPath}'.");
-
                 return true;
             }
             catch (Exception ex)
@@ -228,18 +153,9 @@ namespace Servy.Core.Helpers
 
         /// <summary>
         /// Retrieves the last write time of the assembly that contains the embedded resource.
-        /// This timestamp is used to determine whether the resource should be updated on disk.
         /// </summary>
-        /// <param name="assembly">
-        /// The assembly containing the embedded resource.
-        /// </param>
-        /// <returns>
-        /// The UTC <see cref="DateTime"/> representing the assembly's last write time,
-        /// or <see cref="DateTime.UtcNow"/> if it cannot be determined.
-        /// </returns>
-        public DateTime GetEmbeddedResourceLastWriteTime(Assembly assembly)
+        public DateTime GetEmbeddedResourceLastWriteTimeUTC()
         {
-            // Try to get the executable's last write time
             try
             {
                 using (var process = Process.GetCurrentProcess())
@@ -254,7 +170,6 @@ namespace Servy.Core.Helpers
             }
             catch
             {
-                // Fallback to AppContext if Process access is restricted (rare on Windows)
                 try
                 {
                     var exeName = AppDomain.CurrentDomain.FriendlyName;
@@ -273,5 +188,87 @@ namespace Servy.Core.Helpers
             return DateTime.UtcNow;
         }
 
+        #region Shared Internal Logic
+
+        /// <summary>
+        /// Resolves output paths, creates necessary directories, and determines if a resource extraction is required based on timestamps.
+        /// </summary>
+        /// <param name="assembly">The assembly containing the embedded resource.</param>
+        /// <param name="resourceNamespace">The namespace where the resource is located within the assembly.</param>
+        /// <param name="fileName">The base name of the file to extract (without extension).</param>
+        /// <param name="extension">The file extension (e.g., "exe", "dll").</param>
+        /// <param name="targetPath">Output parameter containing the full destination path on disk.</param>
+        /// <param name="targetFileName">Output parameter containing the combined filename and extension.</param>
+        /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
+        /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
+        private bool ShouldCopyResource(
+            Assembly assembly, 
+            string resourceNamespace,
+            string fileName, 
+            string extension, 
+            out string targetPath, 
+            out string targetFileName, 
+            out string resourceName)
+        {
+            targetFileName = fileName + "." + extension;
+#if DEBUG
+            var dir = Path.GetDirectoryName(assembly.Location);
+            targetPath = Path.Combine(dir!, targetFileName);
+#else
+            targetPath = Path.Combine(AppConfig.ProgramDataPath, targetFileName);
+#endif
+
+            var targetPathDir = Path.GetDirectoryName(targetPath);
+            if (!Directory.Exists(targetPathDir))
+            {
+                Directory.CreateDirectory(targetPathDir!);
+            }
+
+            resourceName = resourceNamespace + "." + fileName + "." + extension;
+
+            if (File.Exists(targetPath))
+            {
+                DateTime existingFileTime = File.GetLastWriteTimeUtc(targetPath);
+                DateTime embeddedResourceTime = GetEmbeddedResourceLastWriteTimeUTC();
+
+                Logger.Debug($"Existing file '{targetPath}' last write time: {existingFileTime.ToLocalTime():G}");
+                Logger.Debug($"Embedded resource '{resourceName}' last write time: {embeddedResourceTime.ToLocalTime():G}");
+
+                // Only copy if the embedded resource is newer by more than DeltaMinutes
+                bool shouldCopy = embeddedResourceTime > existingFileTime.AddMinutes(DeltaMinutes);
+
+                if (!shouldCopy && embeddedResourceTime > existingFileTime)
+                {
+                    Logger.Debug($"Embedded resource '{resourceName}' is newer, but within the {DeltaMinutes}-minute delta. Skipping copy.");
+                }
+
+                return shouldCopy;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Evaluates the file extension type and attempts to safely terminate any processes holding locks on the target file.
+        /// </summary>
+        /// <param name="extension">The file extension used to determine the termination strategy (e.g., "exe", "dll").</param>
+        /// <param name="targetFileName">The name of the file to search for in the process list.</param>
+        /// <param name="targetPath">The full path to the file to check for active file handles.</param>
+        /// <returns>True if all blocking processes were terminated or none were found; false if termination failed.</returns>
+        private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath)
+        {
+            var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
+            var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
+
+            if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
+                return false;
+
+            if (isDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+                return false;
+
+            return true;
+        }
+
+        #endregion
     }
 }
