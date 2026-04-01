@@ -1,5 +1,4 @@
-﻿using Servy.Core.Helpers;
-using Servy.Service.Native;
+﻿using Servy.Service.Native;
 using System.ServiceProcess;
 
 namespace Servy.Service
@@ -18,9 +17,6 @@ namespace Servy.Service
         {
             _ = NativeMethods.FreeConsole();
             _ = NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
-
-            // Ensure event source exists
-            Helper.EnsureEventSourceExists();
 
             ServiceBase[] servicesToRun =
             {

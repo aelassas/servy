@@ -31,13 +31,15 @@ namespace Servy.Core.Logging
         public string? Prefix { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source.
+        /// Initializes a new instance of the <see cref="EventLogLogger"/> class.
         /// </summary>
         /// <param name="source">The event source name used for logging.</param>
-        public EventLogLogger(string source)
+        /// <param name="level">Log level to set. Defaults to <see cref="LogLevel.Info"/>.  Messages below this level will be ignored.</param>
+        public EventLogLogger(string source, LogLevel level = LogLevel.Info)
         {
             _eventLog = new EventLog();
 
+            // Ensure the source exists in the Application log
             if (!EventLog.SourceExists(source))
             {
                 EventLog.CreateEventSource(source, "Application");
@@ -45,15 +47,6 @@ namespace Servy.Core.Logging
 
             _eventLog.Source = source;
             _eventLog.Log = "Application";
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source and log level.
-        /// </summary>
-        /// <param name="source">The event source name used for logging.</param>
-        /// <param name="level">Log level to set for this logger instance. Messages below this level will be ignored.</param>
-        public EventLogLogger(string source, LogLevel level = LogLevel.Info) : this(source)
-        {
             _currentLogLevel = level;
         }
 

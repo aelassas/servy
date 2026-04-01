@@ -34,6 +34,9 @@ namespace Servy.Restarter
 
             try
             {
+                // Ensure event source exists
+                Helper.EnsureEventSourceExists();
+
                 // Load configuration from appsettings.restarter.json
                 var config = new ConfigurationBuilder()
                     .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
@@ -58,9 +61,6 @@ namespace Servy.Restarter
 
                 // Restart service
                 logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
-
-                // Ensure event source exists
-                Helper.EnsureEventSourceExists();
 
                 restarter.RestartService(serviceName);
                 logger.Info($"Successfully restarted service '{serviceName}'.");
