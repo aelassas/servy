@@ -97,6 +97,11 @@ namespace Servy.Manager
         /// </remarks>
         public bool ForceSoftwareRendering { get; private set; }
 
+        /// <summary>
+        /// Log level for the application, loaded from configuration. This determines the verbosity of logs.
+        /// </summary>
+        public LogLevel LogLevel { get; private set; }
+
         #endregion
 
         #region Events
@@ -245,9 +250,9 @@ namespace Servy.Manager
 
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
                 {
-                    logLevel = LogLevel.Info;
+                    LogLevel = LogLevel.Info;
                 }
-                Logger.SetLogLevel(logLevel);
+                Logger.SetLogLevel(LogLevel);
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {

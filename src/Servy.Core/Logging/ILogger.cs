@@ -5,12 +5,19 @@ namespace Servy.Core.Logging
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.
     /// </summary>
-    public interface ILogger
+    public interface ILogger : IDisposable
     {
         /// <summary>
         /// Prefix to prepend to log messages.
         /// </summary>
         string Prefix { get; set; }
+
+        /// <summary>
+        /// Sets the minimum log level to be recorded. 
+        /// Messages below this level will be ignored.
+        /// </summary>
+        /// <param name="level">The new <see cref="LogLevel"/>.</param>
+        void SetLogLevel(LogLevel level);
 
         /// <summary>
         /// Logs an informational message.

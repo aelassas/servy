@@ -49,9 +49,13 @@ namespace Servy.Manager.Views
         {
             var app = (App)Application.Current;
 
+            // Initialize logger
+            _logger = new EventLogLogger(AppConfig.EventSource);
+            _logger.SetLogLevel(app.LogLevel);
+
             // Initialize Logs view
             var logsView = new LogsView();
-            var logsVm = new LogsViewModel(new EventLogLogger(AppConfig.EventSource), new EventLogService(new EventLogReader()));
+            var logsVm = new LogsViewModel(_logger, new EventLogService(new EventLogReader()));
             logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
@@ -65,9 +69,6 @@ namespace Servy.Manager.Views
             var xmlSerializer = new XmlServiceSerializer();
 
             var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
-
-            // Initialize logger
-            _logger = new EventLogLogger(AppConfig.EventSource);
 
             // Initialize service manager
             var serviceManager = new ServiceManager(
