@@ -9,15 +9,26 @@ namespace Servy.Core.Logging
     [ExcludeFromCodeCoverage]
     public class EventLogLogger : ILogger
     {
-        private readonly EventLog _eventLog;
+        #region Private Fields
 
-        ///<inheritdoc/>
-        public string? Prefix { get; set; }
+        private readonly EventLog _eventLog;
+        private LogLevel _currentLogLevel = LogLevel.Info;
+
+        #endregion
+
+        #region Constants
 
         // Default Event IDs per level
         private const int InfoEventId = 1000;
         private const int WarningEventId = 2000;
         private const int ErrorEventId = 3000;
+
+        #endregion
+
+        #region ILogger implementation
+
+        ///<inheritdoc/>
+        public string? Prefix { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source.
@@ -37,28 +48,59 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
+        public void SetLogLevel(LogLevel level)
+        {
+            _currentLogLevel = level;
+            Logger.SetLogLevel(level);
+        }
+
+        /// <inheritdoc/>
         public void Info(string message)
         {
-            var formattedMessage = Format(message);
-            _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Information, InfoEventId);
-            Logger.Info(formattedMessage);
+            if (_currentLogLevel <= LogLevel.Info)
+            {
+                var formattedMessage = Format(message);
+                _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Information, InfoEventId);
+                Logger.Info(formattedMessage);
+            }
         }
 
         /// <inheritdoc/>
         public void Warn(string message)
         {
-            var formattedMessage = Format(message);
-            _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Warning, WarningEventId);
-            Logger.Warn(formattedMessage);
+            if (_currentLogLevel <= LogLevel.Warn)
+            {
+                var formattedMessage = Format(message);
+                _eventLog.WriteEntry(formattedMessage, EventLogEntryType.Warning, WarningEventId);
+                Logger.Warn(formattedMessage);
+            }
         }
 
         /// <inheritdoc/>
         public void Error(string message, Exception? ex = null)
         {
-            var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
-            _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error, ErrorEventId);
-            Logger.Error(fullMessage);
+            if (_currentLogLevel <= LogLevel.Error)
+            {
+                var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
+                _eventLog.WriteEntry(fullMessage, EventLogEntryType.Error, ErrorEventId);
+                Logger.Error(fullMessage);
+            }
         }
+
+        #endregion
+
+        #region IDisposable implementation
+
+        /// <summary>
+        /// Releases all resources used by the <see cref="EventLogLogger"/>, 
+        /// specifically the underlying <see cref="EventLog"/> component.
+        /// </summary>
+        public void Dispose()
+        {
+            _eventLog?.Dispose();
+        }
+
+        #endregion
 
         #region Private Helpers
 

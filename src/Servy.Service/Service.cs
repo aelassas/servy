@@ -291,6 +291,7 @@ namespace Servy.Service
                     logLevel = LogLevel.Info;
                 }
                 Logger.SetLogLevel(logLevel);
+                _logger.SetLogLevel(logLevel);
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
@@ -1962,6 +1963,17 @@ namespace Servy.Service
                     _disposed = true;
                     _cancellationSource?.Dispose();
                     _cancellationSource = null;
+
+                    try
+                    {
+                        // Dispose loggers
+                        Logger.Shutdown();
+                        _logger?.Dispose();
+                    }
+                    catch
+                    {
+                        // Fail-silent
+                    }
                 }
             }
 
@@ -2052,8 +2064,6 @@ namespace Servy.Service
                 {
                     _logger?.Warn($"Failed to dispose output writers: {ex.Message}");
                 }
-
-                Logger.Shutdown();
             }
             catch (Exception ex)
             {
@@ -2077,6 +2087,7 @@ namespace Servy.Service
                     _childProcess.Dispose();
                     _childProcess = null;
                 }
+
             }
 
         }

@@ -1,6 +1,8 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using System.Diagnostics;
 
 /// <summary>
 /// A simple console application to restart a Windows service.
@@ -32,6 +34,29 @@ namespace Servy.Restarter
 
             try
             {
+                // Load configuration from appsettings.restarter.json
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                    .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
+                    .Build();
+
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+                {
+                    logLevel = LogLevel.Info;
+                }
+                Logger.SetLogLevel(logLevel);
+                logger.SetLogLevel(logLevel);
+
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                {
+                    Logger.SetLogRotationSize(size);
+                }
+                else
+                {
+                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+                }
+
+                // Restart service
                 logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 // Ensure event source exists
