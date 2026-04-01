@@ -298,6 +298,9 @@ namespace Servy.Service
             {
                 ServiceName = AppConfig.ServiceNameEventSource;
 
+                // Ensure event source exists
+                Helper.EnsureEventSourceExists();
+
                 _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
                 _logger = logger ?? throw new ArgumentNullException(nameof(logger));
                 _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
