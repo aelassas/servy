@@ -47,6 +47,16 @@ namespace Servy.Core.Logging
             _eventLog.Log = "Application";
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventLogLogger"/> class with the specified source and log level.
+        /// </summary>
+        /// <param name="source">The event source name used for logging.</param>
+        /// <param name="level">Log level to set for this logger instance. Messages below this level will be ignored.</param>
+        public EventLogLogger(string source, LogLevel level = LogLevel.Info) : this(source)
+        {
+            _currentLogLevel = level;
+        }
+
         /// <inheritdoc/>
         public void SetLogLevel(LogLevel level)
         {
