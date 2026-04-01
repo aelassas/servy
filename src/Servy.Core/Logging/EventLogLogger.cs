@@ -12,7 +12,7 @@ namespace Servy.Core.Logging
         #region Private Fields
 
         private readonly EventLog _eventLog;
-        private LogLevel _currentLogLevel = LogLevel.Info;
+        private LogLevel _currentLogLevel;
 
         #endregion
 
