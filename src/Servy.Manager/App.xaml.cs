@@ -250,9 +250,10 @@ namespace Servy.Manager
 
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
                 {
-                    LogLevel = LogLevel.Info;
+                    logLevel = LogLevel.Info;
                 }
-                Logger.SetLogLevel(LogLevel);
+                Logger.SetLogLevel(logLevel);
+                LogLevel = logLevel;
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {

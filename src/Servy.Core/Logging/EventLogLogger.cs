@@ -103,13 +103,35 @@ namespace Servy.Core.Logging
 
         #region IDisposable implementation
 
+        private bool _disposed = false;
+
         /// <summary>
-        /// Releases all resources used by the <see cref="EventLogLogger"/>, 
-        /// specifically the underlying <see cref="EventLog"/> component.
+        /// Releases all resources used by the <see cref="EventLogLogger"/>.
         /// </summary>
         public void Dispose()
         {
-            _eventLog?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected implementation of Dispose pattern.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose, false if called from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                // Free managed objects here
+                _eventLog?.Dispose();
+            }
+
+            _disposed = true;
         }
 
         #endregion
