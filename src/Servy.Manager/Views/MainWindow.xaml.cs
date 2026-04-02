@@ -50,7 +50,7 @@ namespace Servy.Manager.Views
             var app = (App)Application.Current;
 
             // Initialize logger
-            _logger = new EventLogLogger(AppConfig.EventSource, app.LogLevel);
+            _logger = new EventLogLogger(AppConfig.EventSource, app.LogLevel, app.IsEventLogEnabled);
 
             // Initialize Logs view
             var logsView = new LogsView();
