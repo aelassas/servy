@@ -55,7 +55,15 @@ namespace Servy.Infrastructure.UnitTests.Data
 
         public override Task<ServiceDto?> GetByIdAsync(int id, bool decrypt = true, CancellationToken token = default)
         {
-            return _returnNullDto ? Task.FromResult<ServiceDto?>(null) : Task.FromResult<ServiceDto?>(new ServiceDto { Id = id, Name = "StubService" });
+            return _returnNullDto 
+                ? Task.FromResult<ServiceDto?>(null) 
+                : Task.FromResult<ServiceDto?>(new ServiceDto 
+                {
+                    Id = id, 
+                    Name = "StubService",
+                    ActiveStderrPath = @"C:\logs\stub_active_stderr.log",
+                    ActiveStdoutPath = @"C:\logs\stub_active_stdout.log"
+                });
         }
 
         public override Task<ServiceDto?> GetByNameAsync(string name, bool decrypt = true, CancellationToken token = default)

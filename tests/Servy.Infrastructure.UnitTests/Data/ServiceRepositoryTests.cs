@@ -9,7 +9,6 @@ using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using System.Data;
 
 namespace Servy.Infrastructure.UnitTests.Data
 {
@@ -862,6 +861,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, true, TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("StubService", result.Name);
+            Assert.Equal(@"C:\logs\stub_active_stdout.log", result.ActiveStdoutPath);
+            Assert.Equal(@"C:\logs\stub_active_stderr.log", result.ActiveStderrPath);
         }
 
         [Fact]
