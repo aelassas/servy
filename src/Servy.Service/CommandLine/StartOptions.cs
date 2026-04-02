@@ -102,12 +102,12 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the path to the pre-launch standard output log file.
         /// </summary>
-        public string PreLaunchStdOutPath { get; set; }
+        public string PreLaunchStdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the path to the pre-launch standard error log file.
         /// </summary>
-        public string PreLaunchStdErrPath { get; set; }
+        public string PreLaunchStderrPath { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout of pre-launch script.

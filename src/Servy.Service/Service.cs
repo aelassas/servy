@@ -870,8 +870,8 @@ namespace Servy.Service
                                 ? options.WorkingDirectory
                                 : options.PreLaunchWorkingDirectory,
                             UseShellExecute = false,
-                            RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath),
-                            RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath),
+                            RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdoutPath),
+                            RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStderrPath),
                             CreateNoWindow = true
                         };
 
@@ -935,13 +935,13 @@ namespace Servy.Service
                             var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
 
                             // Save logs if paths are set
-                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdOutPath))
+                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdoutPath))
                             {
-                                File.AppendAllText(options.PreLaunchStdOutPath, stdoutBuffer.ToString(), encoding);
+                                File.AppendAllText(options.PreLaunchStdoutPath, stdoutBuffer.ToString(), encoding);
                             }
-                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdErrPath))
+                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStderrPath))
                             {
-                                File.AppendAllText(options.PreLaunchStdErrPath, stderrBuffer.ToString(), encoding);
+                                File.AppendAllText(options.PreLaunchStderrPath, stderrBuffer.ToString(), encoding);
                             }
 
                             if (process.ExitCode == 0)
