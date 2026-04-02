@@ -106,8 +106,8 @@ namespace Servy.Service.Helpers
                   GetDebugLog(options, $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n") +
                   // preLaunchEnvironmentVariables are not logged to avoid exposing sensitive information
                   GetDebugLog(options, $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n") +
-                  $"- preLaunchStdOutPath: {options.PreLaunchStdOutPath}\n" +
-                  $"- preLaunchStdErrPath: {options.PreLaunchStdErrPath}\n" +
+                  $"- preLaunchStdOutPath: {options.PreLaunchStdoutPath}\n" +
+                  $"- preLaunchStdErrPath: {options.PreLaunchStderrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
                   $"- preLaunchRetryAttempts: {options.PreLaunchRetryAttempts}\n" +
                   $"- preLaunchIgnoreFailure: {options.PreLaunchIgnoreFailure}\n\n" +

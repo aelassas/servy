@@ -351,60 +351,7 @@ namespace Servy.Core.Services
             // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
                 Helper.Quote(wrapperExePath),
-                Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(processPriority.ToString()),
-                Helper.Quote(stdoutPath ?? string.Empty),
-                Helper.Quote(stderrPath ?? string.Empty),
-                Helper.Quote(enableSizeRotation ? rotationSizeInBytes.ToString() : "0"),
-                Helper.Quote(enableHealthMonitoring ? heartbeatInterval.ToString() : "0"),
-                Helper.Quote(enableHealthMonitoring ? maxFailedChecks.ToString() : "0"),
-                Helper.Quote(recoveryAction.ToString()),
-                Helper.Quote(serviceName),
-                Helper.Quote(enableHealthMonitoring ? maxRestartAttempts.ToString() : "0"),
-                Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
-
-                // Pre-Launch
-                Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-                Helper.Quote(string.Empty), // Environment variables are no longer passed from binary path and are retrived from DB instead
-                Helper.Quote(preLaunchStdoutPath ?? string.Empty),
-                Helper.Quote(preLaunchStderrPath ?? string.Empty),
-                Helper.Quote(preLaunchTimeout.ToString()),
-                Helper.Quote(preLaunchRetryAttempts.ToString()),
-                Helper.Quote(preLaunchIgnoreFailure.ToString()),
-
-                // Failure program
-                Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-
-                // Post-Launch
-                Helper.Quote(string.Empty), // Process path is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Working directory is no longer passed from binary path and is retrived from DB instead
-                Helper.Quote(string.Empty), // Process parameters are no longer passed from binary path and are retrived from DB instead
-
-                // Debug Logs
-                Helper.Quote(enableDebugLogs.ToString()),
-
-                // Max rotations
-                Helper.Quote(maxRotations.ToString()),
-
-                // Date rotation
-                Helper.Quote(enableSizeRotation.ToString()), // size rotation
-                Helper.Quote(enableDateRotation.ToString()),
-                Helper.Quote(dateRotationType.ToString()),
-
-                // Start/Stop timeouts
-                Helper.Quote((startTimeout ?? AppConfig.DefaultStartTimeout).ToString()),
-                Helper.Quote((stopTimeout ?? AppConfig.DefaultStopTimeout).ToString()),
-
-                // Pre-Stop
-                Helper.Quote((preStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds).ToString()),
-                Helper.Quote(preStopLogAsError.ToString())
-
+                Helper.Quote(serviceName)
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_ALL_ACCESS);
