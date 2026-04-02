@@ -306,6 +306,9 @@ namespace Servy.Service
                 Logger.SetLogLevel(logLevel);
                 _logger.SetLogLevel(logLevel);
 
+                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                _logger.SetIsEventLogEnabled(isEventLogEnabled);
+
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
                     Logger.SetLogRotationSize(size);

@@ -18,6 +18,12 @@
         void SetLogLevel(LogLevel level);
 
         /// <summary>
+        /// Sets whether logging to the Windows Event Log is enabled.
+        /// </summary>
+        /// <param name="isEnabled"><see langword="true"/> to enable Event Log logging; <see langword="false"/> to disable it.</param>
+        void SetIsEventLogEnabled(bool isEnabled);
+
+        /// <summary>
         /// Logs a debug message and optional exception details at the DEBUG level.
         /// </summary>
         /// <param name="message">The operational message to log.</param>

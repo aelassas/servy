@@ -50,6 +50,9 @@ namespace Servy.Restarter
                 Logger.SetLogLevel(logLevel);
                 logger.SetLogLevel(logLevel);
 
+                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                logger.SetIsEventLogEnabled(isEventLogEnabled);
+
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
                     Logger.SetLogRotationSize(size);

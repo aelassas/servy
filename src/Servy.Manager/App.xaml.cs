@@ -98,6 +98,11 @@ namespace Servy.Manager
         /// </summary>
         public LogLevel LogLevel { get; private set; }
 
+        /// <summary>
+        /// Indicates whether logging to the Windows Event Log is enabled, as determined by configuration settings.
+        /// </summary>
+        public bool IsEventLogEnabled { get; private set; }
+
         #endregion
 
         #region Events
@@ -254,6 +259,8 @@ namespace Servy.Manager
                 }
                 Logger.SetLogLevel(logLevel);
                 LogLevel = logLevel;
+
+                IsEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
