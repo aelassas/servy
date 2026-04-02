@@ -53,7 +53,7 @@ namespace Servy.Core.UnitTests.Services
         [InlineData("", "", "")]
         [InlineData("TestService", "", "")]
         [InlineData("TestService", "C:\\Apps\\App.exe", "")]
-        public async Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_Throws_ArgumentException(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -99,7 +99,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchTimeout = 30
             };
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(options));
+            await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.InstallService(options));
         }
 
         [Theory]

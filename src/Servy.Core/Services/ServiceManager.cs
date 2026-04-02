@@ -290,11 +290,11 @@ namespace Servy.Core.Services
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
             if (string.IsNullOrWhiteSpace(options.ServiceName))
-                throw new ArgumentNullException(nameof(options.ServiceName));
+                throw new ArgumentException(nameof(options.ServiceName));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath))
-                throw new ArgumentNullException(nameof(options.WrapperExePath));
+                throw new ArgumentException(nameof(options.WrapperExePath));
             if (string.IsNullOrWhiteSpace(options.RealExePath))
-                throw new ArgumentNullException(nameof(options.RealExePath));
+                throw new ArgumentException(nameof(options.RealExePath));
 
             // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
