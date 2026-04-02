@@ -290,90 +290,35 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallService(
-                string serviceName,
-                string description,
-                string wrapperExePath,
-                string realExePath,
-                string workingDirectory = null,
-                string realArgs = null,
-                ServiceStartType startType = ServiceStartType.Automatic,
-                ProcessPriority processPriority = ProcessPriority.Normal,
-                string stdoutPath = null,
-                string stderrPath = null,
-                bool enableSizeRotation = false,
-                ulong rotationSizeInBytes = AppConfig.DefaultRotationSize * 1024 * 1024,
-                bool enableHealthMonitoring = false,
-                int heartbeatInterval = AppConfig.DefaultHeartbeatInterval,
-                int maxFailedChecks = AppConfig.DefaultMaxFailedChecks,
-                RecoveryAction recoveryAction = RecoveryAction.None,
-                int maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts,
-                string environmentVariables = null,
-                string serviceDependencies = null,
-                string username = null,
-                string password = null,
-                string preLaunchExePath = null,
-                string preLaunchWorkingDirectory = null,
-                string preLaunchArgs = null,
-                string preLaunchEnvironmentVariables = null,
-                string preLaunchStdoutPath = null,
-                string preLaunchStderrPath = null,
-                int preLaunchTimeout = AppConfig.DefaultPreLaunchTimeoutSeconds,
-                int preLaunchRetryAttempts = AppConfig.DefaultPreLaunchRetryAttempts,
-                bool preLaunchIgnoreFailure = false,
-                string failureProgramPath = null,
-                string failureProgramWorkingDirectory = null,
-                string failureProgramArgs = null,
-                string postLaunchExePath = null,
-                string postLaunchWorkingDirectory = null,
-                string postLaunchArgs = null,
-                bool enableDebugLogs = false,
-                string displayName = null,
-                int? maxRotations = AppConfig.DefaultMaxRotations,
-                bool enableDateRotation = false,
-                DateRotationType dateRotationType = DateRotationType.Daily,
-                int? startTimeout = AppConfig.DefaultStartTimeout,
-                int? stopTimeout = AppConfig.DefaultStopTimeout,
-
-                string preStopExePath = null,
-                string preStopWorkingDirectory = null,
-                string preStopArgs = null,
-                int? preStopTimeout = AppConfig.DefaultPreStopTimeoutSeconds,
-                bool? preStopLogAsError = false,
-
-                string postStopExePath = null,
-                string postStopWorkingDirectory = null,
-                string postStopArgs = null
-            )
+        public async Task<bool> InstallService(InstallServiceOptions options)
         {
-            if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
-            if (string.IsNullOrWhiteSpace(wrapperExePath))
-                throw new ArgumentNullException(nameof(wrapperExePath));
-            if (string.IsNullOrWhiteSpace(realExePath))
-                throw new ArgumentNullException(nameof(realExePath));
+            if (options == null)
+                throw new ArgumentNullException(nameof(options));
+            if (string.IsNullOrWhiteSpace(options.ServiceName))
+                throw new ArgumentException(nameof(options.ServiceName));
+            if (string.IsNullOrWhiteSpace(options.WrapperExePath))
+                throw new ArgumentException(nameof(options.WrapperExePath));
+            if (string.IsNullOrWhiteSpace(options.RealExePath))
+                throw new ArgumentException(nameof(options.RealExePath));
 
             // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
-                Helper.Quote(wrapperExePath),
-                Helper.Quote(serviceName)
+                Helper.Quote(options.WrapperExePath),
+                Helper.Quote(options.ServiceName)
             );
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                displayName = serviceName;
-            }
+            string displayName = string.IsNullOrWhiteSpace(options.DisplayName) ? options.ServiceName : options.DisplayName;
 
             IntPtr serviceHandle = IntPtr.Zero;
             try
             {
-                string lpDependencies = ServiceDependenciesParser.Parse(serviceDependencies);
-                string lpServiceStartName = string.IsNullOrWhiteSpace(username) ? LocalSystemAccount : username;
-                string lpPassword = string.IsNullOrEmpty(password) ? null : password;
+                string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
+                string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? LocalSystemAccount : options.Username;
+                string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
                 // Grant "Log on as a service" only for regular user accounts (local or Active Directory).
                 // Skip LocalSystem (already has rights) and gMSA accounts (managed by Active Directory policies).
@@ -385,17 +330,17 @@ namespace Servy.Core.Services
                 if (!isLocalSystem && !isGmsa)
                 {
                     _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
-                    Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{serviceName}'.");
+                    Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{options.ServiceName}'.");
                 }
 
                 // Create the service if it does not exist
                 serviceHandle = _windowsServiceApi.CreateService(
                     hSCManager: scmHandle,
-                    lpServiceName: serviceName,
+                    lpServiceName: options.ServiceName,
                     lpDisplayName: displayName,
                     dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
                     dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                    dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
+                    dwStartType: (uint)(options.StartType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : options.StartType),
                     dwErrorControl: SERVICE_ERROR_NORMAL,
                     lpBinaryPathName: binPath,
                     lpLoadOrderGroup: null,
@@ -408,76 +353,76 @@ namespace Servy.Core.Services
                 // Persist service in database
                 var dto = new ServiceDto
                 {
-                    Name = serviceName,
+                    Name = options.ServiceName,
                     DisplayName = displayName,
-                    Description = description,
-                    ExecutablePath = realExePath,
-                    StartupDirectory = workingDirectory,
-                    Parameters = realArgs,
-                    StartupType = (int)startType,
-                    Priority = (int)processPriority,
-                    StdoutPath = stdoutPath,
-                    StderrPath = stderrPath,
-                    EnableRotation = enableSizeRotation,
-                    RotationSize = (int)(rotationSizeInBytes / (1024 * 1024)),
-                    EnableDateRotation = enableDateRotation,
-                    DateRotationType = (int)dateRotationType,
-                    MaxRotations = maxRotations,
-                    EnableHealthMonitoring = enableHealthMonitoring,
-                    HeartbeatInterval = heartbeatInterval,
-                    MaxFailedChecks = maxFailedChecks,
-                    RecoveryAction = (int)recoveryAction,
-                    MaxRestartAttempts = maxRestartAttempts,
-                    FailureProgramPath = failureProgramPath,
-                    FailureProgramStartupDirectory = failureProgramWorkingDirectory,
-                    FailureProgramParameters = failureProgramArgs,
-                    EnvironmentVariables = environmentVariables,
-                    ServiceDependencies = serviceDependencies,
-                    RunAsLocalSystem = string.IsNullOrWhiteSpace(username),
-                    UserAccount = username,
-                    Password = password,
-                    PreLaunchExecutablePath = preLaunchExePath,
-                    PreLaunchStartupDirectory = preLaunchWorkingDirectory,
-                    PreLaunchParameters = preLaunchArgs,
-                    PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
-                    PreLaunchStdoutPath = preLaunchStdoutPath,
-                    PreLaunchStderrPath = preLaunchStderrPath,
-                    PreLaunchTimeoutSeconds = preLaunchTimeout,
-                    PreLaunchRetryAttempts = preLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
+                    Description = options.Description,
+                    ExecutablePath = options.RealExePath,
+                    StartupDirectory = options.WorkingDirectory,
+                    Parameters = options.RealArgs,
+                    StartupType = (int)options.StartType,
+                    Priority = (int)options.ProcessPriority,
+                    StdoutPath = options.StdoutPath,
+                    StderrPath = options.StderrPath,
+                    EnableRotation = options.EnableSizeRotation,
+                    RotationSize = (int)(options.RotationSizeInBytes / (1024 * 1024)),
+                    EnableDateRotation = options.EnableDateRotation,
+                    DateRotationType = (int)options.DateRotationType,
+                    MaxRotations = options.MaxRotations,
+                    EnableHealthMonitoring = options.EnableHealthMonitoring,
+                    HeartbeatInterval = options.HeartbeatInterval,
+                    MaxFailedChecks = options.MaxFailedChecks,
+                    RecoveryAction = (int)options.RecoveryAction,
+                    MaxRestartAttempts = options.MaxRestartAttempts,
+                    FailureProgramPath = options.FailureProgramPath,
+                    FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,
+                    FailureProgramParameters = options.FailureProgramArgs,
+                    EnvironmentVariables = options.EnvironmentVariables,
+                    ServiceDependencies = options.ServiceDependencies,
+                    RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
+                    UserAccount = options.Username,
+                    Password = options.Password,
+                    PreLaunchExecutablePath = options.PreLaunchExePath,
+                    PreLaunchStartupDirectory = options.PreLaunchWorkingDirectory,
+                    PreLaunchParameters = options.PreLaunchArgs,
+                    PreLaunchEnvironmentVariables = options.PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = options.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = options.PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = options.PreLaunchTimeout,
+                    PreLaunchRetryAttempts = options.PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = options.PreLaunchIgnoreFailure,
 
-                    PostLaunchExecutablePath = postLaunchExePath,
-                    PostLaunchStartupDirectory = postLaunchWorkingDirectory,
-                    PostLaunchParameters = postLaunchArgs,
+                    PostLaunchExecutablePath = options.PostLaunchExePath,
+                    PostLaunchStartupDirectory = options.PostLaunchWorkingDirectory,
+                    PostLaunchParameters = options.PostLaunchArgs,
 
-                    EnableDebugLogs = enableDebugLogs,
+                    EnableDebugLogs = options.EnableDebugLogs,
 
-                    StartTimeout = startTimeout,
-                    StopTimeout = stopTimeout,
+                    StartTimeout = options.StartTimeout,
+                    StopTimeout = options.StopTimeout,
 
-                    PreStopExecutablePath = preStopExePath,
-                    PreStopStartupDirectory = preStopWorkingDirectory,
-                    PreStopParameters = preStopArgs,
-                    PreStopTimeoutSeconds = preStopTimeout,
-                    PreStopLogAsError = preStopLogAsError,
+                    PreStopExecutablePath = options.PreStopExePath,
+                    PreStopStartupDirectory = options.PreStopWorkingDirectory,
+                    PreStopParameters = options.PreStopArgs,
+                    PreStopTimeoutSeconds = options.PreStopTimeout,
+                    PreStopLogAsError = options.PreStopLogAsError,
 
-                    PostStopExecutablePath = postStopExePath,
-                    PostStopStartupDirectory = postStopWorkingDirectory,
-                    PostStopParameters = postStopArgs,
+                    PostStopExecutablePath = options.PostStopExePath,
+                    PostStopStartupDirectory = options.PostStopWorkingDirectory,
+                    PostStopParameters = options.PostStopArgs,
                 };
 
                 // Set PID
-                var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
+                var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
                 dto.Pid = serviceDto?.Pid;
 
                 // Request PreShutdown timeout
                 var bufferTimeInSeconds = 15;
-                var totalWaitTime = (stopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
                 var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
                 totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
-                if (!string.IsNullOrEmpty(preStopExePath))
+                if (!string.IsNullOrEmpty(options.PreStopExePath))
                 {
-                    totalWaitTime += preStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                    totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
                 }
                 uint finalTimeoutMs = (uint)totalWaitTime * 1000;
 
@@ -487,43 +432,43 @@ namespace Servy.Core.Services
 
                     if (enablePreShutdownConfigSuccess)
                     {
-                        Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{serviceName}' during installation.");
+                        Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{options.ServiceName}' during installation.");
                     }
                     else
                     {
-                        Logger.Error($"Failed to enable pre-shutdown for service '{serviceName}' during installation.");
+                        Logger.Error($"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation.");
                         return false;
                     }
 
                     // Set delayed auto-start if necessary
-                    if (startType == ServiceStartType.AutomaticDelayedStart)
+                    if (options.StartType == ServiceStartType.AutomaticDelayedStart)
                     {
                         var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle, true);
 
                         if (!delayedAutoStartConfigSuccess)
                         {
-                            Logger.Error($"Failed to set delayed auto-start for service '{serviceName}' during installation.");
+                            Logger.Error($"Failed to set delayed auto-start for service '{options.ServiceName}' during installation.");
                             return false;
                         }
                         else
                         {
-                            Logger.Info($"Delayed auto-start enabled for service '{serviceName}' during installation.");
+                            Logger.Info($"Delayed auto-start enabled for service '{options.ServiceName}' during installation.");
                         }
                     }
                 }
 
                 if (serviceHandle == IntPtr.Zero)
                 {
-                    var isInstalled = IsServiceInstalled(serviceName);
+                    var isInstalled = IsServiceInstalled(options.ServiceName);
                     if (isInstalled)
                     {
                         // Service exists - update its configuration
                         _ = UpdateServiceConfig(
                             scmHandle: scmHandle,
-                            serviceName: serviceName,
-                            description: description,
+                            serviceName: options.ServiceName,
+                            description: options.Description,
                             binPath: binPath,
-                            startType: startType,
+                            startType: options.StartType,
                             username: lpServiceStartName,
                             password: lpPassword,
                             lpDependencies: lpDependencies,
@@ -531,26 +476,26 @@ namespace Servy.Core.Services
                         );
 
                         // Set delayed auto-start if necessary
-                        if (startType == ServiceStartType.AutomaticDelayedStart || startType == ServiceStartType.Automatic)
+                        if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
                         {
                             IntPtr existingServiceHandle = _windowsServiceApi.OpenService(
                                 scmHandle,
-                                serviceName,
+                                options.ServiceName,
                                 SERVICE_CHANGE_CONFIG
                             );
 
                             try
                             {
-                                var delayedAutostart = startType == ServiceStartType.AutomaticDelayedStart;
+                                var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
                                 var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
 
                                 if (success)
                                 {
-                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{serviceName}'.");
+                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
                                 }
                                 else
                                 {
-                                    Logger.Error($"Failed to set delayed auto-start for existing service '{serviceName}'.");
+                                    Logger.Error($"Failed to set delayed auto-start for existing service '{options.ServiceName}'.");
                                     return false;
                                 }
                             }
@@ -561,23 +506,23 @@ namespace Servy.Core.Services
                         }
 
                         await _serviceRepository.UpsertAsync(dto);
-                        Logger.Info($"Service '{serviceName}' already exists. Updated its configuration.");
+                        Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
 
                         return true;
                     }
                 }
 
                 // Set description
-                SetServiceDescription(serviceHandle, description);
+                SetServiceDescription(serviceHandle, options.Description);
 
                 await _serviceRepository.UpsertAsync(dto);
-                Logger.Info($"Service '{serviceName}' installed successfully.");
+                Logger.Info($"Service '{options.ServiceName}' installed successfully.");
 
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error installing service '{serviceName}'.", ex);
+                Logger.Error($"Error installing service '{options.ServiceName}'.", ex);
                 throw;
             }
             finally

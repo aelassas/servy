@@ -11,7 +11,6 @@ using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -867,6 +866,8 @@ namespace Servy.Infrastructure.UnitTests.Data
             var result = await _serviceRepository.GetDomainServiceByIdAsync(serviceManager, 1, true);
             Assert.NotNull(result);
             Assert.Equal("StubService", result.Name);
+            Assert.Equal(@"C:\logs\stub_active_stdout.log", result.ActiveStdoutPath);
+            Assert.Equal(@"C:\logs\stub_active_stderr.log", result.ActiveStderrPath);
         }
 
         [Fact]

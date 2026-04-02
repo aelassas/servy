@@ -20,115 +20,11 @@ namespace Servy.Core.Services
         /// Installs a Windows service using a wrapper executable that launches the real target executable
         /// with specified arguments and working directory.
         /// </summary>
-        /// <param name="serviceName">The name of the Windows service to create.</param>
-        /// <param name="description">The service description displayed in the Services MMC snap-in.</param>
-        /// <param name="wrapperExePath">The full path to the wrapper executable that will be installed as the service binary.</param>
-        /// <param name="realExePath">The full path to the real executable to be launched by the wrapper.</param>
-        /// <param name="workingDirectory">The working directory to use when launching the real executable.</param>
-        /// <param name="realArgs">The command line arguments to pass to the real executable.</param>
-        /// <param name="startType">The service startup type (Automatic, Manual, Disabled).</param>
-        /// <param name="processPriority">Optional process priority for the service. Defaults to Normal.</param>
-        /// <param name="stdoutPath">Optional path for standard output redirection. If null, no redirection is performed.</param>
-        /// <param name="stderrPath">Optional path for standard error redirection. If null, no redirection is performed.</param>
-        /// <param name="enableSizeRotation">Enable size-based log rotation.</param>
-        /// <param name="rotationSizeInBytes">Size in bytes for log rotation. If 0, no rotation is performed.</param>
-        /// <param name="enableHealthMonitoring">Enable health monitoring.</param>
-        /// <param name="heartbeatInterval">Heartbeat interval in seconds for the process. If 0, health monitoring is disabled.</param>
-        /// <param name="maxFailedChecks">Maximum number of failed health checks before the service is considered unhealthy. If 0, health monitoring is disabled.</param>
-        /// <param name="recoveryAction">Recovery action to take if the service fails. If None, health monitoring is disabled.</param>
-        /// <param name="maxRestartAttempts">Maximum number of restart attempts if the service fails.</param>
-        /// <param name="environmentVariables">Environment variables.</param>
-        /// <param name="serviceDependencies">Service dependencies.</param>
-        /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
-        /// <param name="password">Service account password.</param>
-        /// <param name="preLaunchExePath">Pre-launch script exe path.</param>
-        /// <param name="preLaunchWorkingDirectory">Pre-launch working directory.</param>
-        /// <param name="preLaunchArgs">Command line arguments to pass to the pre-launch executable.</param>
-        /// <param name="preLaunchEnvironmentVariables">Pre-launch environment variables.</param>
-        /// <param name="preLaunchStdoutPath">Optional path for pre-launch standard output redirection. If null, no redirection is performed.</param>
-        /// <param name="preLaunchStderrPath">Optional path for pre-launch standard error redirection. If null, no redirection is performed.</param>
-        /// <param name="preLaunchTimeout">Pre-launch script timeout in seconds. Default is 30 seconds.</param>
-        /// <param name="preLaunchRetryAttempts">Pre-launch script retry attempts.</param>
-        /// <param name="preLaunchIgnoreFailure">Ignore failure and start service even if pre-launch script fails.</param>
-        /// <param name="failureProgramPath">Failure program path.</param>
-        /// <param name="failureProgramWorkingDirectory">Failure program working directory.</param>
-        /// <param name="failureProgramArgs">Failure program parameters.</param>
-        /// <param name="postLaunchExePath">Post-launch script exe path.</param>
-        /// <param name="postLaunchWorkingDirectory">Post-launch working directory.</param>
-        /// <param name="postLaunchArgs">Command line arguments to pass to the post-launch executable.</param>
-        /// <param name="enableDebugLogs">Enable debug logs for the service wrapper.</param>
-        /// <param name="displayName">The Display Name of the service, shown in the Windows Services management console (<c>services.msc</c>).</param>
-        /// <param name="maxRotations">The maximum number of rotated log file to keep. Set to 0 for unlimited.</param>
-        /// <param name="enableDateRotation">Enables rotation based on the date interval specified by <paramref name="dateRotationType"/>.</param>
-        /// <param name="dateRotationType">Defines the date-based rotation schedule (daily, weekly, or monthly).</param>
-        /// <param name="startTimeout">The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</param>
-        /// <param name="stopTimeout">The timeout in seconds to wait for the process to exit.</param>
-        /// <param name="preStopExePath">The path to an executable that runs before the service stops.</param>
-        /// <param name="preStopWorkingDirectory">The startup directory for the pre-stop executable.</param>
-        /// <param name="preStopArgs">The parameters for the pre-stop executable.</param>
-        /// <param name="preStopTimeout">The maximum time in seconds to wait for the pre-stop executable to complete.</param>
-        /// <param name="preStopLogAsError">A flag to log pre-stop failure as error.</param>
-        /// <param name="postStopExePath">The path to an executable that runs after the service stops.</param>
-        /// <param name="postStopWorkingDirectory">The startup directory for the post-stop executable.</param>
-        /// <param name="postStopArgs">The parameters for the post-stop executable.</param>
+        /// <param name="options">The options containing all configuration parameters for the service installation.</param>
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceName"/>, <paramref name="wrapperExePath"/>, or <paramref name="realExePath"/> is null or empty.</exception>
+        /// <exception cref="ArgumentNullException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
-        Task<bool> InstallService(
-                string serviceName,
-                string description,
-                string wrapperExePath,
-                string realExePath,
-                string workingDirectory = null,
-                string realArgs = null,
-                ServiceStartType startType = ServiceStartType.Automatic,
-                ProcessPriority processPriority = ProcessPriority.Normal,
-                string stdoutPath = null,
-                string stderrPath = null,
-                bool enableSizeRotation = false,
-                ulong rotationSizeInBytes = AppConfig.DefaultRotationSize * 1024 * 1024,
-                bool enableHealthMonitoring = false,
-                int heartbeatInterval = AppConfig.DefaultHeartbeatInterval,
-                int maxFailedChecks = AppConfig.DefaultMaxFailedChecks,
-                RecoveryAction recoveryAction = RecoveryAction.None,
-                int maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts,
-                string environmentVariables = null,
-                string serviceDependencies = null,
-                string username = null,
-                string password = null,
-                string preLaunchExePath = null,
-                string preLaunchWorkingDirectory = null,
-                string preLaunchArgs = null,
-                string preLaunchEnvironmentVariables = null,
-                string preLaunchStdoutPath = null,
-                string preLaunchStderrPath = null,
-                int preLaunchTimeout = AppConfig.DefaultPreLaunchTimeoutSeconds,
-                int preLaunchRetryAttempts = AppConfig.DefaultPreLaunchRetryAttempts,
-                bool preLaunchIgnoreFailure = false,
-                string failureProgramPath = null,
-                string failureProgramWorkingDirectory = null,
-                string failureProgramArgs = null,
-                string postLaunchExePath = null,
-                string postLaunchWorkingDirectory = null,
-                string postLaunchArgs = null,
-                bool enableDebugLogs = false,
-                string displayName = null,
-                int? maxRotations = AppConfig.DefaultMaxRotations,
-                bool enableDateRotation = false,
-                DateRotationType dateRotationType = DateRotationType.Daily,
-                int? startTimeout = AppConfig.DefaultStartTimeout,
-                int? stopTimeout = AppConfig.DefaultStopTimeout,
-
-                string preStopExePath = null,
-                string preStopWorkingDirectory = null,
-                string preStopArgs = null,
-                int? preStopTimeout = AppConfig.DefaultPreStopTimeoutSeconds,
-                bool? preStopLogAsError = false,
-
-                string postStopExePath = null,
-                string postStopWorkingDirectory = null,
-                string postStopArgs = null
-        );
+        Task<bool> InstallService(InstallServiceOptions options);
 
         /// <summary>
         /// Uninstalls the specified service.

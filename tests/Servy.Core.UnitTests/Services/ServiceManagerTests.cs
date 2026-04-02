@@ -45,11 +45,21 @@ namespace Servy.Core.UnitTests.Services
             );
         }
 
+        [Fact]
+        public async Task InstallService_OptionsNull_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _serviceManager.InstallService(null));
+
+            Assert.Equal("options", exception.ParamName);
+        }
+
         [Theory]
         [InlineData("", "", "")]
         [InlineData("TestService", "", "")]
         [InlineData("TestService", "C:\\Apps\\App.exe", "")]
-        public async Task InstallService_Throws_ArgumentNullException(string serviceName, string wrapperExePath, string realExePath)
+        public async Task InstallService_Throws_ArgumentException(string serviceName, string wrapperExePath, string realExePath)
         {
             var scmHandle = new IntPtr(123);
             var serviceHandle = new IntPtr(456);
@@ -82,39 +92,20 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _serviceManager.InstallService(
-                serviceName,
-                description,
-                wrapperExePath,
-                realExePath,
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = wrapperExePath,
+                RealExePath = realExePath,
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                PreLaunchTimeout = 30
+            };
 
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                30,
-                0,
-                false
-                ));
+            await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.InstallService(options));
         }
 
         [Theory]
@@ -169,39 +160,17 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                 serviceName,
-                 null,
-                 wrapperExePath,
-                 realExePath,
-                 null,
-                 null,
-                 ServiceStartType.Automatic,
-                 ProcessPriority.Normal,
-                 null,
-                 null,
-                 false,
-                 0,
-                 false,
-                 0,
-                 0,
-                 RecoveryAction.None,
-                 0,
-                 null,
-                 null,
-                 null,
-                 null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                WrapperExePath = wrapperExePath,
+                RealExePath = realExePath,
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                PreLaunchTimeout = 30
+            };
 
-                 null,
-                 null,
-                 null,
-                 null,
-                 null,
-                 null,
-                 30,
-                 0,
-                 false
-                 );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
             _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -242,79 +211,36 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                @".\username",
-                "password",
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                Username = @".\username",
+                Password = "password",
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                ));
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(options));
 
             scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                @".\username",
-                "password",
-
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                ));
-
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(options));
         }
 
         [Fact]
@@ -359,45 +285,39 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(It.IsAny<IntPtr>())).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                true,
-                1024 * 1024,
-                true,
-                30,
-                3,
-                RecoveryAction.None,
-                1,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                EnableSizeRotation = true,
+                RotationSizeInBytes = 1024 * 1024,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 30,
+                MaxFailedChecks = 3,
+                MaxRestartAttempts = 1,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true,
+                FailureProgramPath = @"C:\Apps\App\app.exe",
+                FailureProgramWorkingDirectory = @"C:\Apps\App",
+                FailureProgramArgs = "--arg1 val1",
+                PostLaunchExePath = @"C:\Apps\App\app.exe",
+                PostLaunchWorkingDirectory = @"C:\Apps\App",
+                PostLaunchArgs = "--arg1 val1"
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true,
-                @"C:\Apps\App\app.exe",
-                @"C:\Apps\App",
-                "--arg1 val1",
-                @"C:\Apps\App\app.exe",
-                @"C:\Apps\App",
-                "--arg1 val1"
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
 
@@ -434,11 +354,8 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(IntPtr.Zero);
 
-            // Simulate ERROR_SERVICE_EXISTS
-            //_mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1073);
             _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
 
-            // Setup OpenService for UpdateServiceConfig
             var serviceHandle = new IntPtr(456);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
@@ -468,80 +385,36 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true,
+                DisplayName = serviceName
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true,
-                serviceName
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
 
             _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, It.IsAny<string>()), Times.Once);
 
-            result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.AutomaticDelayedStart,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
-
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true,
-                serviceName
-                );
+            options.StartType = ServiceStartType.AutomaticDelayedStart;
+            result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
         }
@@ -572,11 +445,8 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(IntPtr.Zero);
 
-            // Simulate ERROR_SERVICE_EXISTS
-            //_mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1073);
             _mockWindowsServiceApi.Setup(x => x.GetServices()).Returns(new List<WindowsServiceInfo> { new WindowsServiceInfo { ServiceName = serviceName } });
 
-            // Setup OpenService for UpdateServiceConfig
             var serviceHandle = new IntPtr(456);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
@@ -606,39 +476,27 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.Automatic,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.Automatic,
+                ProcessPriority = ProcessPriority.Normal,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.False(result);
 
@@ -674,8 +532,6 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(serviceHandle);
 
-            // Setup OpenService for UpdateServiceConfig
-
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
@@ -690,40 +546,29 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.AutomaticDelayedStart,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                gMSA,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority = ProcessPriority.Normal,
+                Username = gMSA,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true,
+                PreStopExePath = @"C:\Apps\pre-stop.exe"
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true,
-                preStopExePath: @"C:\Apps\pre-stop.exe"
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
 
@@ -758,8 +603,6 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(serviceHandle);
 
-            // Setup OpenService for UpdateServiceConfig
-
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
@@ -775,39 +618,27 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.AutomaticDelayedStart,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority = ProcessPriority.Normal,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchIgnoreFailure = true
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.False(result);
 
@@ -866,39 +697,20 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.AutomaticDelayedStart,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                gMSA,
-                null,
+            var options = new InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority = ProcessPriority.Normal,
+                Username = gMSA
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                );
+            var result = await _serviceManager.InstallService(options);
 
             Assert.True(result);
 
@@ -909,6 +721,7 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public async Task InstallService_DelayedAutoStart_Error()
         {
+            // Arrange
             var scmHandle = new IntPtr(123);
             var serviceName = "TestService";
             var description = "Test Description";
@@ -934,11 +747,12 @@ namespace Servy.Core.UnitTests.Services
                 .Returns(serviceHandle);
 
             // Setup OpenService for UpdateServiceConfig
-
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, serviceName, It.IsAny<uint>()))
                 .Returns(serviceHandle);
 
-            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny)).Returns(false);
+            // Simulate failure when setting delayed auto-start
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny))
+                .Returns(false);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                It.IsAny<IntPtr>(),
@@ -956,44 +770,52 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(serviceHandle)).Returns(true);
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.InstallService(
-                serviceName,
-                description,
-                "wrapper.exe",
-                "real.exe",
-                "workingDir",
-                "args",
-                ServiceStartType.AutomaticDelayedStart,
-                ProcessPriority.Normal,
-                null,
-                null,
-                false,
-                0,
-                false,
-                0,
-                0,
-                RecoveryAction.None,
-                0,
-                string.Empty,
-                null,
-                null,
-                null,
+            var options = new Servy.Core.Services.InstallServiceOptions
+            {
+                ServiceName = serviceName,
+                Description = description,
+                WrapperExePath = "wrapper.exe",
+                RealExePath = "real.exe",
+                WorkingDirectory = "workingDir",
+                RealArgs = "args",
+                StartType = Servy.Core.Enums.ServiceStartType.AutomaticDelayedStart,
+                ProcessPriority = Servy.Core.Enums.ProcessPriority.Normal,
+                PreLaunchExePath = "pre-launch.exe",
+                PreLaunchWorkingDirectory = "preLaunchDir",
+                PreLaunchArgs = "preLaunchArgs",
+                EnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = "pre-launch-stdout.log",
+                PreLaunchStderrPath = "pre-launch-stderr.log",
+                PreLaunchTimeout = 30,
+                PreLaunchRetryAttempts = 0,
+                PreLaunchIgnoreFailure = true
+            };
 
-                "pre-launch.exe",
-                "preLaunchDir",
-                "preLaunchArgs",
-                "var1=val1;var2=val2;",
-                "pre-launch-stdout.log",
-                "pre-launch-stderr.log",
-                30,
-                0,
-                true
-                );
+            // Act
+            var result = await _serviceManager.InstallService(options);
 
+            // Assert
             Assert.False(result);
 
-            _mockWindowsServiceApi.Verify(x => x.CreateService(scmHandle, serviceName, serviceName, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null), Times.Once);
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(It.IsAny<IntPtr>(), It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny), Times.Once);
+            _mockWindowsServiceApi.Verify(x => x.CreateService(
+                scmHandle,
+                serviceName,
+                serviceName,
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<uint>(),
+                It.IsAny<string>(),
+                null,
+                IntPtr.Zero,
+                ServiceDependenciesParser.NoDependencies,
+                ServiceManager.LocalSystemAccount,
+                null), Times.Once);
+
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(
+                It.IsAny<IntPtr>(),
+                It.IsAny<int>(),
+                ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny), Times.Once);
         }
 
         [Fact]

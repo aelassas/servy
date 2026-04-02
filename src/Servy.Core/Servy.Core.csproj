@@ -139,6 +139,7 @@
     <Compile Include="Services\EventLogService.cs" />
     <Compile Include="Services\IEventLogService.cs" />
     <Compile Include="Services\IManagementObject.cs" />
+    <Compile Include="Services\InstallServiceOptions.cs" />
     <Compile Include="Services\IServiceControllerWrapper.cs" />
     <Compile Include="Services\IServiceManager.cs" />
     <Compile Include="Services\IWin32ErrorProvider.cs" />

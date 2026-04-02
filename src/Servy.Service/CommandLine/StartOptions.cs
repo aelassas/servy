@@ -45,7 +45,7 @@ namespace Servy.Service.CommandLine
         /// <summary>
         /// Gets or sets the maximum size in bytes for log rotation.
         /// </summary>
-        public int RotationSizeInBytes { get; set; }
+        public long RotationSizeInBytes { get; set; }
 
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.

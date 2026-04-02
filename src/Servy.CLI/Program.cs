@@ -179,7 +179,7 @@ namespace Servy.CLI
                 }
 
                 var exitCode = await Parser.Default.ParseArguments<
-                        InstallServiceOptions,
+                        Options.InstallServiceOptions,
                         UninstallServiceOptions,
                         StartServiceOptions,
                         StopServiceOptions,
@@ -189,7 +189,7 @@ namespace Servy.CLI
                         ImportServiceOptions
                         >(args)
                     .MapResult(
-                        async (InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
+                        async (Options.InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
                         async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.Execute(opts)),
                         async (StartServiceOptions opts) => await PrintAndReturnAsync(startCommand.Execute(opts)),
                         async (StopServiceOptions opts) => await PrintAndReturnAsync(stopCommand.Execute(opts)),

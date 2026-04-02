@@ -140,91 +140,33 @@ namespace Servy.Core.UnitTests.Domain
                 PreLaunchTimeoutSeconds = 30,
                 PreLaunchRetryAttempts = 0,
                 PreLaunchIgnoreFailure = true,
-
                 FailureProgramPath = "C:\\failure-program.exe",
                 FailureProgramStartupDirectory = "C:\\failureProgramDir",
                 FailureProgramParameters = "--failureProgramArg",
-
-                ActiveStdoutPath = "C:\\stdout.log",
-                ActiveStderrPath = "C:\\stderr.log",
-
                 PreStopExecutablePath = "C:\\pre-stop.exe",
                 PreStopStartupDirectory = "C:\\preStopDir",
                 PreStopParameters = "--preStopArg",
                 PreStopTimeoutSeconds = 20,
                 PreStopLogAsError = true,
-
                 PostStopExecutablePath = "C:\\post-stop.exe",
                 PostStopStartupDirectory = "C:\\postStopDir",
                 PostStopParameters = "--postStopArg",
-
             };
 
             _serviceManagerMock
-                 .Setup(s => s.InstallService(
-                     service.Name,
-                     service.Description,
-                     It.IsAny<string>(),          // wrapperExePath
-                     service.ExecutablePath,
-                     service.StartupDirectory,          // workingDirectory
-                     service.Parameters ?? string.Empty,
-                     service.StartupType,
-                     service.Priority,
-                     null,                        // stdoutPath
-                     null,                        // stderrPath
-                     false,
-                     (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
-                     false,
-                     service.HeartbeatInterval, // heartbeatInterval
-                     service.MaxFailedChecks,   // maxFailedChecks
-                     service.RecoveryAction,
-                     service.MaxRestartAttempts,
-                     null,                        // environmentVariables
-                     null,                        // serviceDependencies
-                     service.UserAccount,                        // username
-                     service.Password,                        // password
-                     service.PreLaunchExecutablePath,
-                     service.PreLaunchStartupDirectory,
-                     service.PreLaunchParameters,
-                     service.PreLaunchEnvironmentVariables,
-                     service.PreLaunchStdoutPath,
-                     service.PreLaunchStderrPath,
-                     service.PreLaunchTimeoutSeconds,
-                     service.PreLaunchRetryAttempts,
-                     service.PreLaunchIgnoreFailure,
-
-                     service.FailureProgramPath,
-                     service.FailureProgramStartupDirectory,
-                     service.FailureProgramParameters,
-
-                     service.PostLaunchExecutablePath,
-                     service.PostLaunchStartupDirectory,
-                     service.PostLaunchParameters,
-
-                     service.EnableDebugLogs,
-                     service.DisplayName,
-                     service.MaxRotations,
-
-                     service.EnableDateRotation,
-                     service.DateRotationType,
-
-                     service.StartTimeout,
-                     service.StopTimeout,
-
-                     service.PreStopExecutablePath,
-                     service.PreStopStartupDirectory,
-                     service.PreStopParameters,
-                     service.PreStopTimeoutSeconds,
-                     service.PreStopLogAsError,
-
-                     service.PostStopExecutablePath,
-                     service.PostStopStartupDirectory,
-                     service.PostStopParameters
-
-                 ))
+                 .Setup(s => s.InstallService(It.Is<InstallServiceOptions>(o =>
+                     o.ServiceName == service.Name &&
+                     o.Description == service.Description &&
+                     o.RealExePath == service.ExecutablePath &&
+                     o.WorkingDirectory == service.StartupDirectory &&
+                     o.RealArgs == service.Parameters &&
+                     o.Username == service.UserAccount &&
+                     o.PreLaunchExePath == service.PreLaunchExecutablePath &&
+                     o.PreStopTimeout == service.PreStopTimeoutSeconds &&
+                     o.PostStopArgs == service.PostStopParameters
+                 )))
                  .ReturnsAsync(true)
                  .Verifiable();
-
 
             // Act
             var result = await service.Install("C:\\wrapper");
@@ -241,110 +183,23 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
-                DisplayName = "TestService",
-                Description = null,
                 ExecutablePath = @"C:\real.exe",
-                StartupDirectory = null,
-                Parameters = null,
-                StartupType = ServiceStartType.Automatic,
-                Priority = ProcessPriority.Normal,
                 EnableRotation = true,
-                RotationSize = 10 * 1024 * 1024,
-                HeartbeatInterval = 30,
+                RotationSize = 10,
                 EnableHealthMonitoring = true,
-                RecoveryAction = RecoveryAction.RestartService,
-                MaxFailedChecks = 1,
-                MaxRestartAttempts = 3,
-                RunAsLocalSystem = true,
-                PreLaunchExecutablePath = null,
-                PreLaunchStartupDirectory = null,
-                PreLaunchParameters = null,
-                PreLaunchEnvironmentVariables = null,
-                PreLaunchStdoutPath = null,
-                PreLaunchStderrPath = null,
-                PreLaunchTimeoutSeconds = 30,
-                PreLaunchRetryAttempts = 0,
-                PreLaunchIgnoreFailure = true,
-
-                FailureProgramPath = null,
-                FailureProgramStartupDirectory = null,
-                FailureProgramParameters = null,
-
-                PreStopExecutablePath = "C:\\pre-stop.exe",
-                PreStopStartupDirectory = "C:\\preStopDir",
-                PreStopParameters = "--preStopArg",
-                PreStopTimeoutSeconds = 20,
-                PreStopLogAsError = true,
-
-                PostStopExecutablePath = "C:\\post-stop.exe",
-                PostStopStartupDirectory = "C:\\postStopDir",
-                PostStopParameters = "--postStopArg",
+                RecoveryAction = RecoveryAction.RestartService
             };
 
             _serviceManagerMock
-                 .Setup(s => s.InstallService(
-                     service.Name,
-                     It.IsAny<string>(),
-                     It.IsAny<string>(),          // wrapperExePath
-                     service.ExecutablePath,
-                     It.IsAny<string>(),    // workingDirectory
-                     It.IsAny<string>(),
-                     service.StartupType,
-                     service.Priority,
-                     null,                        // stdoutPath
-                     null,                        // stderrPath
-                     true,
-                     (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
-                     true,
-                     service.HeartbeatInterval,   // heartbeatInterval
-                     service.MaxFailedChecks,     // maxFailedChecks
-                     service.RecoveryAction,
-                     service.MaxRestartAttempts,
-                     null,                        // environmentVariables
-                     null,                        // serviceDependencies
-                     null,                        // username
-                     null,                        // password
-                     service.PreLaunchExecutablePath,
-                     service.PreLaunchStartupDirectory,
-                     service.PreLaunchParameters,
-                     service.PreLaunchEnvironmentVariables,
-                     service.PreLaunchStdoutPath,
-                     service.PreLaunchStderrPath,
-                     service.PreLaunchTimeoutSeconds,
-                     service.PreLaunchRetryAttempts,
-                     service.PreLaunchIgnoreFailure,
-
-                     service.FailureProgramPath,
-                     service.FailureProgramStartupDirectory,
-                     service.FailureProgramParameters,
-
-                     service.PostLaunchExecutablePath,
-                     service.PostLaunchStartupDirectory,
-                     service.PostLaunchParameters,
-
-                     service.EnableDebugLogs,
-                     service.DisplayName,
-                     service.MaxRotations,
-
-                     service.EnableDateRotation,
-                     service.DateRotationType,
-
-                     service.StartTimeout,
-                     service.StopTimeout,
-
-                     service.PreStopExecutablePath,
-                     service.PreStopStartupDirectory,
-                     service.PreStopParameters,
-                     service.PreStopTimeoutSeconds,
-                     service.PreStopLogAsError,
-
-                     service.PostStopExecutablePath,
-                     service.PostStopStartupDirectory,
-                     service.PostStopParameters
-                 ))
+                 .Setup(s => s.InstallService(It.Is<InstallServiceOptions>(o =>
+                     o.ServiceName == service.Name &&
+                     o.EnableSizeRotation == true &&
+                     o.RotationSizeInBytes == (ulong)service.RotationSize * 1024 * 1024 &&
+                     o.EnableHealthMonitoring == true &&
+                     o.RecoveryAction == service.RecoveryAction
+                 )))
                  .ReturnsAsync(true)
                  .Verifiable();
-
 
             // Act
             var result = await service.Install();
@@ -361,113 +216,19 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
-                DisplayName = "TestService",
-                Description = null,
-                ExecutablePath = @"C:\real.exe",
-                StartupDirectory = null,
-                Parameters = null,
-                StartupType = ServiceStartType.Automatic,
-                Priority = ProcessPriority.Normal,
-                EnableRotation = true,
-                RotationSize = 10 * 1024 * 1024,
-                HeartbeatInterval = 30,
-                EnableHealthMonitoring = true,
-                RecoveryAction = RecoveryAction.RestartService,
-                MaxFailedChecks = 1,
-                MaxRestartAttempts = 3,
-                RunAsLocalSystem = true,
-                PreLaunchExecutablePath = null,
-                PreLaunchStartupDirectory = null,
-                PreLaunchParameters = null,
-                PreLaunchEnvironmentVariables = null,
-                PreLaunchStdoutPath = null,
-                PreLaunchStderrPath = null,
-                PreLaunchTimeoutSeconds = 30,
-                PreLaunchRetryAttempts = 0,
-                PreLaunchIgnoreFailure = true,
-
-                FailureProgramPath = null,
-                FailureProgramStartupDirectory = null,
-                FailureProgramParameters = null,
-
-                PreStopExecutablePath = "C:\\pre-stop.exe",
-                PreStopStartupDirectory = "C:\\preStopDir",
-                PreStopParameters = "--preStopArg",
-                PreStopTimeoutSeconds = 20,
-                PreStopLogAsError = true,
-
-                PostStopExecutablePath = "C:\\post-stop.exe",
-                PostStopStartupDirectory = "C:\\postStopDir",
-                PostStopParameters = "--postStopArg",
+                ExecutablePath = @"C:\real.exe"
             };
 
             _serviceManagerMock
-                 .Setup(s => s.InstallService(
-                     service.Name,
-                     It.IsAny<string>(),
-                     It.Is<string>(w => w != null && w.Contains(".CLI")),          // wrapperExePath
-                     service.ExecutablePath,
-                     It.IsAny<string>(),    // workingDirectory
-                     It.IsAny<string>(),
-                     service.StartupType,
-                     service.Priority,
-                     null,                        // stdoutPath
-                     null,                        // stderrPath
-                     true,
-                     (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
-                     true,
-                     service.HeartbeatInterval,   // heartbeatInterval
-                     service.MaxFailedChecks,     // maxFailedChecks
-                     service.RecoveryAction,
-                     service.MaxRestartAttempts,
-                     null,                        // environmentVariables
-                     null,                        // serviceDependencies
-                     null,                        // username
-                     null,                        // password
-                     service.PreLaunchExecutablePath,
-                     service.PreLaunchStartupDirectory,
-                     service.PreLaunchParameters,
-                     service.PreLaunchEnvironmentVariables,
-                     service.PreLaunchStdoutPath,
-                     service.PreLaunchStderrPath,
-                     service.PreLaunchTimeoutSeconds,
-                     service.PreLaunchRetryAttempts,
-                     service.PreLaunchIgnoreFailure,
-
-                     service.FailureProgramPath,
-                     service.FailureProgramStartupDirectory,
-                     service.FailureProgramParameters,
-
-                     service.PostLaunchExecutablePath,
-                     service.PostLaunchStartupDirectory,
-                     service.PostLaunchParameters,
-
-                     service.EnableDebugLogs,
-                     service.DisplayName,
-                     service.MaxRotations,
-
-                     service.EnableDateRotation,
-                     service.DateRotationType,
-
-                     service.StartTimeout,
-                     service.StopTimeout,
-
-                     service.PreStopExecutablePath,
-                     service.PreStopStartupDirectory,
-                     service.PreStopParameters,
-                     service.PreStopTimeoutSeconds,
-                     service.PreStopLogAsError,
-
-                     service.PostStopExecutablePath,
-                     service.PostStopStartupDirectory,
-                     service.PostStopParameters
-                 ))
+                 .Setup(s => s.InstallService(It.Is<InstallServiceOptions>(o =>
+                     o.ServiceName == service.Name &&
+                     o.WrapperExePath != null && o.WrapperExePath.Contains(".CLI")
+                 )))
                  .ReturnsAsync(true)
                  .Verifiable();
 
-
             // Act
-            var result = await service.Install(isCLI:true);
+            var result = await service.Install(isCLI: true);
 
             // Assert
             Assert.True(result);
@@ -481,91 +242,18 @@ namespace Servy.Core.UnitTests.Domain
             var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "TestService",
-                DisplayName = "TestService",
-                Description = null,
-                ExecutablePath = null, // forces Path.GetDirectoryName(null) => null
-                StartupDirectory = null,
-                Parameters = null,
-                StartupType = ServiceStartType.Manual,
-                Priority = ProcessPriority.Normal,
-                EnableRotation = false,
-                EnableHealthMonitoring = false,
-                RecoveryAction = RecoveryAction.None,
-                MaxRestartAttempts = 0,
-                RunAsLocalSystem = true,
-
-                PreStopExecutablePath = "C:\\pre-stop.exe",
-                PreStopStartupDirectory = "C:\\preStopDir",
-                PreStopParameters = "--preStopArg",
-                PreStopTimeoutSeconds = 20,
-                PreStopLogAsError = true,
-
-                PostStopExecutablePath = "C:\\post-stop.exe",
-                PostStopStartupDirectory = "C:\\postStopDir",
-                PostStopParameters = "--postStopArg",
+                ExecutablePath = null,
+                StartupDirectory = null
             };
 
             _serviceManagerMock
-                .Setup(s => s.InstallService(
-                    service.Name,                        // serviceName
-                    It.IsAny<string>(),                 // description
-                    It.IsAny<string>(),                   // wrapperExePath
-                    service.ExecutablePath,              // realExePath
-                    string.Empty,                        // workingDirectory
-                    string.Empty,                        // realArgs
-                    service.StartupType,                 // startType
-                    service.Priority,                    // processPriority
-                    null,                                // stdoutPath
-                    null,                                // stderrPath
-                    false,
-                    (ulong)service.RotationSize * 1024 * 1024,  // rotationSizeInBytes
-                    false,
-                    service.HeartbeatInterval,           // heartbeatInterval
-                    service.MaxFailedChecks,             // maxFailedChecks
-                    service.RecoveryAction,              // recoveryAction
-                    service.MaxRestartAttempts,          // maxRestartAttempts
-                    null,                                // environmentVariables
-                    null,                                // serviceDependencies
-                    null,                                // username
-                    null,                                // password
-                    null,                                // preLaunchExePath
-                    null,                                // preLaunchWorkingDirectory
-                    null,                                // preLaunchArgs
-                    null,                                // preLaunchEnvironmentVariables
-                    null,                                // preLaunchStdoutPath
-                    null,                                // preLaunchStderrPath
-                    It.IsAny<int>(),                     // preLaunchTimeout
-                    It.IsAny<int>(),                     // preLaunchRetryAttempts
-                    It.IsAny<bool>(),                    // preLaunchIgnoreFailure
-                    null,                                // failureProgramPath
-                    null,                                // failureProgramWorkingDirectory
-                    null,                                // failureProgramArgs
-                    null,                                // postLaunchExePath
-                    null,                                // postLaunchWorkingDirectory
-                    null,                                // postLaunchArgs
-                    It.IsAny<bool>(),                    // enableDebugLogs
-                    service.DisplayName,                 // displayName
-                    service.MaxRotations,                 // maxRotations
-
-                     service.EnableDateRotation,
-                     service.DateRotationType,
-
-                     service.StartTimeout,
-                     service.StopTimeout,
-
-                     service.PreStopExecutablePath,
-                     service.PreStopStartupDirectory,
-                     service.PreStopParameters,
-                     service.PreStopTimeoutSeconds,
-                     service.PreStopLogAsError,
-
-                     service.PostStopExecutablePath,
-                     service.PostStopStartupDirectory,
-                     service.PostStopParameters
-                ))
+                .Setup(s => s.InstallService(It.Is<InstallServiceOptions>(o =>
+                    o.ServiceName == service.Name &&
+                    o.WorkingDirectory == string.Empty &&
+                    o.RealArgs == string.Empty
+                )))
                 .ReturnsAsync(true)
                 .Verifiable();
-
 
             // Act
             var result = await service.Install();
@@ -574,7 +262,6 @@ namespace Servy.Core.UnitTests.Domain
             Assert.True(result);
             _serviceManagerMock.Verify();
         }
-
 
         [Fact]
         public async Task Uninstall_ShouldCallServiceManager()

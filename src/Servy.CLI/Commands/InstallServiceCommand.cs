@@ -43,7 +43,7 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Options for service installation.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        public async Task<CommandResult> Execute(InstallServiceOptions opts)
+        public async Task<CommandResult> Execute(Options.InstallServiceOptions opts)
         {
             return await ExecuteWithHandlingAsync(async () =>
             {
@@ -76,72 +76,83 @@ namespace Servy.CLI.Commands
                 int stopTimeout = int.TryParse(opts.StopTimeout, out var spTimeout) ? spTimeout : AppConfig.DefaultStopTimeout;
                 int preStopTimeout = int.TryParse(opts.PreStopTimeout, out var psTimeout) ? psTimeout : AppConfig.DefaultPreStopTimeoutSeconds;
 
-                // Call the service manager install method
-                var success = await _serviceManager.InstallService(
-                    opts.ServiceName,
-                    opts.ServiceDescription ?? string.Empty,
-                    wrapperExePath,
-                    opts.ProcessPath ?? string.Empty,
-                    opts.StartupDirectory ?? string.Empty,
-                    opts.ProcessParameters ?? string.Empty,
-                    startupType,
-                    processPriority,
-                    opts.StdoutPath,
-                    opts.StderrPath,
-                    opts.EnableRotation || opts.EnableSizeRotation,
-                    rotationSize,
-                    opts.EnableHealthMonitoring,
-                    heartbeatInterval,
-                    maxFailedChecks,
-                    recoveryAction,
-                    maxRestartAttempts,
-                    opts.EnvironmentVariables,
-                    opts.ServiceDependencies,
-                    opts.User,
-                    opts.Password,
+                var options = new Core.Services.InstallServiceOptions
+                {
+                    ServiceName = opts.ServiceName,
+                    Description = opts.ServiceDescription ?? string.Empty,
+                    WrapperExePath = wrapperExePath,
+                    RealExePath = opts.ProcessPath ?? string.Empty,
+                    WorkingDirectory = opts.StartupDirectory ?? string.Empty,
+                    RealArgs = opts.ProcessParameters ?? string.Empty,
+                    StartType = startupType,
+                    ProcessPriority = processPriority,
+                    StdoutPath = opts.StdoutPath,
+                    StderrPath = opts.StderrPath,
+                    EnableSizeRotation = opts.EnableRotation || opts.EnableSizeRotation,
+                    RotationSizeInBytes = rotationSize,
+                    EnableHealthMonitoring = opts.EnableHealthMonitoring,
+                    HeartbeatInterval = heartbeatInterval,
+                    MaxFailedChecks = maxFailedChecks,
+                    RecoveryAction = recoveryAction,
+                    MaxRestartAttempts = maxRestartAttempts,
+                    EnvironmentVariables = opts.EnvironmentVariables,
+                    ServiceDependencies = opts.ServiceDependencies,
+                    Username = opts.User,
+                    Password = opts.Password,
+
                     // Pre-Launch
-                    opts.PreLaunchPath,
-                    opts.PreLaunchStartupDir,
-                    opts.PreLaunchParameters,
-                    opts.PreLaunchEnvironmentVariables,
-                    opts.PreLaunchStdoutPath,
-                    opts.PreLaunchStderrPath,
-                    preLaunchTimeout,
-                    preLaunchRetryAttempts,
-                    opts.PreLaunchIgnoreFailure,
+                    PreLaunchExePath = opts.PreLaunchPath,
+                    PreLaunchWorkingDirectory = opts.PreLaunchStartupDir,
+                    PreLaunchArgs = opts.PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = opts.PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = opts.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = opts.PreLaunchStderrPath,
+                    PreLaunchTimeout = preLaunchTimeout,
+                    PreLaunchRetryAttempts = preLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = opts.PreLaunchIgnoreFailure,
+
                     // Failure program
-                    failureProgramPath: opts.FailureProgramPath,
-                    failureProgramWorkingDirectory: opts.FailureProgramStartupDir,
-                    failureProgramArgs: opts.FailureProgramParameters,
+                    FailureProgramPath = opts.FailureProgramPath,
+                    FailureProgramWorkingDirectory = opts.FailureProgramStartupDir,
+                    FailureProgramArgs = opts.FailureProgramParameters,
+
                     // Post-Launch
-                    postLaunchExePath: opts.PostLaunchPath,
-                    postLaunchWorkingDirectory: opts.PostLaunchStartupDir,
-                    postLaunchArgs: opts.PostLaunchParameters,
+                    PostLaunchExePath = opts.PostLaunchPath,
+                    PostLaunchWorkingDirectory = opts.PostLaunchStartupDir,
+                    PostLaunchArgs = opts.PostLaunchParameters,
+
                     // Debug Logs
-                    enableDebugLogs: opts.EnableDebugLogs,
+                    EnableDebugLogs = opts.EnableDebugLogs,
+
                     // Display name
-                    displayName: opts.ServiceDisplayName,
+                    DisplayName = opts.ServiceDisplayName,
+
                     // Max Rotations
-                    maxRotations: maxRotations,
+                    MaxRotations = maxRotations,
+
                     // Date rotation
-                    enableDateRotation: opts.EnableDateRotation,
-                    dateRotationType: dateRotationType,
+                    EnableDateRotation = opts.EnableDateRotation,
+                    DateRotationType = dateRotationType,
+
                     // Start/Stop timeouts
-                    startTimeout: startTimeout,
-                    stopTimeout: stopTimeout,
+                    StartTimeout = startTimeout,
+                    StopTimeout = stopTimeout,
 
                     // Pre-Stop
-                    preStopExePath: opts.PreStopPath,
-                    preStopWorkingDirectory: opts.PreStopStartupDir,
-                    preStopArgs: opts.PreStopParameters,
-                    preStopTimeout: preStopTimeout,
-                    preStopLogAsError: opts.PreStopLogAsError,
+                    PreStopExePath = opts.PreStopPath,
+                    PreStopWorkingDirectory = opts.PreStopStartupDir,
+                    PreStopArgs = opts.PreStopParameters,
+                    PreStopTimeout = preStopTimeout,
+                    PreStopLogAsError = opts.PreStopLogAsError,
 
                     // Post-Stop
-                    postStopExePath: opts.PostStopPath,
-                    postStopWorkingDirectory: opts.PostStopStartupDir,
-                    postStopArgs: opts.PostStopParameters
-                );
+                    PostStopExePath = opts.PostStopPath,
+                    PostStopWorkingDirectory = opts.PostStopStartupDir,
+                    PostStopArgs = opts.PostStopParameters
+                };
+
+                // Call the service manager install method
+                var success = await _serviceManager.InstallService(options);
 
                 if (!success)
                     return CommandResult.Fail("Failed to install service.");
