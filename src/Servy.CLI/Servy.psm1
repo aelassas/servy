@@ -305,6 +305,10 @@ function Install-ServyService {
         recovery actions, environment variables, dependencies, service account credentials,
         and optional pre-launch and post-launch executables.
 
+        The Post-launch executable operates in a fire-and-forget mode , meaning it does not support 
+        the full range of configuration options such as stdout/stderr redirection or retry attempts 
+        that are available for the Pre-launch executable.
+
     .PARAMETER Quiet
         Suppress spinner and run in non-interactive mode. Optional.
 
