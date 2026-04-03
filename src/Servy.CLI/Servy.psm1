@@ -911,6 +911,10 @@ function Import-ServyServiceConfig {
     .EXAMPLE
         Import-ServyServiceConfig -ConfigFileType "json" -Path "C:\Configs\MyService.json" -Install
         # Imports the configuration file into Servy's database.
+    
+    .NOTES
+        The service name is read from the configuration file during import.
+        No -Name parameter is needed.
     #>
   param(
     [switch] $Quiet,
