@@ -299,7 +299,7 @@ function Install-ServyService {
         Installs a new Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `install`command to create a Windows service from any
+        Wraps the Servy CLI `install` command to create a Windows service from any
         executable. This function allows configuring service name, description, process path,
         startup directory, parameters, startup type, process priority, logging, health monitoring,
         recovery actions, environment variables, dependencies, service account credentials,
@@ -648,7 +648,7 @@ function Uninstall-ServyService {
         Uninstalls a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `uninstall`command. 
+        Wraps the Servy CLI `uninstall` command. 
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -658,7 +658,7 @@ function Uninstall-ServyService {
         The name of the service to uninstall.
 
     .EXAMPLE
-        Uninstall-Service -Name "MyService"
+        Uninstall-ServyService -Name "MyService"
     #>
   
   param(
@@ -686,7 +686,7 @@ function Start-ServyService {
         Starts a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `start`command to start a service by its name.
+        Wraps the Servy CLI `start` command to start a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -724,7 +724,7 @@ function Stop-ServyService {
         Stops a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `stop`command to stop a service by its name.
+        Wraps the Servy CLI `stop` command to stop a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -762,7 +762,7 @@ function Restart-ServyService {
         Restarts a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `restart`command to restart a service by its name.
+        Wraps the Servy CLI `restart` command to restart a service by its name.
         Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -800,7 +800,7 @@ function Get-ServyServiceStatus {
         Retrieves the current status of a Windows service using Servy.
 
     .DESCRIPTION
-        Wraps the Servy CLI `status`command to get the status of a service by its name.
+        Wraps the Servy CLI `status` command to get the status of a service by its name.
         Possible status results: Stopped, StartPending, StopPending, Running, ContinuePending, PausePending, Paused.
         Requires Administrator privileges.
 
@@ -839,7 +839,7 @@ function Export-ServyServiceConfig {
         Exports a Servy Windows service configuration to a file.
 
     .DESCRIPTION
-        Wraps the Servy CLI `export`command to export the configuration of a service
+        Wraps the Servy CLI `export` command to export the configuration of a service
         to a file. Supports XML and JSON file types. Requires Administrator privileges.
 
     .PARAMETER Quiet
@@ -892,7 +892,7 @@ function Import-ServyServiceConfig {
         Imports a Windows service configuration into Servy's database.
 
     .DESCRIPTION
-        Wraps the Servy CLI `import`command to import a service configuration file
+        Wraps the Servy CLI `import` command to import a service configuration file
         (XML or JSON) into Servy's database. Requires Administrator privileges.
 
     .PARAMETER Quiet
