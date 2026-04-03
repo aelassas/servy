@@ -4,6 +4,7 @@ using Servy.CLI.Helpers;
 using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -76,6 +77,12 @@ namespace Servy.CLI
                     logLevel = LogLevel.Info;
                 }
                 Logger.SetLogLevel(logLevel);
+
+                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+                {
+                    dateRotationType = DateRotationType.None;
+                }
+                Logger.SetDateRotationType(dateRotationType);
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
