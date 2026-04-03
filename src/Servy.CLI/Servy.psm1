@@ -276,6 +276,10 @@ function Show-ServyHelp {
     .EXAMPLE
         Show-ServyHelp
         # Displays help for the Servy CLI.
+
+    .EXAMPLE
+        Show-ServyHelp -Command "install"
+        # Displays help for the install command.        
     #>
   param(
     [switch] $Quiet,
