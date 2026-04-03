@@ -106,4 +106,19 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj | ForEach-Object {
     Write-Host "Updated $csproj"
 }
 
+# -----------------------------
+# 4. Update src\Servy.CLI\Servy.psd1
+# -----------------------------
+$appConfigPath = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
+if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
+
+$content = [System.IO.File]::ReadAllText($appConfigPath)
+$content = [regex]::Replace(
+    $content,
+    "(ModuleVersion\s*=\s*')[^']*(')",
+    { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
+)
+[System.IO.File]::WriteAllText($appConfigPath, $content)
+Write-Host "Updated $appConfigPath"
+
 Write-Host "All version updates complete."
