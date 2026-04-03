@@ -117,7 +117,7 @@ function Add-Arg {
 
   .DESCRIPTION
       This helper function appends a command-line argument in the form:
-          key=value
+          key="value"
       to an existing array of strings,
       but only if the value is not null or empty.
 
@@ -153,9 +153,13 @@ function Add-Arg {
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   if ($null -ne $value -and $value.Trim() -ne "") {
 
+    # Use doubled quotes (PowerShell's native escaping)
+    # This escapes quotes for PowerShell, but the external exe sees single quotes
+    $escapedValue = $value.Replace('"', '""')
+
     # 3. Explicitly cast to array during addition to prevent string concatenation 
     # if $list somehow became a single string.
-    [array]$list += "$($key.Trim())=$value"
+    [array]$list += "$($key.Trim())=`"$escapedValue`""
   }
 
   # 4. The unary comma (,) is essential in PS 2.0 to prevent 
