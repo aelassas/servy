@@ -57,8 +57,7 @@
 if ($PSVersionTable.PSVersion.Major -ge 3) {
   # PS3+ has automatic $PSScriptRoot
   $ModuleRoot = $PSScriptRoot
-}
-else {
+} else {
   # PS2 does not have $PSScriptRoot
   $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
@@ -161,7 +160,7 @@ function Add-Arg {
 
   # 4. The unary comma (,) is essential in PS 2.0 to prevent 
   # PowerShell from "unrolling" the array into individual objects.
-  return , $list
+  return ,$list
 }
 
 <#
@@ -562,16 +561,16 @@ function Install-ServyService {
     [switch] $EnableDebugLogs,
 
     # Pre-stop
-    $PreStopPath,
-    $PreStopStartupDir,
-    $PreStopParams,
-    $PreStopTimeout,
+    [string] $PreStopPath,
+    [string] $PreStopStartupDir,
+    [string] $PreStopParams,
+    [string] $PreStopTimeout,
     [switch] $PreStopLogAsError,
 
     # Post-stop
-    $PostStopPath,
-    $PostStopStartupDir,
-    $PostStopParams
+    [string] $PostStopPath,
+    [string] $PostStopStartupDir,
+    [string] $PostStopParams
 
   )
 
