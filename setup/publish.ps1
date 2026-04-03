@@ -119,6 +119,7 @@ try {
     Copy-Item -Path "taskschd" -Destination "$packageFolder" -Recurse -Force
 
     Copy-Item -Path (Join-Path $cliDir "Servy.psm1") -Destination "$packageFolder" -Force
+    Copy-Item -Path (Join-Path $cliDir "Servy.psd1") -Destination "$packageFolder" -Force
     Copy-Item -Path (Join-Path $cliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
 
     $zipArgs = @(
