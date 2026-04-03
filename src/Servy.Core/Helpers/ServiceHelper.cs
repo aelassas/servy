@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Microsoft.Win32;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Management;
@@ -184,12 +185,9 @@ namespace Servy.Core.Helpers
         #region Private Methods
 
         /// <summary>
-        /// Queries WMI to get all running services whose executable matches the given wrapper filename.
+        /// Queries the Service Control Manager and Registry to get all running services 
+        /// whose executable matches the given wrapper filename.
         /// </summary>
-        /// <param name="wrapperExe">The filename of the service executable (e.g., "Servy.Service.exe").</param>
-        /// <returns>A list of service names that are currently running and match the executable.</returns>
-        /// <exception cref="ArgumentException">Thrown if <paramref name="wrapperExe"/> is null or whitespace.</exception>
-        /// <exception cref="InvalidOperationException">Thrown if WMI query fails.</exception>
         private List<string> GetRunningServices(string wrapperExe)
         {
             if (string.IsNullOrWhiteSpace(wrapperExe))
@@ -199,52 +197,65 @@ namespace Servy.Core.Helpers
 
             try
             {
-                using (var searcher = new ManagementObjectSearcher(
-                           "SELECT Name, PathName FROM Win32_Service WHERE State = 'Running'"))
-                using (var services = searcher.Get())
-                {
-                    foreach (var service in services)
-                    {
-                        var pathName = service["PathName"]?.ToString();
-                        if (string.IsNullOrWhiteSpace(pathName))
-                            continue;
+                // 1. Get all services via SCM (Standard .NET, no WMI)
+                ServiceController[] services = ServiceController.GetServices();
 
-                        // Extract the first quoted string (the actual exe path)
-                        string? exePath = null;
-                        int firstQuote = pathName.IndexOf('"');
+                foreach (var sc in services)
+                {
+                    // Only care about running services
+                    if (sc.Status != ServiceControllerStatus.Running)
+                        continue;
+
+                    // 2. Query Registry for the ImagePath (Binary Path)
+                    // SCM stores this in HKLM\SYSTEM\CurrentControlSet\Services\[ServiceName]
+                    string registryKeyPath = $@"SYSTEM\CurrentControlSet\Services\{sc.ServiceName}";
+                    using (var key = Registry.LocalMachine.OpenSubKey(registryKeyPath))
+                    {
+                        if (key == null) continue;
+
+                        var pathName = key.GetValue("ImagePath")?.ToString();
+                        if (string.IsNullOrWhiteSpace(pathName)) continue;
+
+                        // 1. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
+                        string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
+
+                        // 2. Extract the actual exe path (Handling quotes and arguments)
+                        string exePath;
+                        int firstQuote = expandedPath.IndexOf('"');
                         if (firstQuote >= 0)
                         {
-                            int secondQuote = pathName.IndexOf('"', firstQuote + 1);
+                            int secondQuote = expandedPath.IndexOf('"', firstQuote + 1);
                             if (secondQuote > firstQuote)
-                                exePath = pathName.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                                exePath = expandedPath.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                            else
+                                exePath = expandedPath; // Fallback
                         }
                         else
                         {
-                            // Fallback if no quotes: take substring until first space
-                            int firstSpace = pathName.IndexOf(' ');
-                            exePath = firstSpace > 0 ? pathName.Substring(0, firstSpace) : pathName;
+                            // If no quotes, take until first space (arguments)
+                            int firstSpace = expandedPath.IndexOf(' ');
+                            exePath = firstSpace > 0 ? expandedPath.Substring(0, firstSpace) : expandedPath;
                         }
 
-                        if (string.IsNullOrEmpty(exePath))
-                            continue;
-
-                        // Get just the executable filename
-                        var exeName = System.IO.Path.GetFileName(exePath);
-
-                        // Compare with the requested wrapperExe
-                        if (string.Equals(exeName, wrapperExe, StringComparison.OrdinalIgnoreCase))
+                        // 4. Resolve the filename and compare
+                        try
                         {
-                            var name = service["Name"]?.ToString();
-                            if (!string.IsNullOrEmpty(name))
-                                result.Add(name);
+                            var exeName = Path.GetFileName(exePath);
+                            if (string.Equals(exeName, wrapperExe, StringComparison.OrdinalIgnoreCase))
+                            {
+                                result.Add(sc.ServiceName);
+                            }
                         }
+                        catch (ArgumentException) { /* Handle invalid paths gracefully */ }
                     }
                 }
             }
             catch (Exception ex)
             {
+                // Fail-safe: log locally or return empty list. 
+                // Do not let a query failure block deployment.
                 throw new InvalidOperationException(
-                    $"Failed to query services for {wrapperExe}: {ex.Message}", ex);
+                    $"Failed to query services for {wrapperExe} via SCM/Registry: {ex.Message}", ex);
             }
 
             return result;
