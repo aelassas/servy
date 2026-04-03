@@ -97,8 +97,16 @@ if (-not (Test-Path $script:ServyCliPath)) {
     # Throws an error if Servy CLI is not found, otherwise continues silently.
 #>
 function Test-ServyCliPath {
-  if (-not (Test-Path $script:ServyCliPath)) {
-    throw "Servy CLI not found at path: $($script:ServyCliPath)"
+  <#
+  .SYNOPSIS
+      Checks if the Servy CLI executable was discovered during module initialization.
+  #>
+  if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
+    throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
+          "1. Local module folder: $ModuleRoot `n" +
+          "2. Program Files: $($env:ProgramFiles)\Servy `n" +
+          "3. System PATH `n" +
+          "Please ensure Servy is installed or the CLI executable is in the module directory."
   }
 }
 
