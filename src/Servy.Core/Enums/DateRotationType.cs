@@ -20,7 +20,13 @@
         /// <summary>
         /// Rotates the log file once per calendar month (local).
         /// </summary>
-        Monthly
+        Monthly,
+
+        /// <summary>
+        /// Disables date-based rotation. The log file will not be rotated based 
+        /// on time intervals, regardless of the date change.
+        /// </summary>
+        None,
     }
 
 }

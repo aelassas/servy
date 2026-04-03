@@ -23,6 +23,7 @@ namespace Servy.Core.Logging
         private static LogLevel _currentLogLevel = LogLevel.Info;
         private static string? _fileName;
         private static long _logRotationSizeMB = DefaultLogRotationSizeMB;
+        private static DateRotationType _dateRotationType;
 
         /// <summary>
         /// The maximum number of backup log files to keep. 
@@ -37,13 +38,18 @@ namespace Servy.Core.Logging
         /// <param name="fileName">The name of the log file (e.g., "Servy.Manager.log").</param>
         /// <param name="initialLevel">The starting log level. Defaults to <see cref="LogLevel.Info"/>.</param>
         /// <param name="logRotationSizeMB">The maximum size of the log file in MB before rotation. Defaults to 10MB.</param>
-        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info, int logRotationSizeMB = 10)
+        /// <param name="dateRotationType">
+        /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
+        /// Defaults to <see cref="DateRotationType.None"/>.
+        /// </param>
+        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info, int logRotationSizeMB = 10, DateRotationType dateRotationType= DateRotationType.None)
         {
             lock (_lock)
             {
                 _fileName = fileName;
                 _currentLogLevel = initialLevel;
                 _logRotationSizeMB = logRotationSizeMB;
+                _dateRotationType = dateRotationType;
 
                 InternalInitialize();
             }
@@ -76,8 +82,8 @@ namespace Servy.Core.Logging
                     path: logPath,
                     enableSizeRotation: true,
                     rotationSizeInBytes: rotationSizeInBytes,
-                    enableDateRotation: false,
-                    dateRotationType: DateRotationType.Daily,
+                    enableDateRotation: _dateRotationType != DateRotationType.None,
+                    dateRotationType: _dateRotationType,
                     maxRotations: MaxBackupFiles
                 );
             }
@@ -113,6 +119,34 @@ namespace Servy.Core.Logging
                 if (sizeMB > 0 && _logRotationSizeMB != sizeMB)
                 {
                     _logRotationSizeMB = sizeMB;
+
+                    // If we have an active writer, recreate it to apply the new size constraint
+                    if (_writer != null)
+                    {
+                        InternalInitialize();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the date-based rotation strategy at runtime.
+        /// </summary>
+        /// <param name="dateRotationType">
+        /// The new <see cref="DateRotationType"/> to apply (e.g., Daily, Weekly, Monthly, or None).
+        /// </param>
+        /// <remarks>
+        /// If the rotation type is changed and a log file is currently open, the internal writer 
+        /// will be re-initialized to ensure the new rotation logic is applied immediately 
+        /// to the next write operation.
+        /// </remarks>
+        public static void SetDateRotationType(DateRotationType dateRotationType)
+        {
+            lock (_lock)
+            {
+                if ( _dateRotationType != dateRotationType)
+                {
+                    _dateRotationType = dateRotationType;
 
                     // If we have an active writer, recreate it to apply the new size constraint
                     if (_writer != null)
@@ -195,6 +229,7 @@ namespace Servy.Core.Logging
         /// <param name="message">The content of the log entry.</param>
         private static void Log(LogLevel level, string message)
         {
+            // We still check for null early to avoid locking if the logger isn't active
             if (_writer == null) return;
 
             try
@@ -205,7 +240,6 @@ namespace Servy.Core.Logging
                     string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}] {message}";
 
                     _writer.WriteLine(logEntry);
-                    _writer.Flush();
                 }
             }
             catch

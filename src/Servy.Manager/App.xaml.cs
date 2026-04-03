@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -259,6 +260,12 @@ namespace Servy.Manager
                 }
                 Logger.SetLogLevel(logLevel);
                 LogLevel = logLevel;
+
+                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+                {
+                    dateRotationType = DateRotationType.None;
+                }
+                Logger.SetDateRotationType(dateRotationType);
 
                 IsEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
 
