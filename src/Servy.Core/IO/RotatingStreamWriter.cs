@@ -70,7 +70,8 @@ namespace Servy.Core.IO
             _dateRotationType = dateRotationType;
             _lastRotationDate = File.Exists(path) ? File.GetLastWriteTime(path) : DateTime.Now; // baseline for date rotation
             _maxRotations = maxRotations;
-            InitializeWriter();
+
+            // LAZY INIT: We no longer call InitializeWriter() here in the constructor.
         }
 
         /// <summary>
@@ -113,14 +114,22 @@ namespace Servy.Core.IO
         /// <param name="line">The line of text to write.</param>
         public void WriteLine(string line)
         {
+            if (_disposed) return;
             lock (_lock)
             {
-                if (_writer == null) return;
+                // 1. Lazy Initialize if null (either first run or just rotated)
+                if (_writer == null)
+                {
+                    InitializeWriter();
+                }
 
-                _writer.WriteLine(line);
-                _writer.Flush();
+                _writer!.WriteLine(line);
+                // AutoFlush is true in InitializeWriter, but explicit flush ensures 
+                // the FileInfo.Length is accurate for the next CheckRotation call.
+                _writer!.Flush();
+
+                // 2. Check if we need to rotate
                 CheckRotation();
-
             }
         }
 
@@ -129,12 +138,21 @@ namespace Servy.Core.IO
         /// </summary>
         public void Write(string text)
         {
+            if (_disposed) return;
             lock (_lock)
             {
-                if (_writer == null) return;
+                // 1. Lazy Initialize if null (either first run or just rotated)
+                if (_writer == null)
+                {
+                    InitializeWriter();
+                }
 
-                _writer.Write(text);
-                _writer.Flush();
+                _writer!.Write(text);
+                // AutoFlush is true in InitializeWriter, but explicit flush ensures 
+                // the FileInfo.Length is accurate for the next CheckRotation call.
+                _writer!.Flush();
+
+                // 2. Check if we need to rotate
                 CheckRotation();
             }
         }
@@ -143,21 +161,6 @@ namespace Servy.Core.IO
         /// Determines whether a date-based rotation should occur
         /// based on the configured <see cref="DateRotationType"/>.
         /// </summary>
-        /// <returns>
-        /// <c>true</c> if the current local date has crossed the rotation boundary
-        /// (day, week, or month) since the last rotation; otherwise <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// <para>
-        /// Daily rotation triggers when the calendar date changes (local).
-        /// </para>
-        /// <para>
-        /// Weekly rotation uses ISO week numbering (Monday as first day of week).
-        /// </para>
-        /// <para>
-        /// Monthly rotation triggers when either the month or year differs.
-        /// </para>
-        /// </remarks>
         private bool ShouldRotateByDate()
         {
             var now = DateTime.Now;
@@ -186,26 +189,15 @@ namespace Servy.Core.IO
         /// Determines whether the current log file should be rotated,
         /// based on enabled rotation modes (size and/or date).
         /// </summary>
-        /// <remarks>
-        /// Rotation rules:
-        /// <list type="number">
-        /// <item>
-        /// <description>
-        /// If size rotation is enabled and the file exceeds the configured size,
-        /// the file is rotated immediately and date-based rotation is skipped.
-        /// </description>
-        /// </item>
-        /// <item>
-        /// <description>
-        /// If size rotation does not apply and date rotation is enabled,
-        /// rotation occurs when the configured date interval has elapsed.
-        /// </description>
-        /// </item>
-        /// </list>
-        /// </remarks>
         private void CheckRotation()
         {
+            // If writer is null, the file hasn't been created yet (Lazy Init).
+            // There is nothing to rotate.
+            if (_writer == null) return;
+
             _file.Refresh();
+            if (!_file.Exists) return;
+
             long currentLength = _file.Length;
 
             bool rotateBySize = false;
@@ -240,15 +232,7 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Generates a unique file path by inserting a numeric suffix before the file extension if the file already exists.
-        /// <para>
-        /// Example (with extension): If "app.20260325.log" exists, it returns "app.20260325.(1).log".
-        /// </para>
-        /// <para>
-        /// Example (no extension): If "app.20260325" exists, it returns "app.20260325.(1)".
-        /// </para>
         /// </summary>
-        /// <param name="basePath">The initial file path (potentially containing a timestamp) to check for existence.</param>
-        /// <returns>A unique file path that does not currently exist on disk.</returns>
         private static string GenerateUniqueFileName(string basePath)
         {
             if (!File.Exists(basePath))
@@ -257,29 +241,20 @@ namespace Servy.Core.IO
             string directory = Path.GetDirectoryName(basePath)!;
             string fileName = Path.GetFileName(basePath);
 
-            // Path.GetExtension gets everything from the LAST dot to the end
-            string extension = Path.GetExtension(fileName); // e.g., ".log" or ".20260325_001611"
+            string extension = Path.GetExtension(fileName);
             string namePart;
 
-            // A "Solid" check: 
-            // If the extension is exactly the length of your timestamp (+1 for the dot)
-            // and consists of digits/underscores, it's NOT a real file extension.
-            // Timestamp: .yyyyMMdd_HHmmss (16 characters)
             bool isTimestamp = extension.Length == 16 &&
                                extension.StartsWith(".") &&
                                extension.Substring(1).All(c => char.IsDigit(c) || c == '_');
 
             if (string.IsNullOrEmpty(extension) || isTimestamp)
             {
-                // Case: MyApplication_Output.20260325_001611
-                // Treat the whole thing as the name, so we append .(1) at the very end.
                 namePart = fileName;
                 extension = "";
             }
             else
             {
-                // Case: MyApplication_Output.20260325_001611.log
-                // Treat .log as the extension, so .(1) goes before it.
                 namePart = Path.GetFileNameWithoutExtension(fileName);
             }
 
@@ -287,7 +262,6 @@ namespace Servy.Core.IO
             string newPath;
             do
             {
-                // Result: namePart.(count).extension
                 newPath = Path.Combine(directory, $"{namePart}.({count}){extension}");
                 count++;
             }
@@ -298,12 +272,7 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Deletes older rotated log files to enforce the maximum rotation limit.
-        /// If <see cref="_maxRotations"/> is set to <c>0</c>, rotation cleanup is disabled.
         /// </summary>
-        /// <remarks>
-        /// Rotated files follow the pattern: {name}.{timestamp}.{ext} or {name}.{timestamp}.(n).{ext}
-        /// This method never throws exceptions; deletion failures are silently ignored.
-        /// </remarks>
         private void EnforceMaxRotations()
         {
             if (_maxRotations <= 0)
@@ -313,22 +282,14 @@ namespace Servy.Core.IO
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             string extension = Path.GetExtension(_file.FullName);
 
-            // 1. Search for all files starting with the base name.
-            // We use a broader glob because the timestamp is now injected before the extension.
             var allPotentialFiles = Directory.GetFiles(directory, $"{fileNameWithoutExt}*");
 
             var rotatedFiles = allPotentialFiles
                 .Where(f =>
                 {
-                    // 2. Exclude the currently active log file
                     if (f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
                         return false;
 
-                    // 3. Ensure it matches our specific rotated patterns:
-                    // - MyApplication.20260325_120000.log
-                    // - MyApplication.20260325_120000.(1).log
-                    // - MyApplication.20260325_120000 (if no extension)
-                    // - MyApplication.20260325_120000.(1)
                     string name = Path.GetFileName(f);
 
                     if (!name.StartsWith($"{fileNameWithoutExt}.", StringComparison.OrdinalIgnoreCase))
@@ -344,7 +305,6 @@ namespace Servy.Core.IO
             if (rotatedFiles.Count <= _maxRotations)
                 return;
 
-            // Delete the oldest files (those beyond the max count)
             foreach (var file in rotatedFiles.Skip(_maxRotations))
             {
                 try
@@ -360,23 +320,14 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Rotates the current log file by inserting a local timestamp before the file extension.
-        /// <para>
-        /// Example: 'app.log' becomes 'app.20260325_001611.log'. 
-        /// If no extension is present, the timestamp is appended to the end.
-        /// </para>
-        /// If a file with the generated name already exists, a numeric suffix is added (e.g., '.(1)') to ensure uniqueness.
-        /// This method closes the current writer, renames the file, enforces retention policies, and initializes a new log file.
         /// </summary>
         private void Rotate()
         {
             try
             {
-                // GUARD: If the file doesn't exist anymore or isn't ready, 
-                // we don't null the writer. This preserves the existing instance.
                 _file.Refresh();
                 if (!_file.Exists || _file.Length == 0) return;
 
-                // Use the helper to ensure both _writer and _baseStream are disposed AND nulled
                 lock (_lock)
                 {
                     CloseWriter();
@@ -384,54 +335,33 @@ namespace Servy.Core.IO
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-                // 1. Deconstruct the path
                 var directory = Path.GetDirectoryName(_file.FullName)!;
                 var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-                var extension = Path.GetExtension(_file.FullName); // Includes the dot, e.g., ".log"
+                var extension = Path.GetExtension(_file.FullName);
 
-                // 2. Reconstruct with the timestamp inside
-                // If extension is empty, Path.Combine still works perfectly.
                 var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
                 var rotatedPath = Path.Combine(directory, newFileName);
 
-                // 3. Generate unique rotated filename if it already exists
                 rotatedPath = GenerateUniqueFileName(rotatedPath);
 
                 File.Move(_file.FullName, rotatedPath);
 
-                // Enforce retention
                 EnforceMaxRotations();
             }
             catch
             {
                 // Silently catch I/O errors (e.g., file locked). 
-                // We will just overwrite/append to the existing file below.
+                // We will just overwrite/append to the existing file below on the next write.
             }
-            finally
-            {
-                try
-                {
-                    if (_writer == null && !_disposed)
-                    {
-                        // ALWAYS recreate the writer so logging doesn't permanently die
-                        InitializeWriter();
-                    }
-                }
-                catch
-                {
-                    // If even the fallback fails (e.g. permission changed to ReadOnly), 
-                    // we can't do much, but we shouldn't crash the whole service.
-                }
-            }
+
+            // LAZY INIT FIX: We no longer eagerly call InitializeWriter() in a finally block here.
+            // If the rotation succeeds, _writer remains null. 
+            // The next time Write or WriteLine is called, the file will be cleanly recreated.
         }
 
         /// <summary>
         /// Gracefully closes and disposes of the <see cref="StreamWriter"/> and the underlying <see cref="FileStream"/>.
         /// </summary>
-        /// <remarks>
-        /// This method ensures all buffered data is flushed to the stream before the handles are released. 
-        /// It sets the internal references to <c>null</c> to prevent accidental reuse of disposed objects.
-        /// </remarks>
         private void CloseWriter()
         {
             if (_writer != null)
@@ -451,17 +381,12 @@ namespace Servy.Core.IO
         /// Flushes the underlying <see cref="StreamWriter"/>, ensuring that all buffered
         /// data is written to the log file.
         /// </summary>
-        /// <remarks>
-        /// This method is thread-safe and can be called while the <see cref="RotatingStreamWriter"/>
-        /// is in use. If the writer has been disposed, this method does nothing.
-        /// </remarks>
         public void Flush()
         {
             lock (_lock)
             {
                 _writer?.Flush();
 
-                // Only force a heavy disk flush if the stream has data
                 if (_baseStream != null && _baseStream.Length > 0)
                 {
                     _baseStream.Flush(true);
@@ -481,7 +406,6 @@ namespace Servy.Core.IO
         /// <summary>
         /// Protected virtual dispose method following the standard pattern.
         /// </summary>
-        /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -497,6 +421,5 @@ namespace Servy.Core.IO
 
             _disposed = true;
         }
-
     }
 }
