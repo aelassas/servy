@@ -183,7 +183,7 @@ namespace Servy.Core.Logging
                     EventLog.CreateEventSource(_source, "Application");
                 }
 
-                _eventLog = new EventLog()
+                _eventLog = new EventLog
                 {
                     Log = "Application",
                     Source = _source,
