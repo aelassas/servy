@@ -55,11 +55,12 @@
 
 # Determine module folder
 if ($PSVersionTable.PSVersion.Major -ge 3) {
-    # PS3+ has automatic $PSScriptRoot
-    $ModuleRoot = $PSScriptRoot
-} else {
-    # PS2 does not have $PSScriptRoot
-    $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+  # PS3+ has automatic $PSScriptRoot
+  $ModuleRoot = $PSScriptRoot
+}
+else {
+  # PS2 does not have $PSScriptRoot
+  $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 
 # 1. Check local module folder
@@ -67,16 +68,16 @@ $script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 
 # 2. Check 64-bit Program Files directory
 if (-not (Test-Path $script:ServyCliPath)) {
-    # $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
-    # even if the current PowerShell session is 32-bit (x86).
-    $basePath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
-    $script:ServyCliPath = Join-Path $basePath "Servy\servy-cli.exe"
+  # $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
+  # even if the current PowerShell session is 32-bit (x86).
+  $basePath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
+  $script:ServyCliPath = Join-Path $basePath "Servy\servy-cli.exe"
 }
 
 # 3. Check system PATH
 if (-not (Test-Path $script:ServyCliPath)) {
-    $pathSearch = Get-Command "servy-cli.exe" -ErrorAction SilentlyContinue
-    if ($pathSearch) { $script:ServyCliPath = $pathSearch.Definition }
+  $pathSearch = Get-Command "servy-cli.exe" -ErrorAction SilentlyContinue
+  if ($pathSearch) { $script:ServyCliPath = $pathSearch.Definition }
 }
 
 # ----------------------------------------------------------------
@@ -103,10 +104,10 @@ function Test-ServyCliPath {
   #>
   if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
     throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
-          "1. Local module folder: $ModuleRoot `n" +
-          "2. Program Files: $($env:ProgramFiles)\Servy `n" +
-          "3. System PATH `n" +
-          "Please ensure Servy is installed or the CLI executable is in the module directory."
+    "1. Local module folder: $ModuleRoot `n" +
+    "2. Program Files: $($env:ProgramFiles)\Servy `n" +
+    "3. System PATH `n" +
+    "Please ensure Servy is installed or the CLI executable is in the module directory."
   }
 }
 
@@ -146,21 +147,21 @@ function Add-Arg {
 
   # 1. Ensure $list is an array, even if $null was passed
   if ($null -eq $list) { 
-      $list = @() 
+    $list = @() 
   }
 
   # 2. Robust check for null or empty strings
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   if ($null -ne $value -and $value.Trim() -ne "") {
 
-      # 3. Explicitly cast to array during addition to prevent string concatenation 
-      # if $list somehow became a single string.
-      [array]$list += "$($key.Trim())=$value"
+    # 3. Explicitly cast to array during addition to prevent string concatenation 
+    # if $list somehow became a single string.
+    [array]$list += "$($key.Trim())=$value"
   }
 
   # 4. The unary comma (,) is essential in PS 2.0 to prevent 
   # PowerShell from "unrolling" the array into individual objects.
-  return ,$list
+  return , $list
 }
 
 <#
@@ -199,30 +200,30 @@ function Add-Arg {
 
 #>
 function Invoke-ServyCli {
-    param(
-        [string] $Command,
-        [array]  $Arguments,
-        [switch] $Quiet,
-        [string] $ErrorContext
-    )
+  param(
+    [string] $Command,
+    [array]  $Arguments,
+    [switch] $Quiet,
+    [string] $ErrorContext
+  )
 
-    Test-ServyCliPath
+  Test-ServyCliPath
 
-    [array]$finalArgs = @()
-    if ($null -ne $Command -and $Command -ne "") { $finalArgs += $Command }
-    if ($Arguments) { $finalArgs += $Arguments }
-    if ($Quiet) { $finalArgs += "--quiet" }
+  [array]$finalArgs = @()
+  if ($null -ne $Command -and $Command -ne "") { $finalArgs += $Command }
+  if ($Arguments) { $finalArgs += $Arguments }
+  if ($Quiet) { $finalArgs += "--quiet" }
 
-    try {
-        & $script:ServyCliPath $finalArgs   
-        
-        if ($LASTEXITCODE -ne 0) {
-          throw "Servy CLI exited with code $LASTEXITCODE"
-        }          
-    }
-    catch {
-        throw "$($ErrorContext): $_"
-    }
+  try {
+    & $script:ServyCliPath $finalArgs            
+  }
+  catch {
+    throw "$($ErrorContext): $_"
+  }
+
+  if ($LASTEXITCODE -ne 0) {
+    throw "Servy CLI exited with code $LASTEXITCODE"
+  }     
 }
 
 # ----------------------------------------------------------------
@@ -943,22 +944,22 @@ function Import-ServyServiceConfig {
 # ----------------------------------------------------------------
 
 $publicFunctions = @(
-    "Show-ServyVersion",
-    "Show-ServyHelp",
-    "Install-ServyService",
-    "Uninstall-ServyService",
-    "Start-ServyService",
-    "Stop-ServyService",
-    "Restart-ServyService",
-    "Get-ServyServiceStatus",
-    "Export-ServyServiceConfig",
-    "Import-ServyServiceConfig"
+  "Show-ServyVersion",
+  "Show-ServyHelp",
+  "Install-ServyService",
+  "Uninstall-ServyService",
+  "Start-ServyService",
+  "Stop-ServyService",
+  "Restart-ServyService",
+  "Get-ServyServiceStatus",
+  "Export-ServyServiceConfig",
+  "Import-ServyServiceConfig"
 )
 
 foreach ($fn in $publicFunctions) {
-    if (-not (Get-Command $fn -CommandType Function -ErrorAction SilentlyContinue)) {
-        throw "Public function '$fn' is missing"
-    }
+  if (-not (Get-Command $fn -CommandType Function -ErrorAction SilentlyContinue)) {
+    throw "Public function '$fn' is missing"
+  }
 }
 
 Export-ModuleMember -Function $publicFunctions
