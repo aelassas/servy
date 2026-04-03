@@ -561,16 +561,16 @@ function Install-ServyService {
     [switch] $EnableDebugLogs,
 
     # Pre-stop
-    $PreStopPath,
-    $PreStopStartupDir,
-    $PreStopParams,
-    $PreStopTimeout,
+    [string] $PreStopPath,
+    [string] $PreStopStartupDir,
+    [string] $PreStopParams,
+    [string] $PreStopTimeout,
     [switch] $PreStopLogAsError,
 
     # Post-stop
-    $PostStopPath,
-    $PostStopStartupDir,
-    $PostStopParams
+    [string] $PostStopPath,
+    [string] $PostStopStartupDir,
+    [string] $PostStopParams
 
   )
 
