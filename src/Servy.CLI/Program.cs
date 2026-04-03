@@ -48,8 +48,10 @@ namespace Servy.CLI
             try
             {
                 var verbs = GetVerbs();
-                if (args.Length == 0 || !verbs.Contains(args[0].ToLowerInvariant()))
+                if (args.Length == 0 || (!verbs.Contains(args[0].ToLowerInvariant()) && !args[0].StartsWith("-")))
                 {
+                    // Only inject the default verb if the user didn't provide a recognized verb 
+                    // AND didn't provide a global flag like --version or --help
                     args = (new[] { GetVerbName<HelpOptions>() }).Concat(args).ToArray();
                 }
 
@@ -185,16 +187,21 @@ namespace Servy.CLI
                     });
                 }
 
-                var exitCode = await Parser.Default.ParseArguments<
-                        Options.InstallServiceOptions,
-                        UninstallServiceOptions,
-                        StartServiceOptions,
-                        StopServiceOptions,
-                        ServiceStatusOptions,
-                        RestartServiceOptions,
-                        ExportServiceOptions,
-                        ImportServiceOptions
-                        >(args)
+                var parser = new Parser(with =>
+                {
+                    with.HelpWriter = Console.Out;
+                });
+
+                var exitCode = await parser.ParseArguments<
+                    Options.InstallServiceOptions,
+                    UninstallServiceOptions,
+                    StartServiceOptions,
+                    StopServiceOptions,
+                    ServiceStatusOptions,
+                    RestartServiceOptions,
+                    ExportServiceOptions,
+                    ImportServiceOptions
+                    >(args)
                     .MapResult(
                         async (Options.InstallServiceOptions opts) => await PrintAndReturnAsync(installCommand.Execute(opts)),
                         async (UninstallServiceOptions opts) => await PrintAndReturnAsync(uninstallCommand.Execute(opts)),
