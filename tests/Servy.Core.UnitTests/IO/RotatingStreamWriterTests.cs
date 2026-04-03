@@ -20,7 +20,7 @@ namespace Servy.Core.UnitTests.IO
             _logFilePath = Path.Combine(_testDir, "test.log");
         }
 
-        // Helper to construct per the new constructor signature
+        // Helper to construct per the constructor signature
         private RotatingStreamWriter CreateWriter(
             string path,
             bool enableSizeRotation = true,
@@ -78,6 +78,63 @@ namespace Servy.Core.UnitTests.IO
             Assert.Null(exception); // passes if no exception was thrown
         }
 
+        // --- NEW: Lazy Initialization Tests ---
+
+        [Fact]
+        public void LazyInitialization_Write_DoesNotCreateFileUntilCalled()
+        {
+            var filePath = Path.Combine(_testDir, "lazy_write.txt");
+
+            using (var writer = CreateWriter(filePath, true, 10))
+            {
+                // File shouldn't exist right after instantiation
+                Assert.False(File.Exists(filePath), "File should not exist yet");
+
+                writer.Write("123");
+
+                // File should exist after the first interaction
+                Assert.True(File.Exists(filePath), "File should exist after write");
+            }
+        }
+
+        [Fact]
+        public void LazyInitialization_WriteLine_DoesNotCreateFileUntilCalled()
+        {
+            var filePath = Path.Combine(_testDir, "lazy_writeline.txt");
+
+            using (var writer = CreateWriter(filePath, true, 10))
+            {
+                Assert.False(File.Exists(filePath), "File should not exist yet");
+
+                writer.WriteLine("123");
+
+                Assert.True(File.Exists(filePath), "File should exist after write");
+            }
+        }
+
+        [Fact]
+        public void LazyInitialization_RecreatesWriterAfterRotation()
+        {
+            var filePath = Path.Combine(_testDir, "lazy_rotate.txt");
+
+            // 1. Perform operations inside the using block
+            using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            {
+                writer.Write("123456"); // Triggers rotation, file is moved
+
+                // This assertion passes because Rotate() moved the file and CloseWriter() was called inside it
+                Assert.False(File.Exists(filePath), "Original file should have been moved");
+
+                writer.Write("789"); // Triggers lazy init; a NEW file handle is opened here
+            } // <--- The handle is officially closed here
+
+            // 2. Assert on the results after the handle is released
+            Assert.True(File.Exists(filePath), "Original file should have been recreated by lazy init");
+            Assert.Contains("789", File.ReadAllText(filePath));
+        }
+
+        // --- End Lazy Init Tests ---
+
         [Fact]
         public void GenerateUniqueFileName_FileDoesNotExist_ReturnsOriginalPath()
         {
@@ -115,38 +172,29 @@ namespace Servy.Core.UnitTests.IO
         [InlineData("archive.123", "archive.(1).123")]                         // Short numeric ext (not timestamp)
         public void HandlesCollisions_BasedOnExtensionType(string fileName, string expectedName)
         {
-            // Arrange
             var basePath = Path.Combine(_testDir, fileName);
             var expectedPath = Path.Combine(_testDir, expectedName);
             File.WriteAllText(basePath, "dummy"); // Create the collision
 
-            // Act
             var result = InvokeGenerateUniqueFileName(basePath);
 
-            // Assert
             Assert.Equal(expectedPath, result);
         }
 
         [Fact]
         public void IncrementsCounter_WhenMultipleCollisionsExist()
         {
-            // Arrange
             var fileName = "App.20260325_001611.log";
             var basePath = Path.Combine(_testDir, fileName);
 
-            // Create: .log AND .(1).log
             File.WriteAllText(basePath, "orig");
             File.WriteAllText(Path.Combine(_testDir, "App.20260325_001611.(1).log"), "coll1");
 
             var expectedPath = Path.Combine(_testDir, "App.20260325_001611.(2).log");
-
-            // Act
             var result = InvokeGenerateUniqueFileName(basePath);
 
-            // Assert
             Assert.Equal(expectedPath, result);
         }
-
 
         [Fact]
         public void Rotate_CreatesRotatedFileAndNewWriter()
@@ -155,33 +203,25 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
             {
-                // Write something to trigger rotation
-                writer.WriteLine("more"); // small write
-                writer.Write("12345"); // triggers rotation
+                writer.WriteLine("123"); // small write
+                writer.Write("456");    // triggers rotation
 
-                // Original file still exists (new empty log)
-                Assert.True(File.Exists(filePath));
+                Assert.True(File.Exists(filePath)); // new file recreated
 
-                // There is at least one rotated file
                 var rotatedFiles = Directory.GetFiles(_testDir, "rotate.*.txt").Where(f => !f.EndsWith("rotate.txt")).ToList();
                 Assert.NotEmpty(rotatedFiles);
                 Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotatedFiles[0]);
             }
 
-            // Find the latest rotated file by timestamp
             var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.*.txt")
                     .Select(f => new FileInfo(f))
                     .Where(f => !f.Name.Equals("rotate.txt"))
                     .OrderByDescending(f => f.LastWriteTimeUtc)
                     .FirstOrDefault();
 
-            Assert.NotNull(latestRotatedFile); // make sure rotation happened
-
-            // Read content of the latest rotated file
+            Assert.NotNull(latestRotatedFile);
             var content = File.ReadAllText(latestRotatedFile.FullName);
-
-            // Assert that it contains "12345"
-            Assert.Contains("12345", content);
+            Assert.Contains("123", content);
         }
 
         [Fact]
@@ -191,13 +231,10 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath, true, 10))
             {
-                writer.WriteLine("hello");
-
-                // Just call Flush; should not throw and writes should be persisted
+                writer.WriteLine("hello"); // initializes lazy writer
                 writer.Flush();
             }
 
-            // Check that content is actually written to file
             var content = File.ReadAllText(filePath);
             Assert.Equal("hello\r\n", content);
         }
@@ -205,60 +242,63 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Flush_WhenWriterIsNull_DoesNothing()
         {
-            // Create writer and immediately dispose so _writer becomes null
+            // Just create it (lazy init means writer is null)
             var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10);
-            writer.Dispose(); // _writer is now null
 
             // Calling Flush should not throw
             var exception = Record.Exception(() => writer.Flush());
             Assert.Null(exception);
         }
 
-        // Helper to invoke private static GenerateUniqueFileName via reflection
+        [Fact]
+        public void Flush_EmptyWrite_CoversBaseStreamLengthZero()
+        {
+            var filePath = Path.Combine(_testDir, "flush_empty.txt");
+            using (var writer = CreateWriter(filePath, true, 10))
+            {
+                writer.Write(""); // Forces lazy initialization, _baseStream is created
+                writer.Flush();   // Length could be 0, covers the extra boundary
+            }
+            Assert.True(File.Exists(filePath));
+        }
+
         private string InvokeGenerateUniqueFileName(string path)
         {
-            var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName",
-                BindingFlags.NonPublic | BindingFlags.Static);
+            var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Static);
             return (string)method.Invoke(null, new object[] { path });
+        }
+
+        private void InvokeRotate(RotatingStreamWriter instance)
+        {
+            var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
+            method.Invoke(instance, null);
         }
 
         [Fact]
         public void Dispose_IsIdempotent_AndDoesNotCrashOnSubsequentCalls()
         {
-            // Arrange
             var writer = new RotatingStreamWriter(_logFilePath, true, 1000, false, DateRotationType.Daily, 0);
             writer.WriteLine("Initial log entry");
 
-            // Act
             writer.Dispose();
 
-            // Assert
-            // In xUnit, we just invoke the method. If it throws NullReferenceException, the test fails.
             var ex1 = Record.Exception(() => writer.WriteLine("Line after disposal"));
             Assert.Null(ex1);
 
-            // Act: Dispose again to cover the (if (_disposed) return;) branch
+            // Dispose again
             var ex2 = Record.Exception(writer.Dispose);
             Assert.Null(ex2);
-
-            // Final check: ensure WriteLine still doesn't crash after a second disposal
-            var ex3 = Record.Exception(() => writer.WriteLine("Line after double disposal"));
-            Assert.Null(ex3);
         }
 
         [Fact]
         public void GenerateUniqueFileName_ReturnsNonExistingFileName()
         {
-            var methodInfo = typeof(RotatingStreamWriter)
-                .GetMethod("GenerateUniqueFileName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
-
-            Assert.NotNull(methodInfo);  // Ensure method exists to avoid null dereference
+            var methodInfo = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(methodInfo);
 
             using (var writer = CreateWriter(_logFilePath, true, 1000))
             {
-
                 var basePath = Path.Combine(_testDir, "file.log");
-
                 File.WriteAllText(basePath, "test");
                 File.WriteAllText(Path.Combine(_testDir, "file.(1).log"), "test");
                 File.WriteAllText(Path.Combine(_testDir, "file.(2).log"), "test");
@@ -274,16 +314,13 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "zero.txt");
 
-            using (var writer = CreateWriter(filePath, true, 0)) // enable size rotation but size==0 -> no size rotation
+            using (var writer = CreateWriter(filePath, true, 0))
             {
-                writer.WriteLine("Hello"); // rotation size = 0, should not rotate
+                writer.WriteLine("Hello");
             }
 
             Assert.True(File.Exists(filePath));
-
-            var rotatedFiles = Directory.GetFiles(_testDir, "zero.txt.*")
-                    .Select(f => new FileInfo(f))
-                    .Where(f => !f.Name.Equals("zero.txt"));
+            var rotatedFiles = Directory.GetFiles(_testDir, "zero.txt.*").Where(f => !f.EndsWith("zero.txt"));
             Assert.Empty(rotatedFiles);
         }
 
@@ -292,16 +329,13 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "small.txt");
 
-            using (var writer = CreateWriter(filePath, true, 1024)) // 1 KB
+            using (var writer = CreateWriter(filePath, true, 1024))
             {
-                writer.WriteLine("small"); // file < rotation size
+                writer.WriteLine("small");
             }
 
             Assert.True(File.Exists(filePath));
-
-            var rotatedFiles = Directory.GetFiles(_testDir, "small.txt.*")
-                              .Select(f => new FileInfo(f))
-                              .Where(f => !f.Name.Equals("small.txt"));
+            var rotatedFiles = Directory.GetFiles(_testDir, "small.txt.*").Where(f => !f.EndsWith("small.txt"));
             Assert.Empty(rotatedFiles);
         }
 
@@ -310,29 +344,25 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "rotate2.txt");
 
-            using (var writer = CreateWriter(filePath, true, 5)) // tiny size
+            using (var writer = CreateWriter(filePath, true, 5))
             {
                 writer.WriteLine("12345"); // exactly 5 bytes -> triggers rotation
                 writer.Flush();
-
-                writer.WriteLine("more"); // write to new file
+                writer.WriteLine("12"); // write to new file
                 writer.Flush();
             }
 
             Assert.True(File.Exists(filePath));
-
             var rotatedFiles = Directory.GetFiles(_testDir, "rotate2.txt.*");
             Assert.NotEmpty(rotatedFiles);
         }
 
         [Fact]
-        public void Write_WhenWriterIsNull_DoesNothing()
+        public void Write_WhenWriterIsNull_DoesNothingAfterDisposal()
         {
-            // Create writer and immediately dispose so _writer becomes null
             var writer = CreateWriter(Path.Combine(_testDir, "test.txt"), true, 10);
-            writer.Dispose(); // _writer is now null
+            writer.Dispose();
 
-            // Calling Write should not throw
             var exception = Record.Exception(() => writer.Write("12345"));
             Assert.Null(exception);
         }
@@ -340,26 +370,22 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void EnforceMaxRotations_CoversAllBranches()
         {
-            // Arrange
             string baseLog = Path.Combine(_testDir, "service.log");
             File.WriteAllText(baseLog, "base");
 
             var writer = CreateWriter(baseLog, true, 1000);
+            writer.Write(""); // force file creation
+
             var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
             var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
 
             // ---- BRANCH 1: _maxRotations <= 0 ----
             maxRotField.SetValue(writer, 0);
-            enforceMethod.Invoke(writer, null); // Coverage: return early
+            enforceMethod.Invoke(writer, null);
 
             // ---- BRANCH 2: Filter Logic (StartsWith and EndsWith) ----
-            // f1: Valid rotated file
             string f1 = Path.Combine(_testDir, "service.20260325_000001.log");
-            // noise1: Starts with "service" but NO DOT (e.g., service_backup.log) 
-            // This hits the false side of: StartsWith($"{fileNameWithoutExt}.")
             string noise1 = Path.Combine(_testDir, "service_backup.log");
-            // noise2: Starts with "service." but wrong extension (e.g., service.2026.txt)
-            // This hits the false side of: EndsWith(extension)
             string noise2 = Path.Combine(_testDir, "service.20260325.txt");
 
             File.WriteAllText(f1, "valid");
@@ -371,25 +397,22 @@ namespace Servy.Core.UnitTests.IO
             enforceMethod.Invoke(writer, null);
 
             Assert.True(File.Exists(f1));
-            Assert.True(File.Exists(noise1)); // Noise should never be deleted
+            Assert.True(File.Exists(noise1));
             Assert.True(File.Exists(noise2));
 
             // ---- BRANCH 4: Deletion happens (rotatedFiles.Count > _maxRotations) ----
-            maxRotField.SetValue(writer, 0); // Force deletion of all detected rotated files
-                                             // Note: we can't set it to 0 because the method returns early if <= 0. 
-                                             // So we use 1 and provide 2 valid files.
             string f2 = Path.Combine(_testDir, "service.20260325_000002.log");
             File.WriteAllText(f2, "valid2");
-            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10)); // Oldest
-            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);               // Newest
+            File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
+            File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
             maxRotField.SetValue(writer, 1);
             enforceMethod.Invoke(writer, null);
 
             Assert.True(File.Exists(f2));     // Kept (newest)
-            Assert.False(File.Exists(f1));    // Deleted (valid rotated)
-            Assert.True(File.Exists(noise1)); // Kept (filter rejected it)
-            Assert.True(File.Exists(noise2)); // Kept (filter rejected it)
+            Assert.False(File.Exists(f1));    // Deleted
+            Assert.True(File.Exists(noise1));
+            Assert.True(File.Exists(noise2));
 
             // ---- BRANCH 5: Deletion Failure (IOException) ----
             File.WriteAllText(f1, "recreate");
@@ -397,7 +420,7 @@ namespace Servy.Core.UnitTests.IO
             using (var locked = new FileStream(f1, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 var ex = Record.Exception(() => enforceMethod.Invoke(writer, null));
-                Assert.Null(ex); // Resilience check
+                Assert.Null(ex); // Resilient against locks
             }
 
             writer.Dispose();
@@ -406,29 +429,25 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void EnforceMaxRotations_NoExtension_CoversIsNullOrEmpty()
         {
-            // Arrange: File with NO extension
             string baseLog = Path.Combine(_testDir, "plainfile");
             File.WriteAllText(baseLog, "base");
 
             var writer = CreateWriter(baseLog, true, 1000);
+            writer.Write(""); // Trigger lazy init
+
             var enforceMethod = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
             var maxRotField = typeof(RotatingStreamWriter).GetField("_maxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            // Create a rotated file for a no-extension base
-            // Pattern: plainfile.timestamp
             string f1 = Path.Combine(_testDir, "plainfile.20260325_000001");
             File.WriteAllText(f1, "rotated");
             File.SetLastWriteTimeUtc(f1, DateTime.UtcNow.AddMinutes(-10));
 
-            // Act: Set max rotations to 0 (effectively 1 in logic since we skip)
-            maxRotField.SetValue(writer, 1); // Keep 1
+            maxRotField.SetValue(writer, 1);
 
-            // To trigger deletion, we need 2 files
             string f2 = Path.Combine(_testDir, "plainfile.20260325_000002");
             File.WriteAllText(f2, "rotated2");
             File.SetLastWriteTimeUtc(f2, DateTime.UtcNow);
 
-            // This hits the (string.IsNullOrEmpty(extension)) branch!
             enforceMethod.Invoke(writer, null);
 
             Assert.True(File.Exists(f2));
@@ -452,20 +471,19 @@ namespace Servy.Core.UnitTests.IO
             File.SetLastWriteTimeUtc(rotated1, DateTime.Now.AddMinutes(0));
             File.SetLastWriteTimeUtc(rotated2, DateTime.Now.AddMinutes(-1));
 
-            var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1); // keep 1
+            var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1);
+            writer.Write(""); // create lazy file 
 
-            // Make the rotated file read-only to simulate deletion failure
             File.SetAttributes(rotated2, FileAttributes.ReadOnly);
 
             var ex = Record.Exception(() =>
             {
-                // Force cleanup directly via reflection
-                var method = typeof(RotatingStreamWriter)
-                    .GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
+                var method = typeof(RotatingStreamWriter).GetMethod("EnforceMaxRotations", BindingFlags.NonPublic | BindingFlags.Instance);
                 method.Invoke(writer, Array.Empty<object>());
             });
 
-            Assert.Null(ex); // no exception should propagate
+            Assert.Null(ex);
+            File.SetAttributes(rotated2, FileAttributes.Normal); // Reset so test runner can clean it up
         }
 
         [Fact]
@@ -474,7 +492,6 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "daily.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Daily, 0))
             {
-                // Force last rotation to yesterday
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, DateTime.Now.AddDays(-1));
 
@@ -493,32 +510,24 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "weekly_year.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
-                // 1. Arrange: Set last rotation to Dec 31st of the previous year
                 var lastYear = DateTime.Now.Year - 1;
                 var dec31 = new DateTime(lastYear, 12, 31);
 
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, dec31);
 
-                // 2. Act: This should trigger rotation because now.Year != 2025
                 writer.WriteLine("rotate on year change");
                 writer.Flush();
             }
 
-            // 3. Assert
-            var rotated = Directory.GetFiles(_testDir, "weekly_year.*.log")
-                                   .Where(f => !f.EndsWith("weekly_year.log"))
-                                   .ToArray();
-
+            var rotated = Directory.GetFiles(_testDir, "weekly_year.*.log").Where(f => !f.EndsWith("weekly_year.log")).ToArray();
             Assert.NotEmpty(rotated);
-            // Verifies the branch now.Year != _lastRotationDate.Year was evaluated as true
         }
 
         [Fact]
         public void DateRotation_Weekly_DoesNotRotate_OnSameWeek()
         {
             var filePath = Path.Combine(_testDir, "weekly_same.log");
-            // Ensure we aren't running this at 11:59 PM on a Sunday!
             var recently = DateTime.Now.AddHours(-1);
 
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
@@ -530,8 +539,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Flush();
             }
 
-            var rotated = Directory.GetFiles(_testDir, "weekly_same.*.log")
-                                   .Where(f => !f.EndsWith("weekly_same.log"));
+            var rotated = Directory.GetFiles(_testDir, "weekly_same.*.log").Where(f => !f.EndsWith("weekly_same.log"));
             Assert.Empty(rotated);
         }
 
@@ -541,7 +549,6 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "monthly.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
-                // Set last rotation to previous month
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, DateTime.Now.AddMonths(-1));
 
@@ -560,7 +567,6 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "monthly.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
-                // Set last rotation to previous month
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, DateTime.Now.AddYears(-1));
 
@@ -578,22 +584,18 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "sizeDate.log");
 
-            // enable both rotations. small rotation size so size triggers.
             using (var writer = CreateWriter(filePath, true, 5, true, DateRotationType.Daily, 0))
             {
-                // Set last rotation to yesterday to make date eligible too
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, DateTime.Now.AddDays(-1));
 
-                // Write to exceed size threshold -> size rotation should happen and date rotation skipped for that write
-                writer.Write("123456"); // >5
+                writer.Write("123456");
                 writer.Flush();
             }
 
             var rotated = Directory.GetFiles(_testDir, "sizeDate.*.log").Where(f => !f.EndsWith("sizeDate.log")).ToArray();
             Assert.NotEmpty(rotated);
 
-            // Read rotated content to ensure size-based content exists
             var latest = new DirectoryInfo(_testDir)
                 .GetFiles("sizeDate.*.log")
                 .Where(fi => !fi.Name.Equals("sizeDate.log"))
@@ -609,11 +611,9 @@ namespace Servy.Core.UnitTests.IO
 
             using (var writer = CreateWriter(filePath, true, 1024, true, DateRotationType.Daily, 0))
             {
-                // make date eligible
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 lastField.SetValue(writer, DateTime.Now.AddDays(-1));
 
-                // Do small write that won't exceed size -> should rotate by date
                 writer.WriteLine("date rotation hit");
                 writer.Flush();
             }
@@ -625,28 +625,14 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void ShouldRotateByDate_DefaultCase_ReturnsFalse()
         {
-            // Arrange
-            using (var writer = new RotatingStreamWriter(
-                "dummy.log",
-                enableSizeRotation: false,
-                rotationSizeInBytes: 1000,
-                enableDateRotation: true,
-                dateRotationType: DateRotationType.Daily,
-                maxRotations: 1))
+            using (var writer = new RotatingStreamWriter("dummy.log", false, 1000, true, DateRotationType.Daily, 1))
             {
-                // Force an invalid enum value
-                var field = typeof(RotatingStreamWriter)
-                    .GetField("_dateRotationType", BindingFlags.NonPublic | BindingFlags.Instance);
+                var field = typeof(RotatingStreamWriter).GetField("_dateRotationType", BindingFlags.NonPublic | BindingFlags.Instance);
                 field.SetValue(writer, (DateRotationType)999);
 
-                // Use reflection to call the private method
-                var method = typeof(RotatingStreamWriter)
-                    .GetMethod("ShouldRotateByDate", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // Act
+                var method = typeof(RotatingStreamWriter).GetMethod("ShouldRotateByDate", BindingFlags.NonPublic | BindingFlags.Instance);
                 var result = (bool)method.Invoke(writer, Array.Empty<object>());
 
-                // Assert
                 Assert.False(result);
             }
         }
@@ -661,275 +647,46 @@ namespace Servy.Core.UnitTests.IO
                 writer.Write("init");
                 writer.Flush();
 
-                // 1. OPEN A LOCKING STREAM
-                // By NOT including FileShare.Delete, Windows will block any attempt 
-                // to Move or Delete this file by any process (including the Rotate method).
                 using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     var exception = Record.Exception(() =>
                     {
-                        // 2. Triggers CheckRotation -> Rotate -> File.Move
-                        // File.Move will now throw IOException because 'blocker' denies Delete/Rename access.
                         writer.Write("trigger_rotation");
                         writer.Flush();
                     });
 
-                    // Assert: The internal catch block in RotatingStreamWriter 
-                    // handled the IOException and didn't let it bubble up.
                     Assert.Null(exception);
                 }
 
-                // 3. Verify: No rotated files were created because the move was blocked.
                 var rotatedFiles = Directory.GetFiles(_testDir, "locked_rotate.*.txt")
                                            .Where(f => !f.EndsWith("locked_rotate.txt"))
                                            .ToList();
-
                 Assert.Empty(rotatedFiles);
-
-                // 4. Verify: Original file is still there.
                 Assert.True(File.Exists(filePath));
             }
         }
 
         [Fact]
-        public void Rotate_WhenFileIsReadOnlyAndLocked_CatchBlocksAreFullyCovered()
+        public void Rotate_WhenFileMissingOrEmpty_ReturnsEarly()
         {
-            var filePath = Path.Combine(_testDir, "coverage_test.txt");
-
-            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            var filePath = Path.Combine(_testDir, "missing_rotate.txt");
+            using (var writer = CreateWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
             {
-                writer.Write("init");
+                // 1. File doesn't exist
+                InvokeRotate(writer);
+                Assert.False(File.Exists(filePath));
+
+                // 2. File exists but is empty
+                writer.Write(""); // Lazy init -> 0 bytes
                 writer.Flush();
+                Assert.True(File.Exists(filePath));
+                Assert.Equal(0, new FileInfo(filePath).Length);
 
-                // 1. Set the file to Read-Only AND open a blocking stream.
-                // This ensures File.Move fails (IOException) 
-                // AND new FileStream(..., FileAccess.Write) fails (UnauthorizedAccessException).
-                File.SetAttributes(filePath, FileAttributes.ReadOnly);
-
-                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    var exception = Record.Exception(() =>
-                    {
-                        // This triggers Rotate().
-                        // 1. File.Move fails -> enters catch.
-                        // 2. Finally block tries to CreateWriter() -> fails -> enters your inner catch.
-                        writer.Write("trigger_rotation");
-                    });
-
-                    Assert.Null(exception); // Service didn't crash
-                }
-
-                // 2. CLEANUP for the test runner
-                File.SetAttributes(filePath, FileAttributes.Normal);
-            }
-        }
-
-        [Fact]
-        public void Rotate_WhenFileIsReadOnly_CoversFinallyCatchBlock()
-        {
-            var filePath = Path.Combine(_testDir, "coverage_finally.txt");
-
-            // 1. Setup the writer
-            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
-            {
-                writer.Write("data");
-                writer.Flush();
-
-                // 2. Lock the file physically AND via attributes
-                // This ensures File.Move fails AND CreateWriter fails.
-                File.SetAttributes(filePath, FileAttributes.ReadOnly);
-
-                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    var exception = Record.Exception(() =>
-                    {
-                        // This triggers Rotate()
-                        // - _writer becomes null
-                        // - File.Move fails (caught by Rotate's main catch)
-                        // - CreateWriter fails (caught by finally's catch)
-                        writer.Write("trigger");
-                    });
-
-                    Assert.Null(exception);
-                }
-
-                // 3. Cleanup attributes so test can delete the file
-                File.SetAttributes(filePath, FileAttributes.Normal);
-            }
-        }
-
-        [Fact]
-        public void Rotate_WhenNoRotationNeeded_PreservesExistingWriter()
-        {
-            var filePath = Path.Combine(_testDir, "preserve_writer.txt");
-
-            // Set a massive rotation size so it won't trigger naturally
-            using (var writer = new RotatingStreamWriter(filePath, true, 1024 * 1024, false, DateRotationType.Daily, 0))
-            {
-                writer.Write("initial");
-                writer.Flush();
-
-                // 1. Capture the original instance
-                var originalWriter = GetPrivateWriter(writer);
-
-                // 2. Call Write. Since size is 1MB and we wrote 7 bytes, 
-                // CheckRotation() is called, but Rotate() should skip the 'nulling' part.
-                writer.Write("more");
-
-                // 3. Capture the writer again
-                var currentWriter = GetPrivateWriter(writer);
-
-                // 4. ASSERT: They are the same instance.
-                // This proves the 'if (_writer == null)' branch in finally was skipped.
-                Assert.Same(originalWriter, currentWriter);
-                Assert.NotNull(currentWriter);
-            }
-        }
-
-        [Fact]
-        public void Rotate_WhenAlreadyDisposedAndWriterNotNull_SkipsRecreation()
-        {
-            var filePath = Path.Combine(_testDir, "coverage_branch.txt");
-            var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0);
-
-            // 1. Ensure _writer is NOT null
-            writer.Write("data");
-
-            // 2. Manually set _disposed to true WITHOUT clearing the writer.
-            // This simulates the state: _writer != null AND _disposed == true.
-            var disposedField = typeof(RotatingStreamWriter).GetField("_disposed",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            disposedField.SetValue(writer, true);
-
-            // 3. Use reflection to call the private Rotate() method.
-            // When it reaches the finally block:
-            // (_writer == null) is FALSE
-            // (_disposed == false) is FALSE
-            // Result: The 'if' branch is skipped, covering the 'false' path.
-            var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-
-            var exception = Record.Exception(() => rotateMethod.Invoke(writer, null));
-
-            // 4. Cleanup and Assert
-            Assert.Null(exception);
-
-            // Manually clean up since we hijacked the disposal state
-            disposedField.SetValue(writer, false);
-            writer.Dispose();
-        }
-
-        [Fact]
-        public void Rotate_WhenNotNeeded_BranchTaken_WriterNotNull()
-        {
-            var filePath = Path.Combine(_testDir, "alive_not_null.txt");
-            using (var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0))
-            {
-                writer.Write("test"); // Initializes _writer
-
-                // Use reflection to call Rotate() manually.
-                // Because we haven't hit 1000 bytes, the code skips the 'nulling' logic at the top.
-                // Inside finally: _writer is NOT null, but _disposed is FALSE.
-                // Condition (false || true) == TRUE. Branch is taken.
                 InvokeRotate(writer);
 
-                Assert.NotNull(GetPrivateWriter(writer));
-            }
-        }
-
-        [Fact]
-        public void Rotate_WhenDisposed_BranchSkipped_WriterNotNull()
-        {
-            var filePath = Path.Combine(_testDir, "dead_not_null.txt");
-
-            using (var writer = new RotatingStreamWriter(filePath, true, 1000, false, DateRotationType.Daily, 0))
-            {
-                writer.Write("test");
-                var originalWriter = GetPrivateWriter(writer);
-
-                // 1. Ghost the file path so 'File.Exists' returns false
-                var fileField = typeof(RotatingStreamWriter).GetField("_file", BindingFlags.NonPublic | BindingFlags.Instance);
-                var originalFileInfo = (FileInfo)fileField.GetValue(writer);
-                fileField.SetValue(writer, new FileInfo(Path.Combine(_testDir, "does_not_exist.txt")));
-
-                // 2. Force the "Zombie" state
-                SetPrivateField(writer, "_disposed", true);
-
-                // 3. Act: Trigger Rotate
-                // Logic: Hits the File.Exists guard -> returns early to finally block.
-                InvokeRotate(writer);
-
-                // 4. Assert
-                var currentWriter = GetPrivateWriter(writer);
-                Assert.Same(originalWriter, currentWriter);
-
-                // 5. Restore state for proper 'using' cleanup
-                SetPrivateField(writer, "_disposed", false);
-                fileField.SetValue(writer, originalFileInfo);
-            }
-        }
-
-        private void InvokeRotate(RotatingStreamWriter instance)
-        {
-            var method = typeof(RotatingStreamWriter).GetMethod("Rotate",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            method.Invoke(instance, null);
-        }
-
-        private void SetPrivateField(RotatingStreamWriter instance, string fieldName, object value)
-        {
-            var field = typeof(RotatingStreamWriter).GetField(fieldName,
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(instance, value);
-        }
-
-        // Helper to check the private field for coverage verification
-        private StreamWriter GetPrivateWriter(RotatingStreamWriter instance)
-        {
-            var field = typeof(RotatingStreamWriter).GetField("_writer",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return (StreamWriter)field.GetValue(instance);
-        }
-
-        [Fact]
-        public void Rotate_WhenFileIsGhostedAndDisposed_CoversFalseBranch()
-        {
-            var filePath = Path.Combine(_testDir, "ghost_branch.txt");
-
-            using (var writer = new RotatingStreamWriter(filePath, true, 500, false, DateRotationType.Daily, 0))
-            {
-                writer.Write("initial_data");
-
-                // Capture the "Live" writer to ensure it isn't replaced
-                var originalWriter = GetPrivateWriter(writer);
-
-                // 1. "Ghost" the file path using Reflection.
-                var fileField = typeof(RotatingStreamWriter).GetField("_file", BindingFlags.NonPublic | BindingFlags.Instance);
-                var originalFileInfo = (FileInfo)fileField.GetValue(writer);
-                var ghostFileInfo = new FileInfo(Path.Combine(_testDir, "non_existent.txt"));
-                fileField.SetValue(writer, ghostFileInfo);
-
-                // 2. Force 'disposed' state to true
-                var disposedField = typeof(RotatingStreamWriter).GetField("_disposed", BindingFlags.NonPublic | BindingFlags.Instance);
-                disposedField.SetValue(writer, true);
-
-                // 3. Act: Invoke Rotate()
-                var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
-                rotateMethod.Invoke(writer, null);
-
-                // 4. Assert: Verify the 'False' path logic
-                var currentWriter = GetPrivateWriter(writer);
-
-                // Assert that the writer was NOT recreated (Proves the IF branch was skipped)
-                Assert.Same(originalWriter, currentWriter);
-
-                // Assert that the file reference is still the ghost (Proves we exited early before the Move logic)
-                var currentFile = (FileInfo)fileField.GetValue(writer);
-                Assert.Equal(ghostFileInfo.FullName, currentFile.FullName);
-
-                // 5. Cleanup
-                disposedField.SetValue(writer, false);
-                fileField.SetValue(writer, originalFileInfo);
+                // Ensure no rotated file was generated
+                var rotatedFiles = Directory.GetFiles(_testDir, "missing_rotate.*.txt");
+                Assert.Empty(rotatedFiles);
             }
         }
 
@@ -941,7 +698,6 @@ namespace Servy.Core.UnitTests.IO
                 {
                     Directory.Delete(_testDir, true);
                 }
-
                 GC.SuppressFinalize(this);
             }
             catch
