@@ -77,6 +77,7 @@ Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "
 Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_cli
 Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
+Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 
 ; CLI appsettings.json (only copy if not present, and never uninstall)

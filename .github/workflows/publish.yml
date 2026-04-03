@@ -534,6 +534,7 @@ jobs:
 
           # PowerShell module
           Copy-Item "src/Servy.CLI/Servy.psm1" $pkg -Force
+          Copy-Item "src/Servy.CLI/Servy.psd1" $pkg -Force
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
           
           # Task Scheduler setup
