@@ -185,9 +185,18 @@ namespace Servy.Core.Helpers
         #region Private Methods
 
         /// <summary>
-        /// Queries the Service Control Manager and Registry to get all running services 
-        /// whose executable matches the given wrapper filename.
+        /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
+        /// associated with a specific executable.
         /// </summary>
+        /// <param name="wrapperExe">The filename of the executable to search for (e.g., "Servy.Service.exe").</param>
+        /// <returns>A list containing the names of all currently running services that match the specified executable.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExe"/> is null, empty, or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
+        /// <remarks>
+        /// This method bypasses WMI to prevent COM timeout issues in large-scale deployments. 
+        /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
+        /// and safely parses out executable paths that contain quotes or command-line arguments.
+        /// </remarks>
         private List<string> GetRunningServices(string wrapperExe)
         {
             if (string.IsNullOrWhiteSpace(wrapperExe))
