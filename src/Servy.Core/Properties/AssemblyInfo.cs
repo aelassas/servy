@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 //      Numéro de build
 //      Révision
 //
-[assembly: AssemblyVersion("7.7.0.0")]
-[assembly: AssemblyFileVersion("7.7.0.0")]
+[assembly: AssemblyVersion("7.8.0.0")]
+[assembly: AssemblyFileVersion("7.8.0.0")]
 
 [assembly: InternalsVisibleTo("Servy.Core.UnitTests")]
