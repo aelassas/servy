@@ -100,7 +100,7 @@
             Tags       = @('Windows', 'Service', 'Management', 'CLI', 'Administration', 'Servy')
 
             # A URL to the license for this module.
-            # LicenseUri = ''
+            LicenseUri = 'https://github.com/aelassas/servy/blob/main/LICENSE.txt'
 
             # A URL to the main website for this project.
             ProjectUri = 'https://github.com/aelassas/servy'
@@ -122,7 +122,7 @@
     } # End of PrivateData hashtable
 
     # HelpInfo URI of this module
-    # HelpInfoURI = ''
+    HelpInfoURI = 'https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module'
 
     # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
     # DefaultCommandPrefix = ''
