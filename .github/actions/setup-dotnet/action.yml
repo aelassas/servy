@@ -1,5 +1,13 @@
+# ==============================================================================
+# GitHub Composite Action — Setup Custom .NET
+# ------------------------------------------------------------------------------
+# Security: Prevents script injection by mapping user-controlled inputs 
+# to environment variables instead of using inline expressions in 'run' blocks.
+# ==============================================================================
+
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
+
 inputs:
   version:
     description: '.NET version to install'
@@ -11,11 +19,17 @@ runs:
   steps:
     - name: Install .NET SDK
       shell: powershell
+      # Map the input to an env variable to prevent command injection
+      env:
+        DOTNET_VERSION: ${{ inputs.version }}
       run: |
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
-        ./dotnet-install.ps1 -Channel "${{ inputs.version }}" -InstallDir $installDir
+        
+        # Use the environment variable in the script
+        ./dotnet-install.ps1 -Channel "$env:DOTNET_VERSION" -InstallDir $installDir
+        
         Add-Content -Path $env:GITHUB_PATH -Value $installDir
 
     - name: Check .NET version
