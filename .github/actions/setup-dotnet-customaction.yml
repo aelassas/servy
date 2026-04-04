@@ -1,0 +1,23 @@
+name: 'Setup Custom .NET'
+description: 'Installs a specific .NET SDK version using the dotnet-install script'
+inputs:
+  version:
+    description: '.NET version to install'
+    required: true
+    default: '10.0.x'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install .NET SDK
+      shell: powershell
+      run: |
+        $url = "https://dot.net/v1/dotnet-install.ps1"
+        $installDir = "$env:RUNNER_TEMP\dotnet"
+        Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
+        ./dotnet-install.ps1 -Version "${{ inputs.version }}" -InstallDir $installDir
+        Add-Content -Path $env:GITHUB_PATH -Value $installDir
+
+    - name: Check .NET version
+      shell: pwsh
+      run: dotnet --version

@@ -65,13 +65,8 @@ jobs:
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
-      - name: Install the latest .NET SDK
-        shell: powershell
-        run: |
-          $url = "https://dot.net/v1/dotnet-install.ps1"
-          Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
-          ./dotnet-install.ps1 -Version "latest" -InstallDir "$env:RUNNER_TEMP\dotnet"
-          Add-Content -Path $env:GITHUB_PATH -Value "$env:RUNNER_TEMP\dotnet"
+      - name: Install .NET
+        uses: ./.github/actions/setup-dotnet-custom
 
       - name: Check .NET version
         run: dotnet --version

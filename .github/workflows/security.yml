@@ -1,0 +1,114 @@
+# ===========================================
+# GitHub Actions Workflow — Security Audit
+# -------------------------------------------
+# Performs security checks for the Servy project:
+# 1. Dependency Scanning (NuGet Audit)
+# 2. Static Analysis (CodeQL)
+# 3. Secret Scanning (Gitleaks)
+# ===========================================
+
+name: security-audit
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '30 4 * * 1' # Runs every Monday at 04:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+# Ensure only one concurrent deployment runs at a time
+concurrency:
+  group: security-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 1. Dependency Scanning
+  # Uses native .NET NuGet Audit to check for vulnerable packages
+  dependency-scan:
+    timeout-minutes: 10
+    name: Dependency Scanning
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet-custom
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore Servy.sln
+
+      - name: Scan for vulnerable packages
+        shell: powershell
+        run: |
+          $results = dotnet list Servy.sln package --vulnerable --include-transitive
+          Write-Output $results
+
+          if ($LASTEXITCODE -ne 0 -or $results -match "has the following vulnerable packages") {
+            Write-Error "Vulnerable packages found!"
+            exit 1
+          }
+
+  # 2. Static Analysis (SAST)
+  # Uses GitHub CodeQL to find security vulnerabilities in the C# code
+  static-analysis:
+    timeout-minutes: 10
+    name: Static Analysis (CodeQL)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          queries: security-extended,security-and-quality
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet-custom
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Build for Analysis
+        run: dotnet build Servy.sln --configuration Release
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+
+  # 3. Secret Scanning
+  # Checks the commit history for leaked credentials, API keys, and tokens
+  secret-scanning:
+    timeout-minutes: 10
+    name: Secret Scanning
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Full history is needed for secret scanning
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .github/gitleaks.toml
