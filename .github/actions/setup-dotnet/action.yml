@@ -4,7 +4,7 @@ inputs:
   version:
     description: '.NET version to install'
     required: true
-    default: '10.0.x'
+    default: '10.0'
 
 runs:
   using: "composite"
