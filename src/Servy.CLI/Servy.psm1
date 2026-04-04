@@ -565,6 +565,7 @@ function Install-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name,
 
     [string] $DisplayName,
@@ -572,6 +573,7 @@ function Install-ServyService {
     [string] $Description,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Path,
 
     [string] $StartupDir,
@@ -735,6 +737,7 @@ function Uninstall-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name
   )
 
@@ -773,6 +776,7 @@ function Start-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name
   )
 
@@ -811,6 +815,7 @@ function Stop-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name
   )
 
@@ -849,6 +854,7 @@ function Restart-ServyService {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name
   )
 
@@ -888,6 +894,7 @@ function Get-ServyServiceStatus {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name
   )
 
@@ -932,6 +939,7 @@ function Export-ServyServiceConfig {
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name,
 
     [Parameter(Mandatory = $true)]
@@ -994,6 +1002,7 @@ function Import-ServyServiceConfig {
     [string] $ConfigFileType,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Path,
     [switch] $Install
   )
