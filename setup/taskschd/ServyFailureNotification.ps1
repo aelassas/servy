@@ -5,9 +5,9 @@
 .DESCRIPTION
     This script:
       1. Filters the Windows Application event log for errors related to 'Servy'.
-      2. Retrieves the most recent error.
-      3. Parses the error message to extract the service name and log text.
-      4. Shows a Windows toast notification with the error details.
+      2. Retrieves all new errors since the last execution using a timestamp file.
+      3. Parses the error messages to extract service names and log text.
+      4. Shows individual Windows toast notifications for each failure.
 
 .NOTES
     Author : Akram El Assas
@@ -46,14 +46,39 @@ function Show-Notification {
     $toast = [Windows.UI.Notifications.ToastNotification]::new($serializedXml)
     $toast.Tag = "Servy"
     $toast.Group = "Servy"
-    $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(1)
+    $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     $notifier.Show($toast);
 }
 
 # -------------------------------
-# Get latest Servy error event
+# 1. Determine Script Root (PS 2.0+ Compatible)
+# -------------------------------
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+    $ModuleRoot = $PSScriptRoot
+} else {
+    $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+# Using a distinct timestamp file for toast notifications
+$timestampFile = Join-Path $ModuleRoot "last-processed-toast.dat"
+
+# -------------------------------
+# 2. Read Last Processed Timestamp
+# -------------------------------
+$lastProcessed = $null
+if (Test-Path $timestampFile) {
+    try {
+        $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
+    }
+    catch { 
+      Write-Warning "Could not parse timestamp file. Will process all available events."
+    }
+}
+
+# -------------------------------
+# 3. Build Filter and Query Events
 # -------------------------------
 $filter = @{
     LogName = 'Application'
@@ -61,10 +86,53 @@ $filter = @{
     Level = 2  # Error
 }
 
-$lastError = Get-WinEvent -FilterHashtable $filter -MaxEvents 1 -ErrorAction SilentlyContinue
+if ($lastProcessed) {
+    $filter.StartTime = $lastProcessed
+}
 
-if ($lastError) {
-    $message = $lastError.Message
+try {
+    $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
+}
+catch {
+    exit 0
+}
+
+# -------------------------------
+# 4. Precision Filtering
+# -------------------------------
+if ($lastProcessed) {
+    $errors = @($errors | Where-Object { $_.TimeCreated -gt $lastProcessed })
+}
+
+if ($errors.Count -eq 0) {
+    exit 0
+}
+
+# -------------------------------
+# 5. Update Timestamp File
+# -------------------------------
+# Adding 1 tick to ensure we don't pick up the same event again next time
+$newestTimestamp = $errors[0].TimeCreated.AddTicks(1)
+$newestTimestamp.ToString("o") | Out-File $timestampFile -Force
+
+# -------------------------------
+# 6. Process Events & Send Emails
+# -------------------------------
+# Sort ascending so emails are sent in the exact chronological order the errors occurred
+if ($null -eq $lastProcessed) {
+    # FIRST RUN LOGIC:
+    # We only notify for the single most recent event to avoid flooding.
+    # $errors[0] is always the newest because Get-WinEvent returns newest-first.
+    $eventsToProcess = @($errors[0])
+    Write-Host "No timestamp found. Notifying only for the most recent error to avoid flooding."
+} else {
+    # NORMAL RUN LOGIC:
+    # Sort ascending so emails are sent in the order they actually happened.
+    $eventsToProcess = $errors | Sort-Object TimeCreated
+}
+
+foreach ($evt in $eventsToProcess) {
+    $message = $evt.Message
     if ($message -match "^\[(.+?)\]\s*(.+)$") {
         $serviceName = $matches[1]
         $logText = $matches[2]
@@ -74,6 +142,7 @@ if ($lastError) {
     }
 
     Show-Notification -ToastTitle "Servy - $serviceName" -ToastText $logText
-} else {
-    Write-Host "No Servy error events found."
+    
+    # Brief pause to help the Action Center sequence the toasts properly
+    Start-Sleep -Milliseconds 500
 }

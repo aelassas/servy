@@ -5,9 +5,10 @@
 .DESCRIPTION
     This script performs the following:
       1. Filters the Windows Application event log for errors related to 'Servy'.
-      2. Retrieves the most recent error.
-      3. Parses the error message to extract the service name and log text.
-      4. Sends a notification email to the administrator with the details.
+      2. Retrieves all new errors since the last execution.
+      3. Parses the error messages to extract the service name and log text.
+      4. Sends a notification email to the administrator for each failure.
+      5. Saves the timestamp of the latest event to prevent duplicate alerts.
 
 .PARAMETER None
     No parameters are required. All settings (SMTP, recipient, etc.) are configured inside the script.
@@ -56,9 +57,34 @@ function Send-NotificationEmail {
 
     Send-MailMessage -From $from -To $to -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -Credential $cred -UseSsl
 }
+# -------------------------------
+# 1. Determine Script Root (PS 2.0+ Compatible)
+# -------------------------------
+if ($PSVersionTable.PSVersion.Major -ge 3) {
+  # PS3+ has automatic $PSScriptRoot
+  $ModuleRoot = $PSScriptRoot
+} else {
+  # PS2 does not have $PSScriptRoot
+  $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+}
+
+$timestampFile = Join-Path $ModuleRoot "last-processed-email.dat"
 
 # -------------------------------
-# Get the latest Servy error event
+# 2. Read Last Processed Timestamp
+# -------------------------------
+$lastProcessed = $null
+if (Test-Path $timestampFile) {
+    try {
+        $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
+    }
+    catch { 
+        Write-Warning "Could not parse timestamp file. Will process all available events."
+    }
+}
+
+# -------------------------------
+# 3. Build Filter and Query Events
 # -------------------------------
 $filter = @{
     LogName = 'Application'
@@ -66,10 +92,60 @@ $filter = @{
     Level = 2  # Error
 }
 
-$lastError = Get-WinEvent -FilterHashtable $filter -MaxEvents 1 -ErrorAction SilentlyContinue
+# "Filter Left" - let the Event Log service handle the time filtering natively
+if ($lastProcessed) {
+    $filter.StartTime = $lastProcessed
+}
 
-if ($lastError) {
-    $message = $lastError.Message
+try {
+    # Get-WinEvent returns events in descending order (newest first)
+    $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
+}
+catch {
+    # Exiting cleanly if no new events match the filter
+    exit 0
+}
+
+# -------------------------------
+# 4. Precision Filtering
+# -------------------------------
+# StartTime uses >= and truncates ticks, so the last event is returned again.
+# We must explicitly filter it out to ensure we only have strictly NEW events.
+if ($lastProcessed) {
+    $errors = @($errors | Where-Object { $_.TimeCreated -gt $lastProcessed })
+}
+
+# If no strictly new events remain, exit cleanly
+if ($errors.Count -eq 0) {
+    exit 0
+}
+
+# -------------------------------
+# 5. Update Timestamp File
+# -------------------------------
+# The first item in the array is the most recent event. Save its timestamp.
+# Adding 1 tick ensures the exact same event isn't pulled again on the next run.
+$newestTimestamp = $errors[0].TimeCreated.AddTicks(1)
+$newestTimestamp.ToString("o") | Out-File $timestampFile -Force
+
+# -------------------------------
+# 6. Process Events & Send Emails
+# -------------------------------
+# Sort ascending so emails are sent in the exact chronological order the errors occurred
+if ($null -eq $lastProcessed) {
+    # FIRST RUN LOGIC:
+    # We only notify for the single most recent event to avoid flooding.
+    # $errors[0] is always the newest because Get-WinEvent returns newest-first.
+    $eventsToProcess = @($errors[0])
+    Write-Host "No timestamp found. Notifying only for the most recent error to avoid flooding."
+} else {
+    # NORMAL RUN LOGIC:
+    # Sort ascending so emails are sent in the order they actually happened.
+    $eventsToProcess = $errors | Sort-Object TimeCreated
+}
+
+foreach ($evt in $eventsToProcess) {
+    $message = $evt.Message
     if ($message -match "^\[(.+?)\]\s*(.+)$") {
         $serviceName = $matches[1]
         $logText = $matches[2]
@@ -79,10 +155,10 @@ if ($lastError) {
     }
 
     $subject = "Servy - $serviceName Failure"
-    $body    = "A failure has been detected in service '$serviceName'." + [Environment]::NewLine + "Details: $logText"
+    $body = "A failure has been detected in service '$serviceName'." +
+            [Environment]::NewLine + "Details: $logText"
     $htmlBody = $body -replace "`r?`n", "<br>"
-
+    
     Send-NotificationEmail -Subject $subject -Body $htmlBody
-} else {
-    Write-Host "No Servy error events found."
+    Write-Host "Email Notification sent for '$serviceName'."
 }

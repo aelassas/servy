@@ -435,3 +435,5 @@ coveragereport/
 .signpath*
 
 repomix-output.xml
+
+*.dat
