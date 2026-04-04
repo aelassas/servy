@@ -228,6 +228,8 @@ function Invoke-ServyCli {
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
   $process = $null
+  $stdout = $null
+  $stderr = $null
   $exitCode = 0  # Initialize a variable to hold the exit code
 
   try {
@@ -249,8 +251,8 @@ function Invoke-ServyCli {
     $process.Start() | Out-Null
     
     # Read streams to capture output
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
+    try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
+    try { $stderr = $process.StandardError.ReadToEnd() } catch { }
     $process.WaitForExit()
 
     # CRITICAL: Capture the exit code while the process object is still active
@@ -261,7 +263,10 @@ function Invoke-ServyCli {
     }
   }
   catch {
-    throw "$($ErrorContext): $_"
+    $partialOutput = ""
+    if (-not [string]::IsNullOrEmpty($stdout)) { $partialOutput += " Stdout: $($stdout.TrimEnd())" }
+    if (-not [string]::IsNullOrEmpty($stderr)) { $partialOutput += " Stderr: $($stderr.TrimEnd())" }
+    throw "$($ErrorContext): $_$partialOutput"
   }
   finally {
     if ($null -ne $process) {
