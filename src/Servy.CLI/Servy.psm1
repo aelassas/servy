@@ -155,7 +155,7 @@ function Add-Arg {
 
     # Use doubled quotes (PowerShell's native escaping)
     # This escapes quotes for PowerShell, but the external exe sees single quotes
-    $escapedValue = $value.Replace('"', '""')
+    $escapedValue = $value.Replace('"', '\"')
 
     # 3. Explicitly cast to array during addition to prevent string concatenation 
     # if $list somehow became a single string.
