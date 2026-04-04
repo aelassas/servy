@@ -145,7 +145,7 @@ namespace Servy.Service.UnitTests
             service.InvokeSetupHealthMonitoring(options);
 
             // Assert
-            mockTimerFactory.Verify(f => f.Create(options.HeartbeatInterval * 1000), Times.Once);
+            mockTimerFactory.Verify(f => f.Create(options.HeartbeatInterval * 1000.0), Times.Once);
 
             mockTimer.VerifyAdd(t => t.Elapsed += It.IsAny<ElapsedEventHandler>(), Times.Once);
             mockTimer.VerifySet(t => t.AutoReset = true, Times.Once);

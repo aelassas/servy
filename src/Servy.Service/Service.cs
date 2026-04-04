@@ -1630,7 +1630,7 @@ namespace Servy.Service
 
             if (options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
             {
-                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000);
+                _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000.0);
                 _healthCheckTimer.Elapsed += CheckHealth;
                 _healthCheckTimer.AutoReset = true;
                 _healthCheckTimer.Start();
