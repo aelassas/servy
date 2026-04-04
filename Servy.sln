@@ -111,9 +111,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Service", "src\Servy.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "actions", "actions", "{FED01F22-71C4-4504-9BC6-217F6DE9F152}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-dotnet-customaction", "setup-dotnet-customaction", "{0C2EFAF7-B686-4373-A26C-34C93E963BFB}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-dotnet", "setup-dotnet", "{0C2EFAF7-B686-4373-A26C-34C93E963BFB}"
 	ProjectSection(SolutionItems) = preProject
-		.github\actions\setup-dotnet-customaction\action.yml = .github\actions\setup-dotnet-customaction\action.yml
+		.github\actions\setup-dotnet\action.yml = .github\actions\setup-dotnet\action.yml
 	EndProjectSection
 EndProject
 Global

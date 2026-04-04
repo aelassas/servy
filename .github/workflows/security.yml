@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: ./.github/actions/setup-dotnet-custom
+        uses: ./.github/actions/setup-dotnet
 
       - name: Check .NET version
         run: dotnet --version

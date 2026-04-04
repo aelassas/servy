@@ -65,8 +65,8 @@ jobs:
       # -----------------------------------------------------
       # Install Build dependencies
       # -----------------------------------------------------
-      - name: Install .NET
-        uses: ./.github/actions/setup-dotnet-custom
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
 
       - name: Check .NET version
         run: dotnet --version
