@@ -212,21 +212,58 @@ function Invoke-ServyCli {
 
   Test-ServyCliPath
 
+  # Build argument list
   [array]$finalArgs = @()
   if ($null -ne $Command -and $Command -ne "") { $finalArgs += $Command }
   if ($Arguments) { $finalArgs += $Arguments }
   if ($Quiet) { $finalArgs += "--quiet" }
 
+  # Convert array to space-separated string to bypass PS argument mangling
+  $argString = $finalArgs -join ' '
+
   try {
-    & $script:ServyCliPath $finalArgs            
+    # Using .NET Process class is the most robust way in PS 2.0 to pass 
+    # complex raw argument strings WHILE retaining pipeline output capture.
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $script:ServyCliPath
+    $psi.Arguments = $argString
+    $psi.UseShellExecute = $false
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.CreateNoWindow = $true
+    $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+    $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $psi
+    
+    $process.Start() | Out-Null
+    
+    # Read streams to capture output
+    $stdout = $process.StandardOutput.ReadToEnd()
+    $stderr = $process.StandardError.ReadToEnd()
+    
+    $process.WaitForExit()
+
+    # Pass the captured output back to the PowerShell pipeline
+    if (-not [string]::IsNullOrEmpty($stdout)) { 
+        Write-Output $stdout.TrimEnd() 
+    }
+    
+    # Optional: If the CLI wrote to stderr but didn't fail, log it as a warning
+    if (-not [string]::IsNullOrEmpty($stderr) -and $process.ExitCode -eq 0) { 
+        Write-Warning $stderr.TrimEnd() 
+    }
   }
   catch {
+    # Catches system-level exceptions (e.g., Access Denied, missing .NET runtime)
     throw "$($ErrorContext): $_"
   }
 
-  if ($LASTEXITCODE -ne 0) {
-    throw "Servy CLI exited with code $LASTEXITCODE"
-  }     
+  # Evaluates application-level exit codes after the process has successfully run and terminated
+  if ($process.ExitCode -ne 0) {
+    throw "Servy CLI exited with code $($process.ExitCode)"
+  }
 }
 
 # ----------------------------------------------------------------
