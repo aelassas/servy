@@ -36,7 +36,14 @@ function Send-NotificationEmail {
         [string] [parameter(ValueFromPipeline)] $Body
     )
 
-    # Configure your SMTP settings
+    # ---------------------------------------------------------------
+    # IMPORTANT: These are placeholder values. Replace them before use.
+    # For production environments, consider using encrypted credentials:
+    #   $cred = Get-Credential
+    #   $cred | Export-Clixml "C:\Secure\smtp-cred.xml"
+    # Then load with:
+    #   $cred = Import-Clixml "C:\Secure\smtp-cred.xml"
+    # ---------------------------------------------------------------
     $smtpServer = "smtp.example.com"
     $smtpPort   = 587
     $smtpUser   = "username@example.com"
