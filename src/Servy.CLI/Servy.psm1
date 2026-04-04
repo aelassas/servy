@@ -153,8 +153,9 @@ function Add-Arg {
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   if ($null -ne $value -and $value.Trim() -ne "") {
 
-    # Use doubled quotes (PowerShell's native escaping)
-    # This escapes quotes for PowerShell, but the external exe sees single quotes
+    # For Windows command-line parsing via ProcessStartInfo.Arguments:
+    # Escape internal double quotes with backslashes (Windows convention).
+    # This is DIFFERENT from PowerShell's "" escaping.
     $escapedValue = $value.Replace('"', '\"')
 
     # 3. Explicitly cast to array during addition to prevent string concatenation 
