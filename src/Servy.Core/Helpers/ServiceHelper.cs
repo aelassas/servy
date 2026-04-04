@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Servy.Core.Helpers
 {
     /// <summary>
-    /// Provides helper methods to query, start, and stop Servy services via WMI and ServiceController.
+    /// Provides helper methods to query, start, and stop Servy services via ServiceController.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public class ServiceHelper
@@ -191,12 +191,12 @@ namespace Servy.Core.Helpers
         /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
         /// associated with a specific executable.
         /// </summary>
-        /// <param name="wrapperExe">The filename of the executable to search for (e.g., "Servy.Service.Net48.exe").</param>
+        /// <param name="wrapperExe">The filename of the executable to search for (e.g., "Servy.Service.exe").</param>
         /// <returns>A list containing the names of all currently running services that match the specified executable.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="wrapperExe"/> is null, empty, or whitespace.</exception>
         /// <exception cref="InvalidOperationException">Thrown when an unexpected error occurs while querying the SCM or Registry.</exception>
         /// <remarks>
-        /// This method bypasses WMI to prevent COM timeout issues in large-scale deployments. 
+        /// This method bypasses prevents COM timeout issues in large-scale deployments. 
         /// It reads the <c>ImagePath</c> directly from the Registry, expands environment variables, 
         /// and safely parses out executable paths that contain quotes or command-line arguments.
         /// </remarks>
@@ -209,7 +209,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                // 1. Get all services via SCM (Standard .NET, no WMI)
+                // 1. Get all services via SCM
                 ServiceController[] services = ServiceController.GetServices();
 
                 foreach (var sc in services)

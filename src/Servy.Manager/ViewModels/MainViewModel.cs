@@ -884,7 +884,10 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // 2. Fetch OS Info in bulk
+                var stopwatch = Stopwatch.StartNew();
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
+                stopwatch.Stop();
+                Debug.WriteLine($"GetAllServices finished in {stopwatch.ElapsedMilliseconds}ms");
                 var allServicesDict = allServicesList.ToDictionary(s => s.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 3. Fetch all Repository DTOs in bulk

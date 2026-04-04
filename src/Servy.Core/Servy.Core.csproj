@@ -138,15 +138,14 @@
     <Compile Include="ServiceDependencies\ServiceDependenciesValidator.cs" />
     <Compile Include="Services\EventLogService.cs" />
     <Compile Include="Services\IEventLogService.cs" />
-    <Compile Include="Services\IManagementObject.cs" />
     <Compile Include="Services\InstallServiceOptions.cs" />
+    <Compile Include="Services\IServiceControllerProvider.cs" />
     <Compile Include="Services\IServiceControllerWrapper.cs" />
     <Compile Include="Services\IServiceManager.cs" />
     <Compile Include="Services\IWin32ErrorProvider.cs" />
     <Compile Include="Services\IWindowsServiceApi.cs" />
     <Compile Include="Services\IWindowsServiceProvider.cs" />
-    <Compile Include="Services\IWmiSearcher.cs" />
-    <Compile Include="Services\ManagementObjectWrapper.cs" />
+    <Compile Include="Services\ServiceControllerProvider.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
     <Compile Include="Services\ServiceDependencyNode.cs" />
     <Compile Include="Services\ServiceExporter.cs" />
@@ -156,7 +155,6 @@
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
     <Compile Include="Services\WindowsServiceProvider.cs" />
-    <Compile Include="Services\WmiSearcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

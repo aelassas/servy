@@ -901,7 +901,8 @@ namespace Servy.ViewModels
             null
             )
         {
-            var serviceManager = new ServiceManager(name => new ServiceControllerWrapper(name), new WindowsServiceApi(), new Win32ErrorProvider(), null, new WmiSearcher());
+            Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
+            var serviceManager = new ServiceManager(controllerFactory, new ServiceControllerProvider(controllerFactory), new WindowsServiceApi(), new Win32ErrorProvider(), null);
             ServiceCommands = new ServiceCommands(
                 ModelToServiceDto,
                 BindServiceDtoToModel,

@@ -25,12 +25,31 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
+        public string ServiceName
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _controller.ServiceName;
+            }
+        }
+        /// <inheritdoc/>
         public ServiceControllerStatus Status
         {
             get
             {
                 ThrowIfDisposed();
                 return _controller.Status;
+            }
+        }
+
+        /// <inheritdoc/>
+        public ServiceStartMode StartType
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _controller.StartType;
             }
         }
 

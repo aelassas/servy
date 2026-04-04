@@ -103,12 +103,13 @@ namespace Servy.CLI
                 var xmlSerializer = new XmlServiceSerializer();
                 var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
+                Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                 var serviceManager = new ServiceManager(
-                    name => new ServiceControllerWrapper(name),
+                    controllerFactory,
+                    new ServiceControllerProvider(controllerFactory),
                     new WindowsServiceApi(),
                     new Win32ErrorProvider(),
-                    serviceRepository,
-                    new WmiSearcher()
+                    serviceRepository
                     );
 
                 var installValidator = new ServiceInstallValidator();

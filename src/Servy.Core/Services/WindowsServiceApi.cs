@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Management;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
@@ -101,13 +100,6 @@ namespace Servy.Core.Services
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
-        /// <inheritdoc />
-        public bool ChangeServiceConfig2(
-            IntPtr hService,
-            int dwInfoLevel,
-            IntPtr lpInfo
-            ) => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
-
         /// <inheritdoc/>
         public bool QueryServiceConfig2(
          IntPtr hService,
@@ -129,15 +121,37 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public IEnumerable<IManagementObject> QueryService(string wmiQuery)
-        {
-            using (var searcher = new ManagementObjectSearcher(wmiQuery))
-            {
-                foreach (var obj in searcher.Get())
-                {
-                    yield return new ManagementObjectWrapper(obj);
-                }
-            }
-        }
+        public bool ChangeServiceConfig2(
+            IntPtr hService,
+            int dwInfoLevel,
+            IntPtr lpInfo
+            ) => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
+
+        /// <inheritdoc />
+        public bool QueryServiceConfig(
+            IntPtr hService,
+            IntPtr lpServiceConfig,
+            int cbBufSize,
+            out int pcbBytesNeeded) =>
+            NativeMethods.QueryServiceConfig(
+                hService,
+                lpServiceConfig,
+                cbBufSize,
+                out pcbBytesNeeded);
+
+        /// <inheritdoc />
+        public bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            IntPtr lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded) =>
+            NativeMethods.QueryServiceConfig2(
+                hService,
+                dwInfoLevel,
+                lpBuffer,
+                cbBufSize,
+                ref pcbBytesNeeded);
+
     }
 }

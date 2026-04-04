@@ -4,10 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Runtime.InteropServices;
 
 namespace Servy.Core.Helpers
@@ -50,8 +48,8 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="parentPid">The process ID of the parent whose children should be terminated.</param>
         /// <remarks>
-        /// This method uses WMI (<c>Win32_Process</c>) to enumerate processes where
-        /// <c>ParentProcessId</c> matches the given <paramref name="parentPid"/>.
+        /// This method enumerates processes where <c>ParentProcessId</c> matches 
+        /// the given <paramref name="parentPid"/>.
         /// 
         /// It then recursively calls itself to ensure that grandchildren and deeper
         /// descendants are also terminated before finally killing the child itself.
@@ -81,6 +79,75 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Takes a snapshot of the specified processes, as well as the heaps, modules, and threads used by these processes.
+        /// </summary>
+        /// <param name="dwFlags">The portions of the system to be included in the snapshot (e.g., TH32CS_SNAPPROCESS).</param>
+        /// <param name="th32ProcessID">The process identifier of the process to be included in the snapshot. Use 0 for the current process.</param>
+        /// <returns>An open handle to the specified snapshot if successful; otherwise, INVALID_HANDLE_VALUE (-1).</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+        /// <summary>
+        /// Retrieves information about the first process encountered in a system snapshot.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned by a previous call to CreateToolhelp32Snapshot.</param>
+        /// <param name="lppe">A pointer to a <see cref="PROCESSENTRY32"/> structure.</param>
+        /// <returns>True if the first entry of the process list has been copied to the buffer; otherwise, false.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        /// <summary>
+        /// Retrieves information about the next process recorded in a system snapshot.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned by a previous call to CreateToolhelp32Snapshot.</param>
+        /// <param name="lppe">A pointer to a <see cref="PROCESSENTRY32"/> structure.</param>
+        /// <returns>True if the next entry of the process list has been copied to the buffer; otherwise, false.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        /// <summary>
+        /// Closes an open object handle.
+        /// </summary>
+        /// <param name="hObject">A valid handle to an open object.</param>
+        /// <returns>True if the function succeeds; otherwise, false.</returns>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        /// <summary>
+        /// Describes an entry from a list of the processes residing in the system address space when a snapshot was taken.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESSENTRY32
+        {
+            /// <summary>The size of the structure, in bytes. Before calling Process32First, set this to Marshal.SizeOf(typeof(PROCESSENTRY32)).</summary>
+            public uint dwSize;
+            /// <summary>This member is no longer used and is always set to zero.</summary>
+            public uint cntUsage;
+            /// <summary>The process identifier (PID).</summary>
+            public uint th32ProcessID;
+            /// <summary>This member is no longer used and is always set to zero.</summary>
+            public IntPtr th32DefaultHeapID;
+            /// <summary>This member is no longer used and is always set to zero.</summary>
+            public uint th32ModuleID;
+            /// <summary>The number of execution threads started by the process.</summary>
+            public uint cntThreads;
+            /// <summary>The identifier of the process that created this process (its parent process).</summary>
+            public uint th32ParentProcessID;
+            /// <summary>The base priority of any threads created by this process.</summary>
+            public int pcPriClassBase;
+            /// <summary>This member is no longer used and is always set to zero.</summary>
+            public uint dwFlags;
+            /// <summary>The name of the executable file for the process.</summary>
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szExeFile;
+        }
+
+        /// <summary>
+        /// Includes all processes in the system in the snapshot.
+        /// </summary>
+        private const uint TH32CS_SNAPPROCESS = 0x00000002;
+
+        /// <summary>
         /// Internal recursive method that terminates child processes while validating 
         /// their identity against the parent's start time to prevent PID-reuse accidents.
         /// </summary>
@@ -89,55 +156,82 @@ namespace Servy.Core.Helpers
         /// <param name="selfPid">The PID of the current process to prevent accidental self-termination.</param>
         private static void KillChildrenInternal(int parentPid, DateTime parentStartTime, int selfPid)
         {
+            var children = new List<int>();
+
+            // Take a fast snapshot of all processes
+            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1))
+                return;
+
             try
             {
-                // Optimization: Only select what we need. WMI is expensive.
-                string query = $"SELECT ProcessId, CreationDate FROM Win32_Process WHERE ParentProcessId={parentPid}";
+                PROCESSENTRY32 pe32 = new PROCESSENTRY32();
+                pe32.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32));
 
-                using (var searcher = new ManagementObjectSearcher(query))
-                using (var results = searcher.Get())
+                if (Process32First(snapshot, ref pe32))
                 {
-                    foreach (var obj in results)
+                    do
                     {
-                        int childPid = Convert.ToInt32(obj["ProcessId"]);
-                        if (childPid == selfPid) continue;
-
-                        // Safely parse WMI date
-                        DateTime childStartTime = DateTime.MinValue;
-                        try
+                        if (pe32.th32ParentProcessID == parentPid)
                         {
-                            childStartTime = ManagementDateTimeConverter.ToDateTime(obj["CreationDate"].ToString());
+                            children.Add((int)pe32.th32ProcessID);
                         }
-                        catch { /* Ignore malformed dates */ }
-
-                        // Validation: Only skip if we are SURE it's a PID reuse (child older than parent)
-                        // We add a 2-second buffer for clock skew between WMI and KERNEL32
-                        if (parentStartTime != DateTime.MinValue && childStartTime < parentStartTime.AddSeconds(-2))
-                        {
-                            continue;
-                        }
-
-                        // Recursion: Kill grandchildren first (Leaf-to-Root)
-                        KillChildrenInternal(childPid, childStartTime, selfPid);
-
-                        // Final Kill
-                        try
-                        {
-                            using (var child = Process.GetProcessById(childPid))
-                            {
-                                if (!child.HasExited)
-                                {
-                                    child.Kill();
-                                    // Do not wait indefinitely; 2s is plenty of time
-                                    child.WaitForExit(2000);
-                                }
-                            }
-                        }
-                        catch { /* Process gone or Access Denied */ }
-                    }
+                    } while (Process32Next(snapshot, ref pe32));
                 }
             }
-            catch (ManagementException) { /* WMI Service is stopping or busy */ }
+            finally
+            {
+                CloseHandle(snapshot);
+            }
+
+            foreach (int childPid in children)
+            {
+                if (childPid == selfPid) continue;
+
+                Process childProcess = null;
+                DateTime childStartTime = DateTime.MinValue;
+
+                try
+                {
+                    // Open process early to get the reliable start time from Kernel32
+                    childProcess = Process.GetProcessById(childPid);
+                    childStartTime = childProcess.StartTime;
+                }
+                catch
+                {
+                    // Process has already exited or Access Denied
+                    childProcess?.Dispose();
+                    continue;
+                }
+
+                // Validation: Only skip if we are SURE it's a PID reuse (child older than parent)
+                // We add a 2-second buffer for clock skew
+                if (parentStartTime != DateTime.MinValue && childStartTime < parentStartTime.AddSeconds(-2))
+                {
+                    childProcess.Dispose();
+                    continue;
+                }
+
+                // Recursion: Kill grandchildren first (Leaf-to-Root)
+                KillChildrenInternal(childPid, childStartTime, selfPid);
+
+                // Final Kill
+                try
+                {
+                    if (!childProcess.HasExited)
+                    {
+                        childProcess.Kill();
+                        // Do not wait indefinitely; 2s is plenty of time
+                        childProcess.WaitForExit(2000);
+                    }
+                }
+                catch { /* Process gone or Access Denied */ }
+                finally
+                {
+                    // Ensure the unmanaged handle is released
+                    childProcess.Dispose();
+                }
+            }
         }
 
         /// <summary>
