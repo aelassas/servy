@@ -29,27 +29,62 @@
 function Show-Notification {
     [cmdletbinding()]
     Param (
-        [string] $ToastTitle,
-        [string] [parameter(ValueFromPipeline)] $ToastText
+        [string] $ServiceName,
+        [string] $LogText,
+        [string] $ModuleRoot
     )
 
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
-    $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+    $ToastTitle = "Servy - $ServiceName"
+    
+    try {
+        [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
+        $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
 
-    $rawXml = [xml] $template.GetXml()
-    ($rawXml.toast.visual.binding.text | where {$_.id -eq "1"}).AppendChild($rawXml.CreateTextNode($ToastTitle)) > $null
-    ($rawXml.toast.visual.binding.text | where {$_.id -eq "2"}).AppendChild($rawXml.CreateTextNode($ToastText)) > $null
+        $rawXml = [xml] $template.GetXml()
+        ($rawXml.toast.visual.binding.text | Where-Object {$_.id -eq "1"}).AppendChild($rawXml.CreateTextNode($ToastTitle)) > $null
+        ($rawXml.toast.visual.binding.text | Where-Object {$_.id -eq "2"}).AppendChild($rawXml.CreateTextNode($LogText)) > $null
 
-    $serializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
-    $serializedXml.LoadXml($rawXml.OuterXml)
+        $serializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
+        $serializedXml.LoadXml($rawXml.OuterXml)
 
-    $toast = [Windows.UI.Notifications.ToastNotification]::new($serializedXml)
-    $toast.Tag = "Servy"
-    $toast.Group = "Servy"
-    $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
+        $toast = [Windows.UI.Notifications.ToastNotification]::new($serializedXml)
+        $toast.Tag = "Servy"
+        $toast.Group = "Servy"
+        $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-    $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
-    $notifier.Show($toast);
+        # ASYNCHRONOUS FALLBACK: Handle cases where Show() succeeds but delivery fails
+        $null = $toast.add_Failed({
+            param($evtSender, $evtArgs)
+            $asyncError = "ServyToast: Delivery failed for '$ServiceName'. ErrorCode: $($evtArgs.ErrorCode)"
+            Write-FallbackError -Message $asyncError -ModuleRoot $ModuleRoot
+        })
+
+        $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
+        $notifier.Show($toast)
+    }
+    catch {
+        # SYNCHRONOUS FALLBACK: Handle immediate failures (e.g., no interactive session)
+        $syncError = "ServyToast: Failed to show toast for '$ServiceName'. Details: $_. Original Log: $LogText"
+        Write-FallbackError -Message $syncError -ModuleRoot $ModuleRoot
+    }
+}
+
+# -------------------------------
+# Helper: Fallback Logging
+# -------------------------------
+function Write-FallbackError {
+    Param($Message, $ModuleRoot)
+    
+    try {
+        # Attempt to write to Application Log. Requires 'Servy' source to be registered.
+        Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
+                       -EntryType Warning -Message $Message -ErrorAction Stop
+    }
+    catch {
+        # Last resort: File log
+        $logFile = Join-Path $ModuleRoot "ServyNotification-failures.log"
+        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
+    }
 }
 
 # -------------------------------
@@ -61,7 +96,6 @@ if ($PSVersionTable.PSVersion.Major -ge 3) {
     $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 
-# Using a distinct timestamp file for toast notifications
 $timestampFile = Join-Path $ModuleRoot "last-processed-toast.dat"
 
 # -------------------------------
@@ -69,7 +103,7 @@ $timestampFile = Join-Path $ModuleRoot "last-processed-toast.dat"
 # -------------------------------
 $lastProcessed = $null
 if (Test-Path $timestampFile) {
-    try {
+       try {
         $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
     }
     catch { 
@@ -94,19 +128,17 @@ try {
     $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
 }
 catch {
-    exit 0
+    exit 0 
 }
 
 # -------------------------------
-# 4. Precision Filtering
+# 4. Precision Filtering & Timestamp Update
 # -------------------------------
 if ($lastProcessed) {
     $errors = @($errors | Where-Object { $_.TimeCreated -gt $lastProcessed })
 }
 
-if ($errors.Count -eq 0) {
-    exit 0
-}
+if ($errors.Count -eq 0) { exit 0 }
 
 # -------------------------------
 # 5. Update Timestamp File
@@ -116,9 +148,9 @@ $newestTimestamp = $errors[0].TimeCreated.AddTicks(1)
 $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
 
 # -------------------------------
-# 6. Process Events & Send Emails
+# 6. Process Events & Send Toast Notifications
 # -------------------------------
-# Sort ascending so emails are sent in the exact chronological order the errors occurred
+# Sort ascending so notifications are sent in the exact chronological order the errors occurred
 if ($null -eq $lastProcessed) {
     # FIRST RUN LOGIC:
     # We only notify for the single most recent event to avoid flooding.
@@ -127,7 +159,7 @@ if ($null -eq $lastProcessed) {
     Write-Host "No timestamp found. Notifying only for the most recent error to avoid flooding."
 } else {
     # NORMAL RUN LOGIC:
-    # Sort ascending so emails are sent in the order they actually happened.
+    # Sort ascending so notifications are sent in the order they actually happened.
     $eventsToProcess = $errors | Sort-Object TimeCreated
 }
 
@@ -141,7 +173,7 @@ foreach ($evt in $eventsToProcess) {
         $logText = $message
     }
 
-    Show-Notification -ToastTitle "Servy - $serviceName" -ToastText $logText
+    Show-Notification -ServiceName $serviceName -LogText $logText -ModuleRoot $ModuleRoot
     
     # Brief pause to help the Action Center sequence the toasts properly
     Start-Sleep -Milliseconds 500
