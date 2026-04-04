@@ -15,7 +15,7 @@ runs:
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
         Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
-        ./dotnet-install.ps1 -Version "${{ inputs.version }}" -InstallDir $installDir
+        ./dotnet-install.ps1 -Channel "${{ inputs.version }}" -InstallDir $installDir
         Add-Content -Path $env:GITHUB_PATH -Value $installDir
 
     - name: Check .NET version
