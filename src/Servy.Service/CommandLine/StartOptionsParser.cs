@@ -53,7 +53,7 @@ namespace Servy.Service.CommandLine
                 RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024 * 1024, // Convert from MB to Bytes
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? 0,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? 0,
-                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : (int)RecoveryAction.None,
+                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : RecoveryAction.None,
                 ServiceName = serviceName,
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
