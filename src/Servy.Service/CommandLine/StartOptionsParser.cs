@@ -53,7 +53,7 @@ namespace Servy.Service.CommandLine
                 RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024 * 1024, // Convert from MB to Bytes
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? 0,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? 0,
-                RecoveryAction = (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None),
+                RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : (int)RecoveryAction.None,
                 ServiceName = serviceName,
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
@@ -91,7 +91,7 @@ namespace Servy.Service.CommandLine
                 DateRotationType = (DateRotationType)(serviceDto.DateRotationType ?? (int)DateRotationType.Daily),
 
                 // Start and Stop timeouts
-                StartTimeout = serviceDto.StartTimeout?? AppConfig.DefaultStartTimeout,
+                StartTimeout = serviceDto.StartTimeout ?? AppConfig.DefaultStartTimeout,
                 StopTimeout = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                 // Pre-Stop
