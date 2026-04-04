@@ -3,8 +3,7 @@
   Example scripts demonstrating the usage of the Servy PowerShell module to manage Windows services.
 
 .DESCRIPTION
-  This module contains sample commands showing how to install, start, stop, restart, export/import configuration,
-  check status, display help, display version, and uninstall Windows services using the Servy CLI PowerShell module.
+  Example scripts demonstrating usage of the Servy PowerShell module.
 
 .NOTES
   Author: Akram El Assas
