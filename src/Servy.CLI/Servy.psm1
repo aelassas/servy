@@ -83,23 +83,19 @@ if (-not (Test-Path $script:ServyCliPath)) {
 # Private Helper Functions
 # ----------------------------------------------------------------
 
-<#
-.SYNOPSIS
-    Checks if the Servy CLI executable exists at the configured path.
-
-.DESCRIPTION
-    This helper function validates that the Servy CLI is present at the path
-    specified by $script:ServyCliPath. If the file does not exist, it throws
-    an error. This prevents repeated boilerplate checks in every Servy function.
-
-.EXAMPLE
-    Test-ServyCliPath
-    # Throws an error if Servy CLI is not found, otherwise continues silently.
-#>
 function Test-ServyCliPath {
   <#
   .SYNOPSIS
-      Checks if the Servy CLI executable was discovered during module initialization.
+      Checks if the Servy CLI executable exists at the configured path.
+
+  .DESCRIPTION
+      This helper function validates that the Servy CLI is present at the path
+      specified by $script:ServyCliPath. If the file does not exist, it throws
+      an error. This prevents repeated boilerplate checks in every Servy function.
+
+  .EXAMPLE
+      Test-ServyCliPath
+      # Throws an error if Servy CLI is not found, otherwise continues silently.
   #>
   if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
     throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
