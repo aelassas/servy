@@ -520,7 +520,7 @@ function Install-ServyService {
         Set to 0 for fire and forget.
 
     .PARAMETER PreStopLogAsError
-        Switch to treate pre-stop failures as error. Optional.
+        Switch to treat pre-stop failures as error. Optional.
 
     .PARAMETER PostStopPath
         Path to a post-stop executable or script. Optional.
