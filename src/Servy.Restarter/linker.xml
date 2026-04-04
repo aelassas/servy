@@ -10,8 +10,6 @@
   <assembly fullname="System.IO.FileSystem.Primitives" preserve="all" />
   <assembly fullname="System.IO.FileSystem.Watcher" preserve="all" />
 
-  <assembly fullname="System.Management" preserve="all" />
-
   <assembly fullname="Newtonsoft.Json" preserve="all" />
 
   <assembly fullname="System.Xml.XmlSerializer" preserve="all" />

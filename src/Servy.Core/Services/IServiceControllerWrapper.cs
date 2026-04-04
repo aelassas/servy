@@ -8,9 +8,19 @@ namespace Servy.Core.Services
     public interface IServiceControllerWrapper: IDisposable
     {
         /// <summary>
+        /// Gets the service name.
+        /// </summary>
+        string ServiceName { get; }
+
+        /// <summary>
         /// Gets the current status of the Windows service.
         /// </summary>
         ServiceControllerStatus Status { get; }
+
+        /// <summary>
+        /// Gets the way the service is started.
+        /// </summary>
+        ServiceStartMode StartType { get; }
 
         /// <summary>
         /// Starts the Windows service.

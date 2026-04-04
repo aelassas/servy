@@ -32,17 +32,17 @@ namespace Servy.Manager.UnitTests.Services
             _removedServiceName = null!;
 
             var mockControllerFactory = new Mock<Func<string, IServiceControllerWrapper>>();
+            var mockServiceControllerProvider = new Mock<IServiceControllerProvider>();
             var mockWindowsApi = new Mock<IWindowsServiceApi>();
             var mockErrorProvider = new Mock<IWin32ErrorProvider>();
             var mockRepository = new Mock<IServiceRepository>();
-            var wmiSearcherMock = new Mock<IWmiSearcher>();
 
             var realServiceManager = new ServiceManager(
                 mockControllerFactory.Object,
+                mockServiceControllerProvider.Object,
                 mockWindowsApi.Object,
                 mockErrorProvider.Object,
-                mockRepository.Object,
-                wmiSearcherMock.Object
+                mockRepository.Object
             );
 
             _refreshTcs = new TaskCompletionSource<bool>();

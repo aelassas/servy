@@ -1,5 +1,4 @@
-﻿using System.Management;
-using System.ServiceProcess;
+﻿using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
@@ -236,10 +235,34 @@ namespace Servy.Core.Services
         IEnumerable<WindowsServiceInfo> GetServices();
 
         /// <summary>
-        /// Executes a WMI query and returns matching management objects.
+        /// Retrieves the configuration parameters of the specified service.
         /// </summary>
-        /// <param name="wmiQuery">The WMI query string to execute (e.g., "SELECT * FROM Win32_Service").</param>
-        /// <returns>An enumerable of <see cref="ManagementBaseObject"/> resulting from the query.</returns>
-        IEnumerable<IManagementObject> QueryService(string wmiQuery);
+        /// <param name="hService">A handle to the service. This handle is returned by the OpenService or CreateService function.</param>
+        /// <param name="lpServiceConfig">A pointer to a buffer that receives the service configuration information (QUERY_SERVICE_CONFIG).</param>
+        /// <param name="cbBufSize">The size of the buffer pointed to by the lpServiceConfig parameter, in bytes.</param>
+        /// <param name="pcbBytesNeeded">A variable that receives the number of bytes needed to store all the configuration information if the function fails with ERROR_INSUFFICIENT_BUFFER.</param>
+        /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
+        bool QueryServiceConfig(
+            IntPtr hService,
+            IntPtr lpServiceConfig,
+            int cbBufSize,
+            out int pcbBytesNeeded);
+
+        /// <summary>
+        /// Retrieves the optional configuration parameters of the specified service.
+        /// </summary>
+        /// <param name="hService">A handle to the service.</param>
+        /// <param name="dwInfoLevel">The configuration information to be queried (e.g., SERVICE_CONFIG_DESCRIPTION or SERVICE_CONFIG_DELAYED_AUTO_START_INFO).</param>
+        /// <param name="lpBuffer">A pointer to the buffer that receives the service configuration information.</param>
+        /// <param name="cbBufSize">The size of the buffer pointed to by the lpBuffer parameter, in bytes.</param>
+        /// <param name="pcbBytesNeeded">A variable that receives the number of bytes needed to store the configuration information if the buffer is too small.</param>
+        /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
+        bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            IntPtr lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded);
+
     }
 }

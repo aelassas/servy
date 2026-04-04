@@ -86,6 +86,50 @@ namespace Servy.Core.Native
         public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 0x00000003;
 
         /// <summary>
+        /// Service configuration information level for retrieving or changing the service description.
+        /// </summary>
+        public const uint SERVICE_CONFIG_DESCRIPTION = 1;
+
+        /// <summary>
+        /// Contains configuration information for an installed service.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct QUERY_SERVICE_CONFIG
+        {
+            /// <summary>The type of service.</summary>
+            public uint dwServiceType;
+            /// <summary>The service start options.</summary>
+            public uint dwStartType;
+            /// <summary>The severity of the error, and action taken, if this service fails to start.</summary>
+            public uint dwErrorControl;
+            /// <summary>The fully qualified path to the service binary file.</summary>
+            public IntPtr lpBinaryPathName;
+            /// <summary>The name of the load ordering group to which this service belongs.</summary>
+            public IntPtr lpLoadOrderGroup;
+            /// <summary>A unique tag value for this service in the group specified by the lpLoadOrderGroup parameter.</summary>
+            public uint dwTagId;
+            /// <summary>A pointer to an array of null-separated names of services or load ordering groups that must start before this service.</summary>
+            public IntPtr lpDependencies;
+            /// <summary>The name of the account under which the service should run (e.g., "LocalSystem" or "NT AUTHORITY\NetworkService").</summary>
+            public IntPtr lpServiceStartName;
+            /// <summary>The display name to be used by service control programs to identify the service.</summary>
+            public IntPtr lpDisplayName;
+        }
+
+        /// <summary>
+        /// Contains a service description.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct SERVICE_DESCRIPTION
+        {
+            /// <summary>
+            /// The description of the service. If this member is NULL, the description is not modified. 
+            /// Use <see cref="Marshal.PtrToStringAuto(IntPtr)"/> to retrieve the string value.
+            /// </summary>
+            public IntPtr lpDescription;
+        }
+
+        /// <summary>
         /// Represents the current status of a Windows service.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
@@ -99,6 +143,13 @@ namespace Servy.Core.Native
             public int dwCheckPoint;
             public int dwWaitHint;
         }
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool QueryServiceConfig(
+            IntPtr hService,
+            IntPtr lpServiceConfig,
+            int cbBufSize,
+            out int pcbBytesNeeded);
 
         /// <summary>
         /// Retrieves optional configuration information for a specified service.
@@ -130,6 +181,14 @@ namespace Servy.Core.Native
             IntPtr hService,
             uint dwInfoLevel,
             ref ServiceDelayedAutoStartInfo lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded);
+
+        [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            IntPtr lpBuffer,
             int cbBufSize,
             ref int pcbBytesNeeded);
 

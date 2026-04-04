@@ -150,7 +150,7 @@ namespace Servy.Core.UnitTests.Helpers
                 try
                 {
                     Assert.NotNull(parent);
-                    // Give WMI and the shell time to spawn the nested tree
+                    // Give the shell time to spawn the nested tree
                     await Task.Delay(2000, TestContext.Current.CancellationToken);
 
                     // Capture a snapshot of all timeout processes currently running

@@ -66,12 +66,13 @@ namespace Servy.Views
             var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
 
             // Initialize service manager
+            Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
             var serviceManager = new ServiceManager(
-                name => new ServiceControllerWrapper(name),
+                controllerFactory,
+                new ServiceControllerProvider(controllerFactory),
                 new WindowsServiceApi(),
                 new Win32ErrorProvider(),
-                serviceRepository,
-                new WmiSearcher()
+                serviceRepository
             );
 
             // Initialize ViewModel
