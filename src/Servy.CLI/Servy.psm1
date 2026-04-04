@@ -638,69 +638,70 @@ function Install-ServyService {
   )
 
   $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
-  $argsList = Add-Arg $argsList "--displayName" $DisplayName
-  $argsList = Add-Arg $argsList "--path" $Path
-  $argsList = Add-Arg $argsList "--description" $Description
-  $argsList = Add-Arg $argsList "--startupDir" $StartupDir
-  $argsList = Add-Arg $argsList "--params" $Params
-  $argsList = Add-Arg $argsList "--startupType" $StartupType
-  $argsList = Add-Arg $argsList "--priority" $Priority
-  $argsList = Add-Arg $argsList "--stdout" $Stdout
-  $argsList = Add-Arg $argsList "--stderr" $Stderr
-  $argsList = Add-Arg $argsList "--startTimeout" $StartTimeout
-  $argsList = Add-Arg $argsList "--stopTimeout" $StopTimeout
-  
+
+  # 1. Define parameter pairs for PS 2.0 compatibility
+  $paramPairs = @(
+    @("--name",                     $Name),
+    @("--displayName",              $DisplayName),
+    @("--path",                     $Path),
+    @("--description",              $Description),
+    @("--startupDir",               $StartupDir),
+    @("--params",                   $Params),
+    @("--startupType",              $StartupType),
+    @("--priority",                 $Priority),
+    @("--stdout",                   $Stdout),
+    @("--stderr",                   $Stderr),
+    @("--startTimeout",             $StartTimeout),
+    @("--stopTimeout",              $StopTimeout),
+    @("--rotationSize",             $RotationSize),
+    @("--dateRotationType",         $DateRotationType),
+    @("--maxRotations",             $MaxRotations),
+    @("--heartbeatInterval",        $HeartbeatInterval),
+    @("--maxFailedChecks",          $MaxFailedChecks),
+    @("--recoveryAction",           $RecoveryAction),
+    @("--maxRestartAttempts",       $MaxRestartAttempts),
+    @("--failureProgramPath",       $FailureProgramPath),
+    @("--failureProgramStartupDir", $FailureProgramStartupDir),
+    @("--failureProgramParams",     $FailureProgramParams),
+    @("--env",                      $Env),
+    @("--deps",                     $Deps),
+    @("--user",                     $User),
+    @("--password",                 $Password),
+    @("--preLaunchPath",            $PreLaunchPath),
+    @("--preLaunchStartupDir",      $PreLaunchStartupDir),
+    @("--preLaunchParams",          $PreLaunchParams),
+    @("--preLaunchEnv",             $PreLaunchEnv),
+    @("--preLaunchStdout",          $PreLaunchStdout),
+    @("--preLaunchStderr",          $PreLaunchStderr),
+    @("--preLaunchTimeout",         $PreLaunchTimeout),
+    @("--preLaunchRetryAttempts",   $PreLaunchRetryAttempts),
+    @("--postLaunchPath",           $PostLaunchPath),
+    @("--postLaunchStartupDir",     $PostLaunchStartupDir),
+    @("--postLaunchParams",         $PostLaunchParams),
+    @("--preStopPath",              $PreStopPath),
+    @("--preStopStartupDir",        $PreStopStartupDir),
+    @("--preStopParams",            $PreStopParams),
+    @("--preStopTimeout",           $PreStopTimeout),
+    @("--postStopPath",             $PostStopPath),
+    @("--postStopStartupDir",       $PostStopStartupDir),
+    @("--postStopParams",           $PostStopParams)
+  )
+
+  # 2. Iterate through pairs to build arguments
+  foreach ($pair in $paramPairs) {
+    $argsList = Add-Arg $argsList $pair[0] $pair[1]
+  }
+
+  # 3. Handle switch/flag parameters separately
   if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
   if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
-  
-  $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
-  if ($EnableDateRotation) { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
-  $argsList = Add-Arg $argsList "--dateRotationType" $DateRotationType
-  $argsList = Add-Arg $argsList "--maxRotations" $MaxRotations
-  
-  if ($EnableHealth) { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
-  
-  $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval
-  $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks
-  $argsList = Add-Arg $argsList "--recoveryAction" $RecoveryAction
-  $argsList = Add-Arg $argsList "--maxRestartAttempts" $MaxRestartAttempts
-  $argsList = Add-Arg $argsList "--failureProgramPath" $FailureProgramPath
-  $argsList = Add-Arg $argsList "--failureProgramStartupDir" $FailureProgramStartupDir
-  $argsList = Add-Arg $argsList "--failureProgramParams" $FailureProgramParams
-  $argsList = Add-Arg $argsList "--env" $Env
-  $argsList = Add-Arg $argsList "--deps" $Deps
-  $argsList = Add-Arg $argsList "--user" $User
-  $argsList = Add-Arg $argsList "--password" $Password
+  if ($EnableDateRotation)                       { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
+  if ($EnableHealth)                             { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+  if ($PreLaunchIgnoreFailure)                   { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
+  if ($EnableDebugLogs)                          { $argsList = Add-Arg $argsList "--debug" -Flag }
+  if ($PreStopLogAsError)                        { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
-  $argsList = Add-Arg $argsList "--preLaunchPath" $PreLaunchPath
-  $argsList = Add-Arg $argsList "--preLaunchStartupDir" $PreLaunchStartupDir
-  $argsList = Add-Arg $argsList "--preLaunchParams" $PreLaunchParams
-  $argsList = Add-Arg $argsList "--preLaunchEnv" $PreLaunchEnv
-  $argsList = Add-Arg $argsList "--preLaunchStdout" $PreLaunchStdout
-  $argsList = Add-Arg $argsList "--preLaunchStderr" $PreLaunchStderr
-  $argsList = Add-Arg $argsList "--preLaunchTimeout" $PreLaunchTimeout
-  $argsList = Add-Arg $argsList "--preLaunchRetryAttempts" $PreLaunchRetryAttempts
-  
-  if ($PreLaunchIgnoreFailure) { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
-
-  $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
-  $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
-  $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
-
-  if ($EnableDebugLogs) { $argsList = Add-Arg $argsList "--debug" -Flag }
-
-  $argsList = Add-Arg $argsList "--preStopPath" $PreStopPath
-  $argsList = Add-Arg $argsList "--preStopStartupDir" $PreStopStartupDir
-  $argsList = Add-Arg $argsList "--preStopParams" $PreStopParams
-  $argsList = Add-Arg $argsList "--preStopTimeout" $PreStopTimeout
-  
-  if ($PreStopLogAsError) { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
-
-  $argsList = Add-Arg $argsList "--postStopPath" $PostStopPath
-  $argsList = Add-Arg $argsList "--postStopStartupDir" $PostStopStartupDir
-  $argsList = Add-Arg $argsList "--postStopParams" $PostStopParams
-
+  # 4. Invoke CLI
   $invokeParams = @{
     Command      = "install"
     Arguments    = $argsList
