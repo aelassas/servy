@@ -169,9 +169,9 @@ function Add-Arg {
     [array]$list += "$($key.Trim())=`"$escapedValue`""
   }
 
-  # 4. The unary comma (,) is essential in PS 2.0 to prevent 
-  # PowerShell from "unrolling" the array into individual objects.
-  return ,$list
+  # 4. Array integrity is preserved by the assignment context at all call sites.
+  # No unary comma needed.
+  return $list
 }
 
 <#
