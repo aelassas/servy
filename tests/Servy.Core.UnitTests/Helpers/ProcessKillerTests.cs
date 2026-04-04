@@ -98,7 +98,8 @@ namespace Servy.Core.UnitTests.Helpers
 
         #region Integration Tests (Multiple Processes)
 
-        //[Fact(Skip = "Requires elevated permissions not available in standard CI container")]
+        //[Fact]
+        [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
         public async Task KillProcessTreeAndParents_MultipleInstances_SuccessfullyTerminatesAll()
         {
@@ -140,7 +141,8 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
-        //[Fact(Skip = "Requires elevated permissions not available in standard CI container")]
+        //[Fact]
+        [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
         public async Task KillChildren_DeepAndWideTree_TerminatesAllDescendants()
         {
@@ -186,7 +188,8 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
-        //[Fact(Skip = "Requires elevated permissions not available in standard CI container")]
+        //[Fact]
+        [Fact(Skip = "Requires elevated permissions not available in standard CI container")]
         [Trait("Category", "Integration")]
         public async Task KillProcessTreeAndParents_WithParents_TerminatesUpwardChain()
         {

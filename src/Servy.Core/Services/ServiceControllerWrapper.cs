@@ -30,7 +30,7 @@ namespace Servy.Core.Services
             get
             {
                 ThrowIfDisposed();
-                return _controller.ServiceName;
+                return _serviceName;
             }
         }
         /// <inheritdoc/>
