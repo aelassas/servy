@@ -1956,7 +1956,6 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestServiceWithDescription", It.IsAny<uint>())).Returns(svcHandle);
 
-            const uint SERVICE_CONFIG_DESCRIPTION = 1;
             const string expectedDescription = "This is a mocked service description.";
             int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
             int totalNeeded = structSize + 512; // Buffer for the struct + the string data
@@ -2015,7 +2014,6 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "NoDescService", It.IsAny<uint>())).Returns(svcHandle);
 
-            const uint SERVICE_CONFIG_DESCRIPTION = 1;
             int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
 
             // Mock QueryServiceConfig2 to return a structure with a NULL pointer for lpDescription

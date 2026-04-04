@@ -88,7 +88,7 @@ namespace Servy.Core.Native
         /// <summary>
         /// Service configuration information level for retrieving or changing the service description.
         /// </summary>
-        public const uint SERVICE_CONFIG_DESCRIPTION = 1;
+        public const int SERVICE_CONFIG_DESCRIPTION = 1;
 
         /// <summary>
         /// Contains configuration information for an installed service.

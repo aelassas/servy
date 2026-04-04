@@ -89,6 +89,8 @@ namespace Servy.Core.Services
                 lpPassword,
                 lpDisplayName);
 
+        // --- ChangeServiceConfig2 Overloads ---
+
         /// <inheritdoc />
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDescription lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
@@ -97,14 +99,48 @@ namespace Servy.Core.Services
         public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
+        /// <inheritdoc />
+        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, IntPtr lpInfo)
+            => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
+
+        // --- QueryServiceConfig Overloads ---
+
+        /// <inheritdoc />
+        public bool QueryServiceConfig(
+            IntPtr hService,
+            IntPtr lpServiceConfig,
+            int cbBufSize,
+            out int pcbBytesNeeded)
+            => NativeMethods.QueryServiceConfig(
+                hService,
+                lpServiceConfig,
+                cbBufSize,
+                out pcbBytesNeeded);
+
+        // --- QueryServiceConfig2 Overloads ---
+
         /// <inheritdoc/>
         public bool QueryServiceConfig2(
-         IntPtr hService,
-         uint dwInfoLevel,
-         ref ServiceDelayedAutoStartInfo lpBuffer,
-         int cbBufSize,
-         ref int pcbBytesNeeded)
+            IntPtr hService,
+            uint dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded)
             => NativeMethods.QueryServiceConfig2(hService, dwInfoLevel, ref lpBuffer, cbBufSize, ref pcbBytesNeeded);
+
+        /// <inheritdoc />
+        public bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            IntPtr lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded)
+            => NativeMethods.QueryServiceConfig2(
+                hService,
+                dwInfoLevel,
+                lpBuffer,
+                cbBufSize,
+                ref pcbBytesNeeded);
 
         /// <inheritdoc />
         public IEnumerable<WindowsServiceInfo> GetServices()
@@ -116,39 +152,5 @@ namespace Servy.Core.Services
                     DisplayName = s.DisplayName
                 });
         }
-
-        /// <inheritdoc />
-        public bool ChangeServiceConfig2(
-            IntPtr hService,
-            int dwInfoLevel,
-            IntPtr lpInfo
-            ) => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
-
-        /// <inheritdoc />
-        public bool QueryServiceConfig(
-            IntPtr hService,
-            IntPtr lpServiceConfig,
-            int cbBufSize,
-            out int pcbBytesNeeded) =>
-            NativeMethods.QueryServiceConfig(
-                hService,
-                lpServiceConfig,
-                cbBufSize,
-                out pcbBytesNeeded);
-
-        /// <inheritdoc />
-        public bool QueryServiceConfig2(
-            IntPtr hService,
-            uint dwInfoLevel,
-            IntPtr lpBuffer,
-            int cbBufSize,
-            ref int pcbBytesNeeded) => 
-            NativeMethods.QueryServiceConfig2(
-                hService,
-                dwInfoLevel,
-                lpBuffer,
-                cbBufSize,
-                ref pcbBytesNeeded);
-
     }
 }

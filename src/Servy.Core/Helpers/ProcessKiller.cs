@@ -185,7 +185,7 @@ namespace Servy.Core.Helpers
                 if (childPid == selfPid) continue;
 
                 Process? childProcess = null;
-                DateTime childStartTime = DateTime.MinValue;
+                DateTime childStartTime;
 
                 try
                 {

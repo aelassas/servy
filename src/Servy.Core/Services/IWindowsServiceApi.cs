@@ -1,5 +1,4 @@
-﻿using System.ServiceProcess;
-using static Servy.Core.Native.NativeMethods;
+﻿using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
 {
@@ -124,7 +123,7 @@ namespace Servy.Core.Services
         );
 
         /// <summary>
-        /// Changes the optional configuration parameters of a service.
+        /// Changes the optional configuration parameters of a service using a description structure.
         /// </summary>
         /// <param name="hService">Handle to the service.</param>
         /// <param name="dwInfoLevel">The information level of the configuration to change.</param>
@@ -137,110 +136,38 @@ namespace Servy.Core.Services
         );
 
         /// <summary>
-        /// Changes the optional configuration parameters of a service.
+        /// Changes the optional configuration parameters of a service using a raw pointer.
         /// </summary>
-        /// <param name="hService">
-        /// A handle to the service. This handle must be returned by the OpenService or CreateService function 
-        /// and must have the SERVICE_CHANGE_CONFIG access right.
-        /// </param>
-        /// <param name="dwInfoLevel">
-        /// The configuration information to be changed. Use SERVICE_CONFIG_PRESHUTDOWN_INFO (7) 
-        /// to configure the pre-shutdown timeout.
-        /// </param>
-        /// <param name="lpInfo">
-        /// A pointer to the buffer that contains the new value for the configuration information. 
-        /// The format depends on the value of the <paramref name="dwInfoLevel"/> parameter. 
-        /// For pre-shutdown, this should be a pointer to a SERVICE_PRESHUTDOWN_INFO structure.
-        /// </param>
-        /// <returns>
-        /// Returns true if the function succeeds; otherwise, false. To get extended error information, call <see cref="Marshal.GetLastWin32Error"/>.
-        /// </returns>
-        /// <remarks>
-        /// Changes made by this function are persistent and remain in effect until the service is reconfigured.
-        /// </remarks>
-        bool ChangeServiceConfig2(
-           IntPtr hService,
-           int dwInfoLevel,
-           IntPtr lpInfo
-           );
-
-        /// <summary>
-        /// Changes the optional configuration parameters of an existing Windows service.
-        /// </summary>
-        /// <param name="hService">
-        /// A handle to the service whose configuration is to be changed.  
-        /// The handle must have the <c>SERVICE_CHANGE_CONFIG</c> access right.
-        /// </param>
-        /// <param name="dwInfoLevel">
-        /// The configuration information level to be set.  
-        /// For delayed auto-start configuration, use <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c>.
-        /// </param>
-        /// <param name="lpInfo">
-        /// A reference to a structure that contains the configuration data to be applied.  
-        /// For delayed auto-start, this is a <see cref="ServiceDelayedAutoStartInfo"/> structure.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.  
-        /// Call <see cref="Marshal.GetLastWin32Error"/> to obtain the error code.
-        /// </returns>
-        /// <remarks>
-        /// This function wraps the Windows API <c>ChangeServiceConfig2</c> function from <c>advapi32.dll</c>.  
-        /// It allows updating optional service settings such as delayed auto-start behavior or failure actions.
-        /// </remarks>
+        /// <param name="hService">A handle to the service.</param>
+        /// <param name="dwInfoLevel">The configuration information to be changed.</param>
+        /// <param name="lpInfo">A pointer to the buffer that contains the new configuration data.</param>
+        /// <returns>Returns true if the function succeeds; otherwise, false.</returns>
         bool ChangeServiceConfig2(
             IntPtr hService,
             int dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpInfo);
+            IntPtr lpInfo
+        );
 
         /// <summary>
-        /// Retrieves optional configuration information for a specified Windows service.
+        /// Changes the optional configuration parameters of a service using a delayed auto-start structure.
         /// </summary>
-        /// <param name="hService">
-        /// A handle to the service. This handle must have the <c>SERVICE_QUERY_CONFIG</c> access right.
-        /// </param>
-        /// <param name="dwInfoLevel">
-        /// The configuration information level to query.  
-        /// Use <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c> to query delayed auto-start information.
-        /// </param>
-        /// <param name="lpBuffer">
-        /// A reference to a structure that receives the configuration information.  
-        /// For delayed auto-start, this is a <see cref="ServiceDelayedAutoStartInfo"/> structure.
-        /// </param>
-        /// <param name="cbBufSize">
-        /// The size, in bytes, of the buffer pointed to by <paramref name="lpBuffer"/>.
-        /// </param>
-        /// <param name="pcbBytesNeeded">
-        /// On output, receives the number of bytes required if the buffer is too small.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.  
-        /// Use <see cref="Marshal.GetLastWin32Error"/> to obtain extended error information on failure.
-        /// </returns>
-        /// <remarks>
-        /// This method wraps the native <c>QueryServiceConfig2</c> function from <c>advapi32.dll</c>.  
-        /// It is commonly used to query optional service settings, such as whether a service is 
-        /// configured for delayed auto-start.
-        /// </remarks>
-        bool QueryServiceConfig2(
+        /// <param name="hService">A handle to the service.</param>
+        /// <param name="dwInfoLevel">The configuration information level to be set.</param>
+        /// <param name="lpInfo">A reference to the structure containing the configuration data.</param>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
+        bool ChangeServiceConfig2(
             IntPtr hService,
-            uint dwInfoLevel,
-            ref ServiceDelayedAutoStartInfo lpBuffer,
-            int cbBufSize,
-            ref int pcbBytesNeeded);
-
-        /// <summary>
-        /// Gets all installed Windows services on the system.
-        /// </summary>
-        /// <returns>An enumerable of <see cref="ServiceController"/> representing installed services.</returns>
-        IEnumerable<WindowsServiceInfo> GetServices();
+            int dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpInfo
+        );
 
         /// <summary>
         /// Retrieves the configuration parameters of the specified service.
         /// </summary>
-        /// <param name="hService">A handle to the service. This handle is returned by the OpenService or CreateService function.</param>
-        /// <param name="lpServiceConfig">A pointer to a buffer that receives the service configuration information (QUERY_SERVICE_CONFIG).</param>
-        /// <param name="cbBufSize">The size of the buffer pointed to by the lpServiceConfig parameter, in bytes.</param>
-        /// <param name="pcbBytesNeeded">A variable that receives the number of bytes needed to store all the configuration information if the function fails with ERROR_INSUFFICIENT_BUFFER.</param>
+        /// <param name="hService">A handle to the service.</param>
+        /// <param name="lpServiceConfig">A pointer to a buffer that receives the configuration information.</param>
+        /// <param name="cbBufSize">The size of the buffer, in bytes.</param>
+        /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the function fails with ERROR_INSUFFICIENT_BUFFER.</param>
         /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
         bool QueryServiceConfig(
             IntPtr hService,
@@ -249,13 +176,29 @@ namespace Servy.Core.Services
             out int pcbBytesNeeded);
 
         /// <summary>
-        /// Retrieves the optional configuration parameters of the specified service.
+        /// Retrieves optional configuration information for a service using a delayed auto-start structure.
         /// </summary>
         /// <param name="hService">A handle to the service.</param>
-        /// <param name="dwInfoLevel">The configuration information to be queried (e.g., SERVICE_CONFIG_DESCRIPTION or SERVICE_CONFIG_DELAYED_AUTO_START_INFO).</param>
+        /// <param name="dwInfoLevel">The configuration information level to query.</param>
+        /// <param name="lpBuffer">A reference to a structure that receives the configuration information.</param>
+        /// <param name="cbBufSize">The size, in bytes, of the buffer pointed to by <paramref name="lpBuffer"/>.</param>
+        /// <param name="pcbBytesNeeded">On output, receives the number of bytes required if the buffer is too small.</param>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
+        bool QueryServiceConfig2(
+            IntPtr hService,
+            uint dwInfoLevel,
+            ref ServiceDelayedAutoStartInfo lpBuffer,
+            int cbBufSize,
+            ref int pcbBytesNeeded);
+
+        /// <summary>
+        /// Retrieves optional configuration information for a service using a raw pointer.
+        /// </summary>
+        /// <param name="hService">A handle to the service.</param>
+        /// <param name="dwInfoLevel">The configuration information level to query (e.g., description).</param>
         /// <param name="lpBuffer">A pointer to the buffer that receives the service configuration information.</param>
-        /// <param name="cbBufSize">The size of the buffer pointed to by the lpBuffer parameter, in bytes.</param>
-        /// <param name="pcbBytesNeeded">A variable that receives the number of bytes needed to store the configuration information if the buffer is too small.</param>
+        /// <param name="cbBufSize">The size of the buffer, in bytes.</param>
+        /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the buffer is too small.</param>
         /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
         bool QueryServiceConfig2(
             IntPtr hService,
@@ -264,5 +207,10 @@ namespace Servy.Core.Services
             int cbBufSize,
             ref int pcbBytesNeeded);
 
+        /// <summary>
+        /// Gets all installed Windows services on the system.
+        /// </summary>
+        /// <returns>An enumerable of <see cref="WindowsServiceInfo"/> representing installed services.</returns>
+        IEnumerable<WindowsServiceInfo> GetServices();
     }
 }

@@ -26,12 +26,10 @@ namespace Servy.Core.Services
         private const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
         private const uint SERVICE_ERROR_NORMAL = 0x00000001;
         private const uint SC_MANAGER_ALL_ACCESS = 0xF003F;
-        private const uint SERVICE_QUERY_CONFIG = 0x0001;
         private const uint SERVICE_CHANGE_CONFIG = 0x0002;
         private const uint SERVICE_START = 0x0010;
         private const uint SERVICE_STOP = 0x0020;
         private const uint SERVICE_DELETE = 0x00010000;
-        private const int SERVICE_CONFIG_DESCRIPTION = 1;
         private const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
@@ -760,7 +758,6 @@ namespace Servy.Core.Services
                     if (startupType == ServiceStartType.Automatic)
                     {
                         const uint SC_MANAGER_CONNECT = 0x0001;
-                        const uint SERVICE_QUERY_CONFIG = 0x0001;
                         const uint SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
                         IntPtr scmHandle = IntPtr.Zero;
@@ -821,8 +818,6 @@ namespace Servy.Core.Services
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
             int delayedStructSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
-            const uint SERVICE_QUERY_CONFIG = 0x0001;
-            const uint SERVICE_CONFIG_DESCRIPTION = 1;
             const uint SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
             try
