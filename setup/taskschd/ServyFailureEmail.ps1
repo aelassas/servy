@@ -59,7 +59,7 @@ $filter = @{
     Level = 2  # Error
 }
 
-$lastError = Get-WinEvent -FilterHashtable $filter | Sort-Object TimeCreated -Descending | Select-Object -First 1
+$lastError = Get-WinEvent -FilterHashtable $filter -MaxEvents 1 -ErrorAction SilentlyContinue
 
 if ($lastError) {
     $message = $lastError.Message

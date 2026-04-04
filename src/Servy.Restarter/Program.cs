@@ -70,10 +70,10 @@ namespace Servy.Restarter
                 }
 
                 // Restart service
-                logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+                Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 restarter.RestartService(serviceName);
-                logger.Info($"Successfully restarted service '{serviceName}'.");
+                Logger.Info($"Successfully restarted service '{serviceName}'.");
             }
             catch (Exception ex)
             {
