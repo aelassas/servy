@@ -66,11 +66,11 @@ if ($PSVersionTable.PSVersion.Major -ge 3) {
 $script:ServyCliPath = Join-Path $ModuleRoot "servy-cli.exe"
 
 # 2. Check 64-bit Program Files directory
+# $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
+# even if the current PowerShell session is 32-bit (x86).
+$script:ServyProgramFilesPath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
 if (-not (Test-Path $script:ServyCliPath)) {
-  # $env:ProgramW6432 explicitly points to 'C:\Program Files' on 64-bit Windows
-  # even if the current PowerShell session is 32-bit (x86).
-  $basePath = if ($env:ProgramW6432) { $env:ProgramW6432 } else { $env:ProgramFiles }
-  $script:ServyCliPath = Join-Path $basePath "Servy\servy-cli.exe"
+  $script:ServyCliPath = Join-Path $script:ServyProgramFilesPath "Servy\servy-cli.exe"
 }
 
 # 3. Check system PATH
@@ -104,7 +104,7 @@ function Test-ServyCliPath {
   if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
     throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
     "1. Local module folder: $ModuleRoot `n" +
-    "2. Program Files: $($env:ProgramFiles)\Servy `n" +
+    "2. Program Files: $($script:ServyProgramFilesPath)\Servy `n" +
     "3. System PATH `n" +
     "Please ensure Servy is installed or the CLI executable is in the module directory."
   }
