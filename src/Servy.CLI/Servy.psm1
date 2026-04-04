@@ -220,10 +220,12 @@ function Invoke-ServyCli {
 
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
+  $process = $null
+  $exitCode = 0  # Initialize a variable to hold the exit code
 
   try {
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
-    # complex raw argument strings WHILE retaining pipeline output capture.
+    # complex raw argument strings WHILE retaining pipeline output capture.  
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ServyCliPath
     $psi.Arguments = $argString
@@ -242,27 +244,28 @@ function Invoke-ServyCli {
     # Read streams to capture output
     $stdout = $process.StandardOutput.ReadToEnd()
     $stderr = $process.StandardError.ReadToEnd()
-    
     $process.WaitForExit()
 
-    # Pass the captured output back to the PowerShell pipeline
+    # CRITICAL: Capture the exit code while the process object is still active
+    $exitCode = $process.ExitCode
+
     if (-not [string]::IsNullOrEmpty($stdout)) { 
-        Write-Output $stdout.TrimEnd() 
-    }
-    
-    # Optional: If the CLI wrote to stderr but didn't fail, log it as a warning
-    if (-not [string]::IsNullOrEmpty($stderr) -and $process.ExitCode -eq 0) { 
-        Write-Warning $stderr.TrimEnd() 
+      Write-Output $stdout.TrimEnd() 
     }
   }
   catch {
-    # Catches system-level exceptions (e.g., Access Denied, missing .NET runtime)
     throw "$($ErrorContext): $_"
   }
+  finally {
+    if ($null -ne $process) {
+      $process.Dispose()
+    }
+  }
 
-  # Evaluates application-level exit codes after the process has successfully run and terminated
-  if ($process.ExitCode -ne 0) {
-    throw "Servy CLI exited with code $($process.ExitCode)"
+  # Use the locally captured $exitCode variable instead of the $process object
+  if ($exitCode -ne 0) {
+    $errorMessage = if (-not [string]::IsNullOrEmpty($stderr)) { $stderr.TrimEnd() } else { "Unknown error" }
+    throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }
 }
 
