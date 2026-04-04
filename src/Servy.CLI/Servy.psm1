@@ -55,32 +55,17 @@ if (-not (Test-Path $script:ServyCliPath)) {
   if ($pathSearch) { $script:ServyCliPath = $pathSearch.Definition }
 }
 
+if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
+  throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
+  "1. Local module folder: $ModuleRoot `n" +
+  "2. Program Files: $($script:ServyProgramFilesPath)\Servy `n" +
+  "3. System PATH `n" +
+  "Please ensure Servy is installed or the CLI executable is in the module directory."
+}
+
 # ----------------------------------------------------------------
 # Private Helper Functions
 # ----------------------------------------------------------------
-
-function Test-ServyCliPath {
-  <#
-  .SYNOPSIS
-      Checks if the Servy CLI executable exists at the configured path.
-
-  .DESCRIPTION
-      This helper function validates that the Servy CLI is present at the path
-      specified by $script:ServyCliPath. If the file does not exist, it throws
-      an error. This prevents repeated boilerplate checks in every Servy function.
-
-  .EXAMPLE
-      Test-ServyCliPath
-      # Throws an error if Servy CLI is not found, otherwise continues silently.
-  #>
-  if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
-    throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
-    "1. Local module folder: $ModuleRoot `n" +
-    "2. Program Files: $($script:ServyProgramFilesPath)\Servy `n" +
-    "3. System PATH `n" +
-    "Please ensure Servy is installed or the CLI executable is in the module directory."
-  }
-}
 
 function Add-Arg {
   <#
@@ -192,8 +177,6 @@ function Invoke-ServyCli {
     [switch] $Quiet,
     [string] $ErrorContext
   )
-
-  Test-ServyCliPath
 
   # Build argument list
   [array]$finalArgs = @()
