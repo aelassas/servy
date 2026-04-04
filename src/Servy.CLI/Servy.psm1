@@ -113,35 +113,41 @@ function Test-ServyCliPath {
 function Add-Arg {
   <#
   .SYNOPSIS
-      Adds a key-value argument to a list of command-line arguments.
+      Adds a key-value argument or a standalone flag to a list of command-line arguments.
 
   .DESCRIPTION
       This helper function appends a command-line argument in the form:
           key="value"
-      to an existing array of strings,
-      but only if the value is not null or empty.
+      to an existing array of strings if a value is provided and not empty.
+      If the -Flag switch is used, it simply appends the key as a standalone argument:
+          key
 
   .PARAMETER list
       The existing array of arguments to which the new argument will be added.
 
   .PARAMETER key
-      The name of the argument or option (e.g., "--startupDir").
+      The name of the argument or option (e.g., "--startupDir" or "--enableHealth").
 
   .PARAMETER value
-      The value associated with the argument. Only added if not null or empty.
+      The value associated with the argument. Only added if not null or empty and -Flag is not specified.
+
+  .PARAMETER Flag
+      Switch indicating that this argument is a standalone flag without a value.
 
   .OUTPUTS
-      Returns the updated array of arguments including the new key-value pair.
+      Returns the updated array of arguments including the new argument.
 
   .EXAMPLE
       $argsList = @()
       $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
-      # Result: $argsList contains '--startupDir="C:\MyApp"'
+      $argsList = Add-Arg $argsList "--enableHealth" -Flag
+      # Result: $argsList contains '--startupDir="C:\MyApp"' and '--enableHealth'
   #>
   param(
     $list,          # Existing argument list (Array)
     [string] $key,  # Argument key
-    [string] $value # Argument value
+    [string] $value,# Argument value
+    [switch] $Flag  # Indicates a flag without a value
   )
 
   # 1. Ensure $list is an array, even if $null was passed
@@ -149,9 +155,13 @@ function Add-Arg {
     $list = @() 
   }
 
+  if ($Flag) {
+    # If it's a flag, simply append the key
+    [array]$list += $key.Trim()
+  }
   # 2. Robust check for null or empty strings
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
-  if ($null -ne $value -and $value.Trim() -ne "") {
+  elseif ($null -ne $value -and $value.Trim() -ne "") {
 
     # For Windows command-line parsing via ProcessStartInfo.Arguments:
     # Escape internal double quotes with backslashes (Windows convention).
@@ -640,13 +650,17 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--stderr" $Stderr
   $argsList = Add-Arg $argsList "--startTimeout" $StartTimeout
   $argsList = Add-Arg $argsList "--stopTimeout" $StopTimeout
+  
   if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
-  if ($EnableRotation -or $EnableSizeRotation) { $argsList += "--enableSizeRotation" }
+  if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
+  
   $argsList = Add-Arg $argsList "--rotationSize" $RotationSize
-  if ($EnableDateRotation) { $argsList += "--enableDateRotation" }
+  if ($EnableDateRotation) { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
   $argsList = Add-Arg $argsList "--dateRotationType" $DateRotationType
   $argsList = Add-Arg $argsList "--maxRotations" $MaxRotations
-  if ($EnableHealth) { $argsList += "--enableHealth" }
+  
+  if ($EnableHealth) { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+  
   $argsList = Add-Arg $argsList "--heartbeatInterval" $HeartbeatInterval
   $argsList = Add-Arg $argsList "--maxFailedChecks" $MaxFailedChecks
   $argsList = Add-Arg $argsList "--recoveryAction" $RecoveryAction
@@ -667,19 +681,21 @@ function Install-ServyService {
   $argsList = Add-Arg $argsList "--preLaunchStderr" $PreLaunchStderr
   $argsList = Add-Arg $argsList "--preLaunchTimeout" $PreLaunchTimeout
   $argsList = Add-Arg $argsList "--preLaunchRetryAttempts" $PreLaunchRetryAttempts
-  if ($PreLaunchIgnoreFailure) { $argsList += "--preLaunchIgnoreFailure" }
+  
+  if ($PreLaunchIgnoreFailure) { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
 
   $argsList = Add-Arg $argsList "--postLaunchPath" $PostLaunchPath
   $argsList = Add-Arg $argsList "--postLaunchStartupDir" $PostLaunchStartupDir
   $argsList = Add-Arg $argsList "--postLaunchParams" $PostLaunchParams
 
-  if ($EnableDebugLogs) { $argsList += "--debug" }
+  if ($EnableDebugLogs) { $argsList = Add-Arg $argsList "--debug" -Flag }
 
   $argsList = Add-Arg $argsList "--preStopPath" $PreStopPath
   $argsList = Add-Arg $argsList "--preStopStartupDir" $PreStopStartupDir
   $argsList = Add-Arg $argsList "--preStopParams" $PreStopParams
   $argsList = Add-Arg $argsList "--preStopTimeout" $PreStopTimeout
-  if ($PreStopLogAsError) { $argsList += "--preStopLogAsError" }
+  
+  if ($PreStopLogAsError) { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
   $argsList = Add-Arg $argsList "--postStopPath" $PostStopPath
   $argsList = Add-Arg $argsList "--postStopStartupDir" $PostStopStartupDir
@@ -983,7 +999,7 @@ function Import-ServyServiceConfig {
   $argsList = @()
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
-  if ($Install) { $argsList += "--install" }
+  if ($Install) { $argsList = Add-Arg $argsList "--install" -Flag }
 
   $invokeParams = @{
     Command      = "import"
