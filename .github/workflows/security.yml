@@ -89,7 +89,7 @@ jobs:
         run: dotnet --version
 
       - name: Build for Analysis
-        run: dotnet build Servy.sln --configuration Release
+        run: dotnet build Servy.sln --configuration Debug
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
