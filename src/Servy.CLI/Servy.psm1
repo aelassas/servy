@@ -301,7 +301,7 @@ function Show-ServyVersion {
   )
 
   $invokeParams = @{
-    Command      = "version"
+    Command      = "--version"
     Quiet        = $Quiet
     ErrorContext = "Failed to get Servy CLI version"
   }
