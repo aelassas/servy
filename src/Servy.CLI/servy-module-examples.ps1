@@ -34,7 +34,8 @@
 # ----------------------------------------------------------------
 # Import the Servy PowerShell module (force reload if already imported)
 # ----------------------------------------------------------------
-Import-Module ".\Servy.psm1" -Force
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+Import-Module (Join-Path $scriptDir "Servy.psm1") -Force
 
 # ----------------------------------------------------------------
 # Display the current version of Servy CLI
