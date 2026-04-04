@@ -110,8 +110,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Service", "src\Servy.Service\Servy.Service.csproj", "{02B40D5D-6A53-442A-9A5E-C51043592558}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "actions", "actions", "{FED01F22-71C4-4504-9BC6-217F6DE9F152}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-dotnet-customaction", "setup-dotnet-customaction", "{0C2EFAF7-B686-4373-A26C-34C93E963BFB}"
 	ProjectSection(SolutionItems) = preProject
-		.github\actions\setup-dotnet-customaction.yml = .github\actions\setup-dotnet-customaction.yml
+		.github\actions\setup-dotnet-customaction\action.yml = .github\actions\setup-dotnet-customaction\action.yml
 	EndProjectSection
 EndProject
 Global
@@ -211,6 +213,7 @@ Global
 		{9253D26F-5A46-4EE3-B0B7-0097AB90384E} = {11479D8F-D8B6-4AD7-BC82-A423FCC30779}
 		{02B40D5D-6A53-442A-9A5E-C51043592558} = {66EEF7A1-9E3D-4957-896A-394C6422F01F}
 		{FED01F22-71C4-4504-9BC6-217F6DE9F152} = {8E91D1D2-8183-4A34-922F-5F702720EBD6}
+		{0C2EFAF7-B686-4373-A26C-34C93E963BFB} = {FED01F22-71C4-4504-9BC6-217F6DE9F152}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {93B02B52-77CF-4BAA-AD7E-08960E6D6482}

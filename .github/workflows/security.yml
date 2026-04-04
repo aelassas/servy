@@ -7,7 +7,7 @@
 # 3. Secret Scanning (Gitleaks)
 # ===========================================
 
-name: security-audit
+name: security
 
 on:
   push:
