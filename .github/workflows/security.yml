@@ -23,9 +23,9 @@ permissions:
   contents: read
 
 # Ensure only one concurrent deployment runs at a time
-concurrency:
-  group: security-audit-${{ github.ref }}
-  cancel-in-progress: true
+#concurrency:
+  #group: security-audit-${{ github.ref }}
+  #cancel-in-progress: true
 
 jobs:
   # 1. Dependency Scanning
