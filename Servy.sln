@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		.gitleaks.toml = .gitleaks.toml
 		bump-runtime.ps1 = bump-runtime.ps1
 		bump-version.ps1 = bump-version.ps1
 		codecov.yml = codecov.yml
@@ -44,7 +45,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{8E91
 	ProjectSection(SolutionItems) = preProject
 		.github\azure-pipelines.yml = .github\azure-pipelines.yml
 		.github\FUNDING.yml = .github\FUNDING.yml
-		.github\gitleaks.toml = .github\gitleaks.toml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9FEDDCAA-5911-471B-94CC-9913899B5AD7}"

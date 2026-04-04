@@ -83,7 +83,7 @@ jobs:
           queries: security-extended,security-and-quality
 
       - name: Setup .NET
-        uses: ./.github/actions/setup-dotnet-custom
+        uses: ./.github/actions/setup-dotnet
 
       - name: Check .NET version
         run: dotnet --version
@@ -99,7 +99,7 @@ jobs:
   secret-scanning:
     timeout-minutes: 10
     name: Secret Scanning
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -110,5 +110,3 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          config-path: .github/gitleaks.toml
