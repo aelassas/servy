@@ -322,6 +322,7 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Rotates the current log file by inserting a local timestamp before the file extension.
+        /// The caller must hold the lock.
         /// </summary>
         private void Rotate()
         {
@@ -330,10 +331,7 @@ namespace Servy.Core.IO
                 _file.Refresh();
                 if (!_file.Exists || _file.Length == 0) return;
 
-                lock (_lock)
-                {
-                    CloseWriter();
-                }
+                CloseWriter();
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
