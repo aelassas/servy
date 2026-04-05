@@ -16,9 +16,11 @@ namespace Servy.Core.Services
         /// <returns>An XML-formatted string representing the service.</returns>
         public static string ExportXml(ServiceDto service)
         {
-            var xml = new StringWriter();
-            new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto)).Serialize(xml, service);
-            return xml.ToString();
+            using (var xml = new StringWriter())
+            {
+                new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto)).Serialize(xml, service);
+                return xml.ToString();
+            }
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace Servy.Core.Services
                 {
                     NullValueHandling = NullValueHandling.Ignore
                 });
-            return json.ToString();
+            return json;
         }
 
         /// <summary>
