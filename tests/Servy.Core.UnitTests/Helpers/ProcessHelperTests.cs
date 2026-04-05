@@ -234,6 +234,50 @@ namespace Servy.Core.UnitTests.Helpers
             }
         }
 
+        [Theory]
+
+        // BRANCH 1: string.IsNullOrWhiteSpace(arg)
+        [InlineData(null, "\"\"")]
+        [InlineData("", "\"\"")]
+        [InlineData("   ", "\"\"")]
+
+        // BRANCH: Normal execution (No backslashes, no quotes)
+        [InlineData("SimpleString", "\"SimpleString\"")]
+        [InlineData("Argument With Spaces", "\"Argument With Spaces\"")]
+
+        // BRANCH 5: Regular character (Backslashes that don't precede a quote or end of string)
+        // The backslashes should remain exactly as they are.
+        [InlineData(@"C:\Normal\Path", @"""C:\Normal\Path""")]
+
+        // BRANCH 3: if (i == arg.Length)
+        // Backslashes at the end of the string must be doubled.
+        // 1 trailing backslash  -> 2 backslashes
+        // 2 trailing backslashes -> 4 backslashes
+        [InlineData(@"C:\Trailing\Slash\", @"""C:\Trailing\Slash\\""")]
+        [InlineData(@"MultipleTrailing\\", @"""MultipleTrailing\\\\""")]
+
+        // BRANCH 4: else if (arg[i] == '"')
+        // Quotes and backslashes preceding quotes must be escaped.
+        // 0 backslashes + quote -> 1 backslash + quote (\")
+        // 1 backslash + quote   -> 3 backslashes + quote (\\\")
+        // 2 backslashes + quote -> 5 backslashes + quote (\\\\\")
+        [InlineData(@"Just""AQuote", @"""Just\""AQuote""")]
+        [InlineData(@"OneSlash\""Quote", @"""OneSlash\\\""Quote""")]
+        [InlineData(@"TwoSlashes\\""Quote", @"""TwoSlashes\\\\\""Quote""")]
+
+        // COMBINED: Testing multiple branches in a single complex string
+        // A path with spaces, escaped quotes inside, and a trailing slash
+        [InlineData(@"C:\Temp\""Injected Arg\"" Test\", @"""C:\Temp\\\""Injected Arg\\\"" Test\\""")]
+
+        public void EscapeProcessArgument_CoversAllBranches(string input, string expected)
+        {
+            // Act
+            // Note: Update 'YourClassName' to the actual class where your method lives.
+            string actual = ProcessHelper.EscapeProcessArgument(input);
+
+            // Assert
+            Assert.Equal(expected, actual);
+        }
 
     }
 }
