@@ -259,12 +259,24 @@ function Invoke-ServyCli {
     $hasExited = $process.WaitForExit($script:ServyTimeoutSeconds * 1000)
 
     if (-not $hasExited) {
-        # Handle Timeout: The process is still running!
-        # We must manually kill it to prevent orphaned processes.
-        try { $process.Kill() } catch { }
+      # Handle Timeout: The process is still running!
+      # We must manually kill it to prevent orphaned processes.
+      $killed = $false
+      try {
+        $process.Kill()
+        $process.WaitForExit(5000)
+        $killed = $process.HasExited
+      }
+      catch { }
 
+      if ($killed) {
         throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
+      }
+      else {
+        throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
+      }
     }
+
 
     # COLLECT stderr
     # Convert our collected array back into a string
