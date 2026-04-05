@@ -200,23 +200,41 @@ function Invoke-ServyCli {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
     
+    # ASYNCHRONOUS: Prevent deadlock by reading stderr asynchronously
+    # We use a script-scoped array to collect lines because PS 2.0 events 
+    # run in a separate scope.
+    # Generate unique variable name
+    $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
+    New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
+
+    # 2. REGISTER EVENT NATIVELY
+    # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
+    $errorEvent = Register-ObjectEvent -InputObject $process `
+        -EventName "ErrorDataReceived" `
+        -Action ([ScriptBlock]::Create(@"
+            if (`$EventArgs.Data) { 
+                [void]`$global:$errorVarName.Add(`$EventArgs.Data) 
+            }
+"@))
+
     $started = $process.Start()
 
     if (-not $started) {
       throw "Failed to start Servy CLI process '$($script:ServyCliPath)'. " +
             "Verify the file exists, is not locked, and the current user has execute permissions."
     }
-    
-    # Read streams to capture output
-    if ($null -eq $process.StandardOutput) {
-      throw "Failed to capture standard output from Servy CLI."
-    }
-    if ($null -eq $process.StandardError) {
-      throw "Failed to capture standard error from Servy CLI."
-    }
+
+    # BEGIN ASYNC READ
+    $process.BeginErrorReadLine()
+
+    # Read stdout synchronously
     try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
-    try { $stderr = $process.StandardError.ReadToEnd() } catch { }
+
     $process.WaitForExit()
+
+    # COLLECT stderr
+    # Convert our collected array back into a string
+    $stderr = (Get-Variable -Name $errorVarName -Scope Global -ValueOnly) -join [Environment]::NewLine
 
     # CRITICAL: Capture the exit code while the process object is still active
     $exitCode = $process.ExitCode
@@ -226,12 +244,24 @@ function Invoke-ServyCli {
     }
   }
   catch {
+    # Ensure we still try to get whatever stderr we have if a crash occurs
+    try { 
+        $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
+        if ($list) { $stderr = $list -join [Environment]::NewLine }
+    } catch {}
+
     $partialOutput = ""
     if (-not [string]::IsNullOrEmpty($stdout)) { $partialOutput += " Stdout: $($stdout.TrimEnd())" }
     if (-not [string]::IsNullOrEmpty($stderr)) { $partialOutput += " Stderr: $($stderr.TrimEnd())" }
     throw "$($ErrorContext): $_$partialOutput"
   }
   finally {
+    # CRITICAL: Clean up events and global variables even if the code fails
+    if ($errorEvent) {
+      Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
+    }
+    Remove-Variable -Name $errorVarName -Scope Global -ErrorAction SilentlyContinue
+
     if ($null -ne $process) {
       $process.Dispose()
     }
@@ -576,27 +606,27 @@ function Install-ServyService {
     [string] $Priority,
     [string] $Stdout,
     [string] $Stderr,
-    [ValidateRange(1, [int]::MaxValue)]
+    [ValidateRange(1, 2147483647)]
     [int] $StartTimeout,
-    [ValidateRange(1, [int]::MaxValue)]
+    [ValidateRange(1, 2147483647)]
     [int] $StopTimeout,
     [switch] $EnableRotation,
     [switch] $EnableSizeRotation,
-    [ValidateRange(1, [int]::MaxValue)]
+    [ValidateRange(1, 2147483647)]
     [int] $RotationSize,
     [switch] $EnableDateRotation,
     [ValidateSet("Daily", "Weekly", "Monthly")]
     [string] $DateRotationType,
-    [ValidateRange(0, [int]::MaxValue)]
+    [ValidateRange(0, 2147483647)]
     [int] $MaxRotations,
     [switch] $EnableHealth,
-    [ValidateRange(5, [int]::MaxValue)]
+    [ValidateRange(5, 2147483647)]
     [int] $HeartbeatInterval,
-    [ValidateRange(1, [int]::MaxValue)]
+    [ValidateRange(1, 2147483647)]
     [int] $MaxFailedChecks,
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
-    [ValidateRange(1, [int]::MaxValue)]
+    [ValidateRange(1, 2147483647)]
     [int] $MaxRestartAttempts,
     [string] $FailureProgramPath,
     [string] $FailureProgramStartupDir,
@@ -613,7 +643,7 @@ function Install-ServyService {
     [string] $PreLaunchEnv,
     [string] $PreLaunchStdout,
     [string] $PreLaunchStderr,
-    [ValidateRange(0, [int]::MaxValue)]
+    [ValidateRange(0, 2147483647)]
     [int] $PreLaunchTimeout,
     [string] $PreLaunchRetryAttempts,
     [switch] $PreLaunchIgnoreFailure,
@@ -630,7 +660,7 @@ function Install-ServyService {
     [string] $PreStopPath,
     [string] $PreStopStartupDir,
     [string] $PreStopParams,
-    [ValidateRange(0, [int]::MaxValue)]
+    [ValidateRange(0, 2147483647)]
     [int] $PreStopTimeout,
     [switch] $PreStopLogAsError,
 
