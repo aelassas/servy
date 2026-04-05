@@ -128,42 +128,42 @@ function Add-Arg {
   return $list
 }
 
-<#
-.SYNOPSIS
-    Internal helper to execute the Servy CLI.
-
-.DESCRIPTION
-    Builds and executes a Servy CLI command with the provided arguments.
-    This function centralizes CLI invocation logic, including command
-    construction, quiet mode handling, and error propagation.
-
-    It ensures the Servy CLI path is validated before execution and throws
-    a terminating error with contextual information if the command fails.
-
-.PARAMETER Command
-    The Servy CLI command to execute (for example: install, uninstall, start).
-
-.PARAMETER Arguments
-    An array of additional command-line arguments to pass to the Servy CLI.
-
-.PARAMETER Quiet
-    When specified, adds the --quiet flag to suppress interactive output.
-
-.PARAMETER ErrorContext
-    A contextual error message describing the operation being performed.
-    This message is included in any thrown exception.
-
-.NOTES
-    This function is intended for internal use within the Servy PowerShell
-    module and is not exported.
-
-    Compatible with PowerShell 2.0 and later.
-
-.EXAMPLE
-    Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
-
-#>
 function Invoke-ServyCli {
+  <#
+  .SYNOPSIS
+      Internal helper to execute the Servy CLI.
+
+  .DESCRIPTION
+      Builds and executes a Servy CLI command with the provided arguments.
+      This function centralizes CLI invocation logic, including command
+      construction, quiet mode handling, and error propagation.
+
+      It ensures the Servy CLI path is validated before execution and throws
+      a terminating error with contextual information if the command fails.
+
+  .PARAMETER Command
+      The Servy CLI command to execute (for example: install, uninstall, start).
+
+  .PARAMETER Arguments
+      An array of additional command-line arguments to pass to the Servy CLI.
+
+  .PARAMETER Quiet
+      When specified, adds the --quiet flag to suppress interactive output.
+
+  .PARAMETER ErrorContext
+      A contextual error message describing the operation being performed.
+      This message is included in any thrown exception.
+
+  .NOTES
+      This function is intended for internal use within the Servy PowerShell
+      module and is not exported.
+
+      Compatible with PowerShell 2.0 and later.
+
+  .EXAMPLE
+      Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
+
+  #>
   param(
     [string] $Command,
     [array]  $Arguments,
@@ -242,6 +242,48 @@ function Invoke-ServyCli {
     $errorMessage = if (-not [string]::IsNullOrEmpty($stderr)) { $stderr.TrimEnd() } else { "Unknown error" }
     throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }
+}
+
+function Invoke-ServyServiceCommand {
+  <#
+  .SYNOPSIS
+      Executes a specific service management command via the Servy CLI.
+
+  .DESCRIPTION
+      Wraps the Servy CLI to perform actions such as start, stop, or restart on a 
+      specified service. It handles argument construction and provides context 
+      for error reporting.
+
+  .PARAMETER Command
+      The service command to execute (e.g., 'start', 'stop', 'restart').
+
+  .PARAMETER Name
+      The unique name of the service to target.
+
+  .PARAMETER Quiet
+      If set, suppresses non-essential output from the CLI.
+
+  .EXAMPLE
+      Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
+      Starts the 'Wexflow' service silently.
+  #>
+    [cmdletbinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [string] $Command,
+
+        [Parameter(Mandatory=$true)]
+        [string] $Name,
+
+        [switch] $Quiet
+    )
+
+    $argsList = @()
+    # Assuming Add-Arg is a helper that appends '--name' and the service name
+    $argsList = Add-Arg $argsList "--name" $Name
+
+    # FIX: Changed -Command Command to -Command $Command
+    Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext "Failed to $Command service '$Name'"
 }
 
 # ----------------------------------------------------------------
@@ -687,7 +729,7 @@ function Uninstall-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
   
-  Invoke-ServyCli -Command "uninstall" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to uninstall service '$Name'"
+  Invoke-ServyServiceCommand -Command "uninstall" -Name $Name -Quiet:$Quiet
 }
 
 function Start-ServyService {
@@ -719,7 +761,7 @@ function Start-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "start" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to start service '$Name'"
+  Invoke-ServyServiceCommand -Command "start" -Name $Name -Quiet:$Quiet
 }
 
 function Stop-ServyService {
@@ -751,7 +793,7 @@ function Stop-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "stop" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to stop service '$Name'"
+  Invoke-ServyServiceCommand -Command "stop" -Name $Name -Quiet:$Quiet
 }
 
 function Restart-ServyService {
@@ -783,7 +825,7 @@ function Restart-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "restart" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to restart service '$Name'"
+  Invoke-ServyServiceCommand -Command "restart" -Name $Name -Quiet:$Quiet
 }
 
 function Get-ServyServiceStatus {
@@ -816,7 +858,7 @@ function Get-ServyServiceStatus {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  Invoke-ServyCli -Command "status" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to get status of service '$Name'"
+  Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet
 }
 
 function Export-ServyServiceConfig {
