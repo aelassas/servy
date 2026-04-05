@@ -1,8 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Servy.Service.Helpers
 {
@@ -106,7 +103,16 @@ namespace Servy.Service.Helpers
             foreach (var kvp in variables)
             {
                 string token = "%" + kvp.Key + "%";
-                string replacement = kvp.Value ?? string.Empty; // use a local variable, don't modify kvp
+                string replacement = kvp.Value ?? string.Empty;
+
+                // FIX: Detect and skip self-referencing tokens.
+                // If the replacement value already contains the token we are trying to resolve, 
+                // skip it. This prevents unbounded exponential string growth during dictionary mutation
+                // and safely short-circuits both direct and indirect circular references.
+                if (replacement.Contains(token, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
 
                 int index = 0;
                 while ((index = expanded.IndexOf(token, index, StringComparison.OrdinalIgnoreCase)) >= 0)
@@ -119,5 +125,6 @@ namespace Servy.Service.Helpers
             // Also apply Windows built-in expansion (covers %SystemRoot% etc.)
             return Environment.ExpandEnvironmentVariables(expanded);
         }
+
     }
 }
