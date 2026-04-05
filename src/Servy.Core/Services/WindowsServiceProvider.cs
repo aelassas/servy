@@ -16,12 +16,21 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public IEnumerable<WindowsServiceInfo> GetServices()
         {
-            return ServiceController.GetServices()
-                .Select(s => new WindowsServiceInfo
+            var controllers = ServiceController.GetServices();
+            try
+            {
+                return controllers.Select(s => new WindowsServiceInfo
                 {
                     ServiceName = s.ServiceName,
                     DisplayName = s.DisplayName
-                });
+                }).ToList();
+            }
+            finally
+            {
+                foreach (var sc in controllers)
+                    sc.Dispose();
+            }
+
         }
 
     }

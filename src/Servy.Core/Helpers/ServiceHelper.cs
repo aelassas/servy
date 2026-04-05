@@ -211,55 +211,62 @@ namespace Servy.Core.Helpers
             {
                 // 1. Get all services via SCM
                 ServiceController[] services = ServiceController.GetServices();
-
-                foreach (var sc in services)
+                try
                 {
-                    // Only care about running services
-                    if (sc.Status != ServiceControllerStatus.Running)
-                        continue;
-
-                    // 2. Query Registry for the ImagePath (Binary Path)
-                    // SCM stores this in HKLM\SYSTEM\CurrentControlSet\Services\[ServiceName]
-                    string registryKeyPath = $@"SYSTEM\CurrentControlSet\Services\{sc.ServiceName}";
-                    using (var key = Registry.LocalMachine.OpenSubKey(registryKeyPath))
+                    foreach (var sc in services)
                     {
-                        if (key == null) continue;
+                        // Only care about running services
+                        if (sc.Status != ServiceControllerStatus.Running)
+                            continue;
 
-                        var pathName = key.GetValue("ImagePath")?.ToString();
-                        if (string.IsNullOrWhiteSpace(pathName)) continue;
-
-                        // 1. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
-                        string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
-
-                        // 2. Extract the actual exe path (Handling quotes and arguments)
-                        string exePath;
-                        int firstQuote = expandedPath.IndexOf('"');
-                        if (firstQuote >= 0)
+                        // 2. Query Registry for the ImagePath (Binary Path)
+                        // SCM stores this in HKLM\SYSTEM\CurrentControlSet\Services\[ServiceName]
+                        string registryKeyPath = $@"SYSTEM\CurrentControlSet\Services\{sc.ServiceName}";
+                        using (var key = Registry.LocalMachine.OpenSubKey(registryKeyPath))
                         {
-                            int secondQuote = expandedPath.IndexOf('"', firstQuote + 1);
-                            if (secondQuote > firstQuote)
-                                exePath = expandedPath.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
-                            else
-                                exePath = expandedPath; // Fallback
-                        }
-                        else
-                        {
-                            // If no quotes, take until first space (arguments)
-                            int firstSpace = expandedPath.IndexOf(' ');
-                            exePath = firstSpace > 0 ? expandedPath.Substring(0, firstSpace) : expandedPath;
-                        }
+                            if (key == null) continue;
 
-                        // 4. Resolve the filename and compare
-                        try
-                        {
-                            var exeName = Path.GetFileName(exePath);
-                            if (string.Equals(exeName, wrapperExe, StringComparison.OrdinalIgnoreCase))
+                            var pathName = key.GetValue("ImagePath")?.ToString();
+                            if (string.IsNullOrWhiteSpace(pathName)) continue;
+
+                            // 1. Expand variables first (e.g., %SystemRoot% -> C:\Windows)
+                            string expandedPath = Environment.ExpandEnvironmentVariables(pathName);
+
+                            // 2. Extract the actual exe path (Handling quotes and arguments)
+                            string exePath;
+                            int firstQuote = expandedPath.IndexOf('"');
+                            if (firstQuote >= 0)
                             {
-                                result.Add(sc.ServiceName);
+                                int secondQuote = expandedPath.IndexOf('"', firstQuote + 1);
+                                if (secondQuote > firstQuote)
+                                    exePath = expandedPath.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
+                                else
+                                    exePath = expandedPath; // Fallback
                             }
+                            else
+                            {
+                                // If no quotes, take until first space (arguments)
+                                int firstSpace = expandedPath.IndexOf(' ');
+                                exePath = firstSpace > 0 ? expandedPath.Substring(0, firstSpace) : expandedPath;
+                            }
+
+                            // 4. Resolve the filename and compare
+                            try
+                            {
+                                var exeName = Path.GetFileName(exePath);
+                                if (string.Equals(exeName, wrapperExe, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    result.Add(sc.ServiceName);
+                                }
+                            }
+                            catch (ArgumentException) { /* Handle invalid paths gracefully */ }
                         }
-                        catch (ArgumentException) { /* Handle invalid paths gracefully */ }
                     }
+                }
+                finally
+                {
+                    foreach (var sc in services)
+                        sc.Dispose();
                 }
             }
             catch (Exception ex)

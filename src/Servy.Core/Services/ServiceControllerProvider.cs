@@ -31,9 +31,18 @@ namespace Servy.Core.Services
         {
             // Retrieve native ServiceController instances from the OS,
             // then map them to your custom wrapper using the provided factory.
-            return ServiceController.GetServices()
-                .Select(sc => _factory(sc.ServiceName))
-                .ToArray();
+            var controllers = ServiceController.GetServices();
+            try
+            {
+                return controllers
+                    .Select(sc => _factory(sc.ServiceName))
+                    .ToArray();
+            }
+            finally
+            {
+                foreach (var sc in controllers)
+                    sc.Dispose();
+            }
         }
     }
 }
