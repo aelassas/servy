@@ -1,4 +1,5 @@
 ﻿using Servy.Core.DTOs;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace Servy.Core.Helpers
@@ -14,10 +15,17 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(xml))
                 return null;
 
-            var serializer = new XmlSerializer(typeof(ServiceDto));
-            using (var reader = new StringReader(xml))
+            var settings = new XmlReaderSettings
             {
-                return serializer.Deserialize(reader) as ServiceDto;
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null,
+            };
+
+            var serializer = new XmlSerializer(typeof(ServiceDto));
+            using (var stringReader = new StringReader(xml))
+            using (var xmlReader = XmlReader.Create(stringReader, settings))
+            {
+                return serializer.Deserialize(xmlReader) as ServiceDto;
             }
         }
     }
