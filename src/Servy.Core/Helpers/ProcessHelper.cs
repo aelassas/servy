@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
@@ -300,6 +301,67 @@ namespace Servy.Core.Helpers
             {
                 return false; // ResolvePath failed (unexpanded vars or relative path)
             }
+        }
+
+        /// <summary>
+        /// Encapsulates a string argument in double quotes and escapes internal quotes and backslashes 
+        /// according to the Win32 'CommandLineToArgvW' rules.
+        /// </summary>
+        /// <remarks>
+        /// This is required in .NET Framework 4.8 and earlier when building <see cref="System.Diagnostics.ProcessStartInfo.Arguments"/> 
+        /// to prevent argument injection vulnerabilities and ensure paths with spaces or special characters are parsed correctly.
+        /// 
+        /// Rule summary:
+        /// 1. The argument is wrapped in double quotes.
+        /// 2. Double quotes inside the string are escaped with a backslash (\").
+        /// 3. Backslashes are treated literally unless they immediately precede a double quote.
+        /// 4. If backslashes precede a double quote, they must be doubled (2n) so the last one doesn't escape the quote.
+        /// </remarks>
+        /// <param name="arg">The raw command-line argument to escape.</param>
+        /// <returns>A shell-safe, quoted string ready for use in a process start command.</returns>
+        public static string EscapeProcessArgument(string arg)
+        {
+            if (string.IsNullOrWhiteSpace(arg)) return "\"\"";
+
+            // Replace " with \"
+            // But we must also handle backslashes that precede a "
+            // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
+            // The logic: 2n backslashes + " => n backslashes + literal "
+            // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
+            // Actually, a simpler way for standard .NET/Windows:
+            StringBuilder sb = new StringBuilder();
+            sb.Append('"');
+            for (int i = 0; i < arg.Length; i++)
+            {
+                int backslashCount = 0;
+                while (i < arg.Length && arg[i] == '\\')
+                {
+                    backslashCount++;
+                    i++;
+                }
+
+                if (i == arg.Length)
+                {
+                    // Backslashes at the end of the string need to be doubled 
+                    // so they don't escape the closing quote
+                    sb.Append('\\', backslashCount * 2);
+                }
+                else if (arg[i] == '"')
+                {
+                    // Backslashes before a quote need to be doubled, 
+                    // and then the quote itself needs a backslash
+                    sb.Append('\\', backslashCount * 2 + 1);
+                    sb.Append('"');
+                }
+                else
+                {
+                    // Regular character, just add the backslashes and the char
+                    sb.Append('\\', backslashCount);
+                    sb.Append(arg[i]);
+                }
+            }
+            sb.Append('"');
+            return sb.ToString();
         }
 
     }

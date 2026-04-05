@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
@@ -47,11 +48,11 @@ namespace Servy.Core.Helpers
             var psi = new ProcessStartInfo
             {
                 FileName = handleExePath,
-                Arguments = $"\"{filePath}\" /accepteula",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
-                CreateNoWindow = true
+                CreateNoWindow = true,
+                Arguments = $"{ProcessHelper.EscapeProcessArgument(filePath)} /accepteula"
             };
 
             using (var process = Process.Start(psi))
@@ -81,5 +82,6 @@ namespace Servy.Core.Helpers
 
             return processes;
         }
+
     }
 }
