@@ -113,7 +113,32 @@ if ($PSVersionTable.PSVersion.Major -ge 3) {
 $timestampFile = Join-Path $ModuleRoot "last-processed-toast.dat"
 
 # -------------------------------
-# 2. Read Last Processed Timestamp
+# 2. Imports
+# -------------------------------
+$helperScript = Join-Path $ModuleRoot "Get-ServyLastErrors.ps1"
+
+if (-not (Test-Path $helperScript)) {
+    $errorMsg = "Servy Notification Error: Required dependency not found at '$helperScript'. Please ensure the file exists in the script directory."
+    
+    # 1. Attempt to log to Event Log for administrator visibility
+    try {
+        Write-EventLog -LogName Application -Source "Servy" -EventId 9901 `
+                       -EntryType Error -Message $errorMsg -ErrorAction Stop
+    }
+    catch {
+        # 2. Fallback to stderr if Event Log fails (or source isn't registered)
+        Write-Error $errorMsg
+    }
+
+    # 3. Exit with error code
+    exit 1
+}
+
+# File exists, proceed with dot-sourcing
+. $helperScript
+
+# -------------------------------
+# 3. Read Last Processed Timestamp
 # -------------------------------
 $lastProcessed = $null
 if (Test-Path $timestampFile) {
@@ -126,46 +151,9 @@ if (Test-Path $timestampFile) {
 }
 
 # -------------------------------
-# 3. Build Filter and Query Events
+# 4. Get Latest Errors
 # -------------------------------
-$filter = @{
-    LogName = 'Application'
-    ProviderName = 'Servy'
-    Level = 2  # Error
-}
-
-if ($lastProcessed) {
-    $filter.StartTime = $lastProcessed
-}
-
-try {
-    $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
-}
-catch {
-  if ($_.Exception.Message -like "*No events were found*") {
-    Write-Host "No Servy error events found."
-    exit 0
-  }
-
-  $errorMsg = "Failed to query Windows event log for Servy errors: $_"
-  try {
-    Write-EventLog -LogName Application -Source "Servy" -EventId 9901 -EntryType Warning -Message $errorMsg -ErrorAction Stop
-  }
-  catch {
-    $errorMsg | Out-File -FilePath (Join-Path $ModuleRoot "ServyFailureNotification.log") -Append -ErrorAction SilentlyContinue
-  }
-
-  exit 1
-}
-
-# -------------------------------
-# 4. Precision Filtering & Timestamp Update
-# -------------------------------
-if ($lastProcessed) {
-    $errors = @($errors | Where-Object { $_.TimeCreated -gt $lastProcessed })
-}
-
-if ($errors.Count -eq 0) { exit 0 }
+$errors = Get-ServyLastErrors -LastProcessed $lastProcessed
 
 # -------------------------------
 # 5. Update Timestamp File
