@@ -102,8 +102,20 @@ try {
     $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
 }
 catch {
-    # Exiting cleanly if no new events match the filter
+  if ($_.Exception.Message -like "*No events were found*") {
+    Write-Host "No Servy error events found."
     exit 0
+  }
+
+  $errorMsg = "Failed to query Windows event log for Servy errors: $_"
+  try {
+    Write-EventLog -LogName Application -Source "Servy" -EventId 9901 -EntryType Warning -Message $errorMsg -ErrorAction Stop
+  }
+  catch {
+    $errorMsg | Out-File -FilePath (Join-Path $ModuleRoot "ServyFailureEmail.log") -Append -ErrorAction SilentlyContinue
+  }
+
+  exit 1
 }
 
 # -------------------------------
