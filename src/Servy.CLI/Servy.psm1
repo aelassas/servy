@@ -391,7 +391,10 @@ function Show-ServyHelp {
     [string] $Command
   )
 
-  Invoke-ServyCli -Command "help" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
+  $argsList = @()
+  if ($Command) { $argsList = Add-Arg $argsList "--help" -Flag }
+
+  Invoke-ServyCli -Command $Command -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
 }
 
 function Install-ServyService {
