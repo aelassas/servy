@@ -268,13 +268,7 @@ function Show-ServyVersion {
     [switch] $Quiet
   )
 
-  $invokeParams = @{
-    Command      = "--version"
-    Quiet        = $Quiet
-    ErrorContext = "Failed to get Servy CLI version"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "--version" -Quiet:$Quiet -ErrorContext "Failed to get Servy CLI version"
 }
 
 function Show-ServyHelp {
@@ -306,14 +300,7 @@ function Show-ServyHelp {
     [string] $Command
   )
 
-  $invokeParams = @{
-    Command      = "help"
-    Arguments    = if ($Command) { @($Command) } else { @() }
-    Quiet        = $Quiet
-    ErrorContext = "Failed to display Servy CLI help"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "help" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
 }
 
 function Install-ServyService {
@@ -668,14 +655,7 @@ function Install-ServyService {
   if ($PreStopLogAsError)                        { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
   # 4. Invoke CLI
-  $invokeParams = @{
-    Command      = "install"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to install service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to install service '$Name'"
 }
 
 function Uninstall-ServyService {
@@ -707,14 +687,7 @@ function Uninstall-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
   
-  $invokeParams = @{
-    Command      = "uninstall"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to uninstall service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "uninstall" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to uninstall service '$Name'"
 }
 
 function Start-ServyService {
@@ -746,14 +719,7 @@ function Start-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  $invokeParams = @{
-    Command      = "start"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to start service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "start" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to start service '$Name'"
 }
 
 function Stop-ServyService {
@@ -785,14 +751,7 @@ function Stop-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  $invokeParams = @{
-    Command      = "stop"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to stop service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "stop" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to stop service '$Name'"
 }
 
 function Restart-ServyService {
@@ -824,14 +783,7 @@ function Restart-ServyService {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  $invokeParams = @{
-    Command      = "restart"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to restart service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "restart" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to restart service '$Name'"
 }
 
 function Get-ServyServiceStatus {
@@ -864,14 +816,7 @@ function Get-ServyServiceStatus {
   $argsList = @()
   $argsList = Add-Arg $argsList "--name" $Name
 
-  $invokeParams = @{
-    Command      = "status"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to get status of service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "status" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to get status of service '$Name'"
 }
 
 function Export-ServyServiceConfig {
@@ -918,14 +863,7 @@ function Export-ServyServiceConfig {
   $argsList = Add-Arg $argsList "--config" $ConfigFileType
   $argsList = Add-Arg $argsList "--path" $Path
 
-  $invokeParams = @{
-    Command      = "export"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to export configuration for service '$Name'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "export" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to export configuration for service '$Name'"
 }
 
 function Import-ServyServiceConfig {
@@ -975,12 +913,5 @@ function Import-ServyServiceConfig {
   $argsList = Add-Arg $argsList "--path" $Path
   if ($Install) { $argsList = Add-Arg $argsList "--install" -Flag }
 
-  $invokeParams = @{
-    Command      = "import"
-    Arguments    = $argsList
-    Quiet        = $Quiet
-    ErrorContext = "Failed to import configuration from '$Path'"
-  }
-
-  Invoke-ServyCli @invokeParams
+  Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to import configuration from '$Path'"
 }
