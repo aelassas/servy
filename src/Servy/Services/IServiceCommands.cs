@@ -130,19 +130,19 @@ namespace Servy.Services
         /// Starts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to start.</param>
-        void StartService(string serviceName);
+        Task StartService(string serviceName);
 
         /// <summary>
         /// Stops the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to stop.</param>
-        void StopService(string serviceName);
+        Task StopService(string serviceName);
 
         /// <summary>
         /// Restarts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        void RestartService(string serviceName);
+        Task RestartService(string serviceName);
 
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.

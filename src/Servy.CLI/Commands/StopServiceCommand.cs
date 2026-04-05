@@ -40,7 +40,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceNotFound);
                 }
 
-                var success = await _serviceManager.StopService(opts.ServiceName);
+                var success = await _serviceManager.StopServiceAsync(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service stopped successfully.")
                     : CommandResult.Fail("Failed to stop service.");

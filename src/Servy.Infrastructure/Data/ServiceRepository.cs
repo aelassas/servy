@@ -442,7 +442,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = @"
         SELECT *
@@ -509,7 +509,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportXML(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -524,7 +524,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportXML(string xml, CancellationToken cancellationToken = default)
+        public virtual async Task<bool> ImportXmlAsync(string xml, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(xml))
                 return false;
@@ -545,7 +545,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<string> ExportJSON(string name, CancellationToken cancellationToken = default)
+        public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
         {
             var service = await GetByNameAsync(name);
             if (service == null)
@@ -555,7 +555,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
-        public virtual async Task<bool> ImportJSON(string json, CancellationToken cancellationToken = default)
+        public virtual async Task<bool> ImportJsonAsync(string json, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(json))
                 return false;
@@ -617,21 +617,21 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public async Task<IEnumerable<Service>> SearchDomainServicesAsync(IServiceManager serviceManager, string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var dtos = await Search(keyword, decrypt, cancellationToken);
+            var dtos = await SearchAsync(keyword, decrypt, cancellationToken);
             return dtos.Select(dto => MapToDomain(serviceManager, dto));
         }
 
         /// <inheritdoc />
-        public async Task<string> ExportDomainServiceXMLAsync(string name, CancellationToken cancellationToken = default) => await ExportXML(name, cancellationToken);
+        public async Task<string> ExportDomainServiceXMLAsync(string name, CancellationToken cancellationToken = default) => await ExportXmlAsync(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> ImportDomainServiceXMLAsync(string xml, CancellationToken cancellationToken = default) => await ImportXML(xml, cancellationToken);
+        public async Task<bool> ImportDomainServiceXMLAsync(string xml, CancellationToken cancellationToken = default) => await ImportXmlAsync(xml, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<string> ExportDomainServiceJSONAsync(string name, CancellationToken cancellationToken = default) => await ExportJSON(name, cancellationToken);
+        public async Task<string> ExportDomainServiceJSONAsync(string name, CancellationToken cancellationToken = default) => await ExportJsonAsync(name, cancellationToken);
 
         /// <inheritdoc />
-        public async Task<bool> ImportDomainServiceJSONAsync(string json, CancellationToken cancellationToken = default) => await ImportJSON(json, cancellationToken);
+        public async Task<bool> ImportDomainServiceJSONAsync(string json, CancellationToken cancellationToken = default) => await ImportJsonAsync(json, cancellationToken);
 
         #endregion
 

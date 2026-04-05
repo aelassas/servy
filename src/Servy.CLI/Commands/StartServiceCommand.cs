@@ -47,7 +47,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var success = await _serviceManager.StartService(opts.ServiceName);
+                var success = await _serviceManager.StartServiceAsync(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service started successfully.")
                     : CommandResult.Fail("Failed to start service.");

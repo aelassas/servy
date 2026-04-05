@@ -76,27 +76,27 @@ namespace Servy.Infrastructure.UnitTests.Data
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { new ServiceDto { Name = "StubService" } });
         }
 
-        public override Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken token = default)
+        public override Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken token = default)
         {
             return Task.FromResult<IEnumerable<ServiceDto>>(new List<ServiceDto> { new ServiceDto { Name = "StubService" } });
         }
 
-        public override Task<string> ExportXML(string name, CancellationToken token = default)
+        public override Task<string> ExportXmlAsync(string name, CancellationToken token = default)
         {
             return Task.FromResult("<xml></xml>");
         }
 
-        public override Task<bool> ImportXML(string xml, CancellationToken token = default)
+        public override Task<bool> ImportXmlAsync(string xml, CancellationToken token = default)
         {
             return Task.FromResult(true);
         }
 
-        public override Task<string> ExportJSON(string name, CancellationToken token = default)
+        public override Task<string> ExportJsonAsync(string name, CancellationToken token = default)
         {
             return Task.FromResult("{ }");
         }
 
-        public override Task<bool> ImportJSON(string json, CancellationToken token = default)
+        public override Task<bool> ImportJsonAsync(string json, CancellationToken token = default)
         {
             return Task.FromResult(true);
         }

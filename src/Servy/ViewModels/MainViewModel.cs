@@ -849,9 +849,9 @@ namespace Servy.ViewModels
 
             InstallCommand = new AsyncCommand(InstallService);
             UninstallCommand = new AsyncCommand(UninstallService);
-            StartCommand = new RelayCommand<object>(_ => StartService());
-            StopCommand = new RelayCommand<object>(_ => StopService());
-            RestartCommand = new RelayCommand<object>(_ => RestartService());
+            StartCommand = new AsyncCommand(StartService);
+            StopCommand = new AsyncCommand(StopService);
+            RestartCommand = new AsyncCommand(RestartService);
 
             ManagerCommand = new AsyncCommand(OpenManager);
 
@@ -1166,25 +1166,25 @@ namespace Servy.ViewModels
         /// <summary>
         /// Calls <see cref="IServiceCommands.StartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void StartService()
+        private async Task StartService(object parameter)
         {
-            ServiceCommands.StartService(ServiceName);
+            await ServiceCommands.StartService(ServiceName);
         }
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.StopService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void StopService()
+        private async Task StopService(object parameter)
         {
-            ServiceCommands.StopService(ServiceName);
+            await ServiceCommands.StopService(ServiceName);
         }
 
         /// <summary>
         /// Calls <see cref="IServiceCommands.RestartService"/> for the current <see cref="ServiceName"/>.
         /// </summary>
-        private void RestartService()
+        private async Task RestartService(object parameter)
         {
-            ServiceCommands.RestartService(ServiceName);
+            await ServiceCommands.RestartService(ServiceName);
         }
 
         /// <summary>

@@ -47,7 +47,7 @@ namespace Servy.CLI.Commands
                 }
 
                 // Attempt to uninstall the service
-                var success = await _serviceManager.UninstallService(opts.ServiceName);
+                var success = await _serviceManager.UninstallServiceAsync(opts.ServiceName);
                 if (success)
                 {
                     // Remove the service record from the repository
