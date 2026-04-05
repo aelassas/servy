@@ -17,8 +17,8 @@ namespace Servy.Core.IO
     {
         private bool _disposed;
         private readonly FileInfo _file;
-        private StreamWriter _writer;
-        private FileStream _baseStream;
+        private StreamWriter? _writer;
+        private FileStream? _baseStream;
         private readonly bool _enableSizeRotation;
         private readonly long _rotationSizeInBytes;
         private readonly bool _enableDateRotation;
@@ -96,13 +96,14 @@ namespace Servy.Core.IO
             // Explicitly using FileSystemRights.AppendData forces the Win32 kernel to drop FILE_WRITE_DATA.
             // The OS will now physically reject any write that doesn't go to the true EOF,
             // completely eliminating NULL holes even if an external process clears the file.
-            _baseStream = new FileStream(
-                _file.FullName,
-                FileMode.Append,
-                FileSystemRights.AppendData, // The strict Win32 flag
-                FileShare.ReadWrite,
-                4096,
-                FileOptions.None);
+            _baseStream = FileSystemAclExtensions.Create(
+                fileInfo: _file,
+                mode: FileMode.Append,
+                rights: FileSystemRights.AppendData, // The strict Win32 flag FileSystemRights.AppendData
+                share: FileShare.ReadWrite,
+                bufferSize: 4096,
+                options: FileOptions.None,
+                fileSecurity: null);
 
             _writer = new StreamWriter(_baseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) // UTF-8 without BOM
             {
@@ -126,10 +127,10 @@ namespace Servy.Core.IO
                     InitializeWriter();
                 }
 
-                _writer.WriteLine(line);
+                _writer!.WriteLine(line);
                 // AutoFlush is true in InitializeWriter, but explicit flush ensures 
                 // the FileInfo.Length is accurate for the next CheckRotation call.
-                _writer.Flush();
+                _writer!.Flush();
 
                 // 2. Check if we need to rotate
                 CheckRotation();
@@ -151,10 +152,10 @@ namespace Servy.Core.IO
                     InitializeWriter();
                 }
 
-                _writer.Write(text);
+                _writer!.Write(text);
                 // AutoFlush is true in InitializeWriter, but explicit flush ensures 
                 // the FileInfo.Length is accurate for the next CheckRotation call.
-                _writer.Flush();
+                _writer!.Flush();
 
                 // 2. Check if we need to rotate
                 CheckRotation();
@@ -242,7 +243,7 @@ namespace Servy.Core.IO
             if (!File.Exists(basePath))
                 return basePath;
 
-            string directory = Path.GetDirectoryName(basePath);
+            string directory = Path.GetDirectoryName(basePath)!;
             string fileName = Path.GetFileName(basePath);
 
             string extension = Path.GetExtension(fileName);
@@ -282,7 +283,7 @@ namespace Servy.Core.IO
             if (_maxRotations <= 0)
                 return;
 
-            string directory = _file.Directory.FullName;
+            string directory = _file.Directory!.FullName;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             string extension = Path.GetExtension(_file.FullName);
 
@@ -324,6 +325,7 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Rotates the current log file by inserting a local timestamp before the file extension.
+        /// The caller must hold the lock.
         /// </summary>
         private void Rotate()
         {
@@ -332,14 +334,11 @@ namespace Servy.Core.IO
                 _file.Refresh();
                 if (!_file.Exists || _file.Length == 0) return;
 
-                lock (_lock)
-                {
-                    CloseWriter();
-                }
+                CloseWriter();
 
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-                var directory = Path.GetDirectoryName(_file.FullName);
+                var directory = Path.GetDirectoryName(_file.FullName)!;
                 var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
                 var extension = Path.GetExtension(_file.FullName);
 
