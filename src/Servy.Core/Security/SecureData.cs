@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -192,8 +193,18 @@ namespace Servy.Core.Security
                 // Fallback for legacy payloads that were encrypted but not version-tagged
                 return IsStrictBase64(payload) ? DecryptV1(payload) : payload;
             }
-            catch (FormatException) { return payload; }
-            catch (CryptographicException) { return payload; }
+            catch (FormatException ex)
+            {
+                // Backwards compatibility: Graceful fallback for Base64 decoding errors
+                Logger.Warn($"Decryption fallback triggered (FormatException): {ex.Message}");
+                return payload.ToString();
+            }
+            catch (CryptographicException ex)
+            {
+                // Backwards compatibility: Graceful fallback for key mismatches or corrupted ciphertext
+                Logger.Warn($"Decryption fallback triggered (CryptographicException): {ex.Message}");
+                return payload.ToString();
+            }
         }
 
         /// <summary>
