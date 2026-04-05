@@ -1,8 +1,8 @@
-[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=2)](https://codecov.io/gh/aelassas/servy)
 [![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/security.yml)
+[![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
 <!--
@@ -55,8 +55,7 @@ Servy offers a desktop app, a CLI, and a PowerShell module that let you create, 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 ## Why?
-
-See the [project notes](NOTES.md).
+Servy makes managing Windows services effortless. It provides a robust wrapper for any executable, offering features like automatic restarts, advanced logging, and a real-time management console. See the [project notes](NOTES.md) for details.
 
 ## Getting Started
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:
