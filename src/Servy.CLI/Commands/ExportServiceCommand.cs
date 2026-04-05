@@ -56,13 +56,13 @@ namespace Servy.CLI.Commands
                         case ConfigFileType.Xml:
                             var xml = await _serviceRepository.ExportXML(opts.ServiceName);
                             SaveFile(opts.Path, xml);
-                            Logger.Info($"XML configuration file saved successfully to: {opts.Path}");
-                            return CommandResult.Ok($"XML configuration file saved successfully to: {opts.Path}");
+                            Logger.Info($"XML configuration file exported successfully to: {opts.Path}");
+                            return CommandResult.Ok($"XML configuration exported saved successfully to: {opts.Path}");
                         case ConfigFileType.Json:
                             var json = await _serviceRepository.ExportJSON(opts.ServiceName);
                             SaveFile(opts.Path, json);
-                            Logger.Info($"JSON configuration file saved successfully to: {opts.Path}");
-                            return CommandResult.Ok($"JSON configuration file saved successfully to: {opts.Path}");
+                            Logger.Info($"JSON configuration file exported successfully to: {opts.Path}");
+                            return CommandResult.Ok($"JSON configuration exported saved successfully to: {opts.Path}");
                     }
 
                     return CommandResult.Ok();
@@ -90,4 +90,3 @@ namespace Servy.CLI.Commands
         }
     }
 }
-;
