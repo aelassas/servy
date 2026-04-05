@@ -415,7 +415,7 @@ function Install-ServyService {
         Switch to enable size-based log rotation. Optional.
 
     .PARAMETER RotationSize
-        Maximum log file size in bytes before rotation. Must be >= 1 MB. Optional.
+        Maximum log file size in Megabytes (MB) before rotation. Must be >= 1 MB. Optional.
 
     .PARAMETER EnableDateRotation
         Enable date-based log rotation based on the date interval specified by -DateRotationType. Optional.
@@ -576,21 +576,28 @@ function Install-ServyService {
     [string] $Priority,
     [string] $Stdout,
     [string] $Stderr,
-    [string] $StartTimeout,
-    [string] $StopTimeout,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $StartTimeout,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $StopTimeout,
     [switch] $EnableRotation,
     [switch] $EnableSizeRotation,
-    [string] $RotationSize,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $RotationSize,
     [switch] $EnableDateRotation,
     [ValidateSet("Daily", "Weekly", "Monthly")]
     [string] $DateRotationType,
-    [string] $MaxRotations,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int] $MaxRotations,
     [switch] $EnableHealth,
-    [string] $HeartbeatInterval,
-    [string] $MaxFailedChecks,
+    [ValidateRange(5, [int]::MaxValue)]
+    [int] $HeartbeatInterval,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $MaxFailedChecks,
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
-    [string] $MaxRestartAttempts,
+    [ValidateRange(1, [int]::MaxValue)]
+    [int] $MaxRestartAttempts,
     [string] $FailureProgramPath,
     [string] $FailureProgramStartupDir,
     [string] $FailureProgramParams,
@@ -606,7 +613,8 @@ function Install-ServyService {
     [string] $PreLaunchEnv,
     [string] $PreLaunchStdout,
     [string] $PreLaunchStderr,
-    [string] $PreLaunchTimeout,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int] $PreLaunchTimeout,
     [string] $PreLaunchRetryAttempts,
     [switch] $PreLaunchIgnoreFailure,
 
@@ -622,7 +630,8 @@ function Install-ServyService {
     [string] $PreStopPath,
     [string] $PreStopStartupDir,
     [string] $PreStopParams,
-    [string] $PreStopTimeout,
+    [ValidateRange(0, [int]::MaxValue)]
+    [int] $PreStopTimeout,
     [switch] $PreStopLogAsError,
 
     # Post-stop
