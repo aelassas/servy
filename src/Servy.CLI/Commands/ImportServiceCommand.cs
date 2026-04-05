@@ -133,7 +133,7 @@ namespace Servy.CLI.Commands
 
             // If installation not requested, return success
             if (!opts.InstallService)
-                return CommandResult.Ok("XML configuration saved successfully.");
+                return CommandResult.Ok("XML configuration imported successfully.");
 
             // Deserialize service for installation
             var service = _xmlServiceSerializer.Deserialize(xml);
@@ -166,7 +166,7 @@ namespace Servy.CLI.Commands
 
             // If installation not requested, return success
             if (!opts.InstallService)
-                return CommandResult.Ok("JSON configuration saved successfully.");
+                return CommandResult.Ok("JSON configuration imported successfully.");
 
             // Deserialize service for installation
             var service = JsonConvert.DeserializeObject<ServiceDto>(json);
