@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Servy.CLI.Helpers
+﻿namespace Servy.CLI.Helpers
 {
     /// <summary>
     /// Provides helper methods for console applications.
@@ -54,7 +50,7 @@ namespace Servy.CLI.Helpers
                     // Stop spinner
                     await cts.CancelAsync();
                     await spinnerTask.ConfigureAwait(false); // ensure spinner exits
-                    Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r"); // clear line
+                    Console.Write($"\r{new string(' ', Console.WindowWidth)}\r"); // clear line
                 }
             }
         }
