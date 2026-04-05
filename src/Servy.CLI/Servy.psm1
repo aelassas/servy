@@ -118,19 +118,13 @@ function Add-Arg {
     [switch] $Flag  # Indicates a flag without a value
   )
 
-  # 1. If it's a flag, simply append the key
   if ($Flag) {
-    # If it's a flag, simply append the key
     [array]$list += $key.Trim()
   }
 
-  # 2. Robust check for null or empty strings
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   elseif ($null -ne $value -and $value.Trim() -ne "") {
-
-    # For Windows command-line parsing via ProcessStartInfo.Arguments:
-    # Escape internal double quotes with backslashes (Windows convention).
-    # This is DIFFERENT from PowerShell's "" escaping.
+    # Escape internal double quotes with backslashes (Windows convention, not PowerShell's "")
     $escapedValue = $value.Replace('"', '\"')
 
     # Double trailing backslashes so they don't escape the closing quote
@@ -138,13 +132,9 @@ function Add-Arg {
         $escapedValue += '\'
     }
 
-    # 3. Explicitly cast to array during addition to prevent string concatenation 
-    # if $list somehow became a single string.
     [array]$list += "$($key.Trim())=`"$escapedValue`""
   }
 
-  # 4. Array integrity is preserved by the assignment context at all call sites.
-  # No unary comma needed.
   return $list
 }
 
