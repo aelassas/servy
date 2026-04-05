@@ -209,14 +209,19 @@ function Invoke-ServyCli {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
     
-    $process.Start() | Out-Null
+    $started = $process.Start()
+
+    if (-not $started) {
+      throw "Failed to start Servy CLI process '$($script:ServyCliPath)'. " +
+            "Verify the file exists, is not locked, and the current user has execute permissions."
+    }
     
     # Read streams to capture output
     if ($null -eq $process.StandardOutput) {
-      throw "$($ErrorContext): Failed to capture standard output from Servy CLI."
+      throw "Failed to capture standard output from Servy CLI."
     }
     if ($null -eq $process.StandardError) {
-      throw "$($ErrorContext): Failed to capture standard error from Servy CLI."
+      throw "Failed to capture standard error from Servy CLI."
     }
     try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
     try { $stderr = $process.StandardError.ReadToEnd() } catch { }
