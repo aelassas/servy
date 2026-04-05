@@ -52,10 +52,27 @@ function Send-NotificationEmail {
     $from       = "servy.notifications@example.com"
     $to         = "admin@example.com"
 
-    $securePass = ConvertTo-SecureString $smtpPass -AsPlainText -Force
-    $cred = New-Object System.Management.Automation.PSCredential ($smtpUser, $securePass)
+    try {
+      $securePass = ConvertTo-SecureString $smtpPass -AsPlainText -Force
+      $cred = New-Object System.Management.Automation.PSCredential ($smtpUser, $securePass)
 
-    Send-MailMessage -From $from -To $to -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -Credential $cred -UseSsl
+      Send-MailMessage -From $from -To $to -Subject $Subject -Body $Body -BodyAsHtml -SmtpServer $smtpServer -Port $smtpPort -Credential $cred -UseSsl -ErrorAction Stop
+    }
+    catch {
+      $errorMsg = "ServyFailureEmail: Failed to send notification email for service '$serviceName'. Error: $_"
+      Write-Error $errorMsg
+
+      # Attempt to log to Windows Event Log as fallback
+      try {
+        Write-EventLog -LogName Application -Source "Servy" -EventId 9900 -EntryType Warning -Message $errorMsg -ErrorAction Stop
+      }
+      catch {
+        # Last resort: write to a local log file
+        $errorMsg | Out-File -FilePath (Join-Path $PSScriptRoot "ServyFailureEmail.log") -Append -ErrorAction SilentlyContinue
+      }
+      
+      exit 1
+    }
 }
 # -------------------------------
 # 1. Determine Script Root (PS 2.0+ Compatible)
