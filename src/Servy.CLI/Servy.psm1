@@ -215,7 +215,7 @@ function Invoke-ServyCli {
     $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
     New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
 
-    # 2. REGISTER EVENT NATIVELY
+    # REGISTER EVENT NATIVELY
     # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
     $errorEvent = Register-ObjectEvent -InputObject $process `
         -EventName "ErrorDataReceived" `
@@ -242,7 +242,7 @@ function Invoke-ServyCli {
     $hasExited = $process.WaitForExit($script:ServyTimeoutSeconds * 1000)
 
     if (-not $hasExited) {
-        # 2. Handle Timeout: The process is still running!
+        # Handle Timeout: The process is still running!
         # We must manually kill it to prevent orphaned processes.
         try { $process.Kill() } catch { }
 
