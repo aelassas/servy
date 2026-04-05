@@ -57,13 +57,21 @@ if (-not (Test-Path $script:ServyCliPath)) {
 }
 
 if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
-  throw @"
+    $errorMsg = @"
 Servy CLI ('servy-cli.exe') was not found. Searched locations:
 1. Local module folder: $ModuleRoot
 2. Program Files: $($script:ServyProgramFilesPath)\Servy
 3. System PATH
 Please ensure Servy is installed or the CLI executable is in the module directory.
 "@.Trim()
+
+    # Adding -ErrorAction Stop makes this a terminating error
+    # This allows Import-Module to catch and silence it if requested.
+    Write-Error -Message $errorMsg `
+                -Category ObjectNotFound `
+                -ErrorId "ServyCliNotFound" `
+                -TargetObject $script:ServyCliPath `
+                -ErrorAction Stop 
 }
 
 # ----------------------------------------------------------------
