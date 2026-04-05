@@ -10,24 +10,6 @@
   Module: Servy
   Requires: PowerShell 2.0 or later
   Repository: https://github.com/aelassas/servy
-
-.EXAMPLE
-  # Display the current version of Servy CLI
-  Show-ServyVersion
-
-.EXAMPLE
-  # Install a new Windows service
-  Install-ServyService -Name "MyService" -Path "C:\Apps\MyApp\MyApp.exe" -StartupType "Automatic"
-
-.EXAMPLE
-  # Export service configuration
-  Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
-
-.EXAMPLE
-  # Start, stop, and restart a service
-  Start-ServyService -Name "MyService"
-  Stop-ServyService -Name "MyService"
-  Restart-ServyService -Name "MyService"
 #>
 
 # ----------------------------------------------------------------

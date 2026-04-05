@@ -13,16 +13,7 @@
   Repository  : https://github.com/aelassas/servy
 
 .EXAMPLE
-  # Display the current Servy CLI version
-  Show-ServyVersion
-
-.EXAMPLE
-  # Install a new service
-  Install-ServyService -Name "MyService" -Path "C:\Apps\MyApp\MyApp.exe" -StartupType "Automatic"
-
-.EXAMPLE
-  # Export a service configuration to XML
-  Export-ServyServiceConfig -Name "MyService" -ConfigFileType "xml" -Path "C:\MyService.xml"
+  See servy-module-examples.ps1 for complete usage examples.
 #>
 
 # ----------------------------------------------------------------
