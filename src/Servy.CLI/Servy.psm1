@@ -51,8 +51,10 @@ if (-not (Test-Path $script:ServyCliPath)) {
 
 # 3. Check system PATH
 if (-not (Test-Path $script:ServyCliPath)) {
-  $pathSearch = Get-Command "servy-cli.exe" -ErrorAction SilentlyContinue
-  if ($pathSearch) { $script:ServyCliPath = $pathSearch.Definition }
+  $pathSearch = Get-Command "servy-cli.exe" -CommandType Application -ErrorAction SilentlyContinue
+  if ($pathSearch -and $pathSearch.Definition -and (Test-Path $pathSearch.Definition)) {
+    $script:ServyCliPath = $pathSearch.Definition
+  }
 }
 
 if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
