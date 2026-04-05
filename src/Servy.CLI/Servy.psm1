@@ -191,6 +191,11 @@ function Invoke-ServyCli {
     [string] $ErrorContext
   )
 
+  # Validate command (single token)
+  if ($Command -match '\s') {
+      throw "Command must be a single word without spaces: '$Command'"
+  }
+
   # Build argument list
   $finalArgs = @()
   if ($Command)   { $finalArgs += $Command }
