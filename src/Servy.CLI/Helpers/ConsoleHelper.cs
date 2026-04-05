@@ -54,7 +54,7 @@ namespace Servy.CLI.Helpers
                     // Stop spinner
                     cts.Cancel();
                     await spinnerTask.ConfigureAwait(false); // ensure spinner exits
-                    Console.Write("\r" + new string(' ', Console.WindowWidth) + "\r"); // clear line
+                    Console.Write($"\r{new string(' ', Console.WindowWidth)}\r"); // clear line
                 }
             }
         }

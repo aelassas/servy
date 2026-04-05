@@ -57,11 +57,13 @@ if (-not (Test-Path $script:ServyCliPath)) {
 }
 
 if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
-  throw "Servy CLI ('servy-cli.exe') was not found. Searched locations: `n" +
-  "1. Local module folder: $ModuleRoot `n" +
-  "2. Program Files: $($script:ServyProgramFilesPath)\Servy `n" +
-  "3. System PATH `n" +
-  "Please ensure Servy is installed or the CLI executable is in the module directory."
+  throw @"
+Servy CLI ('servy-cli.exe') was not found. Searched locations:
+1. Local module folder: $ModuleRoot
+2. Program Files: $($script:ServyProgramFilesPath)\Servy
+3. System PATH
+Please ensure Servy is installed or the CLI executable is in the module directory.
+"@.Trim()
 }
 
 # ----------------------------------------------------------------
