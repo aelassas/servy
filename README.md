@@ -1,7 +1,6 @@
 [![build](https://github.com/aelassas/servy/actions/workflows/build.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/build.yml)
 [![test](https://github.com/aelassas/servy/actions/workflows/test.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/test.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aelassas/servy/main?label=coverage&t=2)](https://codecov.io/gh/aelassas/servy)
-[![security](https://github.com/aelassas/servy/actions/workflows/security.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/security.yml)
 [![release](https://github.com/aelassas/servy/actions/workflows/release.yml/badge.svg)](https://github.com/aelassas/servy/actions/workflows/release.yml)
 [![](https://img.shields.io/badge/docs-wiki-brightgreen)](https://github.com/aelassas/servy/wiki)
 
