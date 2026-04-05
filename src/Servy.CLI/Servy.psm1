@@ -212,6 +212,12 @@ function Invoke-ServyCli {
     $process.Start() | Out-Null
     
     # Read streams to capture output
+    if ($null -eq $process.StandardOutput) {
+      throw "$($ErrorContext): Failed to capture standard output from Servy CLI."
+    }
+    if ($null -eq $process.StandardError) {
+      throw "$($ErrorContext): Failed to capture standard error from Servy CLI."
+    }
     try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
     try { $stderr = $process.StandardError.ReadToEnd() } catch { }
     $process.WaitForExit()
