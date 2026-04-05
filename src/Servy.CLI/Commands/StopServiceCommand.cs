@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Services;
+using System;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -19,7 +20,7 @@ namespace Servy.CLI.Commands
         /// <param name="serviceManager">Service manager to perform service operations.</param>
         public StopServiceCommand(IServiceManager serviceManager)
         {
-            _serviceManager = serviceManager;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         /// <summary>

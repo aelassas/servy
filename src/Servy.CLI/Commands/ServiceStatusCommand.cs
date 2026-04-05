@@ -19,7 +19,7 @@ namespace Servy.CLI.Commands
         /// <param name="serviceManager">Service manager to perform service operations.</param>
         public ServiceStatusCommand(IServiceManager serviceManager)
         {
-            _serviceManager = serviceManager;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         /// <summary>

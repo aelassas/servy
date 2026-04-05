@@ -31,9 +31,9 @@ namespace Servy.CLI.Commands
         /// <param name="serviceManager">Manager to control Windows services.</param>
         public ImportServiceCommand(IServiceRepository serviceRepository, IXmlServiceSerializer xmlServiceSerializer, IServiceManager serviceManager)
         {
-            _serviceRepository = serviceRepository;
-            _xmlServiceSerializer = xmlServiceSerializer;
-            _serviceManager = serviceManager;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         /// <summary>
