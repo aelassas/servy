@@ -984,29 +984,3 @@ function Import-ServyServiceConfig {
 
   Invoke-ServyCli @invokeParams
 }
-
-# ----------------------------------------------------------------
-# Export all public functions of the Servy module
-# ----------------------------------------------------------------
-
-$publicFunctions = @(
-  "Show-ServyVersion",
-  "Show-ServyHelp",
-  "Install-ServyService",
-  "Uninstall-ServyService",
-  "Start-ServyService",
-  "Stop-ServyService",
-  "Restart-ServyService",
-  "Get-ServyServiceStatus",
-  "Export-ServyServiceConfig",
-  "Import-ServyServiceConfig"
-)
-
-foreach ($fn in $publicFunctions) {
-  if (-not (Get-Command $fn -CommandType Function -ErrorAction SilentlyContinue)) {
-    throw "Public function '$fn' is missing"
-  }
-}
-
-# Note: Export-ModuleMember is intentionally omitted.
-# FunctionsToExport in Servy.psd1 is the authoritative export list.
