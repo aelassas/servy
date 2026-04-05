@@ -31,44 +31,36 @@ namespace Servy.CLI.Commands
         {
             return await ExecuteWithHandlingAsync(async () =>
             {
-                try
+                if (string.IsNullOrWhiteSpace(opts.ServiceName))
+                    return CommandResult.Fail("Service name is required.");
+
+                ConfigFileType configFileType;
+                if (string.IsNullOrWhiteSpace(opts.ConfigFileType) || !Enum.TryParse(opts.ConfigFileType, true, out configFileType))
+                    return CommandResult.Fail("Configuration output file type is required (xml or json).");
+
+                if (string.IsNullOrWhiteSpace(opts.Path))
+                    return CommandResult.Fail("Output file path is required.");
+
+                var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName);
+
+                if (exists == null)
+                    return CommandResult.Fail("Service not found.");
+
+                switch (configFileType)
                 {
-                    if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                        return CommandResult.Fail("Service name is required.");
-
-                    ConfigFileType configFileType;
-                    if (string.IsNullOrWhiteSpace(opts.ConfigFileType) || !Enum.TryParse(opts.ConfigFileType, true, out configFileType))
-                        return CommandResult.Fail("Configuration output file type is required (xml or json).");
-
-                    if (string.IsNullOrWhiteSpace(opts.Path))
-                        return CommandResult.Fail("Output file path is required.");
-
-                    var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName);
-
-                    if (exists == null)
-                        return CommandResult.Fail("Service not found.");
-
-                    switch (configFileType)
-                    {
-                        case ConfigFileType.Xml:
-                            var xml = await _serviceRepository.ExportXML(opts.ServiceName);
-                            SaveFile(opts.Path, xml);
-                            Logger.Info($"XML configuration file exported successfully to: {opts.Path}");
-                            return CommandResult.Ok($"XML configuration exported saved successfully to: {opts.Path}");
-                        case ConfigFileType.Json:
-                            var json = await _serviceRepository.ExportJSON(opts.ServiceName);
-                            SaveFile(opts.Path, json);
-                            Logger.Info($"JSON configuration file exported successfully to: {opts.Path}");
-                            return CommandResult.Ok($"JSON configuration exported saved successfully to: {opts.Path}");
-                    }
-
-                    return CommandResult.Ok();
+                    case ConfigFileType.Xml:
+                        var xml = await _serviceRepository.ExportXML(opts.ServiceName);
+                        SaveFile(opts.Path, xml);
+                        Logger.Info($"XML configuration file exported successfully to: {opts.Path}");
+                        return CommandResult.Ok($"XML configuration exported saved successfully to: {opts.Path}");
+                    case ConfigFileType.Json:
+                        var json = await _serviceRepository.ExportJSON(opts.ServiceName);
+                        SaveFile(opts.Path, json);
+                        Logger.Info($"JSON configuration file exported successfully to: {opts.Path}");
+                        return CommandResult.Ok($"JSON configuration exported saved successfully to: {opts.Path}");
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error exporting service configuration for '{opts.ServiceName}': {ex.Message}", ex);
-                    return CommandResult.Fail($"An unhandled error occured: {ex.Message}");
-                }
+
+                return CommandResult.Ok();
             });
         }
 

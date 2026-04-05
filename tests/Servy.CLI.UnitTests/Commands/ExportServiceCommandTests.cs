@@ -105,7 +105,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.False(result.Success);
-            Assert.Contains("An unhandled error occured: boom", result.Message);
+            Assert.Contains("An unexpected error occurred. Check logs.", result.Message);
         }
 
         [Fact]
