@@ -37,34 +37,48 @@ function Show-Notification {
     $ToastTitle = "Servy - $ServiceName"
     
     try {
-        [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
-        $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+        # 1. VALIDATE WinRT AVAILABILITY
+        # If this fails, catch block triggers the fallback immediately.
+        [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+        
+        $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
+            [Windows.UI.Notifications.ToastTemplateType]::ToastText02
+        )
 
-        $rawXml = [xml] $template.GetXml()
-        ($rawXml.toast.visual.binding.text | Where-Object {$_.id -eq "1"}).AppendChild($rawXml.CreateTextNode($ToastTitle)) > $null
-        ($rawXml.toast.visual.binding.text | Where-Object {$_.id -eq "2"}).AppendChild($rawXml.CreateTextNode($LogText)) > $null
+        # 2. BUILD NOTIFICATION XML
+        $rawXml = [xml]$template.GetXml()
+        
+        # Using full cmdlet names to avoid alias issues (where-object)
+        $titleNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "1" }
+        $bodyNode  = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "2" }
+
+        [void]$titleNode.AppendChild($rawXml.CreateTextNode($ToastTitle))
+        [void]$bodyNode.AppendChild($rawXml.CreateTextNode($LogText))
 
         $serializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
         $serializedXml.LoadXml($rawXml.OuterXml)
 
+        # 3. CONFIGURE TOAST OBJECT
         $toast = [Windows.UI.Notifications.ToastNotification]::new($serializedXml)
-        $toast.Tag = "Servy"
-        $toast.Group = "Servy"
+        $toast.Tag            = "Servy"
+        $toast.Group          = "Servy"
         $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-        # ASYNCHRONOUS FALLBACK: Handle cases where Show() succeeds but delivery fails
+        # 4. ASYNCHRONOUS FALLBACK (Handles delivery failures like Focus Assist)
         $null = $toast.add_Failed({
             param($evtSender, $evtArgs)
             $asyncError = "ServyToast: Delivery failed for '$ServiceName'. ErrorCode: $($evtArgs.ErrorCode)"
             Write-FallbackError -Message $asyncError -ModuleRoot $ModuleRoot
         })
 
+        # 5. ATTEMPT DISPLAY
         $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
         $notifier.Show($toast)
     }
     catch {
-        # SYNCHRONOUS FALLBACK: Handle immediate failures (e.g., no interactive session)
-        $syncError = "ServyToast: Failed to show toast for '$ServiceName'. Details: $_. Original Log: $LogText"
+        # SYNCHRONOUS FALLBACK
+        # Handles: Type-load errors, no interactive session, or UI-thread blocking.
+        $syncError = "ServyToast: Notification path failed for '$ServiceName'. Details: $($_.Exception.Message)"
         Write-FallbackError -Message $syncError -ModuleRoot $ModuleRoot
     }
 }
@@ -82,7 +96,7 @@ function Write-FallbackError {
     }
     catch {
         # Last resort: File log
-        $logFile = Join-Path $ModuleRoot "ServyNotification-failures.log"
+        $logFile = Join-Path $ModuleRoot "ServyNotification.log"
         "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
     }
 }
