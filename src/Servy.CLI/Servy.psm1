@@ -958,6 +958,7 @@ function Export-ServyServiceConfig {
     [string] $ConfigFileType,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Path
   )
 
