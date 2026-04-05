@@ -115,7 +115,7 @@ function Add-Arg {
     # If it's a flag, simply append the key
     [array]$list += $key.Trim()
   }
-  
+
   # 2. Robust check for null or empty strings
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   elseif ($null -ne $value -and $value.Trim() -ne "") {
@@ -124,6 +124,11 @@ function Add-Arg {
     # Escape internal double quotes with backslashes (Windows convention).
     # This is DIFFERENT from PowerShell's "" escaping.
     $escapedValue = $value.Replace('"', '\"')
+
+    # Double trailing backslashes so they don't escape the closing quote
+    if ($escapedValue.EndsWith('\')) {
+        $escapedValue += '\'
+    }
 
     # 3. Explicitly cast to array during addition to prevent string concatenation 
     # if $list somehow became a single string.
