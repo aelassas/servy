@@ -108,5 +108,48 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             Assert.Equal("C:\\MyApp\\data", result);
         }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldHandleSelfReferencingVariableGracefully()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "FOO", Value = "%FOO%bar" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The self-referencing token should be skipped and remain safely intact in the string, 
+            // exactly how Windows cmd handles unresolved variables.
+            Assert.Equal("%FOO%bar", expanded["FOO"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldHandleCircularReferencesGracefully()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "A", Value = "%B%_suffix" },
+                new EnvironmentVariable { Name = "B", Value = "prefix_%A%" },
+                new EnvironmentVariable { Name = "C", Value = "bar" },
+                new EnvironmentVariable { Name = "D", Value = "foo_%C%" },
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The expansion should gracefully halt without blowing up memory.
+            // The exact string state depends on dictionary hashing order, 
+            // but neither should have caused a catastrophic loop.
+            Assert.Contains("%", expanded["A"]);
+            Assert.Contains("%", expanded["B"]);
+            Assert.Equal("bar", expanded["C"]);
+            Assert.Contains("foo_bar", expanded["D"]);
+        }
     }
 }
