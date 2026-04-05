@@ -669,7 +669,8 @@ function Install-ServyService {
     [string] $PreLaunchStderr,
     [ValidateRange(0, 2147483647)]
     [int] $PreLaunchTimeout,
-    [string] $PreLaunchRetryAttempts,
+    [ValidateRange(0, 2147483647)]
+    [int] $PreLaunchRetryAttempts,
     [switch] $PreLaunchIgnoreFailure,
 
     # Post-launch
