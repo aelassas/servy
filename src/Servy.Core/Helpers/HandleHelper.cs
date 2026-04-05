@@ -68,12 +68,12 @@ namespace Servy.Core.Helpers
 
                 foreach (Match match in regex.Matches(output))
                 {
-                    if (match.Success)
+                    if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
                     {
                         processes.Add(new ProcessHandleInfo
                         {
                             ProcessName = match.Groups["name"].Value.Trim(),
-                            ProcessId = int.Parse(match.Groups["pid"].Value)
+                            ProcessId = pid
                         });
                     }
                 }
