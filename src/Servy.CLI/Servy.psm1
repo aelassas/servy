@@ -110,15 +110,12 @@ function Add-Arg {
     [switch] $Flag  # Indicates a flag without a value
   )
 
-  # 1. Ensure $list is an array, even if $null was passed
-  if ($null -eq $list) { 
-    $list = @() 
-  }
-
+  # 1. If it's a flag, simply append the key
   if ($Flag) {
     # If it's a flag, simply append the key
     [array]$list += $key.Trim()
   }
+  
   # 2. Robust check for null or empty strings
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   elseif ($null -ne $value -and $value.Trim() -ne "") {
