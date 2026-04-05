@@ -19,7 +19,7 @@ namespace Servy.CLI.Commands
         /// <param name="serviceRepository">Service repository.</param>
         public ExportServiceCommand(IServiceRepository serviceRepository)
         {
-            _serviceRepository = serviceRepository;
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
 
         /// <summary>
