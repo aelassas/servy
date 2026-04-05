@@ -196,13 +196,13 @@ namespace Servy.Core.Security
             catch (FormatException ex)
             {
                 // Backwards compatibility: Graceful fallback for Base64 decoding errors
-                Logger.Warn($"Decryption fallback triggered (FormatException): {ex.Message}");
+                Logger.Debug($"Decryption fallback triggered (FormatException): {ex.Message}");
                 return payload.ToString();
             }
             catch (CryptographicException ex)
             {
                 // Backwards compatibility: Graceful fallback for key mismatches or corrupted ciphertext
-                Logger.Warn($"Decryption fallback triggered (CryptographicException): {ex.Message}");
+                Logger.Debug($"Decryption fallback triggered (CryptographicException): {ex.Message}");
                 return payload.ToString();
             }
         }
