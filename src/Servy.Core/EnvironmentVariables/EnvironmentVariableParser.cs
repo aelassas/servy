@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace Servy.Core.EnvironmentVariables
 {
@@ -18,10 +16,10 @@ namespace Servy.Core.EnvironmentVariables
         /// <exception cref="FormatException">Thrown if any variable is missing an unescaped '=' or has an empty key.</exception>
         public static List<EnvironmentVariable> Parse(string input)
         {
-            var result = new List<EnvironmentVariable>();
-
             if (string.IsNullOrEmpty(input))
-                return result;
+                return new List<EnvironmentVariable>();
+
+            var result = new List<EnvironmentVariable>();
 
             // Split by unescaped semicolons
             var parts = SplitByUnescapedDelimiter(input, ';');
