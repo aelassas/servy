@@ -152,7 +152,7 @@ namespace Servy.CLI.Commands
                 };
 
                 // Call the service manager install method
-                var success = await _serviceManager.InstallService(options);
+                var success = await _serviceManager.InstallServiceAsync(options);
 
                 if (!success)
                     return CommandResult.Fail("Failed to install service.");

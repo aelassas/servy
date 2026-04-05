@@ -130,7 +130,7 @@ namespace Servy.CLI.Commands
                 return CommandResult.Fail($"XML file not valid: {validationError}");
 
             // Import XML configuration into repository
-            var imported = await _serviceRepository.ImportXML(xml);
+            var imported = await _serviceRepository.ImportXmlAsync(xml);
             if (!imported)
                 return CommandResult.Fail("Failed to import XML configuration.");
 
@@ -163,7 +163,7 @@ namespace Servy.CLI.Commands
                 return CommandResult.Fail($"JSON file not valid: {validationError}");
 
             // Import JSON configuration into repository
-            var imported = await _serviceRepository.ImportJSON(json);
+            var imported = await _serviceRepository.ImportJsonAsync(json);
             if (!imported)
                 return CommandResult.Fail("Failed to import JSON configuration.");
 

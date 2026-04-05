@@ -28,7 +28,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(true));
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Returns(Task.FromResult(true));
 
             // Act
             var result = await _command.Execute(options);
@@ -58,7 +58,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Returns(Task.FromResult(false));
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Returns(Task.FromResult(false));
 
             // Act
             var result = await _command.Execute(options);
@@ -74,7 +74,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<UnauthorizedAccessException>();
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Throws<UnauthorizedAccessException>();
 
             // Act
             var result = await _command.Execute(options);
@@ -90,7 +90,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallService("TestService")).Throws<Exception>();
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Throws<Exception>();
 
             // Act
             var result = await _command.Execute(options);

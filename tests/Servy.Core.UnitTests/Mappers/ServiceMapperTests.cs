@@ -354,67 +354,67 @@ namespace Servy.Core.UnitTests.Mappers
         [Fact]
         public async Task Start_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.StartService("TestService", It.IsAny<bool>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(true);
 
             var result = await _service.Start();
 
             Assert.True(result);
-            _serviceManagerMock.Verify(sm => sm.StartService("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
         public async Task Start_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.StartService("TestService", It.IsAny<bool>())).ReturnsAsync(false);
+            _serviceManagerMock.Setup(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(false);
 
             var result = await _service.Start();
 
             Assert.False(result);
-            _serviceManagerMock.Verify(sm => sm.StartService("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.StartServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
         public async Task Stop_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.StopService("TestService", It.IsAny<bool>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(true);
 
             var result = await _service.Stop();
 
             Assert.True(result);
-            _serviceManagerMock.Verify(sm => sm.StopService("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
         public async Task Stop_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.StopService("TestService", It.IsAny<bool>())).ReturnsAsync(false);
+            _serviceManagerMock.Setup(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(false);
 
             var result = await _service.Stop();
 
             Assert.False(result);
-            _serviceManagerMock.Verify(sm => sm.StopService("TestService", It.IsAny<bool>()), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.StopServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
         public async Task Restart_ReturnsTrue_WhenServiceManagerReturnsTrue()
         {
-            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).ReturnsAsync(true);
+            _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService")).ReturnsAsync(true);
 
             var result = await _service.Restart();
 
             Assert.True(result);
-            _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService"), Times.Once);
         }
 
         [Fact]
         public async Task Restart_ReturnsFalse_WhenServiceManagerReturnsFalse()
         {
-            _serviceManagerMock.Setup(sm => sm.RestartService("TestService")).ReturnsAsync(false);
+            _serviceManagerMock.Setup(sm => sm.RestartServiceAsync("TestService")).ReturnsAsync(false);
 
             var result = await _service.Restart();
 
             Assert.False(result);
-            _serviceManagerMock.Verify(sm => sm.RestartService("TestService"), Times.Once);
+            _serviceManagerMock.Verify(sm => sm.RestartServiceAsync("TestService"), Times.Once);
         }
 
         [Fact]

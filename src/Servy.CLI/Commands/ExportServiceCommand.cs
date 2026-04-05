@@ -52,12 +52,12 @@ namespace Servy.CLI.Commands
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        var xml = await _serviceRepository.ExportXML(opts.ServiceName);
+                        var xml = await _serviceRepository.ExportXmlAsync(opts.ServiceName);
                         SaveFile(opts.Path, xml);
                         Logger.Info($"XML configuration file exported successfully to: {opts.Path}");
                         return CommandResult.Ok($"XML configuration exported saved successfully to: {opts.Path}");
                     case ConfigFileType.Json:
-                        var json = await _serviceRepository.ExportJSON(opts.ServiceName);
+                        var json = await _serviceRepository.ExportJsonAsync(opts.ServiceName);
                         SaveFile(opts.Path, json);
                         Logger.Info($"JSON configuration file exported successfully to: {opts.Path}");
                         return CommandResult.Ok($"JSON configuration exported saved successfully to: {opts.Path}");

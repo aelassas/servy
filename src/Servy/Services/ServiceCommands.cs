@@ -302,7 +302,7 @@ namespace Servy.Services
                     PostStopArgs = postStopProgramArgs
                 };
 
-                bool success = await _serviceManager.InstallService(options);
+                bool success = await _serviceManager.InstallServiceAsync(options);
 
                 if (success)
                 {
@@ -340,7 +340,7 @@ namespace Servy.Services
 
             try
             {
-                bool success = await _serviceManager.UninstallService(serviceName);
+                bool success = await _serviceManager.UninstallServiceAsync(serviceName);
                 if (success)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
@@ -361,7 +361,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async void StartService(string serviceName)
+        public async Task StartService(string serviceName)
         {
             try
             {
@@ -384,7 +384,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.StartService(serviceName);
+                bool success = await _serviceManager.StartServiceAsync(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
                 else
@@ -397,7 +397,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async void StopService(string serviceName)
+        public async Task StopService(string serviceName)
         {
             try
             {
@@ -413,7 +413,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.StopService(serviceName);
+                bool success = await _serviceManager.StopServiceAsync(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
                 else
@@ -426,7 +426,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async void RestartService(string serviceName)
+        public async Task RestartService(string serviceName)
         {
             try
             {
@@ -449,7 +449,7 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.RestartService(serviceName);
+                bool success = await _serviceManager.RestartServiceAsync(serviceName);
                 if (success)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
                 else

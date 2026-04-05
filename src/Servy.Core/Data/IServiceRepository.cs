@@ -106,7 +106,7 @@ namespace Servy.Core.Data
         /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A collection of matching <see cref="ServiceDto"/> records.</returns>
-        Task<IEnumerable<ServiceDto>> Search(string keyword, bool decrypt = true, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports a <see cref="ServiceDto"/> to an XML string.
@@ -114,7 +114,7 @@ namespace Servy.Core.Data
         /// <param name="name">The name of the service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>An XML string representing the service.</returns>
-        Task<string> ExportXML(string name, CancellationToken cancellationToken = default);
+        Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imports a <see cref="ServiceDto"/> from an XML string.
@@ -122,7 +122,7 @@ namespace Servy.Core.Data
         /// <param name="xml">The XML data to import.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
-        Task<bool> ImportXML(string xml, CancellationToken cancellationToken = default);
+        Task<bool> ImportXmlAsync(string xml, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Exports a <see cref="ServiceDto"/> to a JSON string.
@@ -130,7 +130,7 @@ namespace Servy.Core.Data
         /// <param name="name">The name of the service to export.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A JSON string representing the service.</returns>
-        Task<string> ExportJSON(string name, CancellationToken cancellationToken = default);
+        Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Imports a <see cref="ServiceDto"/> from a JSON string.
@@ -138,7 +138,7 @@ namespace Servy.Core.Data
         /// <param name="json">The JSON data to import.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns><c>true</c> if import succeeded; otherwise, <c>false</c>.</returns>
-        Task<bool> ImportJSON(string json, CancellationToken cancellationToken = default);
+        Task<bool> ImportJsonAsync(string json, CancellationToken cancellationToken = default);
 
         // ------------------------
         // Domain service operations

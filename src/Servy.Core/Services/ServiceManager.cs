@@ -287,7 +287,7 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallService(InstallServiceOptions options)
+        public async Task<bool> InstallServiceAsync(InstallServiceOptions options)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
@@ -532,7 +532,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallService(string serviceName)
+        public async Task<bool> UninstallServiceAsync(string serviceName)
         {
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
@@ -609,7 +609,7 @@ namespace Servy.Core.Services
         }
 
         ///<inheritdoc/>
-        public async Task<bool> StartService(string serviceName, bool logSuccessfulStart = true)
+        public async Task<bool> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
         {
             try
             {
@@ -649,7 +649,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> StopService(string serviceName, bool logSuccessfulStop = true)
+        public async Task<bool> StopServiceAsync(string serviceName, bool logSuccessfulStop = true)
         {
             try
             {
@@ -692,12 +692,12 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> RestartService(string serviceName)
+        public async Task<bool> RestartServiceAsync(string serviceName)
         {
-            if (!await StopService(serviceName, logSuccessfulStop: false))
+            if (!await StopServiceAsync(serviceName, logSuccessfulStop: false))
                 return false;
 
-            var res = await StartService(serviceName, logSuccessfulStart: false);
+            var res = await StartServiceAsync(serviceName, logSuccessfulStart: false);
 
             if (res)
             {

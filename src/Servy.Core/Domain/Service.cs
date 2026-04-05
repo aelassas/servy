@@ -335,7 +335,7 @@ namespace Servy.Core.Domain
         /// </returns>
         public async Task<bool> Start()
         {
-            return await _serviceManager.StartService(Name);
+            return await _serviceManager.StartServiceAsync(Name);
         }
 
         /// <summary>
@@ -346,7 +346,7 @@ namespace Servy.Core.Domain
         /// </returns>
         public virtual async Task<bool> Stop()
         {
-            return await _serviceManager.StopService(Name);
+            return await _serviceManager.StopServiceAsync(Name);
         }
 
         /// <summary>
@@ -357,7 +357,7 @@ namespace Servy.Core.Domain
         /// </returns>
         public async Task<bool> Restart()
         {
-            return await _serviceManager.RestartService(Name);
+            return await _serviceManager.RestartServiceAsync(Name);
         }
 
         /// <summary>
@@ -498,7 +498,7 @@ namespace Servy.Core.Domain
                 PostStopArgs = PostStopParameters
             };
 
-            return await _serviceManager.InstallService(options);
+            return await _serviceManager.InstallServiceAsync(options);
         }
 
         /// <summary>
@@ -517,7 +517,7 @@ namespace Servy.Core.Domain
         /// </exception>
         public async Task<bool> Uninstall()
         {
-            return await _serviceManager.UninstallService(Name);
+            return await _serviceManager.UninstallServiceAsync(Name);
         }
 
         #endregion

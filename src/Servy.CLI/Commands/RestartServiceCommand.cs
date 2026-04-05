@@ -47,7 +47,7 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var success = await _serviceManager.RestartService(opts.ServiceName);
+                var success = await _serviceManager.RestartServiceAsync(opts.ServiceName);
                 return success
                     ? CommandResult.Ok("Service restarted successfully.")
                     : CommandResult.Fail("Failed to restart service.");

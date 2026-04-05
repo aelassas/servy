@@ -613,7 +613,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("e1")).Returns("p1");
 
             var repo = CreateRepository();
-            var result = (await repo.Search("A", true)).ToList();
+            var result = (await repo.SearchAsync("A", true)).ToList();
 
             Assert.Single(result);
             Assert.Equal("p1", result[0].Password);
@@ -649,7 +649,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Decrypt("encrypted_post_stop_params")).Returns("post_stop_params");
 
             var repo = CreateRepository();
-            var result = (await repo.Search(null, true)).ToList();
+            var result = (await repo.SearchAsync(null, true)).ToList();
 
             Assert.Single(result);
             Assert.Equal("params", result[0].Parameters);
@@ -672,7 +672,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             var repo = CreateRepository();
 
-            var xml = await repo.ExportXML("A");
+            var xml = await repo.ExportXmlAsync("A");
 
             Assert.Empty(xml);
         }
@@ -691,7 +691,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 .Returns("p1"); // return the same value or "plain" if you prefer
 
             var repo = CreateRepository();
-            var xml = await repo.ExportXML("A");
+            var xml = await repo.ExportXmlAsync("A");
 
             Assert.Contains("<ServiceDto", xml);
             Assert.Contains("p1", xml);
@@ -708,7 +708,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXmlAsync(xml);
             Assert.True(result);
         }
 
@@ -717,7 +717,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var repo = CreateRepository();
             var xml = string.Empty;
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXmlAsync(xml);
             Assert.False(result);
         }
 
@@ -727,7 +727,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var xml = "<ServiceDto><Name></Invalid></ServiceDto>";
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXmlAsync(xml);
             Assert.False(result);
         }
 
@@ -739,7 +739,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns((ServiceDto)null);
 
-            var result = await repo.ImportXML(xml);
+            var result = await repo.ImportXmlAsync(xml);
             Assert.False(result);
         }
 
@@ -752,7 +752,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             var repo = CreateRepository();
 
-            var json = await repo.ExportJSON("A");
+            var json = await repo.ExportJsonAsync("A");
 
             Assert.Empty(json);
         }
@@ -764,7 +764,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync(dto);
 
             var repo = CreateRepository();
-            var json = await repo.ExportJSON("A");
+            var json = await repo.ExportJsonAsync("A");
 
             Assert.Contains("\"Name\": \"A\"", json);
         }
@@ -778,7 +778,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJsonAsync(json);
             Assert.True(result);
         }
 
@@ -788,7 +788,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = string.Empty;
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJsonAsync(json);
 
             Assert.False(result);
         }
@@ -799,7 +799,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = "null";
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJsonAsync(json);
 
             Assert.False(result);
         }
@@ -810,7 +810,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var repo = CreateRepository();
             var json = "{ invalid json }";
 
-            var result = await repo.ImportJSON(json);
+            var result = await repo.ImportJsonAsync(json);
 
             Assert.False(result);
         }

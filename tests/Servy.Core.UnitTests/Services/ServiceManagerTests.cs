@@ -48,7 +48,7 @@ namespace Servy.Core.UnitTests.Services
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _serviceManager.InstallService(null));
+                _serviceManager.InstallServiceAsync(null));
 
             Assert.Equal("options", exception.ParamName);
         }
@@ -103,7 +103,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchTimeout = 30
             };
 
-            await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.InstallService(options));
+            await Assert.ThrowsAsync<ArgumentException>(() => _serviceManager.InstallServiceAsync(options));
         }
 
         [Theory]
@@ -168,7 +168,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchTimeout = 30
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
             _mockServiceRepository.Verify(x => x.GetByNameAsync(serviceName, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -231,14 +231,14 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchIgnoreFailure = true
             };
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(options));
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallServiceAsync(options));
 
             scmHandle = new IntPtr(123);
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallService(options));
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallServiceAsync(options));
         }
 
         [Fact]
@@ -315,7 +315,7 @@ namespace Servy.Core.UnitTests.Services
                 PostLaunchArgs = "--arg1 val1"
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
 
@@ -404,7 +404,7 @@ namespace Servy.Core.UnitTests.Services
                 DisplayName = serviceName
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
 
@@ -412,7 +412,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig(serviceHandle, It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<uint>(), It.IsAny<string>(), null, IntPtr.Zero, ServiceDependenciesParser.NoDependencies, ServiceManager.LocalSystemAccount, null, It.IsAny<string>()), Times.Once);
 
             options.StartType = ServiceStartType.AutomaticDelayedStart;
-            result = await _serviceManager.InstallService(options);
+            result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
         }
@@ -494,7 +494,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchIgnoreFailure = true
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.False(result);
 
@@ -566,7 +566,7 @@ namespace Servy.Core.UnitTests.Services
                 PreStopExePath = @"C:\Apps\pre-stop.exe"
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
 
@@ -636,7 +636,7 @@ namespace Servy.Core.UnitTests.Services
                 PreLaunchIgnoreFailure = true
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.False(result);
 
@@ -708,7 +708,7 @@ namespace Servy.Core.UnitTests.Services
                 Username = gMSA
             };
 
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             Assert.True(result);
 
@@ -790,7 +790,7 @@ namespace Servy.Core.UnitTests.Services
             };
 
             // Act
-            var result = await _serviceManager.InstallService(options);
+            var result = await _serviceManager.InstallServiceAsync(options);
 
             // Assert
             Assert.False(result);
@@ -982,7 +982,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(IntPtr.Zero);
 
-            var result = await _serviceManager.UninstallService("ServiceName");
+            var result = await _serviceManager.UninstallServiceAsync("ServiceName");
             Assert.False(result);
         }
 
@@ -995,7 +995,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<IntPtr>(), It.IsAny<string>(), It.IsAny<uint>()))
                 .Throws(new Win32Exception("Boom!"));
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallService("ServiceName"));
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallServiceAsync("ServiceName"));
         }
 
         [Fact]
@@ -1011,7 +1011,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle)).Returns(true);
 
-            var result = await _serviceManager.UninstallService("ServiceName");
+            var result = await _serviceManager.UninstallServiceAsync("ServiceName");
             Assert.False(result);
         }
 
@@ -1082,7 +1082,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
                 );
 
-            var result = await _serviceManager.UninstallService(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName);
 
             Assert.False(result);
         }
@@ -1154,7 +1154,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
                 );
 
-            var result = await _serviceManager.UninstallService(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName);
 
             Assert.True(result);
 
@@ -1233,7 +1233,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
             );
 
-            var result = await _serviceManager.UninstallService(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName);
 
             Assert.True(result);
 
@@ -1252,7 +1252,7 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
 
             // Act
-            var result = await _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartServiceAsync("TestService");
 
             // Assert
             Assert.True(result);
@@ -1266,7 +1266,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", PreLaunchExecutablePath = @"C:\Apps\pre-launch.exe" });
 
-            var result = await _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartServiceAsync("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Start(), Times.Once);
@@ -1280,7 +1280,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StartTimeout = 10 });
 
-            var result = await _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartServiceAsync("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Start(), Times.Once);
@@ -1296,7 +1296,7 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(null as Core.DTOs.ServiceDto);
 
             // Act
-            var result = await _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartServiceAsync("TestService");
 
             // Assert
             Assert.False(result);
@@ -1310,7 +1310,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
-            var result = await _serviceManager.StartService("TestService");
+            var result = await _serviceManager.StartServiceAsync("TestService");
 
             Assert.False(result);
         }
@@ -1324,7 +1324,7 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
 
             // Act
-            var result = await _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopServiceAsync("TestService");
 
             // Assert
             Assert.True(result);
@@ -1340,7 +1340,7 @@ namespace Servy.Core.UnitTests.Services
                 .ReturnsAsync(null as Core.DTOs.ServiceDto);
 
             // Act
-            var result = await _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopServiceAsync("TestService");
 
             // Assert
             Assert.False(result);
@@ -1354,7 +1354,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", PreStopExecutablePath = @"C:\Apps\pre-stop.exe" });
 
-            var result = await _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopServiceAsync("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -1368,7 +1368,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
-            var result = await _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopServiceAsync("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -1382,7 +1382,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService", StopTimeout = 10 });
 
-            var result = await _serviceManager.StopService("TestService");
+            var result = await _serviceManager.StopServiceAsync("TestService");
 
             Assert.False(result);
         }
@@ -1398,7 +1398,7 @@ namespace Servy.Core.UnitTests.Services
             _mockServiceRepository.Setup(r => r.GetByNameAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Core.DTOs.ServiceDto { Name = "TestService" });
 
-            var result = await _serviceManager.RestartService("TestService");
+            var result = await _serviceManager.RestartServiceAsync("TestService");
 
             Assert.True(result);
             _mockController.Verify(c => c.Stop(), Times.Once);
@@ -1416,7 +1416,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Stop()).Throws(new Exception("Boom!"));
 
             // Act
-            var result = await _serviceManager.RestartService("TestService");
+            var result = await _serviceManager.RestartServiceAsync("TestService");
 
             // Assert
             Assert.False(result);
@@ -1438,7 +1438,7 @@ namespace Servy.Core.UnitTests.Services
             _mockController.Setup(c => c.Start()).Throws(new Exception("Boom!"));
 
             // Act
-            var result = await _serviceManager.RestartService("TestService");
+            var result = await _serviceManager.RestartServiceAsync("TestService");
 
             // Assert
             Assert.False(result);
