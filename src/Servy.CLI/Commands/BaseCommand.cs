@@ -1,9 +1,10 @@
-﻿namespace Servy.CLI.Commands
-{
-    using Servy.CLI.Models;
-    using System;
-    using System.Threading.Tasks;
+﻿using Servy.CLI.Models;
+using Servy.Core.Logging;
+using System;
+using System.Threading.Tasks;
 
+namespace Servy.CLI.Commands
+{
     /// <summary>
     /// Base class for CLI commands providing centralized exception handling for command execution.
     /// </summary>
@@ -25,9 +26,10 @@
             {
                 return CommandResult.Fail("Administrator privileges are required.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return CommandResult.Fail("An unexpected error occurred.");
+                Logger.Error("An unexpected error occurred.", ex);
+                return CommandResult.Fail("An unexpected error occurred. Check logs.");
             }
         }
 
@@ -47,9 +49,10 @@
             {
                 return CommandResult.Fail("Administrator privileges are required.");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return CommandResult.Fail("An unexpected error occurred.");
+                Logger.Error("An unexpected error occurred.", ex);
+                return CommandResult.Fail("An unexpected error occurred. Check logs.");
             }
         }
     }

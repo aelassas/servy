@@ -172,7 +172,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Equal("An unexpected error occurred.", result.Message);
+                Assert.Contains("An unexpected error occurred.", result.Message);
             }
             finally
             {
