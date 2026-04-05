@@ -238,6 +238,8 @@ namespace Servy.Core.Logging
             {
                 lock (_lock)
                 {
+                    if (_writer == null) return; // Re-check _writer inside the lock
+
                     // Format: [2026-03-12 22:00:00] [INFO] Message text
                     string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}] {message}";
 
