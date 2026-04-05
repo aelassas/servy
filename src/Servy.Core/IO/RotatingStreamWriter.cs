@@ -116,9 +116,10 @@ namespace Servy.Core.IO
         /// <param name="line">The line of text to write.</param>
         public void WriteLine(string line)
         {
-            if (_disposed) return;
             lock (_lock)
             {
+                if (_disposed) return;
+
                 // 1. Lazy Initialize if null (either first run or just rotated)
                 if (_writer == null)
                 {
@@ -140,9 +141,10 @@ namespace Servy.Core.IO
         /// </summary>
         public void Write(string text)
         {
-            if (_disposed) return;
             lock (_lock)
             {
+                if (_disposed) return;
+
                 // 1. Lazy Initialize if null (either first run or just rotated)
                 if (_writer == null)
                 {
@@ -410,18 +412,17 @@ namespace Servy.Core.IO
         /// </summary>
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed)
-                return;
-
-            if (disposing)
+            lock (_lock) // Ensure Dispose doesn't race with Write/Rotate
             {
-                lock (_lock)
+                if (_disposed) return;
+
+                if (disposing)
                 {
                     CloseWriter();
                 }
-            }
 
-            _disposed = true;
+                _disposed = true;
+            }
         }
     }
 }
