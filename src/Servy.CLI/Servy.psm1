@@ -1004,4 +1004,5 @@ foreach ($fn in $publicFunctions) {
   }
 }
 
-Export-ModuleMember -Function $publicFunctions
+# Note: Export-ModuleMember is intentionally omitted.
+# FunctionsToExport in Servy.psd1 is the authoritative export list.
