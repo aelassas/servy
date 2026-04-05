@@ -46,7 +46,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("XML configuration saved successfully", result.Message);
+            Assert.Contains("XML configuration imported successfully", result.Message);
 
             _serviceRepoMock.Verify(r => r.ImportXML(xmlContent, It.IsAny<CancellationToken>()), Times.Once);
 
@@ -94,7 +94,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains("JSON configuration saved successfully", result.Message);
+            Assert.Contains("JSON configuration imported successfully", result.Message);
 
             _serviceRepoMock.Verify(r => r.ImportJSON(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
 
