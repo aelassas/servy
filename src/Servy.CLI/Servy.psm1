@@ -17,6 +17,14 @@
 #>
 
 # ----------------------------------------------------------------
+# Execution Settings
+# ----------------------------------------------------------------
+# Maximum time (in seconds) to wait for a CLI command to complete.
+# This prevents the script from hanging indefinitely if the CLI blocks 
+# on I/O or network calls. Default is 10 minutes.
+$script:ServyTimeoutSeconds = 600
+
+# ----------------------------------------------------------------
 # Module Initialization
 # ----------------------------------------------------------------
 
@@ -230,7 +238,16 @@ function Invoke-ServyCli {
     # Read stdout synchronously
     try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
 
-    $process.WaitForExit()
+    # Start the wait with the defined timeout
+    $hasExited = $process.WaitForExit($script:ServyTimeoutSeconds * 1000)
+
+    if (-not $hasExited) {
+        # 2. Handle Timeout: The process is still running!
+        # We must manually kill it to prevent orphaned processes.
+        try { $process.Kill() } catch { }
+
+        throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
+    }
 
     # COLLECT stderr
     # Convert our collected array back into a string
