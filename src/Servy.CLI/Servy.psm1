@@ -127,10 +127,8 @@ function Add-Arg {
     # Escape internal double quotes with backslashes (Windows convention, not PowerShell's "")
     $escapedValue = $value.Replace('"', '\"')
 
-    # Double trailing backslashes so they don't escape the closing quote
-    if ($escapedValue.EndsWith('\')) {
-        $escapedValue += '\'
-    }
+    # Count trailing backslashes and double them
+    $escapedValue = $escapedValue -replace '(\\+)$', '$1$1'
 
     [array]$list += "$($key.Trim())=`"$escapedValue`""
   }
