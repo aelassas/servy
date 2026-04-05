@@ -182,10 +182,10 @@ function Invoke-ServyCli {
   )
 
   # Build argument list
-  [array]$finalArgs = @()
-  if ($null -ne $Command -and $Command -ne "") { $finalArgs += $Command }
+  $finalArgs = @()
+  if ($Command)   { $finalArgs += $Command }
   if ($Arguments) { $finalArgs += $Arguments }
-  if ($Quiet) { $finalArgs += "--quiet" }
+  if ($Quiet)     { $finalArgs += "--quiet" }
 
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
