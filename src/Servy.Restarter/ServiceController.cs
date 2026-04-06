@@ -45,6 +45,13 @@ namespace Servy.Restarter
         }
 
         /// <inheritdoc />
+        public void Refresh()
+        {
+            ThrowIfDisposed();
+            _controller.Refresh();
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(disposing: true);
