@@ -16,11 +16,7 @@ namespace Servy.CLI.Validators
     public class ServiceInstallValidator : IServiceInstallValidator
     {
 
-        /// <summary>
-        /// Validates the install service options.
-        /// </summary>
-        /// <param name="opts">The install service options to validate.</param>
-        /// <returns>A <see cref="CommandResult"/> indicating success or failure with a message.</returns>
+        ///<inheritdoc/>
         public CommandResult Validate(InstallServiceOptions opts)
         {
             if (string.IsNullOrWhiteSpace(opts.ServiceName) || string.IsNullOrWhiteSpace(opts.ProcessPath))
