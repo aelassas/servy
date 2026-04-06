@@ -1,6 +1,7 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 using System;
 using System.Threading.Tasks;
@@ -42,9 +43,16 @@ namespace Servy.CLI.Commands
                 }
 
                 var success = await _serviceManager.StopServiceAsync(opts.ServiceName);
-                return success
-                    ? CommandResult.Ok("Service stopped successfully.")
-                    : CommandResult.Fail("Failed to stop service.");
+                if (success)
+                {
+                    Logger.Info($"Successfully stopped the service '{opts.ServiceName}'.");
+                    return CommandResult.Ok("Service stopped successfully.");
+                }
+                else
+                {
+                    Logger.Info($"Failed to stop the service '{opts.ServiceName}'.");
+                    return CommandResult.Fail("Failed to stop service.");
+                }
             });
         }
     }

@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 using System;
 using System.Threading.Tasks;
@@ -49,9 +50,16 @@ namespace Servy.CLI.Commands
                 }
 
                 var success = await _serviceManager.RestartServiceAsync(opts.ServiceName);
-                return success
-                    ? CommandResult.Ok("Service restarted successfully.")
-                    : CommandResult.Fail("Failed to restart service.");
+                if (success)
+                {
+                    Logger.Info($"Successfully restarted the service '{opts.ServiceName}'.");
+                    return CommandResult.Ok("Service restarted successfully.");
+                }
+                else
+                {
+                    Logger.Info($"Failed to restart the service '{opts.ServiceName}'.");
+                    return CommandResult.Fail("Failed to restart service.");
+                }
             });
         }
     }
