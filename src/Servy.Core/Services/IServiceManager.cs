@@ -14,6 +14,20 @@ namespace Servy.Core.Services
     /// Implementations handle low-level service control operations and configuration,
     /// including process monitoring, logging, and recovery options.
     /// </summary>
+    /// <remarks>
+    /// This interface deliberately mixes asynchronous and synchronous patterns:
+    /// <list type="bullet">
+    /// <item>
+    /// <description><b>Async Writes:</b> Lifecycle operations (Start, Stop, Install) are asynchronous 
+    /// as they involve long-running process transitions.</description>
+    /// </item>
+    /// <item>
+    /// <description><b>Sync Reads:</b> State interrogation (Status, Exists) is synchronous because 
+    /// the underlying <see cref="System.ServiceProcess.ServiceController"/> and Win32 SCM APIs 
+    /// are inherently blocking and execute quickly.</description>
+    /// </item>
+    /// </list>
+    /// </remarks>
     public interface IServiceManager
     {
         /// <summary>
