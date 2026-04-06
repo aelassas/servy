@@ -1,9 +1,7 @@
-﻿using Servy.Core.Logging;
-using Servy.Service.Native;
+﻿using Servy.Service.Native;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Management;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -45,12 +43,18 @@ namespace Servy.Service.ProcessManagement
             foreach (var other in Process.GetProcesses())
             {
                 Handle handle = new Handle(IntPtr.Zero);
+                bool addedToChildren = false;
+
                 try
                 {
+                    // Capture the ID early. If the process has already exited, 
+                    // this might throw, which is safely caught and handled.
+                    int otherId = other.Id;
+
                     handle = NativeMethods.OpenProcess(
                         NativeMethods.ProcessAccess.QueryInformation,
                         false,
-                        other.Id
+                        otherId // Use the cached ID safely
                     );
 
                     if (handle == IntPtr.Zero)
@@ -80,18 +84,18 @@ namespace Servy.Service.ProcessManagement
                     if ((int)info.InheritedFromUniqueProcessId == parentPid)
                     {
                         children.Add((other, handle));
+                        addedToChildren = true;
                         continue;
                     }
                 }
                 catch
                 {
-                    // Ignore inaccessible processes
-                    other.Dispose();
+                    // Ignore inaccessible processes or processes that threw during ID access.
                 }
                 finally
                 {
-                    // Dispose only if not already added to children
-                    if (!children.Exists(c => c.Process.Id == other.Id))
+                    // Dispose only if ownership was NOT transferred to the children list.
+                    if (!addedToChildren)
                     {
                         other.Dispose();
                         handle.Dispose();
@@ -101,6 +105,5 @@ namespace Servy.Service.ProcessManagement
 
             return children;
         }
-
     }
 }
