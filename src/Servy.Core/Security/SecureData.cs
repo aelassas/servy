@@ -84,6 +84,8 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="plainText"/> is empty.</exception>
         public string Encrypt(string plainText)
         {
+            ThrowIfDisposed();
+
             // Validation: Ensure we have data to work with
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
@@ -161,6 +163,8 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         public string Decrypt(string cipherText)
         {
+            ThrowIfDisposed();
+
             // Initial validation
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
@@ -381,17 +385,45 @@ namespace Servy.Core.Security
         /// </summary>
         public void Dispose()
         {
+            // Pass 'true' because we are being called explicitly by the user's code.
+            Dispose(true);
+
+            // Tell the GC that this object no longer needs its Finalizer called.
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// The bulk of the clean-up logic is handled here.
+        /// </summary>
+        /// <param name="disposing">
+        /// True if called from the <see cref="Dispose()"/> method; 
+        /// false if called from a finalizer.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
             if (_disposed) return;
 
-            // Use CryptographicOperations.ZeroMemory to prevent the 
-            // compiler from optimizing away the clearing operation.
-            if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
-            if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
-            if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
-            if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
+            if (disposing)
+            {
+                // Zero-out sensitive managed byte arrays.
+                // Even though these are managed objects, we treat them as critical 
+                // resources that must be wiped before the memory is reclaimed.
+                if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
+                if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
+                if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
+                if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
+            }
 
             _disposed = true;
-            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
+        /// </summary>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
         }
 
     }

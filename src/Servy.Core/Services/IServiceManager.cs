@@ -118,6 +118,6 @@ namespace Servy.Core.Services
         /// dependency hierarchy, or <c>null</c> if the dependencies could
         /// not be resolved.
         /// </returns>
-        ServiceDependencyNode GetDependencies(string serviceName);
+        ServiceDependencyNode? GetDependencies(string serviceName);
     }
 }
