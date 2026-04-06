@@ -193,9 +193,6 @@ function Invoke-ServyCli {
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
   $process = $null
-  $stdout = $null
-  $stderr = $null
-  $exitCode = 0  # Initialize a variable to hold the exit code
 
   try {
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
@@ -301,8 +298,7 @@ function Invoke-ServyCli {
     }
   }
 
-  # Use the locally captured $exitCode variable instead of the $process object
-  if ($exitCode -ne 0) {
+  if ($null -ne $exitCode -and $exitCode -ne 0) {
     $errorMessage = if (-not [string]::IsNullOrEmpty($stderr)) { $stderr.TrimEnd() } else { "Unknown error" }
     throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }
