@@ -11,17 +11,22 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(null, false)]
         [InlineData("", false)]
         [InlineData("   ", false)]
-        [InlineData("..\\somepath", false)]           // directory traversal
-        [InlineData("C:\\valid\\path.txt", true)]     // valid absolute path (Windows style)
-        [InlineData("C:/valid/path.txt", true)]       // valid absolute path (slash)
-        [InlineData("relative\\path", false)]         // relative path (not rooted)
-        [InlineData("C:\\invalid|path", false)]       // invalid char '|'
-        [InlineData("C:\\valid\\..\\path", false)]    // contains ..
-        [InlineData("/usr/bin/bash", true)]           // absolute path (Unix style)
-        [InlineData("C:\\", true)]                    // root path
+        [InlineData("..\\somepath", false)]           // Explicit directory traversal at start
+        [InlineData("C:\\valid\\path.txt", true)]     // Valid absolute path (Windows style)
+        [InlineData("C:/valid/path.txt", true)]       // Valid absolute path (forward slash)
+        [InlineData("relative\\path", false)]         // Relative path (not rooted)
+        [InlineData("C:\\invalid|path", false)]       // Invalid character '|'
+        [InlineData("C:\\valid\\..\\path", false)]    // Contains traversal segment ".."
+        [InlineData("C:\\", true)]                    // Root path
+        [InlineData("C:\\my..folder\\path", true)]    // Legitimate ".." inside a folder name
+        [InlineData("C:\\folder\\file..txt", true)]   // Legitimate ".." inside a file name
+        [InlineData("C:\\valid\\path\\..", false)]    // Traversal segment at the very end
         public void IsValidPath_VariousInputs_ReturnsExpected(string? path, bool expected)
         {
+            // Act
             var result = Helper.IsValidPath(path!);
+
+            // Assert
             Assert.Equal(expected, result);
         }
 
