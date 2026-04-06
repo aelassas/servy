@@ -262,6 +262,8 @@ function Invoke-ServyCli {
       }
     }
 
+    # Flush async output streams (required per .NET documentation)
+    $process.WaitForExit()
 
     # COLLECT stderr
     # Convert our collected array back into a string
