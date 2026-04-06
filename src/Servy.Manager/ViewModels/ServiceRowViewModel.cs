@@ -12,12 +12,13 @@ namespace Servy.Manager.ViewModels
     /// ViewModel representing a single row in the Services DataGrid.
     /// Exposes the underlying Service model and row-level commands.
     /// </summary>
-    public class ServiceRowViewModel : INotifyPropertyChanged
+    public class ServiceRowViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IServiceCommands _serviceCommands;
         private readonly ILogger _logger;
         private bool _isSelected;
         private bool _isChecked;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of <see cref="ServiceRowViewModel"/>.
@@ -263,6 +264,52 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 _logger.Warn($"Service command failed for {Service?.Name}: {ex}");
+            }
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Unsubscribes from Model events to prevent memory leaks.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="ServiceRowViewModel"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// <c>true</c> to release both managed and unmanaged resources; 
+        /// <c>false</c> to release only unmanaged resources.
+        /// </param>
+        /// <remarks>
+        /// This method is part of the standard <see cref="IDisposable"/> pattern. 
+        /// It is critical for breaking the strong reference held by the <see cref="Service"/> model 
+        /// through the <see cref="Service.PropertyChanged"/> event. Without this unsubscription, 
+        /// the ViewModel would remain rooted in memory, leading to a leak.
+        /// </remarks>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    // CRITICAL: Unsubscribe to release the reference held by the Service model.
+                    // This allows the Garbage Collector to reclaim this ViewModel instance.
+                    if (Service != null)
+                    {
+                        Service.PropertyChanged -= Service_PropertyChanged;
+                    }
+                }
+
+                // Mark as disposed to prevent redundant disposal logic
+                _disposed = true;
             }
         }
 
