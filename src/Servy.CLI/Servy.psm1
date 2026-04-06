@@ -284,7 +284,7 @@ function Invoke-ServyCli {
     $partialOutput = ""
     if (-not [string]::IsNullOrEmpty($stdout)) { $partialOutput += " Stdout: $($stdout.TrimEnd())" }
     if (-not [string]::IsNullOrEmpty($stderr)) { $partialOutput += " Stderr: $($stderr.TrimEnd())" }
-    throw "$($ErrorContext): $_$partialOutput"
+    throw "$($ErrorContext): $_.`n$partialOutput".TrimEnd()
   }
   finally {
     # CRITICAL: Clean up events and global variables even if the code fails
