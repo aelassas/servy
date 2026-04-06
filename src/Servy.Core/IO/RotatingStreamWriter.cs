@@ -243,6 +243,8 @@ namespace Servy.Core.IO
                 return basePath;
 
             string directory = Path.GetDirectoryName(basePath);
+            if (string.IsNullOrEmpty(directory))
+                throw new ArgumentException($"Cannot determine directory from path: {basePath}", nameof(basePath));
             string fileName = Path.GetFileName(basePath);
 
             string extension = Path.GetExtension(fileName);
