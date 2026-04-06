@@ -216,8 +216,7 @@ namespace Servy.Manager.ViewModels
             {
                 if (_selectAll == value) return;
 
-                //_selectAll = value;
-                _selectAll = _selectAll == null ? false : value;
+                _selectAll = value;
                 OnPropertyChanged();
 
                 // Only handle user clicks
@@ -430,18 +429,18 @@ namespace Servy.Manager.ViewModels
             if (_isUpdatingSelectAll) return;
 
             _isUpdatingSelectAll = true;
+            try
+            {
 
-            var all = _services.All(s => s.IsChecked);
-            var none = _services.All(s => !s.IsChecked);
-
-            if (all)
-                SelectAll = true;
-            else if (none)
-                SelectAll = false;
-            else
-                SelectAll = null;
-
-            _isUpdatingSelectAll = false;
+                var checkedCount = _services.Count(s => s.IsChecked);
+                SelectAll = checkedCount == _services.Count ? true
+                          : checkedCount == 0 ? false
+                          : (bool?)null;
+            }
+            finally
+            {
+                _isUpdatingSelectAll = false;
+            }
         }
 
         /// <summary>
