@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Logging;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -454,13 +455,23 @@ namespace Servy.Core.Helpers
             var ancestors = new HashSet<int>();
             try
             {
-                var current = Process.GetCurrentProcess();
-                ancestors.Add(current.Id);
+                int currentPid;
+                int parentId;
 
-                int parentId = GetParentProcessId(current);
+                // 1. Get current PID and dispose immediately
+                using (var current = Process.GetCurrentProcess())
+                {
+                    currentPid = current.Id;
+                    ancestors.Add(currentPid);
+                    parentId = GetParentProcessId(current);
+                }
+
+                // 2. Walk up the tree
+                // Stop at System (PID 4) or if we hit a loop/error
                 while (parentId > 4)
                 {
-                    ancestors.Add(parentId);
+                    if (!ancestors.Add(parentId)) break; // Prevent infinite loops
+
                     try
                     {
                         using (var parent = Process.GetProcessById(parentId))
@@ -468,12 +479,21 @@ namespace Servy.Core.Helpers
                             parentId = GetParentProcessId(parent);
                         }
                     }
-                    catch { break; }
+                    catch (ArgumentException)
+                    {
+                        // Parent process no longer exists
+                        break;
+                    }
+                    catch (Win32Exception)
+                    {
+                        // Access denied to the parent process
+                        break;
+                    }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // In the unlikely event that we cannot get the current process or its parents, we return an empty set, which means no protection.
+                Logger.Warn($"Could not fully resolve ancestor tree: {ex.Message}");
             }
             return ancestors;
         }
