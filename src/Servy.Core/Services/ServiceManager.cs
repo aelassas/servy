@@ -507,6 +507,10 @@ namespace Servy.Core.Services
 
                         return true;
                     }
+
+                    int error = Marshal.GetLastWin32Error();
+                    Logger.Error($"Failed to create service '{options.ServiceName}'. Win32 error: {error}");
+                    return false;
                 }
 
                 // Set description
