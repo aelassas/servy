@@ -262,10 +262,21 @@ namespace Servy.Core.IO
                 namePart = Path.GetFileNameWithoutExtension(fileName);
             }
 
+            const int MaxRetryLimit = 10000;
             int count = 1;
             string newPath;
+
             do
             {
+                // Safety bound: Prevent the process from hanging or causing high I/O latency 
+                // if the directory is pathologically full or locked.
+                if (count > MaxRetryLimit)
+                {
+                    throw new IOException(
+                        $"Failed to generate a unique filename for '{basePath}' after {MaxRetryLimit} attempts. " +
+                        "Please verify directory permissions or clean up orphaned files.");
+                }
+
                 newPath = Path.Combine(directory, $"{namePart}.({count}){extension}");
                 count++;
             }
