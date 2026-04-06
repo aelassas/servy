@@ -387,18 +387,16 @@ namespace Servy.Service
         /// Configures the service to intercept the Windows Pre-Shutdown notification.
         /// </summary>
         /// <remarks>
-        /// This method uses reflection to access the private <c>acceptedCommands</c> field of the 
-        /// <see cref="ServiceBase"/> class. By injecting the <c>SERVICE_ACCEPT_PRESHUTDOWN</c> (0x100) 
-        /// bitmask, the service informs the Service Control Manager (SCM) that it should receive 
-        /// control code 15 (Pre-Shutdown) before the standard shutdown sequence begins. 
-        /// This allows the service more time to clean up child processes or flush logs.
+        /// This method uses reflection to access the private field of the <see cref="ServiceBase"/> class.
+        /// It includes strict runtime validation to ensure compatibility across legacy (e.g., .NET 4.8) 
+        /// and modern runtimes (e.g., .NET 10). If the internal structure of ServiceBase changes, 
+        /// this will fail fast rather than silently degrading shutdown behavior.
         /// </remarks>
         private void InitializePreShutdownHook()
         {
             try
             {
                 // Modern .NET uses "_acceptedCommands", Legacy uses "acceptedCommands"
-                // Minimum tested .NET version: .NET Framework 4.8
                 string[] fieldNames = { "_acceptedCommands", "acceptedCommands" };
                 FieldInfo acceptedField = null;
 
@@ -416,12 +414,17 @@ namespace Servy.Service
                 }
                 else
                 {
-                    _logger?.Error("[Pre-Shutdown] Hook Failed: Neither '_acceptedCommands' nor 'acceptedCommands' found.");
+                    string fw = RuntimeInformation.FrameworkDescription;
+                    throw new PlatformNotSupportedException(
+                        $"[Pre-Shutdown] Hook Failed: Unsupported .NET runtime ({fw}). " +
+                        "Neither '_acceptedCommands' nor 'acceptedCommands' was found in ServiceBase.");
                 }
             }
             catch (Exception ex)
             {
                 _logger?.Error($"[Pre-Shutdown] Reflection Hook Error: {ex.Message}");
+                // Fail-fast: Do not allow the service to start with degraded shutdown capabilities.
+                throw;
             }
         }
 
@@ -489,21 +492,26 @@ namespace Servy.Service
                         }
                         else
                         {
-                            _logger?.Error("Service handle obtained but is zero/invalid");
+                            throw new InvalidOperationException("Service status handle field was found, but the pointer is zero/invalid.");
                         }
                     }
                     else
                     {
-                        _logger?.Error("Could not find service status handle field via reflection!");
+                        string fw = RuntimeInformation.FrameworkDescription;
+                        var availableFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                                                                 .Select(f => f.Name);
 
-                        // Log all available fields for debugging
-                        var allFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
-                        _logger?.Info($"Available private fields in ServiceBase: {string.Join(", ", allFields.Select(f => f.Name))}");
+                        throw new PlatformNotSupportedException(
+                            $"Could not find service status handle field via reflection in {fw}. " +
+                            $"Available private fields: {string.Join(", ", availableFields)}");
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger?.Error($"Failed to get service handle: {ex.Message}", ex);
+                    // Crucial: Set specific exit code and abort start to prevent silent degraded state
+                    ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
+                    throw;
                 }
 
                 // Ensure working directory is valid
