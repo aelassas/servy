@@ -343,7 +343,6 @@ function Invoke-ServyServiceCommand {
     )
 
     $argsList = @()
-    # Assuming Add-Arg is a helper that appends '--name' and the service name
     $argsList = Add-Arg $argsList "--name" $Name
 
     # FIX: Changed -Command Command to -Command $Command
