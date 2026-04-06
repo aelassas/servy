@@ -1802,11 +1802,14 @@ namespace Servy.Service
                 // If we are already recovering, we don't want to increment restartAttempts again
                 if (_isTearingDown || _disposed || _isRecovering) return;
 
-                bool isFailed = _childProcess == null || _childProcess.HasExited;
+                // Capture _childProcess into a local variable to ensure atomicity.
+                var process = _childProcess;
+
+                bool isFailed = process == null || process.HasExited;
                 if (isFailed)
                 {
                     int? exitCode = null;
-                    try { exitCode = _childProcess?.ExitCode; } catch { /* Ignore Error */ }
+                    try { exitCode = process?.ExitCode; } catch { /* Ignore Error */ }
 
                     if (exitCode == 0)
                     {
