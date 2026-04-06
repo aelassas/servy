@@ -40,7 +40,11 @@ namespace Servy.Manager.Views
 
             DataContextChanged += (s, e) =>
             {
-                if (CurrentViewModel != null) CurrentViewModel.PropertyChanged -= OnVmPropertyChanged;
+                if (CurrentViewModel != null)
+                {
+                    CurrentViewModel.PropertyChanged -= OnVmPropertyChanged;
+                    CurrentViewModel.RequestScroll -= OnRequestScroll;
+                }
 
                 if (DataContext is ConsoleViewModel vm)
                 {
@@ -49,7 +53,6 @@ namespace Servy.Manager.Views
                     vm.PropertyChanged += OnVmPropertyChanged;
                 }
             };
-
 
             LogList.SelectionChanged += (_, __) =>
             {
