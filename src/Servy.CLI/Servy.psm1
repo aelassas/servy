@@ -417,11 +417,15 @@ function Show-ServyHelp {
     [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
     [string] $Command
   )
-
+  
   $argsList = @()
-  if ($Command) { $argsList = Add-Arg $argsList "--help" -Flag }
+  if ($Command) {
+      $argsList = Add-Arg $argsList "--help" -Flag
+      Invoke-ServyCli -Command $Command -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
+  } else {
+      Invoke-ServyCli -Command "--help" -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
+  }
 
-  Invoke-ServyCli -Command $Command -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
 }
 
 function Install-ServyService {
