@@ -1031,36 +1031,53 @@ namespace Servy.Service
             int waitChunkMs,
             string operationName)
         {
-            int elapsed = 0;
+            var sw = Stopwatch.StartNew();
 
-            while (!process.WaitForExit(waitChunkMs))
+            try
             {
-                elapsed += waitChunkMs;
-
-                // Keep SCM informed: Request 15s of additional time every chunk
-                _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTime, null!);
-
-                //_logger?.Info($"{operationName} process still running... {elapsed / 1000}s elapsed.");
-
-                if (elapsed >= effectiveTimeoutMs)
+                while (true)
                 {
-                    try
+                    // 1. Check if process exited within the chunk
+                    if (process.WaitForExit(waitChunkMs))
                     {
-                        process.Kill(true);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.Warn(
-                            $"Failed to kill {operationName} process: {ex.Message}");
+                        break;
                     }
 
-                    throw new System.TimeoutException(
-                        $"{operationName} process timed out after {effectiveTimeoutMs / 1000} seconds.");
+                    // 2. Keep SCM informed
+                    _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+
+                    // 3. Check for timeout using actual wall-clock time
+                    if (sw.ElapsedMilliseconds >= effectiveTimeoutMs)
+                    {
+                        _logger?.Error($"{operationName} timed out after {effectiveTimeoutMs}ms. Forcing termination.");
+
+                        try
+                        {
+                            // Kill process tree
+                            process.Kill(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.Warn($"Failed to kill {operationName} process: {ex.Message}");
+                        }
+
+                        throw new System.TimeoutException(
+                            $"{operationName} process timed out and was forcefully terminated.");
+                    }
                 }
             }
+            finally
+            {
+                // 4. Final safety drain for StandardOutput/Error
+                // We use a small timeout (3s) to ensure we don't hang the service 
+                // if the OS is struggling to close the handles.
+                if (!process.WaitForExit(3000))
+                {
+                    _logger?.Warn($"{operationName} handles did not close gracefully within 3s after exit/kill.");
+                }
 
-            // Ensure async stdout/stderr drains to avoid data loss in logs
-            process.WaitForExit();
+                sw.Stop();
+            }
         }
 
         /// <summary>
@@ -2282,22 +2299,46 @@ namespace Servy.Service
 
                 // 1. Run the blocking process.Stop call on a background thread
                 // This ensures we call it exactly once with the full timeout.
+
+                // Capture lineage info while the parent is definitely alive
+                var parentPid = 0;
+                var parentStartTime = DateTime.MinValue;
+                try
+                {
+                    parentPid = process.Id;
+                    parentStartTime = process.StartTime;
+                }
+                catch (Exception ex)
+                {
+                    /* Process already dead, can't get children anyway */
+                    _logger?.Warn($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
+                }
+
+                int childCount = 0;
+                try
+                {
+                    var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+                    childCount = children.Count;
+
+                    // We only needed the count for the dynamic timeout calculation.
+                    // Because StopDescendants will re-query the tree, we MUST dispose 
+                    // these objects immediately so we don't leak them.
+                    foreach (var child in children)
+                    {
+                        if (child.Process != null) child.Process.Dispose();
+                        child.Handle.Dispose();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Warn($"Could not count children for timeout calculation: {ex.Message}");
+                }
+
+                // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
+                var totalTimeoutMs = ((childCount + 1) * timeoutMs) + 10000;
+
                 Task<bool?> stopTask = Task.Run(() =>
                 {
-                    // Capture lineage info while the parent is definitely alive
-                    var parentPid = 0;
-                    var parentStartTime = DateTime.MinValue;
-                    try
-                    {
-                        parentPid = process.Id;
-                        parentStartTime = process.StartTime;
-                    }
-                    catch (Exception ex)
-                    {
-                        /* Process already dead, can't get children anyway */
-                        _logger?.Warn($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
-                    }
-
                     // 1. Stop the main process
                     var result = process.Stop(timeoutMs);
 
@@ -2311,11 +2352,23 @@ namespace Servy.Service
 
                 // 2. Wait for the task to complete in 5-second pulses
                 // This prevents ContextSwitchDeadlock and keeps the SCM happy.
+
+                var maxWaitTime = TimeSpan.FromMilliseconds(totalTimeoutMs);
+                var sw = Stopwatch.StartNew();
+
                 while (!stopTask.Wait(5000))
                 {
+                    if (sw.Elapsed > maxWaitTime)
+                    {
+                        _logger?.Error("Stop operation exceeded safety limit. The process tree may be hung at the kernel level.");
+                        break; // Exit the loop and let the service finish/crash
+                    }
+
                     // Request 15s of "Wait Hint" every 5s pulse
                     _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
                 }
+
+                sw.Stop();
 
                 // 3. Retrieve the result from the finished task
                 var res = stopTask.IsCompleted ? stopTask.Result : null;
