@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.Logging;
 using System.Diagnostics.CodeAnalysis;
 using System.ServiceProcess;
 
@@ -60,8 +61,11 @@ namespace Servy.Core.Helpers
         /// <param name="services">A collection of service names to start.</param>
         public async Task StartServices(IEnumerable<string> services)
         {
-            var defaultTimeoutInSeconds = 30;
-            var bufferTimeInSeconds = 15;
+            const int defaultTimeoutInSeconds = 30;
+            const int bufferTimeInSeconds = 15;
+
+            // Create a bucket to collect any errors that occur
+            var exceptions = new List<Exception>();
 
             foreach (var serviceName in services)
             {
@@ -69,22 +73,29 @@ namespace Servy.Core.Helpers
                 {
                     using (var sc = new ServiceController(serviceName))
                     {
-                        sc.Refresh(); // Sync with SCM
+                        sc.Refresh();
 
-                        // If already running, move to the next service
                         if (sc.Status == ServiceControllerStatus.Running)
                             continue;
 
-                        // Only trigger Start if it is currently Stopped
-                        if (sc.Status == ServiceControllerStatus.Stopped)
+                        try
                         {
-                            sc.Start();
+                            if (sc.Status == ServiceControllerStatus.Stopped)
+                            {
+                                sc.Start();
+                            }
+                            else if (sc.Status == ServiceControllerStatus.Paused)
+                            {
+                                sc.Continue();
+                            }
                         }
-
-                        // If paused, continue it
-                        if (sc.Status == ServiceControllerStatus.Paused)
+                        catch (InvalidOperationException)
                         {
-                            sc.Continue();
+                            sc.Refresh();
+                            if (sc.Status == ServiceControllerStatus.Stopped || sc.Status == ServiceControllerStatus.Paused)
+                            {
+                                throw;
+                            }
                         }
 
                         var service = await _serviceRepository.GetByNameAsync(serviceName);
@@ -92,25 +103,32 @@ namespace Servy.Core.Helpers
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
+
                         var startTimeout = (service.StartTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
-                        startTimeout = Math.Max(startTimeout, defaultTimeoutInSeconds);
-                        var waitTime = TimeSpan.FromSeconds(startTimeout);
+                        var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, defaultTimeoutInSeconds));
 
                         // This blocks until the service is Started or the waitTime expires
                         await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Running, waitTime));
                     }
                 }
-                catch (System.ServiceProcess.TimeoutException)
-                {
-                    throw new InvalidOperationException(
-                        $"Timed out waiting for service '{serviceName}' to start.");
-                }
                 catch (Exception ex)
                 {
-                    throw new InvalidOperationException(
-                        $"Could not start service '{serviceName}': {ex.Message}");
+                    // Instead of throwing, we log the error and store it
+                    Logger.Error($"Failed to start {serviceName}.", ex);
+
+                    // Wrap in a descriptive exception so the caller knows which one failed
+                    exceptions.Add(new InvalidOperationException($"Service '{serviceName}' failed: {ex.Message}", ex));
+
+                    // The loop continues to the next service
                 }
             }
+
+            // After attempting all services, check if we hit any snags
+            if (exceptions.Any())
+            {
+                throw new AggregateException("One or more services failed to start.", exceptions);
+            }
+
         }
 
         /// <summary>
