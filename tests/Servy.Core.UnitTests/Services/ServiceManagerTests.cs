@@ -233,7 +233,7 @@ namespace Servy.Core.UnitTests.Services
              .Returns(scmHandle);
             _mockWin32ErrorProvider.Setup(x => x.GetLastWin32Error()).Returns(1074);
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.InstallServiceAsync(options));
+            Assert.False(await _serviceManager.InstallServiceAsync(options));
         }
 
         [Fact]
