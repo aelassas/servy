@@ -58,11 +58,7 @@ namespace Servy.Core.Helpers
                     return true;
 
                 // Get running services
-                var runningServices = new List<string>();
-                if (stopServices)
-                {
-                    runningServices = _serviceHelper.GetRunningServyServices();
-                }
+                var runningServices = stopServices ? _serviceHelper.GetRunningServyServices() : new List<string>();
 
                 try
                 {
@@ -226,13 +222,9 @@ namespace Servy.Core.Helpers
                     return true;
 
                 // Get running services
-                var runningServices = new List<string>();
-                if (stopServices)
-                {
-                    runningServices = _serviceHelper.GetRunningServyServices();
-                    if (runningServices.Count > 0)
-                        Logger.Info($"Stopping running services before copying resources: {string.Join(", ", runningServices)}");
-                }
+                var runningServices = stopServices ? _serviceHelper.GetRunningServyServices() : new List<string>();
+                if (runningServices.Count > 0)
+                    Logger.Info($"Stopping running services before copying resources: {string.Join(", ", runningServices)}");
 
                 try
                 {
