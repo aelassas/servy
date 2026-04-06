@@ -28,11 +28,6 @@ namespace Servy.Core.Helpers
                 .Replace("\n", ";")
                 .Replace("\r", ";");
 
-            //if (normalized.Contains("="))
-            //{
-            //    var x = EnvironmentVariableParser.Parse(normalized);
-            //}
-
             return normalized;
         }
 

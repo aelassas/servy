@@ -41,21 +41,6 @@ namespace Servy.Validators
                 return false;
             }
 
-            //if (checkServiceStatus)
-            //{
-            //    var serviceNameExists = _serviceManager.IsServiceInstalled(dto.Name);
-            //    if (serviceNameExists)
-            //    {
-            //        var startupType = _serviceManager.GetServiceStartupType(dto.Name);
-
-            //        if (startupType == Core.Enums.ServiceStartType.Disabled)
-            //        {
-            //            await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabled, AppConfig.Caption);
-            //            return false;
-            //        }
-            //    }
-            //}
-
             if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, AppConfig.Caption);

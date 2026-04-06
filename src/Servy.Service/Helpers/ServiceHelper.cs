@@ -61,9 +61,6 @@ namespace Servy.Service.Helpers
                 logger.Prefix = options.ServiceName;
             }
 
-            //logger?.Info($"[Args] {string.Join(" ", args)}");
-            //logger?.Info($"[Args] fullArgs Length: {args.Length}");
-
             string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
             string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
@@ -221,7 +218,6 @@ namespace Servy.Service.Helpers
         /// <inheritdoc />
         public StartOptions InitializeStartup(IServiceRepository serviceRepository, ILogger logger)
         {
-            //var fullArgs = GetSanitizedArgs();
             var fullArgs = _commandLineProvider.GetArgs();
             var options = StartOptionsParser.Parse(serviceRepository, fullArgs);
 
