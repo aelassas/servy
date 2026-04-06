@@ -61,7 +61,11 @@ namespace Servy.Core.Helpers
         public static void KillChildren(int parentPid)
         {
             // 1. Get self PID to prevent suicide
-            int selfPid = Process.GetCurrentProcess().Id;
+            int selfPid;
+            using (var current = Process.GetCurrentProcess())
+            {
+                selfPid = current.Id;
+            }
 
             // 2. Try to get parent start time, but DON'T FAIL if the parent is already dead.
             // If the parent is dead, we use a fallback time (DateTime.MinValue) 
