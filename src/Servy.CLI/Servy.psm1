@@ -80,36 +80,36 @@ Please ensure Servy is installed or the CLI executable is in the module director
 
 function Add-Arg {
   <#
-  .SYNOPSIS
-      Adds a key-value argument or a standalone flag to a list of command-line arguments.
+    .SYNOPSIS
+        Adds a key-value argument or a standalone flag to a list of command-line arguments.
 
-  .DESCRIPTION
-      This helper function appends a command-line argument in the form:
-          key="value"
-      to an existing array of strings if a value is provided and not empty.
-      If the -Flag switch is used, it simply appends the key as a standalone argument:
-          key
+    .DESCRIPTION
+        This helper function appends a command-line argument in the form:
+            key="value"
+        to an existing array of strings if a value is provided and not empty.
+        If the -Flag switch is used, it simply appends the key as a standalone argument:
+            key
 
-  .PARAMETER list
-      The existing array of arguments to which the new argument will be added.
+    .PARAMETER list
+        The existing array of arguments to which the new argument will be added.
 
-  .PARAMETER key
-      The name of the argument or option (e.g., "--startupDir" or "--enableHealth").
+    .PARAMETER key
+        The name of the argument or option (e.g., "--startupDir" or "--enableHealth").
 
-  .PARAMETER value
-      The value associated with the argument. Only added if not null or empty and -Flag is not specified.
+    .PARAMETER value
+        The value associated with the argument. Only added if not null or empty and -Flag is not specified.
 
-  .PARAMETER Flag
-      Switch indicating that this argument is a standalone flag without a value.
+    .PARAMETER Flag
+        Switch indicating that this argument is a standalone flag without a value.
 
-  .OUTPUTS
-      Returns the updated array of arguments including the new argument.
+    .OUTPUTS
+        Returns the updated array of arguments including the new argument.
 
-  .EXAMPLE
-      $argsList = @()
-      $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
-      $argsList = Add-Arg $argsList "--enableHealth" -Flag
-      # Result: $argsList contains '--startupDir="C:\MyApp"' and '--enableHealth'
+    .EXAMPLE
+        $argsList = @()
+        $argsList = Add-Arg $argsList "--startupDir" "C:\MyApp"
+        $argsList = Add-Arg $argsList "--enableHealth" -Flag
+        # Result: $argsList contains '--startupDir="C:\MyApp"' and '--enableHealth'
   #>
   param(
     $list,          # Existing argument list (Array)
@@ -138,38 +138,38 @@ function Add-Arg {
 
 function Invoke-ServyCli {
   <#
-  .SYNOPSIS
-      Internal helper to execute the Servy CLI.
+    .SYNOPSIS
+        Internal helper to execute the Servy CLI.
 
-  .DESCRIPTION
-      Builds and executes a Servy CLI command with the provided arguments.
-      This function centralizes CLI invocation logic, including command
-      construction, quiet mode handling, and error propagation.
+    .DESCRIPTION
+        Builds and executes a Servy CLI command with the provided arguments.
+        This function centralizes CLI invocation logic, including command
+        construction, quiet mode handling, and error propagation.
 
-      It ensures the Servy CLI path is validated before execution and throws
-      a terminating error with contextual information if the command fails.
+        It ensures the Servy CLI path is validated before execution and throws
+        a terminating error with contextual information if the command fails.
 
-  .PARAMETER Command
-      The Servy CLI command to execute (for example: install, uninstall, start).
+    .PARAMETER Command
+        The Servy CLI command to execute (for example: install, uninstall, start).
 
-  .PARAMETER Arguments
-      An array of additional command-line arguments to pass to the Servy CLI.
+    .PARAMETER Arguments
+        An array of additional command-line arguments to pass to the Servy CLI.
 
-  .PARAMETER Quiet
-      When specified, adds the --quiet flag to suppress interactive output.
+    .PARAMETER Quiet
+        When specified, adds the --quiet flag to suppress interactive output.
 
-  .PARAMETER ErrorContext
-      A contextual error message describing the operation being performed.
-      This message is included in any thrown exception.
+    .PARAMETER ErrorContext
+        A contextual error message describing the operation being performed.
+        This message is included in any thrown exception.
 
-  .NOTES
-      This function is intended for internal use within the Servy PowerShell
-      module and is not exported.
+    .NOTES
+        This function is intended for internal use within the Servy PowerShell
+        module and is not exported.
 
-      Compatible with PowerShell 2.0 and later.
+        Compatible with PowerShell 2.0 and later.
 
-  .EXAMPLE
-      Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
+    .EXAMPLE
+        Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
 
   #>
   param(
@@ -306,26 +306,26 @@ function Invoke-ServyCli {
 
 function Invoke-ServyServiceCommand {
   <#
-  .SYNOPSIS
-      Executes a specific service management command via the Servy CLI.
+    .SYNOPSIS
+        Executes a specific service management command via the Servy CLI.
 
-  .DESCRIPTION
-      Wraps the Servy CLI to perform actions such as start, stop, or restart on a 
-      specified service. It handles argument construction and provides context 
-      for error reporting.
+    .DESCRIPTION
+        Wraps the Servy CLI to perform actions such as start, stop, or restart on a 
+        specified service. It handles argument construction and provides context 
+        for error reporting.
 
-  .PARAMETER Command
-      The service command to execute (e.g., 'start', 'stop', 'restart').
+    .PARAMETER Command
+        The service command to execute (e.g., 'start', 'stop', 'restart').
 
-  .PARAMETER Name
-      The unique name of the service to target.
+    .PARAMETER Name
+        The unique name of the service to target.
 
-  .PARAMETER Quiet
-      If set, suppresses non-essential output from the CLI.
+    .PARAMETER Quiet
+        If set, suppresses non-essential output from the CLI.
 
-  .EXAMPLE
-      Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
-      Starts the 'Wexflow' service silently.
+    .EXAMPLE
+        Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
+        Starts the 'Wexflow' service silently.
   #>
     [cmdletbinding()]
     param(
