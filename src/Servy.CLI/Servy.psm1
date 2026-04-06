@@ -212,9 +212,10 @@ function Invoke-ServyCli {
     $process.StartInfo = $psi
     
     # ASYNCHRONOUS: Prevent deadlock by reading stderr asynchronously
-    # We use a script-scoped array to collect lines because PS 2.0 events 
-    # run in a separate scope.
-    # Generate unique variable name
+    # NOTE: $errorVarName MUST only contain alphanumeric characters (e.g., a GUID).
+    # It is interpolated directly into a ScriptBlock string for PS 2.0 compatibility.
+    # If the naming scheme changes to include special characters, the ScriptBlock 
+    # creation below will fail or become a script injection vector.
     $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
 
     # REGISTER EVENT NATIVELY
