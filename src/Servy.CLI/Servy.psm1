@@ -127,7 +127,11 @@ function Add-Arg {
     # Escape internal double quotes with backslashes (Windows convention, not PowerShell's "")
     $escapedValue = $value.Replace('"', '\"')
 
-    # Count trailing backslashes and double them
+    # Escape backslashes before quotes (must be done BEFORE escaping quotes)
+    $escapedValue = $value -replace '(\\+)"', '$1$1\"'
+    # Then escape any remaining standalone quotes
+    $escapedValue = $escapedValue -replace '(?<!\\)"', '\"'
+    # Double trailing backslashes
     $escapedValue = $escapedValue -replace '(\\+)$', '$1$1'
 
     [array]$list += "$($key.Trim())=`"$escapedValue`""
@@ -212,6 +216,7 @@ function Invoke-ServyCli {
     $process.StartInfo = $psi
     
     # ASYNCHRONOUS: Prevent deadlock by reading stderr asynchronously
+    # We use a script-scoped array to collect lines because PS 2.0 events 
     # NOTE: $errorVarName MUST only contain alphanumeric characters (e.g., a GUID).
     # It is interpolated directly into a ScriptBlock string for PS 2.0 compatibility.
     # If the naming scheme changes to include special characters, the ScriptBlock 
