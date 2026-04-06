@@ -29,7 +29,7 @@ namespace Servy.CLI.Commands
             catch (Exception ex)
             {
                 Logger.Error("An unexpected error occurred.", ex);
-                return CommandResult.Fail("An unexpected error occurred. Check logs.");
+                return CommandResult.Fail($"An unexpected error occurred: {ex.Message}");
             }
         }
 
@@ -52,7 +52,7 @@ namespace Servy.CLI.Commands
             catch (Exception ex)
             {
                 Logger.Error("An unexpected error occurred.", ex);
-                return CommandResult.Fail("An unexpected error occurred. Check logs.");
+                return CommandResult.Fail($"An unexpected error occurred: {ex.Message}");
             }
         }
     }
