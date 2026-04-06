@@ -53,11 +53,9 @@ namespace Servy.Core.Helpers
                     return true;
 
                 // Get running services
-                var runningServices = new List<string>();
-                if (stopServices)
-                {
-                    runningServices = isCli ? _serviceHelper.GetRunningServyCLIServices() : _serviceHelper.GetRunningServyUIServices();
-                }
+                var runningServices = stopServices
+                    ? (isCli ? _serviceHelper.GetRunningServyCLIServices() : _serviceHelper.GetRunningServyUIServices())
+                    : new List<string>();
 
                 try
                 {
