@@ -74,7 +74,7 @@ namespace Servy.Core.UnitTests.Helpers
             });
 
             // Act
-            var result = StringHelper.FormatEnvirnomentVariables(rawVars);
+            var result = StringHelper.FormatEnvironmentVariables(rawVars);
 
             // Assert
             var expected = string.Join(Environment.NewLine, new[]

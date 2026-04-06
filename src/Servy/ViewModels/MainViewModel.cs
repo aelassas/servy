@@ -1393,7 +1393,7 @@ namespace Servy.ViewModels
             FailureProgramPath = dto.FailureProgramPath;
             FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory;
             FailureProgramParameters = dto.FailureProgramParameters;
-            EnvironmentVariables = StringHelper.FormatEnvirnomentVariables(dto.EnvironmentVariables);
+            EnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.EnvironmentVariables);
             ServiceDependencies = StringHelper.FormatServiceDependencies(dto.ServiceDependencies);
             RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
             UserAccount = dto.UserAccount;
@@ -1402,7 +1402,7 @@ namespace Servy.ViewModels
             PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
             PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
             PreLaunchParameters = dto.PreLaunchParameters;
-            PreLaunchEnvironmentVariables = StringHelper.FormatEnvirnomentVariables(dto.PreLaunchEnvironmentVariables);
+            PreLaunchEnvironmentVariables = StringHelper.FormatEnvironmentVariables(dto.PreLaunchEnvironmentVariables);
             PreLaunchStdoutPath = dto.PreLaunchStdoutPath;
             PreLaunchStderrPath = dto.PreLaunchStderrPath;
             PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds == null ? DefaultPreLaunchTimeoutSeconds.ToString() : dto.PreLaunchTimeoutSeconds.ToString();
