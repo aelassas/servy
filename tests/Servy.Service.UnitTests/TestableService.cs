@@ -31,9 +31,9 @@ namespace Servy.Service.UnitTests
         }
 
         // Instead of overriding OnStart, expose a public method to call the base protected OnStart:
-        public void TestOnStart(string[] args)
+        public void TestOnStart()
         {
-            base.OnStart(args);
+            base.OnStart(new string[] { TestModeFlag });
         }
 
         public void InvokeSetProcessPriority(ProcessPriorityClass priority) => SetProcessPriority(priority);
