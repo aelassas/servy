@@ -9,12 +9,13 @@ namespace Servy.Core.Security
     /// Implements salted HKDF for key separation and follows strict memory-zeroing protocols for all sensitive buffers.
     /// Designed for a Singleton lifetime; internal keys are immutable after construction.
     /// </summary>
-    public class SecureData : ISecureData
+    public class SecureData : ISecureData, IDisposable
     {
         private readonly byte[] _v1MasterKey;
         private readonly byte[] _v1StaticIv;
         private readonly byte[] _v2EncryptionKey;
         private readonly byte[] _v2HmacKey;
+        private bool _disposed;
 
         private const string EncryptMarker = "SERVY_ENC:";
         private const string V2Marker = EncryptMarker + "v2:";
@@ -373,6 +374,24 @@ namespace Servy.Core.Security
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Performs strict memory-zeroing of all sensitive cryptographic key material.
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            // Use CryptographicOperations.ZeroMemory to prevent the 
+            // compiler from optimizing away the clearing operation.
+            if (_v1MasterKey != null) CryptographicOperations.ZeroMemory(_v1MasterKey);
+            if (_v1StaticIv != null) CryptographicOperations.ZeroMemory(_v1StaticIv);
+            if (_v2EncryptionKey != null) CryptographicOperations.ZeroMemory(_v2EncryptionKey);
+            if (_v2HmacKey != null) CryptographicOperations.ZeroMemory(_v2HmacKey);
+
+            _disposed = true;
+            GC.SuppressFinalize(this);
         }
 
     }

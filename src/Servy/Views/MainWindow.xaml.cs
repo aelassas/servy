@@ -20,6 +20,7 @@ namespace Servy.Views
     /// </summary>
     public partial class MainWindow : Window
     {
+        private SecureData _secureData;
         private readonly MainViewModel _mainViewModel;
 
         /// <summary>
@@ -60,10 +61,10 @@ namespace Servy.Views
 
             var dapperExecutor = new DapperExecutor(dbContext);
             var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
-            var secureData = new SecureData(protectedKeyProvider);
+            _secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
 
-            var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
 
             // Initialize service manager
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
@@ -130,6 +131,7 @@ namespace Servy.Views
                 Logger.Error("Error killing child processes.", ex);
             }
 
+            _secureData?.Dispose();
             Logger.Shutdown();
 
             base.OnClosed(e);
