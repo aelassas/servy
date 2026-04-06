@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.IO;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace Servy.Core.UnitTests.IO
 {
@@ -132,6 +133,32 @@ namespace Servy.Core.UnitTests.IO
         // --- End Lazy Init Tests ---
 
         [Fact]
+        public void GenerateUniqueFileName_ThrowsArgumentException_WhenPathHasNoDirectory()
+        {
+            // 1. Arrange: Create a filename with no path info
+            string fileName = $"test_file_{Guid.NewGuid()}.txt";
+
+            // We must actually create the file so File.Exists(basePath) returns true
+            File.WriteAllText(fileName, "dummy content");
+
+            try
+            {
+                // 2. Act & Assert
+                // Path.GetDirectoryName("filename.txt") returns null or string.Empty 
+                // depending on the .NET runtime version, triggering your check.
+                Assert.Throws<ArgumentException>(() => InvokeGenerateUniqueFileName(fileName));
+            }
+            finally
+            {
+                // 3. Cleanup: Always delete physical files created during tests
+                if (File.Exists(fileName))
+                {
+                    File.Delete(fileName);
+                }
+            }
+        }
+
+        [Fact]
         public void GenerateUniqueFileName_FileDoesNotExist_ReturnsOriginalPath()
         {
             var path = Path.Combine(_testDir, "log.txt");
@@ -260,8 +287,17 @@ namespace Servy.Core.UnitTests.IO
 
         private string InvokeGenerateUniqueFileName(string path)
         {
-            var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Static);
-            return (string)method!.Invoke(null, new object[] { path })!;
+            try
+            {
+                var method = typeof(RotatingStreamWriter).GetMethod("GenerateUniqueFileName", BindingFlags.NonPublic | BindingFlags.Static);
+                return (string)method!.Invoke(null, new object[] { path })!;
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException != null)
+            {
+                // Preserve the stack trace of the original exception
+                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                throw; // Unreachable
+            }
         }
 
         private void InvokeRotate(RotatingStreamWriter instance)
