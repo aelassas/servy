@@ -117,67 +117,107 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Validates and imports an XML service configuration file.
-        /// Optionally installs the service after import.
         /// </summary>
         /// <param name="opts">Import service options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        private async Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts)
+        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts)
         {
-            var xml = File.ReadAllText(opts.Path);
-
-            // Validate XML format
-            if (!XmlServiceValidator.TryValidate(xml, out var validationError))
-                return CommandResult.Fail($"XML file not valid: {validationError}");
-
-            // Import XML configuration into repository
-            var imported = await _serviceRepository.ImportXmlAsync(xml);
-            if (!imported)
-                return CommandResult.Fail("Failed to import XML configuration.");
-
-            // If installation not requested, return success
-            if (!opts.InstallService)
-                return CommandResult.Ok("XML configuration imported successfully.");
-
-            // Deserialize service for installation
-            var service = _xmlServiceSerializer.Deserialize(xml);
-            if (service == null)
-                return CommandResult.Fail("Service imported but failed to deserialize for installation.");
-
-            // Attempt installation
-            return await TryInstallServiceAsync(service.Name, "XML");
+            return ProcessImportInternalAsync(
+                opts,
+                "XML",
+                content => XmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                content => _serviceRepository.ImportXmlAsync(content),
+                content => _xmlServiceSerializer.Deserialize(content));
         }
 
         /// <summary>
         /// Validates and imports a JSON service configuration file.
-        /// Optionally installs the service after import.
         /// </summary>
         /// <param name="opts">Import service options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<En attente>")]
-        private async Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts)
+        [SuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
+        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts)
         {
-            var json = File.ReadAllText(opts.Path);
+            return ProcessImportInternalAsync(
+                opts,
+                "JSON",
+                content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                content => _serviceRepository.ImportJsonAsync(content),
+                JsonConvert.DeserializeObject<ServiceDto>);
+        }
 
-            // Validate JSON format
-            if (!JsonServiceValidator.TryValidate(json, out var validationError))
-                return CommandResult.Fail($"JSON file not valid: {validationError}");
+        /// <summary>
+        /// Core logic for processing service imports across different formats.
+        /// </summary>
+        private async Task<CommandResult> ProcessImportInternalAsync(
+            ImportServiceOptions opts,
+            string formatName,
+            Func<string, (bool Valid, string Error)> validator,
+            Func<string, Task<bool>> repoImporter,
+            Func<string, ServiceDto> deserializer)
+        {
+            var content = File.ReadAllText(opts.Path);
 
-            // Import JSON configuration into repository
-            var imported = await _serviceRepository.ImportJsonAsync(json);
-            if (!imported)
-                return CommandResult.Fail("Failed to import JSON configuration.");
+            // 1. Format Validation
+            var (isValid, error) = validator(content);
+            if (!isValid)
+                return CommandResult.Fail($"{formatName} file not valid: {error}");
 
-            // If installation not requested, return success
+            // 2. Repository Import
+            if (!await repoImporter(content))
+                return CommandResult.Fail($"Failed to import {formatName} configuration.");
+
             if (!opts.InstallService)
-                return CommandResult.Ok("JSON configuration imported successfully.");
+                return CommandResult.Ok($"{formatName} configuration imported successfully.");
 
-            // Deserialize service for installation
-            var service = JsonConvert.DeserializeObject<ServiceDto>(json);
+            // 3. Deserialization
+            var service = deserializer(content);
             if (service == null)
-                return CommandResult.Fail("Service imported but failed to deserialize for installation.");
+                return CommandResult.Fail($"Service imported but failed to deserialize for installation.");
 
-            // Attempt installation
-            return await TryInstallServiceAsync(service.Name, "JSON");
+            // 4. Exhaustive Path Validation
+            var pathValidation = ValidateServicePaths(service);
+            if (!pathValidation.Success)
+                return pathValidation;
+
+            // 5. Installation
+            return await TryInstallServiceAsync(service.Name, formatName);
+        }
+
+        /// <summary>
+        /// Validates all executable and directory paths defined in the service configuration.
+        /// </summary>
+        /// <param name="service">The service data transfer object.</param>
+        /// <returns>A <see cref="CommandResult"/> indicating if all paths are valid.</returns>
+        private CommandResult ValidateServicePaths(ServiceDto service)
+        {
+            // Required path
+            if (!ProcessHelper.ValidatePath(service.ExecutablePath, isFile: true))
+                return CommandResult.Fail("Invalid executable path in configuration.");
+
+            // Optional paths
+            var check = new[]
+            {
+                (service.StartupDirectory, false, "startup directory"),
+                (service.FailureProgramPath, true, "failure program executable path"),
+                (service.FailureProgramStartupDirectory, false, "failure program startup directory"),
+                (service.PreLaunchExecutablePath, true, "pre-launch executable path"),
+                (service.PreLaunchStartupDirectory, false, "pre-launch startup directory"),
+                (service.PostLaunchExecutablePath, true, "post-launch executable path"),
+                (service.PostLaunchStartupDirectory, false, "post-launch startup directory"),
+                (service.PreStopExecutablePath, true, "pre-stop executable path"),
+                (service.PreStopStartupDirectory, false, "pre-stop startup directory"),
+                (service.PostStopExecutablePath, true, "post-stop executable path"),
+                (service.PostStopStartupDirectory, false, "post-stop startup directory")
+            };
+
+            foreach (var (path, isFile, label) in check)
+            {
+                if (!string.IsNullOrWhiteSpace(path) && !ProcessHelper.ValidatePath(path, isFile))
+                    return CommandResult.Fail($"Invalid {label} in configuration.");
+            }
+
+            return CommandResult.Ok();
         }
 
         /// <summary>
