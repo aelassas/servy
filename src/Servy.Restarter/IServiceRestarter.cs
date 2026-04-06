@@ -9,6 +9,6 @@
         /// Restarts the specified Windows service by stopping and starting it.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        void RestartService(string serviceName);
+        void RestartService(string serviceName, TimeSpan timeout);
     }
 }

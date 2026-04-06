@@ -19,17 +19,40 @@ namespace Servy.Restarter
     public static class Program
     {
         /// <summary>
+        /// The default timeout, in seconds, for service restart operations within the wrapper service.
+        /// </summary>
+        /// <remarks>
+        /// Set to 120 seconds to ensure maximum resiliency for background operations. 
+        /// This extended duration allows the restarter to wait out long 'Pending' transitions 
+        /// (e.g., heavy I/O cleanup or database flushes) without triggering a timeout 
+        /// exception in the host service.
+        /// </remarks>
+        public const int DefaultRestartTimeoutSeconds = 120;
+
+        /// <summary>
         /// Main method. Expects a single argument: the service name to restart.
         /// </summary>
         /// <param name="args">Command line arguments. args[0] must be the service name.</param>
         public static void Main(string[] args)
         {
-            if (args.Length == 0)
-                return;
-
             Logger.Initialize("Servy.Restarter.log");
 
+            if (args.Length == 0)
+            {
+                Logger.Error("Missing required argument: service name.");
+                Environment.Exit(1);
+                return;
+            }
+
             var serviceName = args[0];
+
+            if (string.IsNullOrWhiteSpace(serviceName))
+            {
+                Logger.Error("Service name cannot be empty.");
+                Environment.Exit(1);
+                return;
+            }
+
             IServiceRestarter restarter = new ServiceRestarter();
             ILogger logger = new EventLogLogger(AppConfig.ServiceNameEventSource) { Prefix = serviceName };
 
@@ -43,6 +66,8 @@ namespace Servy.Restarter
                     .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
+
+                var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
 
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
                 {
@@ -71,8 +96,7 @@ namespace Servy.Restarter
 
                 // Restart service
                 Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
-
-                restarter.RestartService(serviceName);
+                restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
                 Logger.Info($"Successfully restarted service '{serviceName}'.");
             }
             catch (Exception ex)

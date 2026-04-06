@@ -29,5 +29,13 @@ namespace Servy.Restarter
         /// Stops the service.
         /// </summary>
         void Stop();
+
+        /// <summary>
+        /// Refreshes property values by resetting the properties to their current values from the Windows Service Control Manager (SCM).
+        /// </summary>
+        /// <remarks>
+        /// Call this method before checking the <see cref="Status"/> property to ensure you are reading the most up-to-date state rather than a cached snapshot.
+        /// </remarks>
+        void Refresh();
     }
 }
