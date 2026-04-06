@@ -185,6 +185,40 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
+        public void GenerateUniqueFileName_ShouldThrowIOException_WhenMaxRetryLimitExceeded()
+        {
+            // Arrange
+            string fileName = "testlog.txt";
+            string basePath = Path.Combine(_testDir, fileName);
+            string namePart = Path.GetFileNameWithoutExtension(fileName);
+            string extension = Path.GetExtension(fileName);
+
+            // Create the base file
+            File.WriteAllText(basePath, "initial content");
+
+            // Create 10,000 colliding files: testlog.(1).txt to testlog.(10000).txt
+            // Note: On modern SSDs, creating 10k empty files takes ~1-2 seconds.
+            for (int i = 1; i <= 10000; i++)
+            {
+                string collisionPath = Path.Combine(_testDir, $"{namePart}.({i}){extension}");
+                File.WriteAllText(collisionPath, string.Empty);
+            }
+
+            // Get the private static method via reflection
+            var methodInfo = typeof(RotatingStreamWriter).GetMethod(
+                "GenerateUniqueFileName",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+            // Act & Assert
+            var exception = Assert.Throws<TargetInvocationException>(() =>
+                methodInfo.Invoke(null, new object[] { basePath }));
+
+            // TargetInvocationException wraps the actual IOException
+            Assert.IsType<IOException>(exception.InnerException);
+            Assert.Contains("after 10000 attempts", exception.InnerException.Message);
+        }
+
+        [Fact]
         public void ReturnsOriginalPath_WhenFileDoesNotExist()
         {
             var path = Path.Combine(_testDir, "fresh_file.log");
