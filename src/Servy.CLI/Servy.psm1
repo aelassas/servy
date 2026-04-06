@@ -797,9 +797,6 @@ function Uninstall-ServyService {
     [string] $Name
   )
 
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
-  
   Invoke-ServyServiceCommand -Command "uninstall" -Name $Name -Quiet:$Quiet
 }
 
@@ -828,9 +825,6 @@ function Start-ServyService {
     [ValidateNotNullOrEmpty()]
     [string] $Name
   )
-
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
 
   Invoke-ServyServiceCommand -Command "start" -Name $Name -Quiet:$Quiet
 }
@@ -861,9 +855,6 @@ function Stop-ServyService {
     [string] $Name
   )
 
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
-
   Invoke-ServyServiceCommand -Command "stop" -Name $Name -Quiet:$Quiet
 }
 
@@ -892,9 +883,6 @@ function Restart-ServyService {
     [ValidateNotNullOrEmpty()]
     [string] $Name
   )
-
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
 
   Invoke-ServyServiceCommand -Command "restart" -Name $Name -Quiet:$Quiet
 }
@@ -925,9 +913,6 @@ function Get-ServyServiceStatus {
     [ValidateNotNullOrEmpty()]
     [string] $Name
   )
-
-  $argsList = @()
-  $argsList = Add-Arg $argsList "--name" $Name
 
   Invoke-ServyServiceCommand -Command "status" -Name $Name -Quiet:$Quiet
 }
