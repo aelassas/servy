@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -52,10 +53,12 @@ namespace Servy.CLI.Commands
                 {
                     // Remove the service record from the repository
                     await _serviceRepository.DeleteAsync(opts.ServiceName);
+                    Logger.Info($"Successfully uninstalled the service '{opts.ServiceName}'.");
                     return CommandResult.Ok("Service uninstalled successfully.");
                 }
                 else
                 {
+                    Logger.Info($"Failed to uninstall the service '{opts.ServiceName}'.");
                     return CommandResult.Fail("Failed to uninstall service.");
                 }
             });

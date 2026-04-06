@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -47,9 +48,17 @@ namespace Servy.CLI.Commands
                 }
 
                 var success = await _serviceManager.StartServiceAsync(opts.ServiceName);
-                return success
-                    ? CommandResult.Ok("Service started successfully.")
-                    : CommandResult.Fail("Failed to start service.");
+                if (success)
+                {
+                    Logger.Info($"Successfully started the service '{opts.ServiceName}'.");
+                    return CommandResult.Ok("Service started successfully.");
+                }
+                else
+                {
+                    Logger.Info($"Failed to start the service '{opts.ServiceName}'.");
+                    return CommandResult.Fail("Failed to start service.");
+                }
+
             });
         }
     }

@@ -1,9 +1,8 @@
 ﻿using Servy.CLI.Models;
-using Servy.CLI.Options;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
-using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Logging;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -151,10 +150,16 @@ namespace Servy.CLI.Commands
                 // Call the service manager install method
                 var success = await _serviceManager.InstallServiceAsync(options);
 
-                if (!success)
+                if (success)
+                {
+                    Logger.Info($"Successfully installed the service '{opts.ServiceName}'.");
+                    return CommandResult.Ok("Service installed successfully.");
+                }
+                else
+                {
+                    Logger.Info($"Failed to install the service '{opts.ServiceName}'.");
                     return CommandResult.Fail("Failed to install service.");
-
-                return CommandResult.Ok("Service installed successfully.");
+                }
             });
         }
 
