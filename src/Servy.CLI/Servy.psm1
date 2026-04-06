@@ -267,6 +267,9 @@ function Invoke-ServyCli {
     # Convert our collected array back into a string
     $stderr = (Get-Variable -Name $errorVarName -Scope Global -ValueOnly) -join [Environment]::NewLine
 
+    # Flush async output streams (required per .NET documentation)
+    $process.WaitForExit()
+
     # CRITICAL: Capture the exit code while the process object is still active
     $exitCode = $process.ExitCode
 
