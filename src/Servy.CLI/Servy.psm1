@@ -364,6 +364,7 @@ function Show-ServyVersion {
         Show-ServyVersion
         # Displays the current version of Servy CLI.
     #>
+  [CmdletBinding()]
   param(
     [switch] $Quiet
   )
@@ -394,6 +395,7 @@ function Show-ServyHelp {
         Show-ServyHelp -Command "install"
         # Displays help for the install command.        
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
@@ -614,7 +616,7 @@ function Install-ServyService {
             -RecoveryAction RestartService `
             -MaxRestartAttempts 5
     #>
-  
+  [CmdletBinding()]  
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -789,7 +791,7 @@ function Uninstall-ServyService {
     .EXAMPLE
         Uninstall-ServyService -Name "MyService"
     #>
-  
+  [CmdletBinding()]  
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -819,6 +821,7 @@ function Start-ServyService {
         Start-ServyService -Name "MyService"
         # Starts the service named 'MyService'.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -848,6 +851,7 @@ function Stop-ServyService {
         Stop-ServyService -Name "MyService"
         # Stops the service named 'MyService'.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -877,6 +881,7 @@ function Restart-ServyService {
         Restart-ServyService -Name "MyService"
         # Restarts the service named 'MyService'.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -907,6 +912,7 @@ function Get-ServyServiceStatus {
         Get-ServyServiceStatus -Name "MyService"
         # Retrieves the current status of the service named 'MyService'.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -942,6 +948,7 @@ function Export-ServyServiceConfig {
         Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\MyService.json"
         # Exports the configuration of 'MyService' to a JSON file at the specified path.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -995,6 +1002,7 @@ function Import-ServyServiceConfig {
         The service name is read from the configuration file during import.
         No -Name parameter is needed.
     #>
+  [CmdletBinding()]    
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
