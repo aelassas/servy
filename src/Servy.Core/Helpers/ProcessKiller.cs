@@ -73,7 +73,9 @@ namespace Servy.Core.Helpers
                     parentStartTime = parent.StartTime;
                 }
             }
-            catch { /* Parent already exited, proceed with MinValue */ }
+            catch (InvalidOperationException) { /* Parent already exited */ }
+            catch (System.ComponentModel.Win32Exception) { /* Access denied */ }
+            catch (Exception ex) { Logger.Warn($"Unexpected error getting parent start time: {ex.Message}"); }
 
             KillChildrenInternal(parentPid, parentStartTime, selfPid);
         }
@@ -410,9 +412,11 @@ namespace Servy.Core.Helpers
                     process.WaitForExit(10_000);
                 }
             }
-            catch
+            catch (InvalidOperationException) { /* Process already exited */ }
+            catch (System.ComponentModel.Win32Exception) { /* Access denied */ }
+            catch (Exception ex)
             {
-                // We catch all exceptions to ensure that a failure in killing one process does not prevent attempts to kill others.
+                Logger.Warn($"Unexpected error killing process tree: {ex.Message}");
             }
         }
 
