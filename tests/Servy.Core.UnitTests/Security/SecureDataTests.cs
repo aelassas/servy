@@ -322,6 +322,55 @@ namespace Servy.Core.UnitTests.Security
 
         #region Dispose Tests
 
+
+        [Fact]
+        public void Encrypt_ShouldThrowObjectDisposedException_WhenDisposed()
+        {
+            // Arrange
+            var sp = new SecureData(_mockProvider.Object);
+            sp.Dispose();
+
+            // Act & Assert
+            var exception = Assert.Throws<ObjectDisposedException>(() =>
+                sp.Encrypt("Sensitive Data"));
+
+            // Verify the exception mentions the correct class name
+            Assert.Contains(nameof(SecureData), exception.ObjectName);
+        }
+
+        [Fact]
+        public void Decrypt_ShouldThrowObjectDisposedException_WhenDisposed()
+        {
+            // Arrange
+            var sp = new SecureData(_mockProvider.Object);
+            sp.Dispose();
+
+            // Act & Assert
+            var exception = Assert.Throws<ObjectDisposedException>(() =>
+                sp.Decrypt("SERVY_ENC:v2:dummy_payload"));
+
+            Assert.Contains(nameof(SecureData), exception.ObjectName);
+        }
+
+        [Fact]
+        public void Methods_ShouldWorkBeforeDisposal_ButThrowAfter()
+        {
+            // Arrange
+            var sp = new SecureData(_mockProvider.Object);
+            const string plainText = "SecureMessage";
+
+            // Act 1: Should succeed before disposal
+            var cipher = sp.Encrypt(plainText);
+            Assert.NotNull(cipher);
+
+            // Act 2: Dispose
+            sp.Dispose();
+
+            // Assert: Subsequent calls must fail
+            Assert.Throws<ObjectDisposedException>(() => sp.Encrypt(plainText));
+            Assert.Throws<ObjectDisposedException>(() => sp.Decrypt(cipher));
+        }
+
         [Fact]
         public void Dispose_ZeroesAllKeyMaterialAndHandlesIdempotency()
         {

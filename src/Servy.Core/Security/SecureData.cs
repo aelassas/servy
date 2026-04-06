@@ -90,6 +90,8 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="plainText"/> is empty.</exception>
         public string Encrypt(string plainText)
         {
+            ThrowIfDisposed();
+
             if (plainText == null) throw new ArgumentNullException(nameof(plainText));
             if (plainText.Length == 0) throw new ArgumentException("Cannot encrypt empty string.", nameof(plainText));
 
@@ -179,6 +181,8 @@ namespace Servy.Core.Security
         /// <exception cref="ArgumentException">Thrown if <paramref name="cipherText"/> is empty.</exception>
         public string Decrypt(string cipherText)
         {
+            ThrowIfDisposed();
+
             if (cipherText == null) throw new ArgumentNullException(nameof(cipherText));
             if (cipherText.Length == 0) throw new ArgumentException("Cannot decrypt empty string.", nameof(cipherText));
 
@@ -444,18 +448,41 @@ namespace Servy.Core.Security
         /// </summary>
         public void Dispose()
         {
-            if (_disposed) return;
-            
-            // Use Array.Clear to prevent the 
-            // compiler from optimizing away the clearing operation.
-            if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
-            if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
-            if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
-            if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
+            // Pass 'true' because we are being called explicitly by the user's code.
+            Dispose(true);
 
-            _disposed = true;
+            // Tell the GC that this object no longer needs its Finalizer called.
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Performs strict memory-zeroing of all sensitive cryptographic key material.
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed) return;
+
+            if (disposing)
+            {
+                // Zero-out sensitive managed byte arrays.
+                // Even though these are managed objects, we treat them as critical 
+                // resources that must be wiped before the memory is reclaimed.
+                if (_v1MasterKey != null) Array.Clear(_v1MasterKey, 0, _v1MasterKey.Length);
+                if (_v1StaticIv != null) Array.Clear(_v1StaticIv, 0, _v1StaticIv.Length);
+                if (_v2EncryptionKey != null) Array.Clear(_v2EncryptionKey, 0, _v2EncryptionKey.Length);
+                if (_v2HmacKey != null) Array.Clear(_v2HmacKey, 0, _v2HmacKey.Length);
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Throws an <see cref="ObjectDisposedException"/> if this instance has already been disposed.
+        /// </summary>
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(GetType().Name);
+        }
     }
 }
