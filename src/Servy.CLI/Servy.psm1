@@ -204,8 +204,6 @@ function Invoke-ServyCli {
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.CreateNoWindow = $true
-    $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-    $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
 
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
@@ -239,7 +237,13 @@ function Invoke-ServyCli {
     $process.BeginErrorReadLine()
 
     # Read stdout synchronously
-    try { $stdout = $process.StandardOutput.ReadToEnd() } catch { }
+    try {
+        $stdout = $process.StandardOutput.ReadToEnd()
+    }
+    catch {
+        $stdout = $null
+        Write-Warning "Failed to read CLI stdout: $_"
+    }
 
     # Start the wait with the defined timeout
     $hasExited = $process.WaitForExit($script:ServyTimeoutSeconds * 1000)
