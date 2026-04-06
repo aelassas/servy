@@ -51,15 +51,7 @@ namespace Servy.Core.Helpers
         /// Gets the names of all currently running Servy services (GUI and CLI).
         /// </summary>
         /// <returns>A list of service names.</returns>
-        public List<string> GetRunningServyServices()
-        {
-            var guiServices = GetRunningServyUIServices();
-            var cliServices = GetRunningServyCLIServices();
-            var services = new List<string>();
-            services.AddRange(guiServices);
-            services.AddRange(cliServices);
-            return services;
-        }
+        public List<string> GetRunningServyServices() => GetRunningServyUIServices().Concat(GetRunningServyCLIServices()).ToList();
 
         /// <summary>
         /// Starts the specified services if they are not already running or pending start,
