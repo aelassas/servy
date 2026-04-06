@@ -187,7 +187,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à When enabled, environment variables and process parameters are recorded in the Windows Event Log. Not recommended for production environments, as these logs may contain sensitive information..
+        ///   Recherche une chaîne localisée semblable à When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information..
         /// </summary>
         public static string Info_EnableDebugLogs {
             get {

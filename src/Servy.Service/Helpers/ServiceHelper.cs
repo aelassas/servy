@@ -64,13 +64,12 @@ namespace Servy.Service.Helpers
             string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
             string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
+            // 1. PUBLIC DATA: Logged to both Local Log and Windows Event Log (logger?.Info)
             logger?.Info(
                   $"[Startup Parameters]\n" +
                   "--------Main-------------------\n" +
                   $"- serviceName: {options.ServiceName}\n" +
                   $"- realExePath: {options.ExecutablePath}\n" +
-                  // realArgs are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- realArgs: {options.ExecutableArgs}\n") +
                   $"- workingDir: {options.WorkingDirectory}\n" +
                   $"- priority: {options.Priority}\n" +
                   $"- startTimeoutInSeconds: {options.StartTimeout}\n" +
@@ -91,22 +90,11 @@ namespace Servy.Service.Helpers
                   $"- recoveryAction: {options.RecoveryAction}\n" +
                   $"- maxRestartAttempts: {options.MaxRestartAttempts}\n" +
                   $"- failureProgramPath: {options.FailureProgramPath}\n" +
-                  $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n" +
-                  // failureProgramArgs are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- failureProgramArgs: {options.FailureProgramArgs}\n") +
-                  "\n" +
-
-                  GetDebugLog(options, "--------Advanced---------------\n") +
-                  // environmentVariables are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- environmentVariables: {envVarsFormatted}\n\n") +
+                  $"- failureProgramWorkingDirectory: {options.FailureProgramWorkingDirectory}\n\n" +
 
                   "--------Pre-Launch-------------\n" +
                   $"- preLaunchExecutablePath: {options.PreLaunchExecutablePath}\n" +
                   $"- preLaunchWorkingDirectory: {options.PreLaunchWorkingDirectory}\n" +
-                  // preLaunchExecutableArgs are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n") +
-                  // preLaunchEnvironmentVariables are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n") +
                   $"- preLaunchStdOutPath: {options.PreLaunchStdoutPath}\n" +
                   $"- preLaunchStdErrPath: {options.PreLaunchStderrPath}\n" +
                   $"- preLaunchTimeout: {options.PreLaunchTimeout}\n" +
@@ -115,25 +103,49 @@ namespace Servy.Service.Helpers
 
                   "--------Post-Launch------------\n" +
                   $"- postLaunchExecutablePath: {options.PostLaunchExecutablePath}\n" +
-                  $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n" +
-                  // postLaunchExecutableArgs are not logged to avoid exposing sensitive information
-                  GetDebugLog(options, $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n")+
-                  "\n" +
+                  $"- postLaunchWorkingDirectory: {options.PostLaunchWorkingDirectory}\n\n" +
 
                   "--------Pre-Stop-------------\n" +
                   $"- preStopExecutablePath: {options.PreStopExecutablePath}\n" +
                   $"- preStopWorkingDirectory: {options.PreStopWorkingDirectory}\n" +
-                  GetDebugLog(options, $"- preStopExecutableArgs: {options.PreStopExecutableArgs}\n") +
                   $"- preStopTimeout: {options.PreStopTimeout}\n" +
                   $"- preStopLogAsError: {options.PreStopLogAsError}\n\n" +
 
                   "--------Post-Stop-------------\n" +
                   $"- postStopExecutablePath: {options.PostStopExecutablePath}\n" +
-                  $"- postStopWorkingDirectory: {options.PostStopWorkingDirectory}\n" +
-                  GetDebugLog(options, $"- postStopExecutableArgs: {options.PostStopExecutableArgs}\n")
+                  $"- postStopWorkingDirectory: {options.PostStopWorkingDirectory}\n"
+            );
 
-              //"-------------------------------\n"
-              );
+            // 2. SENSITIVE DATA: Logged to Local Text Logs ONLY (Servy.Service.log)
+            // This is only triggered if EnableDebugLogs is true.
+            if (options.EnableDebugLogs)
+            {
+                Logger.Info(
+                    $"[Startup Parameters - SENSITIVE DATA]\n" +
+                    "NOTE: This section contains sensitive parameters including executable arguments and environment variables.\n" +
+                    "--------Main (Sensitive)-------\n" +
+                    $"- realArgs: {options.ExecutableArgs}\n\n" +
+
+                    "--------Recovery (Sensitive)---\n" +
+                    $"- failureProgramArgs: {options.FailureProgramArgs}\n\n" +
+
+                    "--------Advanced (Sensitive)---\n" +
+                    $"- environmentVariables: {envVarsFormatted}\n\n" +
+
+                    "--------Pre-Launch (Sensitive)-\n" +
+                    $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
+                    $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n\n" +
+
+                    "--------Post-Launch (Sensitive)\n" +
+                    $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n\n" +
+
+                    "--------Pre-Stop (Sensitive)---\n" +
+                    $"- preStopExecutableArgs: {options.PreStopExecutableArgs}\n\n" +
+
+                    "--------Post-Stop (Sensitive)--\n" +
+                    $"- postStopExecutableArgs: {options.PostStopExecutableArgs}\n"
+                );
+            }
         }
 
         /// <inheritdoc />
