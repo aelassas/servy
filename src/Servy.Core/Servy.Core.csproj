@@ -121,6 +121,7 @@
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
+    <Compile Include="Security\JsonSecurity.cs" />
     <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />

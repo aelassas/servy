@@ -6,6 +6,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -143,7 +144,7 @@ namespace Servy.CLI.Commands
                 "JSON",
                 content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content),
-                JsonConvert.DeserializeObject<ServiceDto>);
+                (content) => JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings));
         }
 
         /// <summary>

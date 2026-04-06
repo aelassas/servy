@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System;
 
 namespace Servy.Core.Helpers
@@ -29,7 +30,7 @@ namespace Servy.Core.Helpers
             ServiceDto dto;
             try
             {
-                dto = JsonConvert.DeserializeObject<ServiceDto>(json);
+                dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
             }
             catch (Exception ex)
             {
