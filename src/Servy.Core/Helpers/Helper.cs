@@ -29,7 +29,7 @@ namespace Servy.Core.Helpers
                 return false;
             }
 
-            if (path.Contains("..")) // no directory traversal
+            if (path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(s => s == "..")) // no directory traversal
             {
                 return false;
             }
