@@ -21,6 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ConfigureAwait.Fody" Version="3.3.2" />
     <PackageReference Include="Dapper" Version="2.1.72" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.5" />
