@@ -195,6 +195,9 @@ function Invoke-ServyCli {
   $process = $null
 
   try {
+    if (-not (Test-Path $script:ServyCliPath)) {
+        throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
+    }
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
     # complex raw argument strings WHILE retaining pipeline output capture.  
     $psi = New-Object System.Diagnostics.ProcessStartInfo
