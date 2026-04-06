@@ -345,7 +345,6 @@ function Invoke-ServyServiceCommand {
     $argsList = @()
     $argsList = Add-Arg $argsList "--name" $Name
 
-    # FIX: Changed -Command Command to -Command $Command
     Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext "Failed to $Command service '$Name'"
 }
 
