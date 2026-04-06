@@ -40,7 +40,7 @@ namespace Servy.Service.UnitTests
                 );
 
             // Act
-            service.TestOnStart((new string[] { }));
+            service.TestOnStart();
 
             // Assert
             mockHelper.Verify(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object), Times.Once);

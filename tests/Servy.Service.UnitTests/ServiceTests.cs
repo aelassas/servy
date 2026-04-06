@@ -101,7 +101,7 @@ namespace Servy.Service.UnitTests
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
-            _service.StartForTest(new string[] { });
+            _service.StartForTest();
 
             // Assert
             _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations), Times.Once);
@@ -135,7 +135,7 @@ namespace Servy.Service.UnitTests
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
 
             // Act
-            _service.StartForTest(new string[] { });
+            _service.StartForTest();
 
             // Assert
             _mockLogger.Verify(l => l.Error(
@@ -152,7 +152,7 @@ namespace Servy.Service.UnitTests
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Returns((StartOptions)null);
 
-            _service.StartForTest(new string[] { });
+            _service.StartForTest();
 
             Assert.True(stopped);
         }
@@ -165,7 +165,7 @@ namespace Servy.Service.UnitTests
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Throws(new Exception("Boom"));
 
-            _service.StartForTest(new string[] { });
+            _service.StartForTest();
 
             Assert.True(stopped);
             _mockLogger.Verify(l => l.Error(

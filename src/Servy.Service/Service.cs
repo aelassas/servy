@@ -64,6 +64,13 @@ namespace Servy.Service
         #region Constants
 
         /// <summary>
+        /// The command-line argument used to signal that the service is running in a test context.
+        /// When this flag is present in the startup arguments, certain environment-specific 
+        /// initializations (like Win32 handle reflection) are bypassed.
+        /// </summary>
+        public const string TestModeFlag = "servy_test";
+
+        /// <summary>
         /// The namespace in the assembly where the embedded service resources are located.
         /// </summary>
         private const string ResourcesNamespace = "Servy.Service.Resources";
@@ -447,6 +454,10 @@ namespace Servy.Service
                 _ = NativeMethods.FreeConsole();
                 _ = NativeMethods.SetConsoleCtrlHandler(null, true);
 
+                // Check if we are running in a test context to bypass environment-specific hooks
+                bool isTestMode = args.Length > 0 &&
+                                  string.Equals(args[0], TestModeFlag, StringComparison.OrdinalIgnoreCase);
+
                 // Load and validate service startup options
                 var options = _serviceHelper.InitializeStartup(_serviceRepository, _logger);
                 if (options == null)
@@ -458,12 +469,14 @@ namespace Servy.Service
 
                 _options = options;
 
-                try
+                if (!isTestMode)
                 {
-                    // List of possible field names across different .NET versions
-                    // Minimum tested .NET version: .NET Framework 4.8
-                    string[] possibleFieldNames = new[]
+                    try
                     {
+                        // List of possible field names across different .NET versions
+                        // Minimum tested .NET version: .NET Framework 4.8
+                        string[] possibleFieldNames = new[]
+                        {
                         "serviceStatusHandle",  // .NET Framework
                         "statusHandle",         // Alternative .NET Framework
                         "_statusHandle",        // Modern .NET (private with underscore)
@@ -472,46 +485,47 @@ namespace Servy.Service
                         "m_serviceStatusHandle" // Older naming convention
                     };
 
-                    FieldInfo serviceHandleField = null;
+                        FieldInfo serviceHandleField = null;
 
-                    foreach (var fieldName in possibleFieldNames)
-                    {
-                        serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-
-                        if (serviceHandleField != null) break;
-                    }
-
-                    if (serviceHandleField != null)
-                    {
-                        var handleValue = serviceHandleField.GetValue(this);
-                        _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
-
-                        if (_serviceHandle != IntPtr.Zero)
+                        foreach (var fieldName in possibleFieldNames)
                         {
-                            _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
+                            serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+
+                            if (serviceHandleField != null) break;
+                        }
+
+                        if (serviceHandleField != null)
+                        {
+                            var handleValue = serviceHandleField.GetValue(this);
+                            _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
+
+                            if (_serviceHandle != IntPtr.Zero)
+                            {
+                                _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Service status handle field was found, but the pointer is zero/invalid.");
+                            }
                         }
                         else
                         {
-                            throw new InvalidOperationException("Service status handle field was found, but the pointer is zero/invalid.");
+                            string fw = RuntimeInformation.FrameworkDescription;
+                            var availableFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                                                                     .Select(f => f.Name);
+
+                            throw new PlatformNotSupportedException(
+                                $"Could not find service status handle field via reflection in {fw}. " +
+                                $"Available private fields: {string.Join(", ", availableFields)}");
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        string fw = RuntimeInformation.FrameworkDescription;
-                        var availableFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                                                                 .Select(f => f.Name);
-
-                        throw new PlatformNotSupportedException(
-                            $"Could not find service status handle field via reflection in {fw}. " +
-                            $"Available private fields: {string.Join(", ", availableFields)}");
+                        _logger?.Error($"Failed to get service handle: {ex.Message}", ex);
+                        // Crucial: Set specific exit code and abort start to prevent silent degraded state
+                        ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
+                        throw;
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Error($"Failed to get service handle: {ex.Message}", ex);
-                    // Crucial: Set specific exit code and abort start to prevent silent degraded state
-                    ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
-                    throw;
                 }
 
                 // Ensure working directory is valid
@@ -1068,12 +1082,14 @@ namespace Servy.Service
 
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
-        /// Starts the service with the specified command-line arguments.
+        /// Starts the service using the <see cref="TestModeFlag"/> to bypass environment-specific 
+        /// initializations like Win32 service handle reflection.
         /// </summary>
-        /// <param name="args">The command-line arguments to pass to the service on start.</param>
-        public void StartForTest(string[] args)
+        public void StartForTest()
         {
-            OnStart(args);
+            // Passing the TestModeFlag ensures that the service logic runs without 
+            // attempting to hook into the Windows Service Control Manager.
+            OnStart(new[] { TestModeFlag });
         }
 
         /// <summary>
@@ -1226,6 +1242,7 @@ namespace Servy.Service
             _childProcess.BeginErrorReadLine();
 
             // Fire and forget the post-launch script when process confirmed running
+            _cancellationSource?.Dispose();
             var cts = new CancellationTokenSource();
             _cancellationSource = cts;
 
