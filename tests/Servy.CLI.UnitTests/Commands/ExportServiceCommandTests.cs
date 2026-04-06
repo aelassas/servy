@@ -110,13 +110,13 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.False(result.Success);
-            Assert.Contains("An unexpected error occurred. Check logs.", result.Message);
+            Assert.Contains("An unexpected error occurred: boom", result.Message);
         }
 
         [Fact]
         public void SaveFile_ShouldCreateDirectoryIfNotExists()
         {
-            var filePath = Path.Combine(_tempDir, "subdir", "file.txt");
+            var filePath = Path.Combine(_tempDir, "subdir", "file.xml");
             var content = "hello";
 
             // Use reflection to call private SaveFile
