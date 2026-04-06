@@ -567,7 +567,7 @@ namespace Servy.Core.Services
 
                         while (sc.Status != ServiceControllerStatus.Stopped && DateTime.Now < waitUntil)
                         {
-                            Thread.Sleep(500); // Poll every half-second
+                            await Task.Delay(500); // Poll every half-second
                             sc.Refresh();
                         }
                     }
