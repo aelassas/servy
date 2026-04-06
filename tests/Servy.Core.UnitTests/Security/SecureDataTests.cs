@@ -320,6 +320,61 @@ namespace Servy.Core.UnitTests.Security
 
         #endregion
 
+        #region Dispose Tests
+
+        [Fact]
+        public void Dispose_ZeroesAllKeyMaterialAndHandlesIdempotency()
+        {
+            // 1. Arrange: Setup Mock Provider with dummy key data
+            var mockProvider = new Mock<IProtectedKeyProvider>();
+            byte[] dummyKey = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+            byte[] dummyIv = { 10, 20, 30, 40, 50, 60, 70, 80 };
+
+            mockProvider.Setup(p => p.GetKey()).Returns((byte[])dummyKey.Clone());
+            mockProvider.Setup(p => p.GetIV()).Returns((byte[])dummyIv.Clone());
+
+            var secureData = new SecureData(mockProvider.Object);
+
+            // To verify zeroing, we use Reflection to grab the internal byte arrays.
+            // This is necessary because the fields are private and we need to check 
+            // the content of the memory after Dispose.
+            var v1Key = GetPrivateField<byte[]>(secureData, "_v1MasterKey");
+            var v1Iv = GetPrivateField<byte[]>(secureData, "_v1StaticIv");
+            var v2Enc = GetPrivateField<byte[]>(secureData, "_v2EncryptionKey");
+            var v2Hmac = GetPrivateField<byte[]>(secureData, "_v2HmacKey");
+
+            // Pre-condition check: Ensure keys are not zero before Dispose
+            Assert.Contains(v1Key, b => b != 0);
+            Assert.Contains(v2Enc, b => b != 0);
+
+            // 2. Act: First Dispose (Covers all null-checks and zeroing logic)
+            secureData.Dispose();
+
+            // 3. Assert: Verify all memory is zeroed
+            Assert.All(v1Key, b => Assert.Equal(0, b));
+            Assert.All(v1Iv, b => Assert.Equal(0, b));
+            Assert.All(v2Enc, b => Assert.Equal(0, b));
+            Assert.All(v2Hmac, b => Assert.Equal(0, b));
+
+            // 4. Act: Second Dispose (Covers the 'if (_disposed) return' branch)
+            // This should not throw or cause any side effects
+            var record = Record.Exception(() => secureData.Dispose());
+            Assert.Null(record);
+
+            // Verify state remains disposed
+            bool disposedField = GetPrivateField<bool>(secureData, "_disposed");
+            Assert.True(disposedField);
+        }
+
+        private T GetPrivateField<T>(object obj, string fieldName)
+        {
+            var field = obj.GetType().GetField(fieldName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return (T)field.GetValue(obj);
+        }
+
+        #endregion
+
         #region Helper Tests (Reflection)
 
         [Theory]

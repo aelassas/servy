@@ -185,6 +185,7 @@ namespace Servy.Service
 
         #region Private Fields
 
+        private readonly SecureData _secureData;
         private readonly IServiceHelper _serviceHelper;
         private readonly ILogger _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
@@ -346,10 +347,10 @@ namespace Servy.Service
 
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                var secureData = new SecureData(protectedKeyProvider);
+                _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
 
-                _serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+                _serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();
@@ -2023,6 +2024,8 @@ namespace Servy.Service
                     _disposed = true;
                     _cancellationSource?.Dispose();
                     _cancellationSource = null;
+
+                    _secureData?.Dispose();
 
                     try
                     {

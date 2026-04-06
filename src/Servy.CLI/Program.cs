@@ -36,6 +36,16 @@ namespace Servy.CLI
         private const string ResourcesNamespace = "Servy.CLI.Resources";
 
         /// <summary>
+        /// The singleton instance of <see cref="SecureData"/> used for cryptographic operations.
+        /// </summary>
+        /// <remarks>
+        /// This field holds sensitive AES and HMAC key material in memory. 
+        /// It must be explicitly disposed of during application shutdown to trigger 
+        /// strict memory-zeroing protocols via <see cref="System.Security.Cryptography.CryptographicOperations.ZeroMemory"/>.
+        /// </remarks>
+        private static SecureData _secureData;
+
+        /// <summary>
         /// Parses command-line arguments, invokes the appropriate command handlers,
         /// and returns an exit code indicating the success or failure of the operation.
         /// </summary>
@@ -99,9 +109,9 @@ namespace Servy.CLI
                 var dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
-                var secureData = new SecureData(protectedKeyProvider);
+                _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
-                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+                var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
 
                 Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                 var serviceManager = new ServiceManager(
@@ -235,6 +245,7 @@ namespace Servy.CLI
             }
             finally
             {
+                _secureData?.Dispose();
                 Logger.Shutdown();
             }
         }
