@@ -323,10 +323,16 @@ namespace Servy.Manager.ViewModels
                 AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
                 AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
             }
-            catch
+            catch (OperationCanceledException)
             {
-                // Silently ignore errors (e.g., Access Denied or Process Exited) 
-                // to prevent log bloating and keep the UI stable.
+                // Expected during app shutdown or when the ViewModel is deactivated.
+                // No logging required as this is a normal lifecycle event.
+            }
+            catch (Exception ex)
+            {
+                // Log the error so it's visible in 'Servy.Manager.log'
+                // This ensures developers can diagnose why the UI stopped updating.
+                Logger.Error($"Background tick failed in {GetType().Name}", ex);
             }
         }
 
