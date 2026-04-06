@@ -760,7 +760,17 @@ function Install-ServyService {
 
   # 2. Iterate through pairs to build arguments
   foreach ($pair in $paramPairs) {
-    $argsList = Add-Arg $argsList $pair[0] $pair[1]
+    $paramName = $pair[0].TrimStart('-')
+
+    $hasValue = $false
+
+    if ($pair[1] -is [string]) {
+      $hasValue = $pair[1].Trim() -ne ""
+    }
+
+    if ($PSBoundParameters.ContainsKey($paramName) -or $hasValue) {
+      $argsList = Add-Arg $argsList $pair[0] $pair[1]
+    }
   }
 
   # 3. Handle switch/flag parameters separately
