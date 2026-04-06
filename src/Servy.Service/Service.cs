@@ -2201,8 +2201,23 @@ namespace Servy.Service
                 if (fireAndForget)
                 {
                     // Fire-and-forget: start the process without waiting
-                    Process.Start(psi);
-                    _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                    var process = Process.Start(psi);
+
+                    if (process != null)
+                    {
+                        // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
+                        // because it's meant to run independently after we've stopped the main process tree.
+                        using (process)
+                        {
+                            _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                            // The OS process continues running, but the managed handle is freed.
+                        }
+                    }
+                    else
+                    {
+                        _logger?.Error($"Failed to run pre-stop process: {psi.FileName}");
+                    }
+
                     return true;
                 }
 
