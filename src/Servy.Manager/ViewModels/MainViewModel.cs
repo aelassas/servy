@@ -556,6 +556,12 @@ namespace Servy.Manager.ViewModels
                 // Step 5: update collection on UI thread
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
+                    // Explicitly dispose of existing ViewModels before clearing the collection
+                    foreach (var oldVm in _services)
+                    {
+                        oldVm.Dispose();
+                    }
+
                     _services.Clear();
 
                     foreach (var vm in vms)
