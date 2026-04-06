@@ -53,8 +53,27 @@ namespace Servy.CLI.Commands
                 if (string.IsNullOrWhiteSpace(opts.Path))
                     return CommandResult.Fail("File path is required.");
 
-                if (!File.Exists(opts.Path))
-                    return CommandResult.Fail($"File not found: {opts.Path}");
+                // Canonicalize the path to resolve ".." and relative segments
+                string fullPath = Path.GetFullPath(opts.Path);
+
+                // Extension Validation
+                string extension = Path.GetExtension(fullPath).ToLowerInvariant();
+                string[] allowedExtensions = { ".json", ".xml" };
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    var errorMsg = $"[Import{configFileType}] Security Alert: Invalid file type '{extension}'. Only .json and .xml files are supported.";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                // Existence Check
+                if (!File.Exists(fullPath))
+                {
+                    var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
 
                 // Process file based on its type
                 CommandResult result;
