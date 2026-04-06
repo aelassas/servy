@@ -26,17 +26,6 @@ namespace Servy.CLI.Validators
             if (string.IsNullOrWhiteSpace(opts.ServiceName) || string.IsNullOrWhiteSpace(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_ValidationError);
 
-            //var serviceNameExists = _serviceManager.IsServiceInstalled(opts.ServiceName);
-            //if (serviceNameExists)
-            //{
-            //    var startupType = _serviceManager.GetServiceStartupType(opts.ServiceName);
-
-            //    if (startupType == ServiceStartType.Disabled)
-            //    {
-            //        return CommandResult.Fail(Strings.Msg_ServiceDisabled);
-            //    }
-            //}
-
             if (!ProcessHelper.ValidatePath(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);
 
