@@ -276,7 +276,7 @@ namespace Servy.Service
             _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
-            _pathValidator = pathValidator;
+            _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
             _options = null;
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
         }
