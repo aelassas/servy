@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Security;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 
 #pragma warning disable IDE0079
@@ -350,34 +352,37 @@ namespace Servy.Core.Native
         internal const int LOGON32_PROVIDER_DEFAULT = 0;
 
         /// <summary>
-        /// Validates Windows credentials by attempting a logon using the specified username and password.
+        /// Validates Windows credentials by resolving the identity and attempting a network logon.
         /// </summary>
         /// <param name="username">
         /// The username in one of the following formats:
         /// <list type="bullet">
         /// <item><description><c>DOMAIN\Username</c> for domain accounts</description></item>
         /// <item><description><c>.\Username</c> for local accounts on the current machine</description></item>
-        /// <item><description><c>DOMAIN\gMSA$</c> for gMSA accounts</description></item>
+        /// <item><description><c>DOMAIN\gMSA$</c> for Group Managed Service Accounts</description></item>
         /// </list>
         /// </param>
         /// <param name="password">
-        /// The password associated with the specified username. 
-        /// Can be <c>null</c> or empty if the account has no password.
-        /// Password is ignored for gMSA.
+        /// The password associated with the account. 
+        /// Can be <c>null</c> or empty for accounts without passwords or for gMSA.
         /// </param>
         /// <exception cref="ArgumentException">
-        /// Thrown when the username is null, empty, or not in a valid format.
+        /// Thrown when the username is null, empty, or fails format validation.
+        /// </exception>
+        /// <exception cref="SecurityException">
+        /// Thrown if the account cannot be resolved to a Security Identifier (SID).
         /// </exception>
         /// <exception cref="UnauthorizedAccessException">
-        /// Thrown if the provided credentials are invalid or the account cannot log on.
+        /// Thrown if the password is incorrect or account restrictions prevent logon.
         /// </exception>
         /// <exception cref="Win32Exception">
-        /// Thrown for other system-related logon errors.
+        /// Thrown for underlying system-related logon errors.
         /// </exception>
         /// <remarks>
-        /// This method uses the Windows API function <c>LogonUser</c> to verify that the provided credentials 
-        /// are valid for a network logon. It does not check whether the account has the 
-        /// "Log on as a service" right, which may be required for running a Windows service.
+        /// This method performs a two-stage validation: 
+        /// 1. Identity resolution via <see cref="NTAccount.Translate(Type)"/> to ensure the account exists.
+        /// 2. Authentication via the Win32 <c>LogonUser</c> API using <c>LOGON32_LOGON_NETWORK</c>.
+        /// It does not verify the "Log on as a service" right (<c>SeServiceLogonRight</c>).
         /// </remarks>
         public static void ValidateCredentials(string username, string? password)
         {
@@ -411,6 +416,29 @@ namespace Servy.Core.Native
                 {
                     throw new ArgumentException(invalidMsg);
                 }
+            }
+
+            // Identity Resolution Check:
+            // We attempt to translate the name to a SID. This verifies the account 
+            // exists and is reachable (e.g., Domain Controller is online).
+            try
+            {
+                string translationName = username;
+                if (username.StartsWith(".\\", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Replace ".\" with "MACHINE_NAME\"
+                    translationName = Environment.MachineName + username.Substring(1);
+                }
+                var ntAccount = new NTAccount(translationName);
+                _ = ntAccount.Translate(typeof(SecurityIdentifier));
+            }
+            catch (IdentityNotMappedException)
+            {
+                throw new SecurityException($"The account '{username}' could not be resolved. Please verify the username.");
+            }
+            catch (Exception ex)
+            {
+                throw new SecurityException($"An error occurred while resolving the account '{username}': {ex.Message}");
             }
 
             if (string.IsNullOrEmpty(password))
