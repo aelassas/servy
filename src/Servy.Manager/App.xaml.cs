@@ -32,6 +32,12 @@ namespace Servy.Manager
 
         #endregion
 
+        #region Private Fields
+
+        private SecureData _secureData;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -154,6 +160,32 @@ namespace Servy.Manager
                     });
                 }
             }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        /// <summary>
+        /// Raises the <see cref="Application.Exit"/> event.
+        /// Performs final cleanup of sensitive data providers and encryption keys before the application terminates.
+        /// </summary>
+        /// <param name="e">An <see cref="ExitEventArgs"/> that contains the event data.</param>
+        /// <remarks>
+        /// This override ensures that <see cref="SecureData"/> (which may hold sensitive cryptographic 
+        /// material or file handles for AES keys) is explicitly disposed of, following the 
+        /// deterministic disposal pattern before the process exits.
+        /// </remarks>
+        protected override void OnExit(ExitEventArgs e)
+        {
+            try
+            {
+                // Explicitly dispose of the secure data provider to clear 
+                // sensitive buffers and release key file handles.
+                _secureData?.Dispose();
+            }
+            finally
+            {
+                // Ensure the base implementation is called so the 
+                // application exit sequence completes correctly.
+                base.OnExit(e);
+            }
         }
 
         #endregion
@@ -307,10 +339,10 @@ namespace Servy.Manager
 
                     var dapperExecutor = new DapperExecutor(dbContext);
                     var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
-                    var secureData = new SecureData(protectedKeyProvider);
+                    _secureData = new SecureData(protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
 
-                    var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
 
                     var resourceHelper = new ResourceHelper(serviceRepository);
 
