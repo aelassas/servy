@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Data;
+using Servy.Core.Domain;
 using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -53,9 +54,14 @@ namespace Servy.Core.Helpers
                     return true;
 
                 // Get running services
-                var runningServices = stopServices
-                    ? (isCli ? _serviceHelper.GetRunningServyCLIServices() : _serviceHelper.GetRunningServyUIServices())
-                    : new List<string>();
+                var runningServices = new List<string>();
+
+                if (stopServices)
+                {
+                    runningServices = isCli
+                        ? _serviceHelper.GetRunningServyCLIServices()
+                        : _serviceHelper.GetRunningServyUIServices();
+                }
 
                 try
                 {

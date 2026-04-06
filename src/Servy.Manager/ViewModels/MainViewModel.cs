@@ -428,9 +428,18 @@ namespace Servy.Manager.ViewModels
             {
 
                 var checkedCount = _services.Count(s => s.IsChecked);
-                SelectAll = checkedCount == _services.Count ? true
-                          : checkedCount == 0 ? false
-                          : (bool?)null;
+                if (checkedCount == _services.Count)
+                {
+                    SelectAll = true;
+                }
+                else if (checkedCount == 0)
+                {
+                    SelectAll = false;
+                }
+                else
+                {
+                    SelectAll = null;
+                }
             }
             finally
             {

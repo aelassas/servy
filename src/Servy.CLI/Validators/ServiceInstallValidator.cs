@@ -134,14 +134,12 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStderrPath);
             }
 
-            int preLaunchTimeoutValue = AppConfig.DefaultPreLaunchTimeoutSeconds;
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && (!int.TryParse(opts.PreLaunchTimeout, out preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && (!int.TryParse(opts.PreLaunchTimeout, out int preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchTimeout);
             }
 
-            int preLaunchRetryAttemptsValue = AppConfig.DefaultPreLaunchRetryAttempts;
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && (!int.TryParse(opts.PreLaunchRetryAttempts, out preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && (!int.TryParse(opts.PreLaunchRetryAttempts, out int preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
             }
@@ -164,8 +162,7 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPreStopStartupDirectory);
             }
 
-            int preStopTimeoutValue = AppConfig.DefaultPreStopTimeoutSeconds;
-            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && (!int.TryParse(opts.PreStopTimeout, out preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds))
+            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && (!int.TryParse(opts.PreStopTimeout, out int preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreStopTimeout);
             }
