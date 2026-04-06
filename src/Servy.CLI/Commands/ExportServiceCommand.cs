@@ -3,6 +3,7 @@ using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.Core.Data;
 using Servy.Core.Logging;
+using System.Security;
 
 namespace Servy.CLI.Commands
 {
@@ -65,17 +66,51 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Saves content to file and creates parent directory if it does not exist.
+        /// Safely persists the exported service configuration to a user-defined file path.
+        /// Validates that the target is a supported file type and not a protected system location.
         /// </summary>
-        /// <param name="path">File path.</param>
-        /// <param name="content">Content.</param>
-        private void SaveFile(string path, string content)
+        /// <param name="userPath">The target file path provided via the CLI.</param>
+        /// <param name="content">The serialized configuration string.</param>
+        /// <exception cref="SecurityException">Thrown if the path targets a protected system directory.</exception>
+        /// <exception cref="ArgumentException">Thrown if the file extension is not .json or .xml.</exception>
+        private void SaveFile(string userPath, string content)
         {
-            var parentDir = Path.GetDirectoryName(path);
-            if (!Directory.Exists(parentDir))
-                Directory.CreateDirectory(parentDir!);
-            File.WriteAllText(path, content);
+            // 1. Canonicalize: Resolve ".." and relative paths to an absolute path
+            string fullPath = Path.GetFullPath(userPath);
 
+            // 2. Extension Validation: Ensure we are only writing configuration files
+            string extension = Path.GetExtension(fullPath).ToLowerInvariant();
+            if (extension != ".json" && extension != ".xml")
+            {
+                throw new ArgumentException("Only .json and .xml exports are permitted.");
+            }
+
+            // 3. System Protection: Block writing to critical Windows directories
+            // This prevents overwriting DLLs, drivers, or the SAM database.
+            string[] protectedFolders = {
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+            };
+
+            foreach (var folder in protectedFolders)
+            {
+                if (fullPath.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new SecurityException($"Access Denied: Exporting to protected system directory '{folder}' is prohibited.");
+                }
+            }
+
+            // 4. Directory Creation
+            string? parentDir = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
+            {
+                Directory.CreateDirectory(parentDir);
+            }
+
+            // 5. Atomic-style Write
+            File.WriteAllText(fullPath, content);
         }
     }
 }
