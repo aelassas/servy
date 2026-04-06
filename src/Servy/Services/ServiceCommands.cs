@@ -5,6 +5,7 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Resources;
@@ -606,7 +607,7 @@ namespace Servy.Services
                     return;
                 }
 
-                var dto = JsonConvert.DeserializeObject<ServiceDto>(json);
+                var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadJson, Caption);

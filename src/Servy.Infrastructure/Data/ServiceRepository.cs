@@ -562,7 +562,7 @@ namespace Servy.Infrastructure.Data
 
             try
             {
-                var service = JsonConvert.DeserializeObject<ServiceDto>(json);
+                var service = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
                 if (service == null) return false;
 
                 await UpsertAsync(service);
