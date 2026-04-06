@@ -154,25 +154,41 @@ namespace Servy.Core.Helpers
         /// <param name="selfPid">The PID of the current process to prevent accidental self-termination.</param>
         private static void KillChildrenInternal(int parentPid, DateTime parentStartTime, int selfPid)
         {
-            var children = new List<int>();
+            // 1. Collect PROCESS objects instead of just PIDs. 
+            // Opening the handle early locks the PID from being reused for a *new* process.
+            var childProcesses = new List<Process>();
 
-            // Take a fast snapshot of all processes
             IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
             if (snapshot == IntPtr.Zero || snapshot == new IntPtr(-1))
                 return;
 
             try
             {
-                PROCESSENTRY32 pe32 = new PROCESSENTRY32();
-                pe32.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32));
+                PROCESSENTRY32 pe32 = new PROCESSENTRY32 { dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32)) };
 
                 if (Process32First(snapshot, ref pe32))
                 {
                     do
                     {
-                        if (pe32.th32ParentProcessID == parentPid)
+                        if (pe32.th32ParentProcessID == parentPid && pe32.th32ProcessID != selfPid)
                         {
-                            children.Add((int)pe32.th32ProcessID);
+                            try
+                            {
+                                // Get the process object immediately. This opens a handle.
+                                var proc = Process.GetProcessById((int)pe32.th32ProcessID);
+
+                                // Identity Validation: Does this handle belong to a process 
+                                // created after (or roughly at) our parent's start time?
+                                if (parentStartTime == DateTime.MinValue || proc.StartTime >= parentStartTime.AddSeconds(-2))
+                                {
+                                    childProcesses.Add(proc);
+                                }
+                                else
+                                {
+                                    proc.Dispose(); // Not the process we're looking for.
+                                }
+                            }
+                            catch { /* Process already exited or access denied */ }
                         }
                     } while (Process32Next(snapshot, ref pe32));
                 }
@@ -182,52 +198,28 @@ namespace Servy.Core.Helpers
                 CloseHandle(snapshot);
             }
 
-            foreach (int childPid in children)
+            // 2. Process the identified tree
+            foreach (var child in childProcesses)
             {
-                if (childPid == selfPid) continue;
-
-                Process? childProcess = null;
-                DateTime childStartTime;
-
                 try
                 {
-                    // Open process early to get the reliable start time from Kernel32
-                    childProcess = Process.GetProcessById(childPid);
-                    childStartTime = childProcess.StartTime;
-                }
-                catch
-                {
-                    // Process has already exited or Access Denied
-                    childProcess?.Dispose();
-                    continue;
-                }
+                    // Recursion: Pass the verified start time down.
+                    // We use the child's PID and its start time to lock the next level.
+                    KillChildrenInternal(child.Id, child.StartTime, selfPid);
 
-                // Validation: Only skip if we are SURE it's a PID reuse (child older than parent)
-                // We add a 2-second buffer for clock skew
-                if (parentStartTime != DateTime.MinValue && childStartTime < parentStartTime.AddSeconds(-2))
-                {
-                    childProcess.Dispose();
-                    continue;
-                }
-
-                // Recursion: Kill grandchildren first (Leaf-to-Root)
-                KillChildrenInternal(childPid, childStartTime, selfPid);
-
-                // Final Kill
-                try
-                {
-                    if (!childProcess.HasExited)
+                    if (!child.HasExited)
                     {
-                        childProcess.Kill();
-                        // Do not wait indefinitely; 2s is plenty of time
-                        childProcess.WaitForExit(2000);
+                        child.Kill();
+                        child.WaitForExit(2000);
                     }
                 }
-                catch { /* Process gone or Access Denied */ }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Failed to kill child process {child.Id}: {ex.Message}");
+                }
                 finally
                 {
-                    // Ensure the unmanaged handle is released
-                    childProcess.Dispose();
+                    child.Dispose(); // Release the handle so the PID can finally be recycled by Windows.
                 }
             }
         }
