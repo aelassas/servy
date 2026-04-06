@@ -2,10 +2,6 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Services;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace Servy.CLI.UnitTests.Commands
 {
@@ -99,7 +95,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("An unexpected error occurred.", result.Message);
+            Assert.Contains("An unexpected error occurred", result.Message);
         }
     }
 }
