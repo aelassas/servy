@@ -215,7 +215,6 @@ function Invoke-ServyCli {
     # run in a separate scope.
     # Generate unique variable name
     $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
-    New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
 
     # REGISTER EVENT NATIVELY
     # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
@@ -226,6 +225,8 @@ function Invoke-ServyCli {
                 [void]`$global:$errorVarName.Add(`$EventArgs.Data) 
             }
 "@))
+
+    New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
 
     $started = $process.Start()
 
