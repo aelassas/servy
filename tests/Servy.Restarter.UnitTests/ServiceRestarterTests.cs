@@ -5,6 +5,8 @@ namespace Servy.Restarter.UnitTests
 {
     public class ServiceRestarterTests
     {
+        private static TimeSpan RestartTimeout = TimeSpan.FromSeconds(30);
+
         private readonly Mock<IServiceController> _mockController;
         private readonly ServiceRestarter _restarter;
 
@@ -26,7 +28,7 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.Dispose());
 
             // Act
-            _restarter.RestartService("MyService");
+            _restarter.RestartService("MyService", RestartTimeout);
 
             // Assert - verify calls in correct order
             _mockController.Verify(c => c.WaitForStatus(ServiceControllerStatus.Stopped, It.IsAny<TimeSpan>()), Times.Once);
@@ -41,7 +43,7 @@ namespace Servy.Restarter.UnitTests
             _mockController.Setup(c => c.WaitForStatus(It.IsAny<ServiceControllerStatus>(), It.IsAny<TimeSpan>()))
                 .Throws(new Exception("Service failure"));
 
-            Assert.Throws<Exception>(() => _restarter.RestartService("MyService"));
+            Assert.Throws<Exception>(() => _restarter.RestartService("MyService", RestartTimeout));
 
             _mockController.Verify(c => c.Dispose(), Times.Once);
         }
