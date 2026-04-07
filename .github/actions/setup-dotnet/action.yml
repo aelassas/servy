@@ -25,17 +25,45 @@ runs:
       run: |
         $ErrorActionPreference = "Stop"
 
-        # Force TLS 1.2
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
         $url = "https://dot.net/v1/dotnet-install.ps1"
         $installDir = "$env:RUNNER_TEMP\dotnet"
-        Invoke-WebRequest -Uri $url -OutFile "dotnet-install.ps1" -ErrorAction Stop
+
+        $maxRetries = 5
+        for ($i = 0; $i -lt $maxRetries; $i++) {
+          curl.exe -L $url -o dotnet-install.ps1
+
+          if ($LASTEXITCODE -eq 0) {
+            break
+          }
+
+          if ($i -eq ($maxRetries - 1)) {
+            throw "Failed to download dotnet-install.ps1 after $maxRetries attempts"
+          }
+
+          Start-Sleep -Seconds 3
+        }
         
-        # Use the environment variable in the script
-        ./dotnet-install.ps1 -Channel "$env:DOTNET_VERSION" -InstallDir $installDir
+        # Install dotnet
+        New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+
+        powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
+        -Channel "$env:DOTNET_VERSION" `
+        -InstallDir $installDir
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "dotnet-install.ps1 failed with exit code $LASTEXITCODE"
+        }
         
+        $dotnet = Join-Path $installDir "dotnet.exe"
+
+        if (!(Test-Path $dotnet)) {
+          throw "dotnet was not installed correctly"
+        }
+
+        & $dotnet --version
+
         Add-Content -Path $env:GITHUB_PATH -Value $installDir
+        Add-Content -Path $env:GITHUB_ENV -Value "DOTNET_ROOT=$installDir"
 
     - name: Check .NET version
       shell: pwsh
