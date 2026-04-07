@@ -235,7 +235,7 @@ namespace Servy.Manager.ViewModels
             {
                 if (string.IsNullOrWhiteSpace(ConsoleSearchText)) return true;
                 var line = obj as LogLine;
-                return line.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
+                return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
             };
         }
 
