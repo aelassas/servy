@@ -305,8 +305,10 @@ function Invoke-ServyCli {
       }
     }
 
-    # Flush async output streams (required per .NET documentation)
-    $process.WaitForExit()
+    # Flush async streams with a bounded wait
+    if (-not $process.WaitForExit(5000)) {
+        # Async flush timed out - proceed with whatever stderr we captured
+    }
 
     # COLLECT stderr
     # Convert our collected array back into a string
