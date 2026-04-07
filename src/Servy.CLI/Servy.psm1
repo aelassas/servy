@@ -235,7 +235,12 @@ function Invoke-ServyCli {
 
     New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
 
-    $started = $process.Start()
+    try {
+      $started = $process.Start()
+    }
+    catch [System.ComponentModel.Win32Exception] {
+      throw "Failed to start Servy CLI: $($_.Exception.Message) (Win32 error $($_.Exception.NativeErrorCode)). Path: '$($script:ServyCliPath)'"
+    }
 
     if (-not $started) {
       throw "Failed to start Servy CLI process '$($script:ServyCliPath)'. " +
@@ -417,7 +422,7 @@ function Show-ServyHelp {
     [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
     [string] $Command
   )
-  
+
   $argsList = @()
   if ($Command) {
       $argsList = Add-Arg $argsList "--help" -Flag
