@@ -533,7 +533,8 @@ jobs:
           Copy-Item "src/Servy.CLI/servy-module-examples.ps1" $pkg -Force
           
           # Task Scheduler setup
-          Copy-Item "setup\taskschd" $pkg -Recurse -Force
+          Copy-Item -Path "setup\taskschd\*" -Destination "$pkg\taskschd" -Recurse -Force -Exclude "smtp-cred.xml"
+
 
           $zip = "$name.7z"
 

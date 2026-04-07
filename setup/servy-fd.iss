@@ -87,7 +87,11 @@ Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: i
 Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_manager
 
 ; taskschd
-Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+; 1. Always override all content in the taskschd folder except the config file
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml"; Flags: ignoreversion
+
+; 2. Only install the config file if it does not already exist (preserves user settings)
+Source: ".\taskschd\smtp-config.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
