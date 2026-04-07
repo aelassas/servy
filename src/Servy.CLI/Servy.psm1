@@ -125,6 +125,12 @@ function Add-Arg {
 
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   elseif ($null -ne $value -and $value.Trim() -ne "") {
+    # Fast path: no escaping needed if no special characters
+    if ($value.IndexOf('"') -lt 0 -and $value.IndexOf('\') -lt 0) {
+        [array]$list += "$($key.Trim())=`"$value`""
+        return $list
+    }
+
     # Escape internal double quotes with backslashes (Windows convention, not PowerShell's "")
     $escapedValue = $value.Replace('"', '\"')
 
