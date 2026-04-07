@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
@@ -8,20 +9,20 @@ namespace Servy.Core.UnitTests.Services
 {
     public class EventLogServiceTests
     {
-
         private EventLogService CreateService(Mock<IEventLogReader> mockReader)
         {
             return new EventLogService(mockReader.Object);
         }
 
-        private EventRecord CreateFakeEvent(int id, byte level, DateTime? time, string message)
+        private EventLogEntry CreateFakeEvent(int id, byte level, DateTime? time, string message)
         {
-            var fake = new Mock<EventRecord>();
-            fake.Setup(e => e.Id).Returns(id);
-            fake.Setup(e => e.Level).Returns(level);
-            fake.Setup(e => e.TimeCreated).Returns(time);
-            fake.Setup(e => e.FormatDescription()).Returns(message);
-            return fake.Object;
+            return new EventLogEntry
+            {
+                EventId = id,
+                Level = Logging.EventLogReader.ParseLevel(level),
+                Time = time ?? DateTime.MinValue,
+                Message = message
+            };
         }
 
         [Fact]

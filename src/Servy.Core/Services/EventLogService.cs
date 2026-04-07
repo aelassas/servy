@@ -70,59 +70,29 @@ namespace Servy.Core.Services
 
                 foreach (var evt in records)
                 {
-                    using (evt)
-                    {
-                        //
-                        // All evt.* accesses must stay inside the using block to avoid ObjectDisposedException
-                        //
+                    //
+                    // All evt.* accesses must stay inside the using block to avoid ObjectDisposedException
+                    //
+                    token.ThrowIfCancellationRequested();
 
-                        token.ThrowIfCancellationRequested();
+                    var message = evt.Message?? string.Empty;
 
-                        var message = evt.FormatDescription() ?? string.Empty;
+                    // Only include Servy service logs: messages with [..]
+                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
+                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
 
-                        // Only include Servy service logs: messages with [..]
-                        if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
-                            message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
-                            continue;
+                    if (!string.IsNullOrEmpty(keyword) &&
+                        message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
 
-                        if (!string.IsNullOrEmpty(keyword) &&
-                            message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
-                            continue;
-
-                        results.Add(new EventLogEntry
-                        {
-                            EventId = evt.Id,
-                            Time = evt.TimeCreated ?? DateTime.MinValue,
-                            Level = ParseLevel(evt.Level ?? 0),
-                            Message = message
-                        });
-                    }
+                    results.Add(evt);
                 }
 
                 return results
                     .OrderByDescending(r => r.Time)
                     .ToList();
             }, token);
-        }
-
-        /// <summary>
-        /// Converts a raw event log level (byte) into a strongly typed <see cref="EventLogLevel"/>.
-        /// </summary>
-        /// <param name="level">The raw level value from the event record.</param>
-        /// <returns>The corresponding <see cref="EventLogLevel"/> value. Defaults to <see cref="EventLogLevel.Information"/> if the level is unknown.</returns>
-        private static EventLogLevel ParseLevel(byte level)
-        {
-            switch (level)
-            {
-                case 2:
-                    return EventLogLevel.Error;
-                case 3:
-                    return EventLogLevel.Warning;
-                case 4:
-                    return EventLogLevel.Information;
-                default:
-                    return EventLogLevel.Information;
-            }
         }
 
     }
