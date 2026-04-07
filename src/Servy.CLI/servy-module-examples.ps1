@@ -59,10 +59,10 @@ $installParams = @{
     FailureProgramStartupDir  = "C:\Windows\Temp"
     FailureProgramParams      = "/c exit 0 --param 2001"
 
-    Env                       = "var1=val1; var2=val2;"
+    EnvVars                   = "var1=val1; var2=val2;"
     Deps                      = "Tcpip;Dnscache"
-    # User                      = ".\DummySvc"
-    # Password                  = "ChangeMe!"
+    # User                    = ".\DummySvc"
+    # Password                = "ChangeMe!"
 
     PreLaunchPath             = "C:\Windows\System32\cmd.exe"
     PreLaunchStartupDir       = "C:\Windows\Temp"

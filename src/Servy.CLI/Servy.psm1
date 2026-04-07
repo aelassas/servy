@@ -814,7 +814,7 @@ function Install-ServyService {
     @("--failureProgramPath",       $FailureProgramPath),
     @("--failureProgramStartupDir", $FailureProgramStartupDir),
     @("--failureProgramParams",     $FailureProgramParams),
-    @("--env",                      $EnvVars),
+    @("--envVars",                  $EnvVars),
     @("--deps",                     $Deps),
     @("--user",                     $User),
     @("--password",                 $Password),
