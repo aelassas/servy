@@ -68,14 +68,14 @@ namespace Servy.Manager.Services
             IServiceConfigurationValidator serviceConfigurationValidator
         )
         {
-            _serviceManager = serviceManager;
-            _serviceRepository = serviceRepository;
-            _messageBoxService = messageBoxService;
-            _logger = logger;
-            _fileDialogService = fileDialogService;
-            _removeServiceCallback = removeServiceCallback;
-            _refreshCallback = refreshCallback;
-            _serviceConfigurationValidator = serviceConfigurationValidator;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _fileDialogService = fileDialogService ?? throw new ArgumentNullException(nameof(fileDialogService));
+            _removeServiceCallback = removeServiceCallback ?? throw new ArgumentNullException(nameof(removeServiceCallback));
+            _refreshCallback = refreshCallback ?? throw new ArgumentNullException(nameof(refreshCallback));
+            _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
         }
 
         #endregion
