@@ -415,7 +415,7 @@ namespace Servy.Manager.ViewModels
                 return;
             }
 
-            _timer.Stop();
+            _timer?.Stop();
             try
             {
                 await OnTickAsync();
@@ -427,7 +427,7 @@ namespace Servy.Manager.ViewModels
                 // 2. Only restart if we are STILL supposed to be monitoring
                 if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
                 {
-                    _timer.Start();
+                    _timer?.Start();
                 }
             }
         }
@@ -569,7 +569,7 @@ namespace Servy.Manager.ViewModels
         public void StartMonitoring()
         {
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
-            _timer.Start();
+            _timer?.Start();
         }
 
         /// <summary>
@@ -580,7 +580,7 @@ namespace Servy.Manager.ViewModels
         {
             _cancellationTokenSource?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
-            _timer.Stop();
+            _timer?.Stop();
 
             if (clearConsole)
             {
