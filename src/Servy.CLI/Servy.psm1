@@ -229,7 +229,7 @@ function Invoke-ServyCli {
 
     # REGISTER EVENT NATIVELY
     New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
-    
+
     # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
     $errorEvent = Register-ObjectEvent -InputObject $process `
         -EventName "ErrorDataReceived" `
@@ -294,6 +294,7 @@ function Invoke-ServyCli {
         $process.Kill()
         $process.WaitForExit(5000)
         $killed = $process.HasExited
+        if ($killed) { $process.WaitForExit() }  # Flush async stderr
       }
       catch { }
 
