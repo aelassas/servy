@@ -221,12 +221,6 @@ namespace Servy.Manager.ViewModels
                     // Treat null (indeterminate) click as true
                     bool newValue = _selectAll ?? true;
 
-                    //foreach (var s in _services)
-                    //{
-                    //    s.IsChecked = newValue;
-                    //    s.IsSelected = false;
-                    //}
-
                     if (_services.Count(s => s.IsSelected) <= 1)
                     {
                         foreach (var s in _services)

@@ -390,17 +390,6 @@ namespace Servy.Service.Helpers
             return envVarsFormatted;
         }
 
-        /// <summary>
-        /// Returns the specified debug log message if debug logging is enabled; otherwise, returns an empty string.
-        /// </summary>
-        /// <param name="options">The start options that specify whether debug logging is enabled.</param>
-        /// <param name="message">The message to include in the debug log output.</param>
-        /// <returns>The debug message if <see cref="StartOptions.EnableDebugLogs"/> is true; otherwise, an empty string.</returns>
-        private static string GetDebugLog(StartOptions options, string message)
-        {
-            return options.EnableDebugLogs ? message : string.Empty;
-        }
-
         #endregion
 
     }

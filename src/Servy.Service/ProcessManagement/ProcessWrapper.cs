@@ -471,7 +471,6 @@ namespace Servy.Service.ProcessManagement
                 {
                     // The process does not have a console.
                     case Errors.ERROR_INVALID_HANDLE:
-                        //_logger?.Info($"Sending Ctrl+C: The child process '{process.Format()}' does not have a console.");
                         return false;
 
                     // The process has exited.
