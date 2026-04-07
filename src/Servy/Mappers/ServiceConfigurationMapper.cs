@@ -84,6 +84,7 @@ namespace Servy.Mappers
             {
                 Name = service.Name,
                 Description = service.Description,
+                DisplayName = service.DisplayName,
                 ExecutablePath = service.ExecutablePath,
                 StartupDirectory = service.StartupDirectory,
                 Parameters = service.Parameters,
