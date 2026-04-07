@@ -1,4 +1,6 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.Logging;
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.AccessControl;
 using System.Text;
@@ -348,43 +350,63 @@ namespace Servy.Core.IO
         }
 
         /// <summary>
-        /// Rotates the current log file by inserting a local timestamp before the file extension.
-        /// The caller must hold the lock.
+        /// Rotates the current log file by inserting a timestamp before the file extension.
+        /// Includes a retry mechanism to handle transient file locks (e.g., from Antivirus).
         /// </summary>
         private void Rotate()
         {
-            try
+            _file.Refresh();
+            if (!_file.Exists || _file.Length == 0) return;
+
+            CloseWriter();
+
+            var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+            var timestamp = now.ToString("yyyyMMdd_HHmmss");
+
+            var directory = Path.GetDirectoryName(_file.FullName)!;
+            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
+            var extension = Path.GetExtension(_file.FullName);
+
+            var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
+            var rotatedPath = Path.Combine(directory, newFileName);
+            rotatedPath = GenerateUniqueFileName(rotatedPath);
+
+            const int maxRetries = 3;
+            bool success = false;
+
+            for (int attempt = 0; attempt < maxRetries; attempt++)
             {
-                _file.Refresh();
-                if (!_file.Exists || _file.Length == 0) return;
+                try
+                {
+                    File.Move(_file.FullName, rotatedPath);
+                    success = true;
+                    break;
+                }
+                catch (IOException) when (attempt < maxRetries - 1)
+                {
+                    // Transient lock (Sharing violation). Wait and retry.
+                    // Incremental backoff: 50ms, 100ms, 150ms.
+                    Thread.Sleep(50 * (attempt + 1));
+                }
+                catch (Exception ex)
+                {
+                    // Log the specific exception if it's not a transient I/O issue (e.g., Access Denied)
+                    Logger.Error($"Log rotation critical failure: {ex.Message}", ex);
+                    break;
+                }
+            }
 
-                CloseWriter();
-
-                var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                var timestamp = now.ToString("yyyyMMdd_HHmmss");
-
-                var directory = Path.GetDirectoryName(_file.FullName)!;
-                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-                var extension = Path.GetExtension(_file.FullName);
-
-                var newFileName = $"{fileNameWithoutExt}.{timestamp}{extension}";
-                var rotatedPath = Path.Combine(directory, newFileName);
-
-                rotatedPath = GenerateUniqueFileName(rotatedPath);
-
-                File.Move(_file.FullName, rotatedPath);
-
+            if (success)
+            {
                 EnforceMaxRotations();
             }
-            catch
+            else
             {
-                // Silently catch I/O errors (e.g., file locked). 
-                // We will just overwrite/append to the existing file below on the next write.
+                // If all retries fail, we leave _writer as null. 
+                // The next Write call will append to the current file, 
+                // preventing log loss but allowing the file to exceed the size limit temporarily.
+                Logger.Warn($"Log rotation failed after {maxRetries} attempts for: {_file.FullName}");
             }
-
-            // LAZY INIT FIX: We no longer eagerly call InitializeWriter() in a finally block here.
-            // If the rotation succeeds, _writer remains null. 
-            // The next time Write or WriteLine is called, the file will be cleanly recreated.
         }
 
         /// <summary>
