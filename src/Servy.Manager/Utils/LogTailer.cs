@@ -10,6 +10,13 @@ namespace Servy.Manager.Utils
     public class LogTailer
     {
         /// <summary>
+        /// The maximum number of log lines allowed to be loaded into memory at once.
+        /// This constant prevents application instability or "Out of Memory" exceptions 
+        /// when processing exceptionally large log files.
+        /// </summary>
+        private const int MaxSafeLines = 10_000;
+
+        /// <summary>
         /// Delegate for handling a batch of new log lines.
         /// </summary>
         /// <param name="lines">The list of newly discovered log lines.</param>
@@ -121,6 +128,8 @@ namespace Servy.Manager.Utils
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
         private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
         {
+            maxLines = Math.Min(Math.Max(maxLines, 0), MaxSafeLines);
+
             List<LogLine> lines = new List<LogLine>();
             FileInfo info = new FileInfo(path);
             creationTime = info.CreationTimeUtc;
