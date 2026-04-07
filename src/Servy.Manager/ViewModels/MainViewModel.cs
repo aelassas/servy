@@ -642,166 +642,29 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Start all selected services.
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        private async Task StartSelectedAsync(object parameter)
-        {
-            try
-            {
-                var selectedServices = _services
-                    .Where(s => s.IsInstalled && s.IsChecked)
-                    .Select(s => s.Service)
-                    .ToList();
-
-                if (!selectedServices.Any())
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
-                    return;
-                }
-
-                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_StartSelectedServices, AppConfig.Caption);
-                if (!res) return;
-
-                SetIsBusy(true);
-
-                var failed = new List<string>();
-
-                foreach (var service in selectedServices)
-                {
-                    var ok = await ServiceCommands.StartServiceAsync(service, showMessageBox: false);
-                    if (!ok) failed.Add(service.Name);
-                }
-
-                if (!failed.Any())
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
-                }
-                else
-                {
-                    var message = failed.Count == selectedServices.Count
-                        ? Strings.Msg_AllOperationsFailed
-                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
-
-                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Warn($"Failed to start selected services: {ex}");
-            }
-            finally
-            {
-                SetIsBusy(false);
-            }
-        }
-
+        private Task StartSelectedAsync(object parameter) =>
+            ExecuteBulkOperationAsync(
+                s => ServiceCommands.StartServiceAsync(s, showMessageBox: false),
+                Strings.Confirm_StartSelectedServices,
+                "Failed to start selected services");
 
         /// <summary>
         /// Stop all selected services.
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        private async Task StopSelectedAsync(object parameter)
-        {
-            try
-            {
-                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
-                if (selectedServices.Count == 0)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
-                    return;
-                }
-
-                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_StopSelectedServices, AppConfig.Caption);
-
-                if (!res) return;
-
-                SetIsBusy(true);
-
-                var failed = new List<string>();
-
-                foreach (var service in selectedServices)
-                {
-                    var ok = await ServiceCommands.StopServiceAsync(service, showMessageBox: false);
-                    if (!ok) failed.Add(service.Name);
-                }
-
-                if (!failed.Any())
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
-                }
-                else
-                {
-                    var message = failed.Count == selectedServices.Count
-                        ? Strings.Msg_AllOperationsFailed
-                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
-
-                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _logger.Warn($"Failed to start selected services: {ex}");
-            }
-            finally
-            {
-                SetIsBusy(false);
-            }
-        }
+        private Task StopSelectedAsync(object parameter) =>
+            ExecuteBulkOperationAsync(
+                s => ServiceCommands.StopServiceAsync(s, showMessageBox: false),
+                Strings.Confirm_StopSelectedServices,
+                "Failed to stop selected services");
 
         /// <summary>
         /// Restart all selected services.
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        private async Task RestartSelectedAsync(object parameter)
-        {
-            try
-            {
-                var selectedServices = _services.Where(s => s.IsInstalled && s.IsChecked).Select(s => s.Service).ToList();
-                if (selectedServices.Count == 0)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
-                    return;
-                }
-
-                var res = await _messageBoxService.ShowConfirmAsync(Strings.Confirm_RestartSelectedServices, AppConfig.Caption);
-
-                if (!res) return;
-
-                SetIsBusy(true);
-
-                var failed = new List<string>();
-
-                foreach (var service in selectedServices)
-                {
-                    var ok = await ServiceCommands.RestartServiceAsync(service, showMessageBox: false);
-                    if (!ok) failed.Add(service.Name);
-                }
-
-                if (!failed.Any())
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
-                }
-                else
-                {
-                    var message = failed.Count == selectedServices.Count
-                        ? Strings.Msg_AllOperationsFailed
-                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
-
-                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Warn($"Failed to start selected services: {ex}");
-            }
-            finally
-            {
-                SetIsBusy(false);
-            }
-        }
+        private Task RestartSelectedAsync(object parameter) =>
+            ExecuteBulkOperationAsync(
+                s => ServiceCommands.RestartServiceAsync(s, showMessageBox: false),
+                Strings.Confirm_RestartSelectedServices,
+                "Failed to restart selected services");
 
         #endregion
 
@@ -879,6 +742,73 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Executes a bulk operation on all selected and installed services.
+        /// </summary>
+        /// <param name="operation">The async function to execute for each service.</param>
+        /// <param name="confirmMessage">The message to display for user confirmation.</param>
+        /// <param name="logErrorMessage">The message to log if the entire bulk operation fails.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task ExecuteBulkOperationAsync(
+            Func<Service, Task<bool>> operation,
+            string confirmMessage,
+            string logErrorMessage)
+        {
+            try
+            {
+                // 1. Identify selected and installed services
+                var selectedServices = _services
+                    .Where(s => s.IsInstalled && s.IsChecked)
+                    .Select(s => s.Service)
+                    .ToList();
+
+                if (selectedServices.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_NoServicesSelected, AppConfig.Caption);
+                    return;
+                }
+
+                // 2. Request user confirmation
+                if (!await _messageBoxService.ShowConfirmAsync(confirmMessage, AppConfig.Caption))
+                    return;
+
+                SetIsBusy(true);
+                var failed = new List<string>();
+
+                // 3. Execute the operation delegate in a loop
+                foreach (var service in selectedServices)
+                {
+                    if (!await operation(service))
+                    {
+                        failed.Add(service.Name);
+                    }
+                }
+
+                // 4. Handle results and UI feedback
+                if (failed.Count == 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
+                }
+                else
+                {
+                    // If some or all failed, use Warning level and provide details
+                    var message = failed.Count == selectedServices.Count
+                        ? Strings.Msg_AllOperationsFailed
+                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
+
+                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"{logErrorMessage}: {ex}");
+            }
+            finally
+            {
+                SetIsBusy(false);
+            }
+        }
 
         /// <summary>
         /// Refresh all services description, status, startup type, user and installation state without blocking the UI thread.
