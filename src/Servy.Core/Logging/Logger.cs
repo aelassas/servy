@@ -221,7 +221,7 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="message">The operational message to log.</param>
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
-        public static void Debug(string message, Exception? ex = null)
+        public static void Debug(string? message, Exception? ex = null)
         {
             if (_currentLogLevel <= LogLevel.Debug)
             {
@@ -234,7 +234,7 @@ namespace Servy.Core.Logging
         /// Use this for general operational milestones and state changes.
         /// </summary>
         /// <param name="message">The operational message to log.</param>
-        public static void Info(string message)
+        public static void Info(string? message)
         {
             if (_currentLogLevel <= LogLevel.Info)
             {
@@ -247,7 +247,7 @@ namespace Servy.Core.Logging
         /// Use this for non-critical issues or unexpected states that do not halt execution.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
-        public static void Warn(string message)
+        public static void Warn(string? message)
         {
             if (_currentLogLevel <= LogLevel.Warn)
             {
@@ -260,7 +260,7 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="message">The description of the error.</param>
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
-        public static void Error(string message, Exception? ex = null)
+        public static void Error(string? message, Exception? ex = null)
         {
             if (_currentLogLevel <= LogLevel.Error)
             {
@@ -273,10 +273,12 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="level">The severity level enum.</param>
         /// <param name="message">The content of the log entry.</param>
-        private static void Log(LogLevel level, string message)
+        private static void Log(LogLevel level, string? message)
         {
             // We still check for null early to avoid locking if the logger isn't active
             if (_writer == null) return;
+
+            if (string.IsNullOrEmpty(message)) return;
 
             try
             {

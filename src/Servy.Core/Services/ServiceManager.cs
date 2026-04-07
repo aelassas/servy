@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -282,7 +283,7 @@ namespace Servy.Core.Services
         #region IServiceManager Implementation
 
         /// <inheritdoc />
-        public async Task<bool> InstallServiceAsync(InstallServiceOptions options)
+        public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
         {
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
@@ -429,8 +430,9 @@ namespace Servy.Core.Services
                     }
                     else
                     {
-                        Logger.Error($"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation.");
-                        return false;
+                        string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation.";
+                        Logger.Error(errorMsg);
+                        return OperationResult.Failure(errorMsg);
                     }
 
                     // Set delayed auto-start if necessary
@@ -440,8 +442,9 @@ namespace Servy.Core.Services
 
                         if (!delayedAutoStartConfigSuccess)
                         {
-                            Logger.Error($"Failed to set delayed auto-start for service '{options.ServiceName}' during installation.");
-                            return false;
+                            string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation.";
+                            Logger.Error(errorMsg);
+                            return OperationResult.Failure(errorMsg);
                         }
                         else
                         {
@@ -488,8 +491,9 @@ namespace Servy.Core.Services
                                 }
                                 else
                                 {
-                                    Logger.Error($"Failed to set delayed auto-start for existing service '{options.ServiceName}'.");
-                                    return false;
+                                    string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
+                                    Logger.Error(errorMsg);
+                                    return OperationResult.Failure(errorMsg);
                                 }
                             }
                             finally
@@ -501,12 +505,13 @@ namespace Servy.Core.Services
                         await _serviceRepository.UpsertAsync(dto);
                         Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
 
-                        return true;
+                        return OperationResult.Success();
                     }
 
                     int error = Marshal.GetLastWin32Error();
-                    Logger.Error($"Failed to create service '{options.ServiceName}'. Win32 error: {error}");
-                    return false;
+                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {error}";
+                    Logger.Error(creationErrorMsg);
+                    return OperationResult.Failure(creationErrorMsg);
                 }
 
                 // Set description
@@ -515,7 +520,7 @@ namespace Servy.Core.Services
                 await _serviceRepository.UpsertAsync(dto);
                 Logger.Info($"Service '{options.ServiceName}' installed successfully.");
 
-                return true;
+                return OperationResult.Success();
             }
             catch (Exception ex)
             {
@@ -532,17 +537,17 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallServiceAsync(string serviceName)
+        public async Task<OperationResult> UninstallServiceAsync(string serviceName)
         {
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_ALL_ACCESS);
             if (scmHandle == IntPtr.Zero)
-                return false;
+                return OperationResult.Failure("Failed to open Service Control Manager.");
 
             try
             {
                 IntPtr serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_ALL_ACCESS);
                 if (serviceHandle == IntPtr.Zero)
-                    return false;
+                    return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
 
                 try
                 {
@@ -584,12 +589,13 @@ namespace Servy.Core.Services
                     {
                         await _serviceRepository.DeleteAsync(serviceName);
                         Logger.Info($"Service '{serviceName}' uninstalled successfully.");
-                        return true;
+                        return OperationResult.Success();
                     }
                     else
                     {
-                        Logger.Error($"Failed to uninstall service '{serviceName}'.");
-                        return false;
+                        string errorMsg = $"Failed to uninstall service '{serviceName}'.";
+                        Logger.Error(errorMsg);
+                        return OperationResult.Failure(errorMsg);
                     }
                 }
                 finally
@@ -609,18 +615,18 @@ namespace Servy.Core.Services
         }
 
         ///<inheritdoc/>
-        public async Task<bool> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
+        public async Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
         {
             try
             {
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
 
-                if (service == null) return false;
+                if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
                 using (var sc = _controllerFactory(serviceName))
                 {
                     if (sc.Status == ServiceControllerStatus.Running)
-                        return true;
+                        return OperationResult.Success();
 
                     int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + 15;
                     totalWaitTime = Math.Max(totalWaitTime, ServiceStartTimeoutSeconds);
@@ -638,18 +644,18 @@ namespace Servy.Core.Services
                         Logger.Info($"Service '{serviceName}' started successfully.");
                     }
 
-                    return true;
+                    return OperationResult.Success();
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to start service '{serviceName}'.", ex);
-                return false;
+                return OperationResult.Failure($"Failed to start service '{serviceName}'. Reason: {ex.Message}");
             }
         }
 
         /// <inheritdoc />
-        public async Task<bool> StopServiceAsync(string serviceName, bool logSuccessfulStop = true)
+        public async Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true)
         {
             try
             {
@@ -657,12 +663,12 @@ namespace Servy.Core.Services
 
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
 
-                if (service == null) return false;
+                if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
                 using (var sc = _controllerFactory(serviceName))
                 {
                     if (sc.Status == ServiceControllerStatus.Stopped)
-                        return true;
+                        return OperationResult.Success();
 
                     var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
                     var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
@@ -681,25 +687,25 @@ namespace Servy.Core.Services
                         Logger.Info($"Service '{serviceName}' stopped successfully.");
                     }
 
-                    return true;
+                    return OperationResult.Success();
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"Failed to stop service '{serviceName}'.", ex);
-                return false;
+                return OperationResult.Failure($"Failed to stop service '{serviceName}'. Reason: {ex.Message}");
             }
         }
 
         /// <inheritdoc />
-        public async Task<bool> RestartServiceAsync(string serviceName)
+        public async Task<OperationResult> RestartServiceAsync(string serviceName)
         {
-            if (!await StopServiceAsync(serviceName, logSuccessfulStop: false))
-                return false;
+            if (!(await StopServiceAsync(serviceName, logSuccessfulStop: false)).IsSuccess)
+                return OperationResult.Failure($"Failed to restart service '{serviceName}'.");
 
             var res = await StartServiceAsync(serviceName, logSuccessfulStart: false);
 
-            if (res)
+            if (res.IsSuccess)
             {
                 Logger.Info($"Service '{serviceName}' restarted successfully.");
             }

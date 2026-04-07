@@ -304,9 +304,9 @@ namespace Servy.Services
                     PostStopArgs = postStopProgramArgs
                 };
 
-                bool success = await _serviceManager.InstallServiceAsync(options);
+                var res = await _serviceManager.InstallServiceAsync(options);
 
-                if (success)
+                if (res.IsSuccess)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceCreated, Caption);
                 }
@@ -342,8 +342,8 @@ namespace Servy.Services
 
             try
             {
-                bool success = await _serviceManager.UninstallServiceAsync(serviceName);
-                if (success)
+                var res = await _serviceManager.UninstallServiceAsync(serviceName);
+                if (res.IsSuccess)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
                 }
@@ -386,8 +386,8 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.StartServiceAsync(serviceName);
-                if (success)
+                var res = await _serviceManager.StartServiceAsync(serviceName);
+                if (res.IsSuccess)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
                 else
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
@@ -415,8 +415,8 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.StopServiceAsync(serviceName);
-                if (success)
+                var res = await _serviceManager.StopServiceAsync(serviceName);
+                if (res.IsSuccess)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
                 else
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
@@ -451,8 +451,8 @@ namespace Servy.Services
                     return;
                 }
 
-                bool success = await _serviceManager.RestartServiceAsync(serviceName);
-                if (success)
+                var res = await _serviceManager.RestartServiceAsync(serviceName);
+                if (res.IsSuccess)
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
                 else
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);

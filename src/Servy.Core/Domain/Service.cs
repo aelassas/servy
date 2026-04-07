@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Services;
 using System.ServiceProcess;
@@ -343,7 +344,7 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully started; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<bool> Start()
+        public async Task<OperationResult> Start()
         {
             return await _serviceManager.StartServiceAsync(Name);
         }
@@ -354,7 +355,7 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully stopped; otherwise, <c>false</c>.
         /// </returns>
-        public virtual async Task<bool> Stop()
+        public virtual async Task<OperationResult> Stop()
         {
             return await _serviceManager.StopServiceAsync(Name);
         }
@@ -365,7 +366,7 @@ namespace Servy.Core.Domain
         /// <returns>
         /// <c>true</c> if the service was successfully restarted; otherwise, <c>false</c>.
         /// </returns>
-        public async Task<bool> Restart()
+        public async Task<OperationResult> Restart()
         {
             return await _serviceManager.RestartServiceAsync(Name);
         }
@@ -438,7 +439,7 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service 
         /// cannot be created/updated.
         /// </exception>
-        public async Task<bool> Install(string? wrapperExeDir = null, bool isCLI = false)
+        public async Task<OperationResult> Install(string? wrapperExeDir = null, bool isCLI = false)
         {
             var servyServiceFilename = isCLI ? AppConfig.ServyServiceCLIExe : AppConfig.ServyServiceUIExe;
 #if DEBUG
@@ -526,7 +527,7 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service 
         /// cannot be removed.
         /// </exception>
-        public async Task<bool> Uninstall()
+        public async Task<OperationResult> Uninstall()
         {
             return await _serviceManager.UninstallServiceAsync(Name);
         }

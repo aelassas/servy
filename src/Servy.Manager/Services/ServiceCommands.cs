@@ -113,7 +113,7 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => serviceDomain.Start());
-                if (res)
+                if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Running;
                     if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, AppConfig.Caption);
@@ -122,7 +122,7 @@ namespace Servy.Manager.Services
                 {
                     if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
-                return res;
+                return res.IsSuccess;
             }
             catch (Exception ex)
             {
@@ -146,7 +146,7 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => serviceDomain.Stop());
-                if (res)
+                if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Stopped;
                     if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption);
@@ -155,7 +155,7 @@ namespace Servy.Manager.Services
                 {
                     if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
-                return res;
+                return res.IsSuccess;
             }
             catch (Exception ex)
             {
@@ -188,7 +188,7 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => serviceDomain.Restart());
-                if (res)
+                if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Running;
                     if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, AppConfig.Caption);
@@ -197,7 +197,7 @@ namespace Servy.Manager.Services
                 {
                     if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
-                return res;
+                return res.IsSuccess;
             }
             catch (Exception ex)
             {
@@ -296,7 +296,7 @@ namespace Servy.Manager.Services
                 }
 #endif
                 var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir));
-                if (res)
+                if (res.IsSuccess)
                 {
                     service.IsInstalled = true;
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
@@ -306,7 +306,7 @@ namespace Servy.Manager.Services
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 }
 
-                return res;
+                return res.IsSuccess;
             }
             catch (Exception ex)
             {
@@ -334,9 +334,9 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => serviceDomain.Uninstall());
-                if (res) RemoveService(service);
+                if (res.IsSuccess) RemoveService(service);
 
-                return res;
+                return res.IsSuccess;
             }
             catch (Exception ex)
             {
