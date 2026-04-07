@@ -532,10 +532,7 @@ namespace Servy.Manager.ViewModels
             _timer?.Stop();
 
             // 2. Signal cancellation to background tasks
-            if (_cts != null && !_cts.IsCancellationRequested)
-            {
-                _cts.Cancel();
-            }
+            _cts?.Cancel();
         }
 
         #endregion
