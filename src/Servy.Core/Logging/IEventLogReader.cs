@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Servy.Core.DTOs;
+using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 
 namespace Servy.Core.Logging
 {
     /// <summary>
     /// Defines an abstraction for reading events from the Windows Event Viewer.
-    /// This allows decoupling the <see cref="EventLogReader"/> implementation 
+    /// This allows decoupling the <see cref="System.Diagnostics.Eventing.Reader.EventLogReader"/> implementation 
     /// from consumers, enabling easier unit testing and mocking.
     /// </summary>
     public interface IEventLogReader
@@ -17,8 +18,8 @@ namespace Servy.Core.Logging
         /// The query that defines which log to read and the conditions to filter events.
         /// </param>
         /// <returns>
-        /// A collection of <see cref="EventRecord"/> objects that match the query.
+        /// A collection of <see cref="EventLogEntry"/> objects that match the query.
         /// </returns>
-        IEnumerable<EventRecord> ReadEvents(EventLogQuery query);
+        IEnumerable<EventLogEntry> ReadEvents(EventLogQuery query);
     }
 }
