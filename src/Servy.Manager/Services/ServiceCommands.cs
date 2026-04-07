@@ -468,7 +468,7 @@ namespace Servy.Manager.Services
                 if (res > 0)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.ImportXml_Success, AppConfig.Caption);
-                    RefreshServices();
+                    await RefreshServices();
                     Logger.Info($"Service configuration imported from XML at: {path}");
                 }
                 else
@@ -512,7 +512,7 @@ namespace Servy.Manager.Services
                 if (res > 0)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.ImportJson_Success, AppConfig.Caption);
-                    RefreshServices();
+                    await RefreshServices();
                     Logger.Info($"Service configuration imported from JSON at: {path}");
                 }
                 else
@@ -572,9 +572,10 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Refreshes services list using the configured resfresh callback.
         /// </summary>
-        private void RefreshServices()
+        private async Task RefreshServices()
         {
-            _refreshCallback?.Invoke();
+            if (_refreshCallback != null)
+                await _refreshCallback();
         }
 
         #endregion
