@@ -111,6 +111,7 @@ function Add-Arg {
         $argsList = Add-Arg $argsList "--enableHealth" -Flag
         # Result: $argsList contains '--startupDir="C:\MyApp"' and '--enableHealth'
   #>
+  [CmdletBinding()]
   param(
     $list,          # Existing argument list (Array)
     [string] $key,  # Argument key
@@ -176,6 +177,7 @@ function Invoke-ServyCli {
         Invoke-ServyCli "start" @("--name=MyService") $false "Failed to start service"
 
   #>
+  [CmdletBinding()]
   param(
     [string] $Command,
     [array]  $Arguments,
@@ -378,16 +380,16 @@ function Invoke-ServyServiceCommand {
         Invoke-ServyServiceCommand -Command "start" -Name "Wexflow" -Quiet
         Starts the 'Wexflow' service silently.
   #>
-    [cmdletbinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [string] $Command,
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string] $Command,
 
-        [Parameter(Mandatory=$true)]
-        [string] $Name,
+    [Parameter(Mandatory = $true)]
+    [string] $Name,
 
-        [switch] $Quiet
-    )
+    [switch] $Quiet
+  )
 
     $argsList = @()
     $argsList = Add-Arg $argsList "--name" $Name
@@ -446,7 +448,7 @@ function Show-ServyHelp {
         Show-ServyHelp -Command "install"
         # Displays help for the install command.        
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [ValidateSet("install", "uninstall", "start", "stop", "restart", "status", "export", "import")]
@@ -678,7 +680,7 @@ function Install-ServyService {
             -RecoveryAction RestartService `
             -MaxRestartAttempts 5
     #>
-  [CmdletBinding()]  
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -865,7 +867,7 @@ function Uninstall-ServyService {
     .EXAMPLE
         Uninstall-ServyService -Name "MyService"
     #>
-  [CmdletBinding()]  
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -895,7 +897,7 @@ function Start-ServyService {
         Start-ServyService -Name "MyService"
         # Starts the service named 'MyService'.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -925,7 +927,7 @@ function Stop-ServyService {
         Stop-ServyService -Name "MyService"
         # Stops the service named 'MyService'.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -955,7 +957,7 @@ function Restart-ServyService {
         Restart-ServyService -Name "MyService"
         # Restarts the service named 'MyService'.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -986,7 +988,7 @@ function Get-ServyServiceStatus {
         Get-ServyServiceStatus -Name "MyService"
         # Retrieves the current status of the service named 'MyService'.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -1022,7 +1024,7 @@ function Export-ServyServiceConfig {
         Export-ServyServiceConfig -Name "MyService" -ConfigFileType "json" -Path "C:\Configs\MyService.json"
         # Exports the configuration of 'MyService' to a JSON file at the specified path.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
@@ -1076,7 +1078,7 @@ function Import-ServyServiceConfig {
         The service name is read from the configuration file during import.
         No -Name parameter is needed.
     #>
-  [CmdletBinding()]    
+  [CmdletBinding()]
   param(
     [switch] $Quiet,
     [Parameter(Mandatory = $true)]
