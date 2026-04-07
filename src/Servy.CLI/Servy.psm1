@@ -687,6 +687,18 @@ function Install-ServyService {
             -MaxFailedChecks 3 `
             -RecoveryAction RestartService `
             -MaxRestartAttempts 5
+
+   .NOTES
+        DEVELOPER NOTE: Parameter Naming Convention
+        The dynamic argument builder in this function relies on a 1:1 mapping between 
+        PowerShell parameter names and Servy CLI flag names. 
+        
+        Example: 
+        CLI Flag: "--startupDir" -> PS Parameter: "$StartupDir"
+        
+        If a CLI flag is added that does not match the PS parameter name (ignoring casing 
+        and leading dashes), the $PSBoundParameters.ContainsKey() check
+        will fail, and the argument will not be passed to the executable.            
     #>
   [CmdletBinding()]
   param(
