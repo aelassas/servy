@@ -241,32 +241,15 @@ namespace Servy.Infrastructure.Data
         {
             var clone = (ServiceDto)source.Clone();
 
-            if (!string.IsNullOrWhiteSpace(clone.Parameters))
-                clone.Parameters = _secureData.Encrypt(clone.Parameters);
-
-            if (!string.IsNullOrWhiteSpace(clone.FailureProgramParameters))
-                clone.FailureProgramParameters = _secureData.Encrypt(clone.FailureProgramParameters);
-
-            if (!string.IsNullOrWhiteSpace(clone.PreLaunchParameters))
-                clone.PreLaunchParameters = _secureData.Encrypt(clone.PreLaunchParameters);
-
-            if (!string.IsNullOrWhiteSpace(clone.PostLaunchParameters))
-                clone.PostLaunchParameters = _secureData.Encrypt(clone.PostLaunchParameters);
-
-            if (!string.IsNullOrWhiteSpace(clone.Password))
-                clone.Password = _secureData.Encrypt(clone.Password);
-
-            if (!string.IsNullOrWhiteSpace(clone.EnvironmentVariables))
-                clone.EnvironmentVariables = _secureData.Encrypt(clone.EnvironmentVariables);
-
-            if (!string.IsNullOrWhiteSpace(clone.PreLaunchEnvironmentVariables))
-                clone.PreLaunchEnvironmentVariables = _secureData.Encrypt(clone.PreLaunchEnvironmentVariables);
-
-            if (!string.IsNullOrWhiteSpace(clone.PreStopParameters))
-                clone.PreStopParameters = _secureData.Encrypt(clone.PreStopParameters);
-
-            if (!string.IsNullOrWhiteSpace(clone.PostStopParameters))
-                clone.PostStopParameters = _secureData.Encrypt(clone.PostStopParameters);
+            clone.Parameters = EncryptIfPresent(clone.Parameters);
+            clone.FailureProgramParameters = EncryptIfPresent(clone.FailureProgramParameters);
+            clone.PreLaunchParameters = EncryptIfPresent(clone.PreLaunchParameters);
+            clone.PostLaunchParameters = EncryptIfPresent(clone.PostLaunchParameters);
+            clone.Password = EncryptIfPresent(clone.Password);
+            clone.EnvironmentVariables = EncryptIfPresent(clone.EnvironmentVariables);
+            clone.PreLaunchEnvironmentVariables = EncryptIfPresent(clone.PreLaunchEnvironmentVariables);
+            clone.PreStopParameters = EncryptIfPresent(clone.PreStopParameters);
+            clone.PostStopParameters = EncryptIfPresent(clone.PostStopParameters);
 
             return clone;
         }
@@ -494,32 +477,15 @@ namespace Servy.Infrastructure.Data
         {
             if (dto == null) return;
 
-            if (!string.IsNullOrEmpty(dto.Parameters))
-                dto.Parameters = _secureData.Decrypt(dto.Parameters);
-
-            if (!string.IsNullOrEmpty(dto.FailureProgramParameters))
-                dto.FailureProgramParameters = _secureData.Decrypt(dto.FailureProgramParameters);
-
-            if (!string.IsNullOrEmpty(dto.PreLaunchParameters))
-                dto.PreLaunchParameters = _secureData.Decrypt(dto.PreLaunchParameters);
-
-            if (!string.IsNullOrEmpty(dto.PostLaunchParameters))
-                dto.PostLaunchParameters = _secureData.Decrypt(dto.PostLaunchParameters);
-
-            if (!string.IsNullOrEmpty(dto.Password))
-                dto.Password = _secureData.Decrypt(dto.Password);
-
-            if (!string.IsNullOrEmpty(dto.EnvironmentVariables))
-                dto.EnvironmentVariables = _secureData.Decrypt(dto.EnvironmentVariables);
-
-            if (!string.IsNullOrEmpty(dto.PreLaunchEnvironmentVariables))
-                dto.PreLaunchEnvironmentVariables = _secureData.Decrypt(dto.PreLaunchEnvironmentVariables);
-
-            if (!string.IsNullOrEmpty(dto.PreStopParameters))
-                dto.PreStopParameters = _secureData.Decrypt(dto.PreStopParameters);
-
-            if (!string.IsNullOrEmpty(dto.PostStopParameters))
-                dto.PostStopParameters = _secureData.Decrypt(dto.PostStopParameters);
+            dto.Parameters = DecryptIfPresent(dto.Parameters);
+            dto.FailureProgramParameters = DecryptIfPresent(dto.FailureProgramParameters);
+            dto.PreLaunchParameters = DecryptIfPresent(dto.PreLaunchParameters);
+            dto.PostLaunchParameters = DecryptIfPresent(dto.PostLaunchParameters);
+            dto.Password = DecryptIfPresent(dto.Password);
+            dto.EnvironmentVariables = DecryptIfPresent(dto.EnvironmentVariables);
+            dto.PreLaunchEnvironmentVariables = DecryptIfPresent(dto.PreLaunchEnvironmentVariables);
+            dto.PreStopParameters = DecryptIfPresent(dto.PreStopParameters);
+            dto.PostStopParameters = DecryptIfPresent(dto.PostStopParameters);
         }
 
         /// <inheritdoc />
@@ -804,5 +770,20 @@ namespace Servy.Infrastructure.Data
 
         #endregion
 
+        #region Private Helpers
+
+        /// <summary>
+        /// Encrypts a string if it is not null or white space.
+        /// </summary>
+        private string EncryptIfPresent(string value)
+            => string.IsNullOrWhiteSpace(value) ? value : _secureData.Encrypt(value);
+
+        /// <summary>
+        /// Decrypts a string if it is not null or white space.
+        /// </summary>
+        private string DecryptIfPresent(string value)
+            => string.IsNullOrWhiteSpace(value) ? value : _secureData.Decrypt(value);
+
+        #endregion
     }
 }
