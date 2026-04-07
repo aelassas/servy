@@ -1,4 +1,4 @@
-﻿using System.Data;
+﻿using System.Data.Common;
 
 namespace Servy.Core.Data
 {
@@ -8,9 +8,9 @@ namespace Servy.Core.Data
     public interface IAppDbContext
     {
         /// <summary>
-        /// Creates a new <see cref="IDbConnection"/> for executing SQL commands.
+        /// Creates a new <see cref="DbConnection"/> for executing SQL commands.
         /// </summary>
-        IDbConnection CreateConnection();
+        DbConnection CreateConnection();
 
         /// <summary>
         /// Creates a new <see cref="IDapperExecutor"/> for executing SQL commands via Dapper.

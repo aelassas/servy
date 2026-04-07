@@ -1,5 +1,5 @@
 ﻿using Servy.Core.Data;
-using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics.CodeAnalysis;
 
@@ -23,10 +23,10 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Creates a new <see cref="IDbConnection"/> for the SQLite database.
+        /// Creates a new <see cref="DbConnection"/> for the SQLite database.
         /// </summary>
         /// <returns>A new <see cref="SqliteConnection"/> instance.</returns>
-        public IDbConnection CreateConnection()
+        public DbConnection CreateConnection()
         {
             return new SQLiteConnection(_connectionString);
         }

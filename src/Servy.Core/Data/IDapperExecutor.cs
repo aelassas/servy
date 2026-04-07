@@ -7,7 +7,7 @@ namespace Servy.Core.Data
     /// <summary>
     /// Abstraction for executing database operations using Dapper.
     /// This allows mocking database calls in unit tests without directly
-    /// mocking <see cref="System.Data.IDbConnection"/> extension methods.
+    /// mocking <see cref="System.Data.DbConnection"/> extension methods.
     /// </summary>
     public interface IDapperExecutor
     {
