@@ -51,11 +51,6 @@ namespace Servy.Service.Helpers
                 return;
             }
 
-            if (logger != null)
-            {
-                logger.Prefix = options.ServiceName;
-            }
-
             string envVarsFormatted = EnvironmentVariablesToString(options.EnvironmentVariables);
             string preLaunchEnvVarsFormatted = EnvironmentVariablesToString(options.PreLaunchEnvironmentVariables);
 
@@ -158,72 +153,6 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public bool ValidateStartupOptions(ILogger logger, StartOptions options)
-        {
-            if (string.IsNullOrWhiteSpace(options.ExecutablePath))
-            {
-                logger?.Error("Executable path not provided.");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(options.ServiceName))
-            {
-                logger?.Error("Service name empty");
-                return false;
-            }
-
-            if (!ProcessHelper.ValidatePath(options.ExecutablePath))
-            {
-                logger?.Error($"Process path {options.ExecutablePath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.FailureProgramPath) && !ProcessHelper.ValidatePath(options.FailureProgramPath))
-            {
-                logger?.Error($"Failure program path {options.FailureProgramPath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PreLaunchExecutablePath))
-            {
-                logger?.Error($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PostLaunchExecutablePath))
-            {
-                logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.WorkingDirectory) && !ProcessHelper.ValidatePath(options.WorkingDirectory, false))
-            {
-                logger?.Error($"Process working directory {options.WorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.FailureProgramWorkingDirectory) && !ProcessHelper.ValidatePath(options.FailureProgramWorkingDirectory, false))
-            {
-                logger?.Error($"Failure program working directory {options.FailureProgramWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PreLaunchWorkingDirectory, false))
-            {
-                logger?.Error($"Pre-launch process working directory {options.PreLaunchWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
-            {
-                logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc />
         public StartOptions? InitializeStartup(IServiceRepository serviceRepository, ILogger logger)
         {
             var fullArgs = _commandLineProvider.GetArgs();
@@ -238,6 +167,28 @@ namespace Servy.Service.Helpers
 
             return options;
         }
+
+        /// <inheritdoc />
+        public string[] GetArgs() 
+            => _commandLineProvider.GetArgs();
+
+        /// <inheritdoc />
+        public StartOptions?  ParseOptions(IServiceRepository serviceRepository, string[] fullArgs)
+            => StartOptionsParser.Parse(serviceRepository, fullArgs);
+
+        /// <inheritdoc />
+        public bool ValidateAndLog(StartOptions options, ILogger logger, string[] fullArgs)
+        {
+            LogStartupArguments(logger, fullArgs, options);
+
+            if (!ValidateStartupOptions(logger, options))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
 
         /// <inheritdoc />
         public void RestartProcess(
@@ -392,5 +343,90 @@ namespace Servy.Service.Helpers
 
         #endregion
 
+        #region Private Helpers
+
+        /// <summary>
+        /// Validates the critical configuration paths and service identity within the startup options.
+        /// </summary>
+        /// <remarks>
+        /// This method performs a series of integrity checks on:
+        /// <list type="bullet">
+        /// <item><description>Required fields (Service Name and Main Executable Path).</description></item>
+        /// <item><description>The existence and validity of primary, failure, pre-launch, and post-launch executable paths.</description></item>
+        /// <item><description>The validity of associated working directories for all configured processes.</description></item>
+        /// </list>
+        /// Any validation failure is logged as an error to the provided <paramref name="logger"/>.
+        /// </remarks>
+        /// <param name="logger">The logger instance used to report specific validation errors.</param>
+        /// <param name="options">The <see cref="StartOptions"/> instance containing the configuration to validate.</param>
+        /// <returns>
+        /// <c>true</c> if all mandatory paths and directories are valid; otherwise, <c>false</c>.
+        /// </returns>
+        private bool ValidateStartupOptions(ILogger logger, StartOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(options.ExecutablePath))
+            {
+                logger?.Error("Executable path not provided.");
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(options.ServiceName))
+            {
+                logger?.Error("Service name empty");
+                return false;
+            }
+
+            if (!ProcessHelper.ValidatePath(options.ExecutablePath))
+            {
+                logger?.Error($"Process path {options.ExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramPath) && !ProcessHelper.ValidatePath(options.FailureProgramPath))
+            {
+                logger?.Error($"Failure program path {options.FailureProgramPath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PreLaunchExecutablePath))
+            {
+                logger?.Error($"Pre-launch process path {options.PreLaunchExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchExecutablePath) && !ProcessHelper.ValidatePath(options.PostLaunchExecutablePath))
+            {
+                logger?.Error($"Post-launch process path {options.PostLaunchExecutablePath} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.WorkingDirectory) && !ProcessHelper.ValidatePath(options.WorkingDirectory, false))
+            {
+                logger?.Error($"Process working directory {options.WorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.FailureProgramWorkingDirectory) && !ProcessHelper.ValidatePath(options.FailureProgramWorkingDirectory, false))
+            {
+                logger?.Error($"Failure program working directory {options.FailureProgramWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PreLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Pre-launch process working directory {options.PreLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.PostLaunchWorkingDirectory) && !ProcessHelper.ValidatePath(options.PostLaunchWorkingDirectory, false))
+            {
+                logger?.Error($"Post-launch process working directory {options.PostLaunchWorkingDirectory} is invalid.");
+                return false;
+            }
+
+            return true;
+        }
+
+        #endregion
     }
 }

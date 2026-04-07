@@ -54,75 +54,78 @@ namespace Servy.Restarter
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
-            ILogger logger = new EventLogLogger(AppConfig.ServiceNameEventSource) { Prefix = serviceName };
+            ILogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
+            ILogger? scopedLogger = null;
 
             try
             {
-                // Ensure event source exists
+                // 1. Ensure event source exists before doing anything else
                 Helper.EnsureEventSourceExists();
 
-                // Load configuration from appsettings.restarter.json
+                // 2. Load configuration
                 var config = new ConfigurationBuilder()
                     .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
 
+                // 3. Configure the GLOBAL logging state first
                 var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
 
+                // Set Log Level
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
                 {
                     logLevel = LogLevel.Info;
                 }
                 Logger.SetLogLevel(logLevel);
-                logger.SetLogLevel(logLevel);
 
+                // Set Rotation Type
                 if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
                 {
                     dateRotationType = DateRotationType.None;
                 }
                 Logger.SetDateRotationType(dateRotationType);
 
-                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
-                logger.SetIsEventLogEnabled(isEventLogEnabled);
-
+                // Set Rotation Size
                 if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
                 {
                     Logger.SetLogRotationSize(size);
                 }
-                else
-                {
-                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
-                }
 
-                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-
-                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
+                // Set Local Time preference
+                if (!bool.TryParse(config["UseLocalTimeForRotation"], out bool useLocalTimeForRotation))
                 {
                     useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
                 }
                 Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
 
-                // Restart service
+                // 4. PROMOTE / SCOPE the logger after global config is set
+                scopedLogger = rootLogger.CreateScoped(serviceName);
+
+                // Set log level
+                scopedLogger.SetLogLevel(logLevel);
+
+                // Sync Event Log enablement to the instance
+                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
+
+                // 5. Execution
                 Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
+
                 Logger.Info($"Successfully restarted service '{serviceName}'.");
             }
             catch (Exception ex)
             {
-                logger.Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
+                // Use the scoped logger if available, otherwise fallback to root
+                (scopedLogger ?? rootLogger).Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
             }
             finally
             {
-                try
-                {
-                    // Dispose loggers
-                    Logger.Shutdown();
-                    logger.Dispose();
-                }
-                catch
-                {
-                    // Fail-silent
-                }
+                // Clean up
+                scopedLogger?.Dispose();
+                rootLogger.Dispose();
+                Logger.Shutdown();
             }
 
         }
