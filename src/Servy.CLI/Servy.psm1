@@ -331,12 +331,6 @@ function Invoke-ServyCli {
     }
   }
   catch {
-    # Ensure we still try to get whatever stderr we have if a crash occurs
-    try { 
-        $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
-        if ($list) { $stderr = $list -join [Environment]::NewLine }
-    } catch {}
-
     $partialOutput = ""
     if (-not [string]::IsNullOrEmpty($stdout)) { $partialOutput += " Stdout: $($stdout.TrimEnd())" }
     if (-not [string]::IsNullOrEmpty($stderr)) { $partialOutput += " Stderr: $($stderr.TrimEnd())" }
@@ -346,6 +340,13 @@ function Invoke-ServyCli {
     if ($null -ne $process) {
         try { $process.CancelErrorRead() } catch {}
     }    
+
+    # Capture stderr BEFORE cleanup
+    try {
+        $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
+        if ($list) { $stderr = $list -join [Environment]::NewLine }
+    } catch {}
+
     # CRITICAL: Clean up events and global variables even if the code fails
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
