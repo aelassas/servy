@@ -241,7 +241,7 @@ namespace Servy.Manager.ViewModels
                 return;
             }
 
-            _timer.Stop();
+            _timer?.Stop();
 
             try
             {
@@ -256,7 +256,7 @@ namespace Servy.Manager.ViewModels
                 // This prevents the timer from "resurrecting" after StopMonitoring was called.
                 if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
                 {
-                    _timer.Start();
+                    _timer?.Start();
                 }
             }
         }
@@ -496,7 +496,7 @@ namespace Servy.Manager.ViewModels
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
 
             // Start timer
-            _timer.Start();
+            _timer?.Start();
         }
 
         /// <summary>
@@ -512,7 +512,7 @@ namespace Servy.Manager.ViewModels
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
 
             // Stop timer
-            _timer.Stop();
+            _timer?.Stop();
 
             // Clear points
             if (clearPoints)
