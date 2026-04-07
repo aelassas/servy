@@ -136,6 +136,9 @@ namespace Servy.Infrastructure.Data
                 new KeyValuePair<string, string>("PostStopExecutablePath", "ALTER TABLE Services ADD COLUMN PostStopExecutablePath TEXT;"),
                 new KeyValuePair<string, string>("PostStopStartupDirectory", "ALTER TABLE Services ADD COLUMN PostStopStartupDirectory TEXT;"),
                 new KeyValuePair<string, string>("PostStopParameters", "ALTER TABLE Services ADD COLUMN PostStopParameters TEXT;"),
+
+                // UseLocalTimeForRotation
+                new KeyValuePair<string, string>("UseLocalTimeForRotation", "ALTER TABLE Services ADD COLUMN UseLocalTimeForRotation INTEGER;"),
             };
 
             foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))

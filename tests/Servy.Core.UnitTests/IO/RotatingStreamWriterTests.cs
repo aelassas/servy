@@ -24,7 +24,8 @@ namespace Servy.Core.UnitTests.IO
             long rotationSizeInBytes = 1024,
             bool enableDateRotation = false,
             DateRotationType dateRotationType = DateRotationType.Daily,
-            int maxRotations = 0)
+            int maxRotations = 0,
+            bool useLocalTimeForRotation = false)
         {
             return new RotatingStreamWriter(
                 path,
@@ -32,7 +33,8 @@ namespace Servy.Core.UnitTests.IO
                 rotationSizeInBytes,
                 enableDateRotation,
                 dateRotationType,
-                maxRotations);
+                maxRotations,
+                useLocalTimeForRotation);
         }
 
         [Fact]
@@ -343,7 +345,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void Dispose_IsIdempotent_AndDoesNotCrashOnSubsequentCalls()
         {
-            var writer = new RotatingStreamWriter(_logFilePath, true, 1000, false, DateRotationType.Daily, 0);
+            var writer = new RotatingStreamWriter(_logFilePath, true, 1000, false, DateRotationType.Daily, 0, false);
             writer.WriteLine("Initial log entry");
 
             writer.Dispose();
@@ -691,7 +693,7 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void ShouldRotateByDate_DefaultCase_ReturnsFalse()
         {
-            using (var writer = new RotatingStreamWriter("dummy.log", false, 1000, true, DateRotationType.Daily, 1))
+            using (var writer = new RotatingStreamWriter("dummy.log", false, 1000, true, DateRotationType.Daily, 1, false))
             {
                 var field = typeof(RotatingStreamWriter).GetField("_dateRotationType", BindingFlags.NonPublic | BindingFlags.Instance);
                 field!.SetValue(writer, (DateRotationType)999);
@@ -708,7 +710,7 @@ namespace Servy.Core.UnitTests.IO
         {
             var filePath = Path.Combine(_testDir, "locked_rotate.txt");
 
-            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0))
+            using (var writer = new RotatingStreamWriter(filePath, true, 5, false, DateRotationType.Daily, 0, false))
             {
                 writer.Write("init");
                 writer.Flush();
@@ -753,6 +755,192 @@ namespace Servy.Core.UnitTests.IO
                 // Ensure no rotated file was generated
                 var rotatedFiles = Directory.GetFiles(_testDir, "missing_rotate.*.txt");
                 Assert.Empty(rotatedFiles);
+            }
+        }
+
+        // --- UseLocalTimeForRotation & Daily Rotation Branch Coverage ---
+
+        [Fact]
+        public void Constructor_InitializesLastRotationDate_CorrectlyForTimeZones()
+        {
+            // Ensure file exists to test the "File.Exists" branch
+            File.WriteAllText(_logFilePath, "content");
+            var localWriteTime = File.GetLastWriteTime(_logFilePath);
+            var utcWriteTime = File.GetLastWriteTimeUtc(_logFilePath);
+
+            // Test Local Branch
+            using (var localWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: true))
+            {
+                var lastRot = (DateTime)GetPrivateField(localWriter, "_lastRotationDate");
+                Assert.Equal(localWriteTime, lastRot);
+            }
+
+            // Test UTC Branch
+            using (var utcWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: false))
+            {
+                var lastRot = (DateTime)GetPrivateField(utcWriter, "_lastRotationDate");
+                Assert.Equal(utcWriteTime, lastRot);
+            }
+        }
+
+        [Fact]
+        public void DailyRotation_Local_DST_SafetyBuffer_PreventsEarlyRotation()
+        {
+            // Scenario: It is a new calendar day, but only 22 hours have passed (simulated DST "Fall Back")
+            var now = DateTime.Now;
+            var twentyTwoHoursAgo = now.AddHours(-22);
+
+            // lastRotationDate was yesterday, but logically we are in the safety window
+            using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
+            {
+                SetPrivateField(writer, "_lastRotationDate", twentyTwoHoursAgo);
+
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+
+                // Assert: Should NOT rotate because it hasn't been 23 hours yet
+                Assert.False(shouldRotate, "Should not rotate if < 23 hours have passed in Local mode even if day changed.");
+            }
+        }
+
+        [Fact]
+        public void DailyRotation_Local_DST_SafetyBuffer_AllowsRotationAfterThreshold()
+        {
+            // Scenario: New calendar day and 23.5 hours passed
+            var now = DateTime.Now;
+            var twentyThreeHoursAgo = now.AddHours(-23.5);
+
+            using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
+            {
+                SetPrivateField(writer, "_lastRotationDate", twentyThreeHoursAgo);
+
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+
+                // Assert: Should rotate
+                Assert.True(shouldRotate);
+            }
+        }
+
+        [Fact]
+        public void DailyRotation_UTC_IgnoresSafetyBuffer()
+        {
+            // Scenario: In UTC, we don't care about the 23-hour rule, only the calendar date change
+            var nowUtc = DateTime.UtcNow;
+            var oneHourAgoButDifferentDay = nowUtc.Date.AddSeconds(-1); // Yesterday 11:59:59 PM
+
+            using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: false))
+            {
+                SetPrivateField(writer, "_lastRotationDate", oneHourAgoButDifferentDay);
+
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+
+                // Assert: Should rotate immediately on date change
+                Assert.True(shouldRotate);
+            }
+        }
+
+        [Fact]
+        public void CheckRotation_UpdatesLastRotationDate_WithCorrectTimeZone()
+        {
+            // 1. Test Local Update
+            using (var localWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: true))
+            {
+                localWriter.Write("init"); // Initialize writer
+                InvokePrivateMethod(localWriter, "Rotate"); // Force a rotation
+                InvokePrivateMethod(localWriter, "CheckRotation");
+
+                var lastRot = (DateTime)GetPrivateField(localWriter, "_lastRotationDate");
+                // Kind should be Local
+                Assert.Equal(DateTimeKind.Local, lastRot.Kind);
+            }
+
+            // 2. Test UTC Update
+            using (var utcWriter = CreateWriter(_logFilePath, useLocalTimeForRotation: false))
+            {
+                utcWriter.Write("init");
+                InvokePrivateMethod(utcWriter, "Rotate");
+                InvokePrivateMethod(utcWriter, "CheckRotation");
+
+                var lastRot = (DateTime)GetPrivateField(utcWriter, "_lastRotationDate");
+                // Kind should be Utc
+                Assert.Equal(DateTimeKind.Utc, lastRot.Kind);
+            }
+        }
+
+        [Fact]
+        public void ShouldRotateByDate_Daily_SameDay_ReturnsFalse()
+        {
+            using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily))
+            {
+                // Set last rotation to 'now' so now.Date > lastRotationDate.Date is FALSE
+                SetPrivateField(writer, "_lastRotationDate", DateTime.Now);
+
+                var result = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+
+                Assert.False(result);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)] 
+        [InlineData(false)] 
+        public void CheckRotation_SizeRotation_TernaryCoverage(bool useLocal)
+        {
+            var filePath = Path.Combine(_testDir, $"size_ternary_{useLocal}.log");
+            // Set size to 1 byte so any write triggers rotateBySize = true
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1, useLocalTimeForRotation: useLocal))
+            {
+                writer.Write("trigger"); // This hits CheckRotation -> rotateBySize is true
+
+                var lastRot = (DateTime)GetPrivateField(writer, "_lastRotationDate");
+                Assert.Equal(useLocal ? DateTimeKind.Local : DateTimeKind.Utc, lastRot.Kind);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CheckRotation_DateRotation_TernaryCoverage(bool useLocal)
+        {
+            var filePath = Path.Combine(_testDir, $"date_ternary_{useLocal}.log");
+            using (var writer = CreateWriter(filePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily, useLocalTimeForRotation: useLocal))
+            {
+                writer.Write("init"); // Ensure file and writer exist
+
+                // Force ShouldRotateByDate to return true by aging the last rotation
+                DateTime fakePast = useLocal ? DateTime.Now.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
+                SetPrivateField(writer, "_lastRotationDate", fakePast);
+
+                // Trigger write -> CheckRotation -> rotateByDate is true
+                writer.Write("trigger rotation");
+
+                var lastRot = (DateTime)GetPrivateField(writer, "_lastRotationDate");
+                Assert.Equal(useLocal ? DateTimeKind.Local : DateTimeKind.Utc, lastRot.Kind);
+            }
+        }
+
+        private object GetPrivateField(object obj, string fieldName)
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field!.GetValue(obj)!;
+        }
+
+        private void SetPrivateField(object obj, string fieldName, object value)
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            field!.SetValue(obj, value);
+        }
+
+        private object InvokePrivateMethod(object obj, string methodName, params object[] args)
+        {
+            var method = obj.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            try
+            {
+                return method!.Invoke(obj, args)!;
+            }
+            catch (TargetInvocationException ex)
+            {
+                ExceptionDispatchInfo.Capture(ex.InnerException!).Throw();
+                return null!;
             }
         }
 

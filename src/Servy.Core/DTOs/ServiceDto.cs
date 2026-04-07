@@ -103,6 +103,18 @@ namespace Servy.Core.DTOs
         public int? MaxRotations { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// </summary>
+        /// <remarks>
+        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight). 
+        /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
+        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
+        /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
+        /// </remarks>
+        public bool? UseLocalTimeForRotation { get; set; }
+
+        /// <summary>
         /// Whether health monitoring is enabled.
         /// </summary>
         public bool? EnableHealthMonitoring { get; set; }
@@ -335,6 +347,7 @@ namespace Servy.Core.DTOs
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = DateRotationType,
                 MaxRotations = MaxRotations,
+                UseLocalTimeForRotation = UseLocalTimeForRotation,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 HeartbeatInterval = HeartbeatInterval,
                 MaxFailedChecks = MaxFailedChecks,
@@ -397,6 +410,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnableDateRotation() => EnableDateRotation.HasValue;
         public bool ShouldSerializeDateRotationType() => DateRotationType.HasValue;
         public bool ShouldSerializeMaxRotations() => MaxRotations.HasValue;
+        public bool ShouldSerializeUseLocalTimeForRotation() => UseLocalTimeForRotation.HasValue;
         public bool ShouldSerializeEnableHealthMonitoring() => EnableHealthMonitoring.HasValue;
         public bool ShouldSerializeHeartbeatInterval() => HeartbeatInterval.HasValue;
         public bool ShouldSerializeMaxFailedChecks() => MaxFailedChecks.HasValue;

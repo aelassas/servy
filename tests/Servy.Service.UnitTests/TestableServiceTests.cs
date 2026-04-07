@@ -138,7 +138,8 @@ namespace Servy.Service.UnitTests
             {
                 HeartbeatInterval = 5,
                 MaxFailedChecks = 3,
-                RecoveryAction = RecoveryAction.RestartService
+                RecoveryAction = RecoveryAction.RestartService,
+                EnableHealthMonitoring = true,
             };
 
             // Act

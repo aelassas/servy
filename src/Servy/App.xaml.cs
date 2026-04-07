@@ -272,6 +272,14 @@ namespace Servy
                     Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
                 }
 
+                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+
+                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
+                {
+                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                }
+                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else

@@ -85,6 +85,18 @@ namespace Servy.Models
         public string MaxRotations { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// </summary>
+        /// <remarks>
+        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight). 
+        /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
+        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
+        /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
+        /// </remarks>
+        public bool UseLocalTimeForRotation { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// </summary>
         public bool EnableHealthMonitoring { get; set; }

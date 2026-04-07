@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Servy.Core.Config;
 
 namespace Servy.CLI.Options
 {
@@ -135,6 +136,16 @@ namespace Servy.CLI.Options
         /// </summary>
         [Option("maxRotations", HelpText = "Maximum rotated log files to keep. Set to 0 or leave empty for unlimited.")]
         public string? MaxRotations { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// </summary>
+        /// <remarks>
+        /// <para>Default is <see cref="Constants.DefaultUseLocalTimeForRotation"/> (<c>false</c>).</para>
+        /// <para>When <c>true</c>, rotation occurs at local midnight. When <c>false</c>, rotation occurs at UTC midnight.</para>
+        /// </remarks>
+        [Option("useLocalTimeForRotation", HelpText = "Use local server time for log rotation instead of UTC. Default is false.")]
+        public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
 
         /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.

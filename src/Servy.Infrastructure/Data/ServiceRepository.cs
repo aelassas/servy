@@ -64,7 +64,7 @@ namespace Servy.Infrastructure.Data
                     PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
                     EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
                     PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
-                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters, UseLocalTimeForRotation
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -76,7 +76,7 @@ namespace Servy.Infrastructure.Data
                     @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
                     @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
                     @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
-                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters, @UseLocalTimeForRotation
                 );
                 SELECT last_insert_rowid();";
 
@@ -151,7 +151,8 @@ namespace Servy.Infrastructure.Data
                     PreStopLogAsError = @PreStopLogAsError,
                     PostStopExecutablePath = @PostStopExecutablePath,
                     PostStopStartupDirectory = @PostStopStartupDirectory,
-                    PostStopParameters = @PostStopParameters
+                    PostStopParameters = @PostStopParameters,
+                    UseLocalTimeForRotation = @UseLocalTimeForRotation
                 WHERE Id = @Id;";
 
             return await _dapper.ExecuteAsync(sql, encryptedService);
@@ -219,7 +220,8 @@ namespace Servy.Infrastructure.Data
                     PreStopLogAsError = @PreStopLogAsError,
                     PostStopExecutablePath = @PostStopExecutablePath,
                     PostStopStartupDirectory = @PostStopStartupDirectory,
-                    PostStopParameters = @PostStopParameters
+                    PostStopParameters = @PostStopParameters,
+                    UseLocalTimeForRotation = @UseLocalTimeForRotation
                 WHERE Id = @Id;";
 
             return _dapper.Execute(sql, encryptedService);
@@ -282,7 +284,7 @@ namespace Servy.Infrastructure.Data
                     PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
                     EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
                     PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
-                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters, UseLocalTimeForRotation
                 ) VALUES (
                     @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
                     @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
@@ -294,7 +296,7 @@ namespace Servy.Infrastructure.Data
                     @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
                     @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
                     @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
-                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters, @UseLocalTimeForRotation
                 )
                 ON CONFLICT(LOWER(Name)) DO UPDATE SET
                     Description = excluded.Description,
@@ -346,7 +348,8 @@ namespace Servy.Infrastructure.Data
                     PreStopLogAsError = excluded.PreStopLogAsError,
                     PostStopExecutablePath = excluded.PostStopExecutablePath,
                     PostStopStartupDirectory = excluded.PostStopStartupDirectory,
-                    PostStopParameters = excluded.PostStopParameters;
+                    PostStopParameters = excluded.PostStopParameters,
+                    UseLocalTimeForRotation = excluded.UseLocalTimeForRotation;
 
                 SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
@@ -664,6 +667,7 @@ namespace Servy.Infrastructure.Data
                 EnableDateRotation = dto.EnableDateRotation ?? false,
                 DateRotationType = dto.DateRotationType.HasValue ? (DateRotationType)dto.DateRotationType.Value : DateRotationType.Daily,
                 MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
+                UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
                 EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = dto.HeartbeatInterval ?? 30,
                 MaxFailedChecks = dto.MaxFailedChecks ?? 3,
@@ -741,6 +745,7 @@ namespace Servy.Infrastructure.Data
                 DateRotationType = (int)domain.DateRotationType,
                 MaxRotations = domain.MaxRotations,
                 EnableHealthMonitoring = domain.EnableHealthMonitoring,
+                UseLocalTimeForRotation = domain.UseLocalTimeForRotation,
                 HeartbeatInterval = domain.HeartbeatInterval,
                 MaxFailedChecks = domain.MaxFailedChecks,
                 RecoveryAction = (int)domain.RecoveryAction,

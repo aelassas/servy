@@ -510,6 +510,13 @@ function Install-ServyService {
     .PARAMETER MaxRotations
         Maximum rotated log files to keep. 0 for unlimited. Optional.
 
+    .PARAMETER UseLocalTimeForRotation
+        If this switch is present, log rotation will be calculated using the server's local time (e.g., rotating at local midnight). 
+        This is often preferred for manual log review and local troubleshooting.
+
+        If this switch is omitted, the default behavior is to use Coordinated Universal Time (UTC). 
+        This ensures a consistent, 24-hour rotation cycle that is unaffected by Daylight Saving Time transitions.
+
     .PARAMETER EnableHealth
         Switch to enable health monitoring. Optional.
 
@@ -672,6 +679,7 @@ function Install-ServyService {
     [string] $DateRotationType,
     [ValidateRange(0, 2147483647)]
     [int] $MaxRotations,
+    [switch] $UseLocalTimeForRotation,
     [switch] $EnableHealth,
     [ValidateRange(5, 2147483647)]
     [int] $HeartbeatInterval,
@@ -793,11 +801,12 @@ function Install-ServyService {
   # 3. Handle switch/flag parameters separately
   if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
   if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
-  if ($EnableDateRotation)                       { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
-  if ($EnableHealth)                             { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
-  if ($PreLaunchIgnoreFailure)                   { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
-  if ($EnableDebugLogs)                          { $argsList = Add-Arg $argsList "--debug" -Flag }
-  if ($PreStopLogAsError)                        { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
+  if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
+  if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
+  if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+  if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
+  if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
+  if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
   # 4. Invoke CLI
   Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to install service '$Name'"

@@ -117,7 +117,9 @@ namespace Servy.Services
 
             string postStopProgramPath,
             string postStopProgramWorkingDirectory,
-            string postStopProgramArgs
+            string postStopProgramArgs,
+
+            bool useLocalTimeForRotation
             );
 
         /// <summary>

@@ -214,6 +214,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Info_DateRotation" xml:space="preserve">
     <value>When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
   </data>
+  <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
+    <value>Use local time for log rotation (Default: UTC)</value>
+  </data>
 
   <data name="Label_MaxRotations" xml:space="preserve">
     <value>Max Rotations</value>

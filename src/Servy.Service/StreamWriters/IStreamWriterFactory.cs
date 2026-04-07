@@ -24,6 +24,7 @@ namespace Servy.Service.StreamWriters
         /// Ignored when <paramref name="enableDateRotation"/> is <c>false</c>.
         /// </param>
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <remarks>
         /// When both size-based and date-based rotation are enabled,
         /// size rotation takes precedence. If a size-based rotation occurs,
@@ -36,6 +37,7 @@ namespace Servy.Service.StreamWriters
             long rotationSizeInBytes,
             bool enableDateRotation,
             DateRotationType dateRotationType,
-            int maxRotations);
+            int maxRotations,
+            bool useLocalTimeForRotation);
     }
 }

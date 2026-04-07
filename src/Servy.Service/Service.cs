@@ -332,6 +332,14 @@ namespace Servy.Service
                     Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
                 }
 
+                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+
+                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
+                {
+                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                }
+                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
                 // Initialize database and helpers
                 var dbContext = new AppDbContext(connectionString);
                 DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
@@ -1128,7 +1136,8 @@ namespace Servy.Service
                     options.RotationSizeInBytes,
                     options.EnableDateRotation,
                     options.DateRotationType,
-                    options.MaxRotations
+                    options.MaxRotations,
+                    options.UseLocalTimeForRotation
                     );
             }
 
@@ -1672,7 +1681,7 @@ namespace Servy.Service
             _maxFailedChecks = options.MaxFailedChecks;
             _recoveryAction = options.RecoveryAction;
 
-            if (options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
+            if (options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
             {
                 _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000.0);
                 _healthCheckTimer.Elapsed += CheckHealth;

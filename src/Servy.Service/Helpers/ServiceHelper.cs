@@ -77,7 +77,8 @@ namespace Servy.Service.Helpers
                   $"- rotationSizeInBytes: {options.RotationSizeInBytes}\n" +
                   $"- enableDateRotation: {options.EnableDateRotation}\n" +
                   $"- dateRotationType: {options.DateRotationType}\n" +
-                  $"- maxRotations: {options.MaxRotations}\n\n" +
+                  $"- maxRotations: {options.MaxRotations}\n" +
+                  $"- useLocalTimeForRotation: {options.UseLocalTimeForRotation}\n\n" +
 
                   "--------Recovery---------------\n" +
                   $"- heartbeatInterval: {options.HeartbeatInterval}\n" +

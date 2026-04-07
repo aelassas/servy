@@ -15,14 +15,16 @@ namespace Servy.Service.StreamWriters
             long rotationSizeInBytes,
             bool enableDateRotation,
             DateRotationType dateRotationType,
-            int maxRotations)
+            int maxRotations,
+            bool useLocalTimeForRotation)
         {
             return new RotatingStreamWriterAdapter(path,
                 enableSizeRotation, 
                 rotationSizeInBytes, 
                 enableDateRotation,
                 dateRotationType, 
-                maxRotations);
+                maxRotations,
+                useLocalTimeForRotation);
         }
     }
 }

@@ -94,6 +94,14 @@ namespace Servy.Restarter
                     Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
                 }
 
+                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+
+                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
+                {
+                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                }
+                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
                 // Restart service
                 Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
