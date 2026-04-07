@@ -94,12 +94,14 @@ namespace Servy.CLI.Commands
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
             };
 
-            foreach (var folder in protectedFolders)
+            // Find the first protected folder that matches the start of the fullPath
+            var violatedFolder = protectedFolders
+                .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
+                                          fullPath.StartsWith(folder, StringComparison.OrdinalIgnoreCase));
+
+            if (violatedFolder != null)
             {
-                if (fullPath.StartsWith(folder, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new SecurityException($"Access Denied: Exporting to protected system directory '{folder}' is prohibited.");
-                }
+                throw new SecurityException($"Access Denied: Exporting to protected system directory '{violatedFolder}' is prohibited.");
             }
 
             // 4. Directory Creation
