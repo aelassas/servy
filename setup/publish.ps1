@@ -116,7 +116,9 @@ try {
     # create zib bundle
     Write-Host "Creating zip package $outputZip..."
 
-    Copy-Item -Path "taskschd\*" -Destination "$packageFolder\taskschd" -Recurse -Force -Exclude "smtp-cred.xml"
+    $destPath = Join-Path $packageFolder "taskschd"
+    if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
+    Copy-Item -Path "taskschd\*" -Destination $destPath -Recurse -Force -Exclude "smtp-cred.xml"
 
     Copy-Item -Path (Join-Path $cliDir "Servy.psm1") -Destination "$packageFolder" -Force
     Copy-Item -Path (Join-Path $cliDir "Servy.psd1") -Destination "$packageFolder" -Force
