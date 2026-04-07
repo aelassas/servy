@@ -21,7 +21,6 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-
         #region Constants
 
         /// <summary>
@@ -124,7 +123,7 @@ namespace Servy
                         Shutdown();
                     });
                 }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         /// <summary>
@@ -377,6 +376,5 @@ namespace Servy
         }
 
         #endregion
-
     }
 }
