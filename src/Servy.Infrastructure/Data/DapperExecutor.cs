@@ -83,7 +83,7 @@ namespace Servy.Infrastructure.Data
 
             using (var connection = _dbContext.CreateConnection())
             {
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
                 return await connection.ExecuteScalarAsync<T?>(sql, param).ConfigureAwait(false);
             }
         }
@@ -95,7 +95,7 @@ namespace Servy.Infrastructure.Data
 
             using (var connection = _dbContext.CreateConnection())
             {
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
                 return await connection.ExecuteAsync(sql, param).ConfigureAwait(false);
             }
         }
@@ -105,7 +105,7 @@ namespace Servy.Infrastructure.Data
         {
             using (var connection = _dbContext.CreateConnection())
             {
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
                 return await connection.QueryAsync<T>(command).ConfigureAwait(false);
             }
         }
@@ -115,7 +115,7 @@ namespace Servy.Infrastructure.Data
         {
             using (var connection = _dbContext.CreateConnection())
             {
-                connection.Open();
+                await connection.OpenAsync().ConfigureAwait(false);
                 return await connection.QuerySingleOrDefaultAsync<T>(command).ConfigureAwait(false);
             }
         }

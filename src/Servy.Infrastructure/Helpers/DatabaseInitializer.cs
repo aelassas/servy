@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Data;
-using Servy.Infrastructure.Data;
-using System.Data;
+using System.Data.Common;
 
 namespace Servy.Infrastructure.Helpers
 {
@@ -14,7 +13,7 @@ namespace Servy.Infrastructure.Helpers
         /// </summary>
         /// <param name="dbContext">The database context. Cannot be null.</param>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="dbContext"/> is null.</exception>
-        public static void InitializeDatabase(IAppDbContext dbContext, Action<IDbConnection> initializer)
+        public static void InitializeDatabase(IAppDbContext dbContext, Action<DbConnection> initializer)
         {
             if (dbContext == null) throw new ArgumentNullException(nameof(dbContext));
             if (initializer == null) throw new ArgumentNullException(nameof(initializer));

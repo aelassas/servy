@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Infrastructure.Helpers;
-using System.Data;
+using System.Data.Common;
 
 namespace Servy.Infrastructure.UnitTests.Helpers
 {
@@ -25,7 +25,7 @@ namespace Servy.Infrastructure.UnitTests.Helpers
         [Fact]
         public void InitializeDatabase_CallsInitializer_WithConnection()
         {
-            var mockConnection = new Mock<IDbConnection>();
+            var mockConnection = new Mock<DbConnection>();
             var mockDbContext = new Mock<IAppDbContext>();
             mockDbContext.Setup(c => c.CreateConnection()).Returns(mockConnection.Object);
 

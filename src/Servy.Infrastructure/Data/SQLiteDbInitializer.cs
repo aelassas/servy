@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Servy.Infrastructure.Data
@@ -14,7 +15,7 @@ namespace Servy.Infrastructure.Data
         /// Creates or updates the <c>Services</c> table and necessary indexes.
         /// </summary>
         /// <param name="connection">An open database connection to execute commands on.</param>
-        public static void Initialize(IDbConnection connection)
+        public static void Initialize(DbConnection connection)
         {
             var createTableSql = @"
             CREATE TABLE IF NOT EXISTS Services (
@@ -79,7 +80,7 @@ namespace Servy.Infrastructure.Data
         /// Ensures that all expected columns exist in the Services table.
         /// Adds missing columns for backward compatibility.
         /// </summary>
-        private static void EnsureColumns(IDbConnection connection)
+        private static void EnsureColumns(DbConnection connection)
         {
             // Use dynamic since PRAGMA returns multiple columns
             var existingColumns = new HashSet<string>(
