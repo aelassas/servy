@@ -447,6 +447,11 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> SearchAsync(string keyword, bool decrypt = true, CancellationToken cancellationToken = default)
         {
+            if (string.IsNullOrWhiteSpace(keyword))
+            {
+                return await GetAllAsync(decrypt, cancellationToken);
+            }
+
             var sql = @"
         SELECT *
         FROM Services
@@ -454,7 +459,7 @@ namespace Servy.Infrastructure.Data
             OR LOWER(Description) LIKE @Pattern ESCAPE '\'
         ORDER BY LOWER(Name) COLLATE NOCASE ASC;";
 
-            var escapedKeyword = keyword?.Trim().ToLower()
+            var escapedKeyword = keyword.Trim().ToLower()
                 .Replace(@"\", @"\\")
                 .Replace("%", @"\%")
                 .Replace("_", @"\_");
