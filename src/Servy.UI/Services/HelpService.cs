@@ -6,6 +6,7 @@ using Servy.Core.Logging;
 using System;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.UI.Services
@@ -40,21 +41,26 @@ namespace Servy.UI.Services
         /// <inheritdoc />
         public async Task CheckUpdates(string caption)
         {
+            const string noUpdate = "No updates currently available.";
+            const string updateAvailable = "A new version of Servy is available. Do you want to download it?";
+            const string timeoutMessage = "The update check timed out. Please try again later.";
+
             try
             {
-                const string noUpdate = "No updates currently available.";
-                const string updateAvailable = "A new version of Servy is available. Do you want to download it?";
-
+                // 10 seconds is the ideal 'patience window' for a manual UI trigger
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
                 using (var http = new HttpClient())
                 {
                     http.DefaultRequestHeaders.UserAgent.ParseAdd("ServyApp");
 
-                    // Get latest release from GitHub API
                     var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
-                    var response = await http.GetStringAsync(url);
 
-                    // Parse JSON response
-                    var json = JsonConvert.DeserializeObject<JObject>(response);
+                    // GetAsync responds to the CancellationToken
+                    var response = await http.GetAsync(url, cts.Token);
+                    response.EnsureSuccessStatusCode();
+
+                    var content = await response.Content.ReadAsStringAsync();
+                    var json = JsonConvert.DeserializeObject<JObject>(content);
                     string tagName = json?["tag_name"]?.ToString();
 
                     if (string.IsNullOrEmpty(tagName))
@@ -63,17 +69,14 @@ namespace Servy.UI.Services
                         return;
                     }
 
-                    // Convert version tag to double (e.g., "v1.2" -> 1.2)
                     var latestVersion = Helper.ParseVersion(tagName);
                     var currentVersion = Helper.ParseVersion(AppConfig.Version);
 
                     if (latestVersion > currentVersion)
                     {
-                        var res =await _messageBoxService.ShowConfirmAsync(updateAvailable, caption);
-
+                        var res = await _messageBoxService.ShowConfirmAsync(updateAvailable, caption);
                         if (res)
                         {
-                            // Open latest release page
                             Process.Start(new ProcessStartInfo
                             {
                                 FileName = AppConfig.LatestReleaseLink,
@@ -86,6 +89,12 @@ namespace Servy.UI.Services
                         await _messageBoxService.ShowInfoAsync(noUpdate, caption);
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                // Specific handling for the 10-second timeout
+                Logger.Warn("Update check timed out.");
+                await _messageBoxService.ShowErrorAsync(timeoutMessage, caption);
             }
             catch (Exception ex)
             {
