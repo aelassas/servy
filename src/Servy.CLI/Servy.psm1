@@ -131,9 +131,6 @@ function Add-Arg {
         return $list
     }
 
-    # Escape internal double quotes with backslashes (Windows convention, not PowerShell's "")
-    $escapedValue = $value.Replace('"', '\"')
-
     # Escape backslashes before quotes (must be done BEFORE escaping quotes)
     $escapedValue = $value -replace '(\\+)"', '$1$1\"'
     # Then escape any remaining standalone quotes
