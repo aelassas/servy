@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -25,7 +26,6 @@ namespace Servy.Manager
     /// </summary>
     public partial class App : Application
     {
-
         #region Constants
 
         /// <summary>
@@ -163,9 +163,8 @@ namespace Servy.Manager
                         Shutdown();
                     });
                 }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
         }
-
 
         /// <summary>
         /// Raises the <see cref="Application.Exit"/> event.
@@ -431,7 +430,6 @@ namespace Servy.Manager
         }
 
         #endregion
-
     }
 
 }

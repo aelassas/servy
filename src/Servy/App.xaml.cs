@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
@@ -25,7 +26,6 @@ namespace Servy
     /// </summary>
     public partial class App : Application
     {
-
         #region Constants
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace Servy
                         Shutdown();
                     });
                 }
-            }, TaskContinuationOptions.OnlyOnFaulted);
+            }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         /// <summary>
@@ -392,6 +392,5 @@ namespace Servy
         }
 
         #endregion
-
     }
 }
