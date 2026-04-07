@@ -24,7 +24,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class ConsoleViewModel : ViewModelBase
     {
-
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
@@ -330,7 +329,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 // Log the error so we know why the resume failed
-                Logger.Error("Failed to resume/switch logs.", ex);
+                _logger.Error("Failed to resume/switch logs.", ex);
             }
         }
 
@@ -389,7 +388,7 @@ namespace Servy.Manager.ViewModels
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)
-                        Logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
+                        _logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
@@ -493,7 +492,7 @@ namespace Servy.Manager.ViewModels
                 // Log every 10th error to prevent bloating while maintaining observability
                 if (_tickErrorCount % 10 == 1)
                 {
-                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
+                    _logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
                 }
             }
         }
@@ -627,6 +626,5 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
-
     }
 }
