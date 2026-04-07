@@ -1,0 +1,70 @@
+# ==============================================================================
+# GitHub Composite Action — Setup Custom .NET
+# ------------------------------------------------------------------------------
+# Security: Prevents script injection by mapping user-controlled inputs 
+# to environment variables instead of using inline expressions in 'run' blocks.
+# ==============================================================================
+
+name: 'Setup Custom .NET'
+description: 'Installs a specific .NET SDK version using the dotnet-install script'
+
+inputs:
+  version:
+    description: '.NET version to install'
+    required: true
+    default: '10.0'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install .NET SDK
+      shell: powershell
+      # Map the input to an env variable to prevent command injection
+      env:
+        DOTNET_VERSION: ${{ inputs.version }}
+      run: |
+        $ErrorActionPreference = "Stop"
+
+        $url = "https://dot.net/v1/dotnet-install.ps1"
+        $installDir = "$env:RUNNER_TEMP\dotnet"
+
+        $maxRetries = 5
+        for ($i = 0; $i -lt $maxRetries; $i++) {
+          curl.exe -L $url -o dotnet-install.ps1
+
+          if ($LASTEXITCODE -eq 0) {
+            break
+          }
+
+          if ($i -eq ($maxRetries - 1)) {
+            throw "Failed to download dotnet-install.ps1 after $maxRetries attempts"
+          }
+
+          Start-Sleep -Seconds 3
+        }
+        
+        # Install dotnet
+        New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+
+        powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
+        -Channel "$env:DOTNET_VERSION" `
+        -InstallDir $installDir
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "dotnet-install.ps1 failed with exit code $LASTEXITCODE"
+        }
+        
+        $dotnet = Join-Path $installDir "dotnet.exe"
+
+        if (!(Test-Path $dotnet)) {
+          throw "dotnet was not installed correctly"
+        }
+
+        & $dotnet --version
+
+        Add-Content -Path $env:GITHUB_PATH -Value $installDir
+        Add-Content -Path $env:GITHUB_ENV -Value "DOTNET_ROOT=$installDir"
+
+    - name: Check .NET version
+      shell: pwsh
+      run: dotnet --version
