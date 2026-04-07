@@ -384,7 +384,12 @@ namespace Servy.Manager.ViewModels
                     RequestScroll?.Invoke(false);
                 }, DispatcherPriority.Background);
             };
-            _ = tailer.RunFromPosition(path, type, pos, created, token);
+            _ = tailer.RunFromPosition(path, type, pos, created, token)
+                .ContinueWith(t =>
+                {
+                    if (t.IsFaulted)
+                        Logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <summary>
