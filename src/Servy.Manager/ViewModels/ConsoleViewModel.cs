@@ -46,6 +46,7 @@ namespace Servy.Manager.ViewModels
         private string _stderrPath;
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
+        private int _tickErrorCount = 0;
 
         #endregion
 
@@ -493,9 +494,12 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                // Log the error so it's visible in 'Servy.Manager.log'
-                // This ensures developers can diagnose why the UI stopped updating.
-                Logger.Error($"Background tick failed in {GetType().Name}", ex);
+                _tickErrorCount++;
+                // Log every 10th error to prevent bloating while maintaining observability
+                if (_tickErrorCount % 10 == 1)
+                {
+                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
+                }
             }
         }
 
