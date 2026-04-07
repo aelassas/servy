@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Servy.Core.Security
 {
@@ -13,10 +14,38 @@ namespace Servy.Core.Security
     [ExcludeFromCodeCoverage]
     public class ProtectedKeyProvider : IProtectedKeyProvider
     {
+        #region Security & Synchronization Settings
+
+        /// <summary>
+        /// The protection scope used for DPAPI operations. 
+        /// <see cref="DataProtectionScope.LocalMachine"/> is used to allow the service to access 
+        /// the keys regardless of the specific user account context (e.g., SYSTEM vs. Service Account).
+        /// </summary>
+        private static readonly DataProtectionScope DataProtectionScope = DataProtectionScope.LocalMachine;
+
+        /// <summary>
+        /// Static entropy used to restrict decryption to processes that possess this specific byte sequence.
+        /// This provides an additional layer of security over the default <see cref="DataProtectionScope.LocalMachine"/> 
+        /// by ensuring only applications with this entropy can unprotect the data.
+        /// </summary>
+        private static readonly byte[] AdditionalEntropy = Encoding.UTF8.GetBytes("Servy-Entropy-Secure-Key-Storage");
+
+        /// <summary>
+        /// Synchronization object used to prevent race conditions during file I/O operations,
+        /// ensuring thread-safe generation and storage of key material.
+        /// </summary>
+        private static readonly object FileLock = new object();
+
+        #endregion
+
+        #region Private Fields
+
         private readonly string _keyFilePath;
         private readonly string _ivFilePath;
 
-        private static readonly object FileLock = new object(); // Prevents race conditions
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProtectedKeyProvider"/> class.
@@ -38,14 +67,23 @@ namespace Servy.Core.Security
                 throw new ArgumentException("Key and IV must use different file paths");
         }
 
+        #endregion
+
+        #region IProtectedKeyProvider Implementation
+
         ///<inheritdoc/>
         public byte[] GetKey() => GetOrGenerate(_keyFilePath, 32);
 
         ///<inheritdoc/>
         public byte[] GetIV() => GetOrGenerate(_ivFilePath, 16);
 
+        #endregion
+
+        #region Private Helpers
+
         /// <summary>
-        /// Retrieves the protected bytes from the specified file path, or generates and saves new ones if the file does not exist.
+        /// Retrieves the protected bytes from the specified file path, or generates new ones if the file is missing.
+        /// Supports backward compatibility by falling back to no-entropy decryption.
         /// </summary>
         /// <param name="path">The full filesystem path where the protected data is stored.</param>
         /// <param name="length">The number of random bytes to generate if the file is missing.</param>
@@ -80,8 +118,30 @@ namespace Servy.Core.Security
             try
             {
                 encrypted = File.ReadAllBytes(path);
-                // DataProtectionScope.LocalMachine allows any process on this computer to unprotect the data.
-                return ProtectedData.Unprotect(encrypted, null, DataProtectionScope.LocalMachine);
+
+                try
+                {
+                    // Attempt to unprotect using additional entropy (current security standard).
+                    return ProtectedData.Unprotect(encrypted, AdditionalEntropy, DataProtectionScope);
+                }
+                catch (CryptographicException)
+                {
+                    // Fallback for backward compatibility: attempt to unprotect without entropy.
+                    byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, DataProtectionScope);
+
+                    try
+                    {
+                        // Migration: re-encrypt the file with additional entropy for future use.
+                        SaveProtected(path, decryptedData);
+                        return decryptedData;
+                    }
+                    catch
+                    {
+                        // If migration fails, still return the data so the service can start, 
+                        // but it will try to migrate again next time.
+                        return decryptedData;
+                    }
+                }
             }
             catch (CryptographicException ex)
             {
@@ -96,7 +156,7 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Protects the given byte array and writes it to the specified file path.
+        /// Protects the given byte array using LocalMachine scope and additional entropy.
         /// </summary>
         /// <param name="path">The file path to store the protected data.</param>
         /// <param name="data">The data to protect.</param>
@@ -105,14 +165,14 @@ namespace Servy.Core.Security
             byte[] encrypted = null;
             try
             {
-                // Ensure the target folder exists before writing
                 var directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                encrypted = ProtectedData.Protect(data, null, DataProtectionScope.LocalMachine);
+                // Encrypt data with DPAPI using the machine-specific key and additional entropy.
+                encrypted = ProtectedData.Protect(data, AdditionalEntropy, DataProtectionScope);
                 File.WriteAllBytes(path, encrypted);
             }
             finally
@@ -135,5 +195,7 @@ namespace Servy.Core.Security
             }
             return buffer;
         }
+
+        #endregion
     }
 }
