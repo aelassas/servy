@@ -23,6 +23,7 @@ namespace Servy.Core.IO
         private readonly long _rotationSizeInBytes;
         private readonly bool _enableDateRotation;
         private readonly DateRotationType _dateRotationType;
+        private bool _useLocalTimeForRotation;
         private DateTime _lastRotationDate;
         private readonly int _maxRotations; // 0 = unlimited
         private readonly object _lock = new object();
@@ -44,6 +45,7 @@ namespace Servy.Core.IO
         /// Ignored when <paramref name="enableDateRotation"/> is <c>false</c>.
         /// </param>
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
         /// <remarks>
         /// When both size-based and date-based rotation are enabled,
         /// size rotation takes precedence. If a size-based rotation occurs,
@@ -55,7 +57,8 @@ namespace Servy.Core.IO
             long rotationSizeInBytes,
             bool enableDateRotation,
             DateRotationType dateRotationType,
-            int maxRotations)
+            int maxRotations,
+            bool useLocalTimeForRotation)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -71,10 +74,11 @@ namespace Servy.Core.IO
             _rotationSizeInBytes = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
-            _lastRotationDate = File.Exists(path) ? File.GetLastWriteTime(path) : DateTime.Now; // baseline for date rotation
+            var now = useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+            var lastWriteTime = useLocalTimeForRotation ? File.GetLastWriteTime(path) : File.GetLastWriteTimeUtc(path);
+            _lastRotationDate = File.Exists(path) ? lastWriteTime : now; // baseline for date rotation
             _maxRotations = maxRotations;
-
-            // LAZY INIT: We no longer call InitializeWriter() here in the constructor.
+            _useLocalTimeForRotation = useLocalTimeForRotation;
         }
 
         /// <summary>
@@ -167,12 +171,21 @@ namespace Servy.Core.IO
         /// </summary>
         private bool ShouldRotateByDate()
         {
-            var now = DateTime.Now;
+            var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
 
             switch (_dateRotationType)
             {
                 case DateRotationType.Daily:
-                    return now.Date > _lastRotationDate.Date;
+                    if (now.Date > _lastRotationDate.Date)
+                    {
+                        // If using local time, ensure at least 23 hours have passed to avoid DST duplicate rotations
+                        if (_useLocalTimeForRotation)
+                        {
+                            return (now - _lastRotationDate).TotalHours >= 23;
+                        }
+                        return true;
+                    }
+                    return false;
 
                 case DateRotationType.Weekly:
                     var lastWeek = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
@@ -217,7 +230,8 @@ namespace Servy.Core.IO
             if (rotateBySize)
             {
                 Rotate();
-                _lastRotationDate = DateTime.Now;
+                var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                _lastRotationDate = now;
                 return;
             }
 
@@ -230,7 +244,7 @@ namespace Servy.Core.IO
             if (rotateByDate)
             {
                 Rotate();
-                _lastRotationDate = DateTime.Now;
+                _lastRotationDate = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
             }
         }
 
@@ -348,7 +362,8 @@ namespace Servy.Core.IO
 
                 CloseWriter();
 
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                var timestamp = now.ToString("yyyyMMdd_HHmmss");
 
                 var directory = Path.GetDirectoryName(_file.FullName);
                 var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);

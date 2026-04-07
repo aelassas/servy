@@ -365,6 +365,7 @@ namespace Servy.Core.Services
                     EnableDateRotation = options.EnableDateRotation,
                     DateRotationType = (int)options.DateRotationType,
                     MaxRotations = options.MaxRotations,
+                    UseLocalTimeForRotation = options.UseLocalTimeForRotation,
                     EnableHealthMonitoring = options.EnableHealthMonitoring,
                     HeartbeatInterval = options.HeartbeatInterval,
                     MaxFailedChecks = options.MaxFailedChecks,

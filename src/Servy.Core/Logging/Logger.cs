@@ -26,6 +26,7 @@ namespace Servy.Core.Logging
         private static string _fileName;
         private static long _logRotationSizeMB = DefaultLogRotationSizeMB;
         private static DateRotationType _dateRotationType;
+        private static bool _useLocalTimeForRotation;
 
         /// <summary>
         /// The maximum number of backup log files to keep. 
@@ -44,7 +45,14 @@ namespace Servy.Core.Logging
         /// Specifies the interval (Daily, Weekly, Monthly) for time-based log rotation. 
         /// Defaults to <see cref="DateRotationType.None"/>.
         /// </param>
-        public static void Initialize(string fileName, LogLevel initialLevel = LogLevel.Info, int logRotationSizeMB = 10, DateRotationType dateRotationType = DateRotationType.None)
+        /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
+        public static void Initialize(
+            string fileName,
+            LogLevel initialLevel = LogLevel.Info,
+            int logRotationSizeMB = 10,
+            DateRotationType dateRotationType = DateRotationType.None,
+            bool useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation
+            )
         {
             lock (_lock)
             {
@@ -52,6 +60,7 @@ namespace Servy.Core.Logging
                 _currentLogLevel = initialLevel;
                 _logRotationSizeMB = logRotationSizeMB;
                 _dateRotationType = dateRotationType;
+                _useLocalTimeForRotation = useLocalTimeForRotation;
 
                 InternalInitialize();
             }
@@ -86,7 +95,8 @@ namespace Servy.Core.Logging
                     rotationSizeInBytes: rotationSizeInBytes,
                     enableDateRotation: _dateRotationType != DateRotationType.None,
                     dateRotationType: _dateRotationType,
-                    maxRotations: MaxBackupFiles
+                    maxRotations: MaxBackupFiles,
+                    useLocalTimeForRotation: _useLocalTimeForRotation
                 );
             }
             catch (Exception ex)
@@ -151,6 +161,42 @@ namespace Servy.Core.Logging
                     _dateRotationType = dateRotationType;
 
                     // If we have an active writer, recreate it to apply the new size constraint
+                    if (_writer != null)
+                    {
+                        InternalInitialize();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Updates the time context used for log rotation calculations at runtime.
+        /// </summary>
+        /// <param name="useLocalTimeForRotation">
+        /// <c>true</c> to rotate logs based on the server's local system time; 
+        /// <c>false</c> to use Coordinated Universal Time (UTC).
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// Changing this value at runtime triggers a thread-safe update. If a log writer is currently 
+        /// active, it will be re-initialized to ensure subsequent rotation checks immediately 
+        /// respect the new time context.
+        /// </para>
+        /// <para>
+        /// Note: Transitioning from UTC to Local (or vice versa) while a log file is open may result 
+        /// in a one-time rotation delay or premature rotation if the offset between the two time 
+        /// standards crosses a rotation boundary (e.g., midnight).
+        /// </para>
+        /// </remarks>
+        public static void SetUseLocalTimeForRotation(bool useLocalTimeForRotation)
+        {
+            lock (_lock)
+            {
+                if (_useLocalTimeForRotation != useLocalTimeForRotation)
+                {
+                    _useLocalTimeForRotation = useLocalTimeForRotation;
+
+                    // If we have an active writer, recreate it to apply the new time context
                     if (_writer != null)
                     {
                         InternalInitialize();

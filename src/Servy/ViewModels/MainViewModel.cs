@@ -216,7 +216,7 @@ namespace Servy.ViewModels
 
         /// <summary>
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
-        /// </summary>
+        /// </summary>UseLocalTimeForRotation
         public bool EnableSizeRotation
         {
             get => _config.EnableSizeRotation;
@@ -282,6 +282,26 @@ namespace Servy.ViewModels
         {
             get => _config.MaxRotations;
             set { _config.MaxRotations = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether log rotation should follow the local system time.
+        /// </summary>
+        /// <value>
+        /// <para>When <c>true</c>, logs rotate at local midnight (e.g., 00:00:00 according to the taskbar clock). 
+        /// This is generally more intuitive for users manually inspecting log files.</para>
+        /// <para>When <c>false</c>, logs rotate at UTC midnight. This provides a consistent 24-hour cycle 
+        /// that is unaffected by Daylight Saving Time transitions.</para>
+        /// <para>This property updates the underlying configuration and notifies the UI of the change.</para>
+        /// </value>
+        public bool UseLocalTimeForRotation
+        {
+            get => _config.UseLocalTimeForRotation;
+            set
+            {
+                _config.UseLocalTimeForRotation = value;
+                OnPropertyChanged(nameof(UseLocalTimeForRotation));
+            }
         }
 
         /// <summary>
@@ -813,6 +833,7 @@ namespace Servy.ViewModels
             EnableDateRotation = false;
             SelectedDateRotationType = DateRotationType.Daily;
             MaxRotations = DefaultMaxRotations.ToString();
+            UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
             SelectedRecoveryAction = RecoveryAction.RestartService;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
@@ -1154,7 +1175,9 @@ namespace Servy.ViewModels
 
                 _config.PostStopExecutablePath,
                 _config.PostStopStartupDirectory,
-                _config.PostStopParameters
+                _config.PostStopParameters,
+
+                _config.UseLocalTimeForRotation
                 );
         }
 
@@ -1231,6 +1254,7 @@ namespace Servy.ViewModels
             StderrPath = string.Empty;
             EnableHealthMonitoring = false;
             SelectedRecoveryAction = RecoveryAction.RestartService;
+            UseLocalTimeForRotation = DefaultUseLocalTimeForRotation;
             HeartbeatInterval = DefaultHeartbeatInterval.ToString();
             MaxFailedChecks = DefaultMaxFailedChecks.ToString();
             MaxRestartAttempts = DefaultMaxRestartAttempts.ToString();
@@ -1388,6 +1412,7 @@ namespace Servy.ViewModels
             EnableDateRotation = dto.EnableDateRotation ?? false;
             SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
             MaxRotations = dto.MaxRotations == null ? DefaultMaxRotations.ToString() : dto.MaxRotations.ToString();
+            UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation;
             EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false;
             HeartbeatInterval = dto.HeartbeatInterval == null ? DefaultHeartbeatInterval.ToString() : dto.HeartbeatInterval.ToString();
             MaxFailedChecks = dto.MaxFailedChecks == null ? DefaultMaxFailedChecks.ToString() : dto.MaxFailedChecks.ToString();
@@ -1465,6 +1490,7 @@ namespace Servy.ViewModels
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = (int)SelectedDateRotationType,
                 MaxRotations = int.TryParse(MaxRotations, out var mrs) ? mrs : 0,
+                UseLocalTimeForRotation = UseLocalTimeForRotation,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(HeartbeatInterval, out var hi) ? hi : 0,
                 MaxFailedChecks = int.TryParse(MaxFailedChecks, out var mf) ? mf : 0,

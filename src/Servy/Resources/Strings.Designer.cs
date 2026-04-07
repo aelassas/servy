@@ -836,6 +836,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Use local time for log rotation (Default: UTC).
+        /// </summary>
+        public static string Label_UseLocalTimeForRotation {
+            get {
+                return ResourceManager.GetString("Label_UseLocalTimeForRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à User Account.
         /// </summary>
         public static string Label_UserAccount {

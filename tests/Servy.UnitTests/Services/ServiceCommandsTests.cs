@@ -44,6 +44,7 @@ namespace Servy.UnitTests.Services
             var stderrPath = @"C:\logs\stderr.log";
             var enableRotation = true;
             var rotationSize = "10"; // 10 MB
+            var useLocalTimeForRotation = true;
             var enableHealthMonitoring = true;
             var heartbeatInterval = "30";
             var maxFailedChecks = "3";
@@ -151,7 +152,8 @@ namespace Servy.UnitTests.Services
 
                 postStopExe,
                 postStopDir,
-                postStopArgs
+                postStopArgs,
+                useLocalTimeForRotation
                 );
 
             // Assert
@@ -215,7 +217,9 @@ namespace Servy.UnitTests.Services
 
                 postStopExe,
                 postStopDir,
-                postStopArgs
+                postStopArgs,
+
+                useLocalTimeForRotation
 
                 ), Times.Once);
         }

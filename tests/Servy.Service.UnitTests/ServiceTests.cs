@@ -45,8 +45,8 @@ namespace Servy.Service.UnitTests
             _mockTimer = new Mock<ITimer>();
             _mockProcess = new Mock<IProcessWrapper>();
 
-            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>()))
-                .Returns((string path, bool enableSizeRotation, long size, bool enableDateRotation, DateRotationType dateRotationType, int maxRotations) =>
+            _mockStreamWriterFactory.Setup(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()))
+                .Returns((string path, bool enableSizeRotation, long size, bool enableDateRotation, DateRotationType dateRotationType, int maxRotations, bool useLocalTimeForRotation) =>
                 {
                     if (path.Contains("stdout"))
                         return _mockStdoutWriter.Object;
@@ -90,8 +90,10 @@ namespace Servy.Service.UnitTests
                 RotationSizeInBytes = 1024,
                 HeartbeatInterval = 10,
                 MaxFailedChecks = 3,
+                EnableHealthMonitoring = true,
                 RecoveryAction = RecoveryAction.RestartProcess,
-                MaxRestartAttempts = 2
+                MaxRestartAttempts = 2,
+                UseLocalTimeForRotation = true
             };
 
             _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object))
@@ -104,8 +106,8 @@ namespace Servy.Service.UnitTests
             _service.StartForTest();
 
             // Assert
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations), Times.Once);
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
             _mockServiceHelper.Verify(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object), Times.Once);
 
@@ -265,7 +267,8 @@ namespace Servy.Service.UnitTests
             {
                 StdOutPath = "valid_stdout.log",
                 StdErrPath = "valid_stderr.log",
-                RotationSizeInBytes = 12345
+                RotationSizeInBytes = 12345,
+                UseLocalTimeForRotation = true,
             };
 
             // Simulate Helper.IsValidPath always true for testing
@@ -274,10 +277,10 @@ namespace Servy.Service.UnitTests
             var mockStdOutWriter = new Mock<IStreamWriter>();
             var mockStdErrWriter = new Mock<IStreamWriter>();
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdOutWriter.Object);
 
-            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations))
+            mockStreamWriterFactory.Setup(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation))
                 .Returns(mockStdErrWriter.Object);
 
             mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
@@ -286,8 +289,8 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations), Times.Once);
-            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
+            mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
 
             // Check no errors logged
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
@@ -331,7 +334,7 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>()), Times.Never);
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
 
             mockLogger.Verify(l => l.Error(It.Is<string>(msg => msg.Contains("Invalid log file path")), null), Times.Exactly(2));
 
@@ -372,7 +375,7 @@ namespace Servy.Service.UnitTests
             service.InvokeHandleLogWriters(options);
 
             // Assert
-            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>()), Times.Never);
+            mockStreamWriterFactory.Verify(f => f.Create(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<DateRotationType>(), It.IsAny<int>(), It.IsAny<bool>()), Times.Never);
             mockLogger.Verify(l => l.Error(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
         }
 

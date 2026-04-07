@@ -132,7 +132,9 @@ namespace Servy.Services
 
             string postStopProgramPath,
             string postStopProgramWorkingDirectory,
-            string postStopProgramArgs
+            string postStopProgramArgs,
+
+            bool useLocalTimeForRotation
             )
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
@@ -161,6 +163,7 @@ namespace Servy.Services
                 EnableDateRotation = enableDateRotation,
                 DateRotationType = (int)dateRotationType,
                 MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
+                UseLocalTimeForRotation = useLocalTimeForRotation,
                 EnableHealthMonitoring = enableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : -1,
                 MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : -1,
@@ -256,6 +259,7 @@ namespace Servy.Services
                     StderrPath = stderrPath,
                     EnableSizeRotation = enableSizeRotation,
                     RotationSizeInBytes = rotationSizeValue,
+                    UseLocalTimeForRotation = useLocalTimeForRotation,
                     EnableHealthMonitoring = enableHealthMonitoring,
                     HeartbeatInterval = heartbeatIntervalValue,
                     MaxFailedChecks = maxFailedChecksValue,

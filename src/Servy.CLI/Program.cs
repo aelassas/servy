@@ -105,6 +105,14 @@ namespace Servy.CLI
                     Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
                 }
 
+                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+
+                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
+                {
+                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                }
+                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
                 // Initialize shared dependencies
                 var dbContext = new AppDbContext(connectionString);
                 var dapperExecutor = new DapperExecutor(dbContext);

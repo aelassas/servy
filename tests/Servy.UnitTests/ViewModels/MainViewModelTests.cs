@@ -73,6 +73,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.StderrPath = "err.log";
             _viewModel.EnableSizeRotation = true;
             _viewModel.RotationSize = "12345";
+            _viewModel.UseLocalTimeForRotation = true;
             _viewModel.EnableHealthMonitoring = true;
             _viewModel.HeartbeatInterval = "60";
             _viewModel.MaxFailedChecks = "5";
@@ -182,9 +183,9 @@ namespace Servy.UnitTests.ViewModels
 
                   @"C:\post-stop\post-stop.exe",
                   @"C:\post-stop",
-                  "post-stop-args"
+                  "post-stop-args",
 
-
+                  true
             ), Times.Once);
         }
 

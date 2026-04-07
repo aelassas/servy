@@ -44,6 +44,12 @@ namespace Servy.Core.Services
         /// <summary>Size in bytes for log rotation. If 0, no rotation is performed.</summary>
         public ulong RotationSizeInBytes { get; set; } = AppConfig.DefaultRotationSize * 1024 * 1024;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// Default is <c>false</c> (UTC).
+        /// </summary>
+        public bool UseLocalTimeForRotation { get; set; } = false;
+
         /// <summary>Enable health monitoring.</summary>
         public bool EnableHealthMonitoring { get; set; } = false;
 

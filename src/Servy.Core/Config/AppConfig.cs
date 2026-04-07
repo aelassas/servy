@@ -173,6 +173,16 @@ namespace Servy.Core.Config
         public const int DefaultMaxRotations = 0;
 
         /// <summary>
+        /// The default value for <c>UseLocalTimeForRotation</c>.
+        /// </summary>
+        /// <remarks>
+        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>When set to <c>false</c>, log rotation intervals are calculated using Coordinated Universal Time (UTC). 
+        /// This ensures a consistent, monotonic rotation schedule that is unaffected by Daylight Saving Time transitions.</para>
+        /// </remarks>
+        public const bool DefaultUseLocalTimeForRotation = false;
+
+        /// <summary>
         /// Default heartbeat interval in seconds. Default is 30 seconds.
         /// </summary>
         public const int DefaultHeartbeatInterval = 30;

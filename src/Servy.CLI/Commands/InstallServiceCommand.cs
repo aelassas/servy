@@ -89,6 +89,7 @@ namespace Servy.CLI.Commands
                     StderrPath = opts.StderrPath,
                     EnableSizeRotation = opts.EnableRotation || opts.EnableSizeRotation,
                     RotationSizeInBytes = rotationSize,
+                    UseLocalTimeForRotation = opts.UseLocalTimeForRotation,
                     EnableHealthMonitoring = opts.EnableHealthMonitoring,
                     HeartbeatInterval = heartbeatInterval,
                     MaxFailedChecks = maxFailedChecks,

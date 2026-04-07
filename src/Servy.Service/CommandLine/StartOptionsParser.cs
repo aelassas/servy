@@ -52,6 +52,8 @@ namespace Servy.Service.CommandLine
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
                 RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024 * 1024, // Convert from MB to Bytes
+                UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
+                EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? 0,
                 MaxFailedChecks = serviceDto.MaxFailedChecks ?? 0,
                 RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : RecoveryAction.None,

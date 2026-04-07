@@ -69,6 +69,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{931305A8-9
 	ProjectSection(SolutionItems) = preProject
 		tests\data\Service.json = tests\data\Service.json
 		tests\data\Service.xml = tests\data\Service.xml
+		tests\data\Wexflow.json = tests\data\Wexflow.json
+		tests\data\Wexflow.xml = tests\data\Wexflow.xml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Infrastructure", "src\Servy.Infrastructure\Servy.Infrastructure.csproj", "{2ED3B3E9-1132-4AA4-A487-85848ABCCC1A}"

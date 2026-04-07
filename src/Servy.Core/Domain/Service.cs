@@ -122,6 +122,18 @@ namespace Servy.Core.Domain
         public int MaxRotations { get; set; } = AppConfig.DefaultMaxRotations;
 
         /// <summary>
+        /// Gets or sets a value indicating whether to use local system time for log rotation.
+        /// </summary>
+        /// <remarks>
+        /// <para>Default is <c>false</c> (UTC).</para>
+        /// <para>Set to <c>true</c> to rotate logs based on the server's local time (e.g., exactly at local midnight). 
+        /// This is often preferred for manual log inspection but can be affected by Daylight Saving Time transitions.</para>
+        /// <para>Set to <c>false</c> to use Coordinated Universal Time (UTC). 
+        /// This ensures a consistent, 24-hour rotation interval regardless of time zone or DST changes.</para>
+        /// </remarks>
+        public bool UseLocalTimeForRotation { get; set; } = AppConfig.DefaultUseLocalTimeForRotation;
+
+        /// <summary>
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// Default is false.
         /// </summary>
@@ -452,6 +464,7 @@ namespace Servy.Core.Domain
                 EnableSizeRotation = EnableRotation,
                 RotationSizeInBytes = (ulong)RotationSize * 1024 * 1024,
                 EnableHealthMonitoring = EnableHealthMonitoring,
+                UseLocalTimeForRotation = UseLocalTimeForRotation,
                 HeartbeatInterval = HeartbeatInterval,
                 MaxFailedChecks = MaxFailedChecks,
                 RecoveryAction = RecoveryAction,
@@ -495,7 +508,7 @@ namespace Servy.Core.Domain
 
                 PostStopExePath = PostStopExecutablePath,
                 PostStopWorkingDirectory = PostStopStartupDirectory,
-                PostStopArgs = PostStopParameters
+                PostStopArgs = PostStopParameters,
             };
 
             return await _serviceManager.InstallServiceAsync(options);

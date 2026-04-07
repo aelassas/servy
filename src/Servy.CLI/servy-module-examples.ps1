@@ -44,6 +44,7 @@ $installParams = @{
     EnableDateRotation        = $true
     DateRotationType          = "Weekly"
     MaxRotations              = 3
+    UseLocalTimeForRotation   = $true
 
     Stdout                    = "C:\Windows\Temp\dummy-stdout.log"
     Stderr                    = "C:\Windows\Temp\dummy-stderr.log"
