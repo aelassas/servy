@@ -27,6 +27,13 @@
       - The 'Servy' Event Source must be registered in the Application log.
       - Network access to the configured SMTP server.
 
+    Setup (Secure Credentials):
+      To avoid hardcoding passwords, this script requires an encrypted XML credential file.
+      Run the following command as the user account that will execute the Scheduled Task:
+      
+      $cred = Get-Credential
+      $cred | Export-Clixml (Join-Path "C:\Path\To\Servy" "smtp-cred.xml")
+
 .EXAMPLE
     .\ServyFailureEmail.ps1
     Processes all new Servy errors since the last run and sends individual email alerts.
@@ -42,37 +49,65 @@
 # Email notification function
 # -------------------------------
 function Send-NotificationEmail {
+<#
+.SYNOPSIS
+    Sends an HTML-formatted email notification via SMTP.
+
+.DESCRIPTION
+    Constructs and sends an email using the System.Net.Mail.SmtpClient class. 
+    It securely retrieves credentials from an encrypted XML file (smtp-cred.xml) 
+    using Import-Clixml. This ensures that no plaintext passwords are stored 
+    within the script body.
+
+.PARAMETER Subject
+    The subject line of the email.
+
+.PARAMETER Body
+    The HTML content of the email body.
+
+.EXAMPLE
+    Send-NotificationEmail -Subject "Servy Alert" -Body "Service 'MySvc' failed."
+
+.NOTES
+    The credential file must be generated using Export-Clixml by the same user 
+    running this script, as the encryption is tied to the user's Windows profile (DPAPI).
+#>  
   [cmdletbinding()]
   Param (
     [string] $Subject,
     [string] [parameter(ValueFromPipeline)] $Body
   )
 
-  # ---------------------------------------------------------------
-  # IMPORTANT: These are placeholder values. Replace them before use.
-  # For production environments, consider using encrypted credentials:
-  #   $cred = Get-Credential
-  #   $cred | Export-Clixml "C:\Secure\smtp-cred.xml"
-  # Then load with:
-  #   $cred = Import-Clixml "C:\Secure\smtp-cred.xml"
-  # ---------------------------------------------------------------
-  $smtpServer = "smtp.example.com"
+  # --- CONFIGURATION ---
+  # Best Practice: Move these to a separate config file later.
+  $smtpServer = "smtp.example.com" 
   $smtpPort   = 587
-  $smtpUser   = "username@example.com"
-  $smtpPass   = "password"
   $from       = "servy.notifications@example.com"
   $to         = "admin@example.com"
+  
+  # Path to the encrypted credential file (created via Export-Clixml)
+  $credPath   = Join-Path $ModuleRoot "smtp-cred.xml"
+
+  # --- VALIDATION GATE ---
+  if ($smtpServer -eq "smtp.example.com") {
+      $warnMsg = "ServyFailureEmail: SMTP Server is still set to placeholder 'smtp.example.com'. Skipping email."
+      Write-FallbackError -Message $warnMsg -ModuleRoot $ModuleRoot
+      return $false
+  }
+
+  if (-not (Test-Path $credPath)) {
+      $warnMsg = "ServyFailureEmail: Credential file not found at '$credPath'. Please see script documentation to generate it."
+      Write-FallbackError -Message $warnMsg -ModuleRoot $ModuleRoot
+      return $false
+  }
 
   try {
-    $securePass = ConvertTo-SecureString $smtpPass -AsPlainText -Force
-    $cred = New-Object System.Management.Automation.PSCredential ($smtpUser, $securePass)
+    # Import-Clixml handles the decryption for the local user/machine automatically
+    $cred = Import-Clixml $credPath
 
     $smtp = New-Object System.Net.Mail.SmtpClient($smtpServer, $smtpPort)
-    $smtp.EnableSsl = $true # This replaces -UseSsl
-    
-    if ($null -ne $cred) {
-      $smtp.Credentials = $cred.GetNetworkCredential()
-    }
+    $smtp.EnableSsl = $true
+    $smtp.Credentials = $cred.GetNetworkCredential()
 
     $mailMessage = New-Object System.Net.Mail.MailMessage
     $mailMessage.From = $from
@@ -82,26 +117,40 @@ function Send-NotificationEmail {
     $mailMessage.IsBodyHtml = $true
 
     $smtp.Send($mailMessage)
+    return $true
   }
   catch {
-    $errorMsg = "ServyFailureEmail: Failed to send notification email for service '$serviceName'. Error: $_"
-    Write-Error $errorMsg
-
-    # Attempt to log to Windows Event Log as fallback
-    try {
-      Write-EventLog -LogName Application -Source "Servy" -EventId 9900 -EntryType Warning -Message $errorMsg -ErrorAction Stop
-    }
-    catch {
-      # Last resort: write to a local log file
-      $errorMsg | Out-File -FilePath (Join-Path $PSScriptRoot "ServyFailureEmail.log") -Append -ErrorAction SilentlyContinue
-    }
-
-    if ($null -ne $mailMessage) { $mailMessage.Dispose() }
-    if ($null -ne $smtp) { $smtp.Dispose() }
-    
+    $errorMsg = "ServyFailureEmail: Failed to send notification for service '$serviceName'. Error: $($_.Exception.Message)"
+    Write-FallbackError -Message $errorMsg -ModuleRoot $ModuleRoot
     exit 1
   }
+  finally {
+    if ($null -ne $mailMessage) { $mailMessage.Dispose() }
+    if ($null -ne $smtp) { $smtp.Dispose() }
+  }
 }
+
+# -------------------------------
+# Helper: Fallback Logging
+# -------------------------------
+function Write-FallbackError {
+    Param($Message, $ModuleRoot)
+    
+    # Immediate console visibility
+    Write-Host "ERROR: $Message" -ForegroundColor Red
+
+    try {
+        # Attempt to write to Application Log. Requires 'Servy' source to be registered.
+        Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
+                       -EntryType Warning -Message $Message -ErrorAction Stop
+    }
+    catch {
+        # Last resort: File log
+        $logFile = Join-Path $ModuleRoot "ServyFailureEmail.log"
+        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
+    }
+}
+
 # -------------------------------
 # 1. Determine Script Root (PS 2.0+ Compatible)
 # -------------------------------
@@ -197,6 +246,8 @@ foreach ($evt in $eventsToProcess) {
   [Environment]::NewLine + "Details: $logText"
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  Send-NotificationEmail -Subject $subject -Body $htmlBody
-  Write-Host "Email Notification sent for '$serviceName'."
+  # Check the return value of the function
+  if (Send-NotificationEmail -Subject $subject -Body $htmlBody) {
+      Write-Host "Email Notification sent for '$serviceName'."
+  }
 }
