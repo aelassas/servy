@@ -113,21 +113,21 @@ function Add-Arg {
   #>
   [CmdletBinding()]
   param(
-    $list,          # Existing argument list (Array)
+    [System.Collections.ArrayList] $list, # Performance: Use ArrayList to avoid O(n^2) array copying
     [string] $key,  # Argument key
     [string] $value,# Argument value
     [switch] $Flag  # Indicates a flag without a value
   )
 
   if ($Flag) {
-    [array]$list += $key.Trim()
+    [void]$list.Add($key.Trim())
   }
 
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
   elseif ($null -ne $value -and $value.Trim() -ne "") {
     # Fast path: no escaping needed if no special characters
     if ($value.IndexOf('"') -lt 0 -and $value.IndexOf('\') -lt 0) {
-        [array]$list += "$($key.Trim())=`"$value`""
+        [void]$list.Add("$($key.Trim())=`"$value`"")
         return $list
     }
 
@@ -141,7 +141,7 @@ function Add-Arg {
     # Double trailing backslashes
     $escapedValue = $escapedValue -replace '(\\+)$', '$1$1'
 
-    [array]$list += "$($key.Trim())=`"$escapedValue`""
+    [void]$list.Add("$($key.Trim())=`"$escapedValue`"")
   }
 
   return $list
