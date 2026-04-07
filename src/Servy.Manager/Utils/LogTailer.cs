@@ -170,7 +170,7 @@ namespace Servy.Manager.Utils
                     {
                         // Logic: The very last line in the file is 'lastWrite'
                         // Every line before it is 1 tick older.
-                        int offset = tempLines.Count - i;
+                        long offset = (tempLines.Count - i) * TimeSpan.TicksPerMillisecond;
                         DateTime syntheticTime = lastWrite.AddTicks(-offset);
 
                         lines.Add(new LogLine(tempLines[i], type, syntheticTime));
