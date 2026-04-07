@@ -3,6 +3,9 @@
     Displays Windows toast notifications for the latest Servy error events.
 
 .DESCRIPTION
+    This script leverages modern Windows Runtime (WinRT) APIs to provide 
+    interactive desktop alerts for service failures.
+    
     This script:
       1. Filters the Windows Application event log for errors related to 'Servy'.
       2. Retrieves all new errors since the last execution using a timestamp file.
@@ -10,17 +13,19 @@
       4. Shows individual Windows toast notifications for each failure.
 
 .NOTES
-    Author : Akram El Assas
-    Project: Servy
+    Author      : Akram El Assas
+    Project     : Servy
+    Repository  : https://github.com/aelassas/servy
+    
     Requirements:
-      - PowerShell 5.1+ (or PowerShell Core)
-      - Access to the Windows Application event log
-      - Running on Windows 10 or later for toast notifications
+      - PowerShell 5.1 or later (Required for WinRT and [Type]::new() syntax).
+      - Windows 10 (Build 10240+) or Windows 11.
+      - Access to the Windows Application event log.
+      - An active interactive user session (Toasts do not show in Session 0).
 
 .EXAMPLE
     .\ServyFailureNotification.ps1
     Displays a toast notification for the latest Servy error event.
-
 #>
 
 # -------------------------------
@@ -33,6 +38,14 @@ function Show-Notification {
         [string] $LogText,
         [string] $ModuleRoot
     )
+
+    # --- VERSION GATE ---
+    # WinRT projection and the ::new() constructor require PowerShell 5.0+.
+    if ($PSVersionTable.PSVersion.Major -lt 5) {
+        $verError = "ServyToast: Skipping toast for '$ServiceName'. Toasts require PowerShell 5.0+ (Detected: $($PSVersionTable.PSVersion.Major))."
+        Write-FallbackError -Message $verError -ModuleRoot $ModuleRoot
+        return
+    }
 
     $ToastTitle = "Servy - $ServiceName"
     
