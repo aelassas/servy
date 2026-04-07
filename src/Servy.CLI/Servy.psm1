@@ -250,9 +250,29 @@ function Invoke-ServyCli {
     # BEGIN ASYNC READ
     $process.BeginErrorReadLine()
 
-    # Read stdout synchronously
+    # Define a reasonable cap for CLI output (e.g., 1MB limit)
+    $maxStdoutChars = 1048576
+    $stdoutBuilder = New-Object System.Text.StringBuilder
+    $isTruncated = $false
+
+    # Read stdout synchronously, line-by-line to prevent OOM
     try {
-        $stdout = $process.StandardOutput.ReadToEnd()
+        while (-not $process.StandardOutput.EndOfStream) {
+            $line = $process.StandardOutput.ReadLine()
+            
+            if ($stdoutBuilder.Length -lt $maxStdoutChars) {
+                [void]$stdoutBuilder.AppendLine($line)
+            }
+            elseif (-not $isTruncated) {
+                [void]$stdoutBuilder.AppendLine("... [Output truncated to prevent memory exhaustion] ...")
+                $isTruncated = $true
+            }
+            
+            # CRITICAL: We must continue iterating even after the truncation limit is hit 
+            # to drain the stdout pipe. If we simply 'break' the loop, the child process 
+            # will deadlock once its OS output buffer (typically 4KB) fills up.
+        }
+        $stdout = $stdoutBuilder.ToString()
     }
     catch {
         $stdout = $null
