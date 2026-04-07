@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using static Dapper.SqlMapper;
 
 namespace Servy.Core.Helpers
 {
@@ -29,11 +30,21 @@ namespace Servy.Core.Helpers
                 return false;
             }
 
+            var settings = new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                XmlResolver = null
+            };
+
             try
             {
                 // Basic XML well-formedness check
-                var xmlDoc = new XmlDocument();
-                xmlDoc.LoadXml(xml);
+                using (var stringReader = new StringReader(xml))
+                using (var xmlReader = XmlReader.Create(stringReader, settings))
+                {
+                    var xmlDoc = new XmlDocument();
+                    xmlDoc.Load(xmlReader);
+                }
             }
             catch (XmlException ex)
             {
@@ -47,9 +58,10 @@ namespace Servy.Core.Helpers
             try
             {
                 var serializer = new XmlSerializer(typeof(ServiceDto));
-                using (var reader = new StringReader(xml))
+                using (var stringReader = new StringReader(xml))
+                using (var xmlReader = XmlReader.Create(stringReader, settings))
                 {
-                    dto = serializer.Deserialize(reader) as ServiceDto;
+                    dto = serializer.Deserialize(xmlReader) as ServiceDto;
                 }
             }
             catch (Exception ex)
