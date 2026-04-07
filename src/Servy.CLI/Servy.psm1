@@ -188,6 +188,10 @@ function Invoke-ServyCli {
       throw "Command must be a single word without spaces: '$Command'"
   }
 
+  if ($script:ServyTimeoutSeconds -lt 1) {
+    throw "ServyTimeoutSeconds must be >= 1 (current: $($script:ServyTimeoutSeconds))"
+  }  
+
   # Build argument list
   $finalArgs = @()
   if ($Command)   { $finalArgs += $Command }
