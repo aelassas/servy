@@ -56,23 +56,7 @@ if (-not (Test-Path $script:ServyCliPath)) {
   }
 }
 
-if ($null -eq $script:ServyCliPath -or -not (Test-Path $script:ServyCliPath)) {
-    $errorMsg = @"
-Servy CLI ('servy-cli.exe') was not found. Searched locations:
-1. Local module folder: $ModuleRoot
-2. Program Files: $($script:ServyProgramFilesPath)\Servy
-3. System PATH
-Please ensure Servy is installed or the CLI executable is in the module directory.
-"@.Trim()
-
-    # Adding -ErrorAction Stop makes this a terminating error
-    # This allows Import-Module to catch and silence it if requested.
-    Write-Error -Message $errorMsg `
-                -Category ObjectNotFound `
-                -ErrorId "ServyCliNotFound" `
-                -TargetObject $script:ServyCliPath `
-                -ErrorAction Stop 
-}
+$script:ServyCliFound = Test-Path $script:ServyCliPath
 
 # ----------------------------------------------------------------
 # Private Helper Functions
@@ -210,7 +194,14 @@ function Invoke-ServyCli {
   $process = $null
 
   try {
-    if (-not (Test-Path $script:ServyCliPath)) {
+    # We use a script-scoped array to collect lines because PS 2.0 events 
+    # NOTE: $errorVarName MUST only contain alphanumeric characters (e.g., a GUID).
+    # It is interpolated directly into a ScriptBlock string for PS 2.0 compatibility.
+    # If the naming scheme changes to include special characters, the ScriptBlock 
+    # creation below will fail or become a script injection vector.
+    $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
+
+    if (-not $script:ServyCliFound -and -not (Test-Path $script:ServyCliPath)) {
         throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
     }
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
@@ -225,14 +216,6 @@ function Invoke-ServyCli {
 
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
-    
-    # ASYNCHRONOUS: Prevent deadlock by reading stderr asynchronously
-    # We use a script-scoped array to collect lines because PS 2.0 events 
-    # NOTE: $errorVarName MUST only contain alphanumeric characters (e.g., a GUID).
-    # It is interpolated directly into a ScriptBlock string for PS 2.0 compatibility.
-    # If the naming scheme changes to include special characters, the ScriptBlock 
-    # creation below will fail or become a script injection vector.
-    $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
 
     # REGISTER EVENT NATIVELY
     New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
@@ -350,7 +333,11 @@ function Invoke-ServyCli {
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
     }
-    Remove-Variable -Name $errorVarName -Scope Global -ErrorAction SilentlyContinue
+    
+    # Only attempt removal if we actually assigned a name
+    if ($errorVarName) {
+      Remove-Variable -Name $errorVarName -Scope Global -ErrorAction SilentlyContinue
+    }
 
     if ($null -ne $process) {
       $process.Dispose()
