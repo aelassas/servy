@@ -383,9 +383,11 @@ function Invoke-ServyServiceCommand {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Command,
 
     [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
     [string] $Name,
 
     [switch] $Quiet
