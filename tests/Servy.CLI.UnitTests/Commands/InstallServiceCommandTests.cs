@@ -2,6 +2,7 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Models;
 using Servy.CLI.Validators;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Services;
@@ -41,7 +42,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
-                .ReturnsAsync(true);
+                .ReturnsAsync(OperationResult.Success());
 
             // Create a dummy Servy.Service.exe for the test
             var wrapperExePath = AppConfig.GetServyCLIServicePath();
@@ -93,7 +94,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Updated to use the new options object signature
             _mockServiceManager.Setup(sm => sm.InstallServiceAsync(It.IsAny<Servy.Core.Services.InstallServiceOptions>()))
-                .ReturnsAsync(false);
+                .ReturnsAsync(OperationResult.Failure("Failed to install service."));
 
             var wrapperExePath = AppConfig.GetServyCLIServicePath();
             Directory.CreateDirectory(Path.GetDirectoryName(wrapperExePath));

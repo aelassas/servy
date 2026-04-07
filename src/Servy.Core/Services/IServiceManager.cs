@@ -1,4 +1,5 @@
-﻿using Servy.Core.Config;
+﻿using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using System.Collections.Generic;
@@ -38,14 +39,14 @@ namespace Servy.Core.Services
         /// <returns>True if the service was successfully installed or updated; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <see cref="InstallServiceOptions.ServiceName"/>, <see cref="InstallServiceOptions.WrapperExePath"/>, or <see cref="InstallServiceOptions.RealExePath"/> is null or empty.</exception>
         /// <exception cref="Win32Exception">Thrown if opening the Service Control Manager or creating/updating the service fails.</exception>
-        Task<bool> InstallServiceAsync(InstallServiceOptions options);
+        Task<OperationResult> InstallServiceAsync(InstallServiceOptions options);
 
         /// <summary>
         /// Uninstalls the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was uninstalled; otherwise false.</returns>
-        Task<bool> UninstallServiceAsync(string serviceName);
+        Task<OperationResult> UninstallServiceAsync(string serviceName);
 
         /// <summary>
         /// Starts the specified service.
@@ -53,7 +54,7 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStart">Indicates whether to log a message when the service starts successfully.</param>
         /// <returns>True if the service was started; otherwise false.</returns>
-        Task<bool> StartServiceAsync(string serviceName, bool logSuccessfulStart = true);
+        Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true);
 
         /// <summary>
         /// Stops the specified service.
@@ -61,14 +62,14 @@ namespace Servy.Core.Services
         /// <param name="serviceName">The service name.</param>
         /// <param name="logSuccessfulStop">Indicates whether to log a message when the service stops successfully.</param>
         /// <returns>True if the service was stopped; otherwise false.</returns>
-        Task<bool> StopServiceAsync(string serviceName, bool logSuccessfulStop = true);
+        Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true);
 
         /// <summary>
         /// Restarts the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
         /// <returns>True if the service was restarted; otherwise false.</returns>
-        Task<bool> RestartServiceAsync(string serviceName);
+        Task<OperationResult> RestartServiceAsync(string serviceName);
 
         /// <summary>
         /// Gets the current status of the specified Windows service.

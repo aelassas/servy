@@ -49,16 +49,16 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_ServiceDisabledError);
                 }
 
-                var success = await _serviceManager.RestartServiceAsync(opts.ServiceName);
-                if (success)
+                var res = await _serviceManager.RestartServiceAsync(opts.ServiceName);
+                if (res.IsSuccess)
                 {
                     Logger.Info($"Successfully restarted the service '{opts.ServiceName}'.");
                     return CommandResult.Ok("Service restarted successfully.");
                 }
                 else
                 {
-                    Logger.Info($"Failed to restart the service '{opts.ServiceName}'.");
-                    return CommandResult.Fail("Failed to restart service.");
+                    Logger.Info(res.ErrorMessage);
+                    return CommandResult.Fail(res.ErrorMessage);
                 }
             });
         }

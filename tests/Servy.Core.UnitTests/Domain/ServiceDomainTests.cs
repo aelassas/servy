@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Servy.Core.Common;
 using Servy.Core.Domain;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -31,11 +32,11 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Start_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.StartServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
 
             var result = await service.Start();
 
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.StartServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
@@ -43,11 +44,11 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Stop_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.StopServiceAsync("TestService", It.IsAny<bool>())).ReturnsAsync(OperationResult.Success());
 
             var result = await service.Stop();
 
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.StopServiceAsync("TestService", It.IsAny<bool>()), Times.Once);
         }
 
@@ -55,11 +56,11 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Restart_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService")).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.RestartServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
 
             var result = await service.Restart();
 
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.RestartServiceAsync("TestService"), Times.Once);
         }
 
@@ -165,14 +166,14 @@ namespace Servy.Core.UnitTests.Domain
                      o.PreStopTimeout == service.PreStopTimeoutSeconds &&
                      o.PostStopArgs == service.PostStopParameters
                  )))
-                 .ReturnsAsync(true)
+                 .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
             var result = await service.Install("C:\\wrapper");
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify();
         }
 
@@ -198,14 +199,14 @@ namespace Servy.Core.UnitTests.Domain
                      o.EnableHealthMonitoring == true &&
                      o.RecoveryAction == service.RecoveryAction
                  )))
-                 .ReturnsAsync(true)
+                 .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
             var result = await service.Install();
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify();
         }
 
@@ -224,14 +225,14 @@ namespace Servy.Core.UnitTests.Domain
                      o.ServiceName == service.Name &&
                      o.WrapperExePath != null && o.WrapperExePath.Contains(".CLI")
                  )))
-                 .ReturnsAsync(true)
+                 .ReturnsAsync(OperationResult.Success())
                  .Verifiable();
 
             // Act
             var result = await service.Install(isCLI: true);
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify();
         }
 
@@ -252,14 +253,14 @@ namespace Servy.Core.UnitTests.Domain
                     o.WorkingDirectory == string.Empty &&
                     o.RealArgs == string.Empty
                 )))
-                .ReturnsAsync(true)
+                .ReturnsAsync(OperationResult.Success())
                 .Verifiable();
 
             // Act
             var result = await service.Install();
 
             // Assert
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify();
         }
 
@@ -267,11 +268,11 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Uninstall_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService")).ReturnsAsync(true);
+            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
 
             var result = await service.Uninstall();
 
-            Assert.True(result);
+            Assert.True(result.IsSuccess);
             _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService"), Times.Once);
         }
     }

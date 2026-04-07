@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
+using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
@@ -28,7 +29,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Returns(Task.FromResult(true));
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
 
             // Act
             var result = await _command.Execute(options);
@@ -58,7 +59,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Returns(Task.FromResult(false));
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
 
             // Act
             var result = await _command.Execute(options);

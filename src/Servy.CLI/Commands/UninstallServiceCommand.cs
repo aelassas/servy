@@ -50,8 +50,8 @@ namespace Servy.CLI.Commands
                 }
 
                 // Attempt to uninstall the service
-                var success = await _serviceManager.UninstallServiceAsync(opts.ServiceName);
-                if (success)
+                var res = await _serviceManager.UninstallServiceAsync(opts.ServiceName);
+                if (res.IsSuccess)
                 {
                     // Remove the service record from the repository
                     await _serviceRepository.DeleteAsync(opts.ServiceName);
@@ -60,8 +60,8 @@ namespace Servy.CLI.Commands
                 }
                 else
                 {
-                    Logger.Info($"Failed to uninstall the service '{opts.ServiceName}'.");
-                    return CommandResult.Fail("Failed to uninstall service.");
+                    Logger.Info(res.ErrorMessage);
+                    return CommandResult.Fail(res.ErrorMessage);
                 }
             });
         }

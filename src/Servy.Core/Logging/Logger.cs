@@ -280,6 +280,8 @@ namespace Servy.Core.Logging
             // We still check for null early to avoid locking if the logger isn't active
             if (_writer == null) return;
 
+            if (string.IsNullOrEmpty(message)) return;
+
             try
             {
                 lock (_lock)

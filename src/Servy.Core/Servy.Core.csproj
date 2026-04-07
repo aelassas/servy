@@ -96,6 +96,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\OperationResult.cs" />
     <Compile Include="Config\AppConfig.cs" />
     <Compile Include="Data\IAppDbContext.cs" />
     <Compile Include="Data\IDapperExecutor.cs" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>portable</DebugType>

@@ -164,7 +164,7 @@ namespace Servy.CLI.Commands
                 "JSON",
                 content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content),
-                (content) => JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings));
+                content => JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings));
         }
 
         /// <summary>
@@ -260,16 +260,16 @@ namespace Servy.CLI.Commands
             try
             {
                 // Attempt service installation
-                var installed = await serviceDomain.Install(isCLI: true);
-                if (installed)
+                var res = await serviceDomain.Install(isCLI: true);
+                if (res.IsSuccess)
                 {
                     Logger.Info($"Service imported and installed successfully. Service name: {serviceName}");
                     return CommandResult.Ok($"{format} configuration saved and service installed successfully.");
                 }
                 else
                 {
-                    Logger.Error($"Service imported but failed to install the service. Service name: {serviceName}");
-                    return CommandResult.Fail("Service imported but failed to install the service.");
+                    Logger.Error(res.ErrorMessage);
+                    return CommandResult.Fail(res.ErrorMessage);
                 }
             }
             catch (Exception ex)
