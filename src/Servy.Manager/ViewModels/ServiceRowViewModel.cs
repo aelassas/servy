@@ -300,14 +300,11 @@ namespace Servy.Manager.ViewModels
         {
             if (!_disposed)
             {
-                if (disposing)
+                if (disposing && Service != null)
                 {
                     // CRITICAL: Unsubscribe to release the reference held by the Service model.
                     // This allows the Garbage Collector to reclaim this ViewModel instance.
-                    if (Service != null)
-                    {
-                        Service.PropertyChanged -= Service_PropertyChanged;
-                    }
+                    Service.PropertyChanged -= Service_PropertyChanged;
                 }
 
                 // Mark as disposed to prevent redundant disposal logic

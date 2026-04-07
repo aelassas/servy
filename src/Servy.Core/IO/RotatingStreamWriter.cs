@@ -23,7 +23,7 @@ namespace Servy.Core.IO
         private readonly long _rotationSizeInBytes;
         private readonly bool _enableDateRotation;
         private readonly DateRotationType _dateRotationType;
-        private bool _useLocalTimeForRotation;
+        private readonly bool _useLocalTimeForRotation;
         private DateTime _lastRotationDate;
         private readonly int _maxRotations; // 0 = unlimited
         private readonly object _lock = new object();
