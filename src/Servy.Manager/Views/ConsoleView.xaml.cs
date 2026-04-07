@@ -56,7 +56,6 @@ namespace Servy.Manager.Views
                 }
             };
 
-
             LogList.SelectionChanged += (_, __) =>
             {
                 if (DataContext is ConsoleViewModel vm)
@@ -64,6 +63,8 @@ namespace Servy.Manager.Views
                     vm.SetSelectionActive(LogList.SelectedItems.Count > 0);
                 }
             };
+
+            Unloaded += (s, e) => (DataContext as ConsoleViewModel)?.Cleanup();
         }
 
         /// <summary>

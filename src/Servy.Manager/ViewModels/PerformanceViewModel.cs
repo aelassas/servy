@@ -26,14 +26,13 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class PerformanceViewModel : ViewModelBase
     {
-
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
         private readonly DispatcherTimer _timer;
         private readonly ILogger _logger;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _cts;
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
@@ -420,10 +419,10 @@ namespace Servy.Manager.ViewModels
         private async Task SearchServicesAsync(object parameter)
         {
             // Cancel previous search
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-            var token = _cancellationTokenSource.Token;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
 
             try
             {
@@ -507,7 +506,7 @@ namespace Servy.Manager.ViewModels
         public void StopMonitoring(bool clearPoints)
         {
             // cancel any in-progress async work
-            _cancellationTokenSource?.Cancel();
+            _cts?.Cancel();
 
             // Atomically signal stop
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
@@ -528,7 +527,22 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        #endregion
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Stops the background refresh timer and cancels any pending asynchronous operations.
+        /// </summary>
+        public void Cleanup()
+        {
+            // 1. Stop the timer first to prevent new ticks
+            _timer?.Stop();
 
+            // 2. Signal cancellation to background tasks
+            if (_cts != null && !_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+        }
+
+        #endregion
     }
 }
