@@ -168,28 +168,24 @@ if (Test-Path $timestampFile) {
 # -------------------------------
 $errors = Get-ServyLastErrors -LastProcessed $lastProcessed
 
-# -------------------------------
-# 5. Update Timestamp File
-# -------------------------------
-# Adding 1 tick to ensure we don't pick up the same event again next time
-$newestTimestamp = $errors[0].TimeCreated.AddTicks(1)
-$newestTimestamp.ToString("o") | Out-File $timestampFile -Force
+# CHECK: If no errors, exit quietly
+if ($null -eq $errors -or $errors.Count -eq 0) {
+    Write-Host "No new errors to process."
+    exit 0
+}
 
 # -------------------------------
-# 6. Process Events & Send Toast Notifications
+# 5. Process Events & Send Toast Notifications
 # -------------------------------
-# Sort ascending so notifications are sent in the exact chronological order the errors occurred
 if ($null -eq $lastProcessed) {
-    # FIRST RUN LOGIC:
-    # We only notify for the single most recent event to avoid flooding.
-    # $errors[0] is always the newest because Get-WinEvent returns newest-first.
+    # FIRST RUN LOGIC: Only notify for the most recent to avoid flood
     $eventsToProcess = @($errors[0])
-    Write-Host "No timestamp found. Notifying only for the most recent error to avoid flooding."
 } else {
-    # NORMAL RUN LOGIC:
-    # Sort ascending so notifications are sent in the order they actually happened.
+    # NORMAL RUN LOGIC: Chronological order
     $eventsToProcess = $errors | Sort-Object TimeCreated
 }
+
+$lastSuccessfulTimestamp = $null
 
 foreach ($evt in $eventsToProcess) {
     $message = $evt.Message
@@ -201,8 +197,20 @@ foreach ($evt in $eventsToProcess) {
         $logText = $message
     }
 
+    # Show the notification
     Show-Notification -ServiceName $serviceName -LogText $logText -ModuleRoot $ModuleRoot
     
-    # Brief pause to help the Action Center sequence the toasts properly
+    # Track this timestamp as successfully processed
+    $lastSuccessfulTimestamp = $evt.TimeCreated
+    
     Start-Sleep -Milliseconds 500
+}
+
+# -------------------------------
+# 6. Update Timestamp File (Now safe and at the end)
+# -------------------------------
+if ($null -ne $lastSuccessfulTimestamp) {
+    $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+    $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
+    Write-Host "Timestamp updated to: $($newestTimestamp.ToString('o'))"
 }
