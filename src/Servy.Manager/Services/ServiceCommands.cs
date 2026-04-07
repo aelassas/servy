@@ -556,8 +556,8 @@ namespace Servy.Manager.Services
         /// <returns>The domain service if found; otherwise, <c>null</c>.</returns>
         private async Task<Core.Domain.Service> GetServiceDomain(string serviceName)
         {
-            var results = await _serviceRepository.SearchDomainServicesAsync(_serviceManager, serviceName, decrypt: true);
-            return results.FirstOrDefault();
+            var service = await _serviceRepository.GetDomainServiceByNameAsync(_serviceManager, serviceName, decrypt: true);
+            return service;
         }
 
         /// <summary>

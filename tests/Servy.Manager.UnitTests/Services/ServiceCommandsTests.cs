@@ -106,8 +106,8 @@ namespace Servy.Manager.UnitTests.Services
             var domain = new FakeService(serviceManagerMock.Object, "TestService", stopResult: true);
 
             _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Core.Domain.Service> { domain });
+                .Setup(r => r.GetDomainServiceByNameAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(domain);
 
             _messageBoxServiceMock
                 .Setup(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption))
@@ -181,8 +181,8 @@ namespace Servy.Manager.UnitTests.Services
             _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption))
                 .ReturnsAsync(true);
             _serviceRepositoryMock
-                 .Setup(r => r.SearchDomainServicesAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(new List<Core.Domain.Service> { domain });
+                 .Setup(r => r.GetDomainServiceByNameAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(domain);
             _serviceRepositoryMock.Setup(r => r.DeleteAsync("S1", It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             // Act
