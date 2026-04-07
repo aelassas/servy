@@ -673,17 +673,17 @@ namespace Servy.ViewModels
         /// <summary>
         /// Command to start the service.
         /// </summary>
-        public ICommand StartCommand { get; }
+        public IAsyncCommand StartCommand { get; }
 
         /// <summary>
         /// Command to stop the service.
         /// </summary>
-        public ICommand StopCommand { get; }
+        public IAsyncCommand StopCommand { get; }
 
         /// <summary>
         /// Command to restart the service.
         /// </summary>
-        public ICommand RestartCommand { get; }
+        public IAsyncCommand RestartCommand { get; }
 
         /// <summary>
         /// Command to browse and select the failure program path.

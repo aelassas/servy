@@ -27,7 +27,6 @@ namespace Servy.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
-
         #region Private Fields
 
         private readonly Func<ServiceDto> _modelToServiceDto;
@@ -61,14 +60,13 @@ namespace Servy.Services
             IFileDialogService dialogService,
             IServiceConfigurationValidator serviceConfigurationValidator)
         {
-            _modelToServiceDto = modelToServiceDto;
-            _bindServiceDtoToModel = bindServiceDtoToModel;
+            _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
+            _bindServiceDtoToModel = bindServiceDtoToModel ?? throw new ArgumentNullException(nameof(bindServiceDtoToModel));
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
-            _serviceConfigurationValidator = serviceConfigurationValidator;
-            _dialogService = dialogService;
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
         }
-
 
         #endregion
 
