@@ -61,6 +61,8 @@ namespace Servy.Manager.Views
                     vm.SetSelectionActive(LogList.SelectedItems.Count > 0);
                 }
             };
+
+            Unloaded += (s, e) => (DataContext as ConsoleViewModel)?.Cleanup();
         }
 
         /// <summary>

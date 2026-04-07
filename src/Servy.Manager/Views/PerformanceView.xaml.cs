@@ -17,6 +17,8 @@ namespace Servy.Manager.Views
         public PerformanceView()
         {
             InitializeComponent();
+
+            Unloaded += (s, e) => (DataContext as PerformanceViewModel)?.Cleanup();
         }
 
         /// <summary>

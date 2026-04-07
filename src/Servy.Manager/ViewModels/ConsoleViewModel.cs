@@ -606,6 +606,22 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Stops the background refresh timer and cancels any pending asynchronous operations.
+        /// </summary>
+        public void Cleanup()
+        {
+            // 1. Stop the timer first to prevent new ticks
+            _timer?.Stop();
+
+            // 2. Signal cancellation to background tasks
+            if (_cts != null && !_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+        }
+
         #endregion
 
     }

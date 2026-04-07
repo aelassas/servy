@@ -23,14 +23,13 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class DependenciesViewModel : ViewModelBase
     {
-
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceManager _serviceManager;
         private readonly DispatcherTimer _timer;
         private readonly ILogger _logger;
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _cts;
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
@@ -342,10 +341,10 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         private async Task SearchServicesAsync(object parameter)
         {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-            var token = _cancellationTokenSource.Token;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
 
             try
             {
@@ -435,12 +434,27 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StopMonitoring()
         {
-            _cancellationTokenSource?.Cancel();
+            _cts?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
             _timer.Stop();
         }
 
-        #endregion
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Stops the background refresh timer and cancels any pending asynchronous operations.
+        /// </summary>
+        public void Cleanup()
+        {
+            // 1. Stop the timer first to prevent new ticks
+            _timer?.Stop();
 
+            // 2. Signal cancellation to background tasks
+            if (_cts != null && !_cts.IsCancellationRequested)
+            {
+                _cts.Cancel();
+            }
+        }
+
+        #endregion
     }
 }
