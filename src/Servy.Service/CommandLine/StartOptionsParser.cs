@@ -51,7 +51,7 @@ namespace Servy.Service.CommandLine
                 Priority = Enum.TryParse(((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)).ToString(), true, out ProcessPriorityClass p) ? p : ProcessPriorityClass.Normal,
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
-                RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024 * 1024, // Convert from MB to Bytes
+                RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024L * 1024L, // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
                 HeartbeatInterval = serviceDto.HeartbeatInterval ?? 0,
