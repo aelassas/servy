@@ -430,19 +430,20 @@ namespace Servy.Manager.ViewModels
             _isUpdatingSelectAll = true;
             try
             {
-
-                var checkedCount = _services.Count(s => s.IsChecked);
-                if (checkedCount == _services.Count)
+                // Use All and Any for high-performance short-circuiting
+                if (_services.All(s => s.IsChecked))
                 {
                     SelectAll = true;
                 }
-                else if (checkedCount == 0)
+                else if (_services.Any(s => s.IsChecked))
                 {
-                    SelectAll = false;
+                    // If not All are checked, but at least one is, it's indeterminate
+                    SelectAll = null;
                 }
                 else
                 {
-                    SelectAll = null;
+                    // None are checked
+                    SelectAll = false;
                 }
             }
             finally
