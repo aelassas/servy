@@ -1,4 +1,5 @@
-﻿using Servy.Manager.Models;
+﻿using Servy.Core.Logging;
+using Servy.Manager.Models;
 using System.IO;
 
 namespace Servy.Manager.Utils
@@ -101,8 +102,16 @@ namespace Servy.Manager.Utils
                         }
                     }
                 }
-                catch (IOException) { await Task.Delay(500, token); }
-                catch (Exception) { await Task.Delay(1000, token); }
+                catch (IOException ex)
+                {
+                    Logger.Warn($"IO error reading log: {ex.Message}");
+                    await Task.Delay(500, token);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Unexpected error in log tailer: {ex.Message}", ex);
+                    await Task.Delay(1000, token);
+                }
             }
         }
 

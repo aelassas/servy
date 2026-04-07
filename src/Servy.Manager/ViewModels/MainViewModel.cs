@@ -27,7 +27,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private readonly IServiceManager _serviceManager;
@@ -1006,6 +1005,5 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
-
     }
 }
