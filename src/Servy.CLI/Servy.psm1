@@ -328,6 +328,9 @@ function Invoke-ServyCli {
     throw "$($ErrorContext): $_.`n$partialOutput".TrimEnd()
   }
   finally {
+    if ($null -ne $process) {
+        try { $process.CancelErrorRead() } catch {}
+    }    
     # CRITICAL: Clean up events and global variables even if the code fails
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
