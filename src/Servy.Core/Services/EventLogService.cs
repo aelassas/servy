@@ -39,14 +39,19 @@ namespace Servy.Core.Services
             {
                 token.ThrowIfCancellationRequested();
 
-                // Build System filters
                 var systemFilters = new List<string>();
 
+                // ESCAPE SOURCE NAME
                 if (!string.IsNullOrEmpty(SourceName))
-                    systemFilters.Add($"Provider[@Name='{SourceName}']");
+                {
+                    var escapedSource = SourceName.Replace("'", "&apos;");
+                    systemFilters.Add($"Provider[@Name='{escapedSource}']");
+                }
 
                 if (level.HasValue && level != EventLogLevel.All)
+                {
                     systemFilters.Add($"Level={(int)level.Value}");
+                }
 
                 if (startDate.HasValue)
                 {
@@ -61,7 +66,7 @@ namespace Servy.Core.Services
                 }
 
                 string systemFilterString = string.Join(" and ", systemFilters);
-                string query = $"*[System[{systemFilterString}]]";
+                string query = string.IsNullOrEmpty(systemFilterString) ? "*" : $"*[System[{systemFilterString}]]";
 
                 var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
                 var records = _reader.ReadEvents(eventQuery);
