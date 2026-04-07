@@ -158,7 +158,7 @@ namespace Servy.Services
                 EnableDateRotation = enableDateRotation,
                 DateRotationType = (int)dateRotationType,
                 MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
-                UseLocalTimeForRotation= useLocalTimeForRotation,
+                UseLocalTimeForRotation = useLocalTimeForRotation,
                 EnableHealthMonitoring = enableHealthMonitoring,
                 HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : -1,
                 MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : -1,
@@ -220,19 +220,12 @@ namespace Servy.Services
 
             try
             {
-                var rotationSizeValue = ulong.Parse(rotationSize) * 1024 * 1024;
-                var heartbeatIntervalValue = int.Parse(heartbeatInterval);
-                var maxFailedChecksValue = int.Parse(maxFailedChecks);
-                var maxRestartAttemptsValue = int.Parse(maxRestartAttempts);
+                var rotationSizeValue = dto.RotationSize > 0
+                    ? (ulong)dto.RotationSize * 1024 * 1024
+                    : 0;
+
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
                 var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
-                var preLaunchTimeoutValue = int.Parse(preLaunchTimeout);
-                var preLaunchRetryAttemptsValue = int.Parse(preLaunchRetryAttempts);
-                var maxRotationsValue = int.Parse(maxRotations);
-
-                var startTimeoutValue = int.Parse(startTimeout);
-                var stopTimeoutValue = int.Parse(stopTimeout);
-                var preStopTimeoutValue = int.Parse(preStopTimeout);
 
                 if (runAsLocalSystem)
                 {
@@ -254,12 +247,12 @@ namespace Servy.Services
                     StderrPath = stderrPath,
                     EnableSizeRotation = enableSizeRotation,
                     RotationSizeInBytes = rotationSizeValue,
-                    UseLocalTimeForRotation= useLocalTimeForRotation,
+                    UseLocalTimeForRotation = useLocalTimeForRotation,
                     EnableHealthMonitoring = enableHealthMonitoring,
-                    HeartbeatInterval = heartbeatIntervalValue,
-                    MaxFailedChecks = maxFailedChecksValue,
+                    HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
+                    MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
                     RecoveryAction = recoveryAction,
-                    MaxRestartAttempts = maxRestartAttemptsValue,
+                    MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                     EnvironmentVariables = normalizedEnvVars,
                     ServiceDependencies = serviceDependencies,
                     Username = userAccount,
@@ -271,8 +264,8 @@ namespace Servy.Services
                     PreLaunchEnvironmentVariables = normalizedPreLaunchEnvVars,
                     PreLaunchStdoutPath = preLaunchStdoutPath,
                     PreLaunchStderrPath = preLaunchStderrPath,
-                    PreLaunchTimeout = preLaunchTimeoutValue,
-                    PreLaunchRetryAttempts = preLaunchRetryAttemptsValue,
+                    PreLaunchTimeout = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
                     PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
 
                     FailureProgramPath = failureProgramPath,
@@ -285,16 +278,16 @@ namespace Servy.Services
 
                     EnableDebugLogs = enableDebugLogs,
                     DisplayName = displayName,
-                    MaxRotations = maxRotationsValue,
+                    MaxRotations = dto.MaxRotations,
                     EnableDateRotation = enableDateRotation,
                     DateRotationType = dateRotationType,
-                    StartTimeout = startTimeoutValue,
-                    StopTimeout = stopTimeoutValue,
+                    StartTimeout = dto.StartTimeout,
+                    StopTimeout = dto.StopTimeout,
 
                     PreStopExePath = preStopProgramPath,
                     PreStopWorkingDirectory = preStopProgramWorkingDirectory,
                     PreStopArgs = preStopProgramArgs,
-                    PreStopTimeout = preStopTimeoutValue,
+                    PreStopTimeout = dto.PreStopTimeoutSeconds,
                     PreStopLogAsError = preStopLogAsError,
 
                     PostStopExePath = postStopProgramPath,
