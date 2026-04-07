@@ -56,7 +56,7 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidStopTimeout);
             }
 
-            if (opts.EnableRotation
+            if ((opts.EnableRotation || opts.EnableSizeRotation)
                 && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize)
                 )
             {
