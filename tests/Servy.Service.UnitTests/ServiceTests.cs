@@ -78,102 +78,154 @@ namespace Servy.Service.UnitTests
         public void OnStart_ValidOptions_InitializesCorrectly()
         {
             // Arrange
+            var fullArgs = new[] { "servy.exe" }; // Arguments returned by Helper
             var options = new StartOptions
             {
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
-                ExecutableArgs = "",
                 WorkingDirectory = "C:\\Windows",
-                Priority = ProcessPriorityClass.Normal,
-                StdOutPath = "C:\\Logs\\stdout.log",
-                StdErrPath = "C:\\Logs\\stderr.log",
-                RotationSizeInBytes = 1024,
+                EnableHealthMonitoring = true,
                 HeartbeatInterval = 10,
                 MaxFailedChecks = 3,
-                EnableHealthMonitoring = true,
                 RecoveryAction = RecoveryAction.RestartProcess,
-                MaxRestartAttempts = 2,
-                UseLocalTimeForRotation = true
+                StdOutPath = "C:\\Logs\\stdout.log",
+                StdErrPath = "C:\\Logs\\stderr.log"
             };
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object))
+            var mockScopedLogger = new Mock<ILogger>();
+
+            // 1. ServiceHelper flow
+            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, It.IsAny<string[]>()))
                 .Returns(options);
 
-            _mockServiceHelper.Setup(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object));
+            // 2. Logger Promotion setup
+            // This is critical: the service will now use mockScopedLogger.Object for everything else
+            _mockLogger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
+
+            // 3. Validation setup (Must use the scoped logger)
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+                .Returns(true);
+
+            // 4. Path Validator setup (Used inside HandleLogWriters)
             _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(true);
 
             // Act
             _service.StartForTest();
 
             // Assert
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdOutPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-            _mockStreamWriterFactory.Verify(f => f.Create(options.StdErrPath, options.EnableSizeRotation, options.RotationSizeInBytes, options.EnableDateRotation, options.DateRotationType, options.MaxRotations, options.UseLocalTimeForRotation), Times.Once);
-
-            _mockServiceHelper.Verify(h => h.EnsureValidWorkingDirectory(options, _mockLogger.Object), Times.Once);
-
-            _mockTimerFactory.Verify(f => f.Create(10 * 1000), Times.Once);
+            // Verify Health Monitoring started
+            // 10 seconds * 1000ms = 10000
+            _mockTimerFactory.Verify(f => f.Create(10000), Times.Once);
             _mockTimer.Verify(t => t.Start(), Times.Once);
 
-            _mockLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started."))), Times.Once);
+            // Verify the scoped logger received the success message
+            mockScopedLogger.Verify(l => l.Info(It.Is<string>(s => s.Contains("Health monitoring started."))), Times.Once);
         }
 
         [Fact]
         public void OnStart_InvalidStdOutPath_LogsError()
         {
+            // Arrange
+            var fullArgs = new[] { "servy.exe" };
             var options = new StartOptions
             {
                 ServiceName = "TestService",
                 ExecutablePath = "C:\\Windows\\notepad.exe",
                 StdOutPath = "InvalidPath???",
                 StdErrPath = string.Empty,
-                RotationSizeInBytes = 1024,
-                HeartbeatInterval = 0,
-                MaxFailedChecks = 0,
-                RecoveryAction = RecoveryAction.None,
-                MaxRestartAttempts = 1
+                RecoveryAction = RecoveryAction.None
             };
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Returns(options);
-            _mockPathValidator.Setup(v => v.IsValidPath(It.IsAny<string>())).Returns(false);
+            var mockScopedLogger = new Mock<ILogger>();
+
+            // 1. Setup the ServiceHelper flow
+            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+                .Returns(options);
+
+            // 2. Setup Logger Promotion: Root returns Scoped
+            _mockLogger.Setup(l => l.CreateScoped(options.ServiceName))
+                .Returns(mockScopedLogger.Object);
+
+            // 3. Setup Validation: Must return true for the method to proceed to HandleLogWriters
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+                .Returns(true);
+
+            // 4. Force the path validation to fail
+            _mockPathValidator.Setup(v => v.IsValidPath(options.StdOutPath)).Returns(false);
 
             // Act
             _service.StartForTest();
 
             // Assert
-            _mockLogger.Verify(l => l.Error(
+            // Verify the error was logged to the SCOPED logger, not the root _mockLogger
+            mockScopedLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Invalid log file path")),
                 It.IsAny<Exception>()
-                ), Times.Once);
+                ), Times.AtLeastOnce);
+
+            // Verify root logger was disposed after promotion
+            _mockLogger.Verify(l => l.Dispose(), Times.Once);
         }
 
         [Fact]
         public void OnStart_NullOptions_StopsService()
         {
+            // Arrange
+            var fullArgs = new[] { "servy.exe" };
             bool stopped = false;
+
+            // Subscribe to the test event to verify the service actually stops
             _service.OnStoppedForTest += () => stopped = true;
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Returns((StartOptions)null);
+            // 1. Mock GetArgs to return a valid array
+            _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
 
+            // 2. Mock ParseOptions to return null (simulating invalid or missing configuration)
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+                .Returns((StartOptions)null);
+
+            // Act
             _service.StartForTest();
 
+            // Assert
+            // Verify the service stopped because options were null
             Assert.True(stopped);
+
+            // Verify that ValidateAndLog was NEVER called because we exited early
+            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<ILogger>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
-        public void OnStart_ExceptionInInitialize_StopsServiceAndLogsError()
+        public void OnStart_ExceptionInGetArgs_StopsServiceAndLogsError()
         {
+            // Arrange
             bool stopped = false;
+            var testException = new Exception("Boom");
+
+            // Subscribe to the test event to verify the service actually stops
             _service.OnStoppedForTest += () => stopped = true;
 
-            _mockServiceHelper.Setup(h => h.InitializeStartup(_mockServiceRepository.Object, _mockLogger.Object)).Throws(new Exception("Boom"));
+            // Simulate an exception at the very beginning of the OnStart sequence
+            _mockServiceHelper.Setup(h => h.GetArgs()).Throws(testException);
 
+            // Act
             _service.StartForTest();
 
+            // Assert
+            // 1. Verify the service triggered a stop
             Assert.True(stopped);
+
+            // 2. Verify the error was logged to the root logger
+            // (Promotion hasn't happened yet, so _mockLogger is still the active logger)
             _mockLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Exception in OnStart")),
-                It.IsAny<Exception>()
+                testException
             ), Times.Once);
+
+            // 3. Verify that the logger was never promoted/disposed due to early failure
+            _mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

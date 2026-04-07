@@ -18,39 +18,67 @@ namespace Servy.Service.UnitTests
     public class TestableServiceTests
     {
         [Fact]
-        public void OnStart_CallsInitializeStartup_AndEnsureValidWorkingDirectory()
+        public void OnStart_Workflow_ParsesPromotesAndValidates()
         {
             // Arrange
+            var fullArgs = new[] { "servy.exe" };
+            var expectedOptions = new StartOptions { ServiceName = "TestService" };
+
             var mockHelper = new Mock<IServiceHelper>();
-            var mockLogger = new Mock<ILogger>();
-            var expectedOptions = new StartOptions();
+            var mockRootLogger = new Mock<ILogger>();
+            var mockScopedLogger = new Mock<ILogger>();
+
             var streamWriterFactory = new Mock<IStreamWriterFactory>();
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
             var pathValidator = new Mock<IPathValidator>();
             var serviceRepository = new Mock<IServiceRepository>();
 
-            mockHelper
-                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
-                .Returns(expectedOptions);
+            // 1. Setup the ServiceHelper sequence
+            mockHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+            mockHelper.Setup(h => h.ParseOptions(serviceRepository.Object, fullArgs))
+                      .Returns(expectedOptions);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object,
-                streamWriterFactory.Object, timerFactory.Object, processFactory.Object,
-                pathValidator.Object, serviceRepository.Object
-                );
+            // 2. Setup Logger Promotion (Root -> Scoped)
+            mockRootLogger.Setup(l => l.CreateScoped(expectedOptions.ServiceName))
+                          .Returns(mockScopedLogger.Object);
+
+            // 3. Setup Validation and Working Directory check (using the SCOPED logger)
+            mockHelper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs))
+                      .Returns(true);
+            mockHelper.Setup(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object));
+
+            var service = new TestableService(
+                mockHelper.Object,
+                mockRootLogger.Object,
+                streamWriterFactory.Object,
+                timerFactory.Object,
+                processFactory.Object,
+                pathValidator.Object,
+                serviceRepository.Object);
 
             // Act
             service.TestOnStart();
 
             // Assert
-            mockHelper.Verify(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object), Times.Once);
-            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockLogger.Object), Times.Once);
+            // Verify the sequence of orchestration
+            mockHelper.Verify(h => h.GetArgs(), Times.Once);
+            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, fullArgs), Times.Once);
+
+            // Verify logger promotion and disposal of the root
+            mockRootLogger.Verify(l => l.CreateScoped(expectedOptions.ServiceName), Times.Once);
+            mockRootLogger.Verify(l => l.Dispose(), Times.Once);
+
+            // Verify validation and working directory check used the NEW scoped logger
+            mockHelper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs), Times.Once);
+            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object), Times.Once);
         }
 
         [Fact]
-        public void OnStart_WhenInitializeStartupReturnsNull_DoesNotCallEnsureValidWorkingDirectory()
+        public void OnStart_WhenParseOptionsReturnsNull_DoesNotCallEnsureValidWorkingDirectory()
         {
             // Arrange
+            var fullArgs = new[] { "servy.exe" };
             var mockHelper = new Mock<IServiceHelper>();
             var mockLogger = new Mock<ILogger>();
             var streamWriterFactory = new Mock<IStreamWriterFactory>();
@@ -59,20 +87,34 @@ namespace Servy.Service.UnitTests
             var pathValidator = new Mock<IPathValidator>();
             var serviceRepository = new Mock<IServiceRepository>();
 
+            // 1. Mock GetArgs to return a valid array
+            mockHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
+
+            // 2. Mock ParseOptions to return null (the new "InitializeStartup returns null" equivalent)
             mockHelper
-                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
+                .Setup(h => h.ParseOptions(serviceRepository.Object, fullArgs))
                 .Returns((StartOptions)null);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,
-                timerFactory.Object, processFactory.Object,
-                pathValidator.Object, serviceRepository.Object);
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                streamWriterFactory.Object,
+                timerFactory.Object,
+                processFactory.Object,
+                pathValidator.Object,
+                serviceRepository.Object);
 
             // Act
-            service.TestOnStart((new string[] { }));
+            service.TestOnStart(fullArgs);
 
             // Assert
-            mockHelper.Verify(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object), Times.Once);
-            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), mockLogger.Object), Times.Never);
+            // Verify we attempted to parse but stopped there
+            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, fullArgs), Times.Once);
+
+            // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
+            mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
+            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<ILogger>(), It.IsAny<string[]>()), Times.Never);
+            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<ILogger>()), Times.Never);
         }
 
         [Fact]
@@ -89,23 +131,33 @@ namespace Servy.Service.UnitTests
 
             var exception = new InvalidOperationException("Test exception");
 
+            // Simulate the exception at the first entry point of OnStart
             mockHelper
-                .Setup(h => h.InitializeStartup(serviceRepository.Object, mockLogger.Object))
+                .Setup(h => h.GetArgs())
                 .Throws(exception);
 
-            var service = new TestableService(mockHelper.Object, mockLogger.Object, streamWriterFactory.Object,
-                timerFactory.Object, processFactory.Object,
-                pathValidator.Object, serviceRepository.Object
+            var service = new TestableService(
+                mockHelper.Object,
+                mockLogger.Object,
+                streamWriterFactory.Object,
+                timerFactory.Object,
+                processFactory.Object,
+                pathValidator.Object,
+                serviceRepository.Object
                 );
 
             // Act
-            service.TestOnStart((new string[] { }));
+            service.TestOnStart(new string[] { });
 
             // Assert
+            // Since the crash happens before promotion, mockLogger is still the active logger
             mockLogger.Verify(l => l.Error(
                 It.Is<string>(s => s.Contains("Exception in OnStart")),
-                It.IsAny<Exception>()
+                exception
                 ), Times.Once);
+
+            // Verify that promotion was never attempted due to the early failure
+            mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

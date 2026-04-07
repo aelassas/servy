@@ -23,12 +23,35 @@ namespace Servy.Service.Helpers
         string[] GetSanitizedArgs();
 
         /// <summary>
-        /// Logs the startup arguments and parsed options to the specified event log.
+        /// Retrieves the full command-line arguments for the current process.
         /// </summary>
-        /// <param name="eventLog">The event log to write entries to.</param>
-        /// <param name="args">The raw command line arguments.</param>
-        /// <param name="options">The parsed startup options.</param>
-        void LogStartupArguments(ILogger logger, string[] args, StartOptions options);
+        /// <returns>An array of strings containing the command-line arguments.</returns>
+        string[] GetArgs();
+
+        /// <summary>
+        /// Parses the command-line arguments and loads the service configuration from the repository.
+        /// </summary>
+        /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
+        /// <param name="fullArgs">The full set of command-line arguments to parse.</param>
+        /// <returns>
+        /// A <see cref="StartOptions"/> object if parsing is successful; otherwise, <c>null</c>.
+        /// </returns>
+        StartOptions ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
+
+        /// <summary>
+        /// Performs a comprehensive validation of the startup options and logs the results.
+        /// </summary>
+        /// <remarks>
+        /// This method logs the startup parameters (including sensitive data if debug logging is enabled) 
+        /// and verifies that all critical paths and configurations are valid before the service starts.
+        /// </remarks>
+        /// <param name="options">The startup options to validate.</param>
+        /// <param name="logger">The logger instance (typically a scoped/promoted logger) used for reporting.</param>
+        /// <param name="fullArgs">The original command-line arguments for logging purposes.</param>
+        /// <returns>
+        /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
+        /// </returns>
+        bool ValidateAndLog(StartOptions options, ILogger logger, string[] fullArgs);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.
@@ -37,24 +60,6 @@ namespace Servy.Service.Helpers
         /// <param name="options">The startup options containing the working directory to validate.</param>
         /// <param name="eventLog">The event log to write warnings to.</param>
         void EnsureValidWorkingDirectory(StartOptions options, ILogger logger);
-
-        /// <summary>
-        /// Validates the essential startup options, such as executable path and service name,
-        /// and logs errors to the event log if invalid.
-        /// </summary>
-        /// <param name="eventLog">The event log to write errors to.</param>
-        /// <param name="options">The startup options to validate.</param>
-        /// <returns>True if the options are valid; otherwise, false.</returns>
-        bool ValidateStartupOptions(ILogger logger, StartOptions options);
-
-        /// <summary>
-        /// Initializes startup options by parsing command line arguments,
-        /// logging them, and validating the resulting options.
-        /// </summary>
-        /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
-        /// <param name="eventLog">The event log to write logs and errors to.</param>
-        /// <returns>The initialized and validated <see cref="StartOptions"/>, or null if invalid.</returns>
-        StartOptions InitializeStartup(IServiceRepository serviceRepository, ILogger logger);
 
         /// <summary>
         /// Attempts to restart the given process by:

@@ -33,7 +33,6 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase, IDisposable
     {
-
         #region Enums
 
         /// <summary>
@@ -194,7 +193,7 @@ namespace Servy.Service
 
         private readonly SecureData _secureData;
         private readonly IServiceHelper _serviceHelper;
-        private readonly ILogger _logger;
+        private ILogger _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
@@ -466,13 +465,28 @@ namespace Servy.Service
                 bool isTestMode = args.Length > 0 &&
                                   string.Equals(args[0], TestModeFlag, StringComparison.OrdinalIgnoreCase);
 
-                // Load and validate service startup options
-                var options = _serviceHelper.InitializeStartup(_serviceRepository, _logger);
+                // Load startup options
+                var fullArgs = _serviceHelper.GetArgs(); // You'll need to expose this helper
+                var options = _serviceHelper.ParseOptions(_serviceRepository, fullArgs);
+
                 if (options == null)
                 {
                     // Set a non-zero exit code so Windows knows it failed
                     ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
                     throw new InvalidOperationException("Failed to initialize service options.");
+                }
+
+                // PROMOTE LOGGER IMMEDIATELY
+                // Now every log from this point forward (including validation errors) is prefixed.
+                var rootLogger = _logger;
+                _logger = rootLogger.CreateScoped(options.ServiceName);
+                rootLogger.Dispose();
+
+                // Log and Validate using the new scoped _logger
+                if (!_serviceHelper.ValidateAndLog(options, _logger, fullArgs))
+                {
+                    Stop();
+                    return;
                 }
 
                 _options = options;

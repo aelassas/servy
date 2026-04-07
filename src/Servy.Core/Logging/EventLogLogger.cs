@@ -40,19 +40,25 @@ namespace Servy.Core.Logging
         #region ILogger implementation
 
         ///<inheritdoc/>
-        public string Prefix { get; set; }
+        public string Prefix { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventLogLogger"/> class.
         /// </summary>
         /// <param name="source">The event source name used for logging.</param>
-        /// <param name="level">Log level to set. Defaults to <see cref="LogLevel.Info"/>. Messages below this level will be ignored.</param>
-        /// <param name="isEventLogEnabled">Whether to enable writing to the Windows Event Log. Defaults to <c>true</c>.</param>
-        public EventLogLogger(string source, LogLevel level = LogLevel.Info, bool isEventLogEnabled = true)
+        /// <param name="level">Log level. Messages below this level are ignored.</param>
+        /// <param name="isEventLogEnabled">Whether to enable writing to Windows Event Log.</param>
+        /// <param name="prefix">Optional immutable prefix for this logger instance.</param>
+        public EventLogLogger(
+            string source,
+            LogLevel level = LogLevel.Info,
+            bool isEventLogEnabled = true,
+            string prefix = null)
         {
             _source = source;
             _isEventLogEnabled = isEventLogEnabled;
             _currentLogLevel = level;
+            Prefix = prefix; // Immutable assignment
 
             if (_isEventLogEnabled)
             {
@@ -71,6 +77,21 @@ namespace Servy.Core.Logging
                 InitializeEventLog();
             }
             _isEventLogEnabled = isEnabled;
+        }
+
+        /// <inheritdoc/>
+        public ILogger CreateScoped(string prefix)
+        {
+            // Inherit the parent's settings but apply the new immutable prefix.
+            // If you want nested prefixes (e.g., [Parent][Child]), use:
+            // var newPrefix = string.IsNullOrEmpty(Prefix) ? prefix : $"{Prefix}][{prefix}";
+
+            return new EventLogLogger(
+                _source,
+                _currentLogLevel,
+                _isEventLogEnabled,
+                prefix
+            );
         }
 
         /// <inheritdoc/>
@@ -205,6 +226,7 @@ namespace Servy.Core.Logging
         /// <returns>The formatted message with prefix if available.</returns>
         private string Format(string message)
         {
+            // Since Prefix is now immutable, this is thread-safe.
             return string.IsNullOrEmpty(Prefix) ? message : $"[{Prefix}] {message}";
         }
 
