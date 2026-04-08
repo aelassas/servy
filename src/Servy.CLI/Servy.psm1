@@ -688,8 +688,11 @@ function Install-ServyService {
         will fail, and the argument will not be passed to the executable.            
     #>
   [CmdletBinding()]
-  param(
+param(
+    # Execution Settings
     [switch] $Quiet,
+
+    # Basic Information
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string] $Name,
@@ -698,83 +701,204 @@ function Install-ServyService {
 
     [string] $Description,
 
+    # Process Configuration
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Executable not found: $_" } 
+    })]
     [string] $Path,
 
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Startup directory not found: $_" } 
+    })]
     [string] $StartupDir,
+
     [string] $Params,
+
+    # Service Lifecycle and Priority
     [ValidateSet("Automatic", "AutomaticDelayedStart", "Manual", "Disabled")]
     [string] $StartupType,
+
     [ValidateSet("Idle", "BelowNormal", "Normal", "AboveNormal", "High", "RealTime")]
     [string] $Priority,
+
+    # Logging
+    [ValidateScript({ 
+        $parent = Split-Path $_ -Parent
+        if (Test-Path $parent -PathType Container) { $true } 
+        else { throw "Parent directory for Stdout does not exist: $parent" } 
+    })]
     [string] $Stdout,
+
+    [ValidateScript({ 
+        $parent = Split-Path $_ -Parent
+        if (Test-Path $parent -PathType Container) { $true } 
+        else { throw "Parent directory for Stderr does not exist: $parent" } 
+    })]
     [string] $Stderr,
+
+    # Timeouts
     [ValidateRange(1, 2147483647)]
     [int] $StartTimeout,
+
     [ValidateRange(1, 2147483647)]
     [int] $StopTimeout,
+
+    # Log Rotation
     [switch] $EnableRotation,
+
     [switch] $EnableSizeRotation,
+
     [ValidateRange(1, 2147483647)]
     [int] $RotationSize,
+
     [switch] $EnableDateRotation,
+
     [ValidateSet("Daily", "Weekly", "Monthly")]
     [string] $DateRotationType,
+
     [ValidateRange(0, 2147483647)]
     [int] $MaxRotations,
+
     [switch] $UseLocalTimeForRotation,
+
+    # Health Monitoring
     [switch] $EnableHealth,
+
     [ValidateRange(5, 2147483647)]
     [int] $HeartbeatInterval,
+
     [ValidateRange(1, 2147483647)]
     [int] $MaxFailedChecks,
+
+    # Recovery
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
+
     [ValidateRange(1, 2147483647)]
     [int] $MaxRestartAttempts,
+
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Failure program executable not found: $_" } 
+    })]
     [string] $FailureProgramPath,
+
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Failure program startup directory not found: $_" } 
+    })]
     [string] $FailureProgramStartupDir,
+
     [string] $FailureProgramParams,
+
+    # Environment and Dependencies
+    [ValidatePattern('^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$')]
     [string] $EnvVars,
+
+    [ValidatePattern('^[\w\s;-]+$')]
     [string] $Deps,
+
+    # Identity
+    [ValidatePattern('^.+\\.+$')]
     [string] $User,
+
     [string] $Password,
 
     # Pre-launch
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Pre-launch executable not found: $_" } 
+    })]
     [string] $PreLaunchPath,
+
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Pre-launch startup directory not found: $_" } 
+    })]
     [string] $PreLaunchStartupDir,
+
     [string] $PreLaunchParams,
+
     [string] $PreLaunchEnv,
+
+    [ValidateScript({ 
+        $parent = Split-Path $_ -Parent
+        if (Test-Path $parent -PathType Container) { $true } 
+        else { throw "Parent directory for PreLaunchStdout does not exist: $parent" } 
+    })]
     [string] $PreLaunchStdout,
+
+    [ValidateScript({ 
+        $parent = Split-Path $_ -Parent
+        if (Test-Path $parent -PathType Container) { $true } 
+        else { throw "Parent directory for PreLaunchStderr does not exist: $parent" } 
+    })]
     [string] $PreLaunchStderr,
+
     [ValidateRange(0, 2147483647)]
     [int] $PreLaunchTimeout,
+
     [ValidateRange(0, 2147483647)]
     [int] $PreLaunchRetryAttempts,
+
     [switch] $PreLaunchIgnoreFailure,
 
     # Post-launch
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Post-launch executable not found: $_" } 
+    })]
     [string] $PostLaunchPath,
+
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Post-launch startup directory not found: $_" } 
+    })]
     [string] $PostLaunchStartupDir,
+
     [string] $PostLaunchParams,
 
     # Debug Logs
     [switch] $EnableDebugLogs,
 
     # Pre-stop
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Pre-stop executable not found: $_" } 
+    })]
     [string] $PreStopPath,
+
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Pre-stop startup directory not found: $_" } 
+    })]
     [string] $PreStopStartupDir,
+
     [string] $PreStopParams,
+
     [ValidateRange(0, 2147483647)]
     [int] $PreStopTimeout,
+
     [switch] $PreStopLogAsError,
 
     # Post-stop
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Leaf) { $true } 
+        else { throw "Post-stop executable not found: $_" } 
+    })]
     [string] $PostStopPath,
-    [string] $PostStopStartupDir,
-    [string] $PostStopParams
 
+    [ValidateScript({ 
+        if (Test-Path $_ -PathType Container) { $true } 
+        else { throw "Post-stop startup directory not found: $_" } 
+    })]
+    [string] $PostStopStartupDir,
+
+    [string] $PostStopParams
   )
 
   $argsList = @()
