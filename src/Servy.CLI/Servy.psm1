@@ -573,7 +573,7 @@ function Install-ServyService {
     .PARAMETER FailureProgramParams
         Additional parameters for the failure program. Optional.
 
-    .PARAMETER Env
+    .PARAMETER EnvVars
         Environment variables for the service process. Format: Name=Value;Name=Value. Optional.
 
     .PARAMETER Deps
