@@ -38,7 +38,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail("Service name is required.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
                 if (!exists)
@@ -55,8 +55,11 @@ namespace Servy.CLI.Commands
                 var res = await _serviceManager.RestartServiceAsync(opts.ServiceName);
                 if (res.IsSuccess)
                 {
-                    Logger.Info($"Successfully restarted the service '{opts.ServiceName}'.");
-                    return CommandResult.Ok("Service restarted successfully.");
+                    // Localize and include the service name for better feedback
+                    var successMsg = string.Format(Strings.Msg_RestartSuccess, opts.ServiceName);
+
+                    Logger.Info(successMsg);
+                    return CommandResult.Ok(successMsg);
                 }
                 else
                 {

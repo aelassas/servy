@@ -29,6 +29,78 @@
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
+
+  <data name="Msg_WrapperNotFound" xml:space="preserve">
+    <value>Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.</value>
+  </data>
+  <data name="Msg_ServiceNameRequired" xml:space="preserve">
+    <value>Service name is required.</value>
+  </data>
+  <data name="Msg_PathRequired" xml:space="preserve">
+    <value>File path is required.</value>
+  </data>
+  <data name="Msg_InvalidExecutablePath" xml:space="preserve">
+    <value>Invalid executable path: {0}. Ensure the file exists and is accessible.</value>
+  </data>
+  <data name="Msg_InvalidConfigFileType" xml:space="preserve">
+    <value>Configuration output file type is required (XML or JSON).</value>
+  </data>
+  <data name="Msg_UnsupportedFileType" xml:space="preserve">
+    <value>Unsupported configuration file type: {0}</value>
+  </data>
+  <data name="Msg_ImportFormatInvalid" xml:space="preserve">
+    <value>{0} file is not valid: {1}</value>
+  </data>
+  <data name="Msg_ImportRepoFailure" xml:space="preserve">
+    <value>Failed to import {0} configuration into the repository.</value>
+  </data>
+  <data name="Msg_ServiceStatusFailure" xml:space="preserve">
+    <value>Failed to retrieve status for service '{0}'.</value>
+  </data>
+  <data name="Msg_ImportDeserializationFailure" xml:space="preserve">
+    <value>Service configuration was imported, but failed to deserialize for installation.</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>Invalid {0} in configuration. Ensure the path exists and is accessible.</value>
+  </data>
+  <data name="Msg_ImportInstallSuccess" xml:space="preserve">
+    <value>{0} configuration saved and service '{1}' installed successfully.</value>
+  </data>
+  <data name="Msg_ImportInstallLookupFailure" xml:space="preserve">
+    <value>Service configuration was saved, but the service '{0}' could not be located for installation.</value>
+  </data>
+  <data name="Msg_ImportInstallGeneralFailure" xml:space="preserve">
+    <value>Service configuration was saved, but installation failed for service '{0}'.</value>
+  </data>
+  <data name="Msg_ExportSuccess" xml:space="preserve">
+    <value>{0} configuration exported successfully to: {1}</value>
+  </data>
+  <data name="Msg_ImportSuccessNoInstall" xml:space="preserve">
+    <value>{0} configuration imported successfully.</value>
+  </data>
+  <data name="Msg_InstallSuccess" xml:space="preserve">
+    <value>Service '{0}' installed successfully.</value>
+  </data>
+  <data name="Msg_RestartSuccess" xml:space="preserve">
+    <value>Service '{0}' restarted successfully.</value>
+  </data>
+  <data name="Msg_ServiceStatusResult" xml:space="preserve">
+    <value>Service status for '{0}': {1}</value>
+  </data>
+
+  <data name="Msg_StartSuccess" xml:space="preserve">
+    <value>Service '{0}' started successfully.</value>
+  </data>
+  <data name="Msg_StopSuccess" xml:space="preserve">
+    <value>Service '{0}' stopped successfully.</value>
+  </data>
+  <data name="Msg_UninstallSuccess" xml:space="preserve">
+    <value>Service '{0}' uninstalled successfully.</value>
+  </data>
+  <data name="Msg_ValidationPassed" xml:space="preserve">
+    <value>Validation passed for service '{0}'.</value>
+  </data>
+
   <data name="Msg_InvalidPath" xml:space="preserve">
     <value>The specified process path is invalid.</value>
   </data>
@@ -110,11 +182,12 @@
     <value>The specified pre-launch stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service’s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
+    <value>Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
   </data>
   <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
     <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
   </data>
+
 
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>

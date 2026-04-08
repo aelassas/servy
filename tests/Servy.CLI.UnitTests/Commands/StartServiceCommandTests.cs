@@ -35,7 +35,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.True(result.Success);
-            Assert.Equal("Service started successfully.", result.Message);
+            Assert.Equal("Service 'TestService' started successfully.", result.Message);
         }
 
         [Fact]

@@ -70,6 +70,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} configuration exported successfully to: {1}.
+        /// </summary>
+        public static string Msg_ExportSuccess {
+            get {
+                return ResourceManager.GetString("Msg_ExportSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à This field is required..
         /// </summary>
         public static string Msg_FieldRequired {
@@ -79,11 +88,101 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service configuration was imported, but failed to deserialize for installation..
+        /// </summary>
+        public static string Msg_ImportDeserializationFailure {
+            get {
+                return ResourceManager.GetString("Msg_ImportDeserializationFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} file is not valid: {1}.
+        /// </summary>
+        public static string Msg_ImportFormatInvalid {
+            get {
+                return ResourceManager.GetString("Msg_ImportFormatInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service configuration was saved, but installation failed for service &apos;{0}&apos;..
+        /// </summary>
+        public static string Msg_ImportInstallGeneralFailure {
+            get {
+                return ResourceManager.GetString("Msg_ImportInstallGeneralFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service configuration was saved, but the service &apos;{0}&apos; could not be located for installation..
+        /// </summary>
+        public static string Msg_ImportInstallLookupFailure {
+            get {
+                return ResourceManager.GetString("Msg_ImportInstallLookupFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} configuration saved and service &apos;{1}&apos; installed successfully..
+        /// </summary>
+        public static string Msg_ImportInstallSuccess {
+            get {
+                return ResourceManager.GetString("Msg_ImportInstallSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to import {0} configuration into the repository..
+        /// </summary>
+        public static string Msg_ImportRepoFailure {
+            get {
+                return ResourceManager.GetString("Msg_ImportRepoFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à {0} configuration imported successfully..
+        /// </summary>
+        public static string Msg_ImportSuccessNoInstall {
+            get {
+                return ResourceManager.GetString("Msg_ImportSuccessNoInstall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; installed successfully..
+        /// </summary>
+        public static string Msg_InstallSuccess {
+            get {
+                return ResourceManager.GetString("Msg_InstallSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configuration output file type is required (XML or JSON)..
+        /// </summary>
+        public static string Msg_InvalidConfigFileType {
+            get {
+                return ResourceManager.GetString("Msg_InvalidConfigFileType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The specified date rotation type is invalid. Options: Daily, Weekly, Monthly..
         /// </summary>
         public static string Msg_InvalidDateRotationType {
             get {
                 return ResourceManager.GetString("Msg_InvalidDateRotationType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid executable path: {0}. Ensure the file exists and is accessible..
+        /// </summary>
+        public static string Msg_InvalidExecutablePath {
+            get {
+                return ResourceManager.GetString("Msg_InvalidExecutablePath", resourceCulture);
             }
         }
         
@@ -147,6 +246,15 @@ namespace Servy.CLI.Resources {
         public static string Msg_InvalidPath {
             get {
                 return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid {0} in configuration. Ensure the path exists and is accessible..
+        /// </summary>
+        public static string Msg_InvalidPathInConfig {
+            get {
+                return ResourceManager.GetString("Msg_InvalidPathInConfig", resourceCulture);
             }
         }
         
@@ -232,7 +340,7 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service’s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
@@ -367,11 +475,29 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à File path is required..
+        /// </summary>
+        public static string Msg_PathRequired {
+            get {
+                return ResourceManager.GetString("Msg_PathRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Preparing environment....
         /// </summary>
         public static string Msg_Preparing {
             get {
                 return ResourceManager.GetString("Msg_Preparing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; restarted successfully..
+        /// </summary>
+        public static string Msg_RestartSuccess {
+            get {
+                return ResourceManager.GetString("Msg_RestartSuccess", resourceCulture);
             }
         }
         
@@ -399,6 +525,15 @@ namespace Servy.CLI.Resources {
         public static string Msg_ServiceDisabledError {
             get {
                 return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name is required..
+        /// </summary>
+        public static string Msg_ServiceNameRequired {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameRequired", resourceCulture);
             }
         }
         
@@ -439,11 +574,47 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to retrieve status for service &apos;{0}&apos;..
+        /// </summary>
+        public static string Msg_ServiceStatusFailure {
+            get {
+                return ResourceManager.GetString("Msg_ServiceStatusFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service status for &apos;{0}&apos;: {1}.
+        /// </summary>
+        public static string Msg_ServiceStatusResult {
+            get {
+                return ResourceManager.GetString("Msg_ServiceStatusResult", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was stopped successfully..
         /// </summary>
         public static string Msg_ServiceStopped {
             get {
                 return ResourceManager.GetString("Msg_ServiceStopped", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; started successfully..
+        /// </summary>
+        public static string Msg_StartSuccess {
+            get {
+                return ResourceManager.GetString("Msg_StartSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; stopped successfully..
+        /// </summary>
+        public static string Msg_StopSuccess {
+            get {
+                return ResourceManager.GetString("Msg_StopSuccess", resourceCulture);
             }
         }
         
@@ -457,11 +628,47 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service &apos;{0}&apos; uninstalled successfully..
+        /// </summary>
+        public static string Msg_UninstallSuccess {
+            get {
+                return ResourceManager.GetString("Msg_UninstallSuccess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unsupported configuration file type: {0}.
+        /// </summary>
+        public static string Msg_UnsupportedFileType {
+            get {
+                return ResourceManager.GetString("Msg_UnsupportedFileType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Please fill in all required fields..
         /// </summary>
         public static string Msg_ValidationError {
             get {
                 return ResourceManager.GetString("Msg_ValidationError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Validation passed for service &apos;{0}&apos;..
+        /// </summary>
+        public static string Msg_ValidationPassed {
+            get {
+                return ResourceManager.GetString("Msg_ValidationPassed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed..
+        /// </summary>
+        public static string Msg_WrapperNotFound {
+            get {
+                return ResourceManager.GetString("Msg_WrapperNotFound", resourceCulture);
             }
         }
     }

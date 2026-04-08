@@ -36,7 +36,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.True(result.Success);
-            Assert.Equal("Service uninstalled successfully.", result.Message);
+            Assert.Equal("Service 'TestService' uninstalled successfully.", result.Message);
         }
 
         [Fact]

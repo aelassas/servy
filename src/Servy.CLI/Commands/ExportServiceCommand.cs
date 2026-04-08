@@ -1,6 +1,7 @@
 ﻿using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System;
@@ -40,35 +41,47 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail("Service name is required.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 ConfigFileType configFileType;
                 if (string.IsNullOrWhiteSpace(opts.ConfigFileType) || !Enum.TryParse(opts.ConfigFileType, true, out configFileType))
-                    return CommandResult.Fail("Configuration output file type is required (xml or json).");
+                    return CommandResult.Fail(Strings.Msg_InvalidConfigFileType);
 
                 if (string.IsNullOrWhiteSpace(opts.Path))
-                    return CommandResult.Fail("Output file path is required.");
+                    return CommandResult.Fail(Strings.Msg_PathRequired);
 
                 var exists = await _serviceRepository.GetByNameAsync(opts.ServiceName);
 
                 if (exists == null)
-                    return CommandResult.Fail("Service not found.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNotFound);
 
+                string content;
+                string typeLabel = configFileType.ToString().ToUpper();
+
+                // 1. Perform Export based on type using standard switch syntax
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        var xml = await _serviceRepository.ExportXmlAsync(opts.ServiceName);
-                        SaveFile(opts.Path, xml);
-                        Logger.Info($"XML configuration file exported successfully to: {opts.Path}");
-                        return CommandResult.Ok($"XML configuration exported saved successfully to: {opts.Path}");
+                        content = await _serviceRepository.ExportXmlAsync(opts.ServiceName);
+                        break;
+
                     case ConfigFileType.Json:
-                        var json = await _serviceRepository.ExportJsonAsync(opts.ServiceName);
-                        SaveFile(opts.Path, json);
-                        Logger.Info($"JSON configuration file exported successfully to: {opts.Path}");
-                        return CommandResult.Ok($"JSON configuration exported saved successfully to: {opts.Path}");
+                        content = await _serviceRepository.ExportJsonAsync(opts.ServiceName);
+                        break;
+
+                    default:
+                        // Providing a specific failure if an unsupported type is somehow passed
+                        return CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
                 }
 
-                return CommandResult.Ok();
+                // 2. Save the file (Logic extracted from the switch to avoid duplication)
+                SaveFile(opts.Path, content);
+
+                // 3. Centralized Localized Logging and Response
+                var successMessage = string.Format(Strings.Msg_ExportSuccess, typeLabel, opts.Path);
+
+                Logger.Info(successMessage);
+                return CommandResult.Ok(successMessage);
             });
         }
 

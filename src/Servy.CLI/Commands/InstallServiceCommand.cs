@@ -1,4 +1,5 @@
 ﻿using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Enums;
@@ -58,7 +59,7 @@ namespace Servy.CLI.Commands
                 var wrapperExePath = AppConfig.GetServyCLIServicePath();
 
                 if (!File.Exists(wrapperExePath))
-                    return CommandResult.Fail(@"Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.");
+                    return CommandResult.Fail(Strings.Msg_WrapperNotFound);
 
                 // Parse enums safely with defaults
                 var startupType = ParseEnumOption(opts.ServiceStartType, ServiceStartType.Automatic);
@@ -159,8 +160,11 @@ namespace Servy.CLI.Commands
 
                 if (res.IsSuccess)
                 {
-                    Logger.Info($"Successfully installed the service '{opts.ServiceName}'.");
-                    return CommandResult.Ok("Service installed successfully.");
+                    // Use a localized string that includes the service name for clarity
+                    var successMsg = string.Format(Strings.Msg_InstallSuccess, opts.ServiceName);
+
+                    Logger.Info(successMsg);
+                    return CommandResult.Ok(successMsg);
                 }
                 else
                 {
