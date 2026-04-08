@@ -331,6 +331,7 @@ function Invoke-ServyCli {
   finally {
     if ($null -ne $process) {
         try { $process.CancelErrorRead() } catch {}
+        Start-Sleep -Milliseconds 50  # let in-flight events drain
     }    
 
     # Capture stderr BEFORE cleanup
