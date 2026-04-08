@@ -166,10 +166,11 @@ namespace Servy.Core.Security
                         SaveProtected(path, decryptedData);
                         return decryptedData;
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // If migration fails, still return the data so the service can start, 
-                        // but it will try to migrate again next time.
+                        // Trip the warning so admins can diagnose I/O or permission issues.
+                        // We still return the data so the service remains operational.
+                        Logger.Warn($"Key migration to entropy-protected format failed for '{path}': {ex.Message}");
                         return decryptedData;
                     }
                 }
