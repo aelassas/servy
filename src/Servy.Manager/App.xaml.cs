@@ -321,7 +321,7 @@ namespace Servy.Manager
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else
-                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) ?? string.Empty;
                 ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigrationAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ConfigurationAppPublishPath))
