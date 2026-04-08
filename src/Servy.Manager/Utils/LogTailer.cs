@@ -180,7 +180,10 @@ namespace Servy.Manager.Utils
                 {
                     string line;
                     var tempLines = new List<string>();
-                    while ((line = sr.ReadLine()) != null) tempLines.Add(line);
+                    while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
+                    {
+                        tempLines.Add(line);
+                    }
 
                     // We work backwards from the LastWriteTime
                     // Every line gets 1 tick less than the one after it
