@@ -117,17 +117,34 @@ namespace Servy.Core.Security
             {
                 // Retry with short exponential backoff
                 const int maxRetries = 3;
-                for (int attempt = 0; ; attempt++)
+
+                // Move the safety check to the loop condition
+                for (int attempt = 0; attempt < maxRetries; attempt++)
                 {
                     try
                     {
                         encrypted = File.ReadAllBytes(path);
-                        break;
+                        break; // Success: exit the loop
                     }
-                    catch (IOException) when (attempt < maxRetries - 1)
+                    catch (IOException ex)
                     {
+                        // If this was the last attempt, rethrow to be caught by BaseCommand
+                        if (attempt == maxRetries - 1)
+                        {
+                            Logger.Error(string.Format("Failed to read file after {0} attempts: {1}", maxRetries, path), ex);
+                            throw;
+                        }
+
+                        // Exponential backoff: Wait longer with each failure
                         Thread.Sleep(100 * (attempt + 1));
                     }
+                }
+
+                // Defensive check: Even though the throw above prevents this, 
+                // static analysis tools (and good practice) appreciate the explicit guard.
+                if (encrypted == null)
+                {
+                    throw new FileNotFoundException(string.Format("Configuration file could not be loaded: {0}", path));
                 }
 
                 try
