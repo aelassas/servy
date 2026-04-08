@@ -407,14 +407,6 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <inheritdoc/>
-        public void WaitForExit()
-        {
-            ThrowIfDisposed();
-            if (_process.HasExited) return;
-            _process.WaitForExit();
-        }
-
-        /// <inheritdoc/>
         public bool CloseMainWindow()
         {
             ThrowIfDisposed();

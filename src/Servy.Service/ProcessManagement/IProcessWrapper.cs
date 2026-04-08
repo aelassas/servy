@@ -132,11 +132,6 @@ namespace Servy.Service.ProcessManagement
         bool WaitForExit(int milliseconds);
 
         /// <summary>
-        /// Instructs the process to wait indefinitely for exit.
-        /// </summary>
-        void WaitForExit();
-
-        /// <summary>
         /// Closes the main window of the associated process.
         /// </summary>
         /// <returns><c>true</c> if the main window has been successfully closed; otherwise, <c>false</c>.</returns>
