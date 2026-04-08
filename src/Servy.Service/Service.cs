@@ -76,14 +76,16 @@ namespace Servy.Service
         /// <summary>
         /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
         /// </summary>
-        private const int WaitChunkMs = 5000;
+        private static int WaitChunkMs;
+        private const int DefaultWaitChunkMs = 5000;
 
         /// <summary>
         /// Specifies the additional time, in milliseconds, used for Service Control Manager (SCM) operations.
         /// </summary>
         /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
         /// Windows Service Control Manager to account for potential processing overhead.</remarks>
-        private const int ScmAdditionalTime = 15_000;
+        private static int ScmAdditionalTimeMs;
+        private const int DefaultScmAdditionalTimeMs = 15_000;
 
         /// <summary>
         /// The service can perform cleanup tasks during a system shutdown. 
@@ -306,6 +308,24 @@ namespace Servy.Service
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
 
+                if (int.TryParse(config["Timing:WaitChunkMs"], out var waitChunkMs) && waitChunkMs > 0)
+                {
+                    WaitChunkMs = waitChunkMs;
+                }
+                else
+                {
+                    WaitChunkMs = DefaultWaitChunkMs;
+                }
+
+                if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
+                {
+                    ScmAdditionalTimeMs = scmAdditionalTimeMs;
+                }
+                else
+                {
+                    ScmAdditionalTimeMs = DefaultScmAdditionalTimeMs;
+                }
+
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
                 {
                     logLevel = LogLevel.Info;
@@ -322,9 +342,9 @@ namespace Servy.Service
                 var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
                 _logger.SetIsEventLogEnabled(isEventLogEnabled);
 
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                if (int.TryParse(config["LogRotationSizeMB"], out var logRotationSizeMB) && logRotationSizeMB > 0)
                 {
-                    Logger.SetLogRotationSize(size);
+                    Logger.SetLogRotationSize(logRotationSizeMB);
                 }
                 else
                 {
@@ -338,6 +358,16 @@ namespace Servy.Service
                     useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
                 }
                 Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
+                // --- Log all configurations for debugging ---
+                Logger.Debug("Servy Configuration Loaded:" + Environment.NewLine +
+                    $"  WaitChunkMs: {WaitChunkMs}" + Environment.NewLine +
+                    $"  ScmAdditionalTimeMs: {ScmAdditionalTimeMs}" + Environment.NewLine +
+                    $"  LogLevel: {logLevel}" + Environment.NewLine +
+                    $"  LogRollingInterval: {dateRotationType}" + Environment.NewLine +
+                    $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
+                    $"  LogRotationSizeMB: {logRotationSizeMB}" + Environment.NewLine +
+                    $"  UseLocalTimeForRotation: {useLocalTimeForRotation}");
 
                 // Initialize database and helpers
                 var dbContext = new AppDbContext(connectionString);
@@ -1065,7 +1095,7 @@ namespace Servy.Service
                     }
 
                     // 2. Keep SCM informed
-                    _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+                    _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTimeMs, null!);
 
                     // 3. Check for timeout using actual wall-clock time
                     if (sw.ElapsedMilliseconds >= effectiveTimeoutMs)
@@ -2411,7 +2441,7 @@ namespace Servy.Service
                     }
 
                     // Request 15s of "Wait Hint" every 5s pulse
-                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTime, null!);
+                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTimeMs, null!);
                 }
 
                 sw.Stop();
