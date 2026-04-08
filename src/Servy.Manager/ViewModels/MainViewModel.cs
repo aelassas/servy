@@ -425,7 +425,7 @@ namespace Servy.Manager.ViewModels
             try
             {
                 // Use All and Any for high-performance short-circuiting
-                if (_services.All(s => s.IsChecked))
+                if (_services.Any() && _services.All(s => s.IsChecked))
                 {
                     SelectAll = true;
                 }
