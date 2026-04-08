@@ -206,7 +206,7 @@ namespace Servy.Services
             };
 
             // Validate
-            if (!(await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword)))
+            if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword))
             {
                 return; // Validation failed, errors shown in MessageBox
             }
@@ -322,7 +322,7 @@ namespace Servy.Services
         /// <inheritdoc />
         public async Task UninstallService(string serviceName)
         {
-            if (!(await IsServiceNameValid(serviceName)))
+            if (!await IsServiceNameValid(serviceName))
             {
                 return;
             }
@@ -361,7 +361,7 @@ namespace Servy.Services
         {
             try
             {
-                if (!(await IsServiceNameValid(serviceName)))
+                if (!await IsServiceNameValid(serviceName))
                 {
                     return;
                 }
@@ -397,7 +397,7 @@ namespace Servy.Services
         {
             try
             {
-                if (!(await IsServiceNameValid(serviceName)))
+                if (!await IsServiceNameValid(serviceName))
                 {
                     return;
                 }
@@ -426,7 +426,7 @@ namespace Servy.Services
         {
             try
             {
-                if (!(await IsServiceNameValid(serviceName)))
+                if (!await IsServiceNameValid(serviceName))
                 {
                     return;
                 }
@@ -472,7 +472,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword)))
+                if (!await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword))
                 {
                     return;
                 }
@@ -506,7 +506,7 @@ namespace Servy.Services
                 var dto = _modelToServiceDto();
 
                 // Validation
-                if (!(await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword)))
+                if (!await _serviceConfigurationValidator.Validate(dto: dto, wrapperExePath: null, checkServiceStatus: false, confirmPassword: confirmPassword))
                 {
                     return;
                 }
