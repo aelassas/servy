@@ -70,7 +70,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.Equal(1, result.ExitCode);
-            Assert.Contains("XML file not valid", result.Message);
+            Assert.Contains("XML file is not valid", result.Message);
 
             File.Delete(path);
         }
@@ -118,7 +118,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("JSON file not valid", result.Message);
+            Assert.Contains("JSON file is not valid: Executable path is required", result.Message);
 
             File.Delete(path);
         }

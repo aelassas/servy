@@ -51,7 +51,7 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = "" };
             var result = await _command.Execute(opts);
             Assert.False(result.Success);
-            Assert.Contains("Output file path is required", result.Message);
+            Assert.Contains("File path is required", result.Message);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace Servy.CLI.UnitTests.Commands
             var opts = new ExportServiceOptions { ServiceName = "svc", ConfigFileType = "xml", Path = Path.Combine(_tempDir, "out.xml") };
             var result = await _command.Execute(opts);
             Assert.False(result.Success);
-            Assert.Contains("Service not found", result.Message);
+            Assert.Contains("The specified service was not found", result.Message);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.True(result.Success);
-            Assert.Contains("saved successfully", result.Message);
+            Assert.Contains("XML configuration exported successfully", result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("<xml>data</xml>", File.ReadAllText(filePath));
         }
@@ -91,7 +91,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.True(result.Success);
-            Assert.Contains("saved successfully", result.Message);
+            Assert.Contains("JSON configuration exported successfully", result.Message);
             Assert.True(File.Exists(filePath));
             Assert.Equal("{\"name\":\"svc\"}", File.ReadAllText(filePath));
         }

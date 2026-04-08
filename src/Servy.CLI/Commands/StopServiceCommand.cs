@@ -35,7 +35,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail("Service name is required.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
                 if (!exists)
@@ -46,8 +46,11 @@ namespace Servy.CLI.Commands
                 var res = await _serviceManager.StopServiceAsync(opts.ServiceName);
                 if (res.IsSuccess)
                 {
-                    Logger.Info($"Successfully stopped the service '{opts.ServiceName}'.");
-                    return CommandResult.Ok("Service stopped successfully.");
+                    // Localize the message and include the service name for clarity
+                    var successMsg = string.Format(Strings.Msg_StopSuccess, opts.ServiceName);
+
+                    Logger.Info(successMsg);
+                    return CommandResult.Ok(successMsg);
                 }
                 else
                 {

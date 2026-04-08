@@ -42,7 +42,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail("Service name is required.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
                 var exists = _serviceManager.IsServiceInstalled(opts.ServiceName);
                 if (!exists)
@@ -54,10 +54,14 @@ namespace Servy.CLI.Commands
                 var res = await _serviceManager.UninstallServiceAsync(opts.ServiceName);
                 if (res.IsSuccess)
                 {
-                    // Remove the service record from the repository
+                    // 1. Data Persistence: Remove the service record from the repository
                     await _serviceRepository.DeleteAsync(opts.ServiceName);
-                    Logger.Info($"Successfully uninstalled the service '{opts.ServiceName}'.");
-                    return CommandResult.Ok("Service uninstalled successfully.");
+
+                    // 2. Localized Success Output
+                    var successMsg = string.Format(Strings.Msg_UninstallSuccess, opts.ServiceName);
+
+                    Logger.Info(successMsg);
+                    return CommandResult.Ok(successMsg);
                 }
                 else
                 {

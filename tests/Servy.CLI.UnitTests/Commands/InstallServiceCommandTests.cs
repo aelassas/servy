@@ -52,7 +52,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.True(result.Success);
-                Assert.Equal("Service installed successfully.", result.Message);
+                Assert.Equal("Service 'TestService' installed successfully.", result.Message);
             }
             finally
             {

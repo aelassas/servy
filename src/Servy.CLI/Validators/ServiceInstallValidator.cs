@@ -176,7 +176,11 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPostStopStartupDirectory);
             }
 
-            return CommandResult.Ok("Validation passed.");
+            // Use the localized resource with the service name for clear confirmation
+            var successMsg = string.Format(Strings.Msg_ValidationPassed, opts.ServiceName);
+
+            Logger.Info(successMsg);
+            return CommandResult.Ok(successMsg);
         }
 
         /// <summary>

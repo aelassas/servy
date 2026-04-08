@@ -2,6 +2,7 @@
 using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
@@ -54,7 +55,7 @@ namespace Servy.CLI.Commands
 
                 // Validate file path
                 if (string.IsNullOrWhiteSpace(opts.Path))
-                    return CommandResult.Fail("File path is required.");
+                    return CommandResult.Fail(Strings.Msg_PathRequired);
 
                 // Canonicalize the path to resolve ".." and relative segments
                 string fullPath = Path.GetFullPath(opts.Path);
@@ -106,7 +107,7 @@ namespace Servy.CLI.Commands
                         }
                         break;
                     default:
-                        result = CommandResult.Fail("Unsupported configuration file type.");
+                        result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
                         Logger.Error($"Unsupported configuration file type: {opts.ConfigFileType}");
                         break;
                 }
@@ -181,19 +182,19 @@ namespace Servy.CLI.Commands
             // 1. Format Validation
             var (isValid, error) = validator(content);
             if (!isValid)
-                return CommandResult.Fail($"{formatName} file not valid: {error}");
+                return CommandResult.Fail(string.Format(Strings.Msg_ImportFormatInvalid, formatName, error));
 
             // 2. Repository Import
             if (!await repoImporter(content))
-                return CommandResult.Fail($"Failed to import {formatName} configuration.");
+                return CommandResult.Fail(string.Format(Strings.Msg_ImportRepoFailure, formatName));
 
             if (!opts.InstallService)
-                return CommandResult.Ok($"{formatName} configuration imported successfully.");
+                return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
 
             // 3. Deserialization
             var service = deserializer(content);
             if (service == null)
-                return CommandResult.Fail($"Service imported but failed to deserialize for installation.");
+                return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
 
             // 4. Exhaustive Path Validation
             var pathValidation = ValidateServicePaths(service);
@@ -213,7 +214,7 @@ namespace Servy.CLI.Commands
         {
             // Required path
             if (!ProcessHelper.ValidatePath(service.ExecutablePath, isFile: true))
-                return CommandResult.Fail("Invalid executable path in configuration.");
+                return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, service.ExecutablePath));
 
             // Optional paths
             var check = new[]
@@ -234,7 +235,7 @@ namespace Servy.CLI.Commands
             foreach (var (path, isFile, label) in check)
             {
                 if (!string.IsNullOrWhiteSpace(path) && !ProcessHelper.ValidatePath(path, isFile))
-                    return CommandResult.Fail($"Invalid {label} in configuration.");
+                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, label));
             }
 
             return CommandResult.Ok();
@@ -248,34 +249,29 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure of installation.</returns>
         private async Task<CommandResult> TryInstallServiceAsync(string serviceName, string format)
         {
-            // Retrieve the service domain object
+            // 1. Retrieve the service domain object
             var serviceDomain = await _serviceRepository.GetDomainServiceByNameAsync(_serviceManager, serviceName);
+
             if (serviceDomain == null)
             {
-                Logger.Error($"Service imported but failed to find the service for installation. Service name: {serviceName}");
-                return CommandResult.Fail($"Service imported but failed to find the service for installation.");
+                Logger.Error($"Service lookup failed after import. Service: {serviceName}");
+                return CommandResult.Fail(string.Format(Strings.Msg_ImportInstallLookupFailure, serviceName));
             }
 
-            try
+            // 2. Attempt service installation
+            var res = await serviceDomain.Install(isCLI: true);
+
+            if (res.IsSuccess)
             {
-                // Attempt service installation
-                var res = await serviceDomain.Install(isCLI: true);
-                if (res.IsSuccess)
-                {
-                    Logger.Info($"Service imported and installed successfully. Service name: {serviceName}");
-                    return CommandResult.Ok($"{format} configuration saved and service installed successfully.");
-                }
-                else
-                {
-                    Logger.Error(res.ErrorMessage);
-                    return CommandResult.Fail(res.ErrorMessage!);
-                }
+                Logger.Info($"Service imported and installed successfully: {serviceName}");
+                return CommandResult.Ok(string.Format(Strings.Msg_ImportInstallSuccess, format, serviceName));
             }
-            catch (Exception ex)
-            {
-                Logger.Error($"Service imported but failed to install the service. Error: {ex}");
-                return CommandResult.Fail($"Service imported but failed to install the service. Error: {ex.Message}");
-            }
+
+            // Log the domain-specific error message
+            Logger.Error($"Installation failed for {serviceName}: {res.ErrorMessage}");
+
+            // Return the specific error from the domain logic, or a localized general failure
+            return CommandResult.Fail(res.ErrorMessage ?? string.Format(Strings.Msg_ImportInstallGeneralFailure, serviceName));
         }
 
     }

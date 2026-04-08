@@ -29,7 +29,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.True(result.Success);
-            Assert.Equal("Service status: Running", result.Message);
+            Assert.Equal("Service status for 'TestService': Running", result.Message);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Equal("Failed to get service status.", result.Message);
+            Assert.Contains("Failed to query status for service 'TestService'", result.Message);
         }
 
     }

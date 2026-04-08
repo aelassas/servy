@@ -1,5 +1,6 @@
 ﻿using Servy.CLI.Models;
 using Servy.CLI.Options;
+using Servy.CLI.Resources;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 
@@ -33,20 +34,18 @@ namespace Servy.CLI.Commands
 
             return ExecuteWithHandling(action, suggestion, () =>
             {
+                // 1. Validation using localized resource
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
-                    return CommandResult.Fail("Service name is required.");
+                    return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 
-                try
-                {
-                    var status = _serviceManager.GetServiceStatus(opts.ServiceName);
-                    Logger.Info($"Service status for '{opts.ServiceName}': {status}");
-                    return CommandResult.Ok($"Service status: {status}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error getting service status for '{opts.ServiceName}': {ex.Message}");
-                    return CommandResult.Fail("Failed to get service status.");
-                }
+                // 2. Direct execution
+                var status = _serviceManager.GetServiceStatus(opts.ServiceName);
+
+                // 1. Log the detailed technical status
+                Logger.Info(string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status));
+
+                // 2. Return the localized result to the console
+                return CommandResult.Ok(string.Format(Strings.Msg_ServiceStatusResult, opts.ServiceName, status));
             });
         }
 
