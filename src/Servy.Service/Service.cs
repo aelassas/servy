@@ -1379,9 +1379,16 @@ namespace Servy.Service
 
             try
             {
+                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
+
+                foreach (var kvp in expandedEnv)
+                {
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                }
+
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
                     _options.PostLaunchExecutableArgs ?? string.Empty,
-                    new Dictionary<string, string>()
+                    expandedEnv
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
@@ -1439,9 +1446,16 @@ namespace Servy.Service
 
             try
             {
+                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
+
+                foreach (var kvp in expandedEnv)
+                {
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                }
+
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
                     _options.FailureProgramArgs ?? string.Empty,
-                    new Dictionary<string, string>()
+                    expandedEnv
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
@@ -2247,9 +2261,17 @@ namespace Servy.Service
 
             try
             {
+                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
+
+                foreach (var kvp in expandedEnv)
+                {
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                }
+
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
                     options.PreStopExecutableArgs ?? string.Empty,
-                    new Dictionary<string, string>());
+                    expandedEnv
+                );
 
                 LogUnexpandedPlaceholders(args, "[Pre-Stop] Arguments");
 
@@ -2459,9 +2481,16 @@ namespace Servy.Service
 
             try
             {
+                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
+
+                foreach (var kvp in expandedEnv)
+                {
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                }
+
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
                     _options.PostStopExecutableArgs ?? string.Empty,
-                    new Dictionary<string, string>()
+                    expandedEnv
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
