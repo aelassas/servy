@@ -350,6 +350,31 @@ function Invoke-ServyCli {
   }
 }
 
+function Assert-Administrator {
+  <#
+    .SYNOPSIS
+        Verifies that the current PowerShell session is running with Administrator privileges.
+
+    .DESCRIPTION
+        Checks the security principal of the current Windows identity. If the user is not in
+        the 'Administrator' role, the function throws a terminating error. This is used
+        by Servy cmdlets that interact with the Service Control Manager (SCM).
+
+    .EXAMPLE
+        Assert-Administrator
+        # Throws an error if not elevated; otherwise, allows the script to continue.
+
+    .NOTES
+        Requires the System.Security.Principal namespace.
+  #>
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
+    }
+}
+
 function Invoke-ServyServiceCommand {
   <#
     .SYNOPSIS
@@ -385,6 +410,7 @@ function Invoke-ServyServiceCommand {
 
     [switch] $Quiet
   )
+    Assert-Administrator
 
     $argsList = @()
     $argsList = Add-Arg $argsList "--name" $Name
@@ -901,6 +927,8 @@ param(
     [string] $PostStopParams
   )
 
+  Assert-Administrator
+  
   $argsList = @()
 
   # 1. Define parameter pairs for PS 2.0 compatibility
