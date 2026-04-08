@@ -15,6 +15,9 @@ namespace Servy.Core.Helpers
     /// </summary>
     public static class ProcessHelper
     {
+        private static DateTime _lastPruneTime = DateTime.MinValue;
+        private static readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
+
         /// <summary>
         /// Stores the last CPU measurement for a process.
         /// </summary>
@@ -55,6 +58,9 @@ namespace Servy.Core.Helpers
         [ExcludeFromCodeCoverage]
         public static double GetCpuUsage(int pid)
         {
+            // 1. Periodically prune dead PIDs to prevent memory leaks and stale calculations
+            PruneDeadProcesses();
+
             try
             {
                 using (var process = Process.GetProcessById(pid))
@@ -64,7 +70,6 @@ namespace Servy.Core.Helpers
 
                     if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
                     {
-                        // First measurement -> just store sample
                         CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
                         {
                             LastTime = now,
@@ -77,10 +82,8 @@ namespace Servy.Core.Helpers
                     var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
 
                     // Handle invalid or inconsistent samples
-                    if (deltaTime <= 0 || deltaCpu < 0)
-                        return 0;
+                    if (deltaTime <= 0 || deltaCpu < 0) return 0;
 
-                    // Normalize CPU usage across all cores
                     double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
 
                     // Update stored sample
@@ -106,14 +109,37 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Gets the RAM usage of a process by its PID.
+        /// Removes entries for processes that are no longer running.
+        /// Throttled to execute at most once every 5 minutes.
         /// </summary>
-        /// <param name="pid">The process identifier (PID).</param>
-        /// <returns>
-        /// The RAM usage in bytes.
-        /// Returns <c>0</c> if the process cannot be accessed.
-        /// </returns>
-        [ExcludeFromCodeCoverage]
+        private static void PruneDeadProcesses()
+        {
+            if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;
+
+            foreach (var pid in CpuTimesStore.PrevCpuTimes.Keys)
+            {
+                bool isAlive = false;
+                try
+                {
+                    using (var p = Process.GetProcessById(pid))
+                    {
+                        isAlive = !p.HasExited;
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    isAlive = false;
+                }
+
+                if (!isAlive)
+                {
+                    CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                }
+            }
+
+            _lastPruneTime = DateTime.UtcNow;
+        }
+
         public static long GetRamUsage(int pid)
         {
             try
@@ -363,7 +389,5 @@ namespace Servy.Core.Helpers
             sb.Append('"');
             return sb.ToString();
         }
-
     }
-
 }
