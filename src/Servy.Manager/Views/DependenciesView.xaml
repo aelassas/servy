@@ -11,7 +11,10 @@
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
              xmlns:core="clr-namespace:Servy.Core.Services;assembly=Servy.Core"
              xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
-             Loaded="UserControl_Loaded">
+             Loaded="UserControl_Loaded"
+             AutomationProperties.Name="Dependencies View"
+             AutomationProperties.AutomationId="DependenciesView"
+             AutomationProperties.HelpText="Displays the service list and their hierarchical dependencies">
 
     <UserControl.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
@@ -24,7 +27,6 @@
             <ColumnDefinition Width="4*" />
         </Grid.ColumnDefinitions>
 
-        <!-- LEFT: SEARCH + SERVICES -->
         <controls:ServiceListControl
             Grid.Column="0"
             Services="{Binding Services}"
@@ -32,9 +34,11 @@
             SearchText="{Binding SearchText}"
             SearchButtonText="{Binding SearchButtonText}"
             SearchCommand="{Binding SearchCommand}"
-            IsBusy="{Binding IsBusy}" />
+            IsBusy="{Binding IsBusy}"
+            AutomationProperties.Name="Service Selection List"
+            AutomationProperties.AutomationId="ServiceListControl"
+            AutomationProperties.HelpText="Search and select a service to view its dependencies" />
 
-        <!-- RIGHT: DEPENDENCIES -->
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -47,26 +51,19 @@
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
-                    <!-- PID on the left -->
                     <ColumnDefinition Width="Auto" />
 
-                    <!-- Refresh -->
                     <ColumnDefinition Width="Auto" />
 
-                    <!-- Expand all -->
                     <ColumnDefinition Width="Auto" />
 
-                    <!-- Collapse all -->
                     <ColumnDefinition Width="Auto" />
 
-                    <!-- Spacer -->
                     <ColumnDefinition Width="*" />
 
-                    <!-- INFO on the right -->
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!--PID-->
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="0" Margin="0,0,6,6" VerticalAlignment="Center">
                     <Border Background="#F0F7FA" CornerRadius="2" Padding="4,0,0,0" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal">
@@ -79,7 +76,9 @@
                                        Foreground="#1B7F9F" 
                                        FontWeight="Bold" 
                                        FontSize="12"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       AutomationProperties.Name="Process ID"
+                                       AutomationProperties.AutomationId="PidValueTextBlock" />
 
                             <Button Command="{Binding CopyPidCommand}"
                                     Margin="5,0,0,0"
@@ -88,7 +87,10 @@
                                     BorderThickness="0"
                                     Cursor="Hand"
                                     ToolTip="{x:Static resx:Strings.Button_CopyPid}"
-                                    FocusVisualStyle="{x:Null}">
+                                    FocusVisualStyle="{x:Null}"
+                                    AutomationProperties.Name="{x:Static resx:Strings.Button_CopyPid}"
+                                    AutomationProperties.AutomationId="CopyPidButton"
+                                    AutomationProperties.HelpText="Copies the process ID to the clipboard">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Opacity" Value="0.5" />
@@ -109,7 +111,6 @@
                     </Border>
                 </StackPanel>
 
-                <!--Refresh button-->
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center">
                     <Button Command="{Binding RefreshCommand}"
                             Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
@@ -119,7 +120,10 @@
                             FontSize="10.5"
                             Height="20"
                             Foreground="White"
-                            Cursor="Hand">
+                            Cursor="Hand"
+                            AutomationProperties.Name="{x:Static resx:Strings.Button_Refresh}"
+                            AutomationProperties.AutomationId="RefreshButton"
+                            AutomationProperties.HelpText="Reloads the dependency tree for the selected service">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="#1B7F9F"/>
@@ -162,17 +166,19 @@
                     </Button>
                 </StackPanel>
 
-                <!--Expand All button-->
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="2" Margin="0,0,6,0" VerticalAlignment="Center">
                     <Button Command="{Binding ExpandAllCommand}"
-                           Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
-                           ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
-                           Margin="0,0,0,6" 
-                           Padding="6,1" 
-                           FontSize="10.5"
-                           Height="20"
-                           Foreground="White"
-                           Cursor="Hand">
+                            Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                            ToolTip="{x:Static resx:Strings.Tooltip_ExpandAll}"
+                            Margin="0,0,0,6" 
+                            Padding="6,1" 
+                            FontSize="10.5"
+                            Height="20"
+                            Foreground="White"
+                            Cursor="Hand"
+                            AutomationProperties.Name="{x:Static resx:Strings.Button_ExpandAll}"
+                            AutomationProperties.AutomationId="ExpandAllButton"
+                            AutomationProperties.HelpText="Expands all branches in the dependency tree">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="#1B7F9F"/>
@@ -180,13 +186,13 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="border" 
-                                                   Background="{TemplateBinding Background}" 
-                                                   CornerRadius="2" 
-                                                   Padding="{TemplateBinding Padding}">
+                                                    Background="{TemplateBinding Background}" 
+                                                    CornerRadius="2" 
+                                                    Padding="{TemplateBinding Padding}">
                                                 <StackPanel Orientation="Horizontal" 
-                                                           HorizontalAlignment="Center" 
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,0,1">
+                                                            HorizontalAlignment="Center" 
+                                                            VerticalAlignment="Center"
+                                                            Margin="0,0,0,1">
 
                                                     <TextBlock Text="{x:Static resx:Strings.Button_ExpandAll}" VerticalAlignment="Center"/>
                                                 </StackPanel>
@@ -207,17 +213,19 @@
                     </Button>
                 </StackPanel>
 
-                <!--Collapse All button-->
                 <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="3" Margin="0,0,6,0" VerticalAlignment="Center">
                     <Button Command="{Binding CollapseAllCommand}"
-                           Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
-                           ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
-                           Margin="0,0,0,6" 
-                           Padding="6,1" 
-                           FontSize="10.5"
-                           Height="20"
-                           Foreground="White"
-                           Cursor="Hand">
+                            Visibility="{Binding IsServiceSelected, Converter={StaticResource BoolToVisibility}}"
+                            ToolTip="{x:Static resx:Strings.Tooltip_CollapseAll}"
+                            Margin="0,0,0,6" 
+                            Padding="6,1" 
+                            FontSize="10.5"
+                            Height="20"
+                            Foreground="White"
+                            Cursor="Hand"
+                            AutomationProperties.Name="{x:Static resx:Strings.Button_CollapseAll}"
+                            AutomationProperties.AutomationId="CollapseAllButton"
+                            AutomationProperties.HelpText="Collapses all branches in the dependency tree">
                         <Button.Style>
                             <Style TargetType="Button">
                                 <Setter Property="Background" Value="#1B7F9F"/>
@@ -225,13 +233,13 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="border" 
-                                                   Background="{TemplateBinding Background}" 
-                                                   CornerRadius="2" 
-                                                   Padding="{TemplateBinding Padding}">
+                                                    Background="{TemplateBinding Background}" 
+                                                    CornerRadius="2" 
+                                                    Padding="{TemplateBinding Padding}">
                                                 <StackPanel Orientation="Horizontal" 
-                                                           HorizontalAlignment="Center" 
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,0,1">
+                                                            HorizontalAlignment="Center" 
+                                                            VerticalAlignment="Center"
+                                                            Margin="0,0,0,1">
 
                                                     <TextBlock Text="{x:Static resx:Strings.Button_CollapseAll}" VerticalAlignment="Center"/>
                                                 </StackPanel>
@@ -252,7 +260,6 @@
                     </Button>
                 </StackPanel>
 
-                <!--INFO-->
                 <TextBlock Grid.Row="0"
                            Grid.Column="4"
                            Text="{x:Static resx:Strings.Dependencies_Info}"
@@ -261,10 +268,9 @@
                            VerticalAlignment="Center"
                            HorizontalAlignment="Right"
                            Margin="0,0,0,6"
-                           />
+                           AutomationProperties.Name="Dependency Legend Information" />
             </Grid>
 
-            <!--DEPENDENCIES-->
             <Grid Grid.Row="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
@@ -278,7 +284,10 @@
                     <TreeView ItemsSource="{Binding DependencyTree}" 
                               BorderThickness="0" 
                               Background="Transparent"
-                              Padding="5">
+                              Padding="5"
+                              AutomationProperties.Name="Dependency Hierarchy Tree"
+                              AutomationProperties.AutomationId="DependencyTreeView"
+                              AutomationProperties.HelpText="Displays recursive dependencies for the selected service">
 
                         <TreeView.Resources>
                             <HierarchicalDataTemplate DataType="{x:Type core:ServiceDependencyNode}"
@@ -397,7 +406,6 @@
                     </TreeView>
                 </Border>
 
-                <!--Footer-->
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -410,14 +418,16 @@
                                Text="{x:Static resx:Strings.Label_Dependencies_Gear_Info}" 
                                FontStyle="Normal" 
                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                               TextWrapping="Wrap"/>
+                               TextWrapping="Wrap"
+                               AutomationProperties.Name="Usage Information"/>
 
                     <TextBlock Grid.Row="0" Grid.Column="2"
                                Margin="10,3,0,0"
                                Text="{x:Static resx:Strings.Label_F5_Shortcut_Dependencies}" 
                                FontStyle="Normal" 
                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                               TextWrapping="Wrap"/>
+                               TextWrapping="Wrap"
+                               AutomationProperties.Name="Shortcut Information"/>
                 </Grid>
             </Grid>
 

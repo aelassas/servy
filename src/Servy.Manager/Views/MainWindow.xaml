@@ -18,10 +18,12 @@
         Loaded="Window_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown"
         MouseDown="Window_MouseDown"
+        AutomationProperties.Name="Servy Manager Window"
+        AutomationProperties.AutomationId="MainWindow"
+        AutomationProperties.HelpText="The main interface for the Servy service manager, used to configure service parameters and monitor execution."
         >
 
     <Window.Resources>
-        <!-- Converters -->
         <managerConverters:StartupTypeConverter x:Key="StartupTypeConverter"/>
         <managerConverters:StatusConverter x:Key="StatusConverter"/>
         <managerConverters:PidConverter x:Key="PidConverter"/>
@@ -32,49 +34,48 @@
     </Window.Resources>
 
     <DockPanel>
-        <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top" Height="28">
-            <!--Import-->
-            <MenuItem Header="{x:Static resx:Strings.Menu_Import}">
-                <MenuItem Header="{x:Static resx:Strings.Menu_ImportXml}" Command="{Binding ImportXmlCommand}"/>
-                <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}"/>
+        <Menu DockPanel.Dock="Top" Height="28"
+              AutomationProperties.Name="Main Menu"
+              AutomationProperties.AutomationId="MainMenu"
+              AutomationProperties.HelpText="Provides options to import configuration, configure settings, and access help.">
+            <MenuItem Header="{x:Static resx:Strings.Menu_Import}"
+                      AutomationProperties.Name="{x:Static resx:Strings.Menu_Import}"
+                      AutomationProperties.AutomationId="ImportMenu"
+                      AutomationProperties.HelpText="Opens a menu to import service configurations.">
+                <MenuItem Header="{x:Static resx:Strings.Menu_ImportXml}" Command="{Binding ImportXmlCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_ImportXml}" AutomationProperties.AutomationId="ImportXmlMenuItem" AutomationProperties.HelpText="Imports a service configuration from an XML file."/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_ImportJson}" AutomationProperties.AutomationId="ImportJsonMenuItem" AutomationProperties.HelpText="Imports a service configuration from a JSON file."/>
             </MenuItem>
 
-            <!--Configurator-->
-            <MenuItem Header="{x:Static resx:Strings.Menu_Config}" Click="Menu_ConfigClik" IsEnabled="{Binding IsConfiguratorEnabled}"/>
+            <MenuItem Header="{x:Static resx:Strings.Menu_Config}" Click="Menu_ConfigClik" IsEnabled="{Binding IsConfiguratorEnabled}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Config}" AutomationProperties.AutomationId="ConfigMenu" AutomationProperties.HelpText="Opens the configuration app for the selected service."/>
 
-            <!-- Help Menu -->
-            <MenuItem Header="{x:Static resx:Strings.Menu_Help}">
-                <MenuItem Header="{x:Static resx:Strings.Menu_Doc}" Command="{Binding OpenDocumentationCommand}"/>
-                <MenuItem Header="{x:Static resx:Strings.Menu_CheckUpdates}" Command="{Binding CheckUpdatesCommand}"/>
-                <MenuItem Header="{x:Static resx:Strings.Menu_About}" Command="{Binding OpenAboutDialogCommand}"/>
+            <MenuItem Header="{x:Static resx:Strings.Menu_Help}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Help}" AutomationProperties.AutomationId="HelpMenu" AutomationProperties.HelpText="Opens a menu containing documentation and update options.">
+                <MenuItem Header="{x:Static resx:Strings.Menu_Doc}" Command="{Binding OpenDocumentationCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Doc}" AutomationProperties.AutomationId="DocMenuItem" AutomationProperties.HelpText="Opens the official Servy documentation."/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_CheckUpdates}" Command="{Binding CheckUpdatesCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_CheckUpdates}" AutomationProperties.AutomationId="CheckUpdatesMenuItem" AutomationProperties.HelpText="Checks if a newer version of Servy is available."/>
+                <MenuItem Header="{x:Static resx:Strings.Menu_About}" Command="{Binding OpenAboutDialogCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_About}" AutomationProperties.AutomationId="AboutMenuItem" AutomationProperties.HelpText="Displays application information and copyright details."/>
             </MenuItem>
         </Menu>
 
-        <TabControl x:Name="MainTabControl" Grid.Row="0" SelectionChanged="MainTabControl_SelectionChanged">
+        <TabControl x:Name="MainTabControl" Grid.Row="0" SelectionChanged="MainTabControl_SelectionChanged"
+                    AutomationProperties.Name="Main Navigation Tabs"
+                    AutomationProperties.AutomationId="MainTabControl"
+                    AutomationProperties.HelpText="Allows switching between Services, Performance, Console, Dependencies, and Logs views.">
 
-            <!--Services Tab-->
-            <TabItem x:Name="MainTab" Header="{x:Static resx:Strings.Label_ServicesTab}">
+            <TabItem x:Name="MainTab" Header="{x:Static resx:Strings.Label_ServicesTab}"
+                     AutomationProperties.Name="Services Tab"
+                     AutomationProperties.AutomationId="MainTab"
+                     AutomationProperties.HelpText="Displays the main list of managed services.">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
-                        <!-- Search panel -->
                         <RowDefinition Height="Auto"/>
-                        <!-- DataGrid -->
                         <RowDefinition Height="*"/>
-                        <!-- Footer -->
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Search Panel -->
                     <Grid Grid.Row="0" Margin="0,0,0,10" VerticalAlignment="Center" Focusable="True" FocusVisualStyle="{x:Null}">
                         <Grid.ColumnDefinitions>
-                            <!-- Search box -->
                             <ColumnDefinition Width="Auto"/>
-                            <!-- Button -->
                             <ColumnDefinition Width="Auto"/>
-                            <!-- Spacer -->
                             <ColumnDefinition Width="*"/>
-                            <!-- Right aligned text -->
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
@@ -82,25 +83,21 @@
                                  Width="200" Height="24" Margin="0,0,5,0"  
                                  VerticalContentAlignment="Center"
                                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                                 KeyDown="SearchTextBox_KeyDown" />
+                                 KeyDown="SearchTextBox_KeyDown" 
+                                 AutomationProperties.Name="Search Services"
+                                 AutomationProperties.AutomationId="SearchTextBox"
+                                 AutomationProperties.HelpText="Type a keyword to filter the services list."/>
 
                         <Button Grid.Column="1"
                         Content="{Binding SearchButtonText, UpdateSourceTrigger=PropertyChanged}"
                         Width="80" Height="24" 
                         Command="{Binding SearchCommand}"
-                        IsEnabled="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanConverter}}"/>
-
-                        <!--<ProgressBar Grid.Column="3"  x:Name="AnimatedProgressBar"
-                             Width="150" Height="20"
-                             Margin="10,0,0,0"
-                             VerticalAlignment="Center"
-                             HorizontalAlignment="Center"
-                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"
-                             Minimum="0" Maximum="100" Value="50"
-                             />-->
+                        IsEnabled="{Binding IsBusy, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource InverseBooleanConverter}}"
+                        AutomationProperties.Name="Search"
+                        AutomationProperties.AutomationId="SearchButton"
+                        AutomationProperties.HelpText="Execute service search."/>
                     </Grid>
 
-                    <!-- Services DataGrid -->
                     <DataGrid 
                         x:Name="ServicesDataGrid"
                         Grid.Row="1"
@@ -119,13 +116,13 @@
                         IsReadOnly="True"
                         SelectionUnit="FullRow"
                         SelectionMode="Extended"
-                        >
+                        AutomationProperties.Name="Services List"
+                        AutomationProperties.AutomationId="ServicesDataGrid"
+                        AutomationProperties.HelpText="List of managed services.">
                         <DataGrid.Resources>
-                            <!-- Background of selected row -->
                             <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0078D7"/>
                             <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#0078D7"/>
 
-                            <!-- Text color when row is selected -->
                             <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White"/>
                             <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="White"/>
                         </DataGrid.Resources>
@@ -138,10 +135,8 @@
 
                         <DataGrid.RowStyle>
                             <Style TargetType="DataGridRow">
-                                <!-- Apply height to all rows -->
                                 <Setter Property="Height" Value="32"/>
 
-                                <!-- default background -->
                                 <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
 
@@ -151,7 +146,6 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background" Value="#F5F5F5"/>
                                     </Trigger>
-                                    <!-- change background when IsChecked is true -->
                                     <DataTrigger Binding="{Binding IsChecked}" Value="True">
                                         <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}"/>
                                     </DataTrigger>
@@ -167,29 +161,42 @@
 
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Width="32" MinWidth="32" CanUserResize="False" CanUserReorder="False">
-                                <!--Check all checkbox in header-->
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Select All Services Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.Header>
                                     <CheckBox IsThreeState="True"
                                               Margin="3,0,0,0"
                                               IsChecked="{Binding DataContext.SelectAll, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                              AutomationProperties.Name="Select All Services"
+                                              AutomationProperties.AutomationId="SelectAllServicesCheckBox"
+                                              AutomationProperties.HelpText="Selects or deselects all services in the list."
                                               />
                                 </DataGridTemplateColumn.Header>
 
-                                <!--Row checkbox-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                  AutomationProperties.Name="Select Service"
+                                                  AutomationProperties.AutomationId="SelectServiceCheckBox"
+                                                  AutomationProperties.HelpText="Select this service for bulk actions."/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--Name-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Name}" 
                                                     Width="120" 
                                                     MinWidth="100" 
                                                     CanUserReorder="False" 
                                                     SortMemberPath="Name">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Name Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Name}"
@@ -199,17 +206,23 @@
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    HorizontalAlignment="Left"
-                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
+                                                   AutomationProperties.Name="{Binding Name}"
+                                                   AutomationProperties.HelpText="The name of the service."/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--Description-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Description}" 
                                                     Width="*" 
                                                     MinWidth="160" 
                                                     CanUserReorder="False" 
                                                     SortMemberPath="Description">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Description Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Description}"
@@ -218,37 +231,55 @@
                                                    Margin="5,0,5,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
+                                                   AutomationProperties.Name="{Binding Description}"
+                                                   AutomationProperties.HelpText="The description of the service."/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--Status-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Status}" MinWidth="80" CanUserReorder="False" SortMemberPath="Status">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Status Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Status, Converter={StaticResource StatusConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
+                                                   AutomationProperties.Name="{Binding Status, Converter={StaticResource StatusConverter}}"
+                                                   AutomationProperties.HelpText="The current status of the service."
                                         />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--Startup Type-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_StartupType}" MinWidth="120" CanUserReorder="False" SortMemberPath="StartupType">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Startup Type Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
+                                                   AutomationProperties.Name="{Binding StartupType, Converter={StaticResource StartupTypeConverter}}"
+                                                   AutomationProperties.HelpText="The configured startup type for the service."
                                         />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--User Session-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" Width="100" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="User Session Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding UserSession}"
@@ -258,90 +289,123 @@
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    HorizontalAlignment="Left"
-                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"/>
+                                                   MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
+                                                   AutomationProperties.Name="{Binding UserSession}"
+                                                   AutomationProperties.HelpText="The user account the service is running as."/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--Pid-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_Pid}" MinWidth="60" CanUserReorder="False" SortMemberPath="Pid">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="PID Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Pid, Converter={StaticResource PidConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
+                                                   AutomationProperties.Name="{Binding Pid, Converter={StaticResource PidConverter}}"
+                                                   AutomationProperties.HelpText="The process identifier (PID) of the running service."
                                         />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--CPU-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_CPU}" MinWidth="60" CanUserReorder="False" SortMemberPath="CpuUsage">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="CPU Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding CpuUsage, Converter={StaticResource CpuUsageConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
+                                                   AutomationProperties.Name="{Binding CpuUsage, Converter={StaticResource CpuUsageConverter}}"
+                                                   AutomationProperties.HelpText="The current CPU usage of the service."
                                         />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--RAM-->
                             <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_RAM}" MinWidth="70" CanUserReorder="False" SortMemberPath="RamUsage">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="RAM Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding RamUsage, Converter={StaticResource RamUsageConverter}}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
+                                                   AutomationProperties.Name="{Binding RamUsage, Converter={StaticResource RamUsageConverter}}"
+                                                   AutomationProperties.HelpText="The current RAM usage of the service."
                                         />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!-- Actions -->
                             <DataGridTemplateColumn Width="160" CanUserResize="False" CanUserReorder="False">
-                                <!--Bulk actions-->
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="AutomationProperties.Name" Value="Actions Column" />
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.Header>
                                     <Grid Width="146">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <!-- Start Selected -->
                                             <Button ToolTip="{x:Static resx:Strings.Button_StartSelected}" 
                                             Command="{Binding DataContext.StartSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            Content="▶" Width="24" Height="24" Margin="2,0,0,0"/>
+                                            Content="▶" Width="24" Height="24" Margin="2,0,0,0"
+                                            AutomationProperties.Name="Start Selected"
+                                            AutomationProperties.AutomationId="StartSelectedButton"
+                                            AutomationProperties.HelpText="Starts all selected services."/>
 
-                                            <!-- Stop Selected -->
                                             <Button ToolTip="{x:Static resx:Strings.Button_StopSelected}" 
                                             Command="{Binding DataContext.StopSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            Content="■" Width="24" Height="24" Margin="2,0,0,0"/>
+                                            Content="■" Width="24" Height="24" Margin="2,0,0,0"
+                                            AutomationProperties.Name="Stop Selected"
+                                            AutomationProperties.AutomationId="StopSelectedButton"
+                                            AutomationProperties.HelpText="Stops all selected services."/>
 
-                                            <!-- Restart Selected -->
                                             <Button ToolTip="{x:Static resx:Strings.Button_RestartSelected}" 
                                             Command="{Binding DataContext.RestartSelectedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            Content="⟳" Width="24" Height="24" Margin="2,0,0,0"/>
+                                            Content="⟳" Width="24" Height="24" Margin="2,0,0,0"
+                                            AutomationProperties.Name="Restart Selected"
+                                            AutomationProperties.AutomationId="RestartSelectedButton"
+                                            AutomationProperties.HelpText="Restarts all selected services."/>
 
                                             <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0" Visibility="Hidden"
                                                     IsEnabled="{Binding DataContext.HasSelectedServices, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    AutomationProperties.Name="More Actions Header Placeholder"
+                                                    AutomationProperties.AutomationId="MoreActionsHeaderButton"
+                                                    AutomationProperties.HelpText="Placeholder for the More Actions menu header."
                                             />
                                         </StackPanel>
                                     </Grid>
                                 </DataGridTemplateColumn.Header>
 
-                                <!--Row actions-->
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Tag="{Binding DataContext, ElementName=This}">
 
-                                            <!-- Start, Stop, Restart buttons -->
                                             <Button ToolTip="{x:Static resx:Strings.Button_Start}" 
                                             Command="{Binding StartCommand}"
                                             CommandParameter="{Binding}" 
                                             Content="▶" Width="24" Height="24" Margin="2,0,0,0"
                                             IsEnabled="{Binding IsInstalled}"
-                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
+                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"
+                                            AutomationProperties.Name="Start Service"
+                                            AutomationProperties.AutomationId="StartServiceButton"
+                                            AutomationProperties.HelpText="Starts the current service."/>
 
 
                                             <Button ToolTip="{x:Static resx:Strings.Button_Stop}" 
@@ -349,59 +413,71 @@
                                             CommandParameter="{Binding}" 
                                             Content="■" Width="24" Height="24" Margin="2,0,0,0" 
                                             IsEnabled="{Binding IsInstalled}"
-                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
+                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"
+                                            AutomationProperties.Name="Stop Service"
+                                            AutomationProperties.AutomationId="StopServiceButton"
+                                            AutomationProperties.HelpText="Stops the current service."/>
 
                                             <Button ToolTip="{x:Static resx:Strings.Button_Restart}" 
                                             Command="{Binding RestartCommand}"
                                             CommandParameter="{Binding}" 
                                             Content="⟳" Width="24" Height="24" Margin="2,0,0,0" 
                                             IsEnabled="{Binding IsInstalled}"
-                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"/>
+                                            PreviewMouseLeftButtonDown="ActionButton_PreviewMouseLeftButtonDown"
+                                            AutomationProperties.Name="Restart Service"
+                                            AutomationProperties.AutomationId="RestartServiceButton"
+                                            AutomationProperties.HelpText="Restarts the current service."/>
 
-                                            <!-- Menu button for other actions -->
                                             <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0"
-                                            PreviewMouseLeftButtonDown="MenuButton_PreviewMouseLeftButtonDown">
+                                            PreviewMouseLeftButtonDown="MenuButton_PreviewMouseLeftButtonDown"
+                                            AutomationProperties.Name="More Actions"
+                                            AutomationProperties.AutomationId="MoreActionsButton"
+                                            AutomationProperties.HelpText="Opens a menu with additional actions for the current service.">
                                                 <Button.ContextMenu>
                                                     <ContextMenu>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Install}"
                                                                   Command="{Binding InstallCommand}"
-                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Install Service" AutomationProperties.AutomationId="RowInstallMenuItem" AutomationProperties.HelpText="Installs the service configuration to the system."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Uninstall}" 
                                                                   Command="{Binding UninstallCommand}"
                                                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Uninstall Service" AutomationProperties.AutomationId="RowUninstallMenuItem" AutomationProperties.HelpText="Uninstalls the service from the system."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Remove}" 
                                                                   Command="{Binding RemoveCommand}"
                                                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}" />
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsInstalled, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBooleanConverter}}" 
+                                                                  AutomationProperties.Name="Remove Service" AutomationProperties.AutomationId="RowRemoveMenuItem" AutomationProperties.HelpText="Removes the service from the Servy Manager list."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Config}" 
                                                                   Command="{Binding ConfigureCommand}"
                                                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Configure Service" AutomationProperties.AutomationId="RowConfigMenuItem" AutomationProperties.HelpText="Opens the configuration app for this service."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}" 
                                                                   Command="{Binding ExportXmlCommand}"
-                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Export XML" AutomationProperties.AutomationId="RowExportXmlMenuItem" AutomationProperties.HelpText="Exports the current service configuration to an XML file."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_ExportJSON}" 
                                                                   Command="{Binding ExportJsonCommand}"
-                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Export JSON" AutomationProperties.AutomationId="RowExportJsonMenuItem" AutomationProperties.HelpText="Exports the current service configuration to a JSON file."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_CopyPid}" 
                                                                   Command="{Binding CopyPidCommand}"
                                                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsPidEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsPidEnabled, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  AutomationProperties.Name="Copy PID" AutomationProperties.AutomationId="RowCopyPidMenuItem" AutomationProperties.HelpText="Copies the current Process ID of the service to the clipboard."/>
 
                                                     </ContextMenu>
                                                 </Button.ContextMenu>
                                             </Button>
-
-
-
 
                                         </StackPanel>
                                     </DataTemplate>
@@ -412,7 +488,6 @@
 
                     </DataGrid>
 
-                    <!--Footer-->
                     <Grid Grid.Row="2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -426,35 +501,37 @@
                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                            FontSize="12"
                            TextWrapping="Wrap"
-                           HorizontalAlignment="Left"/>
+                           HorizontalAlignment="Left"
+                           AutomationProperties.Name="{Binding FooterText}"/>
 
                         <TextBlock  Grid.Row="0" Grid.Column="2"
                            Margin="10,3,0,0"
                            Text="{x:Static resx:Strings.Label_F5_Shortcut}" 
                            FontStyle="Normal" 
                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                           TextWrapping="Wrap"/>
+                           TextWrapping="Wrap"
+                           AutomationProperties.Name="{x:Static resx:Strings.Label_F5_Shortcut}"/>
                     </Grid>
                 </Grid>
             </TabItem>
 
-            <!--Performance Tab-->
-            <TabItem x:Name="PerformanceTab" Header="{x:Static resx:Strings.Label_PerformanceTab}" VirtualizingStackPanel.IsVirtualizing="False">
+            <TabItem x:Name="PerformanceTab" Header="{x:Static resx:Strings.Label_PerformanceTab}" VirtualizingStackPanel.IsVirtualizing="False"
+                     AutomationProperties.Name="Performance Tab" AutomationProperties.AutomationId="PerformanceTab" AutomationProperties.HelpText="Displays real-time CPU and memory usage statistics for the running service.">
                 <views:PerformanceView DataContext="{Binding PerformanceVM}" />
             </TabItem>
 
-            <!--Console Tab-->
-            <TabItem x:Name="ConsoleTab" Header="{x:Static resx:Strings.Label_ConsoleTab}" VirtualizingStackPanel.IsVirtualizing="False">
+            <TabItem x:Name="ConsoleTab" Header="{x:Static resx:Strings.Label_ConsoleTab}" VirtualizingStackPanel.IsVirtualizing="False"
+                     AutomationProperties.Name="Console Tab" AutomationProperties.AutomationId="ConsoleTab" AutomationProperties.HelpText="Displays the real-time standard output and error logs for the selected service.">
                 <views:ConsoleView DataContext="{Binding ConsoleVM}" />
             </TabItem>
 
-            <!--Dependencies Tab-->
-            <TabItem x:Name="DependenciesTab" Header="{x:Static resx:Strings.Label_DependenciesTab}" VirtualizingStackPanel.IsVirtualizing="False">
+            <TabItem x:Name="DependenciesTab" Header="{x:Static resx:Strings.Label_DependenciesTab}" VirtualizingStackPanel.IsVirtualizing="False"
+                     AutomationProperties.Name="Dependencies Tab" AutomationProperties.AutomationId="DependenciesTab" AutomationProperties.HelpText="Shows the service dependencies tree and status hierarchy.">
                 <views:DependenciesView DataContext="{Binding DependenciesVM}" />
             </TabItem>
 
-            <!--Logs Tab-->
-            <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}">
+            <TabItem x:Name="LogsTab" Header="{x:Static resx:Strings.Label_LogsTab}"
+                     AutomationProperties.Name="Logs Tab" AutomationProperties.AutomationId="LogsTab" AutomationProperties.HelpText="Displays a list of system events and diagnostic records for the service.">
                 <views:LogsView />
             </TabItem>
 
