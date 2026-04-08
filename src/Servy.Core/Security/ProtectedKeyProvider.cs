@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 
 namespace Servy.Core.Security
 {
@@ -117,7 +118,20 @@ namespace Servy.Core.Security
             byte[] encrypted = null;
             try
             {
-                encrypted = File.ReadAllBytes(path);
+                // Retry with short exponential backoff
+                const int maxRetries = 3;
+                for (int attempt = 0; ; attempt++)
+                {
+                    try
+                    {
+                        encrypted = File.ReadAllBytes(path);
+                        break;
+                    }
+                    catch (IOException) when (attempt < maxRetries - 1)
+                    {
+                        Thread.Sleep(100 * (attempt + 1));
+                    }
+                }
 
                 try
                 {
