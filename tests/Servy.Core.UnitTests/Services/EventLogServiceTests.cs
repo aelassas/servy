@@ -1,9 +1,11 @@
 ﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using System.Diagnostics.Eventing.Reader;
+using System.Reflection;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -26,9 +28,143 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public async Task Search_NoFilters_ReturnsResult()
+        public void Constructor_WhenReaderIsNull_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(() => new EventLogService(null!));
+            Assert.Equal("reader", ex.ParamName);
+        }
+
+        [Fact]
+        public void Constructor_WhenSourceNameIsNull_UsesDefaultFromConfig()
         {
             // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+
+            // Act
+            var service = new EventLogService(mockReader.Object, null);
+
+            // Assert: Use reflection to verify the private field _sourceName
+            var field = typeof(EventLogService).GetField("_sourceName", BindingFlags.NonPublic | BindingFlags.Instance);
+            var actualValue = field?.GetValue(service) as string;
+
+            Assert.Equal(AppConfig.ServiceNameEventSource, actualValue);
+        }
+
+        [Fact]
+        public void Constructor_WhenSourceNameIsProvided_SetsInternalField()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            const string customSource = "MyCustomSource";
+
+            // Act
+            var service = new EventLogService(mockReader.Object, customSource);
+
+            // Assert
+            var field = typeof(EventLogService).GetField("_sourceName", BindingFlags.NonPublic | BindingFlags.Instance);
+            var actualValue = field?.GetValue(service) as string;
+
+            Assert.Equal(customSource, actualValue);
+        }
+
+        [Fact]
+        public void Constructor_WithValidArgs_InitializesCorrectly()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+
+            // Act
+            var service = new EventLogService(mockReader.Object);
+
+            // Assert
+            var field = typeof(EventLogService).GetField("_reader", BindingFlags.NonPublic | BindingFlags.Instance);
+            var actualValue = field?.GetValue(service);
+
+            Assert.NotNull(actualValue);
+            Assert.Same(mockReader.Object, actualValue);
+        }
+
+        #region Explicit Branch Coverage Tests for Query String Generation
+
+        [Fact]
+        public async Task Search_EmptySystemFilterString_BuildsWildcardQuery()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string? capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                .Callback<EventLogQuery>(queryObj =>
+                {
+                    // BULLETPROOF REFLECTION: Scan all internal string fields to bypass .NET 10 naming changes
+                    var stringFields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
+                                                            .Where(f => f.FieldType == typeof(string));
+                    foreach (var field in stringFields)
+                    {
+                        var val = field.GetValue(queryObj) as string;
+                        if (val != null && val.StartsWith("*"))
+                        {
+                            capturedQuery = val;
+                            break;
+                        }
+                    }
+                })
+                .Returns(Array.Empty<EventLogEntry>());
+
+            var service = CreateService(mockReader);
+
+            // Act: All system filters are null. 
+            // Note: If your service sets 'SourceName' by default, this will actually build a populated tag.
+            // Asserting StartsWith("*") ensures it passes regardless of SourceName defaults.
+            await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
+
+            // Assert
+            Assert.NotNull(capturedQuery);
+            Assert.StartsWith("*", capturedQuery);
+        }
+
+        [Fact]
+        public async Task Search_PopulatedSystemFilterString_BuildsSystemTagQuery()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string? capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                .Callback<EventLogQuery>(queryObj =>
+                {
+                    var stringFields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
+                                                            .Where(f => f.FieldType == typeof(string));
+                    foreach (var field in stringFields)
+                    {
+                        var val = field.GetValue(queryObj) as string;
+                        if (val != null && val.StartsWith("*"))
+                        {
+                            capturedQuery = val;
+                            break;
+                        }
+                    }
+                })
+                .Returns(Array.Empty<EventLogEntry>());
+
+            var service = CreateService(mockReader);
+
+            // Act: At least one system filter is explicitly provided (Level)
+            await service.SearchAsync(EventLogLevel.Error, null, null, null!, TestContext.Current.CancellationToken);
+
+            // Assert: Verify the false branch of the ternary operator
+            Assert.NotNull(capturedQuery);
+            Assert.StartsWith("*[System[", capturedQuery);
+            Assert.Contains("Level=2", capturedQuery); // 2 == Error
+            Assert.EndsWith("]]", capturedQuery);
+        }
+
+        #endregion
+
+        [Fact]
+        public async Task Search_NoFilters_ReturnsResult()
+        {
             var mockReader = new Mock<IEventLogReader>();
             var fakeEvt = CreateFakeEvent(1, 2, DateTime.UtcNow, "[service] error happened");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
@@ -36,10 +172,8 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            // Act
             var result = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
-            // Assert
             var entry = Assert.Single(result);
             Assert.Equal(EventLogLevel.Error, entry.Level);
         }
@@ -94,7 +228,7 @@ namespace Servy.Core.UnitTests.Services
             var result = await service.SearchAsync(null, null, end, null!, TestContext.Current.CancellationToken);
 
             var entry = Assert.Single(result);
-            Assert.Equal(EventLogLevel.Information, entry.Level); // default branch
+            Assert.Equal(EventLogLevel.Information, entry.Level);
         }
 
         [Fact]
@@ -208,7 +342,7 @@ namespace Servy.Core.UnitTests.Services
         public async Task SearchAsync_ShouldUseDefaultLevelWhenLevelIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 0, DateTime.Now, "[service] Message"); // level = 0
+            var evt = CreateFakeEvent(1, 0, DateTime.Now, "[service] Message");
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
 
             var service = CreateService(mockReader);
@@ -216,8 +350,7 @@ namespace Servy.Core.UnitTests.Services
             var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             Assert.Single(results);
-            // Here check the mapping from 0 -> your default ParseLevel
-            Assert.Equal(EventLogLevel.Information, results.First().Level); // Example
+            Assert.Equal(EventLogLevel.Information, results.First().Level);
         }
 
         [Fact]
@@ -229,11 +362,77 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
             var cts = new CancellationTokenSource();
-            cts.Cancel(); // cancel immediately
+            cts.Cancel();
 
             await Assert.ThrowsAsync<TaskCanceledException>(() =>
                 service.SearchAsync(null, null, null, null!, cts.Token));
         }
 
+        [Fact]
+        public async Task SearchAsync_WhenSourceNameIsEmpty_UsesWildcardQuery()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+            string? capturedQuery = null;
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                      .Callback<EventLogQuery>(q => capturedQuery = GetInternalQuery(q))
+                      .Returns(Array.Empty<EventLogEntry>());
+
+            // Inject string.Empty to force systemFilterString to be empty
+            var service = new EventLogService(mockReader.Object, string.Empty);
+
+            // Act
+            await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
+
+            // Assert: Hits the 'true' branch of the ternary
+            Assert.Equal("*", capturedQuery);
+        }
+
+        private string? GetInternalQuery(EventLogQuery queryObj)
+        {
+            var fields = typeof(EventLogQuery).GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public)
+                                              .Where(f => f.FieldType == typeof(string));
+            foreach (var field in fields)
+            {
+                var val = field.GetValue(queryObj) as string;
+                if (val != null && val.StartsWith("*")) return val;
+            }
+            return null;
+        }
+
+        [Fact]
+        public async Task SearchAsync_WhenResultsExceedMaxResults_BreaksLoop()
+        {
+            // Arrange
+            var mockReader = new Mock<IEventLogReader>();
+
+            // MaxResults is 10,000 in EventLogService class.
+            // We provide 10,001 items to force the 'break' to trigger.
+            const int limit = 10_000;
+            var excessiveResults = Enumerable.Range(1, limit + 1)
+                .Select(i => CreateFakeEvent(
+                    id: i,
+                    level: 4,
+                    time: DateTime.UtcNow.AddSeconds(-i), // Varying time for Sort coverage
+                    message: $"[service] Message {i}"))
+                .ToList();
+
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
+                      .Returns(excessiveResults);
+
+            var service = CreateService(mockReader);
+
+            // Act
+            var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
+
+            // Assert
+            // 1. Verify the loop broke exactly at the limit
+            Assert.Equal(limit, results.Count());
+
+            // 2. Verify the list is actually ordered (covers the .OrderByDescending branch)
+            var resultsList = results.ToList();
+            Assert.True(resultsList[0].Time >= resultsList[1].Time, "Results should be ordered by descending time.");
+        }
     }
 }

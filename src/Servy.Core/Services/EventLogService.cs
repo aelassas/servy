@@ -12,9 +12,9 @@ namespace Servy.Core.Services
     public class EventLogService : IEventLogService
     {
         private static readonly string LogName = "Application";
-        private static readonly string SourceName = AppConfig.ServiceNameEventSource;
         private const int MaxResults = 10_000;
 
+        private readonly string _sourceName;
         private readonly IEventLogReader _reader;
 
         /// <summary>
@@ -23,9 +23,15 @@ namespace Servy.Core.Services
         /// <param name="reader">
         /// The <see cref="IEventLogReader"/> used to read events from the Windows Event Viewer.
         /// </param>
-        public EventLogService(IEventLogReader reader)
+        /// <param name="sourceName">
+        /// The optional event source name to filter by. If <see langword="null"/>, 
+        /// the service defaults to the value defined in <see cref="AppConfig.ServiceNameEventSource"/>.
+        /// Pass an empty string to disable the provider filter and enable wildcard querying.
+        /// </param>
+        public EventLogService(IEventLogReader reader, string? sourceName = null)
         {
-            _reader = reader;
+            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+            _sourceName = sourceName ?? AppConfig.ServiceNameEventSource;
         }
 
         /// <inheritdoc />
@@ -43,9 +49,9 @@ namespace Servy.Core.Services
                 var systemFilters = new List<string>();
 
                 // ESCAPE SOURCE NAME
-                if (!string.IsNullOrEmpty(SourceName))
+                if (!string.IsNullOrEmpty(_sourceName))
                 {
-                    var escapedSource = SourceName.Replace("'", "&apos;");
+                    var escapedSource = _sourceName.Replace("'", "&apos;");
                     systemFilters.Add($"Provider[@Name='{escapedSource}']");
                 }
 
