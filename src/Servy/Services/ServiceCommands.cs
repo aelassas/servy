@@ -661,7 +661,7 @@ namespace Servy.Services
 
             var forceFlag = app.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
-            var process = new Process
+            using (var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -669,9 +669,10 @@ namespace Servy.Services
                     UseShellExecute = true,
                     Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                 }
-            };
-
-            process.Start();
+            })
+            {
+                process.Start();
+            }
         }
 
         #endregion
