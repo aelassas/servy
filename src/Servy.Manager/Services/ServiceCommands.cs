@@ -533,7 +533,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!(await _serviceConfigurationValidator.Validate(dto))) return;
+                if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
                 var res = await _serviceRepository.UpsertAsync(dto);
                 if (res > 0)
@@ -577,7 +577,7 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                if (!(await _serviceConfigurationValidator.Validate(dto))) return;
+                if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
                 var res = await _serviceRepository.UpsertAsync(dto);
                 if (res > 0)
