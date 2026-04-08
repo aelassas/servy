@@ -59,7 +59,11 @@ namespace Servy.Core.Helpers
                     throw new InvalidOperationException($"Failed to start process: {handleExePath}");
 
                 string output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
+                if (!process.WaitForExit(5000))
+                {
+                    process.Kill();
+                    throw new TimeoutException("handle.exe did not respond within 5 seconds");
+                }
 
                 // Parse output lines like:
                 // notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll
