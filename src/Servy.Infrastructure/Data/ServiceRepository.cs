@@ -411,7 +411,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
-            var sql = "SELECT * FROM Services;";
+            var sql = "SELECT * FROM Services ORDER BY LOWER(Name) COLLATE NOCASE ASC;";
             var cmd = new CommandDefinition(sql, cancellationToken: cancellationToken);
             var list = await _dapper.QueryAsync<ServiceDto>(cmd);
 
