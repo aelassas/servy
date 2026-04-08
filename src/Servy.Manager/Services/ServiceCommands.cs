@@ -220,7 +220,7 @@ namespace Servy.Manager.Services
 
                 var forceFlag = app.ForceSoftwareRendering ? $" {Core.Config.AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
-                var process = new Process
+                using (var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
@@ -228,25 +228,26 @@ namespace Servy.Manager.Services
                         Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
-                };
-
-                if (service == null)
+                })
                 {
+                    if (service == null)
+                    {
+                        process.Start();
+                        return;
+                    }
+
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        return;
+                    }
+
+                    // Pass false to skip splash screen
+                    process.StartInfo.Arguments = $"\"false\" \"{service.Name}\"{forceFlag}";
+
                     process.Start();
-                    return;
                 }
-
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
-                    return;
-                }
-
-                // Pass false to skip splash screen
-                process.StartInfo.Arguments = $"\"false\" \"{service.Name}\"{forceFlag}";
-
-                process.Start();
             }
             catch (Exception ex)
             {
