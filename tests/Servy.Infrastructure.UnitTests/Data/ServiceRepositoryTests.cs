@@ -818,7 +818,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task AddDomainServiceAsync_CallsAddAsync()
         {
-            var service = new Service(null) { Name = "TestService" };
+            var service = new Service(_serviceManagerMock.Object) { Name = "TestService" };
             var result = await _serviceRepository.AddDomainServiceAsync(service);
             Assert.Equal(1, result);
         }
@@ -832,15 +832,32 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task UpdateDomainServiceAsync_CallsUpdateAsync()
         {
-            var service = new Service(null) { Name = "TestService" };
+            var service = new Service(_serviceManagerMock.Object) { Name = "TestService" };
             var result = await _serviceRepository.UpdateDomainServiceAsync(service);
             Assert.Equal(1, result);
         }
 
         [Fact]
+        public async Task UpdateDomainServiceAsync_NullService_ThrowsArgumentNullException()
+        {
+            // Arrange
+            // (Optional) Ensure the repository is initialized in the constructor/Set-up
+
+            // Act & Assert
+            // We use Assert.ThrowsAsync for Task-returning methods.
+            // It will catch the exception and fail the test if the exception is not thrown.
+            var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+                await _serviceRepository.UpdateDomainServiceAsync(null)
+            );
+
+            // Verify the specific parameter name that failed validation
+            Assert.Equal("domain", ex.ParamName);
+        }
+
+        [Fact]
         public async Task UpsertDomainServiceAsync_CallsUpsertAsync()
         {
-            var service = new Service(null) { Name = "TestService" };
+            var service = new Service(_serviceManagerMock.Object) { Name = "TestService" };
             var result = await _serviceRepository.UpsertDomainServiceAsync(service);
             Assert.Equal(1, result);
         }

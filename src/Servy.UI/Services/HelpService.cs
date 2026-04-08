@@ -25,7 +25,7 @@ namespace Servy.UI.Services
         /// <param name="messageBoxService">The message box service used for UI dialogs.</param>
         public HelpService(IMessageBoxService messageBoxService)
         {
-            _messageBoxService = messageBoxService;
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
         }
 
         /// <inheritdoc />

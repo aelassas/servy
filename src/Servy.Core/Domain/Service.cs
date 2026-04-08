@@ -2,6 +2,7 @@
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using System;
 using System.IO;
 using System.ServiceProcess;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Servy.Core.Domain
         /// <param name="serviceManager">Service manager.</param>
         public Service(IServiceManager serviceManager)
         {
-            _serviceManager = serviceManager;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         #endregion
