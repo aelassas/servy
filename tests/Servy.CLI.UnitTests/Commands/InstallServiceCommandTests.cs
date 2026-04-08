@@ -142,7 +142,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Equal("Administrator privileges are required.", result.Message);
+                Assert.Contains("Failed to install service 'TestService': Access is denied", result.Message);
             }
             finally
             {
@@ -177,7 +177,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Contains("An unexpected error occurred", result.Message);
+                Assert.Contains("Failed to install service 'TestService'", result.Message);
             }
             finally
             {

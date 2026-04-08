@@ -29,7 +29,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public CommandResult Execute(ServiceStatusOptions opts)
         {
-            return ExecuteWithHandling(() =>
+            var action = $"query status for service '{opts.ServiceName}'";
+            var suggestion = "Verify the service name is spelled correctly and that it is currently installed on this system.";
+
+            return ExecuteWithHandling(action, suggestion, () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");

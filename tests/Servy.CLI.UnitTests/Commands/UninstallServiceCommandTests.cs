@@ -82,7 +82,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Equal("Administrator privileges are required.", result.Message);
+            Assert.Contains("Failed to uninstall service 'TestService': Access is denied", result.Message);
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("An unexpected error occurred", result.Message);
+            Assert.Contains("Failed to uninstall service 'TestService'", result.Message);
         }
     }
 }

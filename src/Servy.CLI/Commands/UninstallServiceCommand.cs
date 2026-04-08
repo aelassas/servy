@@ -38,7 +38,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="Task{CommandResult}"/> indicating the success or failure of the operation.</returns>
         public async Task<CommandResult> Execute(UninstallServiceOptions opts)
         {
-            return await ExecuteWithHandlingAsync(async () =>
+            var action = $"uninstall service '{opts.ServiceName}'";
+            var suggestion = "Ensure the service is stopped before uninstalling and that you are running this command as an Administrator.";
+
+            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");

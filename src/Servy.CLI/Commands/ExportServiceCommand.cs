@@ -34,7 +34,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(ExportServiceOptions opts)
         {
-            return await ExecuteWithHandlingAsync(async () =>
+            var action = $"export configuration for service '{opts.ServiceName}'";
+            var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
+
+            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");

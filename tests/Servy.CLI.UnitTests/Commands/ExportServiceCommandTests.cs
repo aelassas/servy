@@ -110,7 +110,7 @@ namespace Servy.CLI.UnitTests.Commands
             var result = await _command.Execute(opts);
 
             Assert.False(result.Success);
-            Assert.Contains("An unexpected error occurred: boom", result.Message);
+            Assert.Contains("Failed to export configuration for service 'svc'", result.Message);
         }
 
         [Fact]

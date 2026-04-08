@@ -31,7 +31,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating the result of the stop operation.</returns>
         public async Task<CommandResult> Execute(StopServiceOptions opts)
         {
-            return await ExecuteWithHandlingAsync(async () =>
+            var action = $"stop service '{opts.ServiceName}'";
+            var suggestion = "Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager.";
+
+            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
