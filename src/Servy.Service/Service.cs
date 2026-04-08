@@ -1385,7 +1385,7 @@ namespace Servy.Service
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.PostLaunchExecutablePath)
+                    ? Path.GetDirectoryName(_options.PostLaunchExecutablePath) ?? string.Empty
                     : _options.PostLaunchWorkingDirectory;
 
                 var psi = new ProcessStartInfo
@@ -1445,7 +1445,7 @@ namespace Servy.Service
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.FailureProgramPath)
+                    ? Path.GetDirectoryName(_options.FailureProgramPath) ?? string.Empty
                     : _options.FailureProgramWorkingDirectory;
 
                 var psi = new ProcessStartInfo
@@ -2463,7 +2463,7 @@ namespace Servy.Service
                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
-                    ? Path.GetDirectoryName(_options.PostStopExecutablePath)
+                    ? Path.GetDirectoryName(_options.PostStopExecutablePath) ?? string.Empty
                     : _options.PostStopWorkingDirectory;
 
                 var psi = new ProcessStartInfo
