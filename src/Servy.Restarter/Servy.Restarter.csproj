@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <TrimmerRootDescriptor Include="linker.xml" />
+    <TrimmerRootAssembly Include="System.Threading.Thread" />
   </ItemGroup>
 
   <PropertyGroup>

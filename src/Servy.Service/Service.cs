@@ -15,7 +15,6 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -28,6 +27,24 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase, IDisposable
     {
+        #region Synchronization Primitives
+
+        /// <summary>
+        /// Ensures thread-safe, asynchronous access during file I/O operations.
+        /// This semaphore prevents concurrent read/write conflicts (such as updating persistent restart attempts on disk)
+        /// without blocking the thread pool or the Windows Service Control Manager (SCM).
+        /// </summary>
+        private static readonly SemaphoreSlim _fileSemaphore = new SemaphoreSlim(1, 1);
+
+        /// <summary>
+        /// Acts as an asynchronous gatekeeper for health monitoring and recovery orchestration.
+        /// This ensures that rapid, successive process exit events or timer ticks are evaluated atomically,
+        /// preventing concurrent recovery loops while keeping the OS event threads highly responsive.
+        /// </summary>
+        private readonly SemaphoreSlim _healthCheckSemaphore = new SemaphoreSlim(1, 1);
+
+        #endregion
+
         #region Enums
 
         /// <summary>
@@ -194,9 +211,7 @@ namespace Servy.Service
         private int _maxFailedChecks;
         private int _failedChecks = 0;
         private RecoveryAction _recoveryAction;
-        private readonly object _healthCheckLock = new object();
         private readonly object _teardownLock = new object();
-        private readonly object _fileLock = new object();
         private bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
@@ -584,7 +599,11 @@ namespace Servy.Service
                 // Reset restart attempts on service start to avoid blocking recovery
                 if (_recoveryActionEnabled)
                 {
-                    ConditionalResetRestartAttempts(options);
+                    _ = Task.Run(() => ConditionalResetRestartAttemptsAsync(options))
+                            .ContinueWith(t =>
+                            {
+                                _logger?.Error($"Background reset failed: {t.Exception?.InnerException?.Message}");
+                            }, TaskContinuationOptions.OnlyOnFaulted);
                 }
 
                 // Set up service logging
@@ -690,59 +709,85 @@ namespace Servy.Service
         /// <returns>
         /// The number of recorded restart attempts, or <c>0</c> if the counter was reset.
         /// </returns>
-        private int GetRestartAttempts()
+        private async Task<int> GetRestartAttemptsAsync(CancellationToken ct = default)
         {
-            if (string.IsNullOrEmpty(_restartAttemptsFile)) return 0;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return 0;
 
-            lock (_fileLock)
+            await _fileSemaphore.WaitAsync(ct);
+
+            try
             {
-                try
+                if (!File.Exists(_restartAttemptsFile))
                 {
-                    if (File.Exists(_restartAttemptsFile))
-                    {
-                        var content = File.ReadAllText(_restartAttemptsFile).Trim();
-                        if (int.TryParse(content, out var attempts) && attempts >= 0)
-                            return attempts;
-
-                        File.WriteAllText(_restartAttemptsFile, "0");
-                        _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
-                        return 0;
-                    }
-                    else
-                    {
-                        File.WriteAllText(_restartAttemptsFile, "0");
-                        _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
-                        return 0;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                    _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
+                    await ResetFileAsync(ct);
                     return 0;
                 }
+
+                // Native async read
+                string content = (await File.ReadAllTextAsync(_restartAttemptsFile, ct)).Trim();
+
+                if (int.TryParse(content, out var attempts) && attempts >= 0)
+                    return attempts;
+
+                _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+                await ResetFileAsync(ct);
+                return 0;
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful exit: the service is likely shutting down
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                return 0;
+            }
+            finally
+            {
+                _fileSemaphore.Release();
             }
         }
 
         /// <summary>
-        /// Saves the current number of restart attempts to the persistent attempts file.
-        /// Updates the Last Write Time, which is critical for session persistence checks.
-        /// Does nothing if the attempts file path is null or empty.
+        /// Asynchronously resets the restart attempts counter to zero by overwriting the 
+        /// tracking file with the default initial value.
         /// </summary>
-        /// <param name="attempts">The restart attempts count to save.</param>
-        private void SaveRestartAttempts(int attempts)
-        {
-            if (string.IsNullOrEmpty(_restartAttemptsFile)) return;
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous write operation.</returns>
+        private async Task ResetFileAsync(CancellationToken ct)
+            => await File.WriteAllTextAsync(_restartAttemptsFile!, "0", ct);
 
-            lock (_fileLock)
+        /// <summary>
+        /// Asynchronously saves the current number of restart attempts to the persistent tracking file.
+        /// </summary>
+        /// <param name="attempts">The restart attempts count to persist.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or I/O.</param>
+        /// <returns>A task representing the asynchronous save operation.</returns>
+        private async Task SaveRestartAttemptsAsync(int attempts, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
+
+            // 1. Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
+            await _fileSemaphore.WaitAsync(ct);
+            try
             {
-                try
-                {
-                    File.WriteAllText(_restartAttemptsFile, attempts.ToString());
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error($"Failed to save restart attempts to file: {ex.Message}");
-                }
+                // 2. Use the native async file API with the cancellation token
+                await File.WriteAllTextAsync(_restartAttemptsFile, attempts.ToString(), ct);
+            }
+            catch (OperationCanceledException)
+            {
+                // Graceful exit if the service is stopping; no logging required
+            }
+            catch (Exception ex)
+            {
+                // Include the path in the error message to assist with field troubleshooting
+                _logger.Error($"Failed to save restart attempts to '{_restartAttemptsFile}': {ex.Message}");
+            }
+            finally
+            {
+                _fileSemaphore.Release();
             }
         }
 
@@ -769,11 +814,11 @@ namespace Servy.Service
         /// </item>
         /// </list>
         /// </remarks>
-        private void ConditionalResetRestartAttempts(StartOptions options)
+        private async Task ConditionalResetRestartAttemptsAsync(StartOptions options)
         {
             // If the counter is already 0, there is no need to check timestamps or files.
             // This keeps the health check efficient.
-            if (GetRestartAttempts() == 0) return;
+            if ((await GetRestartAttemptsAsync()) == 0) return;
 
             if (!File.Exists(_restartAttemptsFile)) return;
 
@@ -822,7 +867,7 @@ namespace Servy.Service
             if (secondsSinceLastAttempt > resetThresholdSeconds)
             {
                 _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
-                SaveRestartAttempts(0);
+                await SaveRestartAttemptsAsync(0);
             }
         }
 
@@ -1628,7 +1673,9 @@ namespace Servy.Service
             bool shouldStop = false;
             int exitCode = -1;
 
-            lock (_healthCheckLock)
+            _healthCheckSemaphore.Wait();
+
+            try
             {
                 try
                 {
@@ -1668,6 +1715,10 @@ namespace Servy.Service
                     shouldStop = true;
                 }
             }
+            finally
+            {
+                _healthCheckSemaphore.Release();
+            }
 
             // Actions outside the lock
             if (shouldStop)
@@ -1696,7 +1747,7 @@ namespace Servy.Service
                     // Re-check state after the delay to ensure we aren't mid-shutdown
                     if (!_isTearingDown && !_disposed)
                     {
-                        InitiateRecovery();
+                        await InitiateRecoveryAsync();
                     }
                 }
                 catch (OperationCanceledException)
@@ -1760,55 +1811,71 @@ namespace Servy.Service
         /// simultaneously. The flag is reset in a <c>finally</c> block to guarantee that 
         /// monitoring can resume regardless of whether the recovery succeeded or threw an exception.
         /// </remarks>
-        private void InitiateRecovery()
+        private async Task InitiateRecoveryAsync()
         {
-            bool shouldStop = false;
-            int currentAttempts = 0;
-
-            lock (_healthCheckLock)
-            {
-                // Guard: prevent concurrent recovery attempts
-                if (_isTearingDown || _disposed)
-                    return;
-
-                currentAttempts = GetRestartAttempts();
-
-                if (currentAttempts >= _maxRestartAttempts)
-                {
-                    _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
-                    SaveRestartAttempts(0); // Reset for next manual start
-                    shouldStop = true;
-                }
-                else
-                {
-                    currentAttempts++;
-                    SaveRestartAttempts(currentAttempts);
-                    _failedChecks = 0;
-                    _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
-                }
-            }
-
-            if (shouldStop)
-            {
-                RunFailureProgram();
-                Stop();
-                return;
-            }
-
             try
             {
-                // The actual logic (RestartService, RestartProcess, etc.)
-                ExecuteRecoveryAction(currentAttempts);
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                bool shouldStop = false;
+                int currentAttempts = 0;
+
+                // Asynchronously wait to enter the critical section
+                await _healthCheckSemaphore.WaitAsync();
+                try
+                {
+                    // Guard: prevent concurrent recovery attempts
+                    if (_isTearingDown || _disposed)
+                        return;
+
+                    currentAttempts = await GetRestartAttemptsAsync();
+
+                    if (currentAttempts >= _maxRestartAttempts)
+                    {
+                        _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
+                        await SaveRestartAttemptsAsync(0); // Reset for next manual start
+                        shouldStop = true;
+                    }
+                    else
+                    {
+                        currentAttempts++;
+                        await SaveRestartAttemptsAsync(currentAttempts);
+                        _failedChecks = 0;
+                        _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
+                    }
+                }
+                finally
+                {
+                    // ALWAYS release the semaphore in a finally block
+                    _healthCheckSemaphore.Release();
+                }
+
+                if (shouldStop)
+                {
+                    RunFailureProgram();
+                    Stop();
+                    return;
+                }
+
+                try
+                {
+                    // The actual logic (RestartService, RestartProcess, etc.)
+                    ExecuteRecoveryAction(currentAttempts);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Critical error during recovery execution: {ex.Message}");
+                }
             }
             finally
             {
-                lock (_healthCheckLock)
+                // GUARANTEED EXECUTION: The gate always opens.
+                await _healthCheckSemaphore.WaitAsync();
+                try
                 {
-                    _isRecovering = false; // RELEASE the gatekeeper: GATE OPENED
+                    _isRecovering = false;
+                }
+                finally
+                {
+                    _healthCheckSemaphore.Release();
                 }
             }
         }
@@ -1874,72 +1941,85 @@ namespace Servy.Service
         /// If a recovery is already in progress (triggered by this timer or a process exit event), 
         /// the check exits immediately to prevent duplicate logs and redundant recovery attempts.
         /// </remarks>
-        private void CheckHealth(object? sender, ElapsedEventArgs e)
+        private async void CheckHealth(object? sender, ElapsedEventArgs e)
         {
-            if (_isTearingDown || _disposed) return;
-
-            bool needsRecovery = false;
-            bool shouldStop = false;
-
-            lock (_healthCheckLock)
+            try
             {
-                // If we are already recovering, we don't want to increment restartAttempts again
-                if (_isTearingDown || _disposed || _isRecovering) return;
+                if (_isTearingDown || _disposed) return;
 
-                // Capture _childProcess into a local variable to ensure atomicity.
-                var process = _childProcess;
+                bool needsRecovery = false;
+                bool shouldStop = false;
 
-                bool isFailed = process == null || process.HasExited;
-                if (isFailed)
+                // 1. FAST ASYNCHRONOUS LOCK: Only evaluate memory state
+                await _healthCheckSemaphore.WaitAsync();
+                try
                 {
-                    int? exitCode = null;
-                    try { exitCode = process?.ExitCode; } catch { /* Ignore Error */ }
+                    // If we are already recovering, exit immediately
+                    if (_isTearingDown || _disposed || _isRecovering) return;
 
-                    if (exitCode == 0)
+                    // Capture _childProcess into a local variable to ensure atomicity.
+                    var process = _childProcess;
+
+                    bool isFailed = process == null || process.HasExited;
+                    if (isFailed)
                     {
-                        _logger?.Info("Child process exited successfully. Service will stop.");
-                        shouldStop = true;
+                        int? exitCode = null;
+                        try { exitCode = process?.ExitCode; } catch { /* Ignore Error */ }
+
+                        if (exitCode == 0)
+                        {
+                            _logger?.Info("Child process exited successfully. Service will stop.");
+                            shouldStop = true;
+                        }
+                        else
+                        {
+                            _failedChecks++;
+                            _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+
+                            if (_failedChecks >= _maxFailedChecks)
+                            {
+                                needsRecovery = true;
+
+                                // LOCK THE GATE HERE
+                                // This prevents threads waiting for the lock from 
+                                // logging "Health check failed (4/3)" etc.
+                                _isRecovering = true;
+                            }
+                        }
                     }
                     else
                     {
-                        _failedChecks++;
-                        _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
-
-                        if (_failedChecks >= _maxFailedChecks)
+                        // PROCESS IS HEALTHY
+                        if (_failedChecks > 0)
                         {
-                            needsRecovery = true;
+                            _logger?.Info("Child process is healthy again. Resetting transient failure count.");
 
-                            // LOCK THE GATE HERE
-                            // This prevents threads waiting for the lock from 
-                            // logging "Health check failed (4/3)" etc.
-                            _isRecovering = true;
+                            // Always reset memory count immediately so we don't trigger recovery again unnecessarily
+                            _failedChecks = 0;
                         }
+
+                        // STABILITY CHECK
+                        // This is where we check if we've been healthy long enough to reset the 
+                        // PERSISTENT restart counter (the one that survives reboots).
+                        await ConditionalResetRestartAttemptsAsync(_options!);
                     }
                 }
-                else
+                finally
                 {
-                    // PROCESS IS HEALTHY
-                    if (_failedChecks > 0)
-                    {
-                        _logger?.Info("Child process is healthy again. Resetting transient failure count.");
-
-                        // Always reset memory count immediately so we don't trigger recovery again unnecessarily
-                        _failedChecks = 0;
-                    }
-
-                    // STABILITY CHECK
-                    // This is where we check if we've been healthy long enough to reset the 
-                    // PERSISTENT restart counter (the one that survives reboots).
-                    ConditionalResetRestartAttempts(_options!);
+                    _healthCheckSemaphore.Release();
                 }
+
+                if (shouldStop) Stop();
+
+                // InitiateRecovery will now find _isRecovering is already true.
+                // Ensure InitiateRecovery's internal guard allows it to run if 
+                // it's the one performing the recovery!
+                if (needsRecovery) await InitiateRecoveryAsync();
             }
-
-            if (shouldStop) Stop();
-
-            // InitiateRecovery will now find _isRecovering is already true.
-            // Ensure InitiateRecovery's internal guard allows it to run if 
-            // it's the one performing the recovery!
-            if (needsRecovery) InitiateRecovery();
+            catch (Exception ex)
+            {
+                Logger.Error($"Critical error in health check loop: {ex.Message}", ex);
+            }
         }
 
         /// <summary>

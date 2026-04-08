@@ -4,6 +4,8 @@
     <type fullname="Servy.Core.DTOs.*" preserve="all" />
   </assembly>
 
+  <assembly fullname="System.Threading.Thread" preserve="all" />
+  
   <assembly fullname="System.IO.FileSystem.AccessControl" preserve="all" />
   <assembly fullname="System.IO.FileSystem" preserve="all" />
   <assembly fullname="System.IO.FileSystem.DriveInfo" preserve="all" />
@@ -16,6 +18,5 @@
 
   <assembly fullname="Dapper" preserve="all" />
 
-  <assembly fullname="System.CodeDom" preserve="all" />
-
+  <assembly fullname="System.Data.SQLite" preserve="all" />
 </linker>
