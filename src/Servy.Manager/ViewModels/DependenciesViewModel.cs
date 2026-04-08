@@ -311,7 +311,7 @@ namespace Servy.Manager.ViewModels
 
                 if (currentSelection.Pid != serviceDto.Pid)
                 {
-                    SelectedService.Pid = serviceDto.Pid;
+                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 

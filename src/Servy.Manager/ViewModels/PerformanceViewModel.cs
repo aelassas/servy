@@ -301,7 +301,7 @@ namespace Servy.Manager.ViewModels
 
                 if (currentSelection.Pid != serviceDto.Pid)
                 {
-                    SelectedService.Pid = serviceDto.Pid;
+                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
                     ResetGraphs(true);
 
                     // IMPORTANT: Tell the command the PID is now available (or gone)

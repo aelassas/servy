@@ -475,7 +475,7 @@ namespace Servy.Manager.ViewModels
                     || _stderrPath != serviceDto.ActiveStderrPath
                     )
                 {
-                    SelectedService.Pid = serviceDto.Pid;
+                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
                     _stdoutPath = serviceDto.ActiveStdoutPath;
                     _stderrPath = serviceDto.ActiveStderrPath;
                     SelectedService.StdoutPath = serviceDto.ActiveStdoutPath;
