@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -44,7 +45,10 @@ namespace Servy.Core.Helpers
         /// </item>
         /// </list>
         /// </remarks>
-        private static readonly Regex HandleOutputRegex = new Regex(@"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        private static readonly Regex HandleOutputRegex = new Regex(
+            @"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)", 
+            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline,
+            TimeSpan.FromSeconds(1));
 
         /// <summary>
         /// Uses handle.exe or handle64.exe to find all processes that have an open handle to the specified file.
@@ -86,16 +90,25 @@ namespace Servy.Core.Helpers
 
                 // Parse output lines like:
                 // notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll
-                foreach (Match match in HandleOutputRegex.Matches(output))
+                try
                 {
-                    if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
+                    var matches = HandleOutputRegex.Matches(output);
+
+                    foreach (Match match in matches)
                     {
-                        processes.Add(new ProcessHandleInfo
+                        if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
                         {
-                            ProcessName = match.Groups["name"].Value.Trim(),
-                            ProcessId = pid
-                        });
+                            processes.Add(new ProcessHandleInfo
+                            {
+                                ProcessName = match.Groups["name"].Value.Trim(),
+                                ProcessId = pid
+                            });
+                        }
                     }
+                }
+                catch (RegexMatchTimeoutException ex)
+                {
+                    Logger.Error("Regex parsing timed out while processing handle output.", ex);
                 }
             }
 
