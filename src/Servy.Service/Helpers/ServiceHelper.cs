@@ -290,13 +290,18 @@ namespace Servy.Service.Helpers
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                using (Process.Start(new ProcessStartInfo
                 {
                     FileName = "shutdown",
                     Arguments = "/r /t 0 /f",
                     CreateNoWindow = true,
                     UseShellExecute = false
-                });
+                }))
+                {
+                    // The using block ensures the native process handle is closed 
+                    // immediately after the process is launched, preventing a 
+                    // handle leak in the calling application.
+                }
             }
             catch (Exception ex)
             {
