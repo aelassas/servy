@@ -9,7 +9,10 @@
              xmlns:viewmodels="clr-namespace:Servy.Manager.ViewModels"
              xmlns:converters="clr-namespace:Servy.UI.Converters;assembly=Servy.UI"
              xmlns:controls="clr-namespace:Servy.Manager.Views.Controls"
-             Loaded="UserControl_Loaded">
+             Loaded="UserControl_Loaded"
+             AutomationProperties.Name="Performance Monitor View"
+             AutomationProperties.AutomationId="PerformanceView"
+             AutomationProperties.HelpText="Displays resource usage statistics for the selected process.">
 
     <UserControl.Resources>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
@@ -21,7 +24,6 @@
             <ColumnDefinition Width="4*" />
         </Grid.ColumnDefinitions>
 
-        <!-- LEFT: SEARCH + SERVICES -->
         <controls:ServiceListControl
             Grid.Column="0"
             Services="{Binding Services}"
@@ -29,9 +31,11 @@
             SearchText="{Binding SearchText}"
             SearchButtonText="{Binding SearchButtonText}"
             SearchCommand="{Binding SearchCommand}"
-            IsBusy="{Binding IsBusy}" />
+            IsBusy="{Binding IsBusy}"
+            AutomationProperties.Name="Service Selector"
+            AutomationProperties.AutomationId="PerformanceServiceList"
+            AutomationProperties.HelpText="Select a service from the list to view its performance data." />
 
-        <!-- RIGHT: GRAPHS -->
         <Grid Grid.Column="1" Margin="10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -51,7 +55,9 @@
                                    Foreground="#1B7F9F" 
                                    FontWeight="Bold" 
                                    FontSize="12"
-                                   VerticalAlignment="Center"/>
+                                   VerticalAlignment="Center"
+                                   AutomationProperties.Name="Process ID"
+                                   AutomationProperties.AutomationId="PidValue" />
 
                         <Button Command="{Binding CopyPidCommand}"
                                 Margin="5,0,0,0"
@@ -60,7 +66,10 @@
                                 BorderThickness="0"
                                 Cursor="Hand"
                                 ToolTip="{x:Static resx:Strings.Button_CopyPid}"
-                                FocusVisualStyle="{x:Null}">
+                                FocusVisualStyle="{x:Null}"
+                                AutomationProperties.Name="Copy PID"
+                                AutomationProperties.AutomationId="CopyPidButton"
+                                AutomationProperties.HelpText="Copies the Process ID to the clipboard.">
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Opacity" Value="0.5" />
@@ -80,9 +89,10 @@
                 </Border>
             </StackPanel>
 
-            <!--CPU-->
             <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
-                <Grid>
+                <Grid AutomationProperties.Name="CPU Usage Graph"
+                      AutomationProperties.AutomationId="CpuGraphGrid"
+                      AutomationProperties.HelpText="Historical view of CPU percentage usage.">
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
 
@@ -124,13 +134,16 @@
                         HorizontalAlignment="Right" 
                         Foreground="#1B7F9F" 
                         FontSize="14" 
-                        IsHitTestVisible="False" />
+                        IsHitTestVisible="False"
+                        AutomationProperties.Name="Current CPU Usage"
+                        AutomationProperties.AutomationId="CpuUsageLabel" />
                 </Grid>
             </Border>
 
-            <!--RAM-->
             <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#757575" BorderThickness="1" Margin="0,0,0,5">
-                <Grid>
+                <Grid AutomationProperties.Name="RAM Usage Graph"
+                      AutomationProperties.AutomationId="RamGraphGrid"
+                      AutomationProperties.HelpText="Historical view of memory usage.">
                     <Viewbox Stretch="Fill" HorizontalAlignment="Left">
                         <Canvas Width="{Binding GraphWidth}" Height="{Binding GraphHeight}" IsHitTestVisible="False">
 
@@ -172,7 +185,9 @@
                                HorizontalAlignment="Right" 
                                Foreground="#1B7F9F" 
                                FontSize="14" 
-                               IsHitTestVisible="False" />
+                               IsHitTestVisible="False"
+                               AutomationProperties.Name="Current RAM Usage"
+                               AutomationProperties.AutomationId="RamUsageLabel" />
                 </Grid>
             </Border>
 
