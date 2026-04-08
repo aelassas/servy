@@ -2239,7 +2239,7 @@ namespace Servy.Service
 
             try
             {
-                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
+                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
 
                 foreach (var kvp in expandedEnv)
                 {
@@ -2247,7 +2247,7 @@ namespace Servy.Service
                 }
 
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                    _options.PreStopExecutableArgs ?? string.Empty,
+                    options.PreStopExecutableArgs ?? string.Empty,
                     expandedEnv
                 );
 
