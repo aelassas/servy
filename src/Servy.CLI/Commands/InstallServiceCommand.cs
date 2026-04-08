@@ -102,7 +102,12 @@ namespace Servy.CLI.Commands
                     EnvironmentVariables = opts.EnvironmentVariables,
                     ServiceDependencies = opts.ServiceDependencies,
                     Username = opts.User,
-                    Password = opts.Password,
+
+                    // SECURITY FIX: Prioritize command line option (for backward compatibility/testing), 
+                    // but fall back to the secure environment variable.
+                    Password = !string.IsNullOrEmpty(opts.Password)
+                                ? opts.Password
+                                : Environment.GetEnvironmentVariable("SERVY_PASSWORD"),
 
                     // Pre-Launch
                     PreLaunchExePath = opts.PreLaunchPath,

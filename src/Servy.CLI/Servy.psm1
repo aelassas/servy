@@ -156,6 +156,9 @@ function Invoke-ServyCli {
         A contextual error message describing the operation being performed.
         This message is included in any thrown exception.
 
+    .PARAMETER EnvironmentVariables
+        Accept secure environment variables.
+
     .NOTES
         This function is intended for internal use within the Servy PowerShell
         module and is not exported.
@@ -171,7 +174,8 @@ function Invoke-ServyCli {
     [string] $Command,
     [array]  $Arguments,
     [switch] $Quiet,
-    [string] $ErrorContext
+    [string] $ErrorContext,
+    [hashtable] $EnvironmentVariables
   )
 
   # Validate command (single token)
@@ -223,6 +227,13 @@ function Invoke-ServyCli {
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.CreateNoWindow = $true
+
+    # SECURITY FIX: Inject environment variables securely directly into the child process block
+    if ($EnvironmentVariables) {
+        foreach ($key in $EnvironmentVariables.Keys) {
+            $psi.EnvironmentVariables[$key] = $EnvironmentVariables[$key]
+        }
+    }
 
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
@@ -969,7 +980,6 @@ param(
     @("--envVars",                  $EnvVars),
     @("--deps",                     $Deps),
     @("--user",                     $User),
-    @("--password",                 $Password),
     @("--preLaunchPath",            $PreLaunchPath),
     @("--preLaunchStartupDir",      $PreLaunchStartupDir),
     @("--preLaunchParams",          $PreLaunchParams),
@@ -1014,6 +1024,12 @@ param(
   if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
   if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
   if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
+
+  # 4. Inject password via Environment Variables securely
+  $secureEnv = @{}
+  if ($null -ne $Password -and $Password.Trim() -ne "") {
+      $secureEnv["SERVY_PASSWORD"] = $Password
+  }
 
   # 4. Invoke CLI
   Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to install service '$Name'"
