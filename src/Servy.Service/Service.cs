@@ -1229,7 +1229,7 @@ namespace Servy.Service
 
             foreach (var envVar in expandedEnv)
             {
-                psi.Environment[envVar.Key] = envVar.Value;
+                psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
             }
 
             // Ensure UTF-8 encoding and buffered mode for python
