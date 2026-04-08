@@ -130,6 +130,58 @@ function Add-Arg {
   return $list
 }
 
+function Format-SecureLogMessage {
+  <#
+    .SYNOPSIS
+        Masks sensitive command-line arguments in log text.
+
+    .DESCRIPTION
+        This function parses raw stderr or stdout strings from the Servy CLI and scrubs 
+        the values of known sensitive parameters. This prevents credentials, connection 
+        strings, and environment variables from leaking into the persistent PowerShell 
+        session $Error variable or local log files.
+
+    .PARAMETER Text
+        The raw string output (stdout, stderr, or exception message) to be scrubbed.
+
+    .EXAMPLE
+        $rawLog = 'Error 1: --password="MySecret" --user admin --preLaunchEnv "API_KEY=12345"'
+        $safeLog = Format-SecureLogMessage -Text $rawLog
+        # Returns: 'Error 1: --password "***" --user admin --preLaunchEnv "***"'
+  #>
+    param(
+        [string]$Text
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) { 
+        return $Text 
+    }
+
+    # Define all CLI parameters that may contain sensitive data or injected variables
+    $sensitiveFields = @(
+        "params",
+        "failureProgramParams",
+        "password",
+        "envVars",
+        "preLaunchParams",
+        "preLaunchEnv",
+        "postLaunchParams",
+        "preStopParams",
+        "postStopParams"
+    )
+
+    # Construct the regex pattern dynamically
+    # Breakdown:
+    # (?i)                  : Case-insensitive evaluation
+    # (--(?:...)[=\s]+)     : Group $1 -> Matches the flag (e.g., --password) plus trailing spaces or equals signs
+    # ("[\]*"|'[^']*'|\S+)  : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
+    $fieldsRegex = $sensitiveFields -join '|'
+    $pattern = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)("[^"]*"|''[^'']*''|\S+)'
+
+    # Replace the sensitive value with "***" while preserving the flag prefix
+    return $Text -replace $pattern, '$1"***"'
+}
+
 function Invoke-ServyCli {
   <#
     .SYNOPSIS
@@ -335,8 +387,17 @@ function Invoke-ServyCli {
   }
   catch {
     $partialOutput = ""
-    if (-not [string]::IsNullOrEmpty($stdout)) { $partialOutput += " Stdout: $($stdout.TrimEnd())" }
-    if (-not [string]::IsNullOrEmpty($stderr)) { $partialOutput += " Stderr: $($stderr.TrimEnd())" }
+    
+    # SECURITY FIX: Scrub stdout and stderr in the generic catch block
+    if (-not [string]::IsNullOrEmpty($stdout)) { 
+        $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
+        $partialOutput += " Stdout: $scrubbedStdout" 
+    }
+    if (-not [string]::IsNullOrEmpty($stderr)) { 
+        $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
+        $partialOutput += " Stderr: $scrubbedStderr" 
+    }
+    
     throw "$($ErrorContext): $_.`n$partialOutput".TrimEnd()
   }
   finally {
@@ -367,7 +428,10 @@ function Invoke-ServyCli {
   }
 
   if ($null -ne $exitCode -and $exitCode -ne 0) {
-    $errorMessage = if (-not [string]::IsNullOrEmpty($stderr)) { $stderr.TrimEnd() } else { "Unknown error" }
+    # SECURITY FIX: Scrub stderr before pushing to the session-persistent exit code exception
+    $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderr
+    $errorMessage = if (-not [string]::IsNullOrWhiteSpace($scrubbedStderrFinal)) { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
+    
     throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }
 }
