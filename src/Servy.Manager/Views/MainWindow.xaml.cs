@@ -258,8 +258,11 @@ namespace Servy.Manager.Views
             }
             catch (Exception ex)
             {
-                _logger?.Error("Error in MainTabControl_SelectionChanged", ex);
-                await _messageBoxService!.ShowErrorAsync(Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
+                if (_messageBoxService != null)
+                    await _messageBoxService.ShowErrorAsync(
+                        Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
+                else
+                    Logger.Error("Tab selection failed and message box service unavailable", ex);
             }
         }
 
