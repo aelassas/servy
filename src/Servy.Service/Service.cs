@@ -2172,12 +2172,10 @@ namespace Servy.Service
                             // Log locally for debug, but don't let it stop the loop
                             Logger.Error("Cleanup failed.", ex);
                         }
-                        finally
-                        {
-                            try { hook.Process.Dispose(); } catch { /* ignore */ } // Important: Release the process handles!
-                        }
                     }
-                    _trackedHooks.Clear();
+
+                    // Cleanup and dispose tracked hooks
+                    CleanupTrackedHooks();
                 }
 
                 // 5. Post-Stop Hook
@@ -2496,6 +2494,39 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 _logger?.Error($"Failed to run post-stop program: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Iterates through all tracked process hooks and ensures their underlying resources are released.
+        /// </summary>
+        /// <remarks>
+        /// This method should be called during service shutdown or when a service recovery cycle 
+        /// requires a fresh state. It explicitly disposes of each <see cref="Hook"/> to prevent 
+        /// native process handle leaks from Pre-Launch or Post-Launch operations.
+        /// </remarks>
+        private void CleanupTrackedHooks()
+        {
+            if (_trackedHooks == null) return;
+
+            // Use the collection itself as the sync root to stay consistent with Cleanup()
+            lock (_trackedHooks)
+            {
+                try
+                {
+                    foreach (var hook in _trackedHooks)
+                    {
+                        // Safely dispose each hook to release native handles
+                        hook?.Dispose();
+                    }
+
+                    // Clear the collection while still under the lock
+                    _trackedHooks.Clear();
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Error during hooks cleanup: {ex.Message}");
+                }
             }
         }
 
