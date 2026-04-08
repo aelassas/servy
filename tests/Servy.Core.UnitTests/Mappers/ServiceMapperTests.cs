@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Common;
-using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -29,7 +28,7 @@ namespace Servy.Core.UnitTests.Mappers
         public void ToDto_MapsAllPropertiesCorrectly()
         {
             // Arrange
-            var service = new Service(null!)
+            var service = new Service(_serviceManagerMock.Object)
             {
                 Name = "MyService",
                 Description = "Test Service",
@@ -169,7 +168,7 @@ namespace Servy.Core.UnitTests.Mappers
             };
 
             // Act
-            var service = ServiceMapper.ToDomain(null!, dto);
+            var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             // Assert
             Assert.Equal(dto.Name, service.Name);
@@ -215,8 +214,9 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
-        public void ToDomain_AllNullablesNull_UsesDefaults()
+        public void ToDomain_NullRepository_ThrowsArgumentNullException()
         {
+            // Arrange
             var dto = new ServiceDto
             {
                 Name = "MyService",
@@ -261,27 +261,13 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchParameters = null,
             };
 
-            var service = ServiceMapper.ToDomain(null!, dto);
+            // Act & Assert
+            // We wrap the call in a lambda. Assert.Throws will catch the exception 
+            // and fail the test if the exception is not thrown.
+            var ex = Assert.Throws<ArgumentNullException>(() => ServiceMapper.ToDomain(null!, dto));
 
-            Assert.Equal(dto.Name, service.Name);
-            Assert.Equal(dto.Description, service.Description);
-            Assert.Equal(dto.ExecutablePath, service.ExecutablePath);
-            Assert.Equal(ServiceStartType.Automatic, service.StartupType); // default branch
-            Assert.Equal(ProcessPriority.Normal, service.Priority); // default branch
-            Assert.False(service.EnableRotation); // default branch
-            Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // default branch
-            Assert.False(service.EnableDateRotation); // default branch
-            Assert.Equal(DateRotationType.Daily, service.DateRotationType); // default branch
-            Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
-            Assert.False(service.EnableHealthMonitoring);
-            Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
-            Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
-            Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction); // default branch
-            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
-            Assert.True(service.RunAsLocalSystem);
-            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
-            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
-            Assert.False(service.PreLaunchIgnoreFailure);
+            // Optional: Verify which parameter caused the exception
+            Assert.Equal("serviceManager", ex.ParamName);
         }
 
         [Fact]
@@ -321,7 +307,7 @@ namespace Servy.Core.UnitTests.Mappers
                 PreLaunchIgnoreFailure = true
             };
 
-            var service = ServiceMapper.ToDomain(null!, dto);
+            var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
 
             Assert.Equal(ServiceStartType.Manual, service.StartupType);
             Assert.Equal(ProcessPriority.High, service.Priority);

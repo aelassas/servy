@@ -26,7 +26,7 @@ namespace Servy.Core.Domain
         /// <param name="serviceManager">Service manager.</param>
         public Service(IServiceManager serviceManager)
         {
-            _serviceManager = serviceManager;
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         #endregion

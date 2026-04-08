@@ -26,9 +26,14 @@ namespace Servy.Service.Helpers
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceHelper"/> class.
+        /// </summary>
+        /// <param name="commandLineProvider">The provider used to access system command line arguments.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="commandLineProvider"/> is null.</exception>
         public ServiceHelper(ICommandLineProvider commandLineProvider)
         {
-            _commandLineProvider = commandLineProvider;
+            _commandLineProvider = commandLineProvider ?? throw new ArgumentNullException(nameof(commandLineProvider));
         }
 
         #endregion
