@@ -15,6 +15,7 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -74,17 +75,15 @@ namespace Servy.Service
         private const string ServyRestarterExeFileName = "Servy.Restarter";
 
         /// <summary>
-        /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
+        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
         /// </summary>
-        private int _waitChunkMs;
         private const int DefaultWaitChunkMs = 5000;
 
         /// <summary>
-        /// Specifies the additional time, in milliseconds, used for Service Control Manager (SCM) operations.
+        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
         /// </summary>
         /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
         /// Windows Service Control Manager to account for potential processing overhead.</remarks>
-        private int _scmAdditionalTimeMs;
         private const int DefaultScmAdditionalTimeMs = 15_000;
 
         /// <summary>
@@ -174,6 +173,8 @@ namespace Servy.Service
 
         #region Private Fields
 
+        private readonly int _waitChunkMs;
+        private readonly int _scmAdditionalTimeMs;
         private readonly SecureData? _secureData;
         private readonly IServiceHelper _serviceHelper;
         private ILogger _logger;
