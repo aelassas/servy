@@ -1,6 +1,8 @@
 ﻿using Servy.Core.Helpers;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using Xunit;
 
 namespace Servy.Core.UnitTests.Helpers
@@ -277,6 +279,49 @@ namespace Servy.Core.UnitTests.Helpers
 
             // Assert
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void GetCpuUsage_ForcesPrune_WhenIntervalHasPassed()
+        {
+            // Arrange
+            int pid = Process.GetCurrentProcess().Id;
+
+            // 1. Use reflection to get the private static fields
+            var lastPruneField = typeof(ProcessHelper).GetField("_lastPruneTime", BindingFlags.Static | BindingFlags.NonPublic);
+            var intervalField = typeof(ProcessHelper).GetField("PruneInterval", BindingFlags.Static | BindingFlags.NonPublic);
+
+            var interval = (TimeSpan)intervalField.GetValue(null);
+
+            // 2. Set the last prune time to be older than the interval (e.g., 6 minutes ago)
+            lastPruneField.SetValue(null, DateTime.UtcNow.AddMinutes(-6));
+
+            // Act
+            // This call triggers PruneDeadProcesses()
+            ProcessHelper.GetCpuUsage(pid);
+
+            // Assert
+            var updatedPruneTime = (DateTime)lastPruneField.GetValue(null);
+            Assert.True(updatedPruneTime > DateTime.UtcNow.AddSeconds(-10), "Prune time should have been updated to Now.");
+        }
+
+        [Fact]
+        public void PruneDeadProcesses_DoesNotExecute_WhenCalledTooSoon()
+        {
+            // Arrange
+            var lastPruneField = typeof(ProcessHelper).GetField("_lastPruneTime", BindingFlags.Static | BindingFlags.NonPublic);
+
+            // Set prune time to exactly now
+            DateTime testTime = DateTime.UtcNow;
+            lastPruneField.SetValue(null, testTime);
+
+            // Act
+            // This call hits the 'if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;' branch
+            ProcessHelper.GetCpuUsage(Process.GetCurrentProcess().Id);
+
+            // Assert
+            DateTime resultTime = (DateTime)lastPruneField.GetValue(null);
+            Assert.Equal(testTime, resultTime); // Time should not have changed because it returned early
         }
 
     }

@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Common;
+using Servy.Core.Config;
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -461,6 +462,69 @@ namespace Servy.Core.UnitTests.Mappers
 
             Assert.Equal(ServiceStartType.Automatic, result);
             _serviceManagerMock.Verify(sm => sm.GetServiceStartupType("TestService", It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+
+        [Fact]
+        public void ToDomain_NullOptionalValues_UsesDefaultFallbacks()
+        {
+            // Arrange
+            // Create a DTO with only the absolute required fields; others are null
+            var dto = new ServiceDto
+            {
+                Name = "MinimalService",
+                ExecutablePath = @"C:\app\service.exe",
+                // Every nullable field below is left as null to test fallbacks
+                StartupType = null,
+                Priority = null,
+                EnableRotation = null,
+                RotationSize = null,
+                EnableDateRotation = null,
+                DateRotationType = null,
+                MaxRotations = null,
+                UseLocalTimeForRotation = null,
+                EnableHealthMonitoring = null,
+                HeartbeatInterval = null,
+                MaxFailedChecks = null,
+                RecoveryAction = null,
+                MaxRestartAttempts = null,
+                RunAsLocalSystem = null,
+                PreLaunchTimeoutSeconds = null,
+                PreLaunchRetryAttempts = null,
+                PreLaunchIgnoreFailure = null,
+                EnableDebugLogs = null,
+                StartTimeout = null,
+                StopTimeout = null,
+                PreStopTimeoutSeconds = null,
+                PreStopLogAsError = null
+            };
+
+            // Act
+            var service = ServiceMapper.ToDomain(_serviceManagerMock.Object, dto);
+
+            // Assert: Verify every fallback branch was hit correctly
+            Assert.Equal(ServiceStartType.Automatic, service.StartupType); // StartupType == null branch
+            Assert.Equal(ProcessPriority.Normal, service.Priority);        // Priority == null branch
+            Assert.False(service.EnableRotation);                         // ?? false
+            Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // ?? Default
+            Assert.False(service.EnableDateRotation);                     // ?? false
+            Assert.Equal(DateRotationType.Daily, service.DateRotationType); // .HasValue == false branch
+            Assert.Equal(AppConfig.DefaultMaxRotations, service.MaxRotations);
+            Assert.Equal(AppConfig.DefaultUseLocalTimeForRotation, service.UseLocalTimeForRotation);
+            Assert.False(service.EnableHealthMonitoring);
+            Assert.Equal(AppConfig.DefaultHeartbeatInterval, service.HeartbeatInterval);
+            Assert.Equal(AppConfig.DefaultMaxFailedChecks, service.MaxFailedChecks);
+            Assert.Equal(RecoveryAction.RestartService, service.RecoveryAction); // RecoveryAction == null branch
+            Assert.Equal(AppConfig.DefaultMaxRestartAttempts, service.MaxRestartAttempts);
+            Assert.True(service.RunAsLocalSystem);                        // ?? true
+            Assert.Equal(AppConfig.DefaultPreLaunchTimeoutSeconds, service.PreLaunchTimeoutSeconds);
+            Assert.Equal(AppConfig.DefaultPreLaunchRetryAttempts, service.PreLaunchRetryAttempts);
+            Assert.False(service.PreLaunchIgnoreFailure);
+            Assert.False(service.EnableDebugLogs);
+            Assert.Equal(AppConfig.DefaultStartTimeout, service.StartTimeout);
+            Assert.Equal(AppConfig.DefaultStopTimeout, service.StopTimeout);
+            Assert.Equal(AppConfig.DefaultPreStopTimeoutSeconds, service.PreStopTimeoutSeconds);
+            Assert.False(service.PreStopLogAsError);
         }
 
     }

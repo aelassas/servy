@@ -112,6 +112,7 @@ namespace Servy.Core.Helpers
         /// Removes entries for processes that are no longer running.
         /// Throttled to execute at most once every 5 minutes.
         /// </summary>
+        [ExcludeFromCodeCoverage]
         private static void PruneDeadProcesses()
         {
             if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;
@@ -140,6 +141,20 @@ namespace Servy.Core.Helpers
             _lastPruneTime = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Retrieves the current physical memory usage (Private Bytes) for a specific process.
+        /// </summary>
+        /// <param name="pid">The unique identifier (Process ID) of the target process.</param>
+        /// <returns>
+        /// The number of bytes allocated for the process that cannot be shared with other processes. 
+        /// Returns 0 if the process is not found or if access is denied.
+        /// </returns>
+        /// <remarks>
+        /// This method uses <see cref="Process.PrivateMemorySize64"/>, which represents the current 
+        /// commit charge of the process. This value is generally the closest programmatic match to 
+        /// the "Memory (Private Working Set)" column seen in Windows Task Manager.
+        /// </remarks>
+        [ExcludeFromCodeCoverage]
         public static long GetRamUsage(int pid)
         {
             try
