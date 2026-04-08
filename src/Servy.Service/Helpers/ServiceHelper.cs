@@ -169,11 +169,11 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public string[] GetArgs() 
+        public string[] GetArgs()
             => _commandLineProvider.GetArgs();
 
         /// <inheritdoc />
-        public StartOptions?  ParseOptions(IServiceRepository serviceRepository, string[] fullArgs)
+        public StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs)
             => StartOptionsParser.Parse(serviceRepository, fullArgs);
 
         /// <inheritdoc />
@@ -286,13 +286,18 @@ namespace Servy.Service.Helpers
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                using (Process.Start(new ProcessStartInfo
                 {
                     FileName = "shutdown",
                     Arguments = "/r /t 0 /f",
                     CreateNoWindow = true,
                     UseShellExecute = false
-                });
+                }))
+                {
+                    // The using block ensures the native process handle is closed 
+                    // immediately after the process is launched, preventing a 
+                    // handle leak in the calling application.
+                }
             }
             catch (Exception ex)
             {

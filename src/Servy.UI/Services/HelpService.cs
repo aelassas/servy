@@ -28,11 +28,16 @@ namespace Servy.UI.Services
         /// <inheritdoc />
         public void OpenDocumentation()
         {
-            Process.Start(new ProcessStartInfo
+            using (Process.Start(new ProcessStartInfo
             {
                 FileName = AppConfig.DocumentationLink,
                 UseShellExecute = true
-            });
+            }))
+            {
+                // The using block ensures the native process handle is closed 
+                // immediately after the process is launched, preventing a 
+                // handle leak in the calling application.
+            }
         }
 
         /// <inheritdoc />
@@ -74,11 +79,16 @@ namespace Servy.UI.Services
                         var res = await _messageBoxService.ShowConfirmAsync(updateAvailable, caption);
                         if (res)
                         {
-                            Process.Start(new ProcessStartInfo
+                            using (Process.Start(new ProcessStartInfo
                             {
                                 FileName = AppConfig.LatestReleaseLink,
                                 UseShellExecute = true
-                            });
+                            }))
+                            {
+                                // The using block ensures the native process handle is closed 
+                                // immediately after the process is launched, preventing a 
+                                // handle leak in the calling application.
+                            }
                         }
                     }
                     else
