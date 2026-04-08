@@ -99,7 +99,6 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task<bool> StartServiceAsync(Service service, bool showMessageBox = true)
         {
-            // 1. Guard clause outside the lock
             if (service == null) return false;
 
             bool success = false;
@@ -110,30 +109,32 @@ namespace Servy.Manager.Services
 
             try
             {
-                var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    errorMessage = Strings.Msg_ServiceDisabledError;
-                    return false;
-                }
-
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
                     errorMessage = Strings.Msg_ServiceNotFound;
-                    return false;
-                }
-
-                var res = await Task.Run(() => serviceDomain.Start());
-                if (res.IsSuccess)
-                {
-                    service.Status = ServiceStatus.Running;
-                    infoMessage = Strings.Msg_ServiceStarted;
-                    success = true;
                 }
                 else
                 {
-                    errorMessage = Strings.Msg_UnexpectedError;
+                    var startupType = _serviceManager.GetServiceStartupType(service.Name);
+                    if (startupType == ServiceStartType.Disabled)
+                    {
+                        errorMessage = Strings.Msg_ServiceDisabledError;
+                    }
+                    else
+                    {
+                        var res = await Task.Run(() => serviceDomain.Start());
+                        if (res.IsSuccess)
+                        {
+                            service.Status = ServiceStatus.Running;
+                            infoMessage = Strings.Msg_ServiceStarted;
+                            success = true;
+                        }
+                        else
+                        {
+                            errorMessage = Strings.Msg_UnexpectedError;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -143,12 +144,9 @@ namespace Servy.Manager.Services
             }
             finally
             {
-                // 2. Release the lock AS SOON AS the engine work is done
                 _commandLock.Release();
             }
 
-            // 3. Show UI feedback AFTER the lock is released 
-            // This prevents the app from hanging if the user doesn't click "OK" immediately
             if (showMessageBox)
             {
                 if (!string.IsNullOrEmpty(errorMessage))
@@ -177,21 +175,22 @@ namespace Servy.Manager.Services
                 if (serviceDomain == null)
                 {
                     errorMessage = Strings.Msg_ServiceNotFound;
-                    return false;
-                }
-
-                // Execute the stop logic on a background thread
-                var res = await Task.Run(() => serviceDomain.Stop());
-
-                if (res.IsSuccess)
-                {
-                    service.Status = ServiceStatus.Stopped;
-                    infoMessage = Strings.Msg_ServiceStopped;
-                    success = true;
                 }
                 else
                 {
-                    errorMessage = Strings.Msg_UnexpectedError;
+                    // Execute the stop logic on a background thread
+                    var res = await Task.Run(() => serviceDomain.Stop());
+
+                    if (res.IsSuccess)
+                    {
+                        service.Status = ServiceStatus.Stopped;
+                        infoMessage = Strings.Msg_ServiceStopped;
+                        success = true;
+                    }
+                    else
+                    {
+                        errorMessage = Strings.Msg_UnexpectedError;
+                    }
                 }
             }
             catch (Exception ex)
@@ -205,7 +204,6 @@ namespace Servy.Manager.Services
                 _commandLock.Release();
             }
 
-            // 3. Show UI feedback after the lock is released
             if (showMessageBox)
             {
                 if (!string.IsNullOrEmpty(errorMessage))
@@ -231,32 +229,34 @@ namespace Servy.Manager.Services
 
             try
             {
-                var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    errorMessage = Strings.Msg_ServiceDisabledError;
-                    return false;
-                }
-
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
                     errorMessage = Strings.Msg_ServiceNotFound;
-                    return false;
-                }
-
-                // Execute the restart logic on a background thread
-                var res = await Task.Run(() => serviceDomain.Restart());
-
-                if (res.IsSuccess)
-                {
-                    service.Status = ServiceStatus.Running;
-                    infoMessage = Strings.Msg_ServiceRestarted;
-                    success = true;
                 }
                 else
                 {
-                    errorMessage = Strings.Msg_UnexpectedError;
+                    var startupType = _serviceManager.GetServiceStartupType(service.Name);
+                    if (startupType == ServiceStartType.Disabled)
+                    {
+                        errorMessage = Strings.Msg_ServiceDisabledError;
+                    }
+                    else
+                    {
+                        // Execute the restart logic on a background thread
+                        var res = await Task.Run(() => serviceDomain.Restart());
+
+                        if (res.IsSuccess)
+                        {
+                            service.Status = ServiceStatus.Running;
+                            infoMessage = Strings.Msg_ServiceRestarted;
+                            success = true;
+                        }
+                        else
+                        {
+                            errorMessage = Strings.Msg_UnexpectedError;
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -270,7 +270,6 @@ namespace Servy.Manager.Services
                 _commandLock.Release();
             }
 
-            // 3. Show UI feedback after the lock is released
             if (showMessageBox)
             {
                 if (!string.IsNullOrEmpty(errorMessage))
