@@ -18,7 +18,7 @@
     Repository  : https://github.com/aelassas/servy
     
     Requirements:
-      - PowerShell 5.1 or later (Required for WinRT and [Type]::new() syntax).
+      - PowerShell 5.1 or later (Required for WinRT).
       - Windows 10 (Build 10240+) or Windows 11.
       - Access to the Windows Application event log.
       - An active interactive user session (Toasts do not show in Session 0).
@@ -72,7 +72,7 @@ function Show-Notification {
         $serializedXml.LoadXml($rawXml.OuterXml)
 
         # 3. CONFIGURE TOAST OBJECT
-        $toast = [Windows.UI.Notifications.ToastNotification]::new($serializedXml)
+        $toast                = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
         $toast.Tag            = "Servy"
         $toast.Group          = "Servy"
         $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
