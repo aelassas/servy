@@ -3,6 +3,9 @@ using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
 using System.Diagnostics;
 
 /// <summary>
@@ -40,7 +43,7 @@ namespace Servy.Restarter
             if (args.Length == 0)
             {
                 Logger.Error("Missing required argument: service name.");
-                Environment.Exit(1);
+                Environment.ExitCode = 1;
                 return;
             }
 
@@ -49,13 +52,14 @@ namespace Servy.Restarter
             if (string.IsNullOrWhiteSpace(serviceName))
             {
                 Logger.Error("Service name cannot be empty.");
-                Environment.Exit(1);
+                Environment.ExitCode = 1;
                 return;
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
             ILogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
             ILogger? scopedLogger = null;
+            SecureData? secureData = null;
 
             try
             {
@@ -68,7 +72,11 @@ namespace Servy.Restarter
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
 
-                // 3. Configure the GLOBAL logging state first
+                var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
+                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+                // 3. Configure the GLOBAL logging
                 var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
 
                 // Set Log Level
@@ -108,7 +116,26 @@ namespace Servy.Restarter
                 var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
                 scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
 
-                // 5. Execution
+                // 5. Initialize database and helpers
+                var dbContext = new AppDbContext(connectionString);
+                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                secureData = new SecureData(protectedKeyProvider);
+                var xmlSerializer = new XmlServiceSerializer();
+
+                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+
+                // 6. Validation
+                if (serviceRepository.GetByName(serviceName) == null)
+                {
+                    scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+                // 7. Execution
                 Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
 
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
@@ -119,10 +146,12 @@ namespace Servy.Restarter
             {
                 // Use the scoped logger if available, otherwise fallback to root
                 (scopedLogger ?? rootLogger).Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
+                Environment.ExitCode = 1;
             }
             finally
             {
                 // Clean up
+                secureData?.Dispose();
                 scopedLogger?.Dispose();
                 rootLogger.Dispose();
                 Logger.Shutdown();

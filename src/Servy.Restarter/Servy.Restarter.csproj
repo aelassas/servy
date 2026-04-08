@@ -54,6 +54,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj" />
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj" />
   </ItemGroup>
 
   <!--<ItemGroup>
