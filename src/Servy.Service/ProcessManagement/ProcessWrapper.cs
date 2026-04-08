@@ -422,6 +422,18 @@ namespace Servy.Service.ProcessManagement
             _process.BeginErrorReadLine();
         }
 
+        ///<inheritdoc/>
+        public void CancelOutputRead()
+        {
+            _process.CancelOutputRead();
+        }
+
+        ///<inheritdoc/>
+        public void CancelErrorRead()
+        {
+            _process.CancelErrorRead();
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {

@@ -2121,6 +2121,10 @@ namespace Servy.Service
                 {
                     SafeKillProcess(_childProcess, _options!.StopTimeout * 1000);
 
+                    // Stop async reads first
+                    _childProcess.CancelOutputRead();
+                    _childProcess.CancelErrorRead();
+
                     // Unsubscribe output only after the process is dead to catch final logs
                     _childProcess.OutputDataReceived -= OnOutputDataReceived;
                     _childProcess.ErrorDataReceived -= OnErrorDataReceived;

@@ -157,5 +157,23 @@ namespace Servy.Service.ProcessManagement
         /// Begins asynchronous read operations on the redirected standard error stream of the application.
         /// </summary>
         void BeginErrorReadLine();
+
+        /// <summary>
+        /// Cancels the asynchronous read operation on the process's standard output stream.
+        /// </summary>
+        /// <remarks>
+        /// This should be called when the process has exited or when you no longer wish to 
+        /// receive output events to free up underlying resources.
+        /// </remarks>
+        void CancelOutputRead();
+
+        /// <summary>
+        /// Cancels the asynchronous read operation on the process's standard error stream.
+        /// </summary>
+        /// <remarks>
+        /// This should be called when the process has exited or when you no longer wish to 
+        /// receive error events to prevent resource leaks.
+        /// </remarks>
+        void CancelErrorRead();
     }
 }
