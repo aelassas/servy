@@ -80,17 +80,15 @@ namespace Servy.Service
         private const string ServyRestarterExeFileName = "Servy.Restarter.Net48";
 
         /// <summary>
-        /// Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
+        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
         /// </summary>
-        private static int WaitChunkMs;
         private const int DefaultWaitChunkMs = 5000;
 
         /// <summary>
-        /// Specifies the additional time, in milliseconds, used for Service Control Manager (SCM) operations.
+        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
         /// </summary>
         /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
         /// Windows Service Control Manager to account for potential processing overhead.</remarks>
-        private static int ScmAdditionalTimeMs;
         private const int DefaultScmAdditionalTimeMs = 15_000;
 
         /// <summary>
@@ -193,6 +191,8 @@ namespace Servy.Service
 
         #region Private Fields
 
+        private readonly int _waitChunkMs;
+        private readonly int _scmAdditionalTimeMs;
         private readonly SecureData _secureData;
         private readonly IServiceHelper _serviceHelper;
         private ILogger _logger;
@@ -326,20 +326,20 @@ namespace Servy.Service
 
                 if (int.TryParse(config["Timing:WaitChunkMs"], out var waitChunkMs) && waitChunkMs > 0)
                 {
-                    WaitChunkMs = waitChunkMs;
+                    _waitChunkMs = waitChunkMs;
                 }
                 else
                 {
-                    WaitChunkMs = DefaultWaitChunkMs;
+                    _waitChunkMs = DefaultWaitChunkMs;
                 }
 
                 if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
                 {
-                    ScmAdditionalTimeMs = scmAdditionalTimeMs;
+                    _scmAdditionalTimeMs = scmAdditionalTimeMs;
                 }
                 else
                 {
-                    ScmAdditionalTimeMs = DefaultScmAdditionalTimeMs;
+                    _scmAdditionalTimeMs = DefaultScmAdditionalTimeMs;
                 }
 
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
@@ -377,8 +377,8 @@ namespace Servy.Service
 
                 // --- Log all configurations for debugging ---
                 Logger.Debug("Servy Configuration Loaded:" + Environment.NewLine +
-                    $"  WaitChunkMs: {WaitChunkMs}" + Environment.NewLine +
-                    $"  ScmAdditionalTimeMs: {ScmAdditionalTimeMs}" + Environment.NewLine +
+                    $"  WaitChunkMs: {_waitChunkMs}" + Environment.NewLine +
+                    $"  ScmAdditionalTimeMs: {_scmAdditionalTimeMs}" + Environment.NewLine +
                     $"  LogLevel: {logLevel}" + Environment.NewLine +
                     $"  LogRollingInterval: {dateRotationType}" + Environment.NewLine +
                     $"  EnableEventLog: {isEventLogEnabled}" + Environment.NewLine +
@@ -1010,7 +1010,7 @@ namespace Servy.Service
                             WaitForProcessWithScmHeartbeat(
                                 process,
                                 effectiveTimeout,
-                                WaitChunkMs,
+                                _waitChunkMs,
                                 "Pre-launch");
 
                             // Ensure all async reads are finished
@@ -1113,7 +1113,7 @@ namespace Servy.Service
                     }
 
                     // 2. Keep SCM informed
-                    _serviceHelper?.RequestAdditionalTime(this, ScmAdditionalTimeMs, null);
+                    _serviceHelper?.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
 
                     // 3. Check for timeout using actual wall-clock time
                     if (sw.ElapsedMilliseconds >= effectiveTimeoutMs)
@@ -2346,7 +2346,7 @@ namespace Servy.Service
                     WaitForProcessWithScmHeartbeat(
                         process,
                         effectiveTimeout,
-                        WaitChunkMs,
+                        _waitChunkMs,
                         "Pre-stop");
 
                     if (process.ExitCode == 0)
@@ -2462,7 +2462,7 @@ namespace Servy.Service
                     }
 
                     // Request 15s of "Wait Hint" every 5s pulse
-                    _serviceHelper.RequestAdditionalTime(this, ScmAdditionalTimeMs, null);
+                    _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
                 }
 
                 sw.Stop();
