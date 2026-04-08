@@ -27,6 +27,12 @@ namespace Servy.Core.IO
         private readonly object _lock = new object();
 
         /// <summary>
+        /// A circuit-breaker flag that disables all rotation logic if a permanent failure occurs.
+        /// This prevents infinite loops of failed moves that spike CPU usage.
+        /// </summary>
+        private bool _rotationDisabled;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
         /// </summary>
         /// <param name="path">The path to the log file.</param>
@@ -207,9 +213,9 @@ namespace Servy.Core.IO
         /// </summary>
         private void CheckRotation()
         {
-            // If writer is null, the file hasn't been created yet (Lazy Init).
-            // There is nothing to rotate.
-            if (_writer == null) return;
+            // If writer is null, the file hasn't been created yet.
+            // If rotation is disabled (Circuit Breaker tripped), do nothing to save CPU.
+            if (_rotationDisabled || _writer == null) return;
 
             _file.Refresh();
             if (!_file.Exists) return;
@@ -389,8 +395,10 @@ namespace Servy.Core.IO
                 }
                 catch (Exception ex)
                 {
-                    // Log the specific exception if it's not a transient I/O issue (e.g., Access Denied)
-                    Logger.Error($"Log rotation critical failure: {ex.Message}", ex);
+                    // PERMANENT FAILURE (e.g., UnauthorizedAccessException)
+                    // We trip the circuit breaker immediately to prevent an infinite loop.
+                    Logger.Error($"Log rotation critical failure: {ex.Message}. Rotation will be disabled until service restart.", ex);
+                    _rotationDisabled = true;
                     break;
                 }
             }
@@ -401,10 +409,9 @@ namespace Servy.Core.IO
             }
             else
             {
-                // If all retries fail, we leave _writer as null. 
-                // The next Write call will append to the current file, 
-                // preventing log loss but allowing the file to exceed the size limit temporarily.
-                Logger.Warn($"Log rotation failed after {maxRetries} attempts for: {_file.FullName}");
+                // If we exhausted retries (Transient failure became permanent)
+                _rotationDisabled = true;
+                Logger.Warn($"Log rotation failed after {maxRetries} attempts for: {_file.FullName}. Rotation has been disabled to prevent CPU overhead.");
             }
         }
 

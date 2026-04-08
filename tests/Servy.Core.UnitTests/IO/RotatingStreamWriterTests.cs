@@ -918,6 +918,66 @@ namespace Servy.Core.UnitTests.IO
             }
         }
 
+        #region Circuit Breaker & Permanent Failure Tests
+
+        [Fact]
+        public void CheckRotation_EarlyReturn_WhenDisabled()
+        {
+            var filePath = Path.Combine(_testDir, "gatekeeper.log");
+            // Arrange: Set a high limit so the first write DOES NOT rotate
+            using (var writer = CreateWriter(filePath, enableSizeRotation: true, rotationSizeInBytes: 1000))
+            {
+                writer.Write("initial_data"); // 12 bytes < 1000 (No rotation)
+                writer.Flush();
+
+                // 1. Trip breaker manually
+                SetPrivateField(writer, "_rotationDisabled", true);
+
+                // 2. Act: This should trigger a rotation (1000+ bytes), but won't
+                writer.Write(new string('X', 1100));
+                writer.Flush();
+
+                // 3. Assert: Filter out the base file to check ONLY for rotated ones
+                var rotatedFiles = Directory.GetFiles(_testDir, "gatekeeper.*.log")
+                                            .Where(f => !f.EndsWith("gatekeeper.log"));
+                Assert.Empty(rotatedFiles);
+            }
+        }
+
+        [Fact]
+        public void Rotate_RetryExhaustion_TripsBreaker()
+        {
+            var filePath = Path.Combine(_testDir, "exhaustion.log");
+            using (var writer = CreateWriter(filePath))
+            {
+                writer.Write("init");
+                writer.Flush();
+
+                // 1. Lock the file to force IOExceptions (Sharing Violation)
+                // We use FileShare.ReadWrite so the internal Flush() might work, 
+                // but File.Move will fail.
+                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    // 2. Act: This hits catch (IOException) 3 times, then the 'else' block
+                    var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    rotateMethod!.Invoke(writer, null);
+                }
+
+                // 3. Assert: Hits the 'else { _rotationDisabled = true; }' block
+                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
+                Assert.True(isDisabled, "Circuit breaker should trip after max retries fail.");
+            }
+        }
+
+        #endregion
+
+        // Helper to close writer via reflection for testing lazy re-init
+        private void CloseWriter(RotatingStreamWriter instance)
+        {
+            var method = typeof(RotatingStreamWriter).GetMethod("CloseWriter", BindingFlags.NonPublic | BindingFlags.Instance);
+            method!.Invoke(instance, null);
+        }
+
         private object GetPrivateField(object obj, string fieldName)
         {
             var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
