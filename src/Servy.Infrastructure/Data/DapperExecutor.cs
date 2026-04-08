@@ -86,9 +86,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public T ExecuteScalar<T>(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             return ExecuteWithRetry(() =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -100,9 +101,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public int Execute(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             return ExecuteWithRetry(() =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -114,9 +116,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public IEnumerable<T> Query<T>(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             return ExecuteWithRetry(() =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -128,9 +131,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public T QuerySingleOrDefault<T>(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             return ExecuteWithRetry(() =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     connection.Open();
@@ -146,9 +150,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public async Task<T> ExecuteScalarAsync<T>(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             return await ExecuteWithRetryAsync(async () =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
@@ -160,9 +165,10 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public async Task<int> ExecuteAsync(string sql, object param = null)
         {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
             var result = await ExecuteWithRetryAsync(async () =>
             {
-                if (sql == null) throw new ArgumentNullException(nameof(sql));
                 using (var connection = _dbContext.CreateConnection())
                 {
                     await connection.OpenAsync().ConfigureAwait(false);
