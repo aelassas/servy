@@ -41,7 +41,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(Options.InstallServiceOptions opts)
         {
-            return await ExecuteWithHandlingAsync(async () =>
+            var action = $"install service '{opts.ServiceName}'";
+            var suggestion = "Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges.";
+
+            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 // Validate options
                 var validation = _validator.Validate(opts);
@@ -52,7 +55,7 @@ namespace Servy.CLI.Commands
                 var wrapperExePath = AppConfig.GetServyCLIServicePath();
 
                 if (!File.Exists(wrapperExePath))
-                    return CommandResult.Fail("Wrapper executable not found.");
+                    return CommandResult.Fail(@"Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.");
 
                 // Parse enums safely with defaults
                 var startupType = ParseEnumOption(opts.ServiceStartType, ServiceStartType.Automatic);

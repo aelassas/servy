@@ -30,7 +30,10 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(RestartServiceOptions opts)
         {
-            return await ExecuteWithHandlingAsync(async () =>
+            var action = $"restart service '{opts.ServiceName}'";
+            var suggestion = "Ensure the service is currently installed and that your account has sufficient permissions to stop and start services.";
+
+            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail("Service name is required.");
