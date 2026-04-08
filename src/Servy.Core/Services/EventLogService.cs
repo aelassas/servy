@@ -13,6 +13,7 @@ namespace Servy.Core.Services
     {
         private static readonly string LogName = "Application";
         private static readonly string SourceName = AppConfig.ServiceNameEventSource;
+        private const int MaxResults = 10_000;
 
         private readonly IEventLogReader _reader;
 
@@ -92,6 +93,9 @@ namespace Servy.Core.Services
                         continue;
 
                     results.Add(evt);
+
+                    if (results.Count >= MaxResults)
+                        break;
                 }
 
                 return results
