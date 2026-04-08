@@ -191,6 +191,16 @@ function Invoke-ServyCli {
 
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
+
+  # VALIDATE ARGUMENT LENGTH
+  # Windows limit is 32,767 characters. We check against 32,000 to be safe
+  # and account for the executable path length.
+  if ($argString.Length -gt 32000) {
+      throw "$($ErrorContext): Command-line arguments exceed Windows maximum length ($($argString.Length) characters). " +
+            "To resolve this, shorten your environment variables/parameters or use the 'import' command " +
+            "with a configuration file instead."
+  }
+
   $process = $null
 
   try {
@@ -928,7 +938,7 @@ param(
   )
 
   Assert-Administrator
-  
+
   $argsList = @()
 
   # 1. Define parameter pairs for PS 2.0 compatibility
