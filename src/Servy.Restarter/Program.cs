@@ -1,4 +1,11 @@
-﻿using System;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
+using Servy.Core.Helpers;
+using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
+using System;
 using System.Configuration;
 
 /// <summary>
@@ -31,10 +38,12 @@ namespace Servy.Restarter
         /// <param name="args">Command line arguments. args[0] must be the service name.</param>
         public static void Main(string[] args)
         {
+            Logger.Initialize("Servy.Restarter.log");
+
             if (args.Length == 0)
             {
-                Console.Error.WriteLine("Missing required argument: service name.");
-                Environment.Exit(1);
+                Logger.Error("Missing required argument: service name.");
+                Environment.ExitCode = 1;
                 return;
             }
 
@@ -42,25 +51,109 @@ namespace Servy.Restarter
 
             if (string.IsNullOrWhiteSpace(serviceName))
             {
-                Console.Error.WriteLine("Service name cannot be empty.");
-                Environment.Exit(1);
+                Logger.Error("Service name cannot be empty.");
+                Environment.ExitCode = 1;
                 return;
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
+            ILogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
+            ILogger scopedLogger = null;
+            SecureData secureData = null;
 
             try
             {
+                // 1. Ensure event source exists before doing anything else
+                Helper.EnsureEventSourceExists();
+
+                // 2. Load configuration
                 var config = ConfigurationManager.AppSettings;
+
+                var connectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+                // 3. Configure the GLOBAL logging
                 var restartTimeout = int.TryParse(config["RestartTimeoutSeconds"], out var timeout) && timeout > 0 ? timeout : DefaultRestartTimeoutSeconds;
 
+                // Set Log Level
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
+                {
+                    logLevel = LogLevel.Info;
+                }
+                Logger.SetLogLevel(logLevel);
+
+                // Set Rotation Type
+                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
+                {
+                    dateRotationType = DateRotationType.None;
+                }
+                Logger.SetDateRotationType(dateRotationType);
+
+                // Set Rotation Size
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
+                {
+                    Logger.SetLogRotationSize(size);
+                }
+
+                // Set Local Time preference
+                if (!bool.TryParse(config["UseLocalTimeForRotation"], out bool useLocalTimeForRotation))
+                {
+                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
+                }
+                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
+
+                // 4. PROMOTE / SCOPE the logger after global config is set
+                scopedLogger = rootLogger.CreateScoped(serviceName);
+
+                // Set log level
+                scopedLogger.SetLogLevel(logLevel);
+
+                // Sync Event Log enablement to the instance
+                var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
+                scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
+
+                // 5. Initialize database and helpers
+                var dbContext = new AppDbContext(connectionString);
+                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+
+                var dapperExecutor = new DapperExecutor(dbContext);
+                var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
+                secureData = new SecureData(protectedKeyProvider);
+                var xmlSerializer = new XmlServiceSerializer();
+
+                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+
+                // 6. Validation
+                if (serviceRepository.GetByName(serviceName) == null)
+                {
+                    scopedLogger.Error($"Service '{serviceName}' is not managed by Servy.");
+                    Environment.ExitCode = 1;
+                    return;
+                }
+
+                // 7. Execution
+                Logger.Info($"Attempting to restart service '{serviceName}' using Servy.Restarter.exe.");
+
                 restarter.RestartService(serviceName, TimeSpan.FromSeconds(restartTimeout));
+
+                Logger.Info($"Successfully restarted service '{serviceName}'.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Error restarting service '{serviceName}': {ex.Message}");
-                Environment.Exit(1);
+                // Use the scoped logger if available, otherwise fallback to root
+                (scopedLogger ?? rootLogger).Error($"Servy.Restarter.exe failed to restart the service: {ex.Message}", ex);
+                Environment.ExitCode = 1;
             }
+            finally
+            {
+                // Clean up
+                secureData?.Dispose();
+                scopedLogger?.Dispose();
+                rootLogger.Dispose();
+                Logger.Shutdown();
+            }
+
         }
     }
 }
