@@ -27,7 +27,7 @@ namespace Servy.Core.Helpers
         /// <param name="serviceRepository">The service repository used to access and manage service-related resources. Cannot be null.</param>
         public ResourceHelper(IServiceRepository serviceRepository)
         {
-            _serviceHelper = new ServiceHelper(serviceRepository) ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceHelper = new ServiceHelper(serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository)));
         }
 
         /// <summary>
