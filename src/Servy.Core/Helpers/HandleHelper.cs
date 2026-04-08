@@ -30,6 +30,23 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// A compiled regular expression used to parse the output of the handle utility.
+        /// </summary>
+        /// <remarks>
+        /// The pattern extracts the process name and process ID (PID) from lines formatted as:
+        /// <c>notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll</c>
+        /// <list type="bullet">
+        /// <item>
+        /// <description><c>name</c>: Captures the executable name (e.g., "notepad.exe").</description>
+        /// </item>
+        /// <item>
+        /// <description><c>pid</c>: Captures the numerical process identifier (e.g., "1234").</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
+        private static readonly Regex HandleOutputRegex = new Regex(@"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        /// <summary>
         /// Uses handle.exe or handle64.exe to find all processes that have an open handle to the specified file.
         /// </summary>
         /// <param name="handleExePath">Full path to handle.exe or handle64.exe.</param>
@@ -69,9 +86,7 @@ namespace Servy.Core.Helpers
 
                 // Parse output lines like:
                 // notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll
-                var regex = new Regex(@"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)", RegexOptions.IgnoreCase | RegexOptions.Multiline);
-
-                foreach (Match match in regex.Matches(output))
+                foreach (Match match in HandleOutputRegex.Matches(output))
                 {
                     if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
                     {
