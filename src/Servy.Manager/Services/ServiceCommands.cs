@@ -31,6 +31,8 @@ namespace Servy.Manager.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
+        private readonly SemaphoreSlim _commandLock = new SemaphoreSlim(1, 1);
+
         #region Private Fields
 
         private readonly ServiceManager _serviceManager;
@@ -97,22 +99,28 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task<bool> StartServiceAsync(Service service, bool showMessageBox = true)
         {
+            // 1. Guard clause outside the lock
             if (service == null) return false;
+
+            bool success = false;
+            string errorMessage = null;
+            string infoMessage = null;
+
+            await _commandLock.WaitAsync();
 
             try
             {
                 var startupType = _serviceManager.GetServiceStartupType(service.Name);
-
                 if (startupType == ServiceStartType.Disabled)
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
+                    errorMessage = Strings.Msg_ServiceDisabledError;
                     return false;
                 }
 
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    errorMessage = Strings.Msg_ServiceNotFound;
                     return false;
                 }
 
@@ -120,95 +128,158 @@ namespace Servy.Manager.Services
                 if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Running;
-                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, AppConfig.Caption);
+                    infoMessage = Strings.Msg_ServiceStarted;
+                    success = true;
                 }
                 else
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    errorMessage = Strings.Msg_UnexpectedError;
                 }
-                return res.IsSuccess;
             }
             catch (Exception ex)
             {
                 _logger.Warn($"Failed to start {service.Name}: {ex}");
-                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
+                errorMessage = Strings.Msg_UnexpectedError;
             }
+            finally
+            {
+                // 2. Release the lock AS SOON AS the engine work is done
+                _commandLock.Release();
+            }
+
+            // 3. Show UI feedback AFTER the lock is released 
+            // This prevents the app from hanging if the user doesn't click "OK" immediately
+            if (showMessageBox)
+            {
+                if (!string.IsNullOrEmpty(errorMessage))
+                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                else if (!string.IsNullOrEmpty(infoMessage))
+                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+            }
+
+            return success;
         }
 
         public async Task<bool> StopServiceAsync(Service service, bool showMessageBox = true)
         {
+            // 1. Guard clause outside the lock
             if (service == null) return false;
+
+            bool success = false;
+            string errorMessage = null;
+            string infoMessage = null;
+
+            await _commandLock.WaitAsync();
 
             try
             {
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    errorMessage = Strings.Msg_ServiceNotFound;
                     return false;
                 }
 
+                // Execute the stop logic on a background thread
                 var res = await Task.Run(() => serviceDomain.Stop());
+
                 if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Stopped;
-                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption);
+                    infoMessage = Strings.Msg_ServiceStopped;
+                    success = true;
                 }
                 else
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    errorMessage = Strings.Msg_UnexpectedError;
                 }
-                return res.IsSuccess;
             }
             catch (Exception ex)
             {
                 _logger.Warn($"Failed to stop {service.Name}: {ex}");
-                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
+                errorMessage = Strings.Msg_UnexpectedError;
             }
+            finally
+            {
+                // 2. Release the lock immediately after the engine operation completes
+                _commandLock.Release();
+            }
+
+            // 3. Show UI feedback after the lock is released
+            if (showMessageBox)
+            {
+                if (!string.IsNullOrEmpty(errorMessage))
+                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                else if (!string.IsNullOrEmpty(infoMessage))
+                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+            }
+
+            return success;
         }
 
         /// <inheritdoc />
         public async Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true)
         {
+            // 1. Guard clause outside the lock
             if (service == null) return false;
+
+            bool success = false;
+            string errorMessage = null;
+            string infoMessage = null;
+
+            await _commandLock.WaitAsync();
 
             try
             {
                 var startupType = _serviceManager.GetServiceStartupType(service.Name);
-
                 if (startupType == ServiceStartType.Disabled)
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, AppConfig.Caption);
+                    errorMessage = Strings.Msg_ServiceDisabledError;
                     return false;
                 }
 
                 var serviceDomain = await GetServiceDomain(service.Name);
                 if (serviceDomain == null)
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    errorMessage = Strings.Msg_ServiceNotFound;
                     return false;
                 }
 
+                // Execute the restart logic on a background thread
                 var res = await Task.Run(() => serviceDomain.Restart());
+
                 if (res.IsSuccess)
                 {
                     service.Status = ServiceStatus.Running;
-                    if (showMessageBox) await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, AppConfig.Caption);
+                    infoMessage = Strings.Msg_ServiceRestarted;
+                    success = true;
                 }
                 else
                 {
-                    if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    errorMessage = Strings.Msg_UnexpectedError;
                 }
-                return res.IsSuccess;
             }
             catch (Exception ex)
             {
                 _logger.Warn($"Failed to restart {service.Name}: {ex}");
-                if (showMessageBox) await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
+                errorMessage = Strings.Msg_UnexpectedError;
             }
+            finally
+            {
+                // 2. Release the lock immediately after the operation finishes
+                _commandLock.Release();
+            }
+
+            // 3. Show UI feedback after the lock is released
+            if (showMessageBox)
+            {
+                if (!string.IsNullOrEmpty(errorMessage))
+                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                else if (!string.IsNullOrEmpty(infoMessage))
+                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+            }
+
+            return success;
         }
 
         /// <inheritdoc />
