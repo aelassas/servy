@@ -64,6 +64,8 @@ namespace Servy.Core.Logging
         {
             switch (level)
             {
+                case 1: 
+                    return EventLogLevel.Error;  // Critical -> map to Error (closest match)
                 case 2:
                     return EventLogLevel.Error;
                 case 3:
