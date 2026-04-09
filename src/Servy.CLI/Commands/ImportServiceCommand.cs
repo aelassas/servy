@@ -7,6 +7,7 @@ using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Core.Mappers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Diagnostics.CodeAnalysis;
@@ -250,13 +251,15 @@ namespace Servy.CLI.Commands
         private async Task<CommandResult> TryInstallServiceAsync(string serviceName, string format)
         {
             // 1. Retrieve the service domain object
-            var serviceDomain = await _serviceRepository.GetDomainServiceByNameAsync(_serviceManager, serviceName);
+            var serviceDto = await _serviceRepository.GetByNameAsync(serviceName);
 
-            if (serviceDomain == null)
+            if (serviceDto == null)
             {
                 Logger.Error($"Service lookup failed after import. Service: {serviceName}");
                 return CommandResult.Fail(string.Format(Strings.Msg_ImportInstallLookupFailure, serviceName));
             }
+
+            var serviceDomain = ServiceMapper.ToDomain(_serviceManager, serviceDto);
 
             // 2. Attempt service installation
             var res = await serviceDomain.Install(isCLI: true);

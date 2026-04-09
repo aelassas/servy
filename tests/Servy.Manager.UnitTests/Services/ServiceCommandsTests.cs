@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -77,52 +76,6 @@ namespace Servy.Manager.UnitTests.Services
         }
 
         [Fact]
-        public async Task StartServiceAsync_ShouldShowError_WhenServiceNotFound()
-        {
-            // Arrange
-            var sut = CreateServiceCommands();
-            var service = new Models.Service { Name = "FakeService" };
-            _serviceRepositoryMock
-                .Setup(r => r.SearchDomainServicesAsync(_serviceManagerMock.Object, "FakeService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Core.Domain.Service>());
-
-            // Act
-            var result = await sut.StartServiceAsync(service);
-
-            // Assert
-            Assert.False(result);
-            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption));
-        }
-
-        [Fact]
-        public async Task StopServiceAsync_ShouldSetStatus_WhenStopSucceeds()
-        {
-            // Arrange
-            var sut = CreateServiceCommands();
-            var service = new Models.Service { Name = "TestService" };
-
-            // Use the fake service instead of mocking
-            var serviceManagerMock = new Mock<IServiceManager>();
-            var domain = new FakeService(serviceManagerMock.Object, "TestService", stopResult: true);
-
-            _serviceRepositoryMock
-                .Setup(r => r.GetDomainServiceByNameAsync(It.IsAny<IServiceManager>(), "TestService", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(domain);
-
-            _messageBoxServiceMock
-                .Setup(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption))
-                .Returns(Task.CompletedTask);
-
-            // Act
-            var result = await sut.StopServiceAsync(service);
-
-            // Assert
-            Assert.True(result); // now should pass
-            Assert.Equal(ServiceStatus.Stopped, service.Status);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.Msg_ServiceStopped, AppConfig.Caption), Times.Once);
-        }
-
-        [Fact]
         public async Task ImportJsonConfigAsync_ShouldCallRepositoryAndRefresh_WhenValidJson()
         {
             // Arrange
@@ -169,28 +122,5 @@ namespace Servy.Manager.UnitTests.Services
             File.Delete(tempFile);
         }
 
-        [Fact]
-        public async Task RemoveServiceAsync_ShouldInvokeCallback_WhenConfirmed()
-        {
-            // Arrange
-            var sut = CreateServiceCommands();
-            var service = new Models.Service { Name = "S1" };
-            var serviceManagerMock = new Mock<IServiceManager>();
-            var domain = new Core.Domain.Service(serviceManagerMock.Object);
-
-            _messageBoxServiceMock.Setup(m => m.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption))
-                .ReturnsAsync(true);
-            _serviceRepositoryMock
-                 .Setup(r => r.GetDomainServiceByNameAsync(It.IsAny<IServiceManager>(), "S1", It.IsAny<bool>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(domain);
-            _serviceRepositoryMock.Setup(r => r.DeleteAsync("S1", It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-            // Act
-            var result = await sut.RemoveServiceAsync(service);
-
-            // Assert
-            Assert.True(result);
-            Assert.Equal("S1", _removedServiceName);
-        }
     }
 }

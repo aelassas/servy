@@ -25,6 +25,21 @@ namespace Servy.Core.UnitTests.Mappers
         }
 
         [Fact]
+        public void ToDto_WhenDomainIsNull_ThrowsArgumentNullException()
+        {
+            // Arrange
+            Service? nullDomain = null;
+
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() =>
+                ServiceMapper.ToDto(nullDomain!)
+            );
+
+            // Verify the correct parameter name is reported
+            Assert.Equal("domain", exception.ParamName);
+        }
+
+        [Fact]
         public void ToDto_MapsAllPropertiesCorrectly()
         {
             // Arrange
@@ -44,6 +59,7 @@ namespace Servy.Core.UnitTests.Mappers
                 EnableDateRotation = true,
                 DateRotationType = DateRotationType.Daily,
                 MaxRotations = 5,
+                UseLocalTimeForRotation = true, // Added
                 EnableDebugLogs = true,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 60,
@@ -70,13 +86,23 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
+                StartTimeout = 40, // Added
+                StopTimeout = 50,  // Added
+                PreStopExecutablePath = @"C:\prestop.exe", // Added
+                PreStopStartupDirectory = @"C:\prestop",    // Added
+                PreStopParameters = "-pre-stop",           // Added
+                PreStopTimeoutSeconds = 15,                // Added
+                PreStopLogAsError = true,                 // Added
+                PostStopExecutablePath = @"C:\poststop.exe", // Added
+                PostStopStartupDirectory = @"C:\poststop",   // Added
+                PostStopParameters = "-post-stop"           // Added
             };
 
             // Act
-            var dto = ServiceMapper.ToDto(service);
+            var dto = ServiceMapper.ToDto(service, 123); // Passing an ID to test the mapping
 
             // Assert
-            Assert.Equal(0, dto.Id); // Always 0 for inserts
+            Assert.Equal(123, dto.Id);
             Assert.Equal(service.Name, dto.Name);
             Assert.Equal(service.Description, dto.Description);
             Assert.Equal(service.ExecutablePath, dto.ExecutablePath);
@@ -91,6 +117,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(service.EnableDateRotation, dto.EnableDateRotation);
             Assert.Equal((int)service.DateRotationType, dto.DateRotationType);
             Assert.Equal(service.MaxRotations, dto.MaxRotations);
+            Assert.Equal(service.UseLocalTimeForRotation, dto.UseLocalTimeForRotation); // Added
             Assert.Equal(service.EnableDebugLogs, dto.EnableDebugLogs);
             Assert.Equal(service.EnableHealthMonitoring, dto.EnableHealthMonitoring);
             Assert.Equal(service.HeartbeatInterval, dto.HeartbeatInterval);
@@ -117,6 +144,31 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(service.PostLaunchExecutablePath, dto.PostLaunchExecutablePath);
             Assert.Equal(service.PostLaunchStartupDirectory, dto.PostLaunchStartupDirectory);
             Assert.Equal(service.PostLaunchParameters, dto.PostLaunchParameters);
+            Assert.Equal(service.StartTimeout, dto.StartTimeout); // Added
+            Assert.Equal(service.StopTimeout, dto.StopTimeout);   // Added
+            Assert.Equal(service.PreStopExecutablePath, dto.PreStopExecutablePath); // Added
+            Assert.Equal(service.PreStopStartupDirectory, dto.PreStopStartupDirectory); // Added
+            Assert.Equal(service.PreStopParameters, dto.PreStopParameters); // Added
+            Assert.Equal(service.PreStopTimeoutSeconds, dto.PreStopTimeoutSeconds); // Added
+            Assert.Equal(service.PreStopLogAsError, dto.PreStopLogAsError); // Added
+            Assert.Equal(service.PostStopExecutablePath, dto.PostStopExecutablePath); // Added
+            Assert.Equal(service.PostStopStartupDirectory, dto.PostStopStartupDirectory); // Added
+            Assert.Equal(service.PostStopParameters, dto.PostStopParameters); // Added
+        }
+
+        [Fact]
+        public void ToDomain_WhenDtoIsNull_ThrowsArgumentNullException()
+        {
+            // Arrange
+            ServiceDto? nullDto = null;
+
+            // Act & Assert
+            var exception = Assert.Throws<ArgumentNullException>(() =>
+                ServiceMapper.ToDomain(_serviceManagerMock.Object, nullDto!)
+            );
+
+            // Verify the parameter name in the exception matches your code
+            Assert.Equal("dto", exception.ParamName);
         }
 
         [Fact]
@@ -139,6 +191,7 @@ namespace Servy.Core.UnitTests.Mappers
                 EnableDateRotation = true,
                 DateRotationType = (int)DateRotationType.Weekly,
                 MaxRotations = 5,
+                UseLocalTimeForRotation = true, // Added
                 EnableDebugLogs = true,
                 EnableHealthMonitoring = false,
                 HeartbeatInterval = 90,
@@ -165,6 +218,16 @@ namespace Servy.Core.UnitTests.Mappers
                 PostLaunchExecutablePath = @"C:\apps\post_launch\post_launch.exe",
                 PostLaunchParameters = "--post-param1",
                 PostLaunchStartupDirectory = @"C:\apps\post_launch\",
+                StartTimeout = 40, // Added
+                StopTimeout = 50,  // Added
+                PreStopExecutablePath = @"C:\prestop.exe", // Added
+                PreStopStartupDirectory = @"C:\prestop",    // Added
+                PreStopParameters = "-pre-stop",           // Added
+                PreStopTimeoutSeconds = 15,                // Added
+                PreStopLogAsError = true,                 // Added
+                PostStopExecutablePath = @"C:\poststop.exe", // Added
+                PostStopStartupDirectory = @"C:\poststop",   // Added
+                PostStopParameters = "-post-stop"           // Added
             };
 
             // Act
@@ -176,8 +239,8 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.ExecutablePath, service.ExecutablePath);
             Assert.Equal(dto.StartupDirectory, service.StartupDirectory);
             Assert.Equal(dto.Parameters, service.Parameters);
-            Assert.Equal((ServiceStartType)dto.StartupType, service.StartupType);
-            Assert.Equal((ProcessPriority)dto.Priority, service.Priority);
+            Assert.Equal((ServiceStartType)dto.StartupType!, service.StartupType);
+            Assert.Equal((ProcessPriority)dto.Priority!, service.Priority);
             Assert.Equal(dto.StdoutPath, service.StdoutPath);
             Assert.Equal(dto.StderrPath, service.StderrPath);
             Assert.Equal(dto.EnableRotation, service.EnableRotation);
@@ -185,11 +248,12 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
             Assert.Equal(dto.DateRotationType, (int)service.DateRotationType);
             Assert.Equal(dto.MaxRotations, service.MaxRotations);
+            Assert.Equal(dto.UseLocalTimeForRotation, service.UseLocalTimeForRotation); // Added
             Assert.Equal(dto.EnableDebugLogs, service.EnableDebugLogs);
             Assert.Equal(dto.EnableHealthMonitoring, service.EnableHealthMonitoring);
             Assert.Equal(dto.HeartbeatInterval, service.HeartbeatInterval);
             Assert.Equal(dto.MaxFailedChecks, service.MaxFailedChecks);
-            Assert.Equal((RecoveryAction)dto.RecoveryAction, service.RecoveryAction);
+            Assert.Equal((RecoveryAction)dto.RecoveryAction!, service.RecoveryAction);
             Assert.Equal(dto.MaxRestartAttempts, service.MaxRestartAttempts);
             Assert.Equal(dto.FailureProgramPath, service.FailureProgramPath);
             Assert.Equal(dto.FailureProgramStartupDirectory, service.FailureProgramStartupDirectory);
@@ -211,6 +275,18 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.PostLaunchExecutablePath, service.PostLaunchExecutablePath);
             Assert.Equal(dto.PostLaunchStartupDirectory, service.PostLaunchStartupDirectory);
             Assert.Equal(dto.PostLaunchParameters, service.PostLaunchParameters);
+
+            // New v7.9 Assertions
+            Assert.Equal(dto.StartTimeout, service.StartTimeout);
+            Assert.Equal(dto.StopTimeout, service.StopTimeout);
+            Assert.Equal(dto.PreStopExecutablePath, service.PreStopExecutablePath);
+            Assert.Equal(dto.PreStopStartupDirectory, service.PreStopStartupDirectory);
+            Assert.Equal(dto.PreStopParameters, service.PreStopParameters);
+            Assert.Equal(dto.PreStopTimeoutSeconds, service.PreStopTimeoutSeconds);
+            Assert.Equal(dto.PreStopLogAsError, service.PreStopLogAsError);
+            Assert.Equal(dto.PostStopExecutablePath, service.PostStopExecutablePath);
+            Assert.Equal(dto.PostStopStartupDirectory, service.PostStopStartupDirectory);
+            Assert.Equal(dto.PostStopParameters, service.PostStopParameters);
         }
 
         [Fact]

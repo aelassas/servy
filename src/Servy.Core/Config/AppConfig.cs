@@ -1,5 +1,7 @@
 
 
+using Servy.Core.Enums;
+
 namespace Servy.Core.Config
 {
     /// <summary>
@@ -7,7 +9,6 @@ namespace Servy.Core.Config
     /// </summary>
     public static class AppConfig
     {
-
         #region Constants
 
         /// <summary>
@@ -226,9 +227,69 @@ namespace Servy.Core.Config
         public const int DefaultStartTimeout = 10;
 
         /// <summary>
-        /// Default minimum timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 1 second.
+        /// The default startup type for a new service.
+        /// Default is <see cref="ServiceStartType.Automatic"/>.
         /// </summary>
-        public const int MinStartTimeout = 1;
+        public const ServiceStartType DefaultStartupType = ServiceStartType.Automatic;
+
+        /// <summary>
+        /// The default CPU priority class for the managed process.
+        /// Default is <see cref="ProcessPriority.Normal"/>.
+        /// </summary>
+        public const ProcessPriority DefaultPriority = ProcessPriority.Normal;
+
+        /// <summary>
+        /// The default interval used when date-based log rotation is enabled.
+        /// Default is <see cref="DateRotationType.Daily"/>.
+        /// </summary>
+        public const DateRotationType DefaultDateRotationType = DateRotationType.Daily;
+
+        /// <summary>
+        /// Gets a value indicating whether size-based log rotation is enabled by default.
+        /// Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableRotation = false;
+
+        /// <summary>
+        /// Gets a value indicating whether date-based log rotation is enabled by default.
+        /// Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableDateRotation = false;
+
+        /// <summary>
+        /// Gets a value indicating whether process health monitoring (heartbeat checks) 
+        /// is enabled by default. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableHealthMonitoring = false;
+
+        /// <summary>
+        /// Gets a value indicating whether the service should run under the 
+        /// LocalSystem account by default. Default is <c>true</c>.
+        /// </summary>
+        public const bool DefaultRunAsLocalSystem = true;
+
+        /// <summary>
+        /// Gets a value indicating whether verbose debug-level logging is enabled by default.
+        /// Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultEnableDebugLogs = false;
+
+        /// <summary>
+        /// Gets a value indicating whether the service should continue starting if the 
+        /// pre-launch executable fails. Default is <c>false</c>.
+        /// </summary>
+        public const bool DefaultPreLaunchIgnoreFailure = false;
+
+        /// <summary>
+        /// Represents the default timeout, in seconds, to wait before stopping a process or service.
+        /// </summary>
+        public const int DefaultPreStopTimeoutSeconds = 5;
+
+        /// <summary>
+        /// Gets a value indicating whether failures in the pre-stop executable should 
+        /// be logged as Errors. Default is <c>false</c> (logged as Warnings).
+        /// </summary>
+        public const bool DefaultPreStopLogAsError = false;
 
         /// <summary>
         /// Default start timeout in seconds to wait for exit. Default is 5 seconds.
@@ -236,14 +297,14 @@ namespace Servy.Core.Config
         public const int DefaultStopTimeout = 5;
 
         /// <summary>
+        /// Default minimum timeout in seconds to wait for the process to start successfully before considering the startup as failed. Default is 1 second.
+        /// </summary>
+        public const int MinStartTimeout = 1;
+
+        /// <summary>
         /// Default minimum timeout in seconds to wait for exit. Default is 1 second.
         /// </summary>
         public const int MinStopTimeout = 1;
-
-        /// <summary>
-        /// Represents the default timeout, in seconds, to wait before stopping a process or service.
-        /// </summary>
-        public const int DefaultPreStopTimeoutSeconds = 5;
 
         /// <summary>
         /// Specifies the minimum allowed value, in seconds, for the pre-stop timeout setting.
@@ -349,6 +410,5 @@ namespace Servy.Core.Config
         }
 
         #endregion
-
     }
 }
