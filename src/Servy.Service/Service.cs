@@ -661,7 +661,7 @@ namespace Servy.Service
         private void SetupAttemptsFile(StartOptions options)
         {
             var attemptsDir = Path.Combine(AppConfig.ProgramDataPath, "recovery");
-            Directory.CreateDirectory(attemptsDir); // ensures folder exists
+            SecurityHelper.CreateSecureDirectory(attemptsDir); // ensures folder exists
 
             string safeServiceName = MakeFilenameSafe(options.ServiceName);
             _restartAttemptsFile = Path.Combine(attemptsDir, $"{safeServiceName}_restartAttempts.dat");

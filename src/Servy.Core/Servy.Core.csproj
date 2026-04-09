@@ -142,6 +142,7 @@
     <Compile Include="IO\RotatingStreamWriter.cs" />
     <Compile Include="Security\IProtectedKeyProvider.cs" />
     <Compile Include="Security\ProtectedKeyProvider.cs" />
+    <Compile Include="Security\SecurityHelper.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesParser.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesValidator.cs" />
     <Compile Include="Services\EventLogService.cs" />

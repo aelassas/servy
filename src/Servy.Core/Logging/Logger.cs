@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.IO;
+using Servy.Core.Security;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -76,10 +77,7 @@ namespace Servy.Core.Logging
             try
             {
                 var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                if (!Directory.Exists(logDir))
-                {
-                    Directory.CreateDirectory(logDir);
-                }
+                SecurityHelper.CreateSecureDirectory(logDir);
 
                 string logPath = Path.Combine(logDir, _fileName);
 
@@ -104,10 +102,7 @@ namespace Servy.Core.Logging
                 try
                 {
                     var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                    if (!Directory.Exists(logDir))
-                    {
-                        Directory.CreateDirectory(logDir);
-                    }
+                    SecurityHelper.CreateSecureDirectory(logDir);
 
                     File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
                         $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");

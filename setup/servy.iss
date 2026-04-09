@@ -115,7 +115,8 @@ Source: ".\taskschd\smtp-config.xml"; DestDir: "{app}\taskschd"; Flags: ignoreve
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Dirs]
-Name: "{commonappdata}\Servy"; Permissions: networkservice-modify service-modify
+; Name: "{commonappdata}\Servy"; Permissions: networkservice-modify service-modify
+Name: "{commonappdata}\Servy"
 
 [Icons]
 Name: "{commonprograms}\{#MyAppName}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Components: install_main_app
@@ -130,6 +131,38 @@ Name: "{commonprograms}\{#MyAppName}\Uninstall"; Filename: "{uninstallexe}";
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_main_app
 ; Filename: "{app}\{#ManagerAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(ManagerAppName, '&', '&&')}}"; Flags: postinstall shellexec skipifsilent unchecked; Components: install_manager
 Filename: "{#DocsURL}"; Description: "Open Documentation"; Flags: postinstall shellexec skipifsilent unchecked
+
+; 1. Reset inheritance, grant Admins/System, and PURGE broad groups
+; *S-1-5-32-544: Administrators
+; *S-1-5-18:     Local System
+; *S-1-5-32-545: Users (Purge)
+; *S-1-5-11:     Authenticated Users (Purge)
+; *S-1-5-1:      Everyone (Purge)
+Filename: "icacls.exe"; \
+    Parameters: """{commonappdata}\Servy"" /inheritance:r /grant:r *S-1-5-32-544:(OI)(CI)F *S-1-5-18:(OI)(CI)F /remove:g *S-1-5-32-545 /remove:g *S-1-5-11 /remove:g *S-1-5-1"; \
+    Flags: runhidden; StatusMsg: "Securing service data directory..."
+
+; 2. Grant the Current User (The "Manual Key")
+; Replicates C# logic: Add current user only if they aren't SYSTEM
+Filename: "icacls.exe"; \
+    Parameters: """{commonappdata}\Servy"" /grant ""{username}"":(OI)(CI)F"; \
+    Flags: runhidden; \
+    Check: ShouldAddCurrentUser; \
+    StatusMsg: "Assigning user permissions..."
+
+[Code]
+function ShouldAddCurrentUser(): Boolean;
+var
+  CurrentUserName: String;
+begin
+  CurrentUserName := GetUserNameString();
+  
+  // Replicate C# logic: currentUserSid != systemSid
+  // We don't check for 'adminSid' here because a User SID is never equal 
+  // to the Administrators Group SID.
+  Result := (CompareText(CurrentUserName, 'SYSTEM') <> 0) and 
+            (CurrentUserName <> '');
+end;
 
 [UninstallRun]
 Filename: "taskkill"; Parameters: "/im ""{#MyAppExeName}"" /t /f"; Flags: runhidden waituntilterminated; RunOnceId: StopMainApp

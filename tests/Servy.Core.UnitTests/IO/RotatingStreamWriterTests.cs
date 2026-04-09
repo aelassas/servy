@@ -273,7 +273,7 @@ namespace Servy.Core.UnitTests.IO
 
                 var rotatedFiles = Directory.GetFiles(_testDir, "rotate.*.txt").Where(f => !f.EndsWith("rotate.txt")).ToList();
                 Assert.NotEmpty(rotatedFiles);
-                Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotatedFiles[0]);
+                Assert.Contains(DateTime.UtcNow.ToString("yyyyMMdd"), rotatedFiles[0]);
             }
 
             var latestRotatedFile = Directory.GetFiles(_testDir, "rotate.*.txt")
@@ -540,8 +540,8 @@ namespace Servy.Core.UnitTests.IO
             var rotated2 = Path.Combine(_testDir, "service.log.2");
             File.WriteAllText(rotated2, "old");
 
-            File.SetLastWriteTimeUtc(rotated1, DateTime.Now.AddMinutes(0));
-            File.SetLastWriteTimeUtc(rotated2, DateTime.Now.AddMinutes(-1));
+            File.SetLastWriteTimeUtc(rotated1, DateTime.UtcNow.AddMinutes(0));
+            File.SetLastWriteTimeUtc(rotated2, DateTime.UtcNow.AddMinutes(-1));
 
             var writer = CreateWriter(logPath, true, 1, false, DateRotationType.Daily, 1);
             writer.Write(""); // create lazy file 
@@ -565,7 +565,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Daily, 0))
             {
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddDays(-1));
+                lastField.SetValue(writer, DateTime.UtcNow.AddDays(-1));
 
                 writer.WriteLine("rotate on daily boundary");
                 writer.Flush();
@@ -573,7 +573,7 @@ namespace Servy.Core.UnitTests.IO
 
             var rotated = Directory.GetFiles(_testDir, "daily.*.log").Where(f => !f.EndsWith("daily.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(DateTime.UtcNow.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -582,7 +582,7 @@ namespace Servy.Core.UnitTests.IO
             var filePath = Path.Combine(_testDir, "weekly_year.log");
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
-                var lastYear = DateTime.Now.Year - 1;
+                var lastYear = DateTime.UtcNow.Year - 1;
                 var dec31 = new DateTime(lastYear, 12, 31);
 
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -600,7 +600,7 @@ namespace Servy.Core.UnitTests.IO
         public void DateRotation_Weekly_DoesNotRotate_OnSameWeek()
         {
             var filePath = Path.Combine(_testDir, "weekly_same.log");
-            var recently = DateTime.Now.AddHours(-1);
+            var recently = DateTime.UtcNow.AddHours(-1);
 
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Weekly, 0))
             {
@@ -622,7 +622,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddMonths(-1));
+                lastField.SetValue(writer, DateTime.UtcNow.AddMonths(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -630,7 +630,7 @@ namespace Servy.Core.UnitTests.IO
 
             var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(DateTime.UtcNow.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -640,7 +640,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, false, 0, true, DateRotationType.Monthly, 0))
             {
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddYears(-1));
+                lastField.SetValue(writer, DateTime.UtcNow.AddYears(-1));
 
                 writer.WriteLine("rotate on monthly boundary");
                 writer.Flush();
@@ -648,7 +648,7 @@ namespace Servy.Core.UnitTests.IO
 
             var rotated = Directory.GetFiles(_testDir, "monthly.*.log").Where(f => !f.EndsWith("monthly.log")).ToArray();
             Assert.NotEmpty(rotated);
-            Assert.Contains(DateTime.Now.ToString("yyyyMMdd"), rotated[0]);
+            Assert.Contains(DateTime.UtcNow.ToString("yyyyMMdd"), rotated[0]);
         }
 
         [Fact]
@@ -659,7 +659,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, true, 5, true, DateRotationType.Daily, 0))
             {
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddDays(-1));
+                lastField.SetValue(writer, DateTime.UtcNow.AddDays(-1));
 
                 writer.Write("123456");
                 writer.Flush();
@@ -684,7 +684,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(filePath, true, 1024, true, DateRotationType.Daily, 0))
             {
                 var lastField = typeof(RotatingStreamWriter).GetField("_lastRotationDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                lastField.SetValue(writer, DateTime.Now.AddDays(-1));
+                lastField.SetValue(writer, DateTime.UtcNow.AddDays(-1));
 
                 writer.WriteLine("date rotation hit");
                 writer.Flush();
@@ -876,7 +876,7 @@ namespace Servy.Core.UnitTests.IO
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily))
             {
                 // Set last rotation to 'now' so now.Date > lastRotationDate.Date is FALSE
-                SetPrivateField(writer, "_lastRotationDate", DateTime.Now);
+                SetPrivateField(writer, "_lastRotationDate", DateTime.UtcNow);
 
                 var result = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
 
@@ -911,7 +911,7 @@ namespace Servy.Core.UnitTests.IO
                 writer.Write("init"); // Ensure file and writer exist
 
                 // Force ShouldRotateByDate to return true by aging the last rotation
-                DateTime fakePast = useLocal ? DateTime.Now.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
+                DateTime fakePast = useLocal ? DateTime.UtcNow.AddDays(-2) : DateTime.UtcNow.AddDays(-2);
                 SetPrivateField(writer, "_lastRotationDate", fakePast);
 
                 // Trigger write -> CheckRotation -> rotateByDate is true

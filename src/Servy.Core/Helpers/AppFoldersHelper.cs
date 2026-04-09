@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Servy.Core.Config;
+using Servy.Core.Security;
+using System;
 using System.IO;
 
 namespace Servy.Core.Helpers
@@ -63,9 +65,11 @@ namespace Servy.Core.Helpers
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
             // Ensure folders exist
-            Directory.CreateDirectory(dbFolder);
-            Directory.CreateDirectory(aesKeyFolder);
-            Directory.CreateDirectory(aesIVFolder);
+            string[] folders = { AppConfig.ProgramDataPath, dbFolder, aesKeyFolder, aesIVFolder };
+            foreach (var folder in folders)
+            {
+                SecurityHelper.CreateSecureDirectory(folder);
+            }
         }
 
     }
