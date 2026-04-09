@@ -2,8 +2,7 @@
 # GitHub Actions Workflow - Build (net48)
 # -------------------------------------------
 # Builds the Servy solution targeting .NET Framework 4.8
-# on push or pull request to the net48 branch. Includes
-# checkout, MSBuild setup, NuGet restore, and solution build.
+# and verifies critical reflection hooks.
 # ===========================================
 
 name: build
@@ -29,8 +28,33 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.2.0
+
       - name: Restore NuGet packages
         run: nuget restore Servy.sln
 
-      - name: Build solution (Release)
-        run: msbuild Servy.sln /p:Configuration=Release /p:AllowUnsafeBlocks=true /p:Platform=x64
+      - name: Build Solution (Release)
+        run: |
+          msbuild Servy.sln `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
+      - name: Verify Reflection Compatibility (Release)
+        shell: pwsh
+        run: |
+          $testDll = "tests\Servy.Service.UnitTests\bin\x64\Release\Servy.Service.UnitTests.dll"
+          
+          if (-not (Test-Path $testDll)) {
+              Write-Error "Test DLL not found at $testDll. Verify MSBuild output path."
+              exit 1
+          }
+
+          dotnet test $testDll `
+            --configuration Release `
+            --no-build `
+            --filter "Category=ReflectionValidation" `
+            --logger "console;verbosity=detailed"

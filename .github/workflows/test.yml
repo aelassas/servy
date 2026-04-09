@@ -27,11 +27,31 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.2.0
+
       - name: Restore NuGet packages
         run: nuget restore Servy.sln
 
-      - name: Build solution
-        run: msbuild Servy.sln /p:Configuration=Debug /p:AllowUnsafeBlocks=true /p:Platform=x64
+      - name: Build Solution (Debug)
+        run: |
+          msbuild Servy.sln `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
+      - name: Verify Reflection Compatibility (net48)
+        shell: pwsh
+        run: |
+          # Targeting the specific x64 build we just created
+          $testDll = "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll"
+          dotnet test $testDll `
+            --configuration Debug `
+            --no-build `
+            --filter "Category=ReflectionValidation" `
+            --logger "console;verbosity=detailed"
 
       - name: Setup .NET SDK 6
         uses: actions/setup-dotnet@v4
@@ -112,15 +132,13 @@ jobs:
           $content | Set-Content $normalizedFile
 
       - name: Run other Unit Tests (no coverage)
-        run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
-            "tests\Servy.Restarter.UnitTests\bin\x64\Debug\Servy.Restarter.UnitTests.dll" `
-            "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll" `
-            "tests\Servy.UnitTests\bin\x64\Debug\Servy.UnitTests.dll" `
-            "tests\Servy.CLI.UnitTests\bin\x64\Debug\Servy.CLI.UnitTests.dll" `
-            "tests\Servy.Manager.UnitTests\bin\x64\Debug\Servy.Manager.UnitTests.dll" `
-            "tests\Servy.UI.UnitTests\bin\x64\Debug\Servy.UI.UnitTests.dll"
         shell: pwsh
+        run: |
+          dotnet test Servy.sln `
+            --configuration Debug `
+            --no-build `
+            --filter "FullyQualifiedName!~Servy.Core.UnitTests & FullyQualifiedName!~Servy.Infrastructure.UnitTests & Category!=ReflectionValidation" `
+            --logger "console;verbosity=normal"
 
       - name: Upload coverage to Codecov
         id: codecov
