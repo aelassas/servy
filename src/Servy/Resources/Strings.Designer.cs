@@ -404,7 +404,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à If the service runs under an account other than Local System, NT AUTHORITY\NetworkService, or NT AUTHORITY\LocalService, make sure to grant write access to %ProgramData%\Servy for the account running the service..
+        ///   Recherche une chaîne localisée semblable à If the service runs under an account other than Local System, you must grant write access to %ProgramData%\Servy for the account that runs the service..
         /// </summary>
         public static string Info_UserAccountRights {
             get {

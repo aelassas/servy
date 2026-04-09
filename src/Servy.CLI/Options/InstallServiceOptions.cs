@@ -230,9 +230,9 @@ namespace Servy.CLI.Options
             "user",
             HelpText = "The service account username (e.g., .\\username, DOMAIN\\username, or DOMAIN\\gMSA$). " +
                        "If this option is not set, the service runs under Local System. " +
-                       "If the service runs under an account other than Local System, NT AUTHORITY\\NetworkService, " +
-                       "or NT AUTHORITY\\LocalService, make sure to grant write access to %ProgramData%\\Servy " +
-                       "for the account running the service."
+                       "If the service runs under an account other than Local System, " +
+                       "you must grant write access to %ProgramData%\\Servy " +
+                       "for the account that runs the service."
         )]
         public string User { get; set; }
 
