@@ -68,6 +68,11 @@ namespace Servy.Service.ProcessManagement
         StreamReader StandardError { get; }
 
         /// <summary>
+        /// Underlying Process.
+        /// </summary>
+        Process UnderlyingProcess { get; }
+
+        /// <summary>
         /// Starts the process.
         /// </summary>
         void Start();

@@ -910,177 +910,118 @@ namespace Servy.Service
 
             _preLaunchEnabled = true;
 
-            var effectiveTimeout = Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds) * 1000;
+            // 1. Prepare configuration and shared options
+            var (expandedEnv, args) = PreparePreLaunchEnv(options);
+            var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
+                ? options.WorkingDirectory
+                : options.PreLaunchWorkingDirectory;
 
             var fireAndForget = options.PreLaunchTimeout == 0;
 
+            var launchOptions = new ProcessLaunchOptions
+            {
+                ExecutablePath = options.PreLaunchExecutablePath,
+                Arguments = args,
+                WorkingDirectory = workingDir,
+                EnvironmentVariables = options.PreLaunchEnvironmentVariables ?? new List<EnvironmentVariable>(),
+                WaitChunkMs = _waitChunkMs,
+                ScmAdditionalTimeMs = _scmAdditionalTimeMs,
+                OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger)),
+                StdOutPath = options.PreLaunchStdoutPath,
+                StdErrPath = options.PreLaunchStderrPath,
+                RedirectToWriters = !fireAndForget,
+                FireAndForget = fireAndForget,
+            };
+
+            // 2. Handle Fire-and-Forget Mode
+            // If Timeout is 0, we don't care about the exit code or output; we just launch and move on.
             if (fireAndForget)
             {
+                return RunFireAndForgetPreLaunch(launchOptions, options.PreLaunchIgnoreFailure);
+            }
+
+            // 3. Handle Synchronous Mode with Retries
+            launchOptions.TimeoutMs = Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds) * 1000;
+            return RunSynchronousPreLaunch(launchOptions, options);
+        }
+
+        /// <summary>
+        /// Launches the pre-launch process in fire-and-forget mode and tracks it for cleanup.
+        /// </summary>
+        /// <param name="launchOptions">The initialized process launch parameters.</param>
+        /// <param name="ignoreFailure">If <see langword="true"/>, the service will start even if the process fails to launch.</param>
+        /// <returns><see langword="true"/> if launched successfully or if failures are suppressed.</returns>
+        private bool RunFireAndForgetPreLaunch(ProcessLaunchOptions launchOptions, bool ignoreFailure)
+        {
+            try
+            {
+                _logger?.Info($"Running pre-launch program (fire-and-forget): {launchOptions.ExecutablePath}");
+                _logger?.Info("Redirection and retries are ignored in fire-and-forget mode.");
+
+                var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
+
+                if (process?.UnderlyingProcess is Process nativeProcess)
+                {
+                    lock (_trackedHooks)
+                    {
+                        // We track this so if the main service stops while the fire-and-forget 
+                        // process is still running, we can kill the orphan.
+                        _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = nativeProcess });
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Failed to launch fire-and-forget pre-launch process: {ex.Message}");
+                return ignoreFailure;
+            }
+        }
+
+        /// <summary>
+        /// Executes the pre-launch process synchronously, handling retries and exit code evaluation.
+        /// </summary>
+        /// <param name="launchOptions">The initialized process launch parameters.</param>
+        /// <param name="options">The original start options for access to retry and ignore settings.</param>
+        /// <returns>
+        /// <see langword="true"/> if the process eventually returned exit code 0 or if failures are configured to be ignored.
+        /// </returns>
+        private bool RunSynchronousPreLaunch(ProcessLaunchOptions launchOptions, StartOptions options)
+        {
+            int attempt = 0;
+            int maxAttempts = options.PreLaunchRetryAttempts + 1;
+
+            do
+            {
+                attempt++;
+                _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
+
                 try
                 {
-                    var (expandedEnv, args) = PreparePreLaunchEnv(options);
+                    // ProcessLauncher.Start handles the ScmHeartbeat pulses during the wait.
+                    var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
 
-                    var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
-                                    ? options.WorkingDirectory
-                                    : options.PreLaunchWorkingDirectory;
-
-                    var psi = new ProcessStartInfo
+                    if (process.ExitCode == 0)
                     {
-                        FileName = options.PreLaunchExecutablePath,
-                        Arguments = args,
-                        WorkingDirectory = workingDir,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-
-                    // Apply environment variables
-                    foreach (var envVar in expandedEnv)
-                    {
-                        psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
+                        _logger?.Info("Pre-launch process completed successfully.");
+                        return true;
                     }
 
-                    _logger?.Info($"Running pre-launch program (fire-and-forget): {psi.FileName}");
-                    _logger?.Info("Pre-launch stdout/stderr redirection and retries are ignored in fire-and-forget mode.");
-
-                    // Fire-and-forget: start the process without waiting
-                    var process = Process.Start(psi);
-
-                    // Track the process so we can kill it if the Service stops
-                    if (process != null)
-                    {
-                        lock (_trackedHooks)
-                        {
-                            _trackedHooks.Add(new Hook { OperationName = "pre-launch", Process = process });
-                        }
-                    }
-
-                    return true;
+                    _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Failed to launch fire-and-forget pre-launch process: {ex.Message}");
-                    return options.PreLaunchIgnoreFailure; // Use the user's preference for failure
+                    _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
                 }
-            }
-            else
+
+            } while (attempt < maxAttempts);
+
+            _logger?.Error("Pre-launch process failed after all retry attempts.");
+
+            if (options.PreLaunchIgnoreFailure)
             {
-                int attempt = 0;
-                do
-                {
-                    attempt++;
-                    _logger?.Info($"Starting pre-launch process (attempt {attempt}/{options.PreLaunchRetryAttempts + 1})...");
-
-                    try
-                    {
-                        var (expandedEnv, args) = PreparePreLaunchEnv(options);
-
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = options.PreLaunchExecutablePath,
-                            Arguments = args,
-                            WorkingDirectory = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
-                                ? options.WorkingDirectory
-                                : options.PreLaunchWorkingDirectory,
-                            UseShellExecute = false,
-                            RedirectStandardOutput = !string.IsNullOrWhiteSpace(options.PreLaunchStdoutPath),
-                            RedirectStandardError = !string.IsNullOrWhiteSpace(options.PreLaunchStderrPath),
-                            CreateNoWindow = true
-                        };
-
-                        if (psi.RedirectStandardOutput)
-                        {
-                            psi.StandardOutputEncoding = Encoding.UTF8;
-                        }
-
-                        if (psi.RedirectStandardError)
-                        {
-                            psi.StandardErrorEncoding = Encoding.UTF8;
-                        }
-
-                        // Apply environment variables
-                        foreach (var envVar in expandedEnv)
-                        {
-                            psi.Environment[envVar.Key] = envVar.Value ?? string.Empty;
-                        }
-
-                        // Ensure UTF-8 encoding and buffered mode for python
-                        EnsurePythonUTF8EncodingAndBufferedMode(psi);
-                        EnsureJavaUTF8Encoding(psi);
-
-                        using (var process = new Process { StartInfo = psi })
-                        {
-                            var stdoutBuffer = new StringBuilder();
-                            var stderrBuffer = new StringBuilder();
-
-                            if (psi.RedirectStandardOutput)
-                            {
-                                process.OutputDataReceived += (_, e) =>
-                                {
-                                    if (e.Data != null)
-                                        stdoutBuffer.AppendLine(e.Data);
-                                };
-                            }
-                            if (psi.RedirectStandardError)
-                            {
-                                process.ErrorDataReceived += (_, e) =>
-                                {
-                                    if (e.Data != null)
-                                        stderrBuffer.AppendLine(e.Data);
-                                };
-                            }
-
-                            process.Start();
-
-                            if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
-                            if (psi.RedirectStandardError) process.BeginErrorReadLine();
-
-                            // Wait for pre-lauch process to exit with timeout
-                            WaitForProcessWithScmHeartbeat(
-                                process,
-                                effectiveTimeout,
-                                _waitChunkMs,
-                                "Pre-launch");
-
-                            // Ensure all async reads are finished
-                            process.WaitForExit();
-
-                            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false); // UTF-8 without BOM
-
-                            // Save logs if paths are set
-                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStdoutPath))
-                            {
-                                File.AppendAllText(options.PreLaunchStdoutPath, stdoutBuffer.ToString(), encoding);
-                            }
-                            if (!string.IsNullOrWhiteSpace(options.PreLaunchStderrPath))
-                            {
-                                File.AppendAllText(options.PreLaunchStderrPath, stderrBuffer.ToString(), encoding);
-                            }
-
-                            if (process.ExitCode == 0)
-                            {
-                                _logger?.Info("Pre-launch process completed successfully.");
-                                return true;
-                            }
-                            else
-                            {
-                                _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
-                    }
-
-                } while (attempt <= options.PreLaunchRetryAttempts);
-
-                _logger?.Error("Pre-launch process failed after all retry attempts.");
-
-                if (options.PreLaunchIgnoreFailure)
-                {
-                    _logger?.Warn("Ignoring pre-launch failure and continuing service start.");
-                    return true;
-                }
+                _logger?.Warn("Ignoring pre-launch failure and continuing service start.");
+                return true;
             }
 
             return false; // stop service start
@@ -1093,7 +1034,7 @@ namespace Servy.Service
         {
             // 1. Expand environment variables list
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                options.PreLaunchEnvironmentVariables ?? Enumerable.Empty<EnvironmentVariable>().ToList());
+                options.PreLaunchEnvironmentVariables ?? options.EnvironmentVariables);
 
             // 2. Audit expanded variables for leftover placeholders
             foreach (var kvp in expandedEnv)
@@ -1110,72 +1051,6 @@ namespace Servy.Service
             return (expandedEnv, args);
         }
 
-        /// <summary>
-        /// Waits for a process to exit while periodically sending "Wait Hints" to the Windows Service Control Manager (SCM).
-        /// </summary>
-        /// <param name="process">The external process to monitor.</param>
-        /// <param name="effectiveTimeoutMs">The maximum total time (in milliseconds) allowed before the process is forcibly terminated.</param>
-        /// <param name="waitChunkMs">The interval (in milliseconds) at which to report progress to the SCM and logs.</param>
-        /// <param name="operationName">A descriptive name for the process, used for logging and exception messages.</param>
-        /// <exception cref="TimeoutException">Thrown when the process execution time exceeds <paramref name="effectiveTimeoutMs"/>.</exception>
-        /// <remarks>
-        /// This method uses a "heartbeat" pattern. It is recommended that <paramref name="waitChunkMs"/> 
-        /// be significantly shorter than the 15-second SCM wait hint to ensure the service remains responsive.
-        /// </remarks>
-        private void WaitForProcessWithScmHeartbeat(
-            Process process,
-            int effectiveTimeoutMs,
-            int waitChunkMs,
-            string operationName)
-        {
-            var sw = Stopwatch.StartNew();
-
-            try
-            {
-                while (true)
-                {
-                    // 1. Check if process exited within the chunk
-                    if (process.WaitForExit(waitChunkMs))
-                    {
-                        break;
-                    }
-
-                    // 2. Keep SCM informed
-                    _serviceHelper?.RequestAdditionalTime(this, _scmAdditionalTimeMs, null!);
-
-                    // 3. Check for timeout using actual wall-clock time
-                    if (sw.ElapsedMilliseconds >= effectiveTimeoutMs)
-                    {
-                        _logger?.Error($"{operationName} timed out after {effectiveTimeoutMs}ms. Forcing termination.");
-
-                        try
-                        {
-                            // Kill process tree
-                            process.Kill(true);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.Warn($"Failed to kill {operationName} process: {ex.Message}");
-                        }
-
-                        throw new System.TimeoutException(
-                            $"{operationName} process timed out and was forcefully terminated.");
-                    }
-                }
-            }
-            finally
-            {
-                // 4. Final safety drain for StandardOutput/Error
-                // We use a small timeout (3s) to ensure we don't hang the service 
-                // if the OS is struggling to close the handles.
-                if (!process.WaitForExit(3000))
-                {
-                    _logger?.Warn($"{operationName} handles did not close gracefully within 3s after exit/kill.");
-                }
-
-                sw.Stop();
-            }
-        }
 
         /// <summary>
         /// Exposes the protected <see cref="OnStart(string[])"/> method for testing purposes.
@@ -1434,11 +1309,13 @@ namespace Servy.Service
 
             try
             {
+                // 1. Prepare Environment and Arguments
                 var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
 
+                // Audit expanded variables for leftover placeholders
                 foreach (var kvp in expandedEnv)
                 {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Post-Launch] Environment Variable '{kvp.Key}'");
                 }
 
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
@@ -1446,30 +1323,33 @@ namespace Servy.Service
                     expandedEnv
                 );
 
+                LogUnexpandedPlaceholders(args, "[Post-Launch] Arguments");
+
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostLaunchExecutablePath) ?? string.Empty
                     : _options.PostLaunchWorkingDirectory;
 
-                var psi = new ProcessStartInfo
+                // 2. Configure Launch Options
+                var launchOptions = new ProcessLaunchOptions
                 {
-                    FileName = _options.PostLaunchExecutablePath,
+                    ExecutablePath = _options.PostLaunchExecutablePath,
                     Arguments = args,
                     WorkingDirectory = workingDir,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
+                    EnvironmentVariables = _options.EnvironmentVariables,
+                    FireAndForget = true, // Post-launch does not block service startup
                 };
 
-                _logger?.Info($"Running post-launch program: {psi.FileName}");
+                _logger?.Info($"Running post-launch program: {launchOptions.ExecutablePath}");
 
-                // Fire-and-forget: start the process without disposing immediately
-                var process = Process.Start(psi);
+                // 3. Launch via Centralized Utility
+                var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!);
 
-                // Track the process so we can kill it if the Service stops
-                if (process != null)
+                // 4. Track the native process for teardown orchestration
+                if (process?.UnderlyingProcess is Process nativeProcess)
                 {
                     lock (_trackedHooks)
                     {
-                        _trackedHooks.Add(new Hook { OperationName = "post-launch", Process = process });
+                        _trackedHooks.Add(new Hook { OperationName = "post-launch", Process = nativeProcess });
                     }
                 }
             }
@@ -2340,21 +2220,19 @@ namespace Servy.Service
             if (string.IsNullOrWhiteSpace(options.PreStopExecutablePath))
             {
                 _logger?.Info("No pre-stop executable configured. Skipping.");
-                return true; // proceed with service stop
+                return true;
             }
-
-            var effectiveTimeout = options.PreStopTimeout * 1000;
-            var fireAndForget = effectiveTimeout == 0;
 
             _logger?.Info("Starting pre-stop process...");
 
             try
             {
+                // 1. Prepare Environment and Arguments
                 var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
 
                 foreach (var kvp in expandedEnv)
                 {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Stop] Environment Variable '{kvp.Key}'");
                 }
 
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
@@ -2364,60 +2242,50 @@ namespace Servy.Service
 
                 LogUnexpandedPlaceholders(args, "[Pre-Stop] Arguments");
 
-                var psi = new ProcessStartInfo
+                // 2. Configure Launch Options
+                var effectiveTimeoutMs = options.PreStopTimeout * 1000;
+
+                var launchOptions = new ProcessLaunchOptions
                 {
-                    FileName = options.PreStopExecutablePath,
+                    ExecutablePath = options.PreStopExecutablePath,
                     Arguments = args,
                     WorkingDirectory = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory)
                         ? options.WorkingDirectory
                         : options.PreStopWorkingDirectory,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
+                    EnvironmentVariables = options.EnvironmentVariables,
+                    FireAndForget = (effectiveTimeoutMs == 0),
+                    TimeoutMs = effectiveTimeoutMs,
+
+                    // Timing for SCM Heartbeat
+                    WaitChunkMs = _waitChunkMs,
+                    ScmAdditionalTimeMs = _scmAdditionalTimeMs,
+                    OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger!)),
                 };
 
-                if (fireAndForget)
+                // 3. Launch via Centralized Utility
+                // The Launcher handles the "Wait with Heartbeat" logic internally if TimeoutMs > 0.
+                using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                 {
-                    // Fire-and-forget: start the process without waiting
-                    var process = Process.Start(psi);
-
-                    if (process != null)
+                    if (process == null)
                     {
-                        // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
-                        // because it's meant to run independently after we've stopped the main process tree.
-                        using (process)
-                        {
-                            _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
-                            // The OS process continues running, but the managed handle is freed.
-                        }
-                    }
-                    else
-                    {
-                        _logger?.Error($"Failed to run pre-stop process: {psi.FileName}");
+                        _logger?.Error($"Failed to run pre-stop process: {launchOptions.ExecutablePath}");
+                        return !options.PreStopLogAsError;
                     }
 
-                    return true;
-                }
+                    if (launchOptions.FireAndForget)
+                    {
+                        _logger?.Info("Pre-stop configured as fire-and-forget. Continuing service stop immediately.");
+                        return true;
+                    }
 
-                using (var process = new Process { StartInfo = psi })
-                {
-                    process.Start();
-
-                    // Wait for pre-stop process to exit with timeout
-                    WaitForProcessWithScmHeartbeat(
-                        process,
-                        effectiveTimeout,
-                        _waitChunkMs,
-                        "Pre-stop");
-
+                    // 4. Evaluate Results for Synchronous Execution
                     if (process.ExitCode == 0)
                     {
                         _logger?.Info("Pre-stop process completed successfully.");
                         return true;
                     }
-                    else
-                    {
-                        _logger?.Error($"Pre-stop process exited with code {process.ExitCode}.");
-                    }
+
+                    _logger?.Error($"Pre-stop process '{launchOptions.ExecutablePath}' exited with code {process.ExitCode}.");
                 }
             }
             catch (Exception ex)
@@ -2425,6 +2293,7 @@ namespace Servy.Service
                 _logger?.Error($"Pre-stop process failed: {ex.Message}", ex);
             }
 
+            // 5. Failure Policy Handling
             if (!options.PreStopLogAsError)
             {
                 _logger?.Warn("Ignoring pre-stop failure and continuing service stop.");
@@ -2571,11 +2440,12 @@ namespace Servy.Service
 
             try
             {
+                // 1. Prepare Environment and Arguments
                 var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
 
                 foreach (var kvp in expandedEnv)
                 {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
+                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Post-Stop] Environment Variable '{kvp.Key}'");
                 }
 
                 var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
@@ -2583,35 +2453,34 @@ namespace Servy.Service
                     expandedEnv
                 );
 
+                LogUnexpandedPlaceholders(args, "[Post-Stop] Arguments");
+
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostStopExecutablePath) ?? string.Empty
                     : _options.PostStopWorkingDirectory;
 
-                var psi = new ProcessStartInfo
+                // 2. Configure Launch Options
+                var launchOptions = new ProcessLaunchOptions
                 {
-                    FileName = _options.PostStopExecutablePath,
+                    ExecutablePath = _options.PostStopExecutablePath,
                     Arguments = args,
                     WorkingDirectory = workingDir,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
+                    EnvironmentVariables = _options.EnvironmentVariables,
+                    FireAndForget = true // Post-stop is always fire-and-forget
                 };
 
-                // Fire-and-forget: start the process without waiting
-                var process = Process.Start(psi);
+                _logger?.Info($"Running post-stop program: {launchOptions.ExecutablePath}");
 
-                if (process != null)
+                // 3. Launch via Centralized Utility
+                // We use the wrapper but do not store it in _trackedHooks as this process 
+                // should outlive the service teardown.
+                using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger!))
                 {
-                    // IMPORTANT: This process is not added to _trackedHooks to be killed during cleanup, 
-                    // because it's meant to run independently after we've stopped the main process tree.
-                    using (process)
+                    if (process == null)
                     {
-                        _logger?.Info($"Running post-stop program: {psi.FileName}");
-                        // The OS process continues running, but the managed handle is freed.
+                        _logger?.Error($"Failed to start post-stop program: {launchOptions.ExecutablePath}");
                     }
-                }
-                else
-                {
-                    _logger?.Error($"Failed to start post-stop program: {psi.FileName}");
+                    // The process wrapper is disposed, but the underlying OS process continues.
                 }
             }
             catch (Exception ex)
