@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: windows-2022 # Required for full .NET Framework / MSBuild support
+    runs-on: windows-2022
 
     steps:
       - name: Checkout Code
@@ -35,15 +35,13 @@ jobs:
       - name: Verify Reflection Compatibility (xUnit)
         shell: pwsh
         run: |
-          # Note: Path includes 'x64' because of the MSBuild Platform property
-          $testDll = "tests/Servy.Service.UnitTests/bin/x64/Debug/net48/Servy.Service.UnitTests.dll"
+          $testDll = "tests/Servy.Service.UnitTests/bin/x64/Debug/Servy.Service.UnitTests.dll"
           
           if (-not (Test-Path $testDll)) {
-              Write-Error "Test DLL not found at $testDll. Check if MSBuild output path matches."
+              Write-Error "Test DLL not found at $testDll. Please verify the bin structure."
               exit 1
           }
 
-          # Running the net48 DLL via the dotnet CLI runner
           dotnet test $testDll `
             --configuration Debug `
             --filter "Category=ReflectionValidation" `
