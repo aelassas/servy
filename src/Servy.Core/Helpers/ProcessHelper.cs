@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -17,6 +19,110 @@ namespace Servy.Core.Helpers
     {
         private static DateTime _lastPruneTime = DateTime.MinValue;
         private static readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
+
+        #region Native Methods for Process Tree
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        private const uint TH32CS_SNAPPROCESS = 0x00000002;
+        private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        [ExcludeFromCodeCoverage]
+        private struct PROCESSENTRY32
+        {
+            public uint dwSize;
+            public uint cntUsage;
+            public uint th32ProcessID;
+            public IntPtr th32DefaultHeapID;
+            public uint th32ModuleID;
+            public uint cntThreads;
+            public uint th32ParentProcessID;
+            public int pcPriClassBase;
+            public uint dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szExeFile;
+        }
+
+        /// <summary>
+        /// Efficiently retrieves the process ID and all descendant process IDs for a given root process
+        /// using native Windows APIs to avoid WMI overhead.
+        /// </summary>
+        [ExcludeFromCodeCoverage]
+        private static List<int> GetProcessTree(int rootPid)
+        {
+            var tree = new List<int> { rootPid };
+            var parentToChildren = new Dictionary<int, List<int>>();
+
+            IntPtr snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if (snapshot == INVALID_HANDLE_VALUE) return tree;
+
+            try
+            {
+                PROCESSENTRY32 procEntry = new PROCESSENTRY32();
+                procEntry.dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32));
+
+                if (Process32First(snapshot, ref procEntry))
+                {
+                    do
+                    {
+                        int pid = (int)procEntry.th32ProcessID;
+                        int parentPid = (int)procEntry.th32ParentProcessID;
+
+                        if (!parentToChildren.TryGetValue(parentPid, out var children))
+                        {
+                            children = new List<int>();
+                            parentToChildren[parentPid] = children;
+                        }
+                        children.Add(pid);
+
+                    } while (Process32Next(snapshot, ref procEntry));
+                }
+            }
+            finally
+            {
+                CloseHandle(snapshot);
+            }
+
+            // BFS traversal to find all nested descendants with cycle protection
+            var queue = new Queue<int>();
+            var visited = new HashSet<int>(); // 1. Create a tracking set
+
+            queue.Enqueue(rootPid);
+            visited.Add(rootPid); // 2. Mark root as visited
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+                if (parentToChildren.TryGetValue(current, out var children))
+                {
+                    foreach (var child in children)
+                    {
+                        // 3. Only process the child if we haven't seen it before
+                        if (visited.Add(child))
+                        {
+                            tree.Add(child);
+                            queue.Enqueue(child);
+                        }
+                    }
+                }
+            }
+
+            return tree;
+        }
+
+        #endregion
 
         /// <summary>
         /// Stores the last CPU measurement for a process.
@@ -169,6 +275,50 @@ namespace Servy.Core.Helpers
             {
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Gets the combined CPU usage percentage of a process and all of its child descendant processes.
+        /// Should be called repeatedly (e.g., by a background timer every 4 seconds) to maintain accurate deltas.
+        /// </summary>
+        /// <param name="pid">The root process ID.</param>
+        /// <returns>The combined CPU usage percentage across the tree, rounded to one decimal place.</returns>
+        [ExcludeFromCodeCoverage]
+        public static double GetProcessTreeCpuUsage(int pid)
+        {
+            var pids = GetProcessTree(pid);
+            double totalCpu = 0;
+
+            foreach (var p in pids)
+            {
+                totalCpu += GetCpuUsage(p);
+            }
+
+            // Round to 1 decimal place
+            double roundedTotal = Math.Round(totalCpu, 1, MidpointRounding.AwayFromZero);
+
+            // Cap the maximum possible output at 100.0% to gracefully handle thread timer lag anomalies
+            return Math.Min(100.0, roundedTotal);
+        }
+
+        /// <summary>
+        /// Retrieves the combined physical memory usage (Private Bytes) for a specific process 
+        /// and all of its child descendant processes.
+        /// </summary>
+        /// <param name="pid">The root process ID.</param>
+        /// <returns>The total number of private bytes allocated across the entire process tree.</returns>
+        [ExcludeFromCodeCoverage]
+        public static long GetProcessTreeRamUsage(int pid)
+        {
+            var pids = GetProcessTree(pid);
+            long totalRam = 0;
+
+            foreach (var p in pids)
+            {
+                totalRam += GetRamUsage(p);
+            }
+
+            return totalRam;
         }
 
         /// <summary>

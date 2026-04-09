@@ -29,8 +29,8 @@ namespace Servy.Manager
             long? ramUsage = null;
             if (calculatePerf && service.Pid.HasValue)
             {
-                cpuUsage = await Task.Run(() => ProcessHelper.GetCpuUsage(service.Pid.Value));
-                ramUsage = await Task.Run(() => ProcessHelper.GetRamUsage(service.Pid.Value));
+                cpuUsage = await Task.Run(() => ProcessHelper.GetProcessTreeCpuUsage(service.Pid.Value));
+                ramUsage = await Task.Run(() => ProcessHelper.GetProcessTreeRamUsage(service.Pid.Value));
             }
 
             return new Service
