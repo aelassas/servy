@@ -888,7 +888,7 @@ namespace Servy.Service
             _preLaunchEnabled = true;
 
             // 1. Prepare configuration and shared options
-            var (expandedEnv, args) = PreparePreLaunchEnv(options);
+            var (_, args) = PreparePreLaunchEnv(options);
             var workingDir = string.IsNullOrWhiteSpace(options.PreLaunchWorkingDirectory)
                 ? options.WorkingDirectory
                 : options.PreLaunchWorkingDirectory;
