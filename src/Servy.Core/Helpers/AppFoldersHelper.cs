@@ -1,4 +1,7 @@
-﻿namespace Servy.Core.Helpers
+﻿using Servy.Core.Config;
+using Servy.Core.Security;
+
+namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Provides helper methods for initializing required application folders.
@@ -60,9 +63,11 @@
                 throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
             // Ensure folders exist
-            Directory.CreateDirectory(dbFolder);
-            Directory.CreateDirectory(aesKeyFolder);
-            Directory.CreateDirectory(aesIVFolder);
+            string[] folders = { AppConfig.ProgramDataPath, dbFolder, aesKeyFolder, aesIVFolder };
+            foreach (var folder in folders)
+            {
+                SecurityHelper.CreateSecureDirectory(folder);
+            }
         }
 
     }

@@ -197,7 +197,7 @@ namespace Servy.Core.Security
                 var directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                 {
-                    Directory.CreateDirectory(directory);
+                    SecurityHelper.CreateSecureDirectory(directory);
                 }
 
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
