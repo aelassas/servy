@@ -534,13 +534,13 @@ namespace Servy.Service
                         // - "m_serviceStatusHandle" : Legacy Windows SDK / Alpha runtimes
                         string[] possibleFieldNames = new[]
                         {
-                        "serviceStatusHandle",  // .NET Framework
-                        "statusHandle",         // Alternative .NET Framework
-                        "_statusHandle",        // Modern .NET (private with underscore)
-                        "_serviceStatusHandle", // Modern .NET variant
-                        "m_statusHandle",       // Older naming convention
-                        "m_serviceStatusHandle" // Older naming convention
-                    };
+                            "serviceStatusHandle",  // .NET Framework
+                            "statusHandle",         // Alternative .NET Framework
+                            "_statusHandle",        // Modern .NET (private with underscore)
+                            "_serviceStatusHandle", // Modern .NET variant
+                            "m_statusHandle",       // Older naming convention
+                            "m_serviceStatusHandle" // Older naming convention
+                        };
 
                         FieldInfo? serviceHandleField = null;
 
