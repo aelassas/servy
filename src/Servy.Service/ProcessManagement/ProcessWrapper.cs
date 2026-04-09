@@ -155,9 +155,7 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <summary>
-        /// Standard output stream of the process.
-        /// </summary>
+        /// <inheritdoc/>
         public StreamReader StandardOutput
         {
             get
@@ -167,15 +165,23 @@ namespace Servy.Service.ProcessManagement
             }
         }
 
-        /// <summary>
-        /// Standard error stream of the process.
-        /// </summary>
+        /// <inheritdoc/>
         public StreamReader StandardError
         {
             get
             {
                 ThrowIfDisposed();
                 return _process.StandardError;
+            }
+        }
+
+        /// <inheritdoc/>
+        public Process UnderlyingProcess
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _process;
             }
         }
 
