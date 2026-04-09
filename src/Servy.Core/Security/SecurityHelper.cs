@@ -84,13 +84,13 @@ namespace Servy.Core.Security
         /// </remarks>
         internal static void ApplySecurityRules(DirectorySecurity security, IdentityReference currentUserSid)
         {
-            // 1. Break inheritance (removes rules flowing from C:\ProgramData)
+            // 1. Break inheritance (removes rules flowing from %ProgramData%)
             security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
 
             // 2. Define the broad groups that cause the LPE vulnerability
-            var builtinUsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);       // Users
+            var builtinUsersSid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);            // Users
             var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null); // Authenticated Users
-            var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);                // Everyone
+            var everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);                       // Everyone
 
             // 3. PURGE: Remove these groups even if they were added explicitly/manually by the OS
             security.PurgeAccessRules(builtinUsersSid);
