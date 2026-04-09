@@ -1,8 +1,9 @@
-﻿using Servy.Core.DTOs;
-using Servy.Core.Enums;
+﻿using Servy.Core.Config;
 using Servy.Core.Domain;
-using static Servy.Core.Config.AppConfig;
+using Servy.Core.DTOs;
+using Servy.Core.Enums;
 using Servy.Core.Services;
+using System;
 
 namespace Servy.Core.Mappers
 {
@@ -15,68 +16,74 @@ namespace Servy.Core.Mappers
         /// <summary>
         /// Maps a domain <see cref="Service"/> object to a <see cref="ServiceDto"/> for persistence.
         /// </summary>
-        /// <param name="service">The domain service object to map.</param>
+        /// <param name="domain">The domain service object to map.</param>
         /// <param name="id">Service ID.</param>
         /// <returns>A <see cref="ServiceDto"/> representing the service for storage.</returns>
-        public static ServiceDto ToDto(Service service, int? id = null)
+        public static ServiceDto ToDto(Service domain, int? id = null)
         {
+            if (domain == null) throw new ArgumentNullException(nameof(domain));
+
             return new ServiceDto
             {
-                Id = id ?? 0, // 0 for insert, actual Id for update
-                Pid = service.Pid,
-                Name = service.Name,
-                Description = service.Description,
-                ExecutablePath = service.ExecutablePath,
-                StartupDirectory = service.StartupDirectory,
-                Parameters = service.Parameters,
-                StartupType = (int)service.StartupType,
-                Priority = (int)service.Priority,
-                StdoutPath = service.StdoutPath,
-                StderrPath = service.StderrPath,
-                EnableRotation = service.EnableRotation,
-                RotationSize = service.RotationSize,
-                EnableDateRotation = service.EnableDateRotation,
-                DateRotationType = (int)service.DateRotationType,
-                MaxRotations = service.MaxRotations,
-                UseLocalTimeForRotation = service.UseLocalTimeForRotation,
-                EnableHealthMonitoring = service.EnableHealthMonitoring,
-                HeartbeatInterval = service.HeartbeatInterval,
-                MaxFailedChecks = service.MaxFailedChecks,
-                RecoveryAction = (int)service.RecoveryAction,
-                MaxRestartAttempts = service.MaxRestartAttempts,
-                FailureProgramPath = service.FailureProgramPath,
-                FailureProgramStartupDirectory = service.FailureProgramStartupDirectory,
-                FailureProgramParameters = service.FailureProgramParameters,
-                EnvironmentVariables = service.EnvironmentVariables,
-                ServiceDependencies = service.ServiceDependencies,
-                RunAsLocalSystem = service.RunAsLocalSystem,
-                UserAccount = service.UserAccount,
-                Password = service.Password,
-                PreLaunchExecutablePath = service.PreLaunchExecutablePath,
-                PreLaunchStartupDirectory = service.PreLaunchStartupDirectory,
-                PreLaunchParameters = service.PreLaunchParameters,
-                PreLaunchEnvironmentVariables = service.PreLaunchEnvironmentVariables,
-                PreLaunchStdoutPath = service.PreLaunchStdoutPath,
-                PreLaunchStderrPath = service.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = service.PreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = service.PreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = service.PreLaunchIgnoreFailure,
-                PostLaunchExecutablePath = service.PostLaunchExecutablePath,
-                PostLaunchStartupDirectory = service.PostLaunchStartupDirectory,
-                PostLaunchParameters = service.PostLaunchParameters,
-                EnableDebugLogs = service.EnableDebugLogs,
-                StartTimeout = service.StartTimeout,
-                StopTimeout = service.StopTimeout,
+                Id = id ?? 0,
+                Name = domain.Name,
+                Description = domain.Description,
+                ExecutablePath = domain.ExecutablePath,
+                StartupDirectory = domain.StartupDirectory,
+                Parameters = domain.Parameters,
+                StartupType = (int)domain.StartupType,
+                Priority = (int)domain.Priority,
+                StdoutPath = domain.StdoutPath,
+                StderrPath = domain.StderrPath,
+                EnableRotation = domain.EnableRotation,
+                RotationSize = domain.RotationSize,
+                EnableDateRotation = domain.EnableDateRotation,
+                DateRotationType = (int)domain.DateRotationType,
+                MaxRotations = domain.MaxRotations,
+                EnableHealthMonitoring = domain.EnableHealthMonitoring,
+                UseLocalTimeForRotation = domain.UseLocalTimeForRotation,
+                HeartbeatInterval = domain.HeartbeatInterval,
+                MaxFailedChecks = domain.MaxFailedChecks,
+                RecoveryAction = (int)domain.RecoveryAction,
+                MaxRestartAttempts = domain.MaxRestartAttempts,
+                FailureProgramPath = domain.FailureProgramPath,
+                FailureProgramStartupDirectory = domain.FailureProgramStartupDirectory,
+                FailureProgramParameters = domain.FailureProgramParameters,
+                EnvironmentVariables = domain.EnvironmentVariables,
+                ServiceDependencies = domain.ServiceDependencies,
+                RunAsLocalSystem = domain.RunAsLocalSystem,
+                UserAccount = domain.UserAccount,
+                Password = domain.Password,
+                PreLaunchExecutablePath = domain.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = domain.PreLaunchStartupDirectory,
+                PreLaunchParameters = domain.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = domain.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = domain.PreLaunchStdoutPath,
+                PreLaunchStderrPath = domain.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = domain.PreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = domain.PreLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = domain.PreLaunchIgnoreFailure,
 
-                PreStopExecutablePath = service.PreStopExecutablePath,
-                PreStopStartupDirectory = service.PreStopStartupDirectory,
-                PreStopParameters = service.PreStopParameters,
-                PreStopTimeoutSeconds = service.PreStopTimeoutSeconds,
-                PreStopLogAsError = service.PreStopLogAsError,
+                PostLaunchExecutablePath = domain.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = domain.PostLaunchStartupDirectory,
+                PostLaunchParameters = domain.PostLaunchParameters,
 
-                PostStopExecutablePath = service.PostStopExecutablePath,
-                PostStopStartupDirectory = service.PostStopStartupDirectory,
-                PostStopParameters = service.PostStopParameters,
+                EnableDebugLogs = domain.EnableDebugLogs,
+
+                DisplayName = domain.DisplayName,
+
+                StartTimeout = domain.StartTimeout,
+                StopTimeout = domain.StopTimeout,
+
+                PreStopExecutablePath = domain.PreStopExecutablePath,
+                PreStopStartupDirectory = domain.PreStopStartupDirectory,
+                PreStopParameters = domain.PreStopParameters,
+                PreStopTimeoutSeconds = domain.PreStopTimeoutSeconds,
+                PreStopLogAsError = domain.PreStopLogAsError,
+
+                PostStopExecutablePath = domain.PostStopExecutablePath,
+                PostStopStartupDirectory = domain.PostStopStartupDirectory,
+                PostStopParameters = domain.PostStopParameters,
             };
         }
 
@@ -90,35 +97,36 @@ namespace Servy.Core.Mappers
         /// <returns>A <see cref="Service"/> domain object representing the stored service.</returns>
         public static Service ToDomain(IServiceManager serviceManager, ServiceDto dto)
         {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+
             return new Service(serviceManager)
             {
-                Pid = dto.Pid,
                 Name = dto.Name,
                 Description = dto.Description,
                 ExecutablePath = dto.ExecutablePath,
                 StartupDirectory = dto.StartupDirectory,
                 Parameters = dto.Parameters,
-                StartupType = dto.StartupType == null ? ServiceStartType.Automatic : (ServiceStartType)dto.StartupType,
-                Priority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority,
+                StartupType = dto.StartupType.HasValue ? (ServiceStartType)dto.StartupType.Value : AppConfig.DefaultStartupType,
+                Priority = dto.Priority.HasValue ? (ProcessPriority)dto.Priority.Value : AppConfig.DefaultPriority,
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
-                EnableRotation = dto.EnableRotation ?? false,
-                RotationSize = dto.RotationSize ?? DefaultRotationSize,
-                EnableDateRotation = dto.EnableDateRotation ?? false,
-                DateRotationType = dto.DateRotationType.HasValue ? (DateRotationType)dto.DateRotationType.Value : DateRotationType.Daily,
-                MaxRotations = dto.MaxRotations ?? DefaultMaxRotations,
-                UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? DefaultUseLocalTimeForRotation,
-                EnableHealthMonitoring = dto.EnableHealthMonitoring ?? false,
-                HeartbeatInterval = dto.HeartbeatInterval ?? DefaultHeartbeatInterval,
-                MaxFailedChecks = dto.MaxFailedChecks ?? DefaultMaxFailedChecks,
-                RecoveryAction = dto.RecoveryAction == null ? RecoveryAction.RestartService : (RecoveryAction)dto.RecoveryAction,
-                MaxRestartAttempts = dto.MaxRestartAttempts ?? DefaultMaxRestartAttempts,
+                EnableRotation = dto.EnableRotation ?? AppConfig.DefaultEnableRotation,
+                RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize,
+                EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
+                DateRotationType = dto.DateRotationType.HasValue ? (DateRotationType)dto.DateRotationType.Value : AppConfig.DefaultDateRotationType,
+                MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
+                UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
+                EnableHealthMonitoring = dto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
+                HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
+                MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
+                RecoveryAction = dto.RecoveryAction.HasValue ? (RecoveryAction)dto.RecoveryAction.Value : RecoveryAction.RestartService,
+                MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 FailureProgramPath = dto.FailureProgramPath,
                 FailureProgramStartupDirectory = dto.FailureProgramStartupDirectory,
                 FailureProgramParameters = dto.FailureProgramParameters,
                 EnvironmentVariables = dto.EnvironmentVariables,
                 ServiceDependencies = dto.ServiceDependencies,
-                RunAsLocalSystem = dto.RunAsLocalSystem ?? true,
+                RunAsLocalSystem = dto.RunAsLocalSystem ?? AppConfig.DefaultRunAsLocalSystem,
                 UserAccount = dto.UserAccount,
                 Password = dto.Password,
                 PreLaunchExecutablePath = dto.PreLaunchExecutablePath,
@@ -127,21 +135,30 @@ namespace Servy.Core.Mappers
                 PreLaunchEnvironmentVariables = dto.PreLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
                 PreLaunchStderrPath = dto.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? DefaultPreLaunchTimeoutSeconds,
-                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? DefaultPreLaunchRetryAttempts,
-                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? false,
+                PreLaunchTimeoutSeconds = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
+                PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
+
                 PostLaunchExecutablePath = dto.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = dto.PostLaunchStartupDirectory,
                 PostLaunchParameters = dto.PostLaunchParameters,
-                EnableDebugLogs = dto.EnableDebugLogs ?? false,
-                StartTimeout = dto.StartTimeout ?? DefaultStartTimeout,
-                StopTimeout = dto.StopTimeout ?? DefaultStopTimeout,
+
+                EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs,
+
+                DisplayName = dto.DisplayName,
+
+                StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
+                StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
+
+                Pid = dto.Pid,
+                ActiveStdoutPath = dto.ActiveStdoutPath,
+                ActiveStderrPath = dto.ActiveStderrPath,
 
                 PreStopExecutablePath = dto.PreStopExecutablePath,
                 PreStopStartupDirectory = dto.PreStopStartupDirectory,
                 PreStopParameters = dto.PreStopParameters,
-                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? DefaultPreStopTimeoutSeconds,
-                PreStopLogAsError = dto.PreStopLogAsError ?? false,
+                PreStopTimeoutSeconds = dto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
+                PreStopLogAsError = dto.PreStopLogAsError ?? AppConfig.DefaultPreStopLogAsError,
 
                 PostStopExecutablePath = dto.PostStopExecutablePath,
                 PostStopStartupDirectory = dto.PostStopStartupDirectory,
