@@ -309,8 +309,8 @@ namespace Servy.Manager.ViewModels
                 // Fetch raw metrics
                 var (rawCpu, ramBytes) = await Task.Run(() =>
                 (
-                    ProcessHelper.GetCpuUsage(pid),
-                    ProcessHelper.GetRamUsage(pid)
+                    ProcessHelper.GetProcessTreeCpuUsage(pid),
+                    ProcessHelper.GetProcessTreeRamUsage(pid)
                 ));
                 double rawRamMb = ramBytes / 1024d / 1024d;
 

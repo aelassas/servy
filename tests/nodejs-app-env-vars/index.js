@@ -59,6 +59,16 @@ fs.appendFileSync(filePath, '\n', "utf8")
 
 // process.exit(0)
 
+// start wexflow
+// const workingDir = 'C:\\Program Files\\Wexflow Server\\Wexflow.Server\\';
+// const child = spawn(
+//   'C:\\Program Files\\dotnet\\dotnet.exe',
+//   ['Wexflow.Server.dll'],
+//   {
+//     cwd: workingDir
+//   }
+// );
+
 // start child process notepad.exe (Windows) detached
 // const child = spawn('notepad.exe', [], {
 //   detached: true,   // let child live independently
