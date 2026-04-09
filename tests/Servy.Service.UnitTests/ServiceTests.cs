@@ -115,16 +115,31 @@ namespace Servy.Service.UnitTests
                 .Select(f => type.GetField(f, BindingFlags.Instance | BindingFlags.NonPublic))
                 .FirstOrDefault(field => field != null);
 
-            // 3. Assert
-            // We use multiple checks to ensure we don't fail-fast on the first error 
-            // without seeing the status of the second.
+            // 3. Diagnostic Log & Assert
+            bool isFailed = foundCommandField == null || foundHandleField == null;
+
+            if (isFailed)
+            {
+                _output.WriteLine("--- REFLECTION FAILURE DIAGNOSTICS ---");
+                _output.WriteLine($"Framework: {framework}");
+                _output.WriteLine("Listing all non-public instance fields available on ServiceBase:");
+
+                var allPrivateFields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+                foreach (var field in allPrivateFields)
+                {
+                    _output.WriteLine($" -> Name: {field.Name} (Type: {field.FieldType.Name})");
+                }
+                _output.WriteLine("---------------------------------------");
+            }
+
+            // Assert with descriptive messages
             Assert.True(foundCommandField != null,
                 $"[Reflection Gap] No known 'AcceptedCommands' field found on {framework}. " +
-                "Pre-Shutdown signal interception will fail.");
+                "Pre-Shutdown signal interception will fail. Check test output for available fields.");
 
             Assert.True(foundHandleField != null,
                 $"[Reflection Gap] No known 'StatusHandle' field found on {framework}. " +
-                "SCM signaling (SERVICE_RUNNING) will fail.");
+                "SCM signaling (SERVICE_RUNNING) will fail. Check test output for available fields.");
 
             if (foundCommandField != null) _output.WriteLine($"Found Command Field: {foundCommandField.Name}");
             if (foundHandleField != null) _output.WriteLine($"Found Handle Field: {foundHandleField.Name}");
