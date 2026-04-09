@@ -213,34 +213,25 @@ namespace Servy.Manager.ViewModels
                 _selectAll = value;
                 OnPropertyChanged();
 
-                // Only handle user clicks
                 if (!_isUpdatingSelectAll)
                 {
                     _isUpdatingSelectAll = true;
 
-                    // Treat null (indeterminate) click as true
-                    bool newValue = _selectAll ?? true;
+                    // If the previous state was True, the user wants to uncheck everything.
+                    // Otherwise (if it was False or Null/Indeterminate), they want to check everything.
+                    // We ignore the 'value' passed by the UI toggle cycle to enforce a binary result.
+                    bool targetState = (value == true);
 
-                    if (_services.Count(s => s.IsSelected) <= 1)
+                    // Optimization: Use a local list to avoid multiple enumeration if _services is large
+                    foreach (var service in _services)
                     {
-                        foreach (var s in _services)
-                        {
-                            s.IsChecked = newValue;
-                            s.IsSelected = false;
-                        }
-                    }
-                    else
-                    {
-                        foreach (var s in _services.Where(s => s.IsSelected))
-                        {
-                            s.IsChecked = !s.IsChecked;
-                            s.IsSelected = false;
-                        }
+                        service.IsChecked = targetState;
+                        service.IsSelected = false;
                     }
 
                     _isUpdatingSelectAll = false;
 
-                    // After updating rows, update header to reflect current state
+                    // This updates the header state based on the children's new values
                     UpdateSelectAllState();
                 }
             }
