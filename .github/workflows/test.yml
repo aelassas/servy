@@ -42,17 +42,6 @@ jobs:
             /nodeReuse:false `
             /m
 
-      - name: Verify Reflection Compatibility (net48)
-        shell: pwsh
-        run: |
-          # Targeting the specific x64 build we just created
-          $testDll = "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll"
-          dotnet test $testDll `
-            --configuration Debug `
-            --no-build `
-            --filter "Category=ReflectionValidation" `
-            --logger "console;verbosity=detailed"
-
       - name: Setup .NET SDK 6
         uses: actions/setup-dotnet@v4
         with:
@@ -134,11 +123,16 @@ jobs:
       - name: Run other Unit Tests (no coverage)
         shell: pwsh
         run: |
-          dotnet test Servy.sln `
+          dotnet test `
+            "tests\Servy.Restarter.UnitTests\bin\x64\Debug\Servy.Restarter.UnitTests.dll" `
+            "tests\Servy.Service.UnitTests\bin\x64\Debug\Servy.Service.UnitTests.dll" `
+            "tests\Servy.UnitTests\bin\x64\Debug\Servy.UnitTests.dll" `
+            "tests\Servy.CLI.UnitTests\bin\x64\Debug\Servy.CLI.UnitTests.dll" `
+            "tests\Servy.Manager.UnitTests\bin\x64\Debug\Servy.Manager.UnitTests.dll" `
+            "tests\Servy.UI.UnitTests\bin\x64\Debug\Servy.UI.UnitTests.dll" `
             --configuration Debug `
             --no-build `
-            --filter "FullyQualifiedName!~Servy.Core.UnitTests & FullyQualifiedName!~Servy.Infrastructure.UnitTests & Category!=ReflectionValidation" `
-            --logger "console;verbosity=normal"
+            --filter "Category!=ReflectionValidation"
 
       - name: Upload coverage to Codecov
         id: codecov

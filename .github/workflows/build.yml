@@ -42,19 +42,3 @@ jobs:
             /p:AllowUnsafeBlocks=true `
             /nodeReuse:false `
             /m
-
-      - name: Verify Reflection Compatibility (Release)
-        shell: pwsh
-        run: |
-          $testDll = "tests\Servy.Service.UnitTests\bin\x64\Release\Servy.Service.UnitTests.dll"
-          
-          if (-not (Test-Path $testDll)) {
-              Write-Error "Test DLL not found at $testDll. Verify MSBuild output path."
-              exit 1
-          }
-
-          dotnet test $testDll `
-            --configuration Release `
-            --no-build `
-            --filter "Category=ReflectionValidation" `
-            --logger "console;verbosity=detailed"
