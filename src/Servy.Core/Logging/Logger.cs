@@ -30,6 +30,17 @@ namespace Servy.Core.Logging
         private static bool _useLocalTimeForRotation;
 
         /// <summary>
+        /// Pre-computed, uppercase string representations of LogLevels.
+        /// </summary>
+        private static readonly string[] LevelStrings = new[]
+        {
+            "DEBUG", // 0
+            "INFO",  // 1
+            "WARN",  // 2
+            "ERROR"  // 3
+        };
+
+        /// <summary>
         /// The maximum number of backup log files to keep. 
         /// Set to 0 to allow an unlimited number of backup files.
         /// </summary>
@@ -283,8 +294,12 @@ namespace Servy.Core.Logging
                 {
                     if (_writer == null) return; // Re-check _writer inside the lock
 
+                    string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
+                        ? LevelStrings[(int)level]
+                        : level.ToString().ToUpper(); // Fallback for safety
+
                     // Format: [2026-03-12 22:00:00] [INFO] Message text
-                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level.ToString().ToUpper()}] {message}";
+                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {message}";
 
                     _writer.WriteLine(logEntry);
                 }
