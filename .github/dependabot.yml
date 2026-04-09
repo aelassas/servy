@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # 1. Monitor NuGet Packages for security only
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 0 # Disables automated version update PRs
