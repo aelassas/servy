@@ -10,13 +10,19 @@ using Servy.Service.Timers;
 using Servy.Service.Validation;
 using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.ServiceProcess;
 using Xunit;
+using Xunit.Abstractions;
 using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service.UnitTests
 {
     public class ServiceTests
     {
+        private readonly ITestOutputHelper _output;
         private readonly Mock<IServiceHelper> _mockServiceHelper;
         private readonly Mock<ILogger> _mockLogger;
         private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
@@ -31,8 +37,9 @@ namespace Servy.Service.UnitTests
         private readonly Mock<IProcessWrapper> _mockProcess;
         private readonly Mock<IServiceRepository> _mockServiceRepository;
 
-        public ServiceTests()
+        public ServiceTests(ITestOutputHelper output)
         {
+            _output = output;
             _mockServiceHelper = new Mock<IServiceHelper>();
             _mockLogger = new Mock<ILogger>();
             _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
@@ -72,6 +79,49 @@ namespace Servy.Service.UnitTests
                 _mockPathValidator.Object,
                 _mockServiceRepository.Object
             );
+        }
+
+        [Fact]
+        [Trait("Category", "ReflectionValidation")]
+        public void Verify_ServiceBase_Internal_Fields_Exist_On_Current_Runtime()
+        {
+            // Arrange
+            var type = typeof(ServiceBase);
+            string framework = RuntimeInformation.FrameworkDescription;
+            _output.WriteLine($"Validating ServiceBase reflection for: {framework}");
+
+            // 1. Define Known Field Names based on .NET Lineage
+            // _acceptedCommands: .NET Core 1.0 -> .NET 10.0+
+            // acceptedCommands:  .NET Framework 4.0 -> 4.8
+            string[] commandFields = { "_acceptedCommands", "acceptedCommands" };
+
+            // _statusHandle:         Modern .NET 5.0+
+            // serviceStatusHandle:  Standard .NET Framework
+            // statusHandle:         Mono / Early .NET Core
+            string[] handleFields = { "_statusHandle", "serviceStatusHandle", "statusHandle", "_serviceStatusHandle" };
+
+            // 2. Act
+            var foundCommandField = commandFields
+                .Select(f => type.GetField(f, BindingFlags.Instance | BindingFlags.NonPublic))
+                .FirstOrDefault(field => field != null);
+
+            var foundHandleField = handleFields
+                .Select(f => type.GetField(f, BindingFlags.Instance | BindingFlags.NonPublic))
+                .FirstOrDefault(field => field != null);
+
+            // 3. Assert
+            // We use multiple checks to ensure we don't fail-fast on the first error 
+            // without seeing the status of the second.
+            Assert.True(foundCommandField != null,
+                $"[Reflection Gap] No known 'AcceptedCommands' field found on {framework}. " +
+                "Pre-Shutdown signal interception will fail.");
+
+            Assert.True(foundHandleField != null,
+                $"[Reflection Gap] No known 'StatusHandle' field found on {framework}. " +
+                "SCM signaling (SERVICE_RUNNING) will fail.");
+
+            if (foundCommandField != null) _output.WriteLine($"Found Command Field: {foundCommandField.Name}");
+            if (foundHandleField != null) _output.WriteLine($"Found Handle Field: {foundHandleField.Name}");
         }
 
         [Fact]

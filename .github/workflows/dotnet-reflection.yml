@@ -1,0 +1,50 @@
+name: dotnet-reflection
+
+on:
+  push:
+    branches: [ net48 ]
+  pull_request:
+    branches: [ net48 ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-2022 # Required for full .NET Framework / MSBuild support
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.2.0
+
+      - name: Restore NuGet Packages
+        run: nuget restore Servy.sln
+
+      - name: Build Solution (Debug)
+        run: |
+          msbuild Servy.sln `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /p:AllowUnsafeBlocks=true `
+            /nodeReuse:false `
+            /m
+
+      - name: Verify Reflection Compatibility (xUnit)
+        shell: pwsh
+        run: |
+          # Note: Path includes 'x64' because of the MSBuild Platform property
+          $testDll = "tests/Servy.Service.UnitTests/bin/x64/Debug/net48/Servy.Service.UnitTests.dll"
+          
+          if (-not (Test-Path $testDll)) {
+              Write-Error "Test DLL not found at $testDll. Check if MSBuild output path matches."
+              exit 1
+          }
+
+          # Running the net48 DLL via the dotnet CLI runner
+          dotnet test $testDll `
+            --configuration Debug `
+            --filter "Category=ReflectionValidation" `
+            --logger "console;verbosity=detailed"
