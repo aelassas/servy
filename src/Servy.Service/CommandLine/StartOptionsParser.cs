@@ -48,7 +48,7 @@ namespace Servy.Service.CommandLine
                 ExecutablePath = ProcessHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
                 WorkingDirectory = ProcessHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
-                Priority = Enum.TryParse(((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)).ToString(), true, out ProcessPriorityClass p) ? p : ProcessPriorityClass.Normal,
+                Priority = MapPriority((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)),
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
                 RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024L * 1024L, // Convert from MB to Bytes
@@ -111,5 +111,39 @@ namespace Servy.Service.CommandLine
 
             };
         }
+
+        /// <summary>
+        /// Maps the custom <see cref="ProcessPriority"/> domain enum to the 
+        /// standard <see cref="ProcessPriorityClass"/> used by the system.
+        /// </summary>
+        /// <param name="p">The process priority level defined in the service configuration.</param>
+        /// <returns>
+        /// The corresponding <see cref="ProcessPriorityClass"/>. 
+        /// Defaults to <see cref="ProcessPriorityClass.Normal"/> if the input is unrecognized.
+        /// </returns>
+        /// <remarks>
+        /// This manual mapping is used instead of <see cref="Enum.TryParse{TEnum}(string, out TEnum)"/> 
+        /// to eliminate string allocations and reflection overhead during service startup.
+        /// </remarks>
+        private static ProcessPriorityClass MapPriority(ProcessPriority p)
+        {
+            switch (p)
+            {
+                case ProcessPriority.Idle:
+                    return ProcessPriorityClass.Idle;
+                case ProcessPriority.BelowNormal:
+                    return ProcessPriorityClass.BelowNormal;
+                case ProcessPriority.AboveNormal:
+                    return ProcessPriorityClass.AboveNormal;
+                case ProcessPriority.High:
+                    return ProcessPriorityClass.High;
+                case ProcessPriority.RealTime:
+                    return ProcessPriorityClass.RealTime;
+                case ProcessPriority.Normal:
+                default:
+                    return ProcessPriorityClass.Normal;
+            }
+        }
+
     }
 }
