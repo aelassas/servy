@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Microsoft.Win32;
+using Servy.Core.Logging;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,17 +23,20 @@ namespace Servy.Core.Security
         private static readonly DataProtectionScope DataProtectionScope = DataProtectionScope.LocalMachine;
 
         /// <summary>
-        /// Static entropy used to restrict decryption to processes that possess this specific byte sequence.
-        /// This provides an additional layer of security over the default <see cref="DataProtectionScope.LocalMachine"/> 
-        /// by ensuring only applications with this entropy can unprotect the data.
-        /// </summary>
-        private static readonly byte[] AdditionalEntropy = Encoding.UTF8.GetBytes("Servy-Entropy-Secure-Key-Storage");
-
-        /// <summary>
         /// Synchronization object used to prevent race conditions during file I/O operations,
         /// ensuring thread-safe generation and storage of key material.
         /// </summary>
         private static readonly object FileLock = new object();
+
+        /// <summary>
+        /// Caches the machine-unique entropy to optimize performance and ensure thread-safe initialization.
+        /// </summary>
+        /// <remarks>
+        /// This field uses <see cref="Lazy{T}"/> to ensure that the machine-specific entropy is only 
+        /// retrieved from the registry once. Caching this value avoids redundant registry I/O operations 
+        /// and string-to-byte conversions during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
+        /// </remarks>
+        private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy);
 
         #endregion
 
@@ -78,6 +82,37 @@ namespace Servy.Core.Security
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Retrieves a machine-unique entropy value for use as an additional protection layer in DPAPI operations.
+        /// </summary>
+        /// <returns>
+        /// A byte array derived from the Windows <c>MachineGuid</c> or the local <see cref="Environment.MachineName"/> as a fallback.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method implements a dynamic entropy strategy to mitigate the risk of hardcoded secrets in the binary.
+        /// By utilizing the <c>MachineGuid</c> located at <c>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography</c>, 
+        /// the resulting entropy is unique to the specific OS installation.
+        /// </para>
+        /// <para>
+        /// This ensures that even if an attacker gains access to the encrypted data and the application source code, 
+        /// they cannot decrypt the material on a different machine, effectively making the protected files non-portable.
+        /// </para>
+        /// </remarks>
+        private static byte[] GetMachineEntropy()
+        {
+            // Retrieve the unique MachineGuid from the Windows Registry.
+            // This makes the entropy unique to the machine without requiring a hardcoded string.
+            using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography"))
+            {
+                var guid = key?.GetValue("MachineGuid") as string;
+
+                // Fallback to a secondary unique seed if the registry is somehow unreachable.
+                // Environment.MachineName is a secondary machine-specific fallback to prevent decryption failure.
+                return Encoding.UTF8.GetBytes(guid ?? Environment.MachineName);
+            }
+        }
 
         /// <summary>
         /// Retrieves the protected bytes from the specified file path, or generates new ones if the file is missing.
@@ -147,19 +182,21 @@ namespace Servy.Core.Security
                     throw new FileNotFoundException(string.Format("Configuration file could not be loaded: {0}", path));
                 }
 
+                byte[] dynamicEntropy = MachineEntropy.Value;
+
                 try
                 {
-                    // Attempt to unprotect using additional entropy (current security standard).
-                    return ProtectedData.Unprotect(encrypted, AdditionalEntropy, DataProtectionScope);
+                    // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy
+                    return ProtectedData.Unprotect(encrypted, dynamicEntropy, DataProtectionScope);
                 }
                 catch (CryptographicException)
                 {
-                    // Fallback for backward compatibility: attempt to unprotect without entropy.
+                    // 2. Fallback Attempt (v7.8 compatibility): Try with NO entropy (null)
                     byte[] decryptedData = ProtectedData.Unprotect(encrypted, null, DataProtectionScope);
 
                     try
                     {
-                        // Migration: re-encrypt the file with additional entropy for future use.
+                        // 3. Automatic Migration: Re-save with the new machine-unique entropy
                         SaveProtected(path, decryptedData);
                         return decryptedData;
                     }
@@ -201,7 +238,8 @@ namespace Servy.Core.Security
                 }
 
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
-                encrypted = ProtectedData.Protect(data, AdditionalEntropy, DataProtectionScope);
+                byte[] dynamicEntropy = MachineEntropy.Value;
+                encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
                 File.WriteAllBytes(path, encrypted);
             }
             finally
