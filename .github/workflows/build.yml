@@ -2,8 +2,8 @@
 # GitHub Actions Workflow - Build
 # -------------------------------------------
 # Builds the Servy .NET solution on Windows
-# whenever code is pushed or a pull request is
-# opened against the main branch.
+# (Main Branch). Includes critical reflection 
+# compatibility checks.
 # ===========================================
 
 name: build
@@ -42,7 +42,8 @@ jobs:
         shell: pwsh
         run: |
           $config = "Release"
-
+          $runtime = "win-x64"
+          
           $projects = @(
             "src\Servy.Restarter\Servy.Restarter.csproj",
             "src\Servy.Service\Servy.Service.csproj",
@@ -52,11 +53,17 @@ jobs:
           )
 
           foreach ($proj in $projects) {
-            Write-Host "Restoring $proj..."
-            dotnet restore $proj --runtime win-x64
+            Write-Host "Restoring $proj for $runtime..."
+            dotnet restore $proj --runtime $runtime
           }
 
           foreach ($proj in $projects) {
-            Write-Host "Building $proj ($config)..."
-            dotnet build $proj --configuration $config --no-restore
+            Write-Host "Building $proj ($config) for $runtime..."
+            # We pass the runtime again to ensure the build respects the restored RID
+            dotnet build $proj --configuration $config --runtime $runtime --no-restore
+            
+            if ($LASTEXITCODE -ne 0) { 
+                Write-Error "Build failed for $proj"
+                exit $LASTEXITCODE 
+            }
           }

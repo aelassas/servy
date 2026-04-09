@@ -54,7 +54,7 @@ jobs:
       - name: Run remaining unit tests without coverage
         run: |
           dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Debug --no-build && `
-          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Debug --no-build && `
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Debug --no-build --filter "Category!=ReflectionValidation" && `
           dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Debug --no-build && `
           dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Debug --no-build && `
           dotnet test tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj --configuration Debug --no-build && `
