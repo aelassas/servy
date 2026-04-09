@@ -440,7 +440,9 @@ namespace Servy.Service
         {
             try
             {
-                // Modern .NET uses "_acceptedCommands", Legacy uses "acceptedCommands"
+                // Field Lineage for ServiceBase accepted commands:
+                // - "acceptedCommands"  : .NET Framework 4.0 - 4.8.x
+                // - "_acceptedCommands" : .NET Core 1.0 - .NET 10.0+
                 string[] fieldNames = { "_acceptedCommands", "acceptedCommands" };
                 FieldInfo? acceptedField = null;
 
@@ -525,8 +527,11 @@ namespace Servy.Service
                 {
                     try
                     {
-                        // List of possible field names across different .NET versions
-                        // Minimum tested .NET version: .NET 10.0
+                        // Field Lineage for ServiceBase status handle:
+                        // - "serviceStatusHandle"  : Standard .NET Framework 4.x
+                        // - "_statusHandle"         : Standard .NET 5.0 - .NET 10.0+
+                        // - "statusHandle"          : Mono / Early .NET Core variants
+                        // - "m_serviceStatusHandle" : Legacy Windows SDK / Alpha runtimes
                         string[] possibleFieldNames = new[]
                         {
                         "serviceStatusHandle",  // .NET Framework

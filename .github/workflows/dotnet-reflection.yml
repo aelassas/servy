@@ -1,0 +1,36 @@
+name: dotnet-reflection
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest # Required for ServiceBase reflection
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Check .NET version
+        run: dotnet --version
+
+      - name: Restore Dependencies
+        run: dotnet restore Servy.sln
+
+      - name: Build Solution
+        run: dotnet build Servy.sln --configuration Debug --no-restore
+
+      - name: Verify Reflection Compatibility (xUnit)
+        shell: pwsh
+        run: |
+          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj `
+            --configuration Debug `
+            --no-build `
+            --filter "Category=ReflectionValidation" `
+            --logger "console;verbosity=detailed"
