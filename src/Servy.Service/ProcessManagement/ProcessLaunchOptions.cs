@@ -46,6 +46,11 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         public int TimeoutMs { get; set; } = 0;
 
+        /// <summary>
+        /// Gets or sets a value indicating whether errors should be logged as a Warning instead of an Error.
+        /// </summary>
+        public bool LogErrorAsWarning { get; set; } = false;
+
         #endregion
 
         #region Timing Configuration

@@ -908,6 +908,7 @@ namespace Servy.Service
                 StdErrPath = options.PreLaunchStderrPath,
                 RedirectToWriters = !fireAndForget,
                 FireAndForget = fireAndForget,
+                LogErrorAsWarning = options.PreLaunchIgnoreFailure,
             };
 
             // 2. Handle Fire-and-Forget Mode
@@ -965,12 +966,22 @@ namespace Servy.Service
         /// </returns>
         private bool RunSynchronousPreLaunch(ProcessLaunchOptions launchOptions, StartOptions options)
         {
-            int attempt = 0;
             int maxAttempts = options.PreLaunchRetryAttempts + 1;
+            bool ignoreFailure = options.PreLaunchIgnoreFailure;
 
-            do
+            // Local function to handle conditional logging based on PreLaunchIgnoreFailure
+            void LogIssue(string message, Exception ex = null)
             {
-                attempt++;
+                if (ignoreFailure)
+                    _logger?.Warn(message);
+                else if (ex != null)
+                    _logger?.Error(message, ex);
+                else
+                    _logger?.Error(message);
+            }
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
                 _logger?.Info($"Starting pre-launch process (attempt {attempt}/{maxAttempts})...");
 
                 try
@@ -984,18 +995,18 @@ namespace Servy.Service
                         return true;
                     }
 
-                    _logger?.Error($"Pre-launch process exited with code {process.ExitCode}.");
+                    LogIssue($"Pre-launch process exited with code {process.ExitCode}.");
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Error($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
+                    LogIssue($"Pre-launch process attempt {attempt} failed: {ex.Message}", ex);
                 }
+            }
 
-            } while (attempt < maxAttempts);
+            // Final failure handling
+            LogIssue("Pre-launch process failed after all retry attempts.");
 
-            _logger?.Error("Pre-launch process failed after all retry attempts.");
-
-            if (options.PreLaunchIgnoreFailure)
+            if (ignoreFailure)
             {
                 _logger?.Warn("Ignoring pre-launch failure and continuing service start.");
                 return true;
@@ -2169,52 +2180,54 @@ namespace Servy.Service
             }
 
             _logger?.Info("Starting pre-stop process...");
+            bool logAsError = options.PreStopLogAsError;
+
+            // Helper to keep the catch block and failure logic clean
+            void LogIssue(string message, Exception ex = null)
+            {
+                if (!logAsError)
+                    _logger?.Warn(message);
+                else if (ex != null)
+                    _logger?.Error(message, ex);
+                else
+                    _logger?.Error(message);
+            }
 
             try
             {
                 // 1. Prepare Environment and Arguments
                 var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
-
                 foreach (var kvp in expandedEnv)
                 {
                     LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Stop] Environment Variable '{kvp.Key}'");
                 }
 
-                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                    options.PreStopExecutableArgs ?? string.Empty,
-                    expandedEnv
-                );
-
+                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreStopExecutableArgs ?? string.Empty, expandedEnv);
                 LogUnexpandedPlaceholders(args, "[Pre-Stop] Arguments");
 
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = options.PreStopTimeout * 1000;
-
                 var launchOptions = new ProcessLaunchOptions
                 {
                     ExecutablePath = options.PreStopExecutablePath,
                     Arguments = args,
-                    WorkingDirectory = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory)
-                        ? options.WorkingDirectory
-                        : options.PreStopWorkingDirectory,
+                    WorkingDirectory = string.IsNullOrWhiteSpace(options.PreStopWorkingDirectory) ? options.WorkingDirectory : options.PreStopWorkingDirectory,
                     EnvironmentVariables = options.EnvironmentVariables,
                     FireAndForget = (effectiveTimeoutMs == 0),
                     TimeoutMs = effectiveTimeoutMs,
-
-                    // Timing for SCM Heartbeat
                     WaitChunkMs = _waitChunkMs,
                     ScmAdditionalTimeMs = _scmAdditionalTimeMs,
-                    OnScmHeartbeat = new Action<int>((time) => _serviceHelper.RequestAdditionalTime(this, time, _logger)),
+                    OnScmHeartbeat = time => _serviceHelper.RequestAdditionalTime(this, time, _logger),
+                    LogErrorAsWarning = !logAsError,
                 };
 
-                // 3. Launch via Centralized Utility
-                // The Launcher handles the "Wait with Heartbeat" logic internally if TimeoutMs > 0.
+                // 3. Launch and Evaluate
                 using (var process = ProcessLauncher.Start(launchOptions, _processFactory, _logger))
                 {
                     if (process == null)
                     {
-                        _logger?.Error($"Failed to run pre-stop process: {launchOptions.ExecutablePath}");
-                        return !options.PreStopLogAsError;
+                        LogIssue($"Failed to run pre-stop process: {launchOptions.ExecutablePath}");
+                        return !logAsError;
                     }
 
                     if (launchOptions.FireAndForget)
@@ -2223,23 +2236,22 @@ namespace Servy.Service
                         return true;
                     }
 
-                    // 4. Evaluate Results for Synchronous Execution
                     if (process.ExitCode == 0)
                     {
                         _logger?.Info("Pre-stop process completed successfully.");
                         return true;
                     }
 
-                    _logger?.Error($"Pre-stop process '{launchOptions.ExecutablePath}' exited with code {process.ExitCode}.");
+                    LogIssue($"Pre-stop process '{launchOptions.ExecutablePath}' exited with code {process.ExitCode}.");
                 }
             }
             catch (Exception ex)
             {
-                _logger?.Error($"Pre-stop process failed: {ex.Message}", ex);
+                LogIssue($"Pre-stop process failed: {ex.Message}", ex);
             }
 
-            // 5. Failure Policy Handling
-            if (!options.PreStopLogAsError)
+            // 4. Final Policy Handling
+            if (!logAsError)
             {
                 _logger?.Warn("Ignoring pre-stop failure and continuing service stop.");
                 return true;

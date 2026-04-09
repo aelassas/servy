@@ -31,6 +31,7 @@ namespace Servy.Service.ProcessManagement
             var finalArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.Arguments ?? string.Empty, expandedEnv);
 
             // 2. Configure ProcessStartInfo with service-safe defaults
+            var redirectOutput = options.RedirectToWriters && !options.FireAndForget;
             var psi = new ProcessStartInfo
             {
                 FileName = options.ExecutablePath,
@@ -38,11 +39,15 @@ namespace Servy.Service.ProcessManagement
                 WorkingDirectory = options.WorkingDirectory ?? Path.GetDirectoryName(options.ExecutablePath) ?? string.Empty,
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = options.RedirectToWriters && !string.IsNullOrWhiteSpace(options.StdOutPath),
-                RedirectStandardError = options.RedirectToWriters && !string.IsNullOrWhiteSpace(options.StdErrPath),
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8
+                RedirectStandardOutput = redirectOutput && !string.IsNullOrWhiteSpace(options.StdOutPath),
+                RedirectStandardError = redirectOutput && !string.IsNullOrWhiteSpace(options.StdErrPath),
             };
+
+            if (redirectOutput)
+            {
+                psi.StandardErrorEncoding = Encoding.UTF8;
+                psi.StandardErrorEncoding = Encoding.UTF8;
+            }
 
             // 3. Apply the environment block
             foreach (var envVar in expandedEnv)
@@ -125,8 +130,18 @@ namespace Servy.Service.ProcessManagement
 
                 if (sw.ElapsedMilliseconds >= options.TimeoutMs)
                 {
-                    logger.Error($"{options.ExecutablePath} timed out after {options.TimeoutMs}ms. Terminating process tree.");
+                    var errorMsg = $"{options.ExecutablePath} timed out after {options.TimeoutMs}ms. Terminating process tree.";
+                    if (options.LogErrorAsWarning)
+                    {
+                        logger.Warn(errorMsg);
+                    }
+                    else
+                    {
+                        logger.Error(errorMsg);
+                    }
+                    
                     process.Kill(true);
+
                     throw new TimeoutException($"{options.ExecutablePath} exceeded the maximum allowed timeout of {options.TimeoutMs}ms.");
                 }
             }
