@@ -95,10 +95,19 @@ namespace Servy.Service.UnitTests
             // acceptedCommands:  .NET Framework 4.0 -> 4.8
             string[] commandFields = { "_acceptedCommands", "acceptedCommands" };
 
-            // _statusHandle:         Modern .NET 5.0+
-            // serviceStatusHandle:  Standard .NET Framework
-            // statusHandle:         Mono / Early .NET Core
-            string[] handleFields = { "_statusHandle", "serviceStatusHandle", "statusHandle", "_serviceStatusHandle" };
+            // - "serviceStatusHandle"  : Standard .NET Framework 4.x
+            // - "_statusHandle"         : Standard .NET 5.0 - .NET 10.0+
+            // - "statusHandle"          : Mono / Early .NET Core variants
+            // - "m_serviceStatusHandle" : Legacy Windows SDK / Alpha runtimes
+            string[] handleFields =
+            {
+                "serviceStatusHandle",  // .NET Framework
+                "statusHandle",         // Alternative .NET Framework
+                "_statusHandle",        // Modern .NET (private with underscore)
+                "_serviceStatusHandle", // Modern .NET variant
+                "m_statusHandle",       // Older naming convention
+                "m_serviceStatusHandle" // Older naming convention
+            };
 
             // 2. Act
             var foundCommandField = commandFields
