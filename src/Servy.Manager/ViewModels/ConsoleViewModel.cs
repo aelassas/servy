@@ -35,6 +35,7 @@ namespace Servy.Manager.ViewModels
         private DispatcherTimer _timer;
         private readonly ILogger _logger;
         private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _searchCts;
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
@@ -86,8 +87,10 @@ namespace Servy.Manager.ViewModels
             set
             {
                 _consoleSearchText = value;
-                VisibleLines.Refresh();
                 OnPropertyChanged(nameof(ConsoleSearchText));
+
+                // Trigger debounced refresh instead of immediate refresh
+                _ = ApplyFilterWithDebounceAsync();
 
                 // If the search is cleared, trigger a scroll to the bottom
                 if (string.IsNullOrWhiteSpace(value))
@@ -241,6 +244,39 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Waits for a specified delay (300ms) after the last keystroke before 
+        /// refreshing the visible lines collection to prevent UI jank.
+        /// </summary>
+        private async Task ApplyFilterWithDebounceAsync()
+        {
+            // Cancel any pending search task
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
+            _searchCts = new CancellationTokenSource();
+
+            var token = _searchCts.Token;
+
+            try
+            {
+                // Wait for the user to stop typing
+                await Task.Delay(300, token);
+
+                // Return to the UI thread to refresh the View
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!token.IsCancellationRequested)
+                    {
+                        VisibleLines.Refresh();
+                    }
+                }, DispatcherPriority.Background);
+            }
+            catch (OperationCanceledException)
+            {
+                // Task was cancelled by a newer keystroke; exit gracefully.
+            }
+        }
 
         /// <summary>
         /// Configures the <see cref="DispatcherTimer"/> used to poll process performance metrics.
