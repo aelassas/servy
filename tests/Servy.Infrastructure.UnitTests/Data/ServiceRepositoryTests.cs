@@ -13,17 +13,19 @@ namespace Servy.Infrastructure.UnitTests.Data
         private readonly Mock<IDapperExecutor> _mockDapper;
         private readonly Mock<ISecureData> _mockSecureData;
         private readonly Mock<IXmlServiceSerializer> _mockXmlServiceSerializer;
+        private readonly Mock<IJsonServiceSerializer> _mockJsonServiceSerializer;
 
         public ServiceRepositoryTests()
         {
             _mockDapper = new Mock<IDapperExecutor>();
             _mockSecureData = new Mock<ISecureData>(MockBehavior.Loose);
             _mockXmlServiceSerializer = new Mock<IXmlServiceSerializer>();
+            _mockJsonServiceSerializer = new Mock<IJsonServiceSerializer>();
         }
 
         private ServiceRepository CreateRepository()
         {
-            return new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object);
+            return new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object);
         }
 
         private string? GetPropertyValue(object obj, string propName)
@@ -34,19 +36,25 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public void Constructor_NullDapper_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null!, _mockSecureData.Object, _mockXmlServiceSerializer.Object));
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(null!, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
         }
 
         [Fact]
         public void Constructor_NullSecureData_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null!, _mockXmlServiceSerializer.Object));
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, null!, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object));
         }
 
         [Fact]
         public void Constructor_NullXmlServiceSerializer_Throws()
         {
-            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null!));
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, null!, _mockJsonServiceSerializer.Object));
+        }
+
+        [Fact]
+        public void Constructor_NullJsonServiceSerializer_Throws()
+        {
+            Assert.Throws<ArgumentNullException>(() => new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, null!));
         }
 
         [Fact]
@@ -923,9 +931,11 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task ImportJSON_ValidJson_ReturnsTrue()
         {
+            var dto = new ServiceDto { Name = "A" };
             var repo = CreateRepository();
             var json = "{\"Name\":\"A\"}";
 
+            _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
 
@@ -965,6 +975,15 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             Assert.False(result);
         }
-        
+
+        [Fact]
+        public async Task ImportJSON_Throws_ReturnsFalse()
+        {
+            var repo = CreateRepository();
+            var xml = "{ invalid json }";
+            _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Throws<Exception>();
+            var result = await repo.ImportJsonAsync(xml, TestContext.Current.CancellationToken);
+            Assert.False(result);
+        }
     }
 }

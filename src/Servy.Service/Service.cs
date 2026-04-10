@@ -397,8 +397,9 @@ namespace Servy.Service
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
+                var jsonSerializer = new JsonServiceSerializer();
 
-                _serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
+                _serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
 
                 // Copy service executable from embedded resources
                 var asm = Assembly.GetExecutingAssembly();

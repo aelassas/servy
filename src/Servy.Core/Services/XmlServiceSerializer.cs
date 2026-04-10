@@ -11,7 +11,7 @@ namespace Servy.Core.Services
     public class XmlServiceSerializer : IXmlServiceSerializer
     {
         /// <inheritdoc />
-        public ServiceDto? Deserialize(string xml)
+        public ServiceDto? Deserialize(string? xml)
         {
             // Branch 1: Covered by Deserialize_NullOrEmpty_ReturnsNull
             if (string.IsNullOrWhiteSpace(xml))

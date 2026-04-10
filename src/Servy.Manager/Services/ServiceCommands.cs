@@ -566,7 +566,8 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
+                var serializer = new JsonServiceSerializer();
+                var dto = serializer.Deserialize(json);
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadJson, AppConfig.Caption);

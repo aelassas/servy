@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Servy.CLI.Enums;
+﻿using Servy.CLI.Enums;
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
@@ -8,7 +7,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Mappers;
-using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Diagnostics.CodeAnalysis;
 
@@ -21,6 +19,7 @@ namespace Servy.CLI.Commands
     {
         private readonly IServiceRepository _serviceRepository;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
+        private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IServiceManager _serviceManager;
 
         /// <summary>
@@ -28,11 +27,17 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="serviceRepository">The service repository for persisting configurations.</param>
         /// <param name="xmlServiceSerializer">Serializer for XML service configurations.</param>
+        /// <param name="jsonServiceSerializer">Serializer for JSON service configurations.</param>
         /// <param name="serviceManager">Manager to control Windows services.</param>
-        public ImportServiceCommand(IServiceRepository serviceRepository, IXmlServiceSerializer xmlServiceSerializer, IServiceManager serviceManager)
+        public ImportServiceCommand(
+            IServiceRepository serviceRepository,
+            IXmlServiceSerializer xmlServiceSerializer,
+            IJsonServiceSerializer jsonServiceSerializer,
+            IServiceManager serviceManager)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
+            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
@@ -149,7 +154,7 @@ namespace Servy.CLI.Commands
                 "XML",
                 content => XmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportXmlAsync(content),
-                content => _xmlServiceSerializer.Deserialize(content));
+                _xmlServiceSerializer.Deserialize);
         }
 
         /// <summary>
@@ -165,7 +170,7 @@ namespace Servy.CLI.Commands
                 "JSON",
                 content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content),
-                content => JsonConvert.DeserializeObject<ServiceDto>(content, JsonSecurity.UntrustedDataSettings));
+                _jsonServiceSerializer.Deserialize);
         }
 
         /// <summary>

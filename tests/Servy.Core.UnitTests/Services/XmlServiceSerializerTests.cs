@@ -9,86 +9,155 @@ namespace Servy.Core.UnitTests.Services
     {
         private readonly XmlServiceSerializer _serializer = new XmlServiceSerializer();
 
-        [Fact]
-        public void Deserialize_NullOrEmpty_ReturnsNull()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Deserialize_NullOrWhitespace_ReturnsNull(string? input)
         {
-            // Branch: if (string.IsNullOrWhiteSpace(xml))
-            Assert.Null(_serializer.Deserialize(null!));
-            Assert.Null(_serializer.Deserialize(string.Empty));
-            Assert.Null(_serializer.Deserialize("   "));
-        }
-
-        [Fact]
-        public void Deserialize_ValidXml_ReturnsServiceDto()
-        {
-            // Arrange
-            var dto = new ServiceDto
-            {
-                Name = "TestService",
-                Description = "Test description",
-                ExecutablePath = @"C:\test.exe"
-            };
-
-            var xmlSerializer = new XmlSerializer(typeof(ServiceDto));
-            string xml;
-            using (var sw = new StringWriter())
-            {
-                xmlSerializer.Serialize(sw, dto);
-                xml = sw.ToString();
-            }
-
             // Act
-            var result = _serializer.Deserialize(xml);
+            var result = _serializer.Deserialize(input);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(dto.Name, result!.Name);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.Equal(dto.ExecutablePath, result.ExecutablePath);
+            Assert.Null(result);
         }
 
         [Fact]
         public void Deserialize_PartialXml_AppliesDefaults()
         {
-            // Arrange: Minimal XML missing most properties
-            var xml = "<ServiceDto><Name>PartialTest</Name></ServiceDto>";
+            // Arrange: Minimal valid XML
+            string xml = "<ServiceDto><Name>PartialXmlService</Name></ServiceDto>";
 
             // Act
             var result = _serializer.Deserialize(xml);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("PartialTest", result!.Name);
+            Assert.Equal("PartialXmlService", result.Name);
 
-            // Integration check: Verify ApplyDefaults was called 
-            // by checking a property not present in the XML above.
+            // Integration check: Verify hydration via ServiceDtoHelper.ApplyDefaults
             Assert.Equal(AppConfig.DefaultStartTimeout, result.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
             Assert.Equal(AppConfig.DefaultRunAsLocalSystem, result.RunAsLocalSystem);
         }
 
         [Fact]
-        public void Deserialize_InvalidXml_ThrowsInvalidOperationException()
+        public void Deserialize_AllFields_MapsCorrectly()
         {
-            // Arrange: Malformed XML
-            var invalidXml = "<ServiceDto><Name>Test</Name>";
+            // Arrange: Create a DTO with specific values for every single field
+            var expected = new ServiceDto
+            {
+                Name = "FullXmlService",
+                DisplayName = "Full Display",
+                Description = "Xml Description",
+                ExecutablePath = @"C:\App\bin\service.exe",
+                StartupDirectory = @"C:\App\bin",
+                Parameters = "/start --verbose",
+                StartupType = 2,
+                Priority = 32,
+                StdoutPath = "C:\\logs\\out.log",
+                StderrPath = "C:\\logs\\err.log",
+                EnableRotation = true,
+                RotationSize = 25,
+                EnableDateRotation = true,
+                DateRotationType = 2,
+                MaxRotations = 5,
+                UseLocalTimeForRotation = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 45,
+                MaxFailedChecks = 10,
+                RecoveryAction = 1,
+                MaxRestartAttempts = 5,
+                FailureProgramPath = "reboot.exe",
+                FailureProgramStartupDirectory = "C:\\",
+                FailureProgramParameters = "-f",
+                EnvironmentVariables = "PORT=8080;NODE_ENV=prod",
+                ServiceDependencies = "LanmanWorkstation;W32Time",
+                RunAsLocalSystem = false,
+                UserAccount = "DOMAIN\\ServiceAccount",
+                Password = "EncryptedPasswordString",
+                PreLaunchExecutablePath = "setup.exe",
+                PreLaunchStartupDirectory = "C:\\Temp",
+                PreLaunchParameters = "--quiet",
+                PreLaunchEnvironmentVariables = "SETUP=1",
+                PreLaunchStdoutPath = "setup_out.log",
+                PreLaunchStderrPath = "setup_err.log",
+                PreLaunchTimeoutSeconds = 120,
+                PreLaunchRetryAttempts = 3,
+                PreLaunchIgnoreFailure = true,
+                PostLaunchExecutablePath = "notify.exe",
+                PostLaunchStartupDirectory = "C:\\",
+                PostLaunchParameters = "--started",
+                EnableDebugLogs = true,
+                StartTimeout = 45,
+                StopTimeout = 60,
+                PreStopExecutablePath = "cleanup.exe",
+                PreStopStartupDirectory = "C:\\App",
+                PreStopParameters = "--force",
+                PreStopTimeoutSeconds = 30,
+                PreStopLogAsError = true,
+                PostStopExecutablePath = "final.exe",
+                PostStopStartupDirectory = "C:\\",
+                PostStopParameters = "--done"
+            };
 
-            // Act & Assert
-            // This covers the case where XmlReader fails to parse
-            Assert.Throws<InvalidOperationException>(() => _serializer.Deserialize(invalidXml));
+            // Convert to XML string using the standard Serializer
+            var xmlSerializer = new XmlSerializer(typeof(ServiceDto));
+            string xml;
+            using (var sw = new StringWriter())
+            {
+                xmlSerializer.Serialize(sw, expected);
+                xml = sw.ToString();
+            }
+
+            // Act
+            var actual = _serializer.Deserialize(xml);
+
+            // Assert
+            Assert.NotNull(actual);
+
+            // Validate all major categories
+            Assert.Equal(expected.Name, actual.Name);
+            Assert.Equal(expected.ExecutablePath, actual.ExecutablePath);
+            Assert.Equal(expected.StartupType, actual.StartupType);
+            Assert.Equal(expected.RotationSize, actual.RotationSize);
+            Assert.Equal(expected.MaxFailedChecks, actual.MaxFailedChecks);
+            Assert.Equal(expected.RecoveryAction, actual.RecoveryAction);
+            Assert.Equal(expected.PreLaunchTimeoutSeconds, actual.PreLaunchTimeoutSeconds);
+            Assert.Equal(expected.PreStopLogAsError, actual.PreStopLogAsError);
+            Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
+            Assert.Equal(expected.EnvironmentVariables, actual.EnvironmentVariables);
+            Assert.Equal(expected.ServiceDependencies, actual.ServiceDependencies);
+            Assert.Equal(expected.UserAccount, actual.UserAccount);
+            Assert.Equal(expected.Password, actual.Password);
         }
 
         [Fact]
-        public void Deserialize_WrongRootElement_ReturnsNull()
+        public void Deserialize_MalformedXml_ThrowsInvalidOperationException()
         {
-            // Arrange: Valid XML but not a ServiceDto
-            // This forces the 'is ServiceDto' check to fail
-            var xml = "<OtherObject><Value>123</Value></OtherObject>";
+            // Arrange: Invalid XML structure
+            string malformedXml = "<ServiceDto><Name>UnclosedTag";
 
             // Act & Assert
-            // Note: XmlSerializer usually throws InvalidOperationException if the root 
-            // doesn't match the type it was initialized with.
-            Assert.Throws<InvalidOperationException>(() => _serializer.Deserialize(xml));
+            // XmlSerializer throws InvalidOperationException when the stream is corrupted
+            Assert.Throws<InvalidOperationException>(() => _serializer.Deserialize(malformedXml));
+        }
+
+        [Fact]
+        public void Deserialize_EmptyRoot_ReturnsHydratedDto()
+        {
+            // Arrange: Valid XML structure but NO properties set
+            string emptyXml = "<ServiceDto />";
+
+            // Act
+            var result = _serializer.Deserialize(emptyXml);
+
+            // Assert
+            Assert.NotNull(result);
+            // Verify that while properties were missing in XML, the result is fully hydrated with defaults
+            Assert.Equal(AppConfig.DefaultStopTimeout, result.StopTimeout);
+            Assert.Equal(AppConfig.DefaultRotationSize, result.RotationSize);
+            Assert.Equal((int)AppConfig.DefaultStartupType, result.StartupType);
         }
     }
 }

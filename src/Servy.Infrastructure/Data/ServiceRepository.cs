@@ -17,6 +17,7 @@ namespace Servy.Infrastructure.Data
         private readonly IDapperExecutor _dapper;
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
+        private readonly IJsonServiceSerializer _jsonServiceSerializer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceRepository"/> class.
@@ -30,14 +31,23 @@ namespace Servy.Infrastructure.Data
         /// <param name="xmlServiceSerializer">
         /// The service responsible for serializing XML. Must not be null.
         /// </param>
+        /// <param name="jsonServiceSerializer">
+        /// The service responsible for serializing JSON. Must not be null.
+        /// </param>
         /// <exception cref="ArgumentNullException">
         /// Thrown if <paramref name="dapper"/> or <paramref name="secureData"/> or <paramref name="xmlServiceSerializer"/> is null.
         /// </exception>
-        public ServiceRepository(IDapperExecutor dapper, ISecureData secureData, IXmlServiceSerializer xmlServiceSerializer)
+        public ServiceRepository(
+            IDapperExecutor dapper, 
+            ISecureData secureData,
+            IXmlServiceSerializer xmlServiceSerializer,
+            IJsonServiceSerializer jsonServiceSerializer
+            )
         {
             _dapper = dapper ?? throw new ArgumentNullException(nameof(dapper));
             _secureData = secureData ?? throw new ArgumentNullException(nameof(secureData));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
+            _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
         }
 
         #region DTO methods
@@ -629,7 +639,7 @@ namespace Servy.Infrastructure.Data
 
             try
             {
-                var service = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
+                var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
                 await UpsertAsync(service);

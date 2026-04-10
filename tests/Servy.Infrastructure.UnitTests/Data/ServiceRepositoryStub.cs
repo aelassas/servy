@@ -18,8 +18,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         public ServiceRepositoryStub(bool returnNullDto = false)
             : base(
                 new DapperExecutorStub(),       // replace with stub or mock
-                new SecureDataStub(),       // replace with stub or mock
-                new XmlServiceSerializerStub()  // replace with stub or mock
+                new SecureDataStub(),           // replace with stub or mock
+                new XmlServiceSerializerStub(), // replace with stub or mock
+                new JsonServiceSerializerStub()
             )
         {
             _returnNullDto = returnNullDto;
@@ -154,6 +155,12 @@ namespace Servy.Infrastructure.UnitTests.Data
 
     public class XmlServiceSerializerStub : IXmlServiceSerializer
     {
-        public ServiceDto Deserialize(string xml) => new ServiceDto { Name = "StubService" };
+        public ServiceDto Deserialize(string? xml) => new ServiceDto { Name = "StubService" };
     }
+
+    public class JsonServiceSerializerStub : IJsonServiceSerializer
+    {
+        public ServiceDto Deserialize(string? json) => new ServiceDto { Name = "StubService" };
+    }
+
 }
