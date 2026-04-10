@@ -354,7 +354,7 @@ namespace Servy.Infrastructure.Data
             // Securely clone and encrypt all items in memory before passing to Dapper
             var encryptedServices = services.Select(CreateEncryptedClone).ToList();
 
-            // Use the same robust Upsert SQL as your single UpsertAsync method
+            // The SQL uses an exhaustive DO UPDATE SET to keep the local DB synchronized with all service metadata
             var sql = @"
                 INSERT INTO Services (
                     Name, Description, ExecutablePath, StartupDirectory, Parameters, 
@@ -383,11 +383,59 @@ namespace Servy.Infrastructure.Data
                 )
                 ON CONFLICT(LOWER(Name)) DO UPDATE SET
                     Description = excluded.Description,
+                    ExecutablePath = excluded.ExecutablePath,
+                    StartupDirectory = excluded.StartupDirectory,
+                    Parameters = excluded.Parameters,
                     StartupType = excluded.StartupType,
-                    Pid = excluded.Pid;";
+                    Priority = excluded.Priority,
+                    StdoutPath = excluded.StdoutPath,
+                    StderrPath = excluded.StderrPath,
+                    EnableRotation = excluded.EnableRotation,
+                    RotationSize = excluded.RotationSize,
+                    EnableHealthMonitoring = excluded.EnableHealthMonitoring,
+                    HeartbeatInterval = excluded.HeartbeatInterval,
+                    MaxFailedChecks = excluded.MaxFailedChecks,
+                    RecoveryAction = excluded.RecoveryAction,
+                    MaxRestartAttempts = excluded.MaxRestartAttempts,
+                    EnvironmentVariables = excluded.EnvironmentVariables,
+                    ServiceDependencies = excluded.ServiceDependencies,
+                    RunAsLocalSystem = excluded.RunAsLocalSystem,
+                    UserAccount = excluded.UserAccount,
+                    Password = excluded.Password,
+                    PreLaunchExecutablePath = excluded.PreLaunchExecutablePath,
+                    PreLaunchStartupDirectory = excluded.PreLaunchStartupDirectory,
+                    PreLaunchParameters = excluded.PreLaunchParameters,
+                    PreLaunchEnvironmentVariables = excluded.PreLaunchEnvironmentVariables,
+                    PreLaunchStdoutPath = excluded.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = excluded.PreLaunchStderrPath,
+                    PreLaunchTimeoutSeconds = excluded.PreLaunchTimeoutSeconds,
+                    PreLaunchRetryAttempts = excluded.PreLaunchRetryAttempts,
+                    PreLaunchIgnoreFailure = excluded.PreLaunchIgnoreFailure,
+                    FailureProgramPath = excluded.FailureProgramPath,
+                    FailureProgramStartupDirectory = excluded.FailureProgramStartupDirectory,
+                    FailureProgramParameters = excluded.FailureProgramParameters,
+                    PostLaunchExecutablePath = excluded.PostLaunchExecutablePath,
+                    PostLaunchStartupDirectory = excluded.PostLaunchStartupDirectory,
+                    PostLaunchParameters = excluded.PostLaunchParameters,
+                    Pid = excluded.Pid,
+                    EnableDebugLogs = excluded.EnableDebugLogs,
+                    DisplayName = excluded.DisplayName,
+                    MaxRotations = excluded.MaxRotations,
+                    EnableDateRotation = excluded.EnableDateRotation,
+                    DateRotationType = excluded.DateRotationType,
+                    StartTimeout = excluded.StartTimeout,
+                    StopTimeout = excluded.StopTimeout,
+                    PreStopExecutablePath = excluded.PreStopExecutablePath,
+                    PreStopStartupDirectory = excluded.PreStopStartupDirectory,
+                    PreStopParameters = excluded.PreStopParameters,
+                    PreStopTimeoutSeconds = excluded.PreStopTimeoutSeconds,
+                    PreStopLogAsError = excluded.PreStopLogAsError,
+                    PostStopExecutablePath = excluded.PostStopExecutablePath,
+                    PostStopStartupDirectory = excluded.PostStopStartupDirectory,
+                    PostStopParameters = excluded.PostStopParameters,
+                    UseLocalTimeForRotation = excluded.UseLocalTimeForRotation;";
 
-            // Standard Dapper maps IEnumerable to parameterized commands.
-            // Ensure IDapperExecutor wraps this in BEGIN TRANSACTION / COMMIT internally for SQLite speed.
+            // Standard Dapper collection execution. Returning affected row count.
             return await _dapper.ExecuteAsync(sql, encryptedServices);
         }
 
