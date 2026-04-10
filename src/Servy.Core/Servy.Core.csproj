@@ -154,7 +154,6 @@
     <Compile Include="Services\IServiceManager.cs" />
     <Compile Include="Services\IWin32ErrorProvider.cs" />
     <Compile Include="Services\IWindowsServiceApi.cs" />
-    <Compile Include="Services\IWindowsServiceProvider.cs" />
     <Compile Include="Services\ServiceControllerProvider.cs" />
     <Compile Include="Services\ServiceControllerWrapper.cs" />
     <Compile Include="Services\ServiceDependencyNode.cs" />
@@ -164,7 +163,6 @@
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
-    <Compile Include="Services\WindowsServiceProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
