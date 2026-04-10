@@ -516,6 +516,11 @@ namespace Servy.Manager.Services
 
             try
             {
+                if (!await ValidateFileSize(path))
+                {
+                    return;
+                }
+
                 var xml = File.ReadAllText(path);
                 if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
                 {
@@ -561,6 +566,11 @@ namespace Servy.Manager.Services
 
             try
             {
+                if (!await ValidateFileSize(path))
+                {
+                    return;
+                }
+
                 var json = File.ReadAllText(path);
                 if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
                 {
@@ -649,6 +659,57 @@ namespace Servy.Manager.Services
         {
             if (_refreshCallback != null)
                 await _refreshCallback();
+        }
+
+        /// <summary>
+        /// Validates that the configuration file exists and does not exceed the maximum allowed size.
+        /// </summary>
+        /// <param name="path">The relative or absolute path to the configuration file.</param>
+        /// <returns>
+        /// <c>true</c> if the file exists and its size is within the limit defined by 
+        /// <see cref="AppConfig.MaxConfigFileSizeMB"/>; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method performs path canonicalization to resolve relative segments and 
+        /// catch illegal path characters before attempting filesystem operations.
+        /// </remarks>
+        private async Task<bool> ValidateFileSize(string path)
+        {
+            string fullPath;
+            try
+            {
+                // Resolve absolute path to handle ".." segments and validate characters
+                fullPath = Path.GetFullPath(path);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Invalid path provided for file size validation: {path}", ex);
+                return false;
+            }
+
+            var fileInfo = new FileInfo(fullPath);
+
+            // 1. Existence Check
+            if (!fileInfo.Exists)
+            {
+                var errorMsg = $"[Import] File not found: {fullPath}";
+                Logger.Error(errorMsg);
+                await _messageBoxService.ShowErrorAsync(errorMsg, AppConfig.Caption);
+                return false;
+            }
+
+            // 2. Size Guard (Safety threshold against large/malicious files)
+            // Cast to long to prevent integer overflow during the byte calculation
+            if (fileInfo.Length > (long)Core.Config.AppConfig.MaxConfigFileSizeMB * 1024 * 1024)
+            {
+                // Use string.Format if your resource supports the filename placeholder
+                var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
+                Logger.Error(errorMsg);
+                await _messageBoxService.ShowErrorAsync(errorMsg, AppConfig.Caption);
+                return false;
+            }
+
+            return true;
         }
 
         #endregion

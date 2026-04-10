@@ -971,6 +971,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Configuration file exceeds maximum size (10 MB)..
+        /// </summary>
+        public static string Msg_ConfigSizeLimitReached {
+            get {
+                return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Failed to load JSON service configuration..
         /// </summary>
         public static string Msg_FailedToLoadJson {

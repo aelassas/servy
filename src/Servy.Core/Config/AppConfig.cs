@@ -346,6 +346,16 @@ namespace Servy.Core.Config
         public const int MinPreLaunchRetryAttempts = 0;
 
         /// <summary>
+        /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
+        /// </summary>
+        /// <remarks>
+        /// This constant acts as a safety threshold to prevent "Out of Memory" exceptions or 
+        /// Large Object Heap (LOH) fragmentation when parsing malformed or excessively large files.
+        /// Default is 10 MB.
+        /// </remarks>
+        public const int MaxConfigFileSizeMB = 10;
+
+        /// <summary>
         /// Command-line argument used to bypass hardware acceleration and force 
         /// the application to use software-based rendering.
         /// </summary>
