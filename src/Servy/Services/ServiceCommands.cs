@@ -240,7 +240,7 @@ namespace Servy.Services
 
                 if (res.IsSuccess)
                 {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceCreated, Caption);
+                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
                 }
                 else
                 {

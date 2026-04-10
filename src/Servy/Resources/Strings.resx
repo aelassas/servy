@@ -463,8 +463,8 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
   </data>
 
-  <data name="Msg_ServiceCreated" xml:space="preserve">
-    <value>Service was created successfully.</value>
+  <data name="Msg_ServiceInstalled" xml:space="preserve">
+    <value>Service was installed successfully.</value>
   </data>
   <data name="Msg_ServiceRemoved" xml:space="preserve">
     <value>Service was removed successfully.</value>
