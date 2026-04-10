@@ -41,81 +41,81 @@
 # 1. Determine Script Root (PS 2.0+ Compatible)
 # -------------------------------
 if ($PSVersionTable.PSVersion.Major -ge 3) {
-    $ModuleRoot = $PSScriptRoot
+  $scriptDir = $PSScriptRoot
 } else {
-    $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
+  $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 
 # -------------------------------
 # 2. Helper: Fallback Logging
 # -------------------------------
 function Write-FallbackError {
-    Param($Message, $ModuleRoot)
+  param(
+    [string]$Message, 
+    [string]$scriptDir
+  )
     
-    Write-Host "ERROR: $Message" -ForegroundColor Red
+  Write-Host "ERROR: $Message" -ForegroundColor Red
 
-    try {
-        # Attempt to write to Application Log. Requires 'Servy' source to be registered.
-        Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
-                       -EntryType Warning -Message $Message -ErrorAction Stop
-    }
-    catch {
-        # Last resort: File log
-        $logFile = Join-Path $ModuleRoot "ServyFailureEmail.log"
-        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
-    }
+  try {
+    Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
+      -EntryType Warning -Message $Message -ErrorAction Stop
+  } catch {
+    $logFile = Join-Path $scriptDir "ServyFailureEmail.log"
+    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
+  }
 }
 
 # -------------------------------
 # 3. Load Configuration
 # -------------------------------
-$configPath = Join-Path $ModuleRoot "smtp-config.xml"
+$configPath = Join-Path $scriptDir "smtp-config.xml"
 
 if (-not (Test-Path $configPath)) {
-    $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
-    Write-FallbackError -Message $errorMsg -ModuleRoot $ModuleRoot
-    exit 1
+  $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
+  Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
+  exit 1
 }
 
 try {
-    [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
+  [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
 }
 catch {
-    $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
-    Write-FallbackError -Message $errorMsg -ModuleRoot $ModuleRoot
-    exit 1
+  $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
+  Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
+  exit 1
 }
 
 # -------------------------------
 # 4. Email Notification Function
 # -------------------------------
 function Send-NotificationEmail {
-  [cmdletbinding()]
-  Param (
-    [string] $Subject,
-    [string] [parameter(ValueFromPipeline)] $Body
+  [CmdletBinding()]
+  param (
+    [string]$Subject,
+    [string][Parameter(ValueFromPipeline)]$Body,
+    [string]$scriptDir
   )
 
   # --- CONFIGURATION FROM XML ---
   $smtpServer = $SmtpConfig.SmtpConfig.Server
-  $smtpPort   = [int]$SmtpConfig.SmtpConfig.Port
-  $from       = $SmtpConfig.SmtpConfig.From
-  $to         = $SmtpConfig.SmtpConfig.To
+  $smtpPort = [int]$SmtpConfig.SmtpConfig.Port
+  $from = $SmtpConfig.SmtpConfig.From
+  $to = $SmtpConfig.SmtpConfig.To
   
-  # Path to the encrypted credential file
-  $credPath   = Join-Path $ModuleRoot "smtp-cred.xml"
+  $credPath = Join-Path $scriptDir "smtp-cred.xml"
 
   # --- VALIDATION GATE ---
   if ([string]::IsNullOrEmpty($smtpServer) -or $smtpServer -eq "smtp.example.com") {
-      $warnMsg = "ServyFailureEmail: SMTP Server is not configured or set to placeholder. Skipping email."
-      Write-FallbackError -Message $warnMsg -ModuleRoot $ModuleRoot
-      return $false
+    $warnMsg = "ServyFailureEmail: SMTP Server is not configured. Skipping email."
+    Write-FallbackError -Message $warnMsg -scriptDir $scriptDir
+    return $false
   }
 
   if (-not (Test-Path $credPath)) {
-      $warnMsg = "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email."
-      Write-FallbackError -Message $warnMsg -ModuleRoot $ModuleRoot
-      return $false
+    $warnMsg = "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email."
+    Write-FallbackError -Message $warnMsg -scriptDir $scriptDir
+    return $false
   }
 
   try {
@@ -134,13 +134,11 @@ function Send-NotificationEmail {
 
     $smtp.Send($mailMessage)
     return $true
-  }
-  catch {
+  } catch {
     $errorMsg = "ServyFailureEmail: Failed to send notification. Error: $($_.Exception.Message)"
-    Write-FallbackError -Message $errorMsg -ModuleRoot $ModuleRoot
+    Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
     return $false 
-  }
-  finally {
+  } finally {
     if ($null -ne $mailMessage) { $mailMessage.Dispose() }
     if ($null -ne $smtp) { $smtp.Dispose() }
   }
@@ -149,23 +147,22 @@ function Send-NotificationEmail {
 # -------------------------------
 # 5. Imports and Timestamp Init
 # -------------------------------
-$timestampFile = Join-Path $ModuleRoot "last-processed-email.dat"
-$helperScript = Join-Path $ModuleRoot "Get-ServyLastErrors.ps1"
+$timestampFile = Join-Path $scriptDir "last-processed-email.dat"
+$helperScript = Join-Path $scriptDir "Get-ServyLastErrors.ps1"
 
 if (-not (Test-Path $helperScript)) {
-    $errorMsg = "Servy Notification Error: Required dependency not found at '$helperScript'."
-    Write-FallbackError -Message $errorMsg -ModuleRoot $ModuleRoot
-    exit 1
+  $errorMsg = "Servy Notification Error: Required dependency not found at '$helperScript'."
+  Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
+  exit 1
 }
 
 . $helperScript
-
 $lastProcessed = $null
+
 if (Test-Path $timestampFile) {
   try {
     $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
-  }
-  catch { 
+  } catch { 
     # Warning handled visually; logic continues to process available events
   }
 }
@@ -176,15 +173,16 @@ if (Test-Path $timestampFile) {
 $errors = Get-ServyLastErrors -LastProcessed $lastProcessed
 
 if ($null -eq $errors -or $errors.Count -eq 0) {
-    Write-Host "No new errors to process."
-    exit 0
+  Write-Host "No new errors to process."
+  exit 0
 }
 
 # Determine which events to process based on chronological order
 if ($null -eq $lastProcessed) {
   # Notify only for the single most recent error to avoid flooding on first run
   $eventsToProcess = @($errors[0])
-} else {
+}
+else {
   # Sort ascending so emails are sent in the order they happened
   $eventsToProcess = $errors | Sort-Object TimeCreated
 }
@@ -209,15 +207,15 @@ foreach ($evt in $eventsToProcess) {
   [Environment]::NewLine + "Details: $logText"
   $htmlBody = $body -replace "`r?`n", "<br>"
     
-  if (Send-NotificationEmail -Subject $subject -Body $htmlBody) {
-      Write-Host "Email Notification sent for '$serviceName'."
-      # Track the most recent successfully notified event
-      $lastSuccessfulTimestamp = $evt.TimeCreated
+  if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
+    Write-Host "Email Notification sent for '$serviceName'."
+    # Track the most recent successfully notified event
+    $lastSuccessfulTimestamp = $evt.TimeCreated
   } else {
-      # If email fails, we STOP processing subsequent errors.
-      # This ensures the next run starts from this failed event.
-      Write-Host "Aborting further processing due to email failure." -ForegroundColor Yellow
-      break
+    # If email fails, we STOP processing subsequent errors.
+    # This ensures the next run starts from this failed event.
+    Write-Host "Aborting further processing due to email failure." -ForegroundColor Yellow
+    break
   }
 }
 
@@ -225,8 +223,8 @@ foreach ($evt in $eventsToProcess) {
 # 8. Update Timestamp File (Final Step)
 # -------------------------------
 if ($null -ne $lastSuccessfulTimestamp) {
-    # Add 1 tick to avoid duplicate processing on next run
-    $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
-    $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
-    Write-Host "Timestamp updated to: $($newestTimestamp.ToString('o'))"
+  # Add 1 tick to avoid duplicate processing on next run
+  $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+  $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
+  Write-Host "Timestamp updated to: $($newestTimestamp.ToString('o'))"
 }
