@@ -324,10 +324,16 @@ namespace Servy.Manager.ViewModels
 
                 // Fetch raw metrics
                 var (rawCpu, ramBytes) = await Task.Run(() =>
-                (
-                    ProcessHelper.GetProcessTreeCpuUsage(pid),
-                    ProcessHelper.GetProcessTreeRamUsage(pid)
-                ));
+                {
+                    // 1. Perform background maintenance on the PID cache
+                    ProcessHelper.MaintainCache();
+
+                    // 2. Retrieve tree-wide metrics
+                    return (
+                        ProcessHelper.GetProcessTreeCpuUsage(pid),
+                        ProcessHelper.GetProcessTreeRamUsage(pid)
+                    );
+                });
                 double rawRamMb = ramBytes / 1024d / 1024d;
 
                 // Update UI Texts
