@@ -152,17 +152,14 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Gets the CPU usage percentage of a process over the interval since the last sample.
-        /// Should be called repeatedly (e.g., by a background timer every 4 seconds).
+        /// Retrieves the CPU usage percentage for a process. 
+        /// Updates the internal cache with a new sample for delta calculation.
         /// </summary>
         /// <param name="pid">The process ID.</param>
-        /// <returns>The CPU usage percentage rounded to one decimal place, or 0 if not available.</returns>
+        /// <returns>CPU usage percentage (0.0 to 100.0), or 0 if unavailable.</returns>
         [ExcludeFromCodeCoverage]
         public static double GetCpuUsage(int pid)
         {
-            // 1. Periodically prune dead PIDs to prevent memory leaks and stale calculations
-            PruneDeadProcesses();
-
             try
             {
                 using (var process = Process.GetProcessById(pid))
@@ -172,35 +169,24 @@ namespace Servy.Core.Helpers
 
                     if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
                     {
-                        CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
-                        {
-                            LastTime = now,
-                            LastTotalTime = totalTime
-                        };
+                        UpdateCpuSample(pid, now, totalTime);
                         return 0;
                     }
 
                     var deltaTime = (now - prev.LastTime).TotalMilliseconds;
                     var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
 
-                    // Handle invalid or inconsistent samples
                     if (deltaTime <= 0 || deltaCpu < 0) return 0;
 
                     double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
 
-                    // Update stored sample
-                    CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
-                    {
-                        LastTime = now,
-                        LastTotalTime = totalTime
-                    };
+                    UpdateCpuSample(pid, now, totalTime);
 
                     return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
                 }
             }
             catch (ArgumentException)
             {
-                // Process no longer exists -> remove stale entry
                 CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
                 return 0;
             }
@@ -211,11 +197,11 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Removes entries for processes that are no longer running.
-        /// Throttled to execute at most once every 5 minutes.
+        /// Performs maintenance on the process cache by removing entries for PIDs that are no longer active.
+        /// Should be called by a background timer to prevent memory leaks.
         /// </summary>
         [ExcludeFromCodeCoverage]
-        private static void PruneDeadProcesses()
+        public static void MaintainCache()
         {
             if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;
 
@@ -229,10 +215,7 @@ namespace Servy.Core.Helpers
                         isAlive = !p.HasExited;
                     }
                 }
-                catch (ArgumentException)
-                {
-                    isAlive = false;
-                }
+                catch (ArgumentException) { isAlive = false; }
 
                 if (!isAlive)
                 {
@@ -241,6 +224,18 @@ namespace Servy.Core.Helpers
             }
 
             _lastPruneTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Internal helper to mutate the shared sample state.
+        /// </summary>
+        private static void UpdateCpuSample(int pid, DateTime time, TimeSpan totalTime)
+        {
+            CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
+            {
+                LastTime = time,
+                LastTotalTime = totalTime
+            };
         }
 
         /// <summary>
