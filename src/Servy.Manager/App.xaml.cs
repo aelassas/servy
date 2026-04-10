@@ -6,6 +6,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
+using Servy.Manager.Resources;
 using Servy.Manager.Views;
 using System.Diagnostics;
 using System.IO;
@@ -122,6 +123,22 @@ namespace Servy.Manager
         protected override void OnStartup(StartupEventArgs e)
         {
             Logger.Initialize("Servy.Manager.log");
+
+            // Run the security check from Infrastructure
+            if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+            {
+                // 2. Format the message using your Resources
+                string message = string.Format(
+                    Strings.SqliteVersionWarningMessage,
+                    detectedVersion,
+                    AppConfig.MinRequiredSqliteVersion
+                );
+
+                string title = Strings.SqliteVersionWarningTitle;
+
+                // 3. Show the warning
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
             // Bit-shift to get the major tier (0, 1, or 2)
             // Tier 0 = No hardware acceleration
