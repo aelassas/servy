@@ -28,7 +28,7 @@ namespace Servy.CLI.Helpers
         /// Gets all verb names defined by <see cref="VerbAttribute"/> on all types in the current assembly.
         /// </summary>
         /// <returns>An array of verb names.</returns>
-        public static string[] GetVerbs()
+         public static string[] GetVerbs()
         {
             var verbs = Assembly.GetExecutingAssembly()
                 .GetTypes()
@@ -44,20 +44,6 @@ namespace Servy.CLI.Helpers
         }
 
         /// <summary>
-        /// Executes the output handling for a command result by printing its message to the console
-        /// and returning its exit code.
-        /// </summary>
-        /// <param name="result">The <see cref="CommandResult"/> containing the message and exit code from the executed command.</param>
-        /// <returns>The integer exit code associated with the command result.</returns>
-        public static int PrintAndReturn(CommandResult result)
-        {
-            if (!string.IsNullOrWhiteSpace(result.Message))
-                Console.WriteLine(result.Message);
-
-            return result.ExitCode;
-        }
-
-        /// <summary>
         /// Awaits the execution of a <see cref="CommandResult"/>-returning task,
         /// prints its message to the console, and returns an appropriate exit code.
         /// </summary>
@@ -69,8 +55,23 @@ namespace Servy.CLI.Helpers
         public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)
         {
             var result = await task;
-            Console.WriteLine(result.Message);
-            return result.Success ? 0 : 1;
+            if (result == null) return 1;
+            if (!string.IsNullOrEmpty(result.Message))
+            {
+                if (result.Success)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    await Console.Out.WriteLineAsync(result.Message);
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    await Console.Error.WriteLineAsync(result.Message);
+                }
+
+                Console.ResetColor();
+            }
+            return result.Success ? result.ExitCode : 1;
         }
 
     }
