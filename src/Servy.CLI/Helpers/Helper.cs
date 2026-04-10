@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using Servy.CLI.Models;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Servy.CLI.Helpers
         /// Gets all verb names defined by <see cref="VerbAttribute"/> on all types in the current assembly.
         /// </summary>
         /// <returns>An array of verb names.</returns>
-         public static string[] GetVerbs()
+        public static string[] GetVerbs()
         {
             var verbs = Assembly.GetExecutingAssembly()
                 .GetTypes()
@@ -71,7 +72,7 @@ namespace Servy.CLI.Helpers
 
                 Console.ResetColor();
             }
-            return result.Success ? result.ExitCode : 1;
+            return result.ExitCode;
         }
 
     }
