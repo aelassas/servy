@@ -246,6 +246,8 @@ namespace Servy.Service
 
         #endregion
 
+        #region Constructors
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
         /// using the default <see cref="ServiceHelper"/> implementation,
@@ -282,8 +284,8 @@ namespace Servy.Service
             _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
-            _options = null;
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _options = null;
         }
 
         /// <summary>
@@ -431,6 +433,8 @@ namespace Servy.Service
                 throw; // Re-throw to let SCM know the service cannot start
             }
         }
+
+        #endregion
 
         /// <summary>
         /// Configures the service to intercept the Windows Pre-Shutdown notification.

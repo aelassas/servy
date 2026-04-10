@@ -49,7 +49,6 @@ namespace Servy.Manager.Utils
             long lastPosition = startPos;
             DateTime lastCreationTime = startCreated;
 
-            // Tailing Loop: Continuously poll the file for new content
             while (!token.IsCancellationRequested)
             {
                 try
@@ -62,23 +61,43 @@ namespace Servy.Manager.Utils
 
                     FileInfo info = new FileInfo(path);
 
-                    // Rotation Detection: Check if file was replaced or truncated (e.g., log rotate or 'echo "" > file')
-                    if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                    // 1. Defensively attempt to open the stream
+                    FileStream fs = null;
+                    try
                     {
-                        lastPosition = 0;
-                        lastCreationTime = info.CreationTimeUtc;
+                        // FileShare.ReadWrite is critical, but we also catch the race here
+                        fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    }
+                    catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                    {
+                        // The file was likely rotated or deleted between File.Exists and here
+                        await Task.Delay(500, token);
+                        continue;
+                    }
+                    catch (IOException)
+                    {
+                        // File might be locked exclusively by the service during a write/roll
+                        await Task.Delay(200, token);
+                        continue;
                     }
 
-                    // FileShare.ReadWrite is critical here to allow the service to keep writing while we read
-                    using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (fs)
                     {
+                        // 2. Identity Check: Did the file change while we were opening it?
+                        info.Refresh();
+                        if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                        {
+                            lastPosition = 0;
+                            lastCreationTime = info.CreationTimeUtc;
+                        }
+
                         fs.Seek(lastPosition, SeekOrigin.Begin);
                         using (StreamReader reader = new StreamReader(fs))
                         {
                             while (!token.IsCancellationRequested)
                             {
                                 info.Refresh();
-                                // If file changed identity while we were reading, break to reopen the stream
+                                // Break if rotation occurs to reopen the NEW file identity
                                 if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
                                     break;
 
@@ -86,10 +105,7 @@ namespace Servy.Manager.Utils
                                 string line;
                                 while ((line = await reader.ReadLineAsync()) != null)
                                 {
-                                    var logLine = new LogLine(line, type);
-                                    batch.Add(logLine);
-
-                                    // Batching prevents the UI from being flooded with thousands of individual updates
+                                    batch.Add(new LogLine(line, type));
                                     if (batch.Count >= 500)
                                     {
                                         OnNewLines?.Invoke(batch);
@@ -99,21 +115,15 @@ namespace Servy.Manager.Utils
                                 }
 
                                 if (batch.Count > 0) OnNewLines?.Invoke(batch);
-
-                                // Polling interval to balance CPU usage vs latency
                                 await Task.Delay(150, token);
                             }
                         }
                     }
                 }
-                catch (IOException ex)
-                {
-                    Logger.Warn($"IO error reading log: {ex.Message}");
-                    await Task.Delay(500, token);
-                }
+                catch (OperationCanceledException) { break; }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Unexpected error in log tailer.", ex);
+                    Logger.Error($"Unexpected error in log tailer for {path}.", ex);
                     await Task.Delay(1000, token);
                 }
             }
@@ -141,64 +151,87 @@ namespace Servy.Manager.Utils
         /// <returns>A list of log lines retrieved from the end of the file.</returns>
         private List<LogLine> LoadHistory(string path, LogType type, int maxLines, out long finalPos, out DateTime creationTime)
         {
+            // Initialize out parameters immediately to satisfy the compiler
+            finalPos = 0;
+            creationTime = DateTime.MinValue;
+            List<LogLine> lines = new List<LogLine>();
+
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            {
+                return lines;
+            }
+
             maxLines = Math.Min(Math.Max(maxLines, 0), MaxSafeLines);
 
-            List<LogLine> lines = new List<LogLine>();
-            FileInfo info = new FileInfo(path);
-            creationTime = info.CreationTimeUtc;
-            DateTime lastWrite = info.LastWriteTimeUtc;
-
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            try
             {
-                finalPos = fs.Length;
-                if (fs.Length == 0) return lines;
+                FileInfo info = new FileInfo(path);
+                creationTime = info.CreationTimeUtc;
+                DateTime lastWrite = info.LastWriteTimeUtc;
 
-                long pos = fs.Length;
-                int count = 0;
-                byte[] buffer = new byte[4096];
-
-                // Backwards scan for newline characters to locate the start of the last 'maxLines'
-                while (pos > 0 && count <= maxLines)
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int toRead = (int)Math.Min(pos, buffer.Length);
-                    pos -= toRead;
-                    fs.Seek(pos, SeekOrigin.Begin);
-                    fs.Read(buffer, 0, toRead);
-                    for (int i = toRead - 1; i >= 0; i--)
+                    finalPos = fs.Length;
+                    if (fs.Length == 0) return lines;
+
+                    long pos = fs.Length;
+                    int count = 0;
+                    byte[] buffer = new byte[4096];
+
+                    // Backwards scan for newline characters to locate the start of the last 'maxLines'
+                    while (pos > 0 && count <= maxLines)
                     {
-                        if (buffer[i] == (byte)'\n')
+                        int toRead = (int)Math.Min(pos, buffer.Length);
+                        pos -= toRead;
+                        fs.Seek(pos, SeekOrigin.Begin);
+                        fs.Read(buffer, 0, toRead);
+                        for (int i = toRead - 1; i >= 0; i--)
                         {
-                            count++;
-                            if (count > maxLines) { pos = pos + i + 1; break; }
+                            if (buffer[i] == (byte)'\n')
+                            {
+                                count++;
+                                if (count > maxLines) { pos = pos + i + 1; break; }
+                            }
+                        }
+                    }
+
+                    // Read forward from the discovered position
+                    fs.Seek(pos, SeekOrigin.Begin);
+                    using (StreamReader sr = new StreamReader(fs))
+                    {
+                        string line;
+                        var tempLines = new List<string>();
+                        while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
+                        {
+                            tempLines.Add(line);
+                        }
+
+                        // We work backwards from the LastWriteTime
+                        // Every line gets 1 tick less than the one after it
+                        for (int i = 0; i < tempLines.Count; i++)
+                        {
+                            // Logic: The very last line in the file is 'lastWrite'
+                            // Every line before it is 1 tick older.
+                            long offset = (tempLines.Count - 1 - i) * TimeSpan.TicksPerMillisecond;
+                            DateTime syntheticTime = lastWrite.AddTicks(-offset);
+
+                            lines.Add(new LogLine(tempLines[i], type, syntheticTime));
                         }
                     }
                 }
-
-                // Read forward from the discovered position
-                fs.Seek(pos, SeekOrigin.Begin);
-                using (StreamReader sr = new StreamReader(fs))
-                {
-                    string line;
-                    var tempLines = new List<string>();
-                    while ((line = sr.ReadLine()) != null && tempLines.Count < maxLines)
-                    {
-                        tempLines.Add(line);
-                    }
-
-                    // We work backwards from the LastWriteTime
-                    // Every line gets 1 tick less than the one after it
-                    for (int i = 0; i < tempLines.Count; i++)
-                    {
-                        // Logic: The very last line in the file is 'lastWrite'
-                        // Every line before it is 1 tick older.
-                        long offset = (tempLines.Count - 1 - i) * TimeSpan.TicksPerMillisecond;
-                        DateTime syntheticTime = lastWrite.AddTicks(-offset);
-
-                        lines.Add(new LogLine(tempLines[i], type, syntheticTime));
-                    }
-                }
+            }
+            catch (FileNotFoundException)
+            {
+                // Handle the race condition where file existed a moment ago but is gone now
                 return lines;
             }
+            catch (DirectoryNotFoundException)
+            {
+                return lines;
+            }
+
+            return lines;
         }
+
     }
 }
