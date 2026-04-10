@@ -397,11 +397,9 @@ namespace Servy.Manager.ViewModels
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
             double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
-            // Select the appropriate pre-allocated buffers
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
             var fillBuffer = isCpu ? _cpuFillBuffer : _ramFillBuffer;
 
-            // Clear buffers without re-allocating the underlying array
             lineBuffer.Clear();
             fillBuffer.Clear();
 
@@ -418,15 +416,13 @@ namespace Servy.Manager.ViewModels
             }
 
             // Close the fill polygon
-            if (fillBuffer.Count > 0)
+            // Use valueHistory.Count to satisfy static analysis; if we have data, we have points
+            if (valueHistory.Count > 0)
             {
                 fillBuffer.Add(new Point(fillBuffer[fillBuffer.Count - 1].X, GraphHeight));
                 fillBuffer.Add(new Point(fillBuffer[0].X, GraphHeight));
             }
 
-            // CLONE the buffer for the UI. 
-            // Unlike creating from scratch, Clone() is highly optimized for Freezables.
-            // This allows the UI to have a Frozen snapshot while the VM keeps its mutable buffer.
             if (isCpu)
             {
                 CpuPointCollection = lineBuffer.Clone();
@@ -437,23 +433,6 @@ namespace Servy.Manager.ViewModels
                 RamPointCollection = lineBuffer.Clone();
                 RamFillPoints = fillBuffer.Clone();
             }
-        }
-
-        /// <summary>
-        /// Creates a closed polygon point collection based on a line path to create a filled area effect.
-        /// </summary>
-        /// <param name="linePoints">The point collection representing the top stroke of the graph.</param>
-        /// <returns>A <see cref="PointCollection"/> that includes the baseline anchors for a filled Polygon.</returns>
-        private PointCollection CreateFillCollection(PointCollection linePoints)
-        {
-            var fillPc = new PointCollection(linePoints);
-            if (fillPc.Count > 0)
-            {
-                // Add anchor points at the bottom-right and bottom-left to close the shape
-                fillPc.Add(new Point(fillPc[fillPc.Count - 1].X, GraphHeight));
-                fillPc.Add(new Point(fillPc[0].X, GraphHeight));
-            }
-            return fillPc;
         }
 
         /// <summary>

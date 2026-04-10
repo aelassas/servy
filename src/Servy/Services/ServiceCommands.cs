@@ -8,6 +8,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
+using Servy.Models;
 using Servy.Resources;
 using Servy.UI.Services;
 using Servy.Validators;
@@ -76,64 +77,7 @@ namespace Servy.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task InstallService(
-            string serviceName,
-            string serviceDescription,
-            string processPath,
-            string startupDirectory,
-            string processParameters,
-            ServiceStartType startupType,
-            ProcessPriority processPriority,
-            string stdoutPath,
-            string stderrPath,
-            bool enableSizeRotation,
-            string rotationSize,
-            bool enableHealthMonitoring,
-            string heartbeatInterval,
-            string maxFailedChecks,
-            RecoveryAction recoveryAction,
-            string maxRestartAttempts,
-            string environmentVariables,
-            string serviceDependencies,
-            bool runAsLocalSystem,
-            string userAccount,
-            string password,
-            string confirmPassword,
-            string preLaunchExePath,
-            string preLaunchWorkingDirectory,
-            string preLaunchArgs,
-            string preLaunchEnvironmentVariables,
-            string preLaunchStdoutPath,
-            string preLaunchStderrPath,
-            string preLaunchTimeout,
-            string preLaunchRetryAttempts,
-            bool preLaunchIgnoreFailure,
-            string failureProgramPath,
-            string failureProgramWorkingDirectory,
-            string failureProgramArgs,
-            string postLaunchExePath,
-            string postLaunchWorkingDirectory,
-            string postLaunchArgs,
-            bool enableDebugLogs,
-            string displayName,
-            string maxRotations,
-            bool enableDateRotation,
-            DateRotationType dateRotationType,
-            string startTimeout,
-            string stopTimeout,
-
-            string preStopProgramPath,
-            string preStopProgramWorkingDirectory,
-            string preStopProgramArgs,
-            string preStopTimeout,
-            bool preStopLogAsError,
-
-            string postStopProgramPath,
-            string postStopProgramWorkingDirectory,
-            string postStopProgramArgs,
-
-            bool useLocalTimeForRotation
-            )
+        public async Task InstallService(ServiceConfiguration config)
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
 
@@ -146,67 +90,67 @@ namespace Servy.Services
             // Build DTO
             var dto = new ServiceDto
             {
-                Name = serviceName,
-                DisplayName = displayName,
-                Description = serviceDescription,
-                ExecutablePath = processPath,
-                StartupDirectory = startupDirectory,
-                Parameters = processParameters,
-                StartupType = (int)startupType,
-                Priority = (int)processPriority,
-                StdoutPath = stdoutPath,
-                StderrPath = stderrPath,
-                EnableRotation = enableSizeRotation,
-                RotationSize = int.TryParse(rotationSize, out var rs) ? rs : -1,
-                EnableDateRotation = enableDateRotation,
-                DateRotationType = (int)dateRotationType,
-                MaxRotations = int.TryParse(maxRotations, out var mrn) ? mrn : -1,
-                UseLocalTimeForRotation = useLocalTimeForRotation,
-                EnableHealthMonitoring = enableHealthMonitoring,
-                HeartbeatInterval = int.TryParse(heartbeatInterval, out var hi) ? hi : -1,
-                MaxFailedChecks = int.TryParse(maxFailedChecks, out var mf) ? mf : -1,
-                RecoveryAction = (int)recoveryAction,
-                MaxRestartAttempts = int.TryParse(maxRestartAttempts, out var mr) ? mr : -1,
-                FailureProgramPath = failureProgramPath,
-                FailureProgramStartupDirectory = failureProgramWorkingDirectory,
-                FailureProgramParameters = failureProgramArgs,
-                EnvironmentVariables = environmentVariables,
-                ServiceDependencies = serviceDependencies,
-                RunAsLocalSystem = runAsLocalSystem,
-                UserAccount = runAsLocalSystem ? null : userAccount,
-                Password = runAsLocalSystem ? null : password,
-                PreLaunchExecutablePath = preLaunchExePath,
-                PreLaunchStartupDirectory = preLaunchWorkingDirectory,
-                PreLaunchParameters = preLaunchArgs,
-                PreLaunchEnvironmentVariables = preLaunchEnvironmentVariables,
-                PreLaunchStdoutPath = preLaunchStdoutPath,
-                PreLaunchStderrPath = preLaunchStderrPath,
-                PreLaunchTimeoutSeconds = int.TryParse(preLaunchTimeout, out var pt) ? pt : -1,
-                PreLaunchRetryAttempts = int.TryParse(preLaunchRetryAttempts, out var pra) ? pra : -1,
-                PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
+                Name = config.Name,
+                DisplayName = config.DisplayName,
+                Description = config.Description,
+                ExecutablePath = config.ExecutablePath,
+                StartupDirectory = config.StartupDirectory,
+                Parameters = config.Parameters,
+                StartupType = (int)config.StartupType,
+                Priority = (int)config.Priority,
+                StdoutPath = config.StdoutPath,
+                StderrPath = config.StderrPath,
+                EnableRotation = config.EnableSizeRotation,
+                RotationSize = int.TryParse(config.RotationSize, out var rs) ? rs : -1,
+                EnableDateRotation = config.EnableDateRotation,
+                DateRotationType = (int)config.DateRotationType,
+                MaxRotations = int.TryParse(config.MaxRotations, out var mrn) ? mrn : -1,
+                UseLocalTimeForRotation = config.UseLocalTimeForRotation,
+                EnableHealthMonitoring = config.EnableHealthMonitoring,
+                HeartbeatInterval = int.TryParse(config.HeartbeatInterval, out var hi) ? hi : -1,
+                MaxFailedChecks = int.TryParse(config.MaxFailedChecks, out var mf) ? mf : -1,
+                RecoveryAction = (int)config.RecoveryAction,
+                MaxRestartAttempts = int.TryParse(config.MaxRestartAttempts, out var mr) ? mr : -1,
+                FailureProgramPath = config.FailureProgramPath,
+                FailureProgramStartupDirectory = config.FailureProgramStartupDirectory,
+                FailureProgramParameters = config.FailureProgramParameters,
+                EnvironmentVariables = config.EnvironmentVariables,
+                ServiceDependencies = config.ServiceDependencies,
+                RunAsLocalSystem = config.RunAsLocalSystem,
+                UserAccount = config.RunAsLocalSystem ? null : config.UserAccount,
+                Password = config.RunAsLocalSystem ? null : config.Password,
+                PreLaunchExecutablePath = config.PreLaunchExecutablePath,
+                PreLaunchStartupDirectory = config.PreLaunchStartupDirectory,
+                PreLaunchParameters = config.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = config.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = config.PreLaunchStdoutPath,
+                PreLaunchStderrPath = config.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = int.TryParse(config.PreLaunchTimeoutSeconds, out var pt) ? pt : -1,
+                PreLaunchRetryAttempts = int.TryParse(config.PreLaunchRetryAttempts, out var pra) ? pra : -1,
+                PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
 
-                PostLaunchExecutablePath = postLaunchExePath,
-                PostLaunchStartupDirectory = postLaunchWorkingDirectory,
-                PostLaunchParameters = postLaunchArgs,
+                PostLaunchExecutablePath = config.PostLaunchExecutablePath,
+                PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
+                PostLaunchParameters = config.PostLaunchParameters,
 
-                StartTimeout = int.TryParse(startTimeout, out var st) ? st : -1,
-                StopTimeout = int.TryParse(stopTimeout, out var sot) ? sot : -1,
+                StartTimeout = int.TryParse(config.StartTimeout, out var st) ? st : -1,
+                StopTimeout = int.TryParse(config.StopTimeout, out var sot) ? sot : -1,
 
                 // Pre-Stop
-                PreStopExecutablePath = preStopProgramPath,
-                PreStopStartupDirectory = preStopProgramWorkingDirectory,
-                PreStopParameters = preStopProgramArgs,
-                PreStopTimeoutSeconds = int.TryParse(preStopTimeout, out var pst) ? pst : -1,
-                PreStopLogAsError = preStopLogAsError,
+                PreStopExecutablePath = config.PreStopExecutablePath,
+                PreStopStartupDirectory = config.PreStopStartupDirectory,
+                PreStopParameters = config.PreStopParameters,
+                PreStopTimeoutSeconds = int.TryParse(config.PreStopTimeoutSeconds, out var pst) ? pst : -1,
+                PreStopLogAsError = config.PreStopLogAsError,
 
                 // Post-Stop
-                PostStopExecutablePath = postStopProgramPath,
-                PostStopStartupDirectory = postStopProgramWorkingDirectory,
-                PostStopParameters = postStopProgramArgs,
+                PostStopExecutablePath = config.PostStopExecutablePath,
+                PostStopStartupDirectory = config.PostStopStartupDirectory,
+                PostStopParameters = config.PostStopParameters,
             };
 
             // Validate
-            if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: confirmPassword))
+            if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
             {
                 return; // Validation failed, errors shown in MessageBox
             }
@@ -230,72 +174,69 @@ namespace Servy.Services
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
                 var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
 
-                if (runAsLocalSystem)
-                {
-                    userAccount = null;
-                    password = null;
-                }
+                var finalUserAccount = config.RunAsLocalSystem ? null : config.UserAccount;
+                var finalPassword = config.RunAsLocalSystem ? null : config.Password;
 
                 var options = new InstallServiceOptions
                 {
-                    ServiceName = serviceName,
-                    Description = serviceDescription,
+                    ServiceName = config.Name,
+                    Description = config.Description,
                     WrapperExePath = wrapperExePath,
-                    RealExePath = processPath,
-                    WorkingDirectory = startupDirectory,
-                    RealArgs = processParameters,
-                    StartType = startupType,
-                    ProcessPriority = processPriority,
-                    StdoutPath = stdoutPath,
-                    StderrPath = stderrPath,
-                    EnableSizeRotation = enableSizeRotation,
+                    RealExePath = config.ExecutablePath,
+                    WorkingDirectory = config.StartupDirectory,
+                    RealArgs = config.Parameters,
+                    StartType = config.StartupType,
+                    ProcessPriority = config.Priority,
+                    StdoutPath = config.StdoutPath,
+                    StderrPath = config.StderrPath,
+                    EnableSizeRotation = config.EnableSizeRotation,
                     RotationSizeInBytes = rotationSizeValue,
-                    UseLocalTimeForRotation = useLocalTimeForRotation,
-                    EnableHealthMonitoring = enableHealthMonitoring,
+                    UseLocalTimeForRotation = config.UseLocalTimeForRotation,
+                    EnableHealthMonitoring = config.EnableHealthMonitoring,
                     HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                     MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
-                    RecoveryAction = recoveryAction,
+                    RecoveryAction = config.RecoveryAction,
                     MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                     EnvironmentVariables = normalizedEnvVars,
-                    ServiceDependencies = serviceDependencies,
-                    Username = userAccount,
-                    Password = password,
+                    ServiceDependencies = config.ServiceDependencies,
+                    Username = finalUserAccount,
+                    Password = finalPassword,
 
-                    PreLaunchExePath = preLaunchExePath,
-                    PreLaunchWorkingDirectory = preLaunchWorkingDirectory,
-                    PreLaunchArgs = preLaunchArgs,
+                    PreLaunchExePath = config.PreLaunchExecutablePath,
+                    PreLaunchWorkingDirectory = config.PreLaunchStartupDirectory,
+                    PreLaunchArgs = config.PreLaunchParameters,
                     PreLaunchEnvironmentVariables = normalizedPreLaunchEnvVars,
-                    PreLaunchStdoutPath = preLaunchStdoutPath,
-                    PreLaunchStderrPath = preLaunchStderrPath,
+                    PreLaunchStdoutPath = config.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = config.PreLaunchStderrPath,
                     PreLaunchTimeout = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
                     PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = preLaunchIgnoreFailure,
+                    PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
 
-                    FailureProgramPath = failureProgramPath,
-                    FailureProgramWorkingDirectory = failureProgramWorkingDirectory,
-                    FailureProgramArgs = failureProgramArgs,
+                    FailureProgramPath = config.FailureProgramPath,
+                    FailureProgramWorkingDirectory = config.FailureProgramStartupDirectory,
+                    FailureProgramArgs = config.FailureProgramParameters,
 
-                    PostLaunchExePath = postLaunchExePath,
-                    PostLaunchWorkingDirectory = postLaunchWorkingDirectory,
-                    PostLaunchArgs = postLaunchArgs,
+                    PostLaunchExePath = config.PostLaunchExecutablePath,
+                    PostLaunchWorkingDirectory = config.PostLaunchStartupDirectory,
+                    PostLaunchArgs = config.PostLaunchParameters,
 
-                    EnableDebugLogs = enableDebugLogs,
-                    DisplayName = displayName,
+                    EnableDebugLogs = config.EnableDebugLogs,
+                    DisplayName = config.DisplayName,
                     MaxRotations = dto.MaxRotations,
-                    EnableDateRotation = enableDateRotation,
-                    DateRotationType = dateRotationType,
+                    EnableDateRotation = config.EnableDateRotation,
+                    DateRotationType = config.DateRotationType,
                     StartTimeout = dto.StartTimeout,
                     StopTimeout = dto.StopTimeout,
 
-                    PreStopExePath = preStopProgramPath,
-                    PreStopWorkingDirectory = preStopProgramWorkingDirectory,
-                    PreStopArgs = preStopProgramArgs,
+                    PreStopExePath = config.PreStopExecutablePath,
+                    PreStopWorkingDirectory = config.PreStopStartupDirectory,
+                    PreStopArgs = config.PreStopParameters,
                     PreStopTimeout = dto.PreStopTimeoutSeconds,
-                    PreStopLogAsError = preStopLogAsError,
+                    PreStopLogAsError = config.PreStopLogAsError,
 
-                    PostStopExePath = postStopProgramPath,
-                    PostStopWorkingDirectory = postStopProgramWorkingDirectory,
-                    PostStopArgs = postStopProgramArgs
+                    PostStopExePath = config.PostStopExecutablePath,
+                    PostStopWorkingDirectory = config.PostStopStartupDirectory,
+                    PostStopArgs = config.PostStopParameters
                 };
 
                 var res = await _serviceManager.InstallServiceAsync(options);
@@ -673,6 +614,7 @@ namespace Servy.Services
             {
                 process.Start();
             }
+
         }
 
         #endregion

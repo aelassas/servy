@@ -2,6 +2,7 @@ using Moq;
 using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Models;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
@@ -127,66 +128,75 @@ namespace Servy.UnitTests.ViewModels
 
             // Assert
             _serviceCommandsMock.Verify(s => s.InstallService(
-                "TestService",
-                "Desc",
-                "C:\\test.exe",
-                "C:\\",
-                "--flag",
-                ServiceStartType.Manual,
-                ProcessPriority.High,
-                "out.log",
-                "err.log",
-                true,
-                "12345",
-                true,
-                "60",
-                "5",
-                RecoveryAction.RestartService,
-                "3",
-                "var1=val1;var2=val2",
-                "MongoDB",
-                false,
-                 @".\username",
-                 "password",
-                 "password",
+                It.Is<ServiceConfiguration>(c =>
+                    // 1. Core Metadata
+                    c.Name == _viewModel.ServiceName &&
+                    c.DisplayName == _viewModel.ServiceDisplayName &&
+                    c.Description == _viewModel.ServiceDescription &&
+                    c.ExecutablePath == _viewModel.ProcessPath &&
+                    c.StartupDirectory == _viewModel.StartupDirectory &&
+                    c.Parameters == _viewModel.ProcessParameters &&
+                    c.StartupType == _viewModel.SelectedStartupType &&
+                    c.Priority == _viewModel.SelectedProcessPriority &&
 
-                 @"C:\pre-launch.exe",
-                 @"C:\",
-                 "--param1 val1",
-                 "var1=val1; var2=val2;",
-                 @"C:\pre-launch-stdout.log",
-                 @"C:\pre-launch-stderr.log",
-                 "40",
-                 "3",
-                 true,
+                    // 2. Logging & Rotation
+                    c.StdoutPath == _viewModel.StdoutPath &&
+                    c.StderrPath == _viewModel.StderrPath &&
+                    c.EnableSizeRotation == _viewModel.EnableSizeRotation &&
+                    c.RotationSize == _viewModel.RotationSize &&
+                    c.EnableDateRotation == _viewModel.EnableDateRotation &&
+                    c.DateRotationType == _viewModel.SelectedDateRotationType &&
+                    c.MaxRotations == _viewModel.MaxRotations &&
+                    c.UseLocalTimeForRotation == _viewModel.UseLocalTimeForRotation &&
 
-                 @"C:\failureProgram.exe",
-                 @"C:\failureProgramDir",
-                 "--failureProgramParam1 val1",
+                    // 3. Health & Recovery
+                    c.EnableHealthMonitoring == _viewModel.EnableHealthMonitoring &&
+                    c.HeartbeatInterval == _viewModel.HeartbeatInterval &&
+                    c.MaxFailedChecks == _viewModel.MaxFailedChecks &&
+                    c.RecoveryAction == _viewModel.SelectedRecoveryAction &&
+                    c.MaxRestartAttempts == _viewModel.MaxRestartAttempts &&
+                    c.FailureProgramPath == _viewModel.FailureProgramPath &&
+                    c.FailureProgramStartupDirectory == _viewModel.FailureProgramStartupDirectory &&
+                    c.FailureProgramParameters == _viewModel.FailureProgramParameters &&
 
-                 @"C:\post-launch.exe",
-                 @"C:\",
-                 "--param1 val1",
-                 false,
-                 "TestServiceDisplayName",
-                 "5",
-                 true,
-                 DateRotationType.Weekly,
-                 "11",
-                 "6",
+                    // 4. Identity & Security
+                    c.EnvironmentVariables == _viewModel.EnvironmentVariables &&
+                    c.ServiceDependencies == _viewModel.ServiceDependencies &&
+                    c.RunAsLocalSystem == _viewModel.RunAsLocalSystem &&
+                    c.UserAccount == _viewModel.UserAccount &&
+                    c.Password == _viewModel.Password &&
+                    c.ConfirmPassword == _viewModel.ConfirmPassword &&
 
-                  @"C:\pre-stop\pre-stop.exe",
-                  @"C:\pre-stop",
-                  "pre-stop-args",
-                  "15",
-                  true,
+                    // 5. Pre-Launch Hooks
+                    c.PreLaunchExecutablePath == _viewModel.PreLaunchExecutablePath &&
+                    c.PreLaunchStartupDirectory == _viewModel.PreLaunchStartupDirectory &&
+                    c.PreLaunchParameters == _viewModel.PreLaunchParameters &&
+                    c.PreLaunchEnvironmentVariables == _viewModel.PreLaunchEnvironmentVariables &&
+                    c.PreLaunchStdoutPath == _viewModel.PreLaunchStdoutPath &&
+                    c.PreLaunchStderrPath == _viewModel.PreLaunchStderrPath &&
+                    c.PreLaunchTimeoutSeconds == _viewModel.PreLaunchTimeoutSeconds &&
+                    c.PreLaunchRetryAttempts == _viewModel.PreLaunchRetryAttempts &&
+                    c.PreLaunchIgnoreFailure == _viewModel.PreLaunchIgnoreFailure &&
 
-                  @"C:\post-stop\post-stop.exe",
-                  @"C:\post-stop",
-                  "post-stop-args",
+                    // 6. Post-Launch & Timing
+                    c.PostLaunchExecutablePath == _viewModel.PostLaunchExecutablePath &&
+                    c.PostLaunchStartupDirectory == _viewModel.PostLaunchStartupDirectory &&
+                    c.PostLaunchParameters == _viewModel.PostLaunchParameters &&
+                    c.StartTimeout == _viewModel.StartTimeout &&
+                    c.StopTimeout == _viewModel.StopTimeout &&
 
-                  true
-            ), Times.Once);
+                    // 7. Pre-Stop Hooks
+                    c.PreStopExecutablePath == _viewModel.PreStopExecutablePath &&
+                    c.PreStopStartupDirectory == _viewModel.PreStopStartupDirectory &&
+                    c.PreStopParameters == _viewModel.PreStopParameters &&
+                    c.PreStopTimeoutSeconds == _viewModel.PreStopTimeoutSeconds &&
+                    c.PreStopLogAsError == _viewModel.PreStopLogAsError &&
+
+                    // 8. Post-Stop Hooks
+                    c.PostStopExecutablePath == _viewModel.PostStopExecutablePath &&
+                    c.PostStopStartupDirectory == _viewModel.PostStopStartupDirectory &&
+                    c.PostStopParameters == _viewModel.PostStopParameters
+                )), Times.Once);
         }
 
         [Fact]
