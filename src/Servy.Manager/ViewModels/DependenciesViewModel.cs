@@ -22,8 +22,7 @@ using System.Windows.Threading;
 namespace Servy.Manager.ViewModels
 {
     /// <summary>
-    /// ViewModel for the Dependency view, responsible for real-time log tailing, 
-    /// service monitoring, and log filtering.
+    /// ViewModel for the Dependency view for viewing service dependencies.
     /// </summary>
     public class DependenciesViewModel : ViewModelBase
     {
@@ -184,8 +183,7 @@ namespace Servy.Manager.ViewModels
         #region Constructor
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DependencyViewModel"/> class.
-        /// Sets up log filtering and refresh timers.
+        /// Initializes a new instance of the <see cref="DependenciesViewModel"/> class.
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceManager">Service manager.</param>
