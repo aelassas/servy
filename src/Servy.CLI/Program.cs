@@ -55,6 +55,14 @@ namespace Servy.CLI
         {
             Logger.Initialize("Servy.CLI.log");
 
+            if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
+                Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+ to mitigate CVE-2025-6965.");
+                Console.ResetColor();
+            }
+
             try
             {
                 var verbs = GetVerbs();

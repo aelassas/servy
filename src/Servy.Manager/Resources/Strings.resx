@@ -13,6 +13,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="SqliteVersionWarningTitle" xml:space="preserve">
+    <value>Security Alert</value>
+  </data>
+  <data name="SqliteVersionWarningMessage" xml:space="preserve">
+    <value>Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965.</value>
+  </data>
+
   <!--Splash screen-->
   <data name="Splash_Text" xml:space="preserve">
     <value>Loading Servy Manager...</value>

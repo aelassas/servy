@@ -1495,6 +1495,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Critical Security Risk: Your system is using an outdated SQLite engine ({0}). This version of the application requires SQLite {1} or higher to mitigate CVE-2025-6965..
+        /// </summary>
+        public static string SqliteVersionWarningMessage {
+            get {
+                return ResourceManager.GetString("SqliteVersionWarningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Security Alert.
+        /// </summary>
+        public static string SqliteVersionWarningTitle {
+            get {
+                return ResourceManager.GetString("SqliteVersionWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Automatic (default).
         /// </summary>
         public static string StartupType_Automatic {

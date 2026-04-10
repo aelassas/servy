@@ -20,6 +20,12 @@ namespace Servy.Core.Config
         public static readonly string Version = "7.9";
 
         /// <summary>
+        /// The minimum required SQLite version to mitigate CVE-2025-6965.
+        /// Version 3.50.2 introduced critical fixes for memory corruption.
+        /// </summary>
+        public static readonly Version MinRequiredSqliteVersion = new Version(3, 50, 2);
+
+        /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>
