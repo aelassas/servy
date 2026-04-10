@@ -79,7 +79,11 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Starts the process.
         /// </summary>
-        void Start();
+        /// <returns>
+        /// <c>true</c> if the process was successfully started; 
+        /// <c>false</c> if no new process resource is started (for example, if a process is reused).
+        /// </returns>
+        bool Start();
 
         /// <summary>
         /// Waits until the child process remains alive for the specified timeout,
