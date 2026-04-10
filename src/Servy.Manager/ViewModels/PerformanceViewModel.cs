@@ -53,6 +53,16 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
+        #region Fields - Optimized Double Buffering
+
+        // Pre-allocated collections to avoid GC pressure
+        private readonly PointCollection _cpuBuffer = new PointCollection(PerformanceHistoryCapacity);
+        private readonly PointCollection _cpuFillBuffer = new PointCollection(PerformanceHistoryCapacity + 2);
+        private readonly PointCollection _ramBuffer = new PointCollection(PerformanceHistoryCapacity);
+        private readonly PointCollection _ramFillBuffer = new PointCollection(PerformanceHistoryCapacity + 2);
+
+        #endregion
+
         #region Properties - Service Data
 
         /// <summary>
@@ -373,8 +383,8 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Processes new performance data and updates the point collections for the graph UI.
-        /// Smoothing has been removed to provide raw, real-time data visualization.
+        /// Processes new performance data and updates the point collections using an optimized 
+        /// double-buffering approach to minimize GC allocations.
         /// </summary>
         /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
         /// <param name="newValue">The latest raw value captured from the process.</param>
@@ -382,48 +392,53 @@ namespace Servy.Manager.ViewModels
         private void AddPoint(List<double> valueHistory, double newValue, string propertyName)
         {
             var isCpu = propertyName == nameof(CpuPointCollection);
-
-            // Add the raw value directly to history without averaging
             valueHistory.Add(newValue);
 
-            // Always keep exactly PerformanceHistoryCapacity points to maintain the "scrolling" effect
-            if (valueHistory.Count > PerformanceHistoryCapacity) valueHistory.RemoveAt(0);
+            if (valueHistory.Count > PerformanceHistoryCapacity)
+                valueHistory.RemoveAt(0);
 
-            // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
-            double displayMax = isCpu
-                ? 100.0
-                : Math.Max(currentMax * 1.2, _ramDisplayMax);
+            double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
-            var pc = new PointCollection();
+            // Select the appropriate pre-allocated buffers
+            var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
+            var fillBuffer = isCpu ? _cpuFillBuffer : _ramFillBuffer;
+
+            // Clear buffers without re-allocating the underlying array
+            lineBuffer.Clear();
+            fillBuffer.Clear();
+
             double stepX = GraphWidth / 100.0;
             for (int i = 0; i < valueHistory.Count; i++)
             {
-                // Calculate X: Maps the index (0-100) to the pixel width (0-400)
-                // With PerformanceHistoryCapacity points, we have exactly 100 intervals, matching the 400px width.
                 double x = i * stepX;
-
-                // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
                 double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
                 double y = GraphHeight - (ratio * GraphHeight);
 
-                pc.Add(new Point(x, y));
+                var point = new Point(x, y);
+                lineBuffer.Add(point);
+                fillBuffer.Add(point);
             }
 
-            // Update the specific UI-bound collections and their corresponding fill areas
-            var fill = CreateFillCollection(pc);
-            pc.Freeze();
-            fill.Freeze();
+            // Close the fill polygon
+            if (fillBuffer.Count > 0)
+            {
+                fillBuffer.Add(new Point(fillBuffer[fillBuffer.Count - 1].X, GraphHeight));
+                fillBuffer.Add(new Point(fillBuffer[0].X, GraphHeight));
+            }
 
+            // CLONE the buffer for the UI. 
+            // Unlike creating from scratch, Clone() is highly optimized for Freezables.
+            // This allows the UI to have a Frozen snapshot while the VM keeps its mutable buffer.
             if (isCpu)
             {
-                CpuPointCollection = pc;
-                CpuFillPoints = fill;
+                CpuPointCollection = lineBuffer.Clone();
+                CpuFillPoints = fillBuffer.Clone();
             }
             else
             {
-                RamPointCollection = pc;
-                RamFillPoints = fill;
+                RamPointCollection = lineBuffer.Clone();
+                RamFillPoints = fillBuffer.Clone();
             }
         }
 
