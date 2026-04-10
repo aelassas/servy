@@ -50,11 +50,11 @@ namespace Servy.Service.CommandLine
                 Priority = MapPriority((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)),
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
-                RotationSizeInBytes = (serviceDto.RotationSize ?? 0) * 1024L * 1024L, // Convert from MB to Bytes
+                RotationSizeInBytes = (serviceDto.RotationSize ?? AppConfig.DefaultRotationSize) * 1024L * 1024L, // Convert from MB to Bytes
                 UseLocalTimeForRotation = serviceDto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
                 EnableHealthMonitoring = serviceDto.EnableHealthMonitoring ?? false,
-                HeartbeatInterval = serviceDto.HeartbeatInterval ?? 0,
-                MaxFailedChecks = serviceDto.MaxFailedChecks ?? 0,
+                HeartbeatInterval = serviceDto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
+                MaxFailedChecks = serviceDto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
                 RecoveryAction = (serviceDto.EnableHealthMonitoring ?? false) ? (RecoveryAction)(serviceDto.RecoveryAction ?? (int)RecoveryAction.None) : RecoveryAction.None,
                 ServiceName = serviceName,
                 MaxRestartAttempts = serviceDto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
