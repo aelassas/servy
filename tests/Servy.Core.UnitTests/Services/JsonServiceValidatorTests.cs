@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
-using Servy.Core.Helpers;
+using Servy.Core.Services;
 using Xunit;
 
-namespace Servy.Core.UnitTests.Helpers
+namespace Servy.Core.UnitTests.Services
 {
     public class JsonServiceValidatorTests
     {

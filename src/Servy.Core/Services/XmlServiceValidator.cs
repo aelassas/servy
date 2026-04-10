@@ -4,9 +4,8 @@ using System;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-using static Dapper.SqlMapper;
 
-namespace Servy.Core.Helpers
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Validates XML input to ensure it can be deserialized into a <see cref="ServiceDto"/>

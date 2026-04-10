@@ -130,11 +130,12 @@
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidatorTests.cs" />
     <Compile Include="Helpers\ProcessHelperTests.cs" />
     <Compile Include="Helpers\ProcessKillerTests.cs" />
+    <Compile Include="Helpers\ServiceDtoHelperTests.cs" />
     <Compile Include="Security\SecureDataStressTests.cs" />
     <Compile Include="Security\SecurityHelperTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
-    <Compile Include="Helpers\JsonServiceValidatorTests.cs" />
+    <Compile Include="Services\JsonServiceValidatorTests.cs" />
     <Compile Include="IO\RotatingStreamWriterTests.cs" />
     <Compile Include="Security\SecureDataTests.cs" />
     <Compile Include="ServiceDependencies\ServiceDependenciesParserTests.cs" />
@@ -146,8 +147,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Mappers\ServiceMapperTests.cs" />
     <Compile Include="Helpers\StringHelperTests.cs" />
-    <Compile Include="Helpers\XmlServiceSerializerTests.cs" />
-    <Compile Include="Helpers\XmlServiceValidatorTests.cs" />
+    <Compile Include="Services\XmlServiceSerializerTests.cs" />
+    <Compile Include="Services\XmlServiceValidatorTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

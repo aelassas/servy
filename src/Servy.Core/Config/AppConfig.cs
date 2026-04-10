@@ -210,6 +210,11 @@ namespace Servy.Core.Config
         public const int DefaultMaxRestartAttempts = 3;
 
         /// <summary>
+        /// Default recovery action.
+        /// </summary>
+        public const RecoveryAction DefaultRecoveryAction = RecoveryAction.RestartService;
+
+        /// <summary>
         /// Default timeout in seconds before considering a pre-launch task as failed. Default is 30 seconds.
         /// </summary>
         public const int DefaultPreLaunchTimeoutSeconds = 30;

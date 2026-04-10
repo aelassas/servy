@@ -1,11 +1,7 @@
 using Dapper;
 using Moq;
-using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Domain;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;

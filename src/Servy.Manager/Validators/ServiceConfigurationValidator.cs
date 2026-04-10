@@ -8,7 +8,6 @@ using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.UI.Services;
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
@@ -125,7 +124,7 @@ namespace Servy.Manager.Helpers
                 return false;
             }
 
-            if (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
+            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrEmpty(dto.UserAccount))
             {
                 try
                 {

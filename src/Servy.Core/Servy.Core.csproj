@@ -115,11 +115,12 @@
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Helpers\ServiceDtoHelper.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Security\ISecureData.cs" />
-    <Compile Include="Helpers\IXmlServiceSerializer.cs" />
-    <Compile Include="Helpers\JsonServiceValidator.cs" />
+    <Compile Include="Services\IXmlServiceSerializer.cs" />
+    <Compile Include="Services\JsonServiceValidator.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Helpers\ProcessKiller.cs" />
     <Compile Include="Helpers\ResourceHelper.cs" />
@@ -127,8 +128,8 @@
     <Compile Include="Security\SecureData.cs" />
     <Compile Include="Helpers\ServiceHelper.cs" />
     <Compile Include="Helpers\StringHelper.cs" />
-    <Compile Include="Helpers\XmlServiceSerializer.cs" />
-    <Compile Include="Helpers\XmlServiceValidator.cs" />
+    <Compile Include="Services\XmlServiceSerializer.cs" />
+    <Compile Include="Services\XmlServiceValidator.cs" />
     <Compile Include="Enums\ProcessPriority.cs" />
     <Compile Include="Logging\EventLogLogger.cs" />
     <Compile Include="Logging\EventLogReader.cs" />
