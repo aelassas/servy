@@ -17,7 +17,7 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
-            var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings) as ServiceDto;
+            var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
 
             // Since we made ApplyDefaults null-safe, we call it directly.
             // This line is now 100% covered.
