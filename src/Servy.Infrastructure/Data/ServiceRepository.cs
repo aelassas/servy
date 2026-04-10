@@ -7,6 +7,7 @@ using Servy.Core.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
@@ -343,6 +344,51 @@ namespace Servy.Infrastructure.Data
             service.Id = id;
 
             return id;
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<int> UpsertBatchAsync(IEnumerable<ServiceDto> services, CancellationToken cancellationToken = default)
+        {
+            if (services == null || !services.Any()) return 0;
+
+            // Securely clone and encrypt all items in memory before passing to Dapper
+            var encryptedServices = services.Select(CreateEncryptedClone).ToList();
+
+            // Use the same robust Upsert SQL as your single UpsertAsync method
+            var sql = @"
+                INSERT INTO Services (
+                    Name, Description, ExecutablePath, StartupDirectory, Parameters, 
+                    StartupType, Priority, StdoutPath, StderrPath, EnableRotation, RotationSize, 
+                    EnableHealthMonitoring, HeartbeatInterval, MaxFailedChecks, RecoveryAction, MaxRestartAttempts, 
+                    EnvironmentVariables, ServiceDependencies, RunAsLocalSystem, UserAccount, Password, 
+                    PreLaunchExecutablePath, PreLaunchStartupDirectory, PreLaunchParameters, PreLaunchEnvironmentVariables, 
+                    PreLaunchStdoutPath, PreLaunchStderrPath, PreLaunchTimeoutSeconds, PreLaunchRetryAttempts, PreLaunchIgnoreFailure,
+                    FailureProgramPath, FailureProgramStartupDirectory, FailureProgramParameters,
+                    PostLaunchExecutablePath, PostLaunchStartupDirectory, PostLaunchParameters, Pid, EnableDebugLogs, DisplayName, MaxRotations,
+                    EnableDateRotation, DateRotationType, StartTimeout, StopTimeout,
+                    PreStopExecutablePath, PreStopStartupDirectory, PreStopParameters, PreStopTimeoutSeconds, PreStopLogAsError,
+                    PostStopExecutablePath, PostStopStartupDirectory, PostStopParameters, UseLocalTimeForRotation
+                ) VALUES (
+                    @Name, @Description, @ExecutablePath, @StartupDirectory, @Parameters, 
+                    @StartupType, @Priority, @StdoutPath, @StderrPath, @EnableRotation, @RotationSize, 
+                    @EnableHealthMonitoring, @HeartbeatInterval, @MaxFailedChecks, @RecoveryAction, @MaxRestartAttempts, 
+                    @EnvironmentVariables, @ServiceDependencies, @RunAsLocalSystem, @UserAccount, @Password, 
+                    @PreLaunchExecutablePath, @PreLaunchStartupDirectory, @PreLaunchParameters, @PreLaunchEnvironmentVariables, 
+                    @PreLaunchStdoutPath, @PreLaunchStderrPath, @PreLaunchTimeoutSeconds, @PreLaunchRetryAttempts, @PreLaunchIgnoreFailure,
+                    @FailureProgramPath, @FailureProgramStartupDirectory, @FailureProgramParameters,
+                    @PostLaunchExecutablePath, @PostLaunchStartupDirectory, @PostLaunchParameters, @Pid, @EnableDebugLogs, @DisplayName, @MaxRotations,
+                    @EnableDateRotation, @DateRotationType, @StartTimeout, @StopTimeout,
+                    @PreStopExecutablePath, @PreStopStartupDirectory, @PreStopParameters, @PreStopTimeoutSeconds, @PreStopLogAsError,
+                    @PostStopExecutablePath, @PostStopStartupDirectory, @PostStopParameters, @UseLocalTimeForRotation
+                )
+                ON CONFLICT(LOWER(Name)) DO UPDATE SET
+                    Description = excluded.Description,
+                    StartupType = excluded.StartupType,
+                    Pid = excluded.Pid;";
+
+            // Standard Dapper maps IEnumerable to parameterized commands.
+            // Ensure IDapperExecutor wraps this in BEGIN TRANSACTION / COMMIT internally for SQLite speed.
+            return await _dapper.ExecuteAsync(sql, encryptedServices);
         }
 
         /// <inheritdoc />

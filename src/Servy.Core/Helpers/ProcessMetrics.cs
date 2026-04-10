@@ -1,4 +1,6 @@
-﻿namespace Servy.Core.Helpers
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Servy.Core.Helpers
 {
     /// <summary>
     /// Represents a snapshot of performance metrics captured from a Windows process or process tree.
@@ -7,6 +9,7 @@
     /// This object is typically returned by <see cref="ProcessHelper.GetProcessMetrics"/> or 
     /// <see cref="ProcessHelper.GetProcessTreeMetrics"/> to provide atomic access to CPU and RAM data.
     /// </remarks>
+    [ExcludeFromCodeCoverage]
     public class ProcessMetrics
     {
         /// <summary>

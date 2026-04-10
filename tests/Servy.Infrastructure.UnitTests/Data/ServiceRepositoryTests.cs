@@ -22,19 +22,12 @@ namespace Servy.Infrastructure.UnitTests.Data
         private readonly Mock<IDapperExecutor> _mockDapper;
         private readonly Mock<ISecureData> _mockSecureData;
         private readonly Mock<IXmlServiceSerializer> _mockXmlServiceSerializer;
-        private readonly IServiceRepository _serviceRepository;
-        private readonly ServiceRepository _repository;
-        private readonly Mock<IServiceManager> _serviceManagerMock;
 
         public ServiceRepositoryTests()
         {
             _mockDapper = new Mock<IDapperExecutor>();
             _mockSecureData = new Mock<ISecureData>(MockBehavior.Loose);
             _mockXmlServiceSerializer = new Mock<IXmlServiceSerializer>();
-            _serviceRepository = new ServiceRepositoryStub();
-
-            _repository = new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object); // ignore dependencies for this test
-            _serviceManagerMock = new Mock<IServiceManager>();
         }
 
         private ServiceRepository CreateRepository()
@@ -338,6 +331,70 @@ namespace Servy.Infrastructure.UnitTests.Data
                 It.IsAny<string>(),
                 It.Is<object>(obj => GetPropertyValue(obj, "Password") == encryptedValue)
                 ), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpsertBatchAsync_NullServices_ReturnsZero()
+        {
+            // Arrange
+            var repo = CreateRepository();
+
+            // Act
+            var result = await repo.UpsertBatchAsync(null);
+
+            // Assert
+            Assert.Equal(0, result);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpsertBatchAsync_EmptyServices_ReturnsZero()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var services = new List<ServiceDto>();
+
+            // Act
+            var result = await repo.UpsertBatchAsync(services);
+
+            // Assert
+            Assert.Equal(0, result);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpsertBatchAsync_ValidServices_EncryptsDataAndCallsDapper()
+        {
+            // Arrange
+            var repo = CreateRepository();
+            var services = new List<ServiceDto>
+            {
+                new ServiceDto { Name = "Service1", Password = "plain_password_1" },
+                new ServiceDto { Name = "Service2", Password = "plain_password_2" }
+            };
+
+            const string encryptedPass = "encrypted_password";
+            const int expectedRows = 2;
+
+            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns(encryptedPass);
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<IEnumerable<ServiceDto>>()))
+                       .ReturnsAsync(expectedRows);
+
+            // Act
+            var result = await repo.UpsertBatchAsync(services);
+
+            // Assert
+            Assert.Equal(expectedRows, result);
+
+            // Verify encryption was called for each service with a password
+            _mockSecureData.Verify(s => s.Encrypt("plain_password_1"), Times.Once);
+            _mockSecureData.Verify(s => s.Encrypt("plain_password_2"), Times.Once);
+
+            // Verify Dapper received the SQL and the collection
+            _mockDapper.Verify(d => d.ExecuteAsync(
+                It.Is<string>(s => s.Contains("INSERT INTO Services") && s.Contains("ON CONFLICT")),
+                It.Is<IEnumerable<ServiceDto>>(list => list.All(dto => dto.Password == encryptedPass))
+            ), Times.Once);
         }
 
         [Fact]
