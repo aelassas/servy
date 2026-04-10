@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
@@ -14,11 +13,9 @@ namespace Servy.Manager.UnitTests.Services
 {
     public class ServiceCommandsTests
     {
-        private readonly Mock<IServiceManager> _serviceManagerMock;
         private readonly Mock<IServiceRepository> _serviceRepositoryMock;
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IFileDialogService> _fileDialogServiceMock;
-        private readonly Mock<ILogger> _loggerMock;
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
 
         private bool _refreshCalled;
@@ -50,7 +47,6 @@ namespace Servy.Manager.UnitTests.Services
                 realServiceManager,
                 _serviceRepositoryMock.Object,
                 _messageBoxServiceMock.Object,
-                _loggerMock.Object,
                 _fileDialogServiceMock.Object,
                 name => _removedServiceName = name,
                 () =>
@@ -65,11 +61,9 @@ namespace Servy.Manager.UnitTests.Services
 
         public ServiceCommandsTests()
         {
-            _serviceManagerMock = new Mock<IServiceManager>();
             _serviceRepositoryMock = new Mock<IServiceRepository>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
             _fileDialogServiceMock = new Mock<IFileDialogService>();
-            _loggerMock = new Mock<ILogger>();
             _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
             _refreshTcs = new TaskCompletionSource<bool>();
             _removedServiceName = null!;

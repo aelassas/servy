@@ -36,7 +36,6 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceRepository _serviceRepository;
         private DispatcherTimer _timer;
-        private readonly ILogger _logger;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
         private CancellationTokenSource _cts;
         private bool _hadSelectedService;
@@ -190,14 +189,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        /// <param name="logger">Logger for logging operations.</param>
-        public PerformanceViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands, ILogger logger)
+        public PerformanceViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
-            _logger = logger;
+            
             InitTimer();
         }
 
@@ -472,7 +470,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to search services from performance tab: {ex}");
+                Logger.Error($"Failed to search services from performance tab.", ex);
             }
             finally
             {

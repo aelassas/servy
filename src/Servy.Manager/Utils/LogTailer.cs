@@ -109,7 +109,7 @@ namespace Servy.Manager.Utils
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Unexpected error in log tailer: {ex.Message}", ex);
+                    Logger.Error($"Unexpected error in log tailer.", ex);
                     await Task.Delay(1000, token);
                 }
             }

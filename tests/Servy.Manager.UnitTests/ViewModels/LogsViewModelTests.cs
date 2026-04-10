@@ -1,7 +1,6 @@
 ﻿using Moq;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
@@ -10,18 +9,16 @@ namespace Servy.Manager.UnitTests.ViewModels
 {
     public class LogsViewModelTests
     {
-        private readonly Mock<ILogger> _loggerMock;
         private readonly Mock<IEventLogService> _eventLogServiceMock;
 
         public LogsViewModelTests()
         {
-            _loggerMock = new Mock<ILogger>();
             _eventLogServiceMock = new Mock<IEventLogService>();
         }
 
         private LogsViewModel CreateViewModel()
         {
-            return new LogsViewModel(_loggerMock.Object, _eventLogServiceMock.Object);
+            return new LogsViewModel(_eventLogServiceMock.Object);
         }
 
         [Fact]
@@ -112,47 +109,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.True(scrollRaised);
                 Assert.Equal("Search", vm.SearchButtonText); // Reset after search
                 Assert.False(vm.IsBusy);
-            }, createApp: true);
-        }
-
-        [Fact]
-        public void SearchCommand_ShouldHandleException_AndLogWarning()
-        {
-            Helper.RunOnSTA(async () =>
-            {
-
-                _eventLogServiceMock
-                .Setup(s => s.SearchAsync(It.IsAny<EventLogLevel?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("boom"));
-
-                var vm = CreateViewModel();
-
-                await vm.SearchCommand.ExecuteAsync(null);
-
-                _loggerMock.Verify(l => l.Warn(It.Is<string>(msg => msg.Contains("boom"))), Times.Once);
-            }, createApp: true);
-        }
-
-        [Fact]
-        public void SearchCommand_ShouldHandleCancellation()
-        {
-            Helper.RunOnSTA(async () =>
-            {
-                _eventLogServiceMock
-                .Setup(s => s.SearchAsync(
-                    It.IsAny<EventLogLevel?>(),
-                    It.IsAny<DateTime?>(),
-                    It.IsAny<DateTime?>(),
-                    It.IsAny<string>(),
-                    It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new OperationCanceledException());
-
-                var vm = CreateViewModel();
-
-                await vm.SearchCommand.ExecuteAsync(null);
-
-                // No warning should be logged on cancellation
-                _loggerMock.Verify(l => l.Warn(It.IsAny<string>()), Times.Never);
             }, createApp: true);
         }
 

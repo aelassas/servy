@@ -32,7 +32,6 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
-        private readonly ILogger _logger;
         private readonly IHelpService _helpService;
         private CancellationTokenSource _cancellationTokenSource;
         private DispatcherTimer _refreshTimer;
@@ -314,7 +313,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Initializes a new instance of <see cref="MainViewModel"/>.
         /// </summary>
-        public MainViewModel(ILogger logger,
+        public MainViewModel(
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
@@ -322,7 +321,6 @@ namespace Servy.Manager.ViewModels
             IMessageBoxService messageBoxService
             )
         {
-            _logger = logger;
             _serviceManager = serviceManager;
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
@@ -331,13 +329,13 @@ namespace Servy.Manager.ViewModels
             _selectAll = false;
 
             // Create PerformanceVM only once
-            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands, _logger);
+            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands);
 
             // Create ConsoleVM only once
-            ConsoleVM = new ConsoleViewModel(serviceRepository, serviceCommands, _logger);
+            ConsoleVM = new ConsoleViewModel(serviceRepository, serviceCommands);
 
             // Create DependenciesVM only once
-            DependenciesVM = new DependenciesViewModel(serviceRepository, serviceManager, serviceCommands, _logger);
+            DependenciesVM = new DependenciesViewModel(serviceRepository, serviceManager, serviceCommands);
 
             ServicesView = new ListCollectionView(_services);
 
@@ -367,7 +365,6 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public MainViewModel() :
             this(
-                null,
                 null,
                 null,
                 null,
@@ -481,7 +478,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed background refresh: {ex.Message}");
+                Logger.Error($"Failed background refresh.", ex);
             }
             finally
             {
@@ -528,7 +525,7 @@ namespace Servy.Manager.ViewModels
                 // Step 4: fetch data & build VMs off UI thread
                 sw = Stopwatch.StartNew();
                 var vms = await Task.Run(() =>
-                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands, _logger)).ToList()
+                    results.Select(s => new ServiceRowViewModel(s, ServiceCommands)).ToList()
                 , token);
                 sw.Stop();
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
@@ -574,7 +571,7 @@ namespace Servy.Manager.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        _logger.Warn($"RefreshAllServicesAsync failed: {ex}");
+                        Logger.Error($"RefreshAllServicesAsync failed.", ex);
                     }
                 }, _cancellationTokenSource.Token);
             }
@@ -584,7 +581,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to search services from main tab: {ex}");
+                Logger.Error($"Failed to search services from main tab.", ex);
             }
             finally
             {
@@ -782,7 +779,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"{logErrorMessage}: {ex}");
+                Logger.Error($"{logErrorMessage}.", ex);
             }
             finally
             {
@@ -866,7 +863,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to refresh all services: {ex}");
+                Logger.Error($"Failed to refresh all services.", ex);
             }
         }
 
@@ -978,7 +975,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to refresh {service.Name}: {ex}");
+                Logger.Error($"Failed to refresh {service.Name}.", ex);
             }
 
             return null;

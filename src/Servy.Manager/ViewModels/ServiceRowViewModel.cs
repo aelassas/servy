@@ -15,7 +15,6 @@ namespace Servy.Manager.ViewModels
     public class ServiceRowViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IServiceCommands _serviceCommands;
-        private readonly ILogger _logger;
         private bool _isSelected;
         private bool _isChecked;
         private bool _disposed;
@@ -25,12 +24,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="service">The service model for this row.</param>
         /// <param name="serviceCommands">Service commands for row operations.</param>
-        /// <param name="logger">Logger instance for error reporting.</param>
-        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands, ILogger logger)
+        public ServiceRowViewModel(Service service, IServiceCommands serviceCommands)
         {
             Service = service;
             _serviceCommands = serviceCommands;
-            _logger = logger;
 
             // Subscribe to property changes in the Service model
             Service.PropertyChanged += Service_PropertyChanged;
@@ -279,7 +276,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Service command failed for {Service?.Name}: {ex}");
+                Logger.Error($"Service command failed for {Service?.Name}.", ex);
             }
         }
 

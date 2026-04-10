@@ -28,7 +28,6 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceRepository _serviceRepository;
         private DispatcherTimer _timer;
-        private readonly ILogger _logger;
         private CancellationTokenSource _cancellationTokenSource;
         private CancellationTokenSource _searchCts;
         private bool _hadSelectedService;
@@ -212,15 +211,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        /// <param name="logger">Logger for diagnostic operations.</param>
-        public ConsoleViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands, ILogger logger)
+        public ConsoleViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
-            _logger = logger;
 
             var app = (App)Application.Current;
             _maxLines = app.ConsoleMaxLines;
@@ -382,7 +379,7 @@ namespace Servy.Manager.ViewModels
             catch (Exception ex)
             {
                 // Log the error so we know why the resume failed
-                _logger.Error("Failed to resume/switch logs.", ex);
+                Logger.Error("Failed to resume/switch logs.", ex);
             }
         }
 
@@ -441,7 +438,7 @@ namespace Servy.Manager.ViewModels
                 .ContinueWith(t =>
                 {
                     if (t.IsFaulted)
-                        _logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
+                        Logger.Warn($"Log tailing failed: {t.Exception?.InnerException?.Message}");
                 }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
@@ -545,7 +542,7 @@ namespace Servy.Manager.ViewModels
                 // Log every 10th error to prevent bloating while maintaining observability
                 if (_tickErrorCount % 10 == 1)
                 {
-                    _logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
+                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
                 }
             }
         }
@@ -588,7 +585,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to search services: {ex}");
+                Logger.Error($"Failed to search services.", ex);
             }
             finally
             {

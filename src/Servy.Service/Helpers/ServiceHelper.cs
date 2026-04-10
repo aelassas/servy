@@ -236,7 +236,7 @@ namespace Servy.Service.Helpers
             }
             catch (Exception ex)
             {
-                logger?.Error($"Failed to restart process: {ex.Message}", ex);
+                logger?.Error($"Failed to restart process.", ex);
             }
         }
 
@@ -282,7 +282,7 @@ namespace Servy.Service.Helpers
             }
             catch (Exception ex)
             {
-                logger?.Error($"Failed to launch restarter: {ex}");
+                logger?.Error($"Failed to launch restarter.", ex);
             }
         }
 
@@ -306,7 +306,7 @@ namespace Servy.Service.Helpers
             }
             catch (Exception ex)
             {
-                logger?.Error($"Failed to restart computer: {ex.Message}");
+                logger?.Error($"Failed to restart computer.", ex);
             }
         }
 
@@ -327,7 +327,7 @@ namespace Servy.Service.Helpers
             catch (Exception ex)
             {
                 // Last-resort safety: never let SCM signaling crash the service
-                logger?.Error($"RequestAdditionalTime failed: {ex.Message}");
+                logger?.Error($"RequestAdditionalTime failed.", ex);
             }
         }
 

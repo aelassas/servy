@@ -1,30 +1,16 @@
 ﻿using Moq;
-using Servy.Core.Data;
-using Servy.Core.Logging;
-using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
-using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
     public class ServiceRowViewModelTests
     {
-        private readonly Mock<Service> _serviceMock;
-        private readonly Mock<IServiceManager> _serviceManagerMock;
-        private readonly Mock<IServiceRepository> _serviceRepositoryMock;
-        private readonly Mock<ILogger> _loggerMock;
-        private readonly Mock<IHelpService> _helpServiceMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
 
         public ServiceRowViewModelTests()
         {
-            _serviceMock = new Mock<Service>();
-            _serviceManagerMock = new Mock<IServiceManager>();
-            _serviceRepositoryMock = new Mock<IServiceRepository>();
-            _loggerMock = new Mock<ILogger>();
-            _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
         }
 
@@ -32,8 +18,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             return new ServiceRowViewModel(
                 new Service { Name = "S" },
-                _serviceCommandsMock.Object,
-                _loggerMock.Object
+                _serviceCommandsMock.Object
             );
         }
 
@@ -43,8 +28,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             // Arrange
             var vm = new ServiceRowViewModel(
                 new Service { Name = "" }, // internal service has empty name
-                _serviceCommandsMock.Object,
-                _loggerMock.Object
+                _serviceCommandsMock.Object
             );
 
             // Act
