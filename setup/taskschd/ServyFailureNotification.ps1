@@ -39,6 +39,8 @@ function Show-Notification {
     [string]$scriptDir
   )
 
+  $LogText = $LogText -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
+
   if ($PSVersionTable.PSVersion.Major -lt 5) {
     $verError = "ServyToast: Toasts require PowerShell 5.0+ (Detected: $($PSVersionTable.PSVersion.Major))."
     Write-FallbackError -Message $verError -scriptDir $scriptDir

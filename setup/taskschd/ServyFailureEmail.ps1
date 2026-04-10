@@ -97,6 +97,8 @@ function Send-NotificationEmail {
     [string]$scriptDir
   )
 
+  $Body = $Body -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
+
   # --- CONFIGURATION FROM XML ---
   $smtpServer = $SmtpConfig.SmtpConfig.Server
   $smtpPort = [int]$SmtpConfig.SmtpConfig.Port
