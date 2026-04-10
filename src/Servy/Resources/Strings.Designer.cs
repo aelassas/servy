@@ -1279,15 +1279,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service was created successfully..
-        /// </summary>
-        public static string Msg_ServiceCreated {
-            get {
-                return ResourceManager.GetString("Msg_ServiceCreated", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Choose a different name..
         /// </summary>
         public static string Msg_ServiceDisabled {
@@ -1302,6 +1293,15 @@ namespace Servy.Resources {
         public static string Msg_ServiceDisabledError {
             get {
                 return ResourceManager.GetString("Msg_ServiceDisabledError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service was installed successfully..
+        /// </summary>
+        public static string Msg_ServiceInstalled {
+            get {
+                return ResourceManager.GetString("Msg_ServiceInstalled", resourceCulture);
             }
         }
         
