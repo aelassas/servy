@@ -88,16 +88,16 @@ Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs | ForEach-Object {
 # -----------------------------
 # 4. Update src\Servy.CLI\Servy.psd1
 # -----------------------------
-$appConfigPath = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
-if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
+$psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
+if (-Not (Test-Path $psd1Path)) { Write-Error "File not found: $psd1Path"; exit 1 }
 
-$content = [System.IO.File]::ReadAllText($appConfigPath)
+$content = [System.IO.File]::ReadAllText($psd1Path)
 $content = [regex]::Replace(
     $content,
     "(ModuleVersion\s*=\s*')[^']*(')",
     { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
 )
-[System.IO.File]::WriteAllText($appConfigPath, $content)
-Write-Host "Updated $appConfigPath"
+[System.IO.File]::WriteAllText($psd1Path, $content)
+Write-Host "Updated $psd1Path"
 
 Write-Host "All version updates complete."
