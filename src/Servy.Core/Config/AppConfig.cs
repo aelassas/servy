@@ -130,6 +130,11 @@ namespace Servy.Core.Config
         public static readonly int DefaultDependenciesRefreshIntervalInMs = 800;
 
         /// <summary>
+        /// Extra buffer to ensure SCM doesn't kill the service before cleanup finishes.
+        /// </summary>
+        public static readonly int ScmTimeoutBufferSeconds = 15;
+
+        /// <summary>
         /// Servy's official documentation link.
         /// </summary>
         public static readonly string DocumentationLink = "https://github.com/aelassas/servy/wiki";

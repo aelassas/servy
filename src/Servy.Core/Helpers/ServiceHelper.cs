@@ -62,7 +62,6 @@ namespace Servy.Core.Helpers
         public async Task StartServices(IEnumerable<string> services)
         {
             const int defaultTimeoutInSeconds = 30;
-            const int bufferTimeInSeconds = 15;
 
             // Create a bucket to collect any errors that occur
             var exceptions = new List<Exception>();
@@ -104,7 +103,7 @@ namespace Servy.Core.Helpers
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
 
-                        var startTimeout = (service.StartTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
+                        var startTimeout = (service.StartTimeout ?? defaultTimeoutInSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                         var waitTime = TimeSpan.FromSeconds(Math.Max(startTimeout, defaultTimeoutInSeconds));
 
                         // This blocks until the service is Started or the waitTime expires

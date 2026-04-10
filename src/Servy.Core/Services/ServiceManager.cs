@@ -410,9 +410,8 @@ namespace Servy.Core.Services
                 dto.Pid = serviceDto?.Pid;
 
                 // Request PreShutdown timeout
-                var bufferTimeInSeconds = 15;
-                var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
-                var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                 totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
                 if (!string.IsNullOrEmpty(options.PreStopExePath))
                 {
@@ -628,7 +627,7 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Running)
                         return OperationResult.Success();
 
-                    int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + 15;
+                    int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                     totalWaitTime = Math.Max(totalWaitTime, ServiceStartTimeoutSeconds);
                     if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
                     {
@@ -659,8 +658,6 @@ namespace Servy.Core.Services
         {
             try
             {
-                var bufferTimeInSeconds = 15;
-
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
 
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
@@ -670,8 +667,8 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return OperationResult.Success();
 
-                    var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
-                    var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + bufferTimeInSeconds;
+                    var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
                     totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
                     if (!string.IsNullOrEmpty(service.PreStopExecutablePath))
                     {

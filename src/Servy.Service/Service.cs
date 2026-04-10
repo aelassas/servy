@@ -190,8 +190,11 @@ namespace Servy.Service
 
         #region Private Fields
 
+        /// <summary>The interval, in milliseconds, at which the launcher checks the process status and invokes the OnScmHeartbeat delegate.</summary>
         private readonly int _waitChunkMs;
+        /// <summary>Additional time, in milliseconds, used for Service Control Manager (SCM) operations.</summary>
         private readonly int _scmAdditionalTimeMs;
+
         private readonly SecureData? _secureData;
         private readonly IServiceHelper _serviceHelper;
         private ILogger _logger;
