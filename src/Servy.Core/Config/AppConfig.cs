@@ -297,7 +297,7 @@ namespace Servy.Core.Config
         public const bool DefaultPreStopLogAsError = false;
 
         /// <summary>
-        /// Default start timeout in seconds to wait for exit. Default is 5 seconds.
+        /// Default stop timeout in seconds to wait for exit. Default is 5 seconds.
         /// </summary>
         public const int DefaultStopTimeout = 5;
 

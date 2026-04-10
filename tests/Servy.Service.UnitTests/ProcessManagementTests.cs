@@ -7,10 +7,7 @@ using Servy.Service.ProcessManagement;
 using Servy.Service.StreamWriters;
 using Servy.Service.Timers;
 using Servy.Service.Validation;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using Xunit;
 
 namespace Servy.Service.UnitTests
 {
@@ -60,7 +57,7 @@ namespace Servy.Service.UnitTests
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.Id).Returns(123);
-            mockProcess.Setup(p => p.Start());
+            mockProcess.Setup(p => p.Start()).Returns(true);
 
             processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<ILogger>())).Returns(mockProcess.Object);
 

@@ -667,17 +667,11 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return OperationResult.Success();
 
-                    var totalWaitTime = (service.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    var previousWaitTime = (service.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
-                    if (!string.IsNullOrEmpty(service.PreStopExecutablePath))
-                    {
-                        totalWaitTime += service.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds;
-                    }
+                    int timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds??0);
 
-                    Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {totalWaitTime} seconds.");
+                    Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
-                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(totalWaitTime));
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(timeout));
 
                     if (logSuccessfulStop)
                     {
