@@ -72,7 +72,7 @@ namespace Servy.CLI.Helpers
 
                 Console.ResetColor();
             }
-            return result.Success ? result.ExitCode : 1;
+            return result.ExitCode;
         }
 
     }

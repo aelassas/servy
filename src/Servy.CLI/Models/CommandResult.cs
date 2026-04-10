@@ -46,6 +46,7 @@
         /// </summary>
         /// <param name="message">Optional failure message.</param>
         /// <returns>A <see cref="CommandResult"/> indicating failure.</returns>
-        public static CommandResult Fail(string message = "") => new CommandResult(false, message, 1);
+        public static CommandResult Fail(string message = "", int exitCode = 1) =>
+            new CommandResult(false, message, exitCode == 0 ? 1 : exitCode);
     }
 }
