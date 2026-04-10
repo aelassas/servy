@@ -11,7 +11,7 @@ namespace Servy.Core.Helpers
     /// to ensure that all required service parameters are populated with production-grade 
     /// defaults defined in <see cref="AppConfig"/>.
     /// </remarks>
-    public class ServiceDtoHelper
+    public static class ServiceDtoHelper
     {
         /// <summary>
         /// Populates any null nullable properties with production defaults from AppConfig.
