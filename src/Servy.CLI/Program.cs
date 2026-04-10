@@ -57,7 +57,10 @@ namespace Servy.CLI
             try
             {
                 var verbs = GetVerbs();
-                if (args.Length == 0 || (!verbs.Contains(args[0].ToLowerInvariant()) && !args[0].StartsWith("-")))
+                var firstArg = args.Length > 0 ? args[0] : null;
+
+                if (args.Length == 0 ||
+                    (!verbs.Any(v => string.Equals(v, firstArg, StringComparison.OrdinalIgnoreCase)) && !(firstArg?.StartsWith("-") ?? false)))
                 {
                     // Only inject the default verb if the user didn't provide a recognized verb 
                     // AND didn't provide a global flag like --version or --help
