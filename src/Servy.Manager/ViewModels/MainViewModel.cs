@@ -819,6 +819,8 @@ namespace Servy.Manager.ViewModels
                 var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
                 // 4. Process in parallel using the semaphore
+                var changedDtos = new System.Collections.Concurrent.ConcurrentBag<ServiceDto>();
+
                 using (var semaphore = new SemaphoreSlim(Environment.ProcessorCount))
                 {
                     var tasks = snapshot.Select(async service =>
@@ -826,17 +828,27 @@ namespace Servy.Manager.ViewModels
                         await semaphore.WaitAsync(token);
                         try
                         {
-                            // Pass the pre-fetched DTO from our dictionary
                             allDtosDict.TryGetValue(service.Name, out var dto);
-                            await RefreshServiceInternal(service, allServicesDict, dto);
+                            var updatedDto = await RefreshServiceInternal(service, allServicesDict, dto);
+
+                            if (updatedDto != null)
+                            {
+                                changedDtos.Add(updatedDto);
+                            }
                         }
                         finally
                         {
                             semaphore.Release();
                         }
-                    }).ToList(); // Force task creation while semaphore is in scope
+                    }).ToList();
 
                     await Task.WhenAll(tasks);
+                }
+
+                // 5. Execute a single atomic database batch write for all drifted services
+                if (changedDtos.Any())
+                {
+                    await _serviceRepository.UpsertBatchAsync(changedDtos, token);
                 }
 
                 // Refresh UI only if not cancelled
@@ -859,23 +871,30 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Refresh service description, status, startup type, user and installation state. Heavy work runs off the UI thread.
+        /// Synchronizes a service's live state with both the Windows Service Control Manager (SCM) and process performance counters.
         /// </summary>
+        /// <param name="service">The UI-bound <see cref="Service"/> model to update.</param>
+        /// <param name="allServices">A pre-fetched dictionary of OS-level service information to reduce syscall overhead.</param>
+        /// <param name="serviceDto">The current database state for the service, used to detect metadata drift.</param>
+        /// <returns>
+        /// A <see cref="ServiceDto"/> containing updated metadata if a database synchronization is required; 
+        /// otherwise, <c>null</c> if the database is already in sync.
+        /// </returns>
         /// <remarks>
         /// <para>
-        /// This method performs a dual role: it updates the UI properties for the service 
-        /// and ensures the local database remains the source of truth.
+        /// This method performs the heavy lifting for the background refresh cycle, including:
+        /// <list type="bullet">
+        /// <item><description>Retrieving tree-wide CPU and RAM metrics via <see cref="ProcessHelper"/>.</description></item>
+        /// <item><description>Updating installation status, service status (Running/Stopped), and user sessions.</description></item>
+        /// <item><description>Comparing OS-reported metadata (Description/StartupType) against the provided DTO.</description></item>
+        /// </list>
         /// </para>
         /// <para>
-        /// <b>Side-Effect (Write):</b> If the service's Description or Startup Type as reported 
-        /// by Windows differs from the values stored in the database, this method will 
-        /// automatically trigger an <c>UpsertAsync</c> to the repository to synchronize the records.
+        /// <b>Performance Note:</b> This method does not perform database writes. It returns drifted DTOs 
+        /// to allow the caller to perform an atomic <c>UpsertBatchAsync</c>, significantly reducing SQLite I/O contention.
         /// </para>
         /// </remarks>
-        /// <param name="service">The service to refresh.</param>
-        /// <param name="allServices">Dictionary of all installed services keyed by name.</param>
-        /// <param name="serviceDto">The service DTO from the repository, if any.</param>
-        private async Task RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto)
+        private async Task<ServiceDto> RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto)
         {
             try
             {
@@ -948,9 +967,11 @@ namespace Servy.Manager.ViewModels
                     {
                         serviceDto.Description = service.Description;
                         serviceDto.StartupType = (int)service.StartupType;
-                        await _serviceRepository.UpsertAsync(serviceDto, token);
+                        return serviceDto; // Hand back to the caller for batching
                     }
                 }
+
+                return null;
             }
             catch (OperationCanceledException)
             {
@@ -960,6 +981,8 @@ namespace Servy.Manager.ViewModels
             {
                 _logger.Warn($"Failed to refresh {service.Name}: {ex}");
             }
+
+            return null;
         }
 
         /// <summary>

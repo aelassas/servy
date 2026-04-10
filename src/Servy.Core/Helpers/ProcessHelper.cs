@@ -11,6 +11,7 @@ namespace Servy.Core.Helpers
     /// Provides helper methods for retrieving and formatting process-related information
     /// such as CPU usage and RAM usage.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ProcessHelper
     {
         private static DateTime _lastPruneTime = DateTime.MinValue;
@@ -35,7 +36,6 @@ namespace Servy.Core.Helpers
         private static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        [ExcludeFromCodeCoverage]
         private struct PROCESSENTRY32
         {
             public uint dwSize;
@@ -55,7 +55,6 @@ namespace Servy.Core.Helpers
         /// Efficiently retrieves the process ID and all descendant process IDs for a given root process
         /// using native Windows APIs to avoid WMI overhead.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         private static List<int> GetProcessTree(int rootPid)
         {
             var tree = new List<int> { rootPid };
@@ -123,7 +122,6 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Stores the last CPU measurement for a process.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         private sealed class CpuSample
         {
             /// <summary>
@@ -142,7 +140,6 @@ namespace Servy.Core.Helpers
         /// This class holds the last recorded CPU usage values for each process ID
         /// and is excluded from code coverage because it only acts as an internal cache.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         private static class CpuTimesStore
         {
             /// <summary>
@@ -155,7 +152,6 @@ namespace Servy.Core.Helpers
         /// Performs maintenance on the process cache by removing entries for PIDs that are no longer active.
         /// Should be called by a background timer to prevent memory leaks.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         public static void MaintainCache()
         {
             if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;
@@ -196,7 +192,6 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Retrieves both CPU and RAM metrics for a process using a single handle.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         public static ProcessMetrics GetProcessMetrics(int pid)
         {
             try
@@ -245,7 +240,6 @@ namespace Servy.Core.Helpers
         /// Retrieves combined CPU and RAM metrics for an entire process tree.
         /// Performs a single pass over the tree to minimize kernel transitions.
         /// </summary>
-        [ExcludeFromCodeCoverage]
         public static ProcessMetrics GetProcessTreeMetrics(int rootPid)
         {
             var pids = GetProcessTree(rootPid);
