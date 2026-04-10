@@ -7,7 +7,7 @@
     framework-dependent mode, builds the Inno Setup installer, and creates a
     compressed 7z package containing all published framework-dependent builds.
 
-.PARAMETER Fm
+.PARAMETER Tfm
     Target framework moniker prefix (e.g., "net8.0", "net10.0").
 
 .PARAMETER Version
@@ -25,7 +25,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$Fm = "net10.0",
+    [string]$Tfm = "net10.0",
     [string]$Version = "1.0",
     [switch]$Pause
 )
@@ -33,7 +33,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Standardize TFM and Configuration names used across the codebase
-$Tfm = "$Fm-windows"
+$Tfm = "$Tfm-windows"
 $BuildConfiguration = "Release"
 $Runtime = "win-x64"
 

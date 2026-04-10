@@ -7,7 +7,7 @@
     builds the Inno Setup installer, signs the generated installer,
     and generates a portable 7z package containing the published executables.
 
-.PARAMETER Fm
+.PARAMETER Tfm
     Target framework moniker prefix (e.g., "net8.0", "net10.0").
 
 .PARAMETER Version
@@ -26,7 +26,7 @@
 
 [CmdletBinding()]
 param(
-    [string]$Fm      = "net10.0",
+    [string]$Tfm      = "net10.0",
     [string]$Version = "1.0",
     [switch]$Pause
 )
@@ -34,7 +34,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Standardize TFM and Configuration names used across the codebase
-$Tfm = "$Fm-windows"
+$Tfm = "$Tfm-windows"
 $BuildConfiguration = "Release"
 $Runtime = "win-x64"
 

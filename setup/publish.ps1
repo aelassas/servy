@@ -16,7 +16,7 @@
     2. Inno Setup (ISCC.exe) installed and accessible.
     3. 7-Zip installed with `7z` available in PATH.
 
-.PARAMETER Fm
+.PARAMETER Tfm
     The target framework moniker (TFM).
 
 .PARAMETER Version
@@ -34,11 +34,11 @@
 # Main setup bundle script for building both self-contained and framework-dependent installers
 
 param(
-    [string]$Fm      = "net10.0",    
+    [string]$Tfm      = "net10.0",    
     [string]$Version = "7.9"
 )
 
-$tfm = "$Fm-windows"
+$tfm = "$Tfm-windows"
 
 $ErrorActionPreference = "Stop"
 
@@ -75,14 +75,14 @@ try {
     # Build self-contained installer
     Invoke-Script -ScriptPath "publish-sc.ps1" -Params @{
         Version = $Version
-        Fm      = $Fm
+        Tfm      = $Tfm
     }
 
     <#
     # Build framework-dependent installer
     Invoke-Script -ScriptPath "publish-fd.ps1" -Params @{
         Version = $Version
-        Fm      = $Fm
+        Tfm      = $Tfm
     }
     #>
 
