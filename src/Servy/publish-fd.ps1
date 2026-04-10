@@ -92,12 +92,12 @@ Write-Host "Single File      : false"
     --no-restore `
     --nologo `
     --verbosity minimal `
-    -p:DebugType=None `
-    -p:DebugSymbols=false `
-    -p:ErrorOnDuplicatePublishOutputFiles=true `
-    -p:GeneratePackageOnBuild=false `
-    -p:UseAppHost=true `
-    -p:Clean=true `
+    /p:DebugType=None `
+    /p:DebugSymbols=false `
+    /p:ErrorOnDuplicatePublishOutputFiles=true `
+    /p:GeneratePackageOnBuild=false `
+    /p:UseAppHost=true `
+    /p:Clean=true `
     /p:DeleteExistingFiles=true
 
 if ($LASTEXITCODE -ne 0) {
