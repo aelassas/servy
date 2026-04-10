@@ -13,7 +13,6 @@ using Servy.Resources;
 using Servy.UI.Services;
 using Servy.Validators;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -521,28 +520,12 @@ namespace Servy.Services
                     return;
                 }
 
-                string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+                var isValid = await _serviceConfigurationValidator.Validate(dto);
 
-                string envVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                if (!isValid)
                 {
-                    await _messageBoxService.ShowErrorAsync(envVarsErrorMessage, Caption);
-                    return;
-                }
-
-                List<string> serviceDependenciesErrors;
-                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
-                {
-                    await _messageBoxService.ShowErrorAsync(string.Join("\n", serviceDependenciesErrors), Caption);
-                    return;
-                }
-
-                string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
-
-                string preLaunchEnvVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
-                {
-                    await _messageBoxService.ShowErrorAsync(preLaunchEnvVarsErrorMessage, Caption);
+                    // _serviceConfigurationValidator already shows the errors
+                    Logger.Info($"XML File '{path}' not valid.");
                     return;
                 }
 
@@ -582,28 +565,12 @@ namespace Servy.Services
                     return;
                 }
 
-                string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+                var isValid = await _serviceConfigurationValidator.Validate(dto);
 
-                string envVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out envVarsErrorMessage))
+                if (!isValid)
                 {
-                    await _messageBoxService.ShowErrorAsync(envVarsErrorMessage, Caption);
-                    return;
-                }
-
-                List<string> serviceDependenciesErrors;
-                if (!ServiceDependenciesValidator.Validate(dto.ServiceDependencies, out serviceDependenciesErrors))
-                {
-                    await _messageBoxService.ShowErrorAsync(string.Join("\n", serviceDependenciesErrors), Caption);
-                    return;
-                }
-
-                string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
-
-                string preLaunchEnvVarsErrorMessage;
-                if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out preLaunchEnvVarsErrorMessage))
-                {
-                    await _messageBoxService.ShowErrorAsync(preLaunchEnvVarsErrorMessage, Caption);
+                    // _serviceConfigurationValidator already shows the errors
+                    Logger.Info($"JSON File '{path}' not valid.");
                     return;
                 }
 
