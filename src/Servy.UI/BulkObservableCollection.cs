@@ -11,10 +11,10 @@ namespace Servy.UI
         {
             if (items == null) return;
 
-            _suppressNotification = true; // suspend notifications
+            _suppressNotification = true;
 
             foreach (var item in items)
-                base.Items.Add(item);      // use base.Items to avoid triggering events
+                Items.Add(item); // Note: base.Items is not necessary if _suppressNotification is handled
 
             _suppressNotification = false;
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -26,22 +26,39 @@ namespace Servy.UI
                 base.OnCollectionChanged(e);
         }
 
+        /// <summary>
+        /// Trims the collection to the specified maximum size.
+        /// Uses an optimized range removal to avoid O(n^2) performance degradation.
+        /// </summary>
         public void TrimToSize(int maxItems)
         {
-            if (Items.Count <= maxItems) return;
+            int removeCount = Items.Count - maxItems;
+            if (removeCount <= 0) return;
 
             _suppressNotification = true;
 
-            // Remove from the underlying IList<T> without triggering events
-            while (Items.Count > maxItems)
+            try
             {
-                Items.RemoveAt(0);
+                // Cast to List<T> to access RemoveRange, which performs a single memory shift (O(n))
+                // rather than shifting the entire list for every single removed item.
+                if (Items is List<T> list)
+                {
+                    list.RemoveRange(0, removeCount);
+                }
+                else
+                {
+                    // Fallback for non-List implementations, though ObservableCollection uses List by default
+                    for (int i = 0; i < removeCount; i++)
+                    {
+                        Items.RemoveAt(0);
+                    }
+                }
             }
-
-            _suppressNotification = false;
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            finally
+            {
+                _suppressNotification = false;
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            }
         }
-
     }
-
 }
