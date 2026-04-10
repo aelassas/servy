@@ -1208,17 +1208,33 @@ namespace Servy.Service
             _childProcess.ErrorDataReceived += OnErrorDataReceived;
             _childProcess.Exited += OnProcessExited!;
 
-            // Start the process
+            // Start the process safely
             try
             {
-                _childProcess.Start();
+                if (!_childProcess.Start())
+                {
+                    throw new InvalidOperationException("Process.Start returned false (no process resource started).");
+                }
+
                 _logger?.Info($"Started child process with PID: {_childProcess.Id}");
+            }
+            catch (Exception ex)
+            {
+                // This is now the SINGLE source of truth for start-up failure logging
+                _logger?.Error($"Failed to start process '{_realExePath}': {ex.Message}");
+
+                CleanupFailedProcess();
+
+                // Re-throw so the caller (OnStart) stops the service and signals the SCM
+                throw;
             }
             finally
             {
                 _ = NativeMethods.FreeConsole();
                 _ = NativeMethods.SetConsoleCtrlHandler(null, true);
             }
+
+            // --- The code below this point ONLY executes if Start() was successful ---
 
             // Persist PID and PreviousStopTimeout
             InsertPid(_childProcess.Id, true);
@@ -1251,6 +1267,33 @@ namespace Servy.Service
                     _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
                 }
             }, cts.Token);
+        }
+
+        /// <summary>
+        /// Cleans up the child process object if it fails to start, ensuring event handlers 
+        /// are detached and the object is disposed before it can cause secondary exceptions.
+        /// </summary>
+        private void CleanupFailedProcess()
+        {
+            if (_childProcess == null) return;
+
+            try
+            {
+                // Unsubscribe from events we attached before calling .Start()
+                _childProcess.OutputDataReceived -= OnOutputDataReceived;
+                _childProcess.ErrorDataReceived -= OnErrorDataReceived;
+                _childProcess.Exited -= OnProcessExited!;
+
+                _childProcess.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger?.Warn($"Secondary error during failed process cleanup: {ex.Message}");
+            }
+            finally
+            {
+                _childProcess = null;
+            }
         }
 
         /// <summary>

@@ -183,10 +183,10 @@ namespace Servy.Service.ProcessManagement
         #endregion
 
         /// <inheritdoc/>
-        public void Start()
+        public bool Start()
         {
             ThrowIfDisposed();
-            _process.Start();
+            return _process.Start();
         }
 
         /// <inheritdoc/>
