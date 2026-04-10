@@ -177,10 +177,25 @@ namespace Servy.Core.IO
         /// Determines whether a date-based rotation should occur
         /// based on the configured <see cref="DateRotationType"/>.
         /// </summary>
-        private bool ShouldRotateByDate()
+        /// <param name="now">The current point in time (ideally <see cref="DateTime.UtcNow"/>) to evaluate against the last rotation anchor.</param>
+        /// <returns>
+        /// <c>true</c> if the calendar day has changed and all safety thresholds are met; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// When <see cref="_useLocalTimeForRotation"/> is enabled, this method enforces a 
+        /// 23-hour safety buffer between rotations. This prevents redundant rotations during 
+        /// Daylight Saving Time (DST) "fall back" transitions and protects against 
+        /// aggressive rotation cycles during frequent service restarts near midnight.
+        /// </para>
+        /// <para>
+        /// Internal comparisons are performed using the <see cref="DateTime.Date"/> property 
+        /// of the provided <paramref name="now"/> timestamp and the stored <see cref="_lastRotationDate"/>.
+        /// </para>
+        /// </remarks>
+        private bool ShouldRotateByDate(DateTime now)
         {
-            var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-
             switch (_dateRotationType)
             {
                 case DateRotationType.Daily:
@@ -246,7 +261,7 @@ namespace Servy.Core.IO
             // --- DATE ROTATION ---
             if (_enableDateRotation)
             {
-                rotateByDate = ShouldRotateByDate();
+                rotateByDate = ShouldRotateByDate(_useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow);
             }
 
             if (rotateByDate)
