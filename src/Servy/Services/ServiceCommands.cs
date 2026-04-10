@@ -2,11 +2,9 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
-using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;
@@ -503,6 +501,11 @@ namespace Servy.Services
                     return;
                 }
 
+                if (!await ValidateFileSize(path))
+                {
+                    return;
+                }
+
                 var xml = await File.ReadAllTextAsync(path);
                 if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
                 {
@@ -545,6 +548,11 @@ namespace Servy.Services
             {
                 var path = _dialogService.OpenJson();
                 if (string.IsNullOrEmpty(path))
+                {
+                    return;
+                }
+
+                if (!await ValidateFileSize(path))
                 {
                     return;
                 }
@@ -625,6 +633,57 @@ namespace Servy.Services
             if (string.IsNullOrWhiteSpace(serviceName))
             {
                 await _messageBoxService.ShowWarningAsync(Strings.Msg_ServiceNameError, Caption);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Validates that the configuration file exists and does not exceed the maximum allowed size.
+        /// </summary>
+        /// <param name="path">The relative or absolute path to the configuration file.</param>
+        /// <returns>
+        /// <c>true</c> if the file exists and its size is within the limit defined by 
+        /// <see cref="AppConfig.MaxConfigFileSizeMB"/>; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method performs path canonicalization to resolve relative segments and 
+        /// catch illegal path characters before attempting filesystem operations.
+        /// </remarks>
+        private async Task<bool> ValidateFileSize(string path)
+        {
+            string fullPath;
+            try
+            {
+                // Resolve absolute path to handle ".." segments and validate characters
+                fullPath = Path.GetFullPath(path);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Invalid path provided for file size validation: {path}", ex);
+                return false;
+            }
+
+            var fileInfo = new FileInfo(fullPath);
+
+            // 1. Existence Check
+            if (!fileInfo.Exists)
+            {
+                var errorMsg = $"[Import] File not found: {fullPath}";
+                Logger.Error(errorMsg);
+                await _messageBoxService.ShowErrorAsync(errorMsg, Caption);
+                return false;
+            }
+
+            // 2. Size Guard (Safety threshold against large/malicious files)
+            // Cast to long to prevent integer overflow during the byte calculation
+            if (fileInfo.Length > (long)AppConfig.MaxConfigFileSizeMB * 1024 * 1024)
+            {
+                // Use string.Format if your resource supports the filename placeholder
+                var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
+                Logger.Error(errorMsg);
+                await _messageBoxService.ShowErrorAsync(errorMsg, Caption);
                 return false;
             }
 

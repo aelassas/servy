@@ -2,6 +2,7 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
@@ -64,7 +65,15 @@ namespace Servy.CLI.Commands
                     return CommandResult.Fail(Strings.Msg_PathRequired);
 
                 // Canonicalize the path to resolve ".." and relative segments
-                string fullPath = Path.GetFullPath(opts.Path);
+                string fullPath;
+                try
+                {
+                    fullPath = Path.GetFullPath(opts.Path);
+                }
+                catch (Exception ex)
+                {
+                    return CommandResult.Fail($"{Strings.Msg_InvalidPath}: {ex.Message}");
+                }
 
                 // Extension Validation
                 string extension = Path.GetExtension(fullPath).ToLowerInvariant();
@@ -78,9 +87,17 @@ namespace Servy.CLI.Commands
                 }
 
                 // Existence Check
-                if (!File.Exists(fullPath))
+                var fileInfo = new FileInfo(fullPath);
+                if (!fileInfo.Exists)
                 {
                     var errorMsg = $"[Import{configFileType}] File not found: {fullPath}";
+                    Logger.Error(errorMsg);
+                    return CommandResult.Fail(errorMsg);
+                }
+
+                if (fileInfo.Length > (long)AppConfig.MaxConfigFileSizeMB * 1024 * 1024)
+                {
+                    var errorMsg = string.Format(Strings.Msg_ConfigSizeLimitReached, fullPath);
                     Logger.Error(errorMsg);
                     return CommandResult.Fail(errorMsg);
                 }
@@ -92,30 +109,23 @@ namespace Servy.CLI.Commands
                 {
                     case ConfigFileType.Xml:
                         result = await ProcessXmlAsync(opts);
-                        if (result.Success)
-                        {
-                            Logger.Info($"Successfully imported XML configuration from {opts.Path}.");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to import XML configuration from {opts.Path}. Error: {result.Message}");
-                        }
                         break;
                     case ConfigFileType.Json:
                         result = await ProcessJsonAsync(opts);
-                        if (result.Success)
-                        {
-                            Logger.Info($"Successfully imported JSON configuration from {opts.Path}.");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to import JSON configuration from {opts.Path}. Error: {result.Message}");
-                        }
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
                         Logger.Error($"Unsupported configuration file type: {opts.ConfigFileType}");
                         break;
+                }
+
+                if (result.Success)
+                {
+                    Logger.Info($"Successfully imported {configFileType} configuration from {fullPath}.");
+                }
+                else
+                {
+                    Logger.Error($"Failed to import {configFileType} configuration from {fullPath}. Error: {result.Message}");
                 }
 
                 return result;

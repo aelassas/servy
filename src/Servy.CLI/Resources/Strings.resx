@@ -87,6 +87,9 @@
   <data name="Msg_ServiceStatusResult" xml:space="preserve">
     <value>Service status for '{0}': {1}</value>
   </data>
+  <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
+    <value>Configuration file '{0}' exceeds maximum size (10 MB).</value>
+  </data>
 
   <data name="Msg_StartSuccess" xml:space="preserve">
     <value>Service '{0}' started successfully.</value>
