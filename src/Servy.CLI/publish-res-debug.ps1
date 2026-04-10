@@ -42,11 +42,9 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
 $serviceDir         = Join-Path $scriptDir "..\Servy.Service" | Resolve-Path
-$serviceProject     = Join-Path $serviceDir "Servy.Service.csproj" | Resolve-Path
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.CLI\Resources" | Resolve-Path
 $buildConfiguration = "Debug"
 $runtime            = "win-x64"
-$selfContained      = $true
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project

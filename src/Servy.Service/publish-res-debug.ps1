@@ -44,7 +44,6 @@ $restarterDir       = Join-Path $scriptDir "..\Servy.Restarter" | Resolve-Path
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources" | Resolve-Path
 $buildConfiguration = "Debug"
 $runtime            = "win-x64"
-$selfContained      = $true
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Restarter project
