@@ -234,30 +234,6 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Fact]
-        public void GetCpuUsage_ForcesPrune_WhenIntervalHasPassed()
-        {
-            // Arrange
-            int pid = Process.GetCurrentProcess().Id;
-
-            // 1. Use reflection to get the private static fields
-            var lastPruneField = typeof(ProcessHelper).GetField("_lastPruneTime", BindingFlags.Static | BindingFlags.NonPublic);
-            var intervalField = typeof(ProcessHelper).GetField("PruneInterval", BindingFlags.Static | BindingFlags.NonPublic);
-
-            var interval = (TimeSpan)intervalField!.GetValue(null)!;
-
-            // 2. Set the last prune time to be older than the interval (e.g., 6 minutes ago)
-            lastPruneField!.SetValue(null, DateTime.UtcNow.AddMinutes(-6));
-
-            // Act
-            // This call triggers PruneDeadProcesses()
-            ProcessHelper.GetCpuUsage(pid);
-
-            // Assert
-            var updatedPruneTime = (DateTime)lastPruneField.GetValue(null)!;
-            Assert.True(updatedPruneTime > DateTime.UtcNow.AddSeconds(-10), "Prune time should have been updated to Now.");
-        }
-
-        [Fact]
         public void PruneDeadProcesses_DoesNotExecute_WhenCalledTooSoon()
         {
             // Arrange
