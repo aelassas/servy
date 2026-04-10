@@ -982,14 +982,29 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Removes a service from the services collection and refreshes the view.
+        /// Removes a service from the services collection, unsubscribes from its events,
+        /// and refreshes the view.
         /// </summary>
         /// <param name="serviceName">Name of the service to remove.</param>
         public void RemoveService(string serviceName)
         {
-            var itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
-            if (itemToRemove != null)
+            ServiceRowViewModel itemToRemove;
+
+            lock (_servicesLock)
+            {
+                itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
+                if (itemToRemove == null) return;
+
+                // 1. Unsubscribe the MainViewModel from the RowViewModel events
+                itemToRemove.PropertyChanged -= Service_PropertyChanged;
+
+                // 2. Remove from the collection
                 _services.Remove(itemToRemove);
+            }
+
+            // 3. Call Dispose on the ViewModel to let it clean up its own 
+            // subscriptions to the underlying Service model.
+            itemToRemove.Dispose();
 
             ServicesView.Refresh();
         }

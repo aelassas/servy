@@ -147,6 +147,22 @@ namespace Servy.Manager.ViewModels
                     OnPropertyChanged(e.PropertyName);
                     break;
             }
+
+            // RE-EVALUATE COMMANDS: 
+            // If status or installation state changes, tell the commands to re-check CanExecute.
+            // This ensures buttons in the UI reflect the current OS state immediately.
+            if (e.PropertyName == nameof(Service.Status) || e.PropertyName == nameof(Service.IsInstalled))
+            {
+                (StartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (StopCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (RestartCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (InstallCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (UninstallCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (RemoveCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (ExportXmlCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (ExportJsonCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+                (CopyPidCommand as AsyncCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         #endregion
