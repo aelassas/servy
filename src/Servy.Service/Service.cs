@@ -592,7 +592,7 @@ namespace Servy.Service
                 _serviceHelper.EnsureValidWorkingDirectory(options, _logger!);
 
                 _serviceName = options.ServiceName;
-                _recoveryActionEnabled = options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
+                _recoveryActionEnabled = options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None;
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Request timeout for startup to accommodate slow process
@@ -1726,7 +1726,7 @@ namespace Servy.Service
             _maxFailedChecks = options.MaxFailedChecks;
             _recoveryAction = options.RecoveryAction;
 
-            if (options.EnableHealthMonitoring && options.HeartbeatInterval > 0 && options.MaxFailedChecks > 0 && options.RecoveryAction != RecoveryAction.None)
+            if (_recoveryActionEnabled)
             {
                 _healthCheckTimer = _timerFactory.Create(_heartbeatIntervalSeconds * 1000.0);
                 _healthCheckTimer.Elapsed += CheckHealth;
