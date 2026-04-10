@@ -1070,64 +1070,7 @@ namespace Servy.ViewModels
         /// </summary>
         private async Task InstallService(object parameter)
         {
-            await ServiceCommands.InstallService(
-                _config.Name,
-                _config.Description,
-                _config.ExecutablePath,
-                _config.StartupDirectory,
-                _config.Parameters,
-                _config.StartupType,
-                _config.Priority,
-                _config.StdoutPath,
-                _config.StderrPath,
-                _config.EnableSizeRotation,
-                _config.RotationSize,
-                _config.EnableHealthMonitoring,
-                _config.HeartbeatInterval,
-                _config.MaxFailedChecks,
-                _config.RecoveryAction,
-                _config.MaxRestartAttempts,
-                _config.EnvironmentVariables,
-                _config.ServiceDependencies,
-                _config.RunAsLocalSystem,
-                _config.UserAccount,
-                _config.Password,
-                _config.ConfirmPassword,
-                _config.PreLaunchExecutablePath,
-                _config.PreLaunchStartupDirectory,
-                _config.PreLaunchParameters,
-                _config.PreLaunchEnvironmentVariables,
-                _config.PreLaunchStdoutPath,
-                _config.PreLaunchStderrPath,
-                _config.PreLaunchTimeoutSeconds,
-                _config.PreLaunchRetryAttempts,
-                _config.PreLaunchIgnoreFailure,
-                _config.FailureProgramPath,
-                _config.FailureProgramStartupDirectory,
-                _config.FailureProgramParameters,
-                _config.PostLaunchExecutablePath,
-                _config.PostLaunchStartupDirectory,
-                _config.PostLaunchParameters,
-                _config.EnableDebugLogs,
-                _config.DisplayName,
-                _config.MaxRotations,
-                _config.EnableDateRotation,
-                _config.DateRotationType,
-                _config.StartTimeout,
-                _config.StopTimeout,
-
-                _config.PreStopExecutablePath,
-                _config.PreStopStartupDirectory,
-                _config.PreStopParameters,
-                _config.PreStopTimeoutSeconds,
-                _config.PreStopLogAsError,
-
-                _config.PostStopExecutablePath,
-                _config.PostStopStartupDirectory,
-                _config.PostStopParameters,
-
-                _config.UseLocalTimeForRotation
-                );
+            await ServiceCommands.InstallService(_config);
         }
 
         /// <summary>

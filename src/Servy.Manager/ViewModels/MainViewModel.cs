@@ -917,7 +917,6 @@ namespace Servy.Manager.ViewModels
                     // because the time it takes to manage two threads is greater than the time
                     // saved by running them at once.
                     // Parallelism is only a "win" if the tasks are "heavy."
-                    var pid = service.Pid.Value;
                     ProcessHelper.MaintainCache();
 
                     var processMetrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);

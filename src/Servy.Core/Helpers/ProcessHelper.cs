@@ -102,14 +102,12 @@ namespace Servy.Core.Helpers
                 int current = queue.Dequeue();
                 if (parentToChildren.TryGetValue(current, out var children))
                 {
-                    foreach (var child in children)
+                    // 3. Only process the child if we haven't seen it before
+                    foreach (var child in children.Where(visited.Add))
                     {
-                        // 3. Only process the child if we haven't seen it before
-                        if (visited.Add(child))
-                        {
-                            tree.Add(child);
-                            queue.Enqueue(child);
-                        }
+                        // If visited.Add returns true, the child is new and already added to the hash set
+                        tree.Add(child);
+                        queue.Enqueue(child);
                     }
                 }
             }

@@ -2,6 +2,7 @@
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
+using Servy.Models;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.Validators;
@@ -25,199 +26,153 @@ namespace Servy.UnitTests.Services
         }
 
         [Fact]
-        public void InstallService_CalledWithCorrectParameters()
+        public async Task InstallService_CalledWithCorrectConfiguration()
         {
             // Arrange
-            var serviceName = "TestService";
-            var serviceDisplayName = "TestService";
-            var serviceDescription = "Test Service Description";
-            var processPath = @"C:\path\to\exe.exe";
-            var startupDirectory = @"C:\path\to";
-            var processParameters = "-arg1 -arg2";
-            var startupType = ServiceStartType.Automatic;
-            var processPriority = ProcessPriority.Normal;
-            var stdoutPath = @"C:\logs\stdout.log";
-            var stderrPath = @"C:\logs\stderr.log";
-            var enableRotation = true;
-            var rotationSize = "10"; // 10 MB
-            var useLocalTimeForRotation = true;
-            var enableHealthMonitoring = true;
-            var heartbeatInterval = "30";
-            var maxFailedChecks = "3";
-            var recoveryAction = RecoveryAction.RestartService;
-            var maxRestartAttempts = "5";
-            var envVars = "var1=val1;var2=val2";
-            var dependencies = "DEP1; DEP2";
-            var runAsLocalSystem = false;
-            var username = @".\username";
-            var password = "password";
-            var confirmPassword = "password";
+            var config = new ServiceConfiguration
+            {
+                Name = "TestService",
+                DisplayName = "TestService",
+                Description = "Test Service Description",
+                ExecutablePath = @"C:\path\to\exe.exe",
+                StartupDirectory = @"C:\path\to",
+                Parameters = "-arg1 -arg2",
+                StartupType = ServiceStartType.Automatic,
+                Priority = ProcessPriority.Normal,
+                StdoutPath = @"C:\logs\stdout.log",
+                StderrPath = @"C:\logs\stderr.log",
+                EnableSizeRotation = true,
+                RotationSize = "10",
+                UseLocalTimeForRotation = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = "30",
+                MaxFailedChecks = "3",
+                RecoveryAction = RecoveryAction.RestartService,
+                MaxRestartAttempts = "5",
+                EnvironmentVariables = "var1=val1;var2=val2",
+                ServiceDependencies = "DEP1; DEP2",
+                RunAsLocalSystem = false,
+                UserAccount = @".\username",
+                Password = "password",
+                ConfirmPassword = "password",
 
-            var preLaunchExe = @"C:\pre-launch.exe";
-            var preLaunchDir = @"C:\preLaunchDir";
-            var preLaunchArgs = "preLaunchArgs";
-            var preLaunchVars = "var1=val1;var2=val2;";
-            var preLaunchStdoutPath = @"C:\pre-launch-stdout.log";
-            var preLaunchStderrPath = @"C:\pre-launch-stderr.log";
-            var preLaunchTimeout = "30";
-            var preLaunchRetryAttempts = "0";
-            var preLaunchIgnoreError = true;
+                // Pre-Launch
+                PreLaunchExecutablePath = @"C:\pre-launch.exe",
+                PreLaunchStartupDirectory = @"C:\preLaunchDir",
+                PreLaunchParameters = "preLaunchArgs",
+                PreLaunchEnvironmentVariables = "var1=val1;var2=val2;",
+                PreLaunchStdoutPath = @"C:\pre-launch-stdout.log",
+                PreLaunchStderrPath = @"C:\pre-launch-stderr.log",
+                PreLaunchTimeoutSeconds = "30",
+                PreLaunchRetryAttempts = "0",
+                PreLaunchIgnoreFailure = true,
 
-            var failureProgramExe = @"C:\failureProgram.exe";
-            var failureProgramDir = @"C:\failureProgramDir";
-            var failureProgramArgs = "failureProgramArgs";
+                // Failure Hook
+                FailureProgramPath = @"C:\failureProgram.exe",
+                FailureProgramStartupDirectory = @"C:\failureProgramDir",
+                FailureProgramParameters = "failureProgramArgs",
 
-            var postLaunchExe = @"C:\post-launch.exe";
-            var postLaunchDir = @"C:\postLaunchDir";
-            var postLaunchArgs = "postLaunchArgs";
-            var enableDebugLogs = false;
-            var maxRotations = "0";
-            var enableDateRotation = true;
-            var dateRotationType = DateRotationType.Weekly;
-            var startTimeout = "11";
-            var stopTimeout = "6";
+                // Post-Launch
+                PostLaunchExecutablePath = @"C:\post-launch.exe",
+                PostLaunchStartupDirectory = @"C:\postLaunchDir",
+                PostLaunchParameters = "postLaunchArgs",
 
-            var preStopExe = @"C:\pre-stop.exe";
-            var preStopDir = @"C:\preStopDir";
-            var preStopArgs = "preStopArgs";
-            var preStopTimeout = "10";
-            var preStopLogAsError = false;
+                // Logging & Timing
+                EnableDebugLogs = false,
+                MaxRotations = "0",
+                EnableDateRotation = true,
+                DateRotationType = DateRotationType.Weekly,
+                StartTimeout = "11",
+                StopTimeout = "6",
 
-            var postStopExe = @"C:\post-stop.exe";
-            var postStopDir = @"C:\postStopDir";
-            var postStopArgs = "postStopArgs";
+                // Pre-Stop
+                PreStopExecutablePath = @"C:\pre-stop.exe",
+                PreStopStartupDirectory = @"C:\preStopDir",
+                PreStopParameters = "preStopArgs",
+                PreStopTimeoutSeconds = "10",
+                PreStopLogAsError = false,
+
+                // Post-Stop
+                PostStopExecutablePath = @"C:\post-stop.exe",
+                PostStopStartupDirectory = @"C:\postStopDir",
+                PostStopParameters = "postStopArgs"
+            };
 
             // Act
-            _mockServiceCommands.Object.InstallService(
-                serviceName,
-                serviceDescription,
-                processPath,
-                startupDirectory,
-                processParameters,
-                startupType,
-                processPriority,
-                stdoutPath,
-                stderrPath,
-                enableRotation,
-                rotationSize,
-                enableHealthMonitoring,
-                heartbeatInterval,
-                maxFailedChecks,
-                recoveryAction,
-                maxRestartAttempts,
-                envVars,
-                dependencies,
-                runAsLocalSystem,
-                username,
-                password,
-                confirmPassword,
-
-                preLaunchExe,
-                preLaunchDir,
-                preLaunchArgs,
-                preLaunchVars,
-                preLaunchStdoutPath,
-                preLaunchStderrPath,
-                preLaunchTimeout,
-                preLaunchRetryAttempts,
-                preLaunchIgnoreError,
-
-                failureProgramExe,
-                failureProgramDir,
-                failureProgramArgs,
-
-                postLaunchExe,
-                postLaunchDir,
-                postLaunchArgs,
-                enableDebugLogs,
-
-                serviceDisplayName,
-                maxRotations,
-
-                enableDateRotation,
-                dateRotationType,
-
-                startTimeout,
-                stopTimeout,
-
-                preStopExe,
-                preStopDir,
-                preStopArgs,
-                preStopTimeout,
-                preStopLogAsError,
-
-                postStopExe,
-                postStopDir,
-                postStopArgs,
-                useLocalTimeForRotation
-                );
+            await _mockServiceCommands.Object.InstallService(config);
 
             // Assert
             _mockServiceCommands.Verify(m => m.InstallService(
-                serviceName,
-                serviceDescription,
-                processPath,
-                startupDirectory,
-                processParameters,
-                startupType,
-                processPriority,
-                stdoutPath,
-                stderrPath,
-                enableRotation,
-                rotationSize,
-                enableHealthMonitoring,
-                heartbeatInterval,
-                maxFailedChecks,
-                recoveryAction,
-                maxRestartAttempts,
-                envVars,
-                dependencies,
-                runAsLocalSystem,
-                username,
-                password,
-                confirmPassword,
+                It.Is<ServiceConfiguration>(c =>
+                    // 1. Core Metadata & Main Process
+                    c.Name == config.Name &&
+                    c.DisplayName == config.DisplayName &&
+                    c.Description == config.Description &&
+                    c.ExecutablePath == config.ExecutablePath &&
+                    c.StartupDirectory == config.StartupDirectory &&
+                    c.Parameters == config.Parameters &&
+                    c.StartupType == config.StartupType &&
+                    c.Priority == config.Priority &&
 
-                preLaunchExe,
-                preLaunchDir,
-                preLaunchArgs,
-                preLaunchVars,
-                preLaunchStdoutPath,
-                preLaunchStderrPath,
-                preLaunchTimeout,
-                preLaunchRetryAttempts,
-                preLaunchIgnoreError,
+                    // 2. Logging & Rotation
+                    c.StdoutPath == config.StdoutPath &&
+                    c.StderrPath == config.StderrPath &&
+                    c.EnableSizeRotation == config.EnableSizeRotation &&
+                    c.RotationSize == config.RotationSize &&
+                    c.EnableDateRotation == config.EnableDateRotation &&
+                    c.DateRotationType == config.DateRotationType &&
+                    c.MaxRotations == config.MaxRotations &&
+                    c.UseLocalTimeForRotation == config.UseLocalTimeForRotation &&
 
-                failureProgramExe,
-                failureProgramDir,
-                failureProgramArgs,
+                    // 3. Health & Recovery
+                    c.EnableHealthMonitoring == config.EnableHealthMonitoring &&
+                    c.HeartbeatInterval == config.HeartbeatInterval &&
+                    c.MaxFailedChecks == config.MaxFailedChecks &&
+                    c.RecoveryAction == config.RecoveryAction &&
+                    c.MaxRestartAttempts == config.MaxRestartAttempts &&
+                    c.FailureProgramPath == config.FailureProgramPath &&
+                    c.FailureProgramStartupDirectory == config.FailureProgramStartupDirectory &&
+                    c.FailureProgramParameters == config.FailureProgramParameters &&
 
-                postLaunchExe,
-                postLaunchDir,
-                postLaunchArgs,
-                enableDebugLogs,
+                    // 4. Identity & Security
+                    c.EnvironmentVariables == config.EnvironmentVariables &&
+                    c.ServiceDependencies == config.ServiceDependencies &&
+                    c.RunAsLocalSystem == config.RunAsLocalSystem &&
+                    c.UserAccount == config.UserAccount &&
+                    c.Password == config.Password &&
+                    c.ConfirmPassword == config.ConfirmPassword &&
 
-                serviceDisplayName,
-                maxRotations,
+                    // 5. Pre-Launch Hooks
+                    c.PreLaunchExecutablePath == config.PreLaunchExecutablePath &&
+                    c.PreLaunchStartupDirectory == config.PreLaunchStartupDirectory &&
+                    c.PreLaunchParameters == config.PreLaunchParameters &&
+                    c.PreLaunchEnvironmentVariables == config.PreLaunchEnvironmentVariables &&
+                    c.PreLaunchStdoutPath == config.PreLaunchStdoutPath &&
+                    c.PreLaunchStderrPath == config.PreLaunchStderrPath &&
+                    c.PreLaunchTimeoutSeconds == config.PreLaunchTimeoutSeconds &&
+                    c.PreLaunchRetryAttempts == config.PreLaunchRetryAttempts &&
+                    c.PreLaunchIgnoreFailure == config.PreLaunchIgnoreFailure &&
 
-                enableDateRotation,
-                dateRotationType,
+                    // 6. Post-Launch & Timing
+                    c.PostLaunchExecutablePath == config.PostLaunchExecutablePath &&
+                    c.PostLaunchStartupDirectory == config.PostLaunchStartupDirectory &&
+                    c.PostLaunchParameters == config.PostLaunchParameters &&
+                    c.StartTimeout == config.StartTimeout &&
+                    c.StopTimeout == config.StopTimeout &&
+                    c.EnableDebugLogs == config.EnableDebugLogs &&
 
-                startTimeout,
-                stopTimeout,
+                    // 7. Pre-Stop Hooks
+                    c.PreStopExecutablePath == config.PreStopExecutablePath &&
+                    c.PreStopStartupDirectory == config.PreStopStartupDirectory &&
+                    c.PreStopParameters == config.PreStopParameters &&
+                    c.PreStopTimeoutSeconds == config.PreStopTimeoutSeconds &&
+                    c.PreStopLogAsError == config.PreStopLogAsError &&
 
-                preStopExe,
-                preStopDir,
-                preStopArgs,
-                preStopTimeout,
-                preStopLogAsError,
-
-                postStopExe,
-                postStopDir,
-                postStopArgs,
-
-                useLocalTimeForRotation
-
-                ), Times.Once);
+                    // 8. Post-Stop Hooks
+                    c.PostStopExecutablePath == config.PostStopExecutablePath &&
+                    c.PostStopStartupDirectory == config.PostStopStartupDirectory &&
+                    c.PostStopParameters == config.PostStopParameters
+                )), Times.Once);
         }
 
         [Fact]
