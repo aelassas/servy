@@ -343,25 +343,22 @@ namespace Servy.Manager.ViewModels
                 SetPidText();
 
                 // Fetch raw metrics
-                var (rawCpu, ramBytes) = await Task.Run(() =>
+                var processMetrics = await Task.Run(() =>
                 {
                     // 1. Perform background maintenance on the PID cache
                     ProcessHelper.MaintainCache();
 
                     // 2. Retrieve tree-wide metrics
-                    return (
-                        ProcessHelper.GetProcessTreeCpuUsage(pid),
-                        ProcessHelper.GetProcessTreeRamUsage(pid)
-                    );
+                    return ProcessHelper.GetProcessTreeMetrics(pid);
                 });
-                double rawRamMb = ramBytes / 1024d / 1024d;
+                double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
 
                 // Update UI Texts
-                CpuUsage = ProcessHelper.FormatCpuUsage(rawCpu);
-                RamUsage = ProcessHelper.FormatRamUsage(ramBytes);
+                CpuUsage = ProcessHelper.FormatCpuUsage(processMetrics.CpuUsage);
+                RamUsage = ProcessHelper.FormatRamUsage(processMetrics.RamUsage);
 
                 // Update Graphs
-                AddPoint(_cpuValues, rawCpu, nameof(CpuPointCollection));
+                AddPoint(_cpuValues, processMetrics.CpuUsage, nameof(CpuPointCollection));
                 AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
             }
             catch (OperationCanceledException)
