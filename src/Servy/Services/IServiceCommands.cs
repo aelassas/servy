@@ -37,31 +37,31 @@ namespace Servy.Services
         /// </remarks>
         /// <exception cref="UnauthorizedAccessException">Thrown if the application lacks the administrative privileges required to install a service.</exception>
         /// <exception cref="Exception">Thrown if an unexpected error occurs during the SCM communication or file I/O.</exception>
-        Task InstallService(ServiceConfiguration config);
+        Task<bool> InstallService(ServiceConfiguration config);
 
         /// <summary>
         /// Uninstalls the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to uninstall.</param>
-        Task UninstallService(string serviceName);
+        Task<bool> UninstallService(string serviceName);
 
         /// <summary>
         /// Starts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to start.</param>
-        Task StartService(string serviceName);
+        Task<bool> StartService(string serviceName);
 
         /// <summary>
         /// Stops the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to stop.</param>
-        Task StopService(string serviceName);
+        Task<bool> StopService(string serviceName);
 
         /// <summary>
         /// Restarts the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to restart.</param>
-        Task RestartService(string serviceName);
+        Task<bool> RestartService(string serviceName);
 
         /// <summary>
         /// Exports the service configuration to an XML file selected by the user.

@@ -77,14 +77,14 @@ namespace Servy.Services
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
-        public async Task InstallService(ServiceConfiguration config)
+        public async Task<bool> InstallService(ServiceConfiguration config)
         {
             var wrapperExePath = AppConfig.GetServyUIServicePath();
 
             if (!File.Exists(wrapperExePath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, Caption);
-                return;
+                return false;
             }
 
             // Build DTO
@@ -152,7 +152,7 @@ namespace Servy.Services
             // Validate
             if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
             {
-                return; // Validation failed, errors shown in MessageBox
+                return false; // Validation failed, errors shown in MessageBox
             }
 
             if (_serviceManager.IsServiceInstalled(dto.Name))
@@ -161,7 +161,7 @@ namespace Servy.Services
 
                 if (!res)
                 {
-                    return;
+                    return false;
                 }
             }
 
@@ -244,35 +244,39 @@ namespace Servy.Services
                 if (res.IsSuccess)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, Caption);
+                    return true;
                 }
                 else
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
                 }
             }
             catch (UnauthorizedAccessException)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
+                return false;
             }
             catch (Exception)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
         }
 
         /// <inheritdoc />
-        public async Task UninstallService(string serviceName)
+        public async Task<bool> UninstallService(string serviceName)
         {
             if (!await IsServiceNameValid(serviceName))
             {
-                return;
+                return false;
             }
 
             var exists = _serviceManager.IsServiceInstalled(serviceName);
             if (!exists)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                return;
+                return false;
             }
 
             try
@@ -281,120 +285,145 @@ namespace Servy.Services
                 if (res.IsSuccess)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);
+                    return true;
                 }
                 else
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
                 }
             }
             catch (UnauthorizedAccessException)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
+                return false;
             }
             catch (Exception)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
         }
 
         /// <inheritdoc />
-        public async Task StartService(string serviceName)
+        public async Task<bool> StartService(string serviceName)
         {
             try
             {
                 if (!await IsServiceNameValid(serviceName))
                 {
-                    return;
+                    return false;
                 }
 
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return;
+                    return false;
                 }
 
                 var startupType = _serviceManager.GetServiceStartupType(serviceName);
                 if (startupType == ServiceStartType.Disabled)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
-                    return;
+                    return false;
                 }
 
                 var res = await _serviceManager.StartServiceAsync(serviceName);
                 if (res.IsSuccess)
+                {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
+                    return true;
+                }
                 else
+                {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
+                }
             }
             catch (Exception)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
         }
 
         /// <inheritdoc />
-        public async Task StopService(string serviceName)
+        public async Task<bool> StopService(string serviceName)
         {
             try
             {
                 if (!await IsServiceNameValid(serviceName))
                 {
-                    return;
+                    return false;
                 }
 
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return;
+                    return false;
                 }
 
                 var res = await _serviceManager.StopServiceAsync(serviceName);
                 if (res.IsSuccess)
+                {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
+                    return true;
+                }
                 else
+                {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
+                }
             }
             catch (Exception)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
         }
 
         /// <inheritdoc />
-        public async Task RestartService(string serviceName)
+        public async Task<bool> RestartService(string serviceName)
         {
             try
             {
                 if (!await IsServiceNameValid(serviceName))
                 {
-                    return;
+                    return false;
                 }
 
                 var exists = _serviceManager.IsServiceInstalled(serviceName);
                 if (!exists)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return;
+                    return false;
                 }
 
                 var startupType = _serviceManager.GetServiceStartupType(serviceName);
                 if (startupType == ServiceStartType.Disabled)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
-                    return;
+                    return false;
                 }
 
                 var res = await _serviceManager.RestartServiceAsync(serviceName);
                 if (res.IsSuccess)
+                {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
+                    return true;
+                }
                 else
+                {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
+                }
             }
             catch (Exception)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
             }
         }
 
