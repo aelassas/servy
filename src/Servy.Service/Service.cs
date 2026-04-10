@@ -699,25 +699,19 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Reads the current restart attempts count from the persistent file storage.
-        /// Uses a lock to prevent concurrent access corruption.
+        /// Ensures the restart attempts tracking file exists and retrieves the current counter value.
         /// </summary>
-        /// <remarks>
-        /// This method ensures that the restart attempts counter is always retrieved from disk,
-        /// allowing the value to persist across service restarts.  
-        /// <para>
-        /// If the file is missing, contains invalid data, or an error occurs during reading,
-        /// the counter is reset to <c>0</c> and the file is updated accordingly.
-        /// </para>
-        /// <para>
-        /// Use this method at service startup (e.g., in <see cref="OnStart"/>) to ensure
-        /// the restart attempts value reflects the most recent persisted state.
-        /// </para>
-        /// </remarks>
+        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or performing I/O.</param>
         /// <returns>
-        /// The number of recorded restart attempts, or <c>0</c> if the counter was reset.
+        /// The number of restart attempts recorded in the file. 
+        /// Returns 0 if the file is missing, corrupt, or if an error occurs during retrieval.
         /// </returns>
-        private async Task<int> GetRestartAttemptsAsync(CancellationToken ct = default)
+        /// <remarks>
+        /// This method uses an asynchronous semaphore to prevent race conditions during file access.
+        /// If the file content is invalid or unreadable, it automatically resets the file to "0" 
+        /// to maintain a clean recovery state for the managed process.
+        /// </remarks>
+        private async Task<int> EnsureRestartAttemptsFileAsync(CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return 0;
 
@@ -826,7 +820,7 @@ namespace Servy.Service
         {
             // If the counter is already 0, there is no need to check timestamps or files.
             // This keeps the health check efficient.
-            if ((await GetRestartAttemptsAsync()) == 0) return;
+            if ((await EnsureRestartAttemptsFileAsync()) == 0) return;
 
             if (!File.Exists(_restartAttemptsFile)) return;
 
@@ -1725,7 +1719,7 @@ namespace Servy.Service
                     if (_isTearingDown || _disposed)
                         return;
 
-                    currentAttempts = await GetRestartAttemptsAsync();
+                    currentAttempts = await EnsureRestartAttemptsFileAsync();
 
                     if (currentAttempts >= _maxRestartAttempts)
                     {
