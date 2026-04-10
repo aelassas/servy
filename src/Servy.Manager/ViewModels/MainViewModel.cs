@@ -826,6 +826,10 @@ namespace Servy.Manager.ViewModels
                         try
                         {
                             allDtosDict.TryGetValue(service.Name, out var dto);
+
+                            // As properties mutate inside this method, INotifyPropertyChanged 
+                            // will fire. WPF handles marshaling these specific property updates 
+                            // to the UI thread automatically.
                             var updatedDto = await RefreshServiceInternal(service, allServicesDict, dto);
 
                             if (updatedDto != null)
@@ -848,14 +852,9 @@ namespace Servy.Manager.ViewModels
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
                 }
 
-                // Refresh UI only if not cancelled
-                if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        ServicesView.Refresh();
-                    }, DispatcherPriority.Background);
-                }
+                // Note: ServicesView.Refresh() has been explicitly removed.
+                // Property updates (CPU, RAM, Status) are handled by INotifyPropertyChanged.
+                // Additions and removals are handled via ObservableCollection in SearchServicesAsync.
             }
             catch (OperationCanceledException)
             {
