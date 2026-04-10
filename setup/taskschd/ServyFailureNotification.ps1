@@ -32,17 +32,15 @@
 # Function to show toast notification
 # -------------------------------
 function Show-Notification {
-  [cmdletbinding()]
-  Param (
-    [string] $ServiceName,
-    [string] $LogText,
-    [string] $scriptDir
+  [CmdletBinding()]
+  param (
+    [string]$ServiceName,
+    [string]$LogText,
+    [string]$scriptDir
   )
 
-  # --- VERSION GATE ---
-  # WinRT projection and the ::new() constructor require PowerShell 5.0+.
   if ($PSVersionTable.PSVersion.Major -lt 5) {
-    $verError = "ServyToast: Skipping toast for '$ServiceName'. Toasts require PowerShell 5.0+ (Detected: $($PSVersionTable.PSVersion.Major))."
+    $verError = "ServyToast: Toasts require PowerShell 5.0+ (Detected: $($PSVersionTable.PSVersion.Major))."
     Write-FallbackError -Message $verError -scriptDir $scriptDir
     return
   }
@@ -50,18 +48,13 @@ function Show-Notification {
   $ToastTitle = "Servy - $ServiceName"
     
   try {
-    # 1. VALIDATE WinRT AVAILABILITY
-    # If this fails, catch block triggers the fallback immediately.
     [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
         
     $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
       [Windows.UI.Notifications.ToastTemplateType]::ToastText02
     )
 
-    # 2. BUILD NOTIFICATION XML
     $rawXml = [xml]$template.GetXml()
-        
-    # Using full cmdlet names to avoid alias issues (where-object)
     $titleNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "1" }
     $bodyNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "2" }
 
@@ -71,26 +64,21 @@ function Show-Notification {
     $serializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
     $serializedXml.LoadXml($rawXml.OuterXml)
 
-    # 3. CONFIGURE TOAST OBJECT
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
     $toast.Tag = "Servy"
     $toast.Group = "Servy"
     $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-    # 4. ASYNCHRONOUS FALLBACK (Handles delivery failures like Focus Assist)
     $null = $toast.add_Failed({
         param($evtSender, $evtArgs)
-        $asyncError = "ServyToast: Delivery failed for '$ServiceName'. ErrorCode: $($evtArgs.ErrorCode)"
+        $asyncError = "ServyToast: Delivery failed. ErrorCode: $($evtArgs.ErrorCode)"
         Write-FallbackError -Message $asyncError -scriptDir $scriptDir
       })
 
-    # 5. ATTEMPT DISPLAY
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
     $notifier.Show($toast)
   } catch {
-    # SYNCHRONOUS FALLBACK
-    # Handles: Type-load errors, no interactive session, or UI-thread blocking.
-    $syncError = "ServyToast: Notification path failed for '$ServiceName'. Details: $($_.Exception.Message)"
+    $syncError = "ServyToast: Notification path failed. Details: $($_.Exception.Message)"
     Write-FallbackError -Message $syncError -scriptDir $scriptDir
   }
 }
@@ -99,15 +87,16 @@ function Show-Notification {
 # Helper: Fallback Logging
 # -------------------------------
 function Write-FallbackError {
-  Param($Message, $scriptDir)
+  param(
+    [string]$Message, 
+    [string]$scriptDir
+  )
     
   try {
-    # Attempt to write to Application Log. Requires 'Servy' source to be registered.
     Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
       -EntryType Warning -Message $Message -ErrorAction Stop
   }
   catch {
-    # Last resort: File log
     $logFile = Join-Path $scriptDir "ServyNotification.log"
     "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
   }

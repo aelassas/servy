@@ -50,16 +50,17 @@ if ($PSVersionTable.PSVersion.Major -ge 3) {
 # 2. Helper: Fallback Logging
 # -------------------------------
 function Write-FallbackError {
-  Param($Message, $scriptDir)
+  param(
+    [string]$Message, 
+    [string]$scriptDir
+  )
     
   Write-Host "ERROR: $Message" -ForegroundColor Red
 
   try {
-    # Attempt to write to Application Log. Requires 'Servy' source to be registered.
     Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
       -EntryType Warning -Message $Message -ErrorAction Stop
   } catch {
-    # Last resort: File log
     $logFile = Join-Path $scriptDir "ServyFailureEmail.log"
     "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append
   }
@@ -89,11 +90,11 @@ catch {
 # 4. Email Notification Function
 # -------------------------------
 function Send-NotificationEmail {
-  [cmdletbinding()]
-  Param (
-    [string] $Subject,
-    [string] [parameter(ValueFromPipeline)] $Body,
-    [string] $scriptDir
+  [CmdletBinding()]
+  param (
+    [string]$Subject,
+    [string][Parameter(ValueFromPipeline)]$Body,
+    [string]$scriptDir
   )
 
   # --- CONFIGURATION FROM XML ---
@@ -102,12 +103,11 @@ function Send-NotificationEmail {
   $from = $SmtpConfig.SmtpConfig.From
   $to = $SmtpConfig.SmtpConfig.To
   
-  # Path to the encrypted credential file
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
 
   # --- VALIDATION GATE ---
   if ([string]::IsNullOrEmpty($smtpServer) -or $smtpServer -eq "smtp.example.com") {
-    $warnMsg = "ServyFailureEmail: SMTP Server is not configured or set to placeholder. Skipping email."
+    $warnMsg = "ServyFailureEmail: SMTP Server is not configured. Skipping email."
     Write-FallbackError -Message $warnMsg -scriptDir $scriptDir
     return $false
   }
