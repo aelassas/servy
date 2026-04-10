@@ -695,12 +695,18 @@ namespace Servy.Core.UnitTests.IO
         {
             using (var writer = new RotatingStreamWriter("dummy.log", false, 1000, true, DateRotationType.Daily, 1, false))
             {
+                // 1. Force an invalid enum value into the private field
                 var field = typeof(RotatingStreamWriter).GetField("_dateRotationType", BindingFlags.NonPublic | BindingFlags.Instance);
                 field!.SetValue(writer, (DateRotationType)999);
 
+                // 2. Get the method info
                 var method = typeof(RotatingStreamWriter).GetMethod("ShouldRotateByDate", BindingFlags.NonPublic | BindingFlags.Instance);
-                var result = (bool)method!.Invoke(writer, Array.Empty<object>())!;
 
+                // 3. Provide the required DateTime parameter (even for the default/invalid case)
+                var args = new object[] { DateTime.UtcNow };
+                var result = (bool)method!.Invoke(writer, args)!;
+
+                // Assert: An unrecognized rotation type should safely return false
                 Assert.False(result);
             }
         }
@@ -786,55 +792,73 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void DailyRotation_Local_DST_SafetyBuffer_PreventsEarlyRotation()
         {
-            // Scenario: It is a new calendar day, but only 22 hours have passed (simulated DST "Fall Back")
-            var now = DateTime.Now;
-            var twentyTwoHoursAgo = now.AddHours(-22);
+            // Arrange: Fix the timeline to simulate a 22-hour gap across midnight
+            // April 10th, 11:00 PM (23:00)
+            var lastRotationUtc = new DateTime(2026, 4, 10, 23, 0, 0, DateTimeKind.Utc);
 
-            // lastRotationDate was yesterday, but logically we are in the safety window
+            // April 11th, 09:00 PM (21:00) -> 22 hours later
+            var nowUtc = lastRotationUtc.AddHours(22);
+
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
-                SetPrivateField(writer, "_lastRotationDate", twentyTwoHoursAgo);
+                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
 
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+                // Act
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
 
-                // Assert: Should NOT rotate because it hasn't been 23 hours yet
-                Assert.False(shouldRotate, "Should not rotate if < 23 hours have passed in Local mode even if day changed.");
+                // Assert
+                // Even though it is a new day (April 11 vs April 10), 
+                // the 23-hour buffer should block the rotation.
+                Assert.False(shouldRotate, "Should not rotate if < 23 hours have passed, even if the calendar day changed.");
             }
         }
 
         [Fact]
-        public void DailyRotation_Local_DST_SafetyBuffer_AllowsRotationAfterThreshold()
+        public void DailyRotation_Local_Simulated_AllowsRotationAfterThreshold()
         {
-            // Scenario: New calendar day and 23.5 hours passed
-            var now = DateTime.Now;
-            var twentyThreeHoursAgo = now.AddHours(-23.5);
+            // Arrange: Use a fixed UTC date that is guaranteed to cross a day boundary
+            // April 10th, 10:00 AM UTC
+            var lastRotationUtc = new DateTime(2026, 4, 10, 10, 0, 0, DateTimeKind.Utc);
+
+            // April 11th, 11:00 AM UTC (25 hours later)
+            // 25 hours ensures that even in the most extreme time zones, 
+            // a new calendar day has started.
+            var nowUtc = lastRotationUtc.AddHours(25);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: true))
             {
-                SetPrivateField(writer, "_lastRotationDate", twentyThreeHoursAgo);
+                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
 
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+                // Act
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
 
-                // Assert: Should rotate
-                Assert.True(shouldRotate);
+                // Assert
+                Assert.True(shouldRotate, "Rotation should trigger when crossing into a new calendar day.");
             }
         }
 
         [Fact]
         public void DailyRotation_UTC_IgnoresSafetyBuffer()
         {
-            // Scenario: In UTC, we don't care about the 23-hour rule, only the calendar date change
-            var nowUtc = DateTime.UtcNow;
-            var oneHourAgoButDifferentDay = nowUtc.Date.AddSeconds(-1); // Yesterday 11:59:59 PM
+            // Arrange: Strictly UTC. 
+            // Last rotation was yesterday at 11:59:59 PM
+            var lastRotationUtc = new DateTime(2026, 4, 10, 23, 59, 59, DateTimeKind.Utc);
+
+            // Now is today at 00:00:01 AM (Only 2 seconds passed, but day changed)
+            var nowUtc = new DateTime(2026, 4, 11, 0, 0, 1, DateTimeKind.Utc);
 
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, useLocalTimeForRotation: false))
             {
-                SetPrivateField(writer, "_lastRotationDate", oneHourAgoButDifferentDay);
+                SetPrivateField(writer, "_lastRotationDate", lastRotationUtc);
 
-                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+                // Act: Pass the simulated 'now'
+                var args = new object[] { nowUtc };
+                var shouldRotate = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
 
-                // Assert: Should rotate immediately on date change
-                Assert.True(shouldRotate);
+                // Assert: In UTC mode, we ignore the 23h buffer and rotate on day change
+                Assert.True(shouldRotate, "UTC mode should rotate immediately when the calendar day flips.");
             }
         }
 
@@ -869,14 +893,20 @@ namespace Servy.Core.UnitTests.IO
         [Fact]
         public void ShouldRotateByDate_Daily_SameDay_ReturnsFalse()
         {
+            // Arrange: Pick a fixed UTC point in time
+            var nowUtc = new DateTime(2026, 4, 11, 10, 0, 0, DateTimeKind.Utc);
+
             using (var writer = CreateWriter(_logFilePath, enableDateRotation: true, dateRotationType: DateRotationType.Daily))
             {
-                // Set last rotation to 'now' so now.Date > lastRotationDate.Date is FALSE
-                SetPrivateField(writer, "_lastRotationDate", DateTime.UtcNow);
+                // Set last rotation to the same day
+                SetPrivateField(writer, "_lastRotationDate", nowUtc.AddHours(-2));
 
-                var result = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate");
+                // Act: Pass nowUtc as the argument to the private method
+                var args = new object[] { nowUtc };
+                var result = (bool)InvokePrivateMethod(writer, "ShouldRotateByDate", args);
 
-                Assert.False(result);
+                // Assert: 10:00 AM is same day as 08:00 AM, should not rotate
+                Assert.False(result, "Should not rotate if the calendar day has not changed.");
             }
         }
 
