@@ -172,6 +172,7 @@ namespace Servy.Service.UnitTests
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
             _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, It.IsAny<string[]>()))
                 .Returns(options);
+            _mockProcess.Setup(p => p.Start()).Returns(true);
 
             // 2. Logger Promotion setup
             // This is critical: the service will now use mockScopedLogger.Object for everything else

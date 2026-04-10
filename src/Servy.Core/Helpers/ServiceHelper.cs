@@ -142,9 +142,6 @@ namespace Servy.Core.Helpers
         /// <param name="services">A collection of service names to stop.</param>
         public async Task StopServices(IEnumerable<string> services)
         {
-            var defaultTimeoutInSeconds = 30;
-            var bufferTimeInSeconds = 15;
-
             foreach (var serviceName in services)
             {
                 try
@@ -169,10 +166,8 @@ namespace Servy.Core.Helpers
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
-                        var stopTimeout = (service.StopTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
-                        var previousStopTimeout = (service.PreviousStopTimeout ?? defaultTimeoutInSeconds) + bufferTimeInSeconds;
-                        stopTimeout = Math.Max(Math.Max(stopTimeout, previousStopTimeout), defaultTimeoutInSeconds);
-                        var waitTime = TimeSpan.FromSeconds(stopTimeout);
+                        int timeout = CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout);
+                        var waitTime = TimeSpan.FromSeconds(timeout);
 
                         // This blocks until the service is Stopped or the waitTime expires
                         await Task.Run(() => sc.WaitForStatus(ServiceControllerStatus.Stopped, waitTime));
@@ -196,6 +191,29 @@ namespace Servy.Core.Helpers
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Calculates the total stop timeout by evaluating configured limits, 
+        /// historical stop times, and mandatory safety buffers.
+        /// </summary>
+        /// <param name="configuredTimeout">The timeout value from the service configuration.</param>
+        /// <param name="previousStopTimeout">The last recorded successful stop duration.</param>
+        /// <param name="preStopTimeout">The timeout for the pre-stop executable hook, if any.</param>
+        /// <returns>The calculated timeout in seconds, including safety buffers.</returns>
+        public static int CalculateStopTimeout(int? configuredTimeout, int? previousStopTimeout, int preStopTimeout = 0)
+        {
+            // Standardize the floor using the default stop timeout
+            int floor = AppConfig.DefaultStopTimeout;
+
+            // Determine the baseline: highest of configured or historical duration (respecting the floor)
+            int baseline = Math.Max(configuredTimeout ?? floor, previousStopTimeout ?? floor);
+
+            // Add the configurable OS/SCM buffer and the pre-stop hook duration
+            int total = baseline + AppConfig.ScmTimeoutBufferSeconds + preStopTimeout;
+
+            // Final safety check to ensure we never drop below the absolute floor
+            return Math.Max(total, floor);
+        }
 
         /// <summary>
         /// Queries the Service Control Manager (SCM) and Windows Registry to find all active services 
