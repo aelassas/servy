@@ -30,7 +30,7 @@ namespace Servy.Manager.Services
 
         #region Private Fields
 
-        private readonly ServiceManager _serviceManager;
+        private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
         private readonly IFileDialogService _fileDialogService;
