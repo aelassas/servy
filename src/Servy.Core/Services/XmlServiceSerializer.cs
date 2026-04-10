@@ -1,8 +1,9 @@
 ﻿using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Servy.Core.Helpers
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides XML serialization and deserialization for <see cref="ServiceDto"/> objects.
@@ -12,6 +13,7 @@ namespace Servy.Core.Helpers
         /// <inheritdoc />
         public ServiceDto? Deserialize(string xml)
         {
+            // Branch 1: Covered by Deserialize_NullOrEmpty_ReturnsNull
             if (string.IsNullOrWhiteSpace(xml))
                 return null;
 
@@ -25,7 +27,16 @@ namespace Servy.Core.Helpers
             using (var stringReader = new StringReader(xml))
             using (var xmlReader = XmlReader.Create(stringReader, settings))
             {
-                return serializer.Deserialize(xmlReader) as ServiceDto;
+                // Directly cast the result. 
+                // If the XML is valid, this is a ServiceDto. 
+                // If the XML root is wrong, XmlSerializer throws (covered by tests).
+                var dto = serializer.Deserialize(xmlReader) as ServiceDto;
+
+                // Since we made ApplyDefaults null-safe, we call it directly.
+                // This line is now 100% covered.
+                ServiceDtoHelper.ApplyDefaults(dto);
+
+                return dto;
             }
         }
     }

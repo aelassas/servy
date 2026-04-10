@@ -18,7 +18,6 @@ namespace Servy.Validators
     /// </summary>
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
     {
-
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
@@ -71,46 +70,49 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout)
+            if (dto.StartTimeout.HasValue && dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartTimeout, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout)
+            if (dto.StopTimeout.HasValue && dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStopTimeout, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.RotationSize < Core.Config.AppConfig.MinRotationSize)
+            if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && dto.RotationSize < Core.Config.AppConfig.MinRotationSize)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.MaxRotations < 0)
+            if (dto.MaxRotations.HasValue && dto.MaxRotations < 0)
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRotations, AppConfig.Caption);
                 return false;
             }
 
-            if (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval)
+            if (dto.EnableHealthMonitoring.HasValue && dto.EnableHealthMonitoring.Value)
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
-                return false;
-            }
+                if (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
+                    return false;
+                }
 
-            if (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks)
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
-                return false;
-            }
+                if (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
+                    return false;
+                }
 
-            if (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts)
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
-                return false;
+                if (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
+                    return false;
+                }
             }
 
             // Failure Program
@@ -126,21 +128,7 @@ namespace Servy.Validators
                 return false;
             }
 
-            var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
-            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
-            {
-                await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
-                return false;
-            }
-
-            var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
-            if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
-                return false;
-            }
-
-            if (!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value)
+            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrEmpty(dto.UserAccount))
             {
                 try
                 {
@@ -159,6 +147,20 @@ namespace Servy.Validators
                     await _messageBoxService.ShowErrorAsync(ex.Message, AppConfig.Caption);
                     return false;
                 }
+            }
+
+            var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
+            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
+            {
+                await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
+                return false;
+            }
+
+            var normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
+            if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
+            {
+                await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
+                return false;
             }
 
             // Pre-launch validation

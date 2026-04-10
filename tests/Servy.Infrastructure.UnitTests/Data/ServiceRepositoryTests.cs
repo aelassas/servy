@@ -2,8 +2,8 @@ using Dapper;
 using Moq;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Helpers;
 using Servy.Core.Security;
+using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 
 namespace Servy.Infrastructure.UnitTests.Data

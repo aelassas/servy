@@ -2,7 +2,6 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Data;
-using Servy.Core.Helpers;
 using Servy.Core.Services;
 
 namespace Servy.CLI.UnitTests.Commands

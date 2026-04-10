@@ -1,6 +1,6 @@
 ﻿using Servy.Core.DTOs;
 
-namespace Servy.Core.Helpers
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Defines methods to serialize and deserialize <see cref="ServiceDto"/> objects from XML.

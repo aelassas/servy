@@ -3,7 +3,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 
-namespace Servy.Core.Helpers
+namespace Servy.Core.Services
 {
     /// <summary>
     /// Provides validation for JSON strings that should represent a <see cref="ServiceDto"/>.

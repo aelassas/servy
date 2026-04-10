@@ -575,6 +575,8 @@ namespace Servy.Manager.Services
 
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
 
+                ServiceDtoHelper.ApplyDefaults(dto);
+
                 var res = await _serviceRepository.UpsertAsync(dto);
                 if (res > 0)
                 {

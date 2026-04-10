@@ -1,8 +1,8 @@
 ﻿using Servy.Core.DTOs;
-using Servy.Core.Helpers;
+using Servy.Core.Services;
 using System.Xml.Serialization;
 
-namespace Servy.Core.UnitTests.Helpers
+namespace Servy.Core.UnitTests.Services
 {
     public class XmlServiceValidatorTests
     {
