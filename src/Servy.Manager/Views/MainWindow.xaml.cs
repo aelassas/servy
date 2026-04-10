@@ -104,7 +104,7 @@ namespace Servy.Manager.Views
                 _logger,
                 fileDialogService,
                 viewModel.RemoveService,
-                viewModel.Resfresh,
+                viewModel.Refresh,
                 serviceConfigurationValidator
             );
 

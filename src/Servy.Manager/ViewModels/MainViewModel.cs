@@ -1041,7 +1041,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refreshes the services list by re-running the search.
         /// </summary>
-        public async Task Resfresh()
+        public async Task Refresh()
         {
             await SearchServicesAsync(null);
         }
