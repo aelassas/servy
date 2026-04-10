@@ -26,6 +26,17 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class PerformanceViewModel : ViewModelBase
     {
+        #region Constants
+
+        /// <summary>
+        /// The number of data points maintained in the performance history buffers.
+        /// A value of 101 ensures the graph line spans the entire horizontal width 
+        /// of the UI control (0 to 100 on the X-axis) immediately upon initialization.
+        /// </summary>
+        private const int PerformanceHistoryCapacity = 101;
+
+        #endregion
+
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
@@ -207,10 +218,10 @@ namespace Servy.Manager.ViewModels
                 RamUsage = UiConstants.NotAvailable;
             }
 
-            // 2. Clear and SEED the data history with 101 zeros
+            // 2. Clear and SEED the data history with PerformanceHistoryCapacity zeros
             // This ensures the graph line spans the whole width immediately
-            _cpuValues = Enumerable.Repeat(0.0, 101).ToList();
-            _ramValues = Enumerable.Repeat(0.0, 101).ToList();
+            _cpuValues = Enumerable.Repeat(0.0, PerformanceHistoryCapacity).ToList();
+            _ramValues = Enumerable.Repeat(0.0, PerformanceHistoryCapacity).ToList();
 
             // 3. Reset the UI collections to empty (they will update on next tick)
             CpuPointCollection = new PointCollection();
@@ -354,8 +365,8 @@ namespace Servy.Manager.ViewModels
             // Add the raw value directly to history without averaging
             valueHistory.Add(newValue);
 
-            // Always keep exactly 101 points to maintain the "scrolling" effect
-            if (valueHistory.Count > 101) valueHistory.RemoveAt(0);
+            // Always keep exactly PerformanceHistoryCapacity points to maintain the "scrolling" effect
+            if (valueHistory.Count > PerformanceHistoryCapacity) valueHistory.RemoveAt(0);
 
             // Determine the vertical scale (CPU is fixed at 100%, RAM scales to usage)
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
@@ -368,7 +379,7 @@ namespace Servy.Manager.ViewModels
             for (int i = 0; i < valueHistory.Count; i++)
             {
                 // Calculate X: Maps the index (0-100) to the pixel width (0-400)
-                // With 101 points, we have exactly 100 intervals, matching the 400px width.
+                // With PerformanceHistoryCapacity points, we have exactly 100 intervals, matching the 400px width.
                 double x = i * stepX;
 
                 // Calculate Y: Maps value to pixel height, inverted for WPF coordinate system
@@ -541,5 +552,6 @@ namespace Servy.Manager.ViewModels
         }
 
         #endregion
+
     }
 }
