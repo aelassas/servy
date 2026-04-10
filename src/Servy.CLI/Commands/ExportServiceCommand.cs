@@ -99,8 +99,9 @@ namespace Servy.CLI.Commands
             string fullPath = Path.GetFullPath(userPath);
 
             // 2. Extension Validation: Ensure we are only writing configuration files
-            string extension = Path.GetExtension(fullPath).ToLowerInvariant();
-            if (extension != ".json" && extension != ".xml")
+            string extension = Path.GetExtension(fullPath);
+            if (!string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Only .json and .xml exports are permitted.");
             }

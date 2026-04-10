@@ -530,21 +530,25 @@ namespace Servy.Infrastructure.Data
                 return await GetAllAsync(decrypt, cancellationToken);
             }
 
+            // Standardize: Remove LOWER() from SQL to utilize indexes more efficiently
+            // SQLite's LIKE is case-insensitive by default for ASCII
             var sql = @"
-        SELECT *
-        FROM Services
-        WHERE LOWER(Name) LIKE @Pattern ESCAPE '\'
-            OR LOWER(Description) LIKE @Pattern ESCAPE '\'
-        ORDER BY LOWER(Name) COLLATE NOCASE ASC;";
+                SELECT * FROM Services 
+                WHERE Name LIKE @Pattern ESCAPE '\' 
+                   OR Description LIKE @Pattern ESCAPE '\' 
+                ORDER BY Name COLLATE NOCASE ASC;";
 
-            var escapedKeyword = keyword.Trim().ToLower()
+            // Use Span-friendly or allocation-reduced escaping if possible
+            // Standardizing on OrdinalIgnoreCase logic for the keyword preparation
+            var escapedKeyword = keyword.Trim()
                 .Replace(@"\", @"\\")
                 .Replace("%", @"\%")
                 .Replace("_", @"\_");
 
             var pattern = $"%{escapedKeyword}%";
+
             var cmd = new CommandDefinition(sql, new { Pattern = pattern }, cancellationToken: cancellationToken);
-            var list = await _dapper.QueryAsync<ServiceDto>(cmd);
+            var list = (await _dapper.QueryAsync<ServiceDto>(cmd)).ToList();
 
             if (decrypt)
             {
