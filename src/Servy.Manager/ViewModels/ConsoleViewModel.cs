@@ -32,7 +32,7 @@ namespace Servy.Manager.ViewModels
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
-        private readonly DispatcherTimer _timer;
+        private DispatcherTimer _timer;
         private readonly ILogger _logger;
         private CancellationTokenSource _cancellationTokenSource;
         private bool _hadSelectedService;
@@ -227,8 +227,7 @@ namespace Servy.Manager.ViewModels
             var app = (App)Application.Current;
             _maxLines = app.ConsoleMaxLines;
 
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.ConsoleRefreshIntervalInMs) };
-            _timer.Tick += OnTick;
+            InitTimer();
 
             VisibleLines = CollectionViewSource.GetDefaultView(RawLines);
             VisibleLines.Filter = (obj) =>
@@ -242,6 +241,24 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// Configures the <see cref="DispatcherTimer"/> used to poll process performance metrics.
+        /// </summary>
+        /// <remarks>
+        /// The timer interval is retrieved from the global <see cref="App.PerformanceRefreshIntervalInMs"/> configuration.
+        /// This method hooks the <see cref="OnTick"/> event handler, which is responsible for triggering 
+        /// the asynchronous update of CPU and RAM counters.
+        /// </remarks>
+        private void InitTimer()
+        {
+            if (_timer == null)
+            {
+                var app = (App)Application.Current;
+                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
+                _timer.Tick += OnTick;
+            }
+        }
 
         /// <summary>
         /// Orchestrates the transition between services. This method synchronizes the history 
@@ -573,6 +590,9 @@ namespace Servy.Manager.ViewModels
         public void StartMonitoring()
         {
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
+
+            // Start timer
+            InitTimer();
             _timer?.Start();
         }
 
@@ -615,16 +635,26 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// Stops the background refresh timer and cancels any pending asynchronous operations.
+        /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
+        /// from timer events to prevent memory leaks during tab navigation.
         /// </summary>
         public void Cleanup()
         {
-            // 1. Stop the timer first to prevent new ticks
-            _timer?.Stop();
+            // 1. Cancel and dispose the CancellationTokenSource
+            if (_cts != null)
+            {
+                _cts.Cancel();
+                _cts.Dispose();
+                _cts = null;
+            }
 
-            // 2. Signal cancellation to background tasks
-            _cts?.Cancel();
+            // 2. Stop the timer, unsubscribe from the Tick event, and release the reference
+            if (_timer != null)
+            {
+                _timer.Stop();
+                _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher from keeping the VM alive
+                _timer = null;
+            }
         }
 
         #endregion
