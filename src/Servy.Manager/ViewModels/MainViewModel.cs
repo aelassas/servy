@@ -866,6 +866,17 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refresh service description, status, startup type, user and installation state. Heavy work runs off the UI thread.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method performs a dual role: it updates the UI properties for the service 
+        /// and ensures the local database remains the source of truth.
+        /// </para>
+        /// <para>
+        /// <b>Side-Effect (Write):</b> If the service's Description or Startup Type as reported 
+        /// by Windows differs from the values stored in the database, this method will 
+        /// automatically trigger an <c>UpsertAsync</c> to the repository to synchronize the records.
+        /// </para>
+        /// </remarks>
         /// <param name="service">The service to refresh.</param>
         /// <param name="allServices">Dictionary of all installed services keyed by name.</param>
         /// <param name="serviceDto">The service DTO from the repository, if any.</param>
