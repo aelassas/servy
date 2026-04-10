@@ -1,33 +1,16 @@
 <#
 .SYNOPSIS
-Builds Servy for release as a framework-dependent Windows x64 executable.
+    Builds Servy for release as a framework-dependent Windows x64 executable.
 
 .DESCRIPTION
-This script:
-1. Runs publish-res-release.ps1 to generate embedded resources.
-2. Cleans old publish output.
-3. Publishes Servy.csproj as a framework-dependent app for win-x64.
-4. Produces a non-self-contained build suitable for distribution.
-
-.PARAMETER Tfm
-Specifies the target framework. Default is "net10.0-windows".
-
-.EXAMPLE
-./publish-release.ps1
-Publishes using the default target framework.
-
-.EXAMPLE
-./publish-release.ps1 -Tfm net10.0-windows
-Publishes using .NET target framework.
-
-.NOTES
-Author: Akram El Assas
-Project: Servy
-This script must be run from PowerShell 5+ or PowerShell 7+.
+    Standardized Pattern A script. This script:
+    1. Runs the resource publishing step.
+    2. Cleans and publishes Servy.csproj without debug symbols.
+    3. Produces a framework-dependent build suitable for distribution.
 #>
 
+[CmdletBinding()]
 param(
-    # Target framework (default: net10.0-windows)
     [string]$Tfm                = "net10.0-windows",
     [string]$BuildConfiguration = "Release"
 )
@@ -35,74 +18,54 @@ param(
 $ErrorActionPreference = "Stop"
 
 # ---------------------------------------------------------------------------------
-# Script directory (so the script can be run from anywhere)
+# Step 0: Setup variables
 # ---------------------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
+$projectPath = Join-Path $scriptDir "Servy.csproj"
 
 # ---------------------------------------------------------------------------------
-# Step 0: Run publish-res-release.ps1 (resource publishing step)
+# Step 1: Run resource publishing step
 # ---------------------------------------------------------------------------------
-$publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
+$resSuffix = if ($BuildConfiguration -eq "Debug") { "debug" } else { "release" }
+$publishResScriptName = "publish-res-$resSuffix.ps1"
 $publishResScript = Join-Path $scriptDir $publishResScriptName
 
 if (-not (Test-Path $publishResScript)) {
-    Write-Error "Required script not found: $publishResScript"
-    exit 1
+    Write-Error "Required resource script not found: $publishResScript"
 }
 
-Write-Host "=== Running $publishResScriptName ==="
+Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
 & $publishResScript -Tfm $Tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
-    exit $LASTEXITCODE
-}
-Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
-# Step 1: Clean and publish Servy.csproj (Framework-dependent, win-x64)
+# Step 2: Clean and Publish (Pattern A: Default output location)
 # ---------------------------------------------------------------------------------
-$projectPath   = Join-Path $scriptDir "Servy.csproj" | Resolve-Path
-$publishFolder = Join-Path $scriptDir "bin\Release\$Tfm\win-x64\publish"
-
-if (-not (Test-Path $projectPath)) {
-    Write-Error "Project file not found: $projectPath"
-    exit 1
-}
-
-# Remove old publish output if it exists
-if (Test-Path $publishFolder) {
-    Write-Host "Removing old publish folder: $publishFolder"
-    Remove-Item -Recurse -Force $publishFolder
-}
-
-Write-Host "=== Publishing Servy.csproj ==="
+Write-Host "=== Publishing Servy.csproj ===" -ForegroundColor Cyan
 Write-Host "Target Framework : $Tfm"
-Write-Host "Configuration    : Release"
-Write-Host "Runtime          : win-x64"
-Write-Host "Self-contained   : false"
-Write-Host "Single File      : false"
+Write-Host "Configuration    : $BuildConfiguration"
+
+# Pattern A: Perform restore and clean via dotnet toolchain
+& dotnet restore $projectPath -r win-x64
+
+& dotnet clean $projectPath -c $BuildConfiguration
 
 & dotnet publish $projectPath `
-    -c Release `
+    -c $BuildConfiguration `
     -r win-x64 `
     --self-contained false `
-    /p:PublishSingleFile=false `
-    /p:IncludeAllContentForSelfExtract=true `
-    /p:PublishTrimmed=false `
     --no-restore `
     --nologo `
     --verbosity minimal `
+    /p:PublishSingleFile=false `
+    /p:IncludeAllContentForSelfExtract=true `
+    /p:PublishTrimmed=false `
     /p:DebugType=None `
     /p:DebugSymbols=false `
+    /p:CopyOutputSymbolsToPublishDirectory=false `
+    /p:CopyCommandLineArguments=false `
     /p:ErrorOnDuplicatePublishOutputFiles=true `
-    /p:GeneratePackageOnBuild=false `
     /p:UseAppHost=true `
     /p:Clean=true `
     /p:DeleteExistingFiles=true
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
-    exit $LASTEXITCODE
-}
-
-Write-Host "=== Servy.csproj published successfully ==="
+Write-Host "=== Servy.csproj published successfully ===" -ForegroundColor Green

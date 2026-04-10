@@ -57,7 +57,7 @@ if (-not (Test-Path $publishRestarterScript)) {
 }
 
 Write-Host "=== [restarter] Running publish.ps1 ==="
-& $publishRestarterScript -Tfm $Tfm -Runtime $runtime -Configuration $buildConfiguration
+& $publishRestarterScript -Tfm $Tfm -Runtime $runtime -BuildConfiguration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[restarter] publish.ps1 failed."
     exit $LASTEXITCODE

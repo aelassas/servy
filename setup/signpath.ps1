@@ -22,7 +22,7 @@
 
 param(
     [Parameter(Mandatory = $true)]
-    [string]$FilePath
+    [string]$Path
 )
 
 # ----------------------------------------------------------
@@ -103,18 +103,18 @@ if (!$apiToken -or !$organizationId -or !$projectSlug -or !$signingPolicySlug) {
     exit 1
 }
 
-if (-not (Test-Path $FilePath)) {
-    Write-Error "File not found: $FilePath"
+if (-not (Test-Path $Path)) {
+    Write-Error "File not found: $Path"
     exit 1
 }
 
-$fileName = Split-Path $FilePath -Leaf
+$fileName = Split-Path $Path -Leaf
 Write-Host "Submitting signing job for $fileName..."
 
 # ----------------------------------------------------------
 # SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
-$signedPath = "$FilePath.signed"
+$signedPath = "$Path.signed"
 
 try {
     $commonParams = @{
@@ -122,7 +122,7 @@ try {
         ApiToken           = $apiToken
         ProjectSlug        = $projectSlug
         SigningPolicySlug  = $signingPolicySlug
-        InputArtifactPath  = $FilePath
+        InputArtifactPath  = $Path
         WaitForCompletion  = $true
         OutputArtifactPath = $signedPath
     }
@@ -178,8 +178,8 @@ try {
         Write-Error "SignPath did not produce the expected output file: $signedPath"
         exit 1
     }
-    Move-Item -Force -Path $signedPath -Destination $FilePath
-    Write-Host "Signing complete: $FilePath"
+    Move-Item -Force -Path $signedPath -Destination $Path
+    Write-Host "Signing complete: $Path"
 }
 catch {
     Write-Error "Failed to replace the original file: $_"

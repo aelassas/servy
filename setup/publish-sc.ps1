@@ -4,170 +4,153 @@
 
 .DESCRIPTION
     This script compiles all Servy applications (WPF, CLI, Manager) as self-contained,
-    builds the Inno Setup installer, signs the generated installer (if signing is enabled),
+    builds the Inno Setup installer, signs the generated installer,
     and generates a portable 7z package containing the published executables.
 
 .PARAMETER Fm
-    Target framework moniker (TFM), e.g., "net10.0".
+    Target framework moniker prefix (e.g., "net8.0", "net10.0").
 
 .PARAMETER Version
     Application version used for installer and ZIP output file names.
 
 .PARAMETER Pause
-    Optional switch that pauses the script before exiting. Useful when double-clicking.
+    Optional switch that pauses the script before exiting.
 
 .NOTES
     Requirements:
-      - .NET SDK must be installed
-      - Inno Setup (ISCC.exe) must be installed
-      - 7-Zip (7z.exe) must be installed
-      - SignPath script configured in setup/signpath.ps1
-
-.EXAMPLE
-    ./publish-sc.ps1 -fm "net10.0" -version "3.8"
-
-.EXAMPLE
-    ./publish-sc.ps1 -version "3.8" -Pause
+      - .NET SDK
+      - Inno Setup (ISCC.exe)
+      - 7-Zip (7z.exe)
+      - setup/signpath.ps1
 #>
 
-# publish-sc.ps1
-# Build script for Servy self-contained installer and ZIP package
-
+[CmdletBinding()]
 param(
     [string]$Fm      = "net10.0",
     [string]$Version = "1.0",
     [switch]$Pause
 )
 
-if (-not $tfm) {
-    $tfm = "$Fm-windows"
-}
+$ErrorActionPreference = "Stop"
+
+# Standardize TFM and Configuration names used across the codebase
+$Tfm = "$Fm-windows"
+$BuildConfiguration = "Release"
+$Runtime = "win-x64"
 
 # ========================
 # Configuration
 # ========================
-$buildConfiguration = "Release"
-$runtime            = "win-x64"
-$innoCompiler       = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$sevenZipExe        = "C:\Program Files\7-Zip\7z.exe"
+$innoCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+$sevenZipExe  = "C:\Program Files\7-Zip\7z.exe"
 
 # Directories
-$scriptDir          = Split-Path -Parent $MyInvocation.MyCommand.Path
-$rootDir            = (Resolve-Path (Join-Path $scriptDir "..")).Path
-$servyDir           = Join-Path $rootDir "src\Servy"
-$cliDir             = Join-Path $rootDir "src\Servy.CLI"
-$managerDir         = Join-Path $rootDir "src\Servy.Manager"
-$signPath           = Join-Path $rootDir "setup\signpath.ps1" | Resolve-Path
+$scriptDir = $PSScriptRoot
+$rootDir   = (Resolve-Path (Join-Path $scriptDir "..")).Path
+$servyDir  = Join-Path $rootDir "src\Servy"
+$cliDir    = Join-Path $rootDir "src\Servy.CLI"
+$managerDir = Join-Path $rootDir "src\Servy.Manager"
+$signPath  = Join-Path $rootDir "setup\signpath.ps1"
 
-# Inno Setup file
-$issFile            = Join-Path $scriptDir "servy.iss"
+# Output Artifacts
+$issFile       = Join-Path $scriptDir "servy.iss"
+$packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
+$outputZip     = "$packageFolder.7z"
+$installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe"
 
 # ========================
 # Functions
 # ========================
-function Remove-FileOrFolder {
-    param (
-        [string]$Path
-    )
+function Remove-ItemSafely {
+    param ([string]$Path)
     if (Test-Path $Path) {
-        Write-Host "Removing: $Path"
+        Write-Host "Cleaning: $Path" -ForegroundColor Gray
         Remove-Item -Recurse -Force $Path
-        Write-Host "Removed: $Path"
     }
 }
 
 # ========================
 # Step 1: Build Applications
 # ========================
-Write-Host "Building Servy WPF app..."
-& (Join-Path $servyDir "publish.ps1") -Tfm $tfm
+# Use the call operator and explicit TFM to ensure consistency
+$projects = @($servyDir, $cliDir, $managerDir)
 
-Write-Host "Building Servy CLI app..."
-& (Join-Path $cliDir "publish.ps1") -Tfm $tfm
-
-Write-Host "Building Servy.Manager app..."
-& (Join-Path $managerDir "publish.ps1") -Tfm $tfm
-
-# ========================
-# Step 2: Build Installer
-# ========================
-Write-Host "Building installer from $issFile..."
-& $innoCompiler $issFile /DMyAppVersion=$Version
-
-# ========================
-# Step 3: Sign Installer if signing is enabled
-# ========================
-$InstallerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe" | Resolve-Path
-& $signPath $InstallerPath
-
-# ========================
-# Step 4: Build Self-Contained ZIP
-# ========================
-Write-Host "Building self-contained ZIP..."
-
-# Paths to executables
-$servyExe    = Join-Path $servyDir   "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.exe"
-$cliExe      = Join-Path $cliDir     "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.CLI.exe"
-$managerExe  = Join-Path $managerDir "bin\$buildConfiguration\$tfm\$runtime\publish\Servy.Manager.exe"
-
-# Package folder
-$packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
-$outputZip     = "$packageFolder.7z"
-
-# Clean old artifacts
-Remove-FileOrFolder -path $outputZip
-Remove-FileOrFolder -path $packageFolder
-New-Item -ItemType Directory -Path $packageFolder | Out-Null
-
-# Copy executables with versioned names
-# Copy-Item $servyExe (Join-Path $packageFolder "servy-$Version-$tfm-x64.exe") -Force
-# Copy-Item $cliExe   (Join-Path $packageFolder "servy-cli-$Version-$tfm-x64.exe") -Force
-Copy-Item $servyExe (Join-Path $packageFolder "Servy.exe") -Force
-Copy-Item $cliExe (Join-Path $packageFolder "servy-cli.exe") -Force
-Copy-Item $managerExe (Join-Path $packageFolder "Servy.Manager.exe") -Force
-
-# Compress with 7-Zip
-Write-Host "Creating ZIP: $outputZip"
-$parentDir  = Split-Path $packageFolder -Parent
-$folderName = Split-Path $packageFolder -Leaf
-
-$destPath = Join-Path $packageFolder "taskschd"
-if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
-Copy-Item -Path "taskschd\*" -Destination $destPath -Recurse -Force -Exclude "smtp-cred.xml"
-
-Copy-Item -Path (Join-Path $cliDir "Servy.psm1") -Destination "$packageFolder" -Force
-Copy-Item -Path (Join-Path $cliDir "Servy.psd1") -Destination "$packageFolder" -Force
-Copy-Item -Path (Join-Path $cliDir "servy-module-examples.ps1") -Destination "$packageFolder" -Force
-
-$zipArgs = @(
-    "a",
-    "-t7z",
-    "-m0=lzma2",
-    "-mx=9",
-    "-mfb=273",
-    "-md=128m",
-    "-ms=on",
-    $outputZip,
-    "$packageFolder"
-)
-
-$process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
-
-if ($process.ExitCode -ne 0) {
-    Write-Error "ERROR: 7z compression failed."
-    exit 1
+foreach ($project in $projects) {
+    $projectName = Split-Path $project -Leaf
+    Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
+    
+    $publishScript = Join-Path $project "publish.ps1"
+    if (Test-Path $publishScript) {
+        & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
+    }
+    else {
+        Write-Warning "Publish script not found for $projectName. Using generic dotnet publish."
+        & dotnet restore $project
+        & dotnet clean $project -c $BuildConfiguration
+        & dotnet publish $project -c $BuildConfiguration -f $Tfm -r $Runtime --self-contained true
+    }
 }
 
-# Remove temp folder
-Remove-FileOrFolder -path $packageFolder
+# ========================
+# Step 2: Build & Sign Installer
+# ========================
+Write-Host "--- Building Installer ---" -ForegroundColor Cyan
+if (Test-Path $innoCompiler) {
+    & $innoCompiler $issFile /DMyAppVersion=$Version
+}
+else {
+    Write-Error "ISCC.exe not found. Skipping installer build."
+}
 
-Write-Host "Self-contained ZIP build complete."
-Write-Host "Installer build finished."
+if (Test-Path $signPath) {
+    Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
+    & $signPath -Path $installerPath
+}
 
 # ========================
-# Step 5: Pause if requested
+# Step 3: Build Portable Package
 # ========================
+Write-Host "--- Packaging Portable ZIP ---" -ForegroundColor Cyan
+
+Remove-ItemSafely -Path $outputZip
+Remove-ItemSafely -Path $packageFolder
+[void](New-Item -ItemType Directory -Path $packageFolder)
+
+# Consolidate executables
+$binaries = @{
+    "Servy.exe"         = Join-Path $servyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.exe"
+    "servy-cli.exe"     = Join-Path $cliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.CLI.exe"
+    "Servy.Manager.exe" = Join-Path $managerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.Manager.exe"
+}
+
+foreach ($item in $binaries.GetEnumerator()) {
+    if (Test-Path $item.Value) {
+        Copy-Item -Path $item.Value -Destination (Join-Path $packageFolder $item.Name) -Force
+    }
+}
+
+# Include PowerShell Module and Task Scheduler hooks
+$taskSchdDest = Join-Path $packageFolder "taskschd"
+[void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
+Copy-Item -Path (Join-Path $scriptDir "taskschd\*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml"
+
+$cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
+foreach ($art in $cliArtifacts) {
+    Copy-Item -Path (Join-Path $cliDir $art) -Destination $packageFolder -Force
+}
+
+# Compress
+if (Test-Path $sevenZipExe) {
+    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
+    $process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
+    
+    if ($process.ExitCode -eq 0) {
+        Remove-ItemSafely -Path $packageFolder
+        Write-Host "Success: $outputZip" -ForegroundColor Green
+    }
+}
+
 if ($Pause) {
-    Write-Host "Press any key to exit..."
+    Write-Host "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }

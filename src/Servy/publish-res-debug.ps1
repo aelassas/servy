@@ -62,7 +62,7 @@ if (-not (Test-Path $publishServiceScript)) {
 }
 
 Write-Host "=== [service] Running publish.ps1 ==="
-& $publishServiceScript -Tfm $Tfm -Configuration $buildConfiguration
+& $publishServiceScript -Tfm $Tfm -BuildConfiguration $buildConfiguration
 if ($LASTEXITCODE -ne 0) {
     Write-Error "[service] publish.ps1 failed."
     exit $LASTEXITCODE
