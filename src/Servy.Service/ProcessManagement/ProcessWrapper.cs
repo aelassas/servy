@@ -21,16 +21,6 @@ namespace Servy.Service.ProcessManagement
         private readonly ILogger _logger;
         private bool _disposed;
 
-        /// <inheritdoc/>
-        public IntPtr ProcessHandle
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return _process.Handle;
-            }
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ProcessWrapper"/> class with the specified <see cref="ProcessStartInfo"/>.
         /// </summary>
