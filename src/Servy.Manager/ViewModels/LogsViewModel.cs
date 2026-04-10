@@ -14,7 +14,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -29,7 +28,6 @@ namespace Servy.Manager.ViewModels
 
         #region Private Fields
 
-        private readonly ILogger _logger;
         private readonly IEventLogService _eventLogService;
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
@@ -291,11 +289,9 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="LogsViewModel"/> class.
         /// </summary>
-        /// <param name="logger">Logger used to record warnings or errors.</param>
         /// <param name="eventLogService">Service used to fetch event logs.</param>
-        public LogsViewModel(ILogger logger, IEventLogService eventLogService)
+        public LogsViewModel(IEventLogService eventLogService)
         {
-            _logger = logger;
             _eventLogService = eventLogService;
 
             FromDate = DateTime.Now.AddDays(-3); // Default to last 3 days
@@ -369,7 +365,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to search logs: {ex}");
+                Logger.Error($"Failed to search logs.", ex);
             }
             finally
             {

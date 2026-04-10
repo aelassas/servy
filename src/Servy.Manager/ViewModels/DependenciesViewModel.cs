@@ -31,7 +31,6 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceManager _serviceManager;
         private DispatcherTimer _timer;
-        private readonly ILogger _logger;
         private CancellationTokenSource _cts;
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
@@ -188,11 +187,10 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceManager">Service manager.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        /// <param name="logger">Logger for diagnostic operations.</param>
-        public DependenciesViewModel(IServiceRepository serviceRepository,
+        public DependenciesViewModel(
+            IServiceRepository serviceRepository,
             IServiceManager serviceManager,
-            IServiceCommands serviceCommands,
-            ILogger logger)
+            IServiceCommands serviceCommands)
         {
             _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
@@ -202,7 +200,7 @@ namespace Servy.Manager.ViewModels
             RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
-            _logger = logger;
+
             InitTimer();
         }
 
@@ -387,7 +385,7 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to search services: {ex}");
+                Logger.Error($"Failed to search services.", ex);
             }
             finally
             {

@@ -29,7 +29,6 @@ namespace Servy.Manager.Views
     public partial class MainWindow : Window
     {
         private SecureData _secureData;
-        private ILogger _logger;
         private IMessageBoxService _messageBoxService;
 
         /// <summary>
@@ -50,12 +49,9 @@ namespace Servy.Manager.Views
         {
             var app = (App)Application.Current;
 
-            // Initialize logger
-            _logger = new EventLogLogger(AppConfig.EventSource, app.LogLevel, app.IsEventLogEnabled);
-
             // Initialize Logs view
             var logsView = new LogsView();
-            var logsVm = new LogsViewModel(_logger, new EventLogService(new EventLogReader()));
+            var logsVm = new LogsViewModel( new EventLogService(new EventLogReader()));
             logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
@@ -87,7 +83,6 @@ namespace Servy.Manager.Views
 
             // Create main ViewModel
             var viewModel = new MainViewModel(
-                _logger,
                 serviceManager,
                 serviceRepository,
                 null,                   // We'll set ServiceCommands next
@@ -101,7 +96,6 @@ namespace Servy.Manager.Views
                 serviceManager,
                 serviceRepository,
                 _messageBoxService,
-                _logger,
                 fileDialogService,
                 viewModel.RemoveService,
                 viewModel.Refresh,
@@ -603,9 +597,8 @@ namespace Servy.Manager.Views
 
             try
             {
-                // Dispose loggers
+                // Dispose logger
                 Logger.Shutdown();
-                _logger?.Dispose();
             }
             catch
             {

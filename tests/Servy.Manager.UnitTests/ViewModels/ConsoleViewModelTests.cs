@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Servy.Core.Data;
-using Servy.Core.Logging;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -19,21 +18,18 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
-        private readonly Mock<ILogger> _loggerMock;
 
         public ConsoleViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
-            _loggerMock = new Mock<ILogger>();
         }
 
         private ConsoleViewModel CreateViewModel()
         {
             return new ConsoleViewModel(
                 _serviceRepoMock.Object,
-                _serviceCommandsMock.Object,
-                _loggerMock.Object);
+                _serviceCommandsMock.Object);
         }
 
         [Fact]
@@ -227,7 +223,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.Equal("Line 1", sortedHistory[1].Text);
             }, createApp: true);
         }
-        
+
         [Fact]
         public async Task SwitchService_WithIdenticalTimestamps_ShouldKeepStdOutBeforeStdErr()
         {
