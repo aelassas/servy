@@ -156,51 +156,6 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Retrieves the CPU usage percentage for a process. 
-        /// Updates the internal cache with a new sample for delta calculation.
-        /// </summary>
-        /// <param name="pid">The process ID.</param>
-        /// <returns>CPU usage percentage (0.0 to 100.0), or 0 if unavailable.</returns>
-        [ExcludeFromCodeCoverage]
-        public static double GetCpuUsage(int pid)
-        {
-            try
-            {
-                using (var process = Process.GetProcessById(pid))
-                {
-                    var now = DateTime.UtcNow;
-                    var totalTime = process.TotalProcessorTime;
-
-                    if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
-                    {
-                        UpdateCpuSample(pid, now, totalTime);
-                        return 0;
-                    }
-
-                    var deltaTime = (now - prev.LastTime).TotalMilliseconds;
-                    var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
-
-                    if (deltaTime <= 0 || deltaCpu < 0) return 0;
-
-                    double usage = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
-
-                    UpdateCpuSample(pid, now, totalTime);
-
-                    return Math.Round(usage, 1, MidpointRounding.AwayFromZero);
-                }
-            }
-            catch (ArgumentException)
-            {
-                CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
-                return 0;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        /// <summary>
         /// Performs maintenance on the process cache by removing entries for PIDs that are no longer active.
         /// Should be called by a background timer to prevent memory leaks.
         /// </summary>
@@ -243,77 +198,72 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Retrieves the current physical memory usage (Private Bytes) for a specific process.
+        /// Retrieves both CPU and RAM metrics for a process using a single handle.
         /// </summary>
-        /// <param name="pid">The unique identifier (Process ID) of the target process.</param>
-        /// <returns>
-        /// The number of bytes allocated for the process that cannot be shared with other processes. 
-        /// Returns 0 if the process is not found or if access is denied.
-        /// </returns>
-        /// <remarks>
-        /// This method uses <see cref="Process.PrivateMemorySize64"/>, which represents the current 
-        /// commit charge of the process. This value is generally the closest programmatic match to 
-        /// the "Memory (Private Working Set)" column seen in Windows Task Manager.
-        /// </remarks>
         [ExcludeFromCodeCoverage]
-        public static long GetRamUsage(int pid)
+        public static ProcessMetrics GetProcessMetrics(int pid)
         {
             try
             {
                 using (var process = Process.GetProcessById(pid))
                 {
-                    // Private bytes (close to Task Manager's "Memory" column)
-                    return process.PrivateMemorySize64;
+                    // 1. Capture RAM (Instantaneous)
+                    long ram = process.PrivateMemorySize64;
+
+                    // 2. Capture CPU (Delta-based)
+                    var now = DateTime.UtcNow;
+                    var totalTime = process.TotalProcessorTime;
+
+                    if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
+                    {
+                        UpdateCpuSample(pid, now, totalTime);
+                        return new ProcessMetrics(0, ram);
+                    }
+
+                    var deltaTime = (now - prev.LastTime).TotalMilliseconds;
+                    var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
+
+                    double cpu = 0;
+                    if (deltaTime > 0 && deltaCpu >= 0)
+                    {
+                        cpu = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
+                        cpu = Math.Round(cpu, 1, MidpointRounding.AwayFromZero);
+                    }
+
+                    UpdateCpuSample(pid, now, totalTime);
+                    return new ProcessMetrics(cpu, ram);
                 }
+            }
+            catch (ArgumentException)
+            {
+                CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                return new ProcessMetrics(0, 0);
             }
             catch (Exception)
             {
-                return 0;
+                return new ProcessMetrics(0, 0);
             }
         }
 
         /// <summary>
-        /// Gets the combined CPU usage percentage of a process and all of its child descendant processes.
-        /// Should be called repeatedly (e.g., by a background timer every 4 seconds) to maintain accurate deltas.
+        /// Retrieves combined CPU and RAM metrics for an entire process tree.
+        /// Performs a single pass over the tree to minimize kernel transitions.
         /// </summary>
-        /// <param name="pid">The root process ID.</param>
-        /// <returns>The combined CPU usage percentage across the tree, rounded to one decimal place.</returns>
         [ExcludeFromCodeCoverage]
-        public static double GetProcessTreeCpuUsage(int pid)
+        public static ProcessMetrics GetProcessTreeMetrics(int rootPid)
         {
-            var pids = GetProcessTree(pid);
+            var pids = GetProcessTree(rootPid);
             double totalCpu = 0;
-
-            foreach (var p in pids)
-            {
-                totalCpu += GetCpuUsage(p);
-            }
-
-            // Round to 1 decimal place
-            double roundedTotal = Math.Round(totalCpu, 1, MidpointRounding.AwayFromZero);
-
-            // Cap the maximum possible output at 100.0% to gracefully handle thread timer lag anomalies
-            return Math.Min(100.0, roundedTotal);
-        }
-
-        /// <summary>
-        /// Retrieves the combined physical memory usage (Private Bytes) for a specific process 
-        /// and all of its child descendant processes.
-        /// </summary>
-        /// <param name="pid">The root process ID.</param>
-        /// <returns>The total number of private bytes allocated across the entire process tree.</returns>
-        [ExcludeFromCodeCoverage]
-        public static long GetProcessTreeRamUsage(int pid)
-        {
-            var pids = GetProcessTree(pid);
             long totalRam = 0;
 
-            foreach (var p in pids)
+            foreach (var pid in pids)
             {
-                totalRam += GetRamUsage(p);
+                var metrics = GetProcessMetrics(pid);
+                totalCpu += metrics.CpuUsage;
+                totalRam += metrics.RamUsage;
             }
 
-            return totalRam;
+            return new ProcessMetrics(Math.Min(100.0, totalCpu), totalRam);
         }
 
         /// <summary>

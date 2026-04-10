@@ -905,8 +905,10 @@ namespace Servy.Manager.ViewModels
                     // Parallelism is only a "win" if the tasks are "heavy."
                     var pid = service.Pid.Value;
                     ProcessHelper.MaintainCache();
-                    cpuUsage = ProcessHelper.GetProcessTreeCpuUsage(pid);
-                    ramUsage = ProcessHelper.GetProcessTreeRamUsage(pid);
+
+                    var processMetrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);
+                    cpuUsage = processMetrics.CpuUsage;
+                    ramUsage = processMetrics.RamUsage;
                 }
                 service.CpuUsage = cpuUsage;
                 service.RamUsage = ramUsage;

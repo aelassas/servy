@@ -281,24 +281,5 @@ namespace Servy.Core.UnitTests.Helpers
             Assert.Equal(expected, actual);
         }
 
-        [Fact]
-        public void PruneDeadProcesses_DoesNotExecute_WhenCalledTooSoon()
-        {
-            // Arrange
-            var lastPruneField = typeof(ProcessHelper).GetField("_lastPruneTime", BindingFlags.Static | BindingFlags.NonPublic);
-
-            // Set prune time to exactly now
-            DateTime testTime = DateTime.UtcNow;
-            lastPruneField.SetValue(null, testTime);
-
-            // Act
-            // This call hits the 'if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;' branch
-            ProcessHelper.GetCpuUsage(Process.GetCurrentProcess().Id);
-
-            // Assert
-            DateTime resultTime = (DateTime)lastPruneField.GetValue(null);
-            Assert.Equal(testTime, resultTime); // Time should not have changed because it returned early
-        }
-
     }
 }
