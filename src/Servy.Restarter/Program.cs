@@ -122,8 +122,9 @@ namespace Servy.Restarter
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
+                var jsonSerializer = new JsonServiceSerializer();
 
-                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer);
+                var serviceRepository = new ServiceRepository(dapperExecutor, secureData, xmlSerializer, jsonSerializer);
 
                 // 6. Validation
                 if (serviceRepository.GetByName(serviceName) == null)

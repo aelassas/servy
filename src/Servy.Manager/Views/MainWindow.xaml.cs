@@ -51,7 +51,7 @@ namespace Servy.Manager.Views
 
             // Initialize Logs view
             var logsView = new LogsView();
-            var logsVm = new LogsViewModel( new EventLogService(new EventLogReader()));
+            var logsVm = new LogsViewModel(new EventLogService(new EventLogReader()));
             logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
@@ -63,8 +63,9 @@ namespace Servy.Manager.Views
             var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
             _secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
+            var jsonSerializer = new JsonServiceSerializer();
 
-            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
+            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
 
             // Initialize service manager
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);

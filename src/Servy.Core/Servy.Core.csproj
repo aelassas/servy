@@ -119,7 +119,9 @@
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Security\ISecureData.cs" />
+    <Compile Include="Services\IJsonServiceSerializer.cs" />
     <Compile Include="Services\IXmlServiceSerializer.cs" />
+    <Compile Include="Services\JsonServiceSerializer.cs" />
     <Compile Include="Services\JsonServiceValidator.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />
     <Compile Include="Helpers\ProcessKiller.cs" />

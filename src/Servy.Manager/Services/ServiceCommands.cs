@@ -1,10 +1,7 @@
-﻿using Newtonsoft.Json;
-using Servy.Core.Data;
-using Servy.Core.DTOs;
+﻿using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
@@ -571,7 +568,8 @@ namespace Servy.Manager.Services
                     return;
                 }
 
-                var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
+                var serializer = new JsonServiceSerializer();
+                var dto = serializer.Deserialize(json);
                 if (dto == null)
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadJson, AppConfig.Caption);

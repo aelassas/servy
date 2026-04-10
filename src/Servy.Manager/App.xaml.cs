@@ -360,8 +360,9 @@ namespace Servy.Manager
                     var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
                     _secureData = new SecureData(protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
 
-                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
+                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
 
                     var resourceHelper = new ResourceHelper(serviceRepository);
 

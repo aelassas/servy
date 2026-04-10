@@ -65,8 +65,9 @@ namespace Servy.Views
             var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
             _secureData = new SecureData(protectedKeyProvider);
             var xmlSerializer = new XmlServiceSerializer();
+            var jsonSerializer = new JsonServiceSerializer();
 
-            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
+            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
 
             // Initialize service manager
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
@@ -134,7 +135,6 @@ namespace Servy.Views
             }
 
             _secureData?.Dispose();
-
             Logger.Shutdown();
 
             base.OnClosed(e);

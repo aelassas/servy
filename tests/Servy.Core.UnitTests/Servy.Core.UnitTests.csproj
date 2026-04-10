@@ -135,6 +135,7 @@
     <Compile Include="Security\SecurityHelperTests.cs" />
     <Compile Include="Services\EventLogServiceTests.cs" />
     <Compile Include="Helpers\HelperTests.cs" />
+    <Compile Include="Services\JsonServiceSerializerTests.cs" />
     <Compile Include="Services\JsonServiceValidatorTests.cs" />
     <Compile Include="IO\RotatingStreamWriterTests.cs" />
     <Compile Include="Security\SecureDataTests.cs" />

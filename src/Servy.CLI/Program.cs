@@ -130,7 +130,8 @@ namespace Servy.CLI
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
                 _secureData = new SecureData(protectedKeyProvider);
                 var xmlSerializer = new XmlServiceSerializer();
-                var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer);
+                var jsonSerializer = new JsonServiceSerializer();
+                var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
 
                 Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                 var serviceManager = new ServiceManager(
@@ -150,7 +151,7 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, serviceManager);
+                var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, jsonSerializer, serviceManager);
 
                 async Task Run()
                 {

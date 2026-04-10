@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Helpers;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -23,8 +22,9 @@ namespace Servy.Infrastructure.UnitTests.Data
         public ServiceRepositoryStub(bool returnNullDto = false)
             : base(
                 new DapperExecutorStub(),       // replace with stub or mock
-                new SecureDataStub(),       // replace with stub or mock
-                new XmlServiceSerializerStub()  // replace with stub or mock
+                new SecureDataStub(),           // replace with stub or mock
+                new XmlServiceSerializerStub(), // replace with stub or mock
+                new JsonServiceSerializerStub()
             )
         {
             _returnNullDto = returnNullDto;
@@ -62,7 +62,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             return _returnNullDto
                 ? Task.FromResult<ServiceDto>(null)
-                : Task.FromResult(new ServiceDto
+                : Task.FromResult<ServiceDto>(new ServiceDto
                 {
                     Id = id,
                     Name = "StubService",
@@ -107,7 +107,6 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
     }
 
-    // Dummy stubs for the constructor dependencies
     // Dummy stubs for the constructor dependencies
     public class DapperExecutorStub : IDapperExecutor
     {
@@ -162,4 +161,10 @@ namespace Servy.Infrastructure.UnitTests.Data
     {
         public ServiceDto Deserialize(string xml) => new ServiceDto { Name = "StubService" };
     }
+
+    public class JsonServiceSerializerStub : IJsonServiceSerializer
+    {
+        public ServiceDto Deserialize(string json) => new ServiceDto { Name = "StubService" };
+    }
+
 }

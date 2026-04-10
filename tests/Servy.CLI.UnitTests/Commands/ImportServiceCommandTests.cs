@@ -2,7 +2,6 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Data;
-using Servy.Core.Helpers;
 using Servy.Core.Services;
 using System.IO;
 using System.Threading;
@@ -15,6 +14,7 @@ namespace Servy.CLI.UnitTests.Commands
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializer;
+        private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializer;
         private readonly Mock<IServiceManager> _serviceManager;
         private readonly ImportServiceCommand _command;
 
@@ -22,8 +22,9 @@ namespace Servy.CLI.UnitTests.Commands
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _xmlServiceSerializer = new Mock<IXmlServiceSerializer>();
+            _jsonServiceSerializer = new Mock<IJsonServiceSerializer>();
             _serviceManager = new Mock<IServiceManager>();
-            _command = new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _serviceManager.Object);
+            _command = new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object);
         }
 
         [Fact]
