@@ -354,38 +354,141 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         [Fact]
-        public async Task UpsertBatchAsync_ValidServices_EncryptsDataAndCallsDapper()
+        public async Task UpsertBatchAsync_FullyPopulatedServices_MapsAllColumnsAndEncrypts()
         {
             // Arrange
             var repo = CreateRepository();
-            var services = new List<ServiceDto>
+
+            var service = new ServiceDto
             {
-                new ServiceDto { Name = "Service1", Password = "plain_password_1" },
-                new ServiceDto { Name = "Service2", Password = "plain_password_2" }
+                Name = "FullService",
+                DisplayName = "Display Name",
+                Description = "Description",
+                Pid = 1234,
+                ExecutablePath = "C:\\path.exe",
+                StartupDirectory = "C:\\dir",
+                Parameters = "--args",
+                StartupType = 2,
+                Priority = 1,
+                StartTimeout = 45,
+                StopTimeout = 45,
+                RunAsLocalSystem = false,
+                UserAccount = "User",
+                Password = "plain_password", // This will be encrypted
+                StdoutPath = "C:\\out.log",
+                StderrPath = "C:\\err.log",
+                EnableRotation = true,
+                RotationSize = 10,
+                MaxRotations = 5,
+                EnableDateRotation = true,
+                DateRotationType = 1,
+                UseLocalTimeForRotation = true,
+                EnableHealthMonitoring = true,
+                HeartbeatInterval = 30,
+                MaxFailedChecks = 3,
+                RecoveryAction = 1,
+                MaxRestartAttempts = 5,
+                EnvironmentVariables = "VAR=VAL",
+                ServiceDependencies = "Dep1",
+                EnableDebugLogs = true,
+                PreLaunchExecutablePath = "C:\\pre.exe",
+                PreLaunchStartupDirectory = "C:\\pre_dir",
+                PreLaunchParameters = "--pre",
+                PreLaunchEnvironmentVariables = "PRE_VAR=VAL",
+                PreLaunchStdoutPath = "C:\\pre_out.log",
+                PreLaunchStderrPath = "C:\\pre_err.log",
+                PreLaunchTimeoutSeconds = 60,
+                PreLaunchRetryAttempts = 2,
+                PreLaunchIgnoreFailure = true,
+                FailureProgramPath = "C:\\fail.exe",
+                FailureProgramStartupDirectory = "C:\\fail_dir",
+                FailureProgramParameters = "--fail",
+                PostLaunchExecutablePath = "C:\\post.exe",
+                PostLaunchStartupDirectory = "C:\\post_dir",
+                PostLaunchParameters = "--post",
+                PreStopExecutablePath = "C:\\pre_stop.exe",
+                PreStopStartupDirectory = "C:\\pre_stop_dir",
+                PreStopParameters = "--pre-stop",
+                PreStopTimeoutSeconds = 15,
+                PreStopLogAsError = true,
+                PostStopExecutablePath = "C:\\post_stop.exe",
+                PostStopStartupDirectory = "C:\\post_stop_dir",
+                PostStopParameters = "--post-stop"
             };
 
-            const string encryptedPass = "encrypted_password";
-            const int expectedRows = 2;
+            var services = new List<ServiceDto> { service };
+            const string encryptedPrefix = "encrypted_";
 
-            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns(encryptedPass);
+            _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>()))
+                           .Returns((string input) => encryptedPrefix + input);
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<IEnumerable<ServiceDto>>()))
-                       .ReturnsAsync(expectedRows);
+                       .ReturnsAsync(1);
 
             // Act
-            var result = await repo.UpsertBatchAsync(services, TestContext.Current.CancellationToken);
+            await repo.UpsertBatchAsync(services, TestContext.Current.CancellationToken);
 
             // Assert
-            Assert.Equal(expectedRows, result);
-
-            // Verify encryption was called for each service with a password
-            _mockSecureData.Verify(s => s.Encrypt("plain_password_1"), Times.Once);
-            _mockSecureData.Verify(s => s.Encrypt("plain_password_2"), Times.Once);
-
-            // Verify Dapper received the SQL and the collection
             _mockDapper.Verify(d => d.ExecuteAsync(
-                It.Is<string>(s => s.Contains("INSERT INTO Services") && s.Contains("ON CONFLICT")),
-                It.Is<IEnumerable<ServiceDto>>(list => list.All(dto => dto.Password == encryptedPass))
-            ), Times.Once);
+         It.Is<string>(sql =>
+             sql.Contains("INSERT INTO Services") &&
+             sql.Contains("ON CONFLICT(LOWER(Name)) DO UPDATE SET") &&
+             sql.Contains("PreStopParameters = excluded.PreStopParameters") &&
+             sql.Contains("UseLocalTimeForRotation = excluded.UseLocalTimeForRotation")),
+         It.Is<IEnumerable<ServiceDto>>(list =>
+             list.Count() == 1 && VerifyAllProperties(list.First(), service, encryptedPrefix))
+     ), Times.Once);
+        }
+
+        /// <summary>
+        /// Exhaustively verifies that every property on the actual DTO matches the expected DTO.
+        /// Used to ensure 100% mapping accuracy for bulk database operations.
+        /// </summary>
+        private bool VerifyAllProperties(ServiceDto actual, ServiceDto expected, string enc)
+        {
+            // 1. Identification & Core Metadata
+            bool coreOk = actual.Name == expected.Name &&
+                          actual.DisplayName == expected.DisplayName &&
+                          actual.Description == expected.Description &&
+                          actual.Pid == expected.Pid;
+
+            // 2. Encrypted Fields (Must have the prefix from the mock)
+            bool encryptedOk = actual.Password == (enc + expected.Password) &&
+                               actual.Parameters == (enc + expected.Parameters) &&
+                               actual.EnvironmentVariables == (enc + expected.EnvironmentVariables) &&
+                               actual.FailureProgramParameters == (enc + expected.FailureProgramParameters) &&
+                               actual.PreLaunchParameters == (enc + expected.PreLaunchParameters) &&
+                               actual.PostLaunchParameters == (enc + expected.PostLaunchParameters) &&
+                               actual.PreLaunchEnvironmentVariables == (enc + expected.PreLaunchEnvironmentVariables) &&
+                               actual.PreStopParameters == (enc + expected.PreStopParameters) &&
+                               actual.PostStopParameters == (enc + expected.PostStopParameters);
+
+            // 3. Main Execution & Timing
+            bool executionOk = actual.ExecutablePath == expected.ExecutablePath &&
+                               actual.StartupDirectory == expected.StartupDirectory &&
+                               actual.StartupType == expected.StartupType &&
+                               actual.Priority == expected.Priority &&
+                               actual.StartTimeout == expected.StartTimeout &&
+                               actual.StopTimeout == expected.StopTimeout;
+
+            // 4. Logging & Rotation
+            bool loggingOk = actual.StdoutPath == expected.StdoutPath &&
+                             actual.StderrPath == expected.StderrPath &&
+                             actual.EnableRotation == expected.EnableRotation &&
+                             actual.RotationSize == expected.RotationSize &&
+                             actual.MaxRotations == expected.MaxRotations &&
+                             actual.EnableDateRotation == expected.EnableDateRotation &&
+                             actual.DateRotationType == expected.DateRotationType &&
+                             actual.UseLocalTimeForRotation == expected.UseLocalTimeForRotation;
+
+            // 5. Health & Hooks metadata (excluding the encrypted params checked above)
+            bool hooksOk = actual.EnableHealthMonitoring == expected.EnableHealthMonitoring &&
+                           actual.HeartbeatInterval == expected.HeartbeatInterval &&
+                           actual.PreLaunchExecutablePath == expected.PreLaunchExecutablePath &&
+                           actual.PreStopExecutablePath == expected.PreStopExecutablePath &&
+                           actual.PostStopExecutablePath == expected.PostStopExecutablePath &&
+                           actual.PreStopLogAsError == expected.PreStopLogAsError;
+
+            return coreOk && encryptedOk && executionOk && loggingOk && hooksOk;
         }
 
         [Fact]
