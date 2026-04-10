@@ -508,7 +508,7 @@ function Invoke-ServyServiceCommand {
 # Public Functions
 # ----------------------------------------------------------------
 
-function Show-ServyVersion {
+function Get-ServyVersion {
   <#
     .SYNOPSIS
         Displays the version of the Servy CLI.
@@ -521,7 +521,7 @@ function Show-ServyVersion {
         Suppress spinner and run in non-interactive mode. Optional.
 
     .EXAMPLE
-        Show-ServyVersion
+        Get-ServyVersion
         # Displays the current version of Servy CLI.
     #>
   [CmdletBinding()]
@@ -532,7 +532,7 @@ function Show-ServyVersion {
   Invoke-ServyCli -Command "--version" -Quiet:$Quiet -ErrorContext "Failed to get Servy CLI version"
 }
 
-function Show-ServyHelp {
+function Get-ServyHelp {
   <#
     .SYNOPSIS
         Displays help information for the Servy CLI.
@@ -548,11 +548,11 @@ function Show-ServyHelp {
         Specific command to show help for. Optional.
 
     .EXAMPLE
-        Show-ServyHelp
+        Get-ServyHelp
         # Displays help for the Servy CLI.
 
     .EXAMPLE
-        Show-ServyHelp -Command "install"
+        Get-ServyHelp -Command "install"
         # Displays help for the install command.        
     #>
   [CmdletBinding()]
@@ -1348,3 +1348,35 @@ function Import-ServyServiceConfig {
 
   Invoke-ServyCli -Command "import" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to import configuration from '$Path'"
 }
+
+# PS 2.0 Compatible Alias declaration
+# We MUST use Export-ModuleMember in PS 2.0 to ensure 
+# the aliases actually leave the module scope.
+
+# 1. Define all public functions
+$publicFunctions = @(
+  'Get-ServyVersion',
+  'Get-ServyHelp',
+  'Install-ServyService',
+  'Uninstall-ServyService',
+  'Start-ServyService',
+  'Stop-ServyService',
+  'Restart-ServyService',
+  'Get-ServyServiceStatus',
+  'Export-ServyServiceConfig',
+  'Import-ServyServiceConfig'
+)
+
+# 2. Define all aliases (including the legacy Show- ones)
+$publicAliases = @(
+  'Show-ServyVersion',
+  'Show-ServyHelp'
+)
+
+# 3. Create the actual Aliases pointing to the new Get- functions
+New-Alias -Name 'Show-ServyVersion' -Value 'Get-ServyVersion' -ErrorAction SilentlyContinue
+New-Alias -Name 'Show-ServyHelp'    -Value 'Get-ServyHelp'    -ErrorAction SilentlyContinue
+
+# 4. Export everything to the pipeline
+Export-ModuleMember -Function $publicFunctions -Alias $publicAliases
+# --- End of Servy.psm1 ---

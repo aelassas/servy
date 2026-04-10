@@ -21,7 +21,7 @@ Import-Module (Join-Path $scriptDir "Servy.psm1") -Force
 # ----------------------------------------------------------------
 # Display the current version of Servy CLI
 # ----------------------------------------------------------------
-Show-ServyVersion -Quiet
+Get-ServyVersion -Quiet
 
 # ----------------------------------------------------------------
 # Install a new Windows service using Servy (splatting)
