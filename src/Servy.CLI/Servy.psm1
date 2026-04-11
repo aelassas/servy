@@ -1070,7 +1070,8 @@ param(
 
   # 2. Iterate through pairs to build arguments
   foreach ($pair in $paramPairs) {
-    $paramName = $pair[0].TrimStart('-')
+    $camelName = $pair[0].TrimStart('-')
+    $paramName = $camelName.Substring(0,1).ToUpper() + $camelName.Substring(1)
 
     $hasValue = $false
 
