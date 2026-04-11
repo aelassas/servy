@@ -28,7 +28,7 @@ namespace Servy.Core.DTOs
         /// Gets or sets the user account under which the service runs.
         /// Defaults to <c>LocalSystem</c> if not specified.
         /// </summary>
-        public string UserSession { get; set; }
+        public string LogOnAs { get; set; }
 
         /// <summary>
         /// Gets or sets the description of the service.
@@ -43,7 +43,7 @@ namespace Servy.Core.DTOs
         {
             Status = ServiceStatus.None;
             StartupType = ServiceStartType.Automatic;
-            UserSession = "LocalSystem";
+            LogOnAs = "LocalSystem";
             Description = string.Empty;
         }
     }

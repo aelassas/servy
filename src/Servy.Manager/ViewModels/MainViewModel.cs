@@ -939,9 +939,9 @@ namespace Servy.Manager.ViewModels
                     if (service.StartupType != info.StartupType)
                         service.StartupType = info.StartupType;
 
-                    var user = string.IsNullOrEmpty(info.UserSession) ? AppConfig.LocalSystem : info.UserSession;
-                    if (service.UserSession != user)
-                        service.UserSession = ServiceMapper.GetUserSessionDisplayName(user);
+                    var user = string.IsNullOrEmpty(info.LogOnAs) ? AppConfig.LocalSystem : info.LogOnAs;
+                    if (service.LogOnAs != user)
+                        service.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(user);
 
                     if (service.Description != info.Description)
                         service.Description = info.Description;

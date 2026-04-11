@@ -351,9 +351,9 @@ namespace Servy.Manager.Resources {
         /// <summary>
         ///   Recherche une chaîne localisée semblable à User Session.
         /// </summary>
-        public static string Column_UserSession {
+        public static string Column_LogOnAs {
             get {
-                return ResourceManager.GetString("Column_UserSession", resourceCulture);
+                return ResourceManager.GetString("Column_LogOnAs", resourceCulture);
             }
         }
         

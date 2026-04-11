@@ -38,7 +38,7 @@ namespace Servy.Manager
                 Description = service.Description ?? string.Empty,
                 StartupType = null,
                 Status = ServiceStatus.None,
-                UserSession = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetUserSessionDisplayName(service.UserAccount) ?? string.Empty,
+                LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty,
                 IsInstalled = false,
                 IsConfigurationAppAvailable = app.IsConfigurationAppAvailable,
                 Pid = service.Pid,
@@ -104,7 +104,7 @@ namespace Servy.Manager
         /// </summary>
         /// <param name="userSession">User session.</param>
         /// <returns>ser session display name.</returns>
-        public static string GetUserSessionDisplayName(string userSession)
+        public static string GetLogOnAsDisplayName(string userSession)
         {
             if (string.IsNullOrEmpty(userSession))
                 return AppConfig.LocalSystem;

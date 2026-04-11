@@ -78,7 +78,7 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the user session under which the service runs.
         /// </summary>
-        public string UserSession
+        public string LogOnAs
         {
             get => _userSession;
             set => SetProperty(ref _userSession, value);

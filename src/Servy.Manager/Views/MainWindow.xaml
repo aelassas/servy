@@ -274,7 +274,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_UserSession}" Width="100" MinWidth="80" CanUserReorder="False" SortMemberPath="UserSession">
+                            <DataGridTemplateColumn Header="{x:Static resx:Strings.Column_LogOnAs}" Width="100" MinWidth="80" CanUserReorder="False" SortMemberPath="LogOnAs">
                                 <DataGridTemplateColumn.HeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="AutomationProperties.Name" Value="User Session Column" />
@@ -282,15 +282,15 @@
                                 </DataGridTemplateColumn.HeaderStyle>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding UserSession}"
-                                                   ToolTip="{Binding UserSession}"
+                                        <TextBlock Text="{Binding LogOnAs}"
+                                                   ToolTip="{Binding LogOnAs}"
                                                    VerticalAlignment="Center"
                                                    Margin="5,0,0,0"
                                                    TextWrapping="NoWrap"
                                                    TextTrimming="CharacterEllipsis"
                                                    HorizontalAlignment="Left"
                                                    MaxWidth="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
-                                                   AutomationProperties.Name="{Binding UserSession}"
+                                                   AutomationProperties.Name="{Binding LogOnAs}"
                                                    AutomationProperties.HelpText="The user account the service is running as."/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>

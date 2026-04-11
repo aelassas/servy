@@ -1832,7 +1832,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Single(result);
-            Assert.Equal("CustomUser", result[0].UserSession);
+            Assert.Equal("CustomUser", result[0].LogOnAs);
         }
 
         [Theory]
@@ -1908,7 +1908,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Assert
             Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
-            Assert.Equal("LocalSystem", result[0].UserSession); // Stayed default because bytesNeeded was 0
+            Assert.Equal("LocalSystem", result[0].LogOnAs); // Stayed default because bytesNeeded was 0
         }
 
         [Theory]
@@ -1967,7 +1967,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetAllServices(CancellationToken.None);
 
             // Assert
-            Assert.Equal(expectedUser, result[0].UserSession);
+            Assert.Equal(expectedUser, result[0].LogOnAs);
         }
 
         [Fact]
