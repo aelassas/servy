@@ -295,7 +295,7 @@ namespace Servy.Service.Helpers
                 using (var process = Process.Start(new ProcessStartInfo
                 {
                     FileName = restarter,
-                    Arguments = $"\"{serviceName}\"", // Quotes ensure the name is treated as a single token
+                    Arguments = Helper.Quote(serviceName), // Quotes ensure the name is treated as a single token
                     CreateNoWindow = true,
                     UseShellExecute = false
                 }))
