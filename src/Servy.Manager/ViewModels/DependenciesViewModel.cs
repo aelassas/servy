@@ -10,7 +10,6 @@ using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -31,20 +30,6 @@ namespace Servy.Manager.ViewModels
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
-
-        #endregion
-
-        #region Properties - Log Data
-
-        /// <summary>
-        /// Gets the full collection of log lines received from the service.
-        /// </summary>
-        public BulkObservableCollection<LogLine> RawLines { get; } = new BulkObservableCollection<LogLine>();
-
-        /// <summary>
-        /// Gets the filtered view of log lines based on the <see cref="DependencySearchText"/>.
-        /// </summary>
-        public ICollectionView VisibleLines { get; }
 
         #endregion
 
@@ -191,12 +176,13 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
             ServiceCommands = serviceCommands;
+            _cts = new CancellationTokenSource();
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
-            
+
             InitTimer();
         }
 

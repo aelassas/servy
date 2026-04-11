@@ -35,19 +35,19 @@ namespace Servy.Core.Services
 
         public const uint SC_MANAGER_CONNECT = 0x0001;
         public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
-        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
+        // SC_MANAGER_ENUMERATE_SERVICE is defined in NativeMethods
 
         #endregion
 
         #region Service Access Rights
 
-        public const uint SERVICE_QUERY_CONFIG = 0x0001;
+        // SERVICE_QUERY_CONFIG is defined in NativeMethods
         public const uint SERVICE_CHANGE_CONFIG = 0x0002;
         public const uint SERVICE_QUERY_STATUS = 0x0004;
         public const uint SERVICE_START = 0x0010;
         public const uint SERVICE_STOP = 0x0020;
         public const uint SERVICE_DELETE = 0x00010000; // Standardized to 8-digit hex for clarity
-        public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
+        // SERVICE_CONFIG_DELAYED_AUTO_START_INFO is defined in NativeMethods
 
         #endregion
 
@@ -920,7 +920,7 @@ namespace Servy.Core.Services
                                     {
                                         if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, descPtr, bytesNeeded, ref bytesNeeded))
                                         {
-                                            var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(descPtr);
+                                            var descStruct = Marshal.PtrToStructure<ServiceDescription>(descPtr);
                                             description = Marshal.PtrToStringAuto(descStruct.lpDescription) ?? string.Empty;
                                         }
                                     }

@@ -2022,7 +2022,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "TestServiceWithDescription", It.IsAny<uint>())).Returns(svcHandle);
 
             const string expectedDescription = "This is a mocked service description.";
-            int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
+            int structSize = Marshal.SizeOf(typeof(ServiceDescription));
             int totalNeeded = structSize + 512; // Buffer for the struct + the string data
 
             // Mock QueryServiceConfig2 (Level 1: Description)
@@ -2043,7 +2043,7 @@ namespace Servy.Core.UnitTests.Services
                     }
 
                     // Step 2: Write the structure into the allocated memory
-                    var descStruct = new SERVICE_DESCRIPTION
+                    var descStruct = new ServiceDescription
                     {
                         lpDescription = Marshal.StringToHGlobalAuto(expectedDescription)
                     };
@@ -2079,7 +2079,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null!, null!, It.IsAny<uint>())).Returns(scmHandle);
             _mockWindowsServiceApi.Setup(x => x.OpenService(scmHandle, "NoDescService", It.IsAny<uint>())).Returns(svcHandle);
 
-            int structSize = Marshal.SizeOf(typeof(SERVICE_DESCRIPTION));
+            int structSize = Marshal.SizeOf(typeof(ServiceDescription));
 
             // Mock QueryServiceConfig2 to return a structure with a NULL pointer for lpDescription
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig2(
@@ -2097,7 +2097,7 @@ namespace Servy.Core.UnitTests.Services
                     }
 
                     // Step 2: Write a structure where lpDescription is IntPtr.Zero
-                    var descStruct = new SERVICE_DESCRIPTION
+                    var descStruct = new ServiceDescription
                     {
                         lpDescription = IntPtr.Zero // <--- This triggers the '?? string.Empty' branch
                     };

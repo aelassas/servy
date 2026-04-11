@@ -2163,8 +2163,6 @@ namespace Servy.Service
         /// </summary>
         private void Cleanup()
         {
-            if (_disposed) return;
-
             // reset PID
             ResetPid();
 

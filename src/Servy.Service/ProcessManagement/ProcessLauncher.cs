@@ -59,6 +59,14 @@ namespace Servy.Service.ProcessManagement
             // 5. Launch the process
             var process = factory.Create(psi, logger);
 
+            process.Start();
+
+            // 6. Handle execution mode
+            if (options.FireAndForget)
+            {
+                return process;
+            }
+
             var stdoutBuffer = new StringBuilder();
             var stderrBuffer = new StringBuilder();
 
@@ -79,19 +87,11 @@ namespace Servy.Service.ProcessManagement
                 };
             }
 
-            process.Start();
-
-            // 6. Handle execution mode
-            if (options.FireAndForget)
-            {
-                return process;
-            }
-
             if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
             if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
             // Synchronous mode: Wait for exit while pulsing the SCM
-            if (options.TimeoutMs > 0 && options.OnScmHeartbeat?.Target != null || options.OnScmHeartbeat?.Method != null)
+            if (options.TimeoutMs > 0 && (options.OnScmHeartbeat?.Target != null || options.OnScmHeartbeat?.Method != null))
             {
                 WaitForExitWithHeartbeat(process, options, logger);
             }

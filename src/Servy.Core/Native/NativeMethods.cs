@@ -113,19 +113,6 @@ namespace Servy.Core.Native
         }
 
         /// <summary>
-        /// Contains a service description.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        public struct SERVICE_DESCRIPTION
-        {
-            /// <summary>
-            /// The description of the service. If this member is NULL, the description is not modified. 
-            /// Use <see cref="Marshal.PtrToStringAuto(IntPtr)"/> to retrieve the string value.
-            /// </summary>
-            public IntPtr lpDescription;
-        }
-
-        /// <summary>
         /// Represents the current status of a Windows service.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]

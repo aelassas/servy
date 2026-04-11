@@ -115,10 +115,10 @@ namespace Servy.CLI.Commands
                 switch (configFileType)
                 {
                     case ConfigFileType.Xml:
-                        result = await ProcessXmlAsync(opts);
+                        result = await ProcessXmlAsync(opts, fullPath);
                         break;
                     case ConfigFileType.Json:
-                        result = await ProcessJsonAsync(opts);
+                        result = await ProcessJsonAsync(opts, fullPath);
                         break;
                     default:
                         result = CommandResult.Fail(string.Format(Strings.Msg_UnsupportedFileType, configFileType));
@@ -163,11 +163,13 @@ namespace Servy.CLI.Commands
         /// Validates and imports an XML service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="fullPath">The canonicalized absolute file path to read from.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts)
+        private Task<CommandResult> ProcessXmlAsync(ImportServiceOptions opts, string fullPath)
         {
             return ProcessImportInternalAsync(
                 opts,
+                fullPath,
                 "XML",
                 content => XmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportXmlAsync(content),
@@ -178,12 +180,14 @@ namespace Servy.CLI.Commands
         /// Validates and imports a JSON service configuration file.
         /// </summary>
         /// <param name="opts">Import service options.</param>
+        /// <param name="fullPath">The canonicalized absolute file path to read from.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         [SuppressMessage("Trimming", "IL2026", Justification = "Awaiting full trimming support")]
-        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts)
+        private Task<CommandResult> ProcessJsonAsync(ImportServiceOptions opts, string fullPath)
         {
             return ProcessImportInternalAsync(
                 opts,
+                fullPath,
                 "JSON",
                 content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content),
@@ -195,12 +199,13 @@ namespace Servy.CLI.Commands
         /// </summary>
         private async Task<CommandResult> ProcessImportInternalAsync(
             ImportServiceOptions opts,
+            string fullPath,
             string formatName,
             Func<string, (bool Valid, string? Error)> validator,
             Func<string, Task<bool>> repoImporter,
             Func<string, ServiceDto?> deserializer)
         {
-            var content = await File.ReadAllTextAsync(opts.Path);
+            var content = await File.ReadAllTextAsync(fullPath);
 
             // 1. Format Validation
             var (isValid, error) = validator(content);

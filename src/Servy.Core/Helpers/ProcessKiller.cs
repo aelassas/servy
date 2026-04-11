@@ -325,13 +325,9 @@ namespace Servy.Core.Helpers
                     if (string.IsNullOrEmpty(procInfo.ProcessName))
                         continue; // skip null or empty names
 
-                    try
+                    if (!KillProcessTreeAndParents(procInfo.ProcessName))
                     {
-                        KillProcessTreeAndParents(procInfo.ProcessName);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).", ex);
+                        Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
                         success = false;
                     }
                 }
