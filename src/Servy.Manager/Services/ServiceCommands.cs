@@ -345,7 +345,7 @@ namespace Servy.Manager.Services
                     var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, AppConfig.Caption);
                     if (!result)
                     {
-                        return true;
+                        return false;
                     }
 
                 }

@@ -13,6 +13,7 @@ namespace Servy.Core.Helpers
         {
             // 1. Mandatory Fields & Lengths
             if (string.IsNullOrWhiteSpace(dto.Name)) return (false, "Service name is required.");
+            if (string.IsNullOrWhiteSpace(dto.ExecutablePath)) return (false, "Executable path is required.");
             if (dto.Name.Length > AppConfig.MaxServiceNameLength)
                 return (false, $"Service name exceeds {AppConfig.MaxServiceNameLength} characters.");
 
@@ -33,7 +34,7 @@ namespace Servy.Core.Helpers
 
             // Protect against uint overflow in ChangeServiceConfig2 (SCM)
             if (dto.StopTimeout.HasValue && dto.StopTimeout < AppConfig.MinStopTimeout)
-                return (false, "Stop Timeout must be between 30s and 1 hour.");
+                return (false, $"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).");
 
             if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && (dto.RotationSize < AppConfig.MinRotationSize))
                 return (false, "Rotation size is too small.");

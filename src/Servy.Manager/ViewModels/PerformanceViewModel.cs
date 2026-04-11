@@ -193,9 +193,10 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
+            _cts = new CancellationTokenSource();
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
-            
+
             InitTimer();
         }
 

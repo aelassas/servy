@@ -91,7 +91,7 @@ namespace Servy.Service.ProcessManagement
             if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
             // Synchronous mode: Wait for exit while pulsing the SCM
-            if (options.TimeoutMs > 0 && options.OnScmHeartbeat?.Target != null || options.OnScmHeartbeat?.Method != null)
+            if (options.TimeoutMs > 0 && (options.OnScmHeartbeat?.Target != null || options.OnScmHeartbeat?.Method != null))
             {
                 WaitForExitWithHeartbeat(process, options, logger);
             }

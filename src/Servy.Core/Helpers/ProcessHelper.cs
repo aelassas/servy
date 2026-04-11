@@ -304,6 +304,8 @@ namespace Servy.Core.Helpers
         /// </returns>
         public static string FormatRamUsage(long ramUsage)
         {
+            if (ramUsage < 0) return "0 B";
+
             const double KB = 1024.0;
             const double MB = KB * 1024.0;
             const double GB = MB * 1024.0;

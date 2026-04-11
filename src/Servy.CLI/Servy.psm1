@@ -107,6 +107,7 @@ function Add-Arg {
 
   if ($Flag) {
     [void]$list.Add($key)
+    return $list
   }
 
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
@@ -1100,7 +1101,7 @@ param(
   }
 
   # 4. Invoke CLI
-  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to install service '$Name'"
+  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -EnvironmentVariables $secureEnv -ErrorContext "Failed to install service '$Name'"
 }
 
 function Uninstall-ServyService {
