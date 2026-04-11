@@ -15,6 +15,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Step 0: Setup variables
 # ---------------------------------------------------------------------------------
@@ -30,10 +38,12 @@ $publishResScript = Join-Path $scriptDir $publishResScriptName
 
 if (-not (Test-Path $publishResScript)) {
     Write-Error "Required script not found: $publishResScript"
+    exit 1
 }
 
 Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
 & $publishResScript -Tfm $Tfm
+Check-LastExitCode "$publishResScriptName failed"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Clean and Publish (Pattern A: Default output location)
@@ -43,9 +53,11 @@ Write-Host "Target Framework : $Tfm"
 Write-Host "Configuration    : $BuildConfiguration"
 
 & dotnet restore $projectPath -r win-x64
+Check-LastExitCode "dotnet restore failed"
 
 # Use dotnet toolchain for cleaning instead of manual Remove-Item
 & dotnet clean $projectPath -c $BuildConfiguration
+Check-LastExitCode "Project clean failed"
 
 & dotnet publish $projectPath `
     -c $BuildConfiguration `
@@ -65,5 +77,6 @@ Write-Host "Configuration    : $BuildConfiguration"
     /p:UseAppHost=true `
     /p:Clean=true `
     /p:DeleteExistingFiles=true
+Check-LastExitCode "dotnet publish failed"
 
 Write-Host "=== Servy.Manager.csproj published successfully ===" -ForegroundColor Green

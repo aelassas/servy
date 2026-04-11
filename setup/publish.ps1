@@ -34,12 +34,10 @@
 # Main setup bundle script for building both self-contained and framework-dependent installers
 
 param(
-    [string]$Tfm      = "net10.0", 
+    [string]$Tfm      = "net10.0-windows", 
     [ValidatePattern("^\d+\.\d+$")]
     [string]$Version = "7.9"
 )
-
-$tfm = "$Tfm-windows"
 
 $ErrorActionPreference = "Stop"
 
@@ -50,7 +48,7 @@ try {
     $startTime = Get-Date
 
     # Script directory (so we can run from anywhere)
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $scriptDir = $PSScriptRoot
 
     function Invoke-Script {
         param(

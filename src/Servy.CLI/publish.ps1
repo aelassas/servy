@@ -51,10 +51,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Script directory (so it works regardless of the current working directory)
 # ---------------------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ---------------------------------------------------------------------------------
 # SignPath script path
@@ -74,10 +82,7 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ==="
 & $publishResScript -Tfm $Tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishResScriptName failed"
 Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
@@ -96,32 +101,37 @@ Write-Host "Configuration    : $BuildConfiguration"
 Write-Host "Runtime          : $Runtime"
 
 & dotnet restore $projectPath -r $Runtime
+Check-LastExitCode "dotnet restore failed"
 
 & dotnet clean $projectPath -c $BuildConfiguration
+Check-LastExitCode "Project clean failed"
 
 & dotnet publish $projectPath `
     -c $BuildConfiguration `
     -r $Runtime `
     --force `
     /p:DeleteExistingFiles=true
+Check-LastExitCode "dotnet publish failed"    
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
-    exit $LASTEXITCODE
-}
 
 # ---------------------------------------------------------------------------------
 # Step 2: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $basePath      = Join-Path $scriptDir "..\Servy.CLI\bin\$BuildConfiguration\$Tfm\$Runtime"
-    $publishFolder = Join-Path $basePath "publish"
-    $exePath       = Join-Path $publishFolder "Servy.CLI.exe" | Resolve-Path
-    & $signPath $exePath
+    $publishFolder = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
+    $exePath = Join-Path $publishFolder "Servy.CLI.exe"
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Signing Servy.CLI.exe failed."
-        exit $LASTEXITCODE
+    if (Test-Path $exePath) {
+        if ($null -ne $signPath) {
+            Write-Host "=== Signing Servy.CLI.exe ===" -ForegroundColor Cyan
+            & $signPath $exePath
+            Check-LastExitCode "Code signing failed"
+        }
+    }
+    else {
+        # Critical failure: If the file isn't there, the build is invalid.
+        Write-Error "Published executable not found at: $exePath. Ensure the project output name matches 'Servy.CLI.exe'."
+        exit 1
     }
 }
 

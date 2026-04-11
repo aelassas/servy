@@ -30,6 +30,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Step 0: Setup variables
 # ---------------------------------------------------------------------------------
@@ -37,6 +45,11 @@ $scriptDir   = $PSScriptRoot
 $appName     = "Servy.Service"
 $signPath    = Join-Path $scriptDir "..\..\setup\signpath.ps1"
 $projectPath = Join-Path $scriptDir "$appName.csproj"
+
+if (-not (Test-Path $projectPath)) {
+    Write-Error "CRITICAL: Project file not found: $projectPath"
+    exit 1
+}
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish resources first
@@ -51,16 +64,18 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
 & $publishResScript -Tfm $Tfm -Runtime $Runtime -BuildConfiguration $BuildConfiguration
-
+Check-LastExitCode "$publishResScriptName failed"
 # ---------------------------------------------------------------------------------
 # Step 2: Clean and Restore
 # ---------------------------------------------------------------------------------
 Write-Host "=== Preparing $appName ===" -ForegroundColor Cyan
 
 & dotnet restore $projectPath -r $Runtime
+Check-LastExitCode "dotnet restore failed"
 
 # Pattern A: Use dotnet toolchain for cleaning instead of manual Remove-Item
 & dotnet clean $projectPath -c $BuildConfiguration
+Check-LastExitCode "Project clean failed"
 
 # ---------------------------------------------------------------------------------
 # Step 3: Build and publish (Pattern A: Default output location)
@@ -72,6 +87,7 @@ Write-Host "=== Publishing $appName ===" -ForegroundColor Cyan
     -r $Runtime `
     --force `
     /p:DeleteExistingFiles=true
+Check-LastExitCode "dotnet publish failed"
 
 # ---------------------------------------------------------------------------------
 # Step 4: Sign the published executable (Pattern A: Standard Path)
@@ -84,6 +100,7 @@ if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
     
     if (Test-Path $exePath) {
         & $signPath -Path $exePath
+        Check-LastExitCode "Code signing failed"
     }
 }
 

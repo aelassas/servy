@@ -33,10 +33,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Script directory (ensures relative paths work)
 # ---------------------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
@@ -45,6 +53,12 @@ $serviceDir         = Join-Path $scriptDir "..\Servy.Service" | Resolve-Path
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.CLI\Resources" | Resolve-Path
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
+
+# Prevent Resolve-Path errors on clean environments
+if (-not (Test-Path $serviceDir)) {
+    Write-Error "CRITICAL: Service project directory not found at $serviceDir"
+    exit 1
+}
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Service project
@@ -58,10 +72,7 @@ if (-not (Test-Path $publishServiceScript)) {
 
 Write-Host "=== [service] Running publish.ps1 ==="
 & $publishServiceScript -Tfm $Tfm -BuildConfiguration $buildConfiguration
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "[service] publish.ps1 failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishServiceScript failed"
 Write-Host "=== [service] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------

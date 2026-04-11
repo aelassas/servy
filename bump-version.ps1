@@ -42,7 +42,7 @@ $fileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Ver
 Write-Host "Updating Servy version to $Version..."
 
 # Base directory of the script
-$baseDir = $PSScriptRoot
+$baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # -----------------------------
 # 1. Update setup\publish.ps1

@@ -30,10 +30,10 @@ $script:ServyTimeoutSeconds = 600
 
 # Determine module folder
 if ($PSVersionTable.PSVersion.Major -ge 3) {
-  # PS3+ has automatic $PSScriptRoot
-  $ModuleRoot = $PSScriptRoot
+  # PS3+ has automatic Split-Path -Parent $MyInvocation.MyCommand.Path
+  $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 } else {
-  # PS2 does not have $PSScriptRoot
+  # PS2 does not have Split-Path -Parent $MyInvocation.MyCommand.Path
   $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
 

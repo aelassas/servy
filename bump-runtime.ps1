@@ -49,7 +49,7 @@ param(
 # -----------------------------
 $currentVersionRegex = "net\d+\.\d+"
 $netVersion = "net$Version"
-$baseDir = $PSScriptRoot
+$baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "Updating .NET runtime to $netVersion..." -ForegroundColor Cyan
 if ($DryRun) {

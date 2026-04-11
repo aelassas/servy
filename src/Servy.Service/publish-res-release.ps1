@@ -32,10 +32,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Script directory (ensures relative paths work)
 # ---------------------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
@@ -44,6 +52,13 @@ $restarterDir       = Join-Path $scriptDir "..\Servy.Restarter" | Resolve-Path
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources" | Resolve-Path
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
+
+# Prevent Resolve-Path errors on clean environments
+if (-not (Test-Path $restarterDir)) {
+    Write-Error "CRITICAL: Restarter project directory not found at $restarterDir"
+    exit 1
+}
+
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Restarter project
@@ -57,10 +72,7 @@ if (-not (Test-Path $publishRestarterScript)) {
 
 Write-Host "=== [restarter] Running publish.ps1 ==="
 & $publishRestarterScript -Tfm $Tfm -Runtime $runtime -BuildConfiguration $buildConfiguration
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "[restarter] publish.ps1 failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishRestarterScript failed"
 Write-Host "=== [restarter] Completed publish.ps1 ===`n"
 
 # ---------------------------------------------------------------------------------
@@ -80,11 +92,6 @@ if (-not (Test-Path $resourcesFolder)) {
 # ---------------------------------------------------------------------------------
 # Step 5: Copy artifacts (renaming as needed)
 # ---------------------------------------------------------------------------------
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Signing Servy.Restarter.exe failed."
-    exit $LASTEXITCODE
-}
 
 Copy-Item -Path (Join-Path $publishFolder "Servy.Restarter.exe") `
           -Destination (Join-Path $resourcesFolder "Servy.Restarter.exe") -Force

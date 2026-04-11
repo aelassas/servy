@@ -74,8 +74,21 @@ Source: "..\src\Servy\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "
 ; Source: "..\src\Servy\appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; CLI
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_cli
-Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; DestDir: "{app}"; DestName: "{#CliExeName}"; Flags: ignoreversion; Components: install_cli
+; 1. Copy everything EXCEPT the original exe (to avoid duplicates)
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\*"; \
+    DestDir: "{app}"; \
+    Flags: ignoreversion recursesubdirs createallsubdirs; \
+    Excludes: "appsettings.cli.json, Servy.CLI.exe"; \
+    Components: install_cli
+
+; 2. Copy the exe and rename it specifically
+Source: "..\src\Servy.CLI\bin\Release\net10.0-windows\win-x64\publish\Servy.CLI.exe"; \
+    DestDir: "{app}"; \
+    DestName: "{#CliExeName}"; \
+    Flags: ignoreversion; \
+    Components: install_cli
+
+; PowerShell Module and Scripts
 Source: "..\src\Servy.CLI\Servy.psm1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\Servy.psd1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
 Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: ignoreversion; Components: install_cli
@@ -84,7 +97,7 @@ Source: "..\src\Servy.CLI\servy-module-examples.ps1"; DestDir: "{app}"; Flags: i
 ; Source: "..\src\Servy.CLI\appsettings.json"; DestDir: "{app}\cli"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; Manager app
-Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.json"; Components: install_manager
+Source: "..\src\Servy.Manager\bin\Release\net10.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "appsettings.manager.json"; Components: install_manager
 
 ; taskschd
 ; 1. Always override all content in the taskschd folder except the config and credential files

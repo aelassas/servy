@@ -39,15 +39,26 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ---------------------------------------------------------------------------------
 # Script directory (so we can run from anywhere)
 # ---------------------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ---------------------------------------------------------------------------------
 # SignPath script path
 # ---------------------------------------------------------------------------------
 $signPath = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+if (-not (Test-Path $signPath)) {
+    Write-Warning "SignPath script not found at: $signPath. Signing will be skipped."
+}
 
 # ---------------------------------------------------------------------------------
 # Step 0: Publish resources
@@ -62,10 +73,7 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ==="
 & $publishResScript -Tfm $Tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishResScriptName failed"
 Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ---------------------------------------------------------------------------------
@@ -85,32 +93,35 @@ Write-Host "Runtime: $Runtime"
 Write-Host "Self-contained: true"
 
 & dotnet restore $projectPath -r $Runtime
+Check-LastExitCode "dotnet restore failed"
 
 & dotnet clean $projectPath -c $BuildConfiguration
+Check-LastExitCode "Project clean failed"
 
 & dotnet publish $projectPath `
     -c $BuildConfiguration `
     -r $Runtime `
     --force `
     /p:DeleteExistingFiles=true
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "dotnet publish failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "dotnet publish failed"
 
 # ---------------------------------------------------------------------------------
 # Step 2: Sign the published executable if signing is enabled
 # ---------------------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
-    $basePath      = Join-Path $scriptDir "..\Servy\bin\$BuildConfiguration\$Tfm\$Runtime"
-    $publishFolder = Join-Path $basePath "publish"
+    $publishFolder = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
     $exePath       = Join-Path $publishFolder "Servy.exe" | Resolve-Path
-    & $signPath $exePath
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Signing Servy.exe failed."
-        exit $LASTEXITCODE
+    if (Test-Path $exePath) {
+        if ($null -ne $signPath) {
+            Write-Host "=== Signing Servy.exe ===" -ForegroundColor Cyan
+            & $signPath $exePath
+            Check-LastExitCode "Code signing failed"
+        }
+    }
+    else {
+        Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
+        exit 1
     }
 }
 

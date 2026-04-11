@@ -33,18 +33,33 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # Project and directories
 $projectName = "Servy.Restarter"
 $scriptDir   = $PSScriptRoot
 $signPath    = Join-Path $scriptDir "..\..\setup\signpath.ps1"
 $projectPath = Join-Path $scriptDir "$projectName.csproj"
 
+if (-not (Test-Path $projectPath)) {
+    Write-Error "CRITICAL: Project file not found: $projectPath"
+    exit 1
+}
+
 # Step 0: Clean and Restore
 Write-Host "--- Preparing $projectName ---" -ForegroundColor Cyan
 
 & dotnet restore $projectPath -r $Runtime
+Check-LastExitCode "dotnet restore failed"
 
 & dotnet clean $projectPath -c $BuildConfiguration
+Check-LastExitCode "Project clean failed"
 
 # Step 1: Publish project (Pattern A: Uses default output location)
 Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
@@ -54,6 +69,7 @@ Write-Host "--- Publishing $projectName ---" -ForegroundColor Cyan
     -r $Runtime `
     --force `
     /p:DeleteExistingFiles=true
+Check-LastExitCode "dotnet publish failed"
 
 # Step 2: Sign the published executable (Pattern A: Self-referencing bin path)
 if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
@@ -64,6 +80,7 @@ if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
     
     if (Test-Path $exePath) {
         & $signPath -Path $exePath
+        Check-LastExitCode "Code signing failed"
     }
 }
 

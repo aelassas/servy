@@ -26,16 +26,13 @@
 
 [CmdletBinding()]
 param(
-    [string]$Tfm      = "net10.0",
+    [string]$Tfm      = "net10.0-windows",
     [ValidatePattern("^\d+\.\d+$")]
     [string]$Version = "1.0",
     [switch]$Pause
 )
 
 $ErrorActionPreference = "Stop"
-
-# Standardize TFM and Configuration names used across the codebase
-$Tfm = "$Tfm-windows"
 $BuildConfiguration = "Release"
 $Runtime = "win-x64"
 
@@ -62,6 +59,14 @@ $installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe"
 # ========================
 # Functions
 # ========================
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 function Remove-ItemSafely {
     param ([string]$Path)
     if (Test-Path $Path) {
@@ -83,12 +88,16 @@ foreach ($project in $projects) {
     $publishScript = Join-Path $project "publish.ps1"
     if (Test-Path $publishScript) {
         & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
+        Check-LastExitCode "$publishScript failed"
     }
     else {
         Write-Warning "Publish script not found for $projectName. Using generic dotnet publish."
         & dotnet restore $project
+        Check-LastExitCode "dotnet restore failed"
         & dotnet clean $project -c $BuildConfiguration
+        Check-LastExitCode "Project clean failed"
         & dotnet publish $project -c $BuildConfiguration -f $Tfm -r $Runtime --self-contained true
+        Check-LastExitCode "dotnet publish failed"
     }
 }
 
@@ -96,16 +105,17 @@ foreach ($project in $projects) {
 # Step 2: Build & Sign Installer
 # ========================
 Write-Host "--- Building Installer ---" -ForegroundColor Cyan
-if (Test-Path $innoCompiler) {
-    & $innoCompiler $issFile /DMyAppVersion=$Version
+if (-not (Test-Path $innoCompiler)) {
+    Write-Error "Inno Setup Compiler (ISCC.exe) not found at: $innoCompiler"
+    exit 1
 }
-else {
-    Write-Error "ISCC.exe not found. Skipping installer build."
-}
+& $innoCompiler $issFile /DMyAppVersion=$Version
+Check-LastExitCode "Inno Setup compilation failed"
 
 if (Test-Path $signPath) {
     Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
     & $signPath -Path $installerPath
+    Check-LastExitCode "Signing artifacts failed"
 }
 
 # ========================
@@ -141,15 +151,22 @@ foreach ($art in $cliArtifacts) {
 }
 
 # Compress
-if (Test-Path $sevenZipExe) {
-    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
-    $process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
-    
-    if ($process.ExitCode -eq 0) {
-        Remove-ItemSafely -Path $packageFolder
-        Write-Host "Success: $outputZip" -ForegroundColor Green
-    }
+if (-not (Test-Path $sevenZipExe)) {
+    Write-Error "7-Zip executable not found at: $sevenZipExe. Compression failed."
+    exit 1
 }
+
+$zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
+$process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
+    
+if ($process.ExitCode -ne 0) {
+    Write-Error "7-Zip failed with exit code $($process.ExitCode)"
+    exit $process.ExitCode
+}
+
+# Only remove the folder if the ZIP was successful
+Remove-ItemSafely -Path $packageFolder
+Write-Host "Success: $outputZip" -ForegroundColor Green
 
 if ($Pause) {
     Write-Host "`nPress any key to exit..."
