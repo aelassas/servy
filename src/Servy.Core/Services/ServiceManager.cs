@@ -363,6 +363,8 @@ namespace Servy.Core.Services
                     lpPassword: lpPassword
                 );
 
+                int createServiceError = Marshal.GetLastWin32Error();
+
                 // Persist service in database
                 var dto = new ServiceDto
                 {
@@ -527,8 +529,7 @@ namespace Servy.Core.Services
                         return OperationResult.Success();
                     }
 
-                    int error = Marshal.GetLastWin32Error();
-                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {error}";
+                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
                     Logger.Error(creationErrorMsg);
                     return OperationResult.Failure(creationErrorMsg);
                 }
