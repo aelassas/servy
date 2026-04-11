@@ -115,8 +115,10 @@ namespace Servy.Core.Logging
                     var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
                     SecurityHelper.CreateSecureDirectory(logDir);
 
+                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+
                     File.AppendAllText(Path.Combine(logDir, "LoggerInitializationErrors.log"),
-                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
+                        $"[{now:yyyy-MM-dd HH:mm:ss}] Failed to initialize logger with file '{_fileName}'. Exception: {ex}{Environment.NewLine}");
                 }
                 catch
                 {
@@ -303,7 +305,8 @@ namespace Servy.Core.Logging
                         .Replace("\n", "\\n");
 
                     // Format: [2026-03-12 22:00:00] [INFO] Message text
-                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {sanitizedMessage}";
+                    var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                    string logEntry = $"[{now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
