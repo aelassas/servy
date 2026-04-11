@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using System;
@@ -7,56 +8,64 @@ using System;
 namespace Servy.Core.Services
 {
     /// <summary>
-    /// Provides validation for JSON strings that should represent a <see cref="ServiceDto"/>.
+    /// Provides strict validation for JSON strings representing a <see cref="ServiceDto"/>.
+    /// Ensures both structural integrity and Windows SCM compatibility.
     /// </summary>
     public static class JsonServiceValidator
     {
         /// <summary>
-        /// Validates that the input JSON is a valid <see cref="ServiceDto"/> and contains required fields.
+        /// Validates that the input JSON is a valid <see cref="ServiceDto"/>, contains required fields,
+        /// and adheres to strict domain safety limits.
         /// </summary>
         /// <param name="json">The JSON string to validate.</param>
-        /// <param name="errorMessage">If validation fails, contains the reason.</param>
-        /// <returns>True if valid; otherwise false.</returns>
+        /// <param name="errorMessage">If validation fails, contains the specific domain or security error.</param>
+        /// <returns>True if valid and safe; otherwise false.</returns>
         public static bool TryValidate(string json, out string errorMessage)
         {
             errorMessage = null;
 
             if (string.IsNullOrWhiteSpace(json))
             {
-                errorMessage = "JSON cannot be null or empty.";
+                errorMessage = "JSON input cannot be null or empty.";
                 return false;
             }
 
+            // 1. Structural Validation & Deserialization
             ServiceDto dto;
             try
             {
+                // Note: We continue using JsonSecurity.UntrustedDataSettings 
+                // to prevent TypeNameHandling and other injection vulnerabilities.
                 dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
             }
             catch (Exception ex)
             {
-                errorMessage = $"Invalid JSON format: {ex.Message}";
-                Logger.Error("JSON deserialization error", ex);
+                errorMessage = $"Invalid JSON structure: {ex.Message}";
+                Logger.Error("JSON parsing error during import", ex);
                 return false;
             }
 
             if (dto == null)
             {
-                errorMessage = "Failed to deserialize JSON to ServiceDto.";
-                Logger.Error("Deserialization resulted in null ServiceDto.");
+                errorMessage = "Deserialization resulted in an empty service definition.";
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(dto.Name))
+            // 2. DEEP DOMAIN VALIDATION
+            // This applies the centralized rules for lengths, timeouts, and numeric ranges.
+            var validation = ServiceValidator.ValidateDto(dto);
+            if (!validation.IsValid)
             {
-                errorMessage = "Service name is required.";
-                Logger.Error("Validation failed: Service name is missing.");
+                errorMessage = validation.ErrorMessage;
+                Logger.Warn($"JSON Import Blocked: Logical violation for service '{dto.Name}'. Reason: {errorMessage}");
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(dto.ExecutablePath))
+            // 3. Executable Path Integrity
+            // Ensuring the imported path is at least syntactically valid for the host OS.
+            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
-                errorMessage = "Executable path is required.";
-                Logger.Error("Validation failed: Executable path is missing.");
+                errorMessage = "The provided executable path is invalid or inaccessible.";
                 return false;
             }
 

@@ -84,26 +84,40 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_JsonFile_Valid_CallsImportAndReturnsOk()
         {
             // Arrange
-            var path = "test.json";
-            var jsonContent = "{\"Name\":\"TestService\",\"ExecutablePath\":\"C:\\\\TestService\\\\app.exe\"}";
+            // 1. Use a path that is guaranteed to exist on a Windows test runner
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            var path = Path.GetTempFileName() + ".json";
+
+            // 2. Build the JSON with the real path
+            var jsonContent = "{\"Name\":\"TestService\",\"ExecutablePath\":\"" + realPath.Replace("\\", "\\\\") + "\"}";
             File.WriteAllText(path, jsonContent);
 
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = path };
 
+            // 3. Ensure your mock for the validator returns true 
+            // (Note: Since JsonServiceValidator.TryValidate is static, 
+            // it will still execute its internal path check logic).
             MockJsonValidator(true);
 
-            _serviceRepoMock.Setup(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _serviceRepoMock.Setup(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             // Act
             var result = await _command.Execute(opts);
 
             // Assert
-            Assert.Equal(0, result.ExitCode);
-            Assert.Contains("JSON configuration imported successfully", result.Message);
+            try
+            {
+                Assert.Equal(0, result.ExitCode);
+                Assert.Contains("JSON configuration imported successfully", result.Message);
 
-            _serviceRepoMock.Verify(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
-
-            File.Delete(path);
+                _serviceRepoMock.Verify(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()), Times.Once);
+            }
+            finally
+            {
+                // Always cleanup temp files
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         [Fact]
@@ -123,7 +137,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("JSON file is not valid: Executable path is required", result.Message);
+            Assert.Contains("JSON file is not valid: The provided executable path", result.Message);
 
             File.Delete(path);
         }
