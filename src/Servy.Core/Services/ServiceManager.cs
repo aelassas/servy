@@ -24,18 +24,37 @@ namespace Servy.Core.Services
     {
         #region Constants
 
-        private const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
-        private const uint SERVICE_ERROR_NORMAL = 0x00000001;
-        private const uint SC_MANAGER_ALL_ACCESS = 0xF003F;
-        private const uint SERVICE_CHANGE_CONFIG = 0x0002;
-        private const uint SERVICE_START = 0x0010;
-        private const uint SERVICE_STOP = 0x0020;
-        private const uint SERVICE_DELETE = 0x00010000;
-        private const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
 
         public const string LocalSystemAccount = "LocalSystem";
+
+        #endregion
+
+        #region SCM Access Rights
+
+        public const uint SC_MANAGER_CONNECT = 0x0001;
+        public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
+        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
+
+        #endregion
+
+        #region Service Access Rights
+
+        public const uint SERVICE_QUERY_CONFIG = 0x0001;
+        public const uint SERVICE_CHANGE_CONFIG = 0x0002;
+        public const uint SERVICE_QUERY_STATUS = 0x0004;
+        public const uint SERVICE_START = 0x0010;
+        public const uint SERVICE_STOP = 0x0020;
+        public const uint SERVICE_DELETE = 0x00010000; // Standardized to 8-digit hex for clarity
+
+        #endregion
+
+        #region Service Configuration & Type Flags
+
+        public const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
+        public const uint SERVICE_ERROR_NORMAL = 0x00000001;
+        public const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
 
         #endregion
 
@@ -300,7 +319,7 @@ namespace Servy.Core.Services
                 Helper.Quote(options.ServiceName)
             );
 
-            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_ALL_ACCESS);
+            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
@@ -538,13 +557,14 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> UninstallServiceAsync(string serviceName)
         {
-            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_ALL_ACCESS);
+            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_CONNECT);
             if (scmHandle == IntPtr.Zero)
                 return OperationResult.Failure("Failed to open Service Control Manager.");
 
             try
             {
-                IntPtr serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_ALL_ACCESS);
+                uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE;
+                IntPtr serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights);
                 if (serviceHandle == IntPtr.Zero)
                     return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
 
@@ -992,7 +1012,6 @@ namespace Servy.Core.Services
         }
 
     }
-
 
     #endregion
 }
