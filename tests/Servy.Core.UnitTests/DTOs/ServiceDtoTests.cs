@@ -36,6 +36,35 @@ namespace Servy.Core.UnitTests.DTOs
             }
         }
 
+        [Fact]
+        public void ShouldSerializePassword_AlwaysReturnsFalse()
+        {
+            // Arrange
+            var dto = new ServiceDto { Password = "SensitivePassword123" };
+
+            // Act
+            bool result = dto.ShouldSerializePassword();
+
+            // Assert
+            // This ensures the line is covered and the security logic is enforced
+            Assert.False(result, "Passwords must never be serialized for security reasons.");
+        }
+
+        [Fact]
+        public void ShouldSerializeId_AlwaysReturnsFalse()
+        {
+            // Covering other hardcoded false branches while we're at it
+            var dto = new ServiceDto { Id = 1 };
+            Assert.False(dto.ShouldSerializeId());
+        }
+
+        [Fact]
+        public void ShouldSerializePid_AlwaysReturnsFalse()
+        {
+            var dto = new ServiceDto { Pid = 1234 };
+            Assert.False(dto.ShouldSerializePid());
+        }
+
         /// <summary>
         /// Helper to ensure every property has a unique, non-default value.
         /// </summary>

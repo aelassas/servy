@@ -1,23 +1,23 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Core.Helpers;
 using System.Xml;
 using System.Xml.Serialization;
-using static Dapper.SqlMapper;
 
 namespace Servy.Core.Services
 {
     /// <summary>
     /// Validates XML input to ensure it can be deserialized into a <see cref="ServiceDto"/>
-    /// and meets basic business rules before inserting into the database.
+    /// and meets strict Windows SCM and security rules before database persistence.
     /// </summary>
     public static class XmlServiceValidator
     {
         /// <summary>
-        /// Validates that the given XML string represents a valid <see cref="ServiceDto"/>.
+        /// Validates that the given XML string represents a valid and safe <see cref="ServiceDto"/>.
         /// </summary>
         /// <param name="xml">The XML string to validate.</param>
-        /// <param name="errorMessage">If validation fails, contains the reason.</param>
-        /// <returns><c>true</c> if the XML is valid; otherwise, <c>false</c>.</returns>
+        /// <param name="errorMessage">If validation fails, contains the specific security or logic error.</param>
+        /// <returns><c>true</c> if the XML is well-formed and logically valid; otherwise, <c>false</c>.</returns>
         public static bool TryValidate(string xml, out string? errorMessage)
         {
             errorMessage = null;
@@ -28,30 +28,13 @@ namespace Servy.Core.Services
                 return false;
             }
 
+            // 1. Prevent XXE Attacks
             var settings = new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
                 XmlResolver = null
             };
 
-            try
-            {
-                // Basic XML well-formedness check
-                using (var stringReader = new StringReader(xml))
-                using (var xmlReader = XmlReader.Create(stringReader, settings))
-                {
-                    var xmlDoc = new XmlDocument();
-                    xmlDoc.Load(xmlReader);
-                }
-            }
-            catch (XmlException ex)
-            {
-                errorMessage = $"Invalid XML format: {ex.Message}";
-                Logger.Error("XML parsing error", ex);
-                return false;
-            }
-
-            // Try deserializing to ServiceDto
             ServiceDto? dto;
             try
             {
@@ -64,34 +47,34 @@ namespace Servy.Core.Services
             }
             catch (Exception ex)
             {
-                errorMessage = $"XML does not match ServiceDto format: {ex.Message}";
-                Logger.Error("XML deserialization error", ex);
+                errorMessage = $"XML structure error: {ex.Message}";
                 return false;
             }
 
             if (dto == null)
             {
-                errorMessage = "Failed to deserialize XML to ServiceDto.";
-                Logger.Error("Deserialization resulted in null ServiceDto.");
+                errorMessage = "Failed to deserialize XML.";
                 return false;
             }
 
-            // Basic required field checks
-            if (string.IsNullOrWhiteSpace(dto.Name))
+            // 2. DEEP DOMAIN VALIDATION (The Security Fix)
+            // This applies the same rules as the CLI installer to ensure 
+            // parity between manual and automated setup.
+            var validation = ServiceValidator.ValidateDto(dto);
+            if (!validation.IsValid)
             {
-                errorMessage = "Service name is required.";
-                Logger.Error("Validation failed: Service name is missing.");
+                errorMessage = validation.ErrorMessage;
+                Logger.Warn($"Import Blocked: Crafted or invalid XML for service '{dto.Name}'. Reason: {errorMessage}");
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(dto.ExecutablePath))
+            // 3. Path Validation
+            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
-                errorMessage = "Executable path is required.";
-                Logger.Error("Validation failed: Executable path is missing.");
+                errorMessage = "The executable path in the XML is invalid or inaccessible.";
                 return false;
             }
 
-            // All checks passed
             return true;
         }
     }

@@ -1,6 +1,8 @@
-﻿using Servy.Core.DTOs;
+﻿using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Services;
 using System.Xml.Serialization;
+using Xunit;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -31,18 +33,21 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_InvalidXml_ReturnsFalse()
         {
+            // Missing closing tag
             var result = XmlServiceValidator.TryValidate("<ServiceDto><Name>Test</Name>", out var error);
             Assert.False(result);
-            Assert.StartsWith("Invalid XML format:", error);
+            Assert.StartsWith("XML structure error:", error);
         }
 
         [Fact]
         public void TryValidate_XmlNotMatchingServiceDto_ReturnsFalse()
         {
+            // Valid XML, but doesn't map to ServiceDto properties
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
             var result = XmlServiceValidator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.StartsWith("XML does not match ServiceDto format:", error);
+            // This now triggers the structural error catch
+            Assert.Contains("XML structure error", error);
         }
 
         [Fact]
@@ -51,37 +56,58 @@ namespace Servy.Core.UnitTests.Services
             var xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
             var result = XmlServiceValidator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.Equal("Failed to deserialize XML to ServiceDto.", error);
+            Assert.Equal("Failed to deserialize XML.", error);
         }
 
         [Fact]
-        public void TryValidate_MissingName_ReturnsFalse()
+        public void TryValidate_DomainValidationFailure_ReturnsFalse()
         {
+            // Name length is a Domain check via ServiceValidator.ValidateDto
             var dto = new ServiceDto
             {
-                Name = "",
+                Name = new string('A', AppConfig.MaxServiceNameLength + 1),
                 ExecutablePath = "C:\\path\\to\\exe"
             };
             var xml = Serialize(dto);
 
             var result = XmlServiceValidator.TryValidate(xml, out var error);
+
             Assert.False(result);
-            Assert.Equal("Service name is required.", error);
+            Assert.Contains("exceeds", error);
+        }
+
+        [Theory]
+        [InlineData(-1)] // Starts at MinStartTimeout (usually 30000 or 0)
+        public void TryValidate_InvalidTimeout_ReturnsFalse(int invalidTimeout)
+        {
+            var dto = new ServiceDto
+            {
+                Name = "TestService",
+                ExecutablePath = "C:\\path\\to\\exe",
+                StartTimeout = invalidTimeout
+            };
+            var xml = Serialize(dto);
+
+            var result = XmlServiceValidator.TryValidate(xml, out var error);
+
+            Assert.False(result);
+            Assert.Equal("Invalid Start Timeout.", error);
         }
 
         [Fact]
-        public void TryValidate_MissingExecutablePath_ReturnsFalse()
+        public void TryValidate_InvalidExecutablePath_ReturnsFalse()
         {
             var dto = new ServiceDto
             {
                 Name = "MyService",
-                ExecutablePath = ""
+                // This triggers the ProcessHelper.ValidatePath branch
+                ExecutablePath = "INVALID_PATH_CHAR_<>|"
             };
             var xml = Serialize(dto);
 
             var result = XmlServiceValidator.TryValidate(xml, out var error);
             Assert.False(result);
-            Assert.Equal("Executable path is required.", error);
+            Assert.Equal("The executable path in the XML is invalid or inaccessible.", error);
         }
 
         [Fact]
@@ -90,11 +116,13 @@ namespace Servy.Core.UnitTests.Services
             var dto = new ServiceDto
             {
                 Name = "MyService",
-                ExecutablePath = "C:\\path\\to\\exe"
+                ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
+                StopTimeout = 30000
             };
             var xml = Serialize(dto);
 
             var result = XmlServiceValidator.TryValidate(xml, out var error);
+
             Assert.True(result);
             Assert.Null(error);
         }

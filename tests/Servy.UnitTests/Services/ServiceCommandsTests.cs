@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -274,10 +275,18 @@ namespace Servy.UnitTests.Services
         public async Task ImportXmlCommand_ValidFile_UpdatesModel()
         {
             // Arrange
-            var xmlContent = @"<ServiceDto><Name>TestService</Name><ExecutablePath>C:\MyApp.exe</ExecutablePath></ServiceDto>";
-            var path = "test.xml";
+            // 1. Use a real path to satisfy the ProcessHelper.ValidatePath check inside XmlServiceValidator
+            var realPath = @"C:\Windows\System32\notepad.exe";
+            var xmlContent = $@"<ServiceDto><Name>TestService</Name><ExecutablePath>{realPath}</ExecutablePath></ServiceDto>";
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            // Use a temp file to avoid permission issues in the project root
+            var path = Path.GetTempFileName() + ".xml";
+
+            _serviceConfigurationValidator.Setup(d => d.Validate(
+                It.IsAny<ServiceDto>(),
+                It.IsAny<string>(),
+                It.IsAny<bool>(),
+                It.IsAny<string>())).ReturnsAsync(true);
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
@@ -298,58 +307,76 @@ namespace Servy.UnitTests.Services
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object
             );
 
-            File.WriteAllText(path, xmlContent); // alternatively, mock File.ReadAllText
-
-
+            File.WriteAllText(path, xmlContent);
 
             // Act
             await serviceCommands.ImportXmlConfig();
 
             // Assert
-            Assert.True(bindCalled);
-            Assert.NotNull(capturedDto);
-            Assert.Equal("TestService", capturedDto!.Name);
-            File.Delete(path);
+            try
+            {
+                Assert.True(bindCalled, "The logic exited before binding. Likely XmlServiceValidator.TryValidate failed because the ExecutablePath file doesn't exist.");
+                Assert.NotNull(capturedDto);
+                Assert.Equal("TestService", capturedDto!.Name);
+            }
+            finally
+            {
+                // Cleanup
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         [Fact]
         public async Task ImportJsonCommand_ValidFile_UpdatesModel()
         {
             // Arrange
-            var jsonContent = "{\"Name\":\"TestService\", \"ExecutablePath\":\"C:\\\\MyApp.exe\"}";
-            var path = "test.json";
+            // 1. Use a guaranteed path to pass the internal ProcessHelper.ValidatePath check
+            var dto = new ServiceDto
+            {
+                Name = "TestService",
+                ExecutablePath = @"C:\Windows\System32\notepad.exe"
+            };
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            // 2. Serialize properly to ensure it matches the DTO's attributes (JsonIgnore, etc.)
+            var jsonContent = JsonConvert.SerializeObject(dto);
+
+            var path = Path.GetTempFileName();
+            File.WriteAllText(path, jsonContent);
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
-            var bindCalled = false;
-            ServiceDto? capturedDto = null;
-            Action<ServiceDto> bindSpy = dto =>
-            {
-                bindCalled = true;
-                capturedDto = dto;
-            };
+            // 3. Ensure the validator mock returns true for this specific DTO instance
+            _serviceConfigurationValidator
+                .Setup(v => v.Validate(
+                    It.IsAny<ServiceDto>(),
+                    It.IsAny<string>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<string>()))
+                .ReturnsAsync(true);
+
+            bool bindCalled = false;
 
             var serviceCommands = new ServiceCommands(
                 modelToServiceDto: () => new ServiceDto(),
-                bindServiceDtoToModel: bindSpy,
+                bindServiceDtoToModel: d => {
+                    bindCalled = true;
+                    // Verify inside the spy to see what actually arrived
+                    Assert.Equal("TestService", d.Name);
+                },
                 serviceManager: Mock.Of<IServiceManager>(),
                 messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object
             );
 
-            File.WriteAllText(path, jsonContent);
-
             // Act
             await serviceCommands.ImportJsonConfig();
 
+            // Cleanup before final assertion to prevent file locks
+            if (File.Exists(path)) File.Delete(path);
+
             // Assert
-            Assert.True(bindCalled);
-            Assert.NotNull(capturedDto);
-            Assert.Equal("TestService", capturedDto!.Name);
-            File.Delete(path);
+            Assert.True(bindCalled, "The logic exited before binding. Check if JsonServiceValidator.TryValidate is failing on the ExecutablePath or if a JSON exception was caught.");
         }
 
         [Fact]

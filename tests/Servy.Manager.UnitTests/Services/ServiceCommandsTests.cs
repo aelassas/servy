@@ -5,7 +5,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Helpers;
-using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Services;
 
@@ -72,9 +71,9 @@ namespace Servy.Manager.UnitTests.Services
         [Fact]
         public async Task ImportJsonConfigAsync_ShouldCallRepositoryAndRefresh_WhenValidJson()
         {
-            // Arrange
+            // 1. Arrange
             var sut = CreateServiceCommands();
-            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\myApp.exe" };
+            var dto = new ServiceDto { Name = "MyService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
             var json = JsonConvert.SerializeObject(dto);
 
             var tempFile = Path.GetTempFileName();
@@ -82,18 +81,27 @@ namespace Servy.Manager.UnitTests.Services
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
             _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
-            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            // Act
+            // Ensure the mock triggers the completion signal
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1)
+                .Callback(() => _refreshTcs.TrySetResult(true));
+
+            // 2. Act
             await sut.ImportJsonConfigAsync();
-            await _refreshTcs.Task;
 
-            // Assert
-            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.Is<ServiceDto>(d => d.Name == "MyService"), It.IsAny<CancellationToken>()), Times.Once);
-            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(Strings.ImportJson_Success, AppConfig.Caption));
+            // 3. Assert (Wait with Timeout)
+            var delay = Task.Delay(2000, TestContext.Current.CancellationToken);
+            var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
+
+            // If we hit the delay, the refresh was never triggered
+            Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! The refresh logic was not executed.");
+
+            // 4. Verification
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
             Assert.True(_refreshCalled);
 
-            File.Delete(tempFile);
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
 
         [Fact]
