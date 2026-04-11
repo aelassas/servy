@@ -121,7 +121,7 @@ namespace Servy.Core.Services
         /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
         /// </returns>
         /// <exception cref="Win32Exception">Thrown if updating the service configuration fails.</exception>
-        private bool UpdateServiceConfig(
+        internal bool UpdateServiceConfig(
             IntPtr scmHandle,
             string serviceName,
             string description,
@@ -181,7 +181,7 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">Handle to the service.</param>
         /// <param name="description">The description text.</param>
         /// <exception cref="Win32Exception">Thrown if setting the description fails.</exception>
-        private void SetServiceDescription(IntPtr serviceHandle, string description)
+        internal void SetServiceDescription(IntPtr serviceHandle, string description)
         {
             if (string.IsNullOrEmpty(description))
                 return;

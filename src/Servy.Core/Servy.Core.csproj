@@ -34,5 +34,9 @@
       <_Parameter2>$(TargetFramework)</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Core.UnitTests" />
+  </ItemGroup>
+
 </Project>
