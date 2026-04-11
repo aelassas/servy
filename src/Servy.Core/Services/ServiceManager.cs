@@ -47,6 +47,7 @@ namespace Servy.Core.Services
         public const uint SERVICE_START = 0x0010;
         public const uint SERVICE_STOP = 0x0020;
         public const uint SERVICE_DELETE = 0x00010000; // Standardized to 8-digit hex for clarity
+        public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
         #endregion
 
@@ -779,9 +780,6 @@ namespace Servy.Core.Services
                     // If automatic, drill down with P/Invoke to check for Delayed Auto-Start
                     if (startupType == ServiceStartType.Automatic)
                     {
-                        const uint SC_MANAGER_CONNECT = 0x0001;
-                        const uint SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
-
                         IntPtr scmHandle = IntPtr.Zero;
                         IntPtr svcHandle = IntPtr.Zero;
 
@@ -840,7 +838,6 @@ namespace Servy.Core.Services
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
             int delayedStructSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
-            const uint SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
             try
             {
