@@ -105,6 +105,12 @@ namespace Servy.Service
         private const int DefaultScmAdditionalTimeMs = 15_000;
 
         /// <summary>
+        /// Minimum StartTimeout (in seconds) before requesting additional SCM time.
+        /// Below this threshold the default SCM timeout is sufficient.
+        /// </summary>
+        private const int ScmStartupRequestThresholdSeconds = 20;
+
+        /// <summary>
         /// The service can perform cleanup tasks during a system shutdown. 
         /// Setting this flag in the 'acceptedCommands' bitmask enables the service 
         /// to receive the SERVICE_CONTROL_PRESHUTDOWN notification.
@@ -602,7 +608,7 @@ namespace Servy.Service
                 _maxRestartAttempts = options.MaxRestartAttempts;
 
                 // Request timeout for startup to accommodate slow process
-                if (_options.StartTimeout > 20) // Use a lower threshold to be safe
+                if (_options.StartTimeout > ScmStartupRequestThresholdSeconds)
                 {
                     _serviceHelper.RequestAdditionalTime(this, (_options.StartTimeout + 10) * 1000, _logger!);
                 }
