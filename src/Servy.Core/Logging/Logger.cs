@@ -296,8 +296,12 @@ namespace Servy.Core.Logging
                         ? LevelStrings[(int)level]
                         : level.ToString().ToUpper(); // Fallback for safety
 
+                    var sanitizedMessage = message?
+                        .Replace("\r", "\\r")
+                        .Replace("\n", "\\n");
+
                     // Format: [2026-03-12 22:00:00] [INFO] Message text
-                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {message}";
+                    string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{levelName}] {sanitizedMessage}";
 
                     _writer.WriteLine(logEntry);
                 }
