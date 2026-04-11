@@ -13,6 +13,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="SecurityWarningTitle" xml:space="preserve">
+    <value>Elevation Required</value>
+  </data>
+  <data name="SecurityWarningMessage" xml:space="preserve">
+    <value>Servy requires administrative privileges to manage system services.</value>
+  </data>
+  
   <data name="SqliteVersionWarningTitle" xml:space="preserve">
     <value>Security Alert</value>
   </data>
@@ -91,7 +98,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Label_LoggingTab" xml:space="preserve">
     <value>Logging</value>
-  </data>  
+  </data>
   <data name="Label_RecoveryTab" xml:space="preserve">
     <value>Recovery</value>
   </data>
@@ -532,7 +539,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_EnableDebugLogs" xml:space="preserve">
     <value>When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.</value>
   </data>
-  
+
   <!--Start/Stop timeouts-->
   <data name="Label_StartTimeout" xml:space="preserve">
     <value>Start Timeout</value>
@@ -543,7 +550,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_InvalidStartTimeout" xml:space="preserve">
     <value>Start timeout must be a number greater than or equal to 1.</value>
   </data>
-  
+
   <data name="Label_StopTimeout" xml:space="preserve">
     <value>Stop Timeout</value>
   </data>
@@ -593,7 +600,7 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
     <value>The specified post-stop startup directory is invalid.</value>
   </data>
-  
+
   <!--Miscellaneous-->
   <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
     <value>Configuration file exceeds maximum size (10 MB).</value>
@@ -610,5 +617,5 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
     <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
   </data>
-  
+
 </root>

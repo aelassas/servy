@@ -1,4 +1,5 @@
 ﻿using Servy.CLI.Models;
+using Servy.CLI.Resources;
 using Servy.Core.Logging;
 
 namespace Servy.CLI.Commands
@@ -12,11 +13,12 @@ namespace Servy.CLI.Commands
         /// Executes a synchronous command action with common error handling.
         /// Catches <see cref="UnauthorizedAccessException"/> and <see cref="Exception"/>, returning an appropriate contextual failure <see cref="CommandResult"/>.
         /// </summary>
+        /// <param name="commandName">Command name  (e.g., "install", "start").</param>
         /// <param name="action">A description of what is being attempted (e.g., "install service 'MyService'").</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The synchronous command logic to execute.</param>
         /// <returns>A <see cref="CommandResult"/> representing success or failure of the command.</returns>
-        protected CommandResult ExecuteWithHandling(string action, string suggestion, Func<CommandResult> task)
+        protected CommandResult ExecuteWithHandling(string commandName, string action, string suggestion, Func<CommandResult> task)
         {
             try
             {
@@ -26,12 +28,12 @@ namespace Servy.CLI.Commands
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
-                var errorMessage = $"Failed to {action}: Access is denied.";
-                var fallbackSuggestion = string.IsNullOrEmpty(suggestion)
-                    ? "Administrator privileges are required. Please run the application as an Administrator."
-                    : suggestion;
+                // This uses your specific resource string: 
+                // "Access Denied. Please restart your shell as Administrator to run the '{0}' command."
+                var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
 
-                return CommandResult.Fail($"{errorMessage}{Environment.NewLine}Suggestion: {fallbackSuggestion}");
+                // We can skip the 'fallbackSuggestion' since your message is already so clear.
+                return CommandResult.Fail(errorMessage);
             }
             catch (Exception ex)
             {
@@ -51,11 +53,12 @@ namespace Servy.CLI.Commands
         /// Executes an asynchronous command action with common error handling.
         /// Catches <see cref="UnauthorizedAccessException"/> and <see cref="Exception"/>, returning an appropriate contextual failure <see cref="CommandResult"/>.
         /// </summary>
+        /// <param name="commandName">Command name  (e.g., "install", "start").</param>
         /// <param name="action">A description of what is being attempted (e.g., "start service 'MyService'").</param>
         /// <param name="suggestion">Actionable advice for the user if the command fails.</param>
         /// <param name="task">The asynchronous command logic to execute.</param>
         /// <returns>A <see cref="Task{CommandResult}"/> representing success or failure of the command.</returns>
-        protected async Task<CommandResult> ExecuteWithHandlingAsync(string action, string suggestion, Func<Task<CommandResult>> task)
+        protected async Task<CommandResult> ExecuteWithHandlingAsync(string commandName, string action, string suggestion, Func<Task<CommandResult>> task)
         {
             try
             {
@@ -65,12 +68,12 @@ namespace Servy.CLI.Commands
             {
                 Logger.Error($"Failed to {action} (Unauthorized)", ex);
 
-                var errorMessage = $"Failed to {action}: Access is denied.";
-                var fallbackSuggestion = string.IsNullOrEmpty(suggestion)
-                    ? "Administrator privileges are required. Please run the application as an Administrator."
-                    : suggestion;
+                // This uses your specific resource string: 
+                // "Access Denied. Please restart your shell as Administrator to run the '{0}' command."
+                var errorMessage = string.Format(Strings.Msg_AdminPrivilegesRequired, commandName);
 
-                return CommandResult.Fail($"{errorMessage}{Environment.NewLine}Suggestion: {fallbackSuggestion}");
+                // We can skip the 'fallbackSuggestion' since your message is already so clear.
+                return CommandResult.Fail(errorMessage);
             }
             catch (Exception ex)
             {

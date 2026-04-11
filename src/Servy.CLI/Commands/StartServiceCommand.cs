@@ -3,6 +3,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -33,8 +34,11 @@ namespace Servy.CLI.Commands
             var action = $"start service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is installed, the executable path is valid, and the service account has 'Log On As Service' rights.";
 
-            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
+            return await ExecuteWithHandlingAsync("start",action, suggestion, async () =>
             {
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
+
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 

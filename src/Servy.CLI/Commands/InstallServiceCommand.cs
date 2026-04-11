@@ -4,6 +4,7 @@ using Servy.CLI.Validators;
 using Servy.Core.Config;
 using Servy.Core.Enums;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -45,8 +46,11 @@ namespace Servy.CLI.Commands
             var action = $"install service '{opts.ServiceName}'";
             var suggestion = "Ensure the executable path is correct, the service name is not already in use, and you are running with Administrator privileges.";
 
-            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
+            return await ExecuteWithHandlingAsync("install", action, suggestion, async () =>
             {
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
+
                 // Validate options
                 var validation = _validator.Validate(opts);
                 if (!validation.Success)

@@ -20,6 +20,9 @@
   <data name="Msg_FieldRequired" xml:space="preserve">
     <value>This field is required.</value>
   </data>
+  <data name="Msg_AdminPrivilegesRequired" xml:space="preserve">
+    <value>Access Denied. Please restart your shell as Administrator to run the '{0}' command.</value>
+  </data>
 
   <data name="Msg_Preparing" xml:space="preserve">
     <value>Preparing environment...</value>

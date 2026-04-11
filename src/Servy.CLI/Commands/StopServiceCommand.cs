@@ -2,6 +2,7 @@
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using Servy.Core.Services;
 
 namespace Servy.CLI.Commands
@@ -32,8 +33,11 @@ namespace Servy.CLI.Commands
             var action = $"stop service '{opts.ServiceName}'";
             var suggestion = "Ensure you have Administrator privileges. If the service is unresponsive, you may need to terminate the process manually via Task Manager.";
 
-            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
+            return await ExecuteWithHandlingAsync("stop", action, suggestion, async () =>
             {
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
+
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 

@@ -56,7 +56,7 @@ namespace Servy.CLI.Commands
             var action = $"export configuration for service '{opts.ServiceName}'";
             var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
 
-            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
+            return await ExecuteWithHandlingAsync("export", action, suggestion, async () =>
             {
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);

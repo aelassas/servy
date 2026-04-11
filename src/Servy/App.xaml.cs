@@ -90,6 +90,13 @@ namespace Servy
         {
             Logger.Initialize("Servy.log");
 
+            if (!SecurityHelper.IsAdministrator())
+            {
+                MessageBox.Show(Strings.SecurityWarningMessage, Strings.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                Shutdown(1);
+                return;
+            }
+
             // Run the security check from Infrastructure
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
@@ -135,10 +142,11 @@ namespace Servy
                 if (t.IsFaulted)
                 {
                     var ex = t.Exception?.Flatten().InnerException;
+                    Logger.Error("Critical Startup Fault in InitializeApp", ex);
                     Current.Dispatcher.Invoke(() =>
                     {
                         MessageBox.Show($"Critical Startup Fault: {ex?.Message}");
-                        Shutdown();
+                        Shutdown(1);
                     });
                 }
             }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());

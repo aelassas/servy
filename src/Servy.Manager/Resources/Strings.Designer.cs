@@ -277,6 +277,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à User Session.
+        /// </summary>
+        public static string Column_LogOnAs {
+            get {
+                return ResourceManager.GetString("Column_LogOnAs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Message.
         /// </summary>
         public static string Column_Message {
@@ -345,15 +354,6 @@ namespace Servy.Manager.Resources {
         public static string Column_Time {
             get {
                 return ResourceManager.GetString("Column_Time", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à User Session.
-        /// </summary>
-        public static string Column_LogOnAs {
-            get {
-                return ResourceManager.GetString("Column_LogOnAs", resourceCulture);
             }
         }
         
@@ -1238,6 +1238,24 @@ namespace Servy.Manager.Resources {
         public static string SaveFileDialog_XmlTitle {
             get {
                 return ResourceManager.GetString("SaveFileDialog_XmlTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Servy Manager requires administrative privileges to manage system services..
+        /// </summary>
+        public static string SecurityWarningMessage {
+            get {
+                return ResourceManager.GetString("SecurityWarningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Elevation Required.
+        /// </summary>
+        public static string SecurityWarningTitle {
+            get {
+                return ResourceManager.GetString("SecurityWarningTitle", resourceCulture);
             }
         }
         

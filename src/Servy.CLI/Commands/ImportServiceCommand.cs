@@ -8,6 +8,7 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Mappers;
+using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Diagnostics.CodeAnalysis;
 
@@ -54,8 +55,14 @@ namespace Servy.CLI.Commands
             var action = $"import configuration from '{opts.Path}'";
             var suggestion = "Check that the file path is correct, the file format is valid JSON or XML, and you have read permissions.";
 
-            return await ExecuteWithHandlingAsync(action, suggestion, async () =>
+            return await ExecuteWithHandlingAsync("import", action, suggestion, async () =>
             {
+                // Pre-flight elevation check
+                if (opts.InstallService)
+                {
+                    SecurityHelper.EnsureAdministrator();
+                }
+
                 // Validate configuration file type
                 if (!TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
                     return CommandResult.Fail(parseError);

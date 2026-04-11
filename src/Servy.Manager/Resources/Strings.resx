@@ -13,6 +13,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
+  <data name="SecurityWarningTitle" xml:space="preserve">
+    <value>Elevation Required</value>
+  </data>
+  <data name="SecurityWarningMessage" xml:space="preserve">
+    <value>Servy Manager requires administrative privileges to manage system services.</value>
+  </data>
+  
   <data name="SqliteVersionWarningTitle" xml:space="preserve">
     <value>Security Alert</value>
   </data>
