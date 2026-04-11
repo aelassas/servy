@@ -1242,6 +1242,24 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Servy Manager requires administrative privileges to manage system services..
+        /// </summary>
+        public static string SecurityWarningMessage {
+            get {
+                return ResourceManager.GetString("SecurityWarningMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Elevation Required.
+        /// </summary>
+        public static string SecurityWarningTitle {
+            get {
+                return ResourceManager.GetString("SecurityWarningTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Loading Servy Manager....
         /// </summary>
         public static string Splash_Text {

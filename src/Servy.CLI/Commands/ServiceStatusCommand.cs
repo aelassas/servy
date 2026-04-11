@@ -33,7 +33,7 @@ namespace Servy.CLI.Commands
             var action = $"query status for service '{opts.ServiceName}'";
             var suggestion = "Verify the service name is spelled correctly and that it is currently installed on this system.";
 
-            return ExecuteWithHandling(action, suggestion, () =>
+            return ExecuteWithHandling("status", action, suggestion, () =>
             {
                 // 1. Validation using localized resource
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))

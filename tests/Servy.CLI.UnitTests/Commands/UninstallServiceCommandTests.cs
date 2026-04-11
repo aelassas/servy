@@ -82,7 +82,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.False(result.Success);
-            Assert.Contains("Failed to uninstall service 'TestService': Access is denied", result.Message);
+            Assert.Contains("Access Denied", result.Message);
         }
 
         [Fact]
@@ -102,5 +102,3 @@ namespace Servy.CLI.UnitTests.Commands
         }
     }
 }
-
-

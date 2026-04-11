@@ -17,14 +17,12 @@ namespace Servy.CLI.UnitTests.Commands
     {
         private readonly Mock<IServiceManager> _mockServiceManager;
         private readonly Mock<IServiceInstallValidator> _mockValidator;
-        private readonly Mock<IServiceRepository> _mockRepository;
         private readonly InstallServiceCommand _command;
 
         public InstallServiceCommandTests()
         {
             _mockServiceManager = new Mock<IServiceManager>();
             _mockValidator = new Mock<IServiceInstallValidator>();
-            _mockRepository = new Mock<IServiceRepository>();
             _command = new InstallServiceCommand(_mockServiceManager.Object, _mockValidator.Object);
         }
 
@@ -142,7 +140,7 @@ namespace Servy.CLI.UnitTests.Commands
 
                 // Assert
                 Assert.False(result.Success);
-                Assert.Contains("Failed to install service 'TestService': Access is denied", result.Message);
+                Assert.Contains("Access Denied", result.Message);
             }
             finally
             {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -111,5 +112,42 @@ namespace Servy.Core.Security
                 security.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, accessFlags, PropagationFlags.None, AccessControlType.Allow));
             }
         }
+
+        /// <summary>
+        /// Determines whether the current process is running with administrative privileges.
+        /// </summary>
+        /// <returns>
+        /// <see langword="true"/> if the current user has the <see cref="WindowsBuiltInRole.Administrator"/> role; 
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        [ExcludeFromCodeCoverage]
+        public static bool IsAdministrator()
+        {
+            using (var identity = WindowsIdentity.GetCurrent())
+            {
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
+
+        /// <summary>
+        /// Validates that the current process is running as an administrator.
+        /// </summary>
+        /// <exception cref="UnauthorizedAccessException">
+        /// Thrown when the current process does not have administrative privileges.
+        /// </exception>
+        /// <remarks>
+        /// Use this as a pre-flight check before performing service management operations 
+        /// to avoid opaque NTSTATUS or Win32 errors.
+        /// </remarks>
+        [ExcludeFromCodeCoverage]
+        public static void EnsureAdministrator()
+        {
+            if (!IsAdministrator())
+            {
+                throw new UnauthorizedAccessException("This operation requires administrator privileges.");
+            }
+        }
+
     }
 }

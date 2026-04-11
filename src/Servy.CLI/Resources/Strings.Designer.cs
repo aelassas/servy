@@ -61,6 +61,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Access Denied. Please restart your shell as Administrator to run the &apos;{0}&apos; command..
+        /// </summary>
+        public static string Msg_AdminPrivilegesRequired {
+            get {
+                return ResourceManager.GetString("Msg_AdminPrivilegesRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
         /// </summary>
         public static string Msg_AdminRightsRequired {
