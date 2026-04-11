@@ -971,11 +971,38 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Arguments exceed the Windows command-line limit of {0} characters..
+        /// </summary>
+        public static string Msg_ArgumentsLengthReached {
+            get {
+                return ResourceManager.GetString("Msg_ArgumentsLengthReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Configuration file exceeds maximum size (10 MB)..
         /// </summary>
         public static string Msg_ConfigSizeLimitReached {
             get {
                 return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Description exceeds {0} characters..
+        /// </summary>
+        public static string Msg_DescriptionLengthReached {
+            get {
+                return ResourceManager.GetString("Msg_DescriptionLengthReached", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Display name exceeds {0} characters..
+        /// </summary>
+        public static string Msg_DisplayNameLengthReached {
+            get {
+                return ResourceManager.GetString("Msg_DisplayNameLengthReached", resourceCulture);
             }
         }
         
@@ -1320,6 +1347,15 @@ namespace Servy.Resources {
         public static string Msg_ServiceNameError {
             get {
                 return ResourceManager.GetString("Msg_ServiceNameError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name exceeds {0} characters..
+        /// </summary>
+        public static string Msg_ServiceNameLengthReached {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameLengthReached", resourceCulture);
             }
         }
         

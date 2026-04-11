@@ -26,6 +26,40 @@ namespace Servy.Core.Config
         public static readonly Version MinRequiredSqliteVersion = new Version(3, 50, 2);
 
         /// <summary>
+        /// The maximum character length for a Windows Service name.
+        /// </summary>
+        /// <remarks>
+        /// This is a hard limit imposed by the Windows Service Control Manager (SCM).
+        /// </remarks>
+        public const int MaxServiceNameLength = 256;
+
+        /// <summary>
+        /// The maximum character length for a Windows Service display name.
+        /// </summary>
+        /// <remarks>
+        /// This matches the SCM constraint for display strings in the Services console (services.msc).
+        /// </remarks>
+        public const int MaxDisplayNameLength = 256;
+
+        /// <summary>
+        /// The maximum permitted length for a service description.
+        /// </summary>
+        /// <remarks>
+        /// While the registry can technically store larger strings, this limit prevents 
+        /// unnecessary bloat in the Windows Registry and the local SQLite database.
+        /// </remarks>
+        public const int MaxDescriptionLength = 8192;
+
+        /// <summary>
+        /// The maximum permitted length for command-line arguments.
+        /// </summary>
+        /// <remarks>
+        /// The theoretical Win32 limit for the CreateProcess argument string is 32,767 characters. 
+        /// This value is set slightly lower to provide a safety margin for internal path canonicalization.
+        /// </remarks>
+        public const int MaxArgumentLength = 32000;
+
+        /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>

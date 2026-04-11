@@ -9,6 +9,7 @@ using Servy.Resources;
 using Servy.UI.Services;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
@@ -40,9 +41,44 @@ namespace Servy.Validators
                 return false;
             }
 
+            if (dto.Name.Length > Core.Config.AppConfig.MaxServiceNameLength)
+            {
+                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_ServiceNameLengthReached, Core.Config.AppConfig.MaxServiceNameLength), AppConfig.Caption);
+                return false;
+            }
+
             if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.DisplayName?.Length > Core.Config.AppConfig.MaxDisplayNameLength)
+            {
+                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_DisplayNameLengthReached, Core.Config.AppConfig.MaxDisplayNameLength), AppConfig.Caption);
+                return false;
+            }
+
+            if (dto.Description?.Length > Core.Config.AppConfig.MaxDescriptionLength)
+            {
+                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_DescriptionLengthReached, Core.Config.AppConfig.MaxDescriptionLength), AppConfig.Caption);
+                return false;
+            }
+
+            // Validate all 6 parameter fields
+            var paramFields = new[]
+            {
+                dto.Parameters,
+                dto.PreLaunchParameters,
+                dto.PostLaunchParameters,
+                dto.PreStopParameters,
+                dto.PostStopParameters,
+                dto.FailureProgramParameters
+            };
+
+            if (paramFields.Any(p => p?.Length > Core.Config.AppConfig.MaxArgumentLength))
+            {
+                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_ArgumentsLengthReached, Core.Config.AppConfig.MaxArgumentLength), AppConfig.Caption);
                 return false;
             }
 
