@@ -29,8 +29,16 @@ Builds Servy.Service in Debug mode and copies outputs to the Resources folder.
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # --- Paths ---
-$scriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir            = $PSScriptRoot
 $servyProject         = Join-Path $scriptDir "..\Servy\Servy.csproj" | Resolve-Path
 $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
 $resourcesFolder      = Join-Path $scriptDir "..\Servy\Resources" | Resolve-Path
@@ -39,10 +47,20 @@ $platform             = "x64"
 $buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$buildConfiguration"
 $resourcesBuildOutput = Join-Path $scriptDir "..\Servy\bin\$platform\$buildConfiguration"
 
+# Safety check: Resolve-Path will fail if the directory structure is missing
+try {
+    $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
+    $resourcesFolder      = Join-Path $scriptDir "..\Servy\Resources"
+} catch {
+    Write-Error "CRITICAL: Could not resolve project paths. Ensure the folder structure is correct."
+    exit 1
+}
+
 # ------------------------------------------------------------------------
 # 1. Build the project
 # ------------------------------------------------------------------------
 & $servicePublishScript -BuildConfiguration $buildConfiguration
+Check-LastExitCode "Service publish script failed"
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy

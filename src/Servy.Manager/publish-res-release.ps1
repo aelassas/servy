@@ -29,11 +29,19 @@ Builds Servy.Service in Release mode and copies binaries into Servy.Manager\Reso
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ------------------------------------------------------------------------
 # Paths
 # ------------------------------------------------------------------------
 # Get the directory of the current script
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # Absolute paths to relevant folders and project
 $managerProject        = Join-Path $scriptDir "..\Servy.Manager\Servy.Manager.csproj" | Resolve-Path
@@ -44,15 +52,22 @@ $platform              = "x64"
 $buildOutput           = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
 $resourcesBuildOutput  = Join-Path $scriptDir "..\Servy.Manager\bin\$platform\$buildConfiguration"
 
+if (-not (Test-Path $managerProject)) {
+    Write-Error "CRITICAL: Manager Project not found at $managerProject"
+    exit 1
+}
+
 # ------------------------------------------------------------------------
 # 0. Build Servy to ensure x86 and x64 resources exist
 # ------------------------------------------------------------------------
 & msbuild $managerProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
+Check-LastExitCode "MSBuild for Manager failed"
 
 # ------------------------------------------------------------------------
 # 1. Build Servy.Service
 # ------------------------------------------------------------------------
 & $servicePublishScript -BuildConfiguration $buildConfiguration
+Check-LastExitCode "Service publish script failed"
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy

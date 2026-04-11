@@ -31,7 +31,7 @@ $ErrorActionPreference = "Stop"
 $MsbuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
 
 # Directories
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = $PSScriptRoot
 $TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
 $CoverageReportDir = Join-Path -Path $ScriptDir -ChildPath "coveragereport"
 

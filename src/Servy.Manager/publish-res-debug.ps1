@@ -29,8 +29,16 @@ Builds Servy.Service in Debug mode and copies binaries into Servy.Manager\Resour
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # --- Paths ---
-$scriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir            = $PSScriptRoot
 $managerProject       = Join-Path $scriptDir "..\Servy.Manager\Servy.Manager.csproj" | Resolve-Path
 $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
 $resourcesFolder      = Join-Path $scriptDir "..\Servy.Manager\Resources" | Resolve-Path
@@ -39,13 +47,20 @@ $platform             = "x64"
 $buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
 $resourcesBuildOutput = Join-Path $scriptDir "..\Servy.Manager\bin\$platform\$buildConfiguration"
 
+if (-not (Test-Path $managerProject)) {
+    Write-Error "CRITICAL: Manager Project not found at $managerProject"
+    exit 1
+}
+
 # ------------------------------------------------------------------------
 # Step 0: Build Servy to ensure x86 and x64 resources exist
 # ------------------------------------------------------------------------
 & msbuild $managerProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
+Check-LastExitCode "MSBuild for Manager failed"
 
 # --- Step 1: Build the project ---
 & $servicePublishScript -BuildConfiguration $buildConfiguration
+Check-LastExitCode "Service publish script failed"
 
 # --- Step 2: Define files to copy ---
 $filesToCopy = @(

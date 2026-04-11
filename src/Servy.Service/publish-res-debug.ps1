@@ -23,10 +23,18 @@
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ----------------------------------------------------------------------
 # Resolve script directory (absolute path to this script's location)
 # ----------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
@@ -37,10 +45,16 @@ $buildConfiguration     = "Debug"
 $platform               = "x64"
 $buildOutput            = Join-Path $scriptDir "..\Servy.Restarter\bin\$platform\$buildConfiguration"
 
+if (-not (Test-Path $restarterPublishScript)) {
+    Write-Error "CRITICAL: Restarter publish script not found at $restarterPublishScript"
+    exit 1
+}
+
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter in Debug mode
 # ----------------------------------------------------------------------
 & $restarterPublishScript -BuildConfiguration $buildConfiguration
+Check-LastExitCode "Restarter publish script failed"
 
 # ----------------------------------------------------------------------
 # Step 2: Files to copy (with renamed outputs where applicable)

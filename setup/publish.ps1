@@ -28,7 +28,7 @@ try {
     # === PATH RESOLUTION ===
 
     # Directories
-    $scriptDir              = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $scriptDir              = $PSScriptRoot
     $rootDir                = (Resolve-Path (Join-Path $scriptDir "..")).Path
     $servyDir               = Join-Path $rootDir "src\Servy"
     $cliDir                 = Join-Path $rootDir "src\Servy.CLI"
@@ -48,6 +48,14 @@ try {
     # ========================
     # Functions
     # ========================
+    function Check-LastExitCode {
+        param([string]$ErrorMessage)
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+            exit $LASTEXITCODE
+        }
+    }
+
     function Remove-FileOrFolder {
         param (
             [string]$Path
@@ -62,23 +70,36 @@ try {
     # === BUILD PROJECTS ===
     Write-Host "Restoring NuGet packages..."
     nuget restore "..\Servy.sln"
+    Check-LastExitCode "NuGet restore failed"
 
     Write-Host "Building Servy WPF..."
     & (Join-Path $scriptDir "..\src\Servy\publish.ps1") -Version $version
+    Check-LastExitCode "Servy WPF build failed"
 
     Write-Host "Building Servy CLI..."
     & (Join-Path $scriptDir "..\src\Servy.CLI\publish.ps1") -Version $version
+    Check-LastExitCode "Servy CLI build failed"
 
     Write-Host "Building Servy Manager..."
     & (Join-Path $scriptDir "..\src\Servy.Manager\publish.ps1") -Version $version
+    Check-LastExitCode "Servy Manager build failed"
 
     # === BUILD INSTALLER ===
     Write-Host "Building installer from $issFile..."
     & "$innoCompiler" (Join-Path $scriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$framework
+    Check-LastExitCode "Inno Setup failed"
 
     # === SIGN INSTALLER ===
-    $installerPath = Join-Path $rootDir "setup\servy-$version-net48-x64-installer.exe" | Resolve-Path
-    & $signPath $installerPath
+    $installerPath = Join-Path $rootDir "setup\servy-$version-net48-x64-installer.exe"
+    if (Test-Path $installerPath) {
+        if ($null -ne $signPath) {
+            Write-Host ">>> Signing Installer..." -ForegroundColor Cyan
+            & $signPath $installerPath
+            Check-LastExitCode "Signing failed"
+        }
+    } else {
+        throw "Installer binary not found at $installerPath"
+    }
 
     # === PREPARE PACKAGE FILES ===
     Write-Host "Preparing package files..."

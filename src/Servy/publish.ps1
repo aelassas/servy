@@ -40,8 +40,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # Get the directory of the current script
-$scriptDir            = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir            = $PSScriptRoot
 
 # Configuration
 $platform             = "x64"
@@ -50,6 +58,11 @@ $publishFolder        = Join-Path $scriptDir "bin\$platform\$BuildConfiguration"
 
 # Paths
 $projectPath = Join-Path $scriptDir "Servy.csproj"
+
+if (-not (Test-Path $projectPath)) {
+    Write-Error "CRITICAL: Project file not found at $projectPath"
+    exit 1
+}
 
 # Step 1: Run publish-res-release.ps1
 $publishResScriptName = if ($BuildConfiguration -eq "Debug") { "publish-res-debug.ps1" } else { "publish-res-release.ps1" }
@@ -62,26 +75,20 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ==="
 & $publishResScript -tfm $tfm
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishResScriptName failed"
 Write-Host "=== Completed $publishResScriptName ===`n"
 
 # Step 2: Build project with MSBuild
 Write-Host "Building Servy project in $BuildConfiguration mode..."
 & msbuild $projectPath /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
 Write-Host "Build completed."
+Check-LastExitCode "MSBuild failed"
 
 # Step 3: Sign the published executable if signing is enabled
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $publishFolder "Servy.exe" | Resolve-Path
     & $signPath $exePath
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Signing Servy.exe failed."
-        exit $LASTEXITCODE
-    }
+    Check-LastExitCode "Code signing failed"
 }
 
 if ($Pause) { 

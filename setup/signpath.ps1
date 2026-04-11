@@ -48,7 +48,7 @@ if (-not (Get-Module -ListAvailable -Name SignPath)) {
 # ----------------------------------------------------------
 # LOCATE CONFIG FILE
 # ----------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 $configCandidates = @(
     (Join-Path $scriptDir ".signpath"),
     (Join-Path $scriptDir ".signpath.env"),

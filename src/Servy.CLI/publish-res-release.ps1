@@ -30,10 +30,18 @@ Builds Servy.Service in Release mode and copies outputs to Servy.CLI\Resources.
 
 $ErrorActionPreference = "Stop"
 
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ----------------------------------------------------------------------
 # Resolve script directory (absolute path to this script's location)
 # ----------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
@@ -46,15 +54,22 @@ $platform              = "x64"
 $buildOutput           = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
 $resourcesBuildOutput  = Join-Path $scriptDir "..\Servy.CLI\bin\$platform\$buildConfiguration"
 
+if (-not (Test-Path $cliProject)) {
+    Write-Error "CRITICAL: CLI Project not found at $cliProject"
+    exit 1
+}
+
 # ------------------------------------------------------------------------
 # Step 0: Build Servy to ensure x86 and x64 resources exist
 # ------------------------------------------------------------------------
 & msbuild $cliProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration /p:Platform=$platform
+Check-LastExitCode "MSBuild for CLI failed"
 
 # ----------------------------------------------------------------------
 # 1. Build Servy.Service in Release mode
 # ----------------------------------------------------------------------
 & $servicePublishScript -BuildConfiguration $buildConfiguration
+Check-LastExitCode "Service publish script failed"
 
 # ------------------------------------------------------------------------
 # 2. Define files to copy

@@ -39,10 +39,20 @@ param(
     [switch]$Pause
 )
 
+$ErrorActionPreference = "Stop"
+
+function Check-LastExitCode {
+    param([string]$ErrorMessage)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)"
+        exit $LASTEXITCODE
+    }
+}
+
 # ----------------------------------------------------------------------
 # Resolve script directory (absolute path to this script's location)
 # ----------------------------------------------------------------------
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = $PSScriptRoot
 
 # ----------------------------------------------------------------------
 # Absolute paths and configuration
@@ -51,6 +61,11 @@ $serviceProject   = Join-Path $scriptDir "..\Servy.Service\Servy.Service.csproj"
 $platform         = "x64"
 $buildOutput      = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$BuildConfiguration"
 $signPath         = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+
+if (-not (Test-Path $serviceProject)) {
+    Write-Error "CRITICAL: Project file not found at $serviceProject"
+    exit 1
+}
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish resources first
@@ -65,10 +80,7 @@ if (-not (Test-Path $publishResScript)) {
 
 Write-Host "=== Running $publishResScriptName ==="
 & $publishResScript
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "$publishResScriptName failed."
-    exit $LASTEXITCODE
-}
+Check-LastExitCode "$publishResScriptName failed"
 Write-Host "=== Completed $publishResScriptName ===`n"
 
 # ----------------------------------------------------------------------
@@ -76,6 +88,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ----------------------------------------------------------------------
 Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 & msbuild $serviceProject /t:Clean,Rebuild /p:Configuration=$BuildConfiguration /p:AllowUnsafeBlocks=true /p:Platform=$platform
+Check-LastExitCode "MSBuild failed"
 
 # ----------------------------------------------------------------------
 # Step 3: Sign the executable only in Release mode
@@ -83,11 +96,7 @@ Write-Host "Building Servy.Service in $BuildConfiguration mode..."
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $buildOutput "Servy.Service.exe" | Resolve-Path
     & $signPath $exePath
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Signing Servy.CLI.exe failed."
-        exit $LASTEXITCODE
-    }
+    Check-LastExitCode "Code signing failed"
 }
 
 Write-Host "Build completed for Servy.Service in $BuildConfiguration mode."
