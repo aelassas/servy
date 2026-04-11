@@ -38,7 +38,7 @@
         /// </summary>
         /// <param name="error">The mandatory error message describing why the operation failed.</param>
         /// <returns>A failed <see cref="OperationResult"/> containing the error context.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown if <paramref name="error"/> is null or whitespace.</exception>
         public static OperationResult Failure(string error)
         {
             if (string.IsNullOrWhiteSpace(error))

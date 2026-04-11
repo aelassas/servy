@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 namespace Servy.CLI.Commands
 {
     /// <summary>
-    /// Command to restart an existing Windows service.
+    /// Command to export an existing Windows service.
     /// </summary>
     public class ExportServiceCommand : BaseCommand
     {
@@ -47,7 +47,7 @@ namespace Servy.CLI.Commands
         }
 
         /// <summary>
-        /// Executes the restart of the service with the specified options.
+        /// Executes the export of the service with the specified options.
         /// </summary>
         /// <param name="opts">Export service options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>

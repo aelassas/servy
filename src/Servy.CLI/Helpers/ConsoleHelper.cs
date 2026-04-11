@@ -6,10 +6,10 @@
     public static class ConsoleHelper
     {
         /// <summary>
-        /// Runs a synchronous action while displaying a console loading spinner.
+        /// Runs an asynchronous action while displaying a console loading spinner.
         /// The spinner shows next to a custom message until the action completes.
         /// </summary>
-        /// <param name="action">The synchronous work to execute while the spinner is shown.</param>
+        /// <param name="action">The asynchronous work to execute while the spinner is shown.</param>
         /// <param name="message">
         /// The message to display next to the spinner. Defaults to "Preparing environment...".
         /// </param>
@@ -43,7 +43,7 @@
 
                 try
                 {
-                    await action();  // synchronous work
+                    await action();  // asynchronous work
                 }
                 finally
                 {
