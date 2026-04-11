@@ -5,6 +5,7 @@ using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using System.Security;
+using System.Text.RegularExpressions;
 
 namespace Servy.CLI.Commands
 {
@@ -13,6 +14,27 @@ namespace Servy.CLI.Commands
     /// </summary>
     public class ExportServiceCommand : BaseCommand
     {
+        #region Export Security Constants
+
+        /// <summary>
+        /// A collection of legacy Windows reserved device names that cannot be used as filenames.
+        /// </summary>
+        private static readonly HashSet<string> ReservedDeviceNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "CON", "PRN", "AUX", "NUL"
+        };
+
+        /// <summary>
+        /// Matches legacy Windows serial (COM) and parallel (LPT) port names (1-9).
+        /// Includes a 200ms timeout to mitigate ReDoS.
+        /// </summary>
+        private static readonly Regex ReservedPortRegex = new Regex(
+            @"^(COM|LPT)[1-9]$",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase,
+            TimeSpan.FromMilliseconds(200));
+
+        #endregion
+
         private readonly IServiceRepository _serviceRepository;
 
         /// <summary>
@@ -83,35 +105,59 @@ namespace Servy.CLI.Commands
 
         /// <summary>
         /// Safely persists the exported service configuration to a user-defined file path.
-        /// Validates that the target is a supported file type and not a protected system location.
+        /// Validates that the target is a supported file type, not a UNC path, 
+        /// not a reserved device name, and not a protected system location.
         /// </summary>
         /// <param name="userPath">The target file path provided via the CLI.</param>
         /// <param name="content">The serialized configuration string.</param>
-        /// <exception cref="SecurityException">Thrown if the path targets a protected system directory.</exception>
-        /// <exception cref="ArgumentException">Thrown if the file extension is not .json or .xml.</exception>
+        /// <exception cref="SecurityException">Thrown if the path targets a protected system directory or a UNC path.</exception>
+        /// <exception cref="ArgumentException">Thrown if the path is a reserved device name or an unsupported file type.</exception>
         private void SaveFile(string userPath, string content)
         {
-            // 1. Canonicalize: Resolve ".." and relative paths to an absolute path
+            // 1. Canonicalize: Resolve ".." and relative paths to a strictly absolute path.
+            // This is the foundation for all subsequent security checks.
             string fullPath = Path.GetFullPath(userPath);
 
-            // 2. Extension Validation: Ensure we are only writing configuration files
+            // 2. Extension Validation
             string extension = Path.GetExtension(fullPath);
             if (!string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase)
                 && !string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Only .json and .xml exports are permitted.");
+                throw new ArgumentException("Security Alert: Only .json and .xml exports are permitted.");
             }
 
-            // 3. System Protection: Block writing to critical Windows directories
-            // This prevents overwriting DLLs, drivers, or the SAM database.
-            string[] protectedFolders = {
+            // 3. UNC Path Block (Exfiltration Guard)
+            // Prevents writing sensitive config data (including encrypted passwords) to remote shares.
+            if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || new Uri(fullPath).IsUnc)
+            {
+                throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
+            }
+
+            // 4. Reserved Device Name Block (DOS/Data Loss Guard)
+            // Prevents writing to CON, NUL, COM1, etc., which can hang the process or discard data.
+            string fileName = Path.GetFileNameWithoutExtension(fullPath);
+            try
+            {
+                if (ReservedDeviceNames.Contains(fileName) || ReservedPortRegex.IsMatch(fileName))
+                {
+                    throw new ArgumentException($"Security Alert: '{fileName}' is a reserved Windows device name and cannot be used.");
+                }
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Fallback: If regex fails to validate the filename in time, block the write.
+                throw new SecurityException("Security Alert: Filename validation timed out. Export aborted for safety.");
+            }
+
+            // 5. System Protection: Block writing to critical Windows directories
+            string[] protectedFolders = 
+            {
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
                 Environment.GetFolderPath(Environment.SpecialFolder.System),
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
             };
 
-            // Find the first protected folder that matches the start of the fullPath
             var violatedFolder = protectedFolders
                 .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
                                           fullPath.StartsWith(folder, StringComparison.OrdinalIgnoreCase));
@@ -121,14 +167,14 @@ namespace Servy.CLI.Commands
                 throw new SecurityException($"Access Denied: Exporting to protected system directory '{violatedFolder}' is prohibited.");
             }
 
-            // 4. Directory Creation
+            // 6. Directory Creation
             string? parentDir = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
                 Directory.CreateDirectory(parentDir);
             }
 
-            // 5. Atomic-style Write
+            // 7. Final Atomic Write
             File.WriteAllText(fullPath, content);
         }
     }
