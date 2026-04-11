@@ -193,7 +193,7 @@ namespace Servy.Core.Helpers
                                     proc.Dispose(); // Not the process we're looking for.
                                 }
                             }
-                            catch { /* Process already exited or access denied */ }
+                            catch (Exception ex) { Logger.Debug($"Could not inspect/kill child process.", ex); }
                         }
                     } while (Process32Next(snapshot, ref pe32));
                 }
@@ -283,8 +283,9 @@ namespace Servy.Core.Helpers
                     foreach (var p in allProcesses) p.Dispose();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn("Failed to kill process tree and parents.", ex);
                 return false;
             }
         }
@@ -445,9 +446,10 @@ namespace Servy.Core.Helpers
                     parent.WaitForExit(5000);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // We catch all exceptions to ensure that a failure in killing one parent does not prevent attempts to kill others.
+                // A failure in killing one parent must not prevent attempts to kill others.
+                Logger.Debug("Failed to kill parent process.", ex);
             }
         }
 
