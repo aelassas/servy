@@ -809,6 +809,8 @@ param(
     [ValidateNotNullOrEmpty()]
     [string] $Name,
 
+    [ValidateNotNullOrEmpty()]
+    [ValidateLength(1, 256)]
     [string] $DisplayName,
 
     [string] $Description,
@@ -918,6 +920,7 @@ param(
     [ValidatePattern('^.+\\.+$')]
     [string] $User,
 
+    [ValidateNotNullOrEmpty()]
     [string] $Password,
 
     # Pre-launch
