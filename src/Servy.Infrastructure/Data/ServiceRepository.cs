@@ -510,7 +510,6 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
         {
-            // Using Dapper for a fast, scalar query
             const string sql = "SELECT Pid FROM Services WHERE Name = @Name LIMIT 1;";
 
             return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName });
