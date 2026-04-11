@@ -938,6 +938,7 @@ param(
 
     [string] $PreLaunchParams,
 
+    [ValidatePattern('^([^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)(; ?[^= ]+=(?:\\=|\\;|\\"|\\\\|[^;])*)*;?$')]
     [string] $PreLaunchEnv,
 
     [ValidateScript({ 
