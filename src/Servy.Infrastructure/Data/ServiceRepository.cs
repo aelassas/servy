@@ -519,7 +519,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public async Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default)
         {
-            var query = @"
+            const string sql = @"
                 SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
                 FROM Services 
                 WHERE Name = @Name 
@@ -527,7 +527,7 @@ namespace Servy.Infrastructure.Data
 
             // This bypasses full DTO mapping and hits the SQLite page cache instantly
             return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
-                query,
+                sql,
                 new { Name = serviceName }
             );
         }
