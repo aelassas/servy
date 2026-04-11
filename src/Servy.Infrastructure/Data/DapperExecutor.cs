@@ -205,6 +205,21 @@ namespace Servy.Infrastructure.Data
             }).ConfigureAwait(false);
         }
 
+        /// <inheritdoc/>
+        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null)
+        {
+            if (sql == null) throw new ArgumentNullException(nameof(sql));
+
+            return await ExecuteWithRetryAsync(async () =>
+            {
+                using (var connection = _dbContext.CreateConnection())
+                {
+                    await connection.OpenAsync().ConfigureAwait(false);
+                    return await connection.QueryFirstOrDefaultAsync<T>(sql, param).ConfigureAwait(false);
+                }
+            }).ConfigureAwait(false);
+        }
+
         #endregion
     }
 }

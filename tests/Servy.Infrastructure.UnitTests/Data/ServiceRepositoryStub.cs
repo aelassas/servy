@@ -140,6 +140,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
+        public Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null)
+        {
+            throw new NotImplementedException();
+        }
+
         public T QuerySingleOrDefault<T>(string sql, object param = null)
         {
             throw new NotImplementedException();

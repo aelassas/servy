@@ -515,6 +515,31 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc />
+        public async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
+        {
+            // Using Dapper for a fast, scalar query
+            const string sql = "SELECT Pid FROM Services WHERE Name = @Name LIMIT 1;";
+
+            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName });
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceConsoleStateDto> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default)
+        {
+            var query = @"
+                SELECT Pid, ActiveStdoutPath, ActiveStderrPath 
+                FROM Services 
+                WHERE Name = @Name 
+                LIMIT 1;";
+
+            // This bypasses full DTO mapping and hits the SQLite page cache instantly
+            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                query,
+                new { Name = serviceName }
+            );
+        }
+
+        /// <inheritdoc />
         public virtual async Task<IEnumerable<ServiceDto>> GetAllAsync(bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var sql = "SELECT * FROM Services ORDER BY LOWER(Name) COLLATE NOCASE ASC;";

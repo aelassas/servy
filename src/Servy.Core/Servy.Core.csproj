@@ -102,6 +102,7 @@
     <Compile Include="Data\IDapperExecutor.cs" />
     <Compile Include="Data\IServiceRepository.cs" />
     <Compile Include="DTOs\EventLogEntry.cs" />
+    <Compile Include="DTOs\ServiceConsoleStateDto.cs" />
     <Compile Include="DTOs\ServiceDto.cs" />
     <Compile Include="DTOs\ServiceInfo.cs" />
     <Compile Include="Enums\DateRotationType.cs" />

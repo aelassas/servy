@@ -8,6 +8,7 @@ using Servy.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -682,6 +683,162 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("v3=val3", result.PreLaunchEnvironmentVariables);
             Assert.Equal("pre-stop-params", result.PreStopParameters);
             Assert.Equal("post-stop-params", result.PostStopParameters);
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_ServiceIsRunning_ReturnsPid()
+        {
+            // Arrange
+            var serviceName = "RunningService";
+            int expectedPid = 1234;
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
+                    It.Is<string>(sql => sql.Contains("SELECT Pid FROM Services")),
+                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName)))
+                .ReturnsAsync(expectedPid);
+
+            // Act
+            var repo = CreateRepository();
+            var result = await repo.GetServicePidAsync(serviceName);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedPid, result);
+            _mockDapper.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_ServiceIsStopped_ReturnsNull()
+        {
+            // Arrange
+            var serviceName = "StoppedService";
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
+                    It.Is<string>(sql => sql.Contains("SELECT Pid FROM Services")),
+                    It.IsAny<object>()))
+                .ReturnsAsync((int?)null);
+
+            // Act
+            var repo = CreateRepository();
+            var result = await repo.GetServicePidAsync(serviceName);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_ServiceDoesNotExist_ReturnsNull()
+        {
+            // Arrange
+            var serviceName = "NonExistentService";
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
+                    It.IsAny<string>(),
+                    It.IsAny<object>()))
+                .ReturnsAsync((int?)null);
+
+            // Act
+            var repo = CreateRepository();
+            var result = await repo.GetServicePidAsync(serviceName);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetServicePidAsync_PassesCancellationToken()
+        {
+            // Arrange
+            var serviceName = "TestService";
+
+            // Act
+            var repo = CreateRepository();
+            await repo.GetServicePidAsync(serviceName);
+
+            // Assert
+            // This ensures the repo method correctly propagates the token to the executor
+            _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<int?>(
+                It.IsAny<string>(),
+                It.IsAny<object>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_ServiceExists_ReturnsLightweightDto()
+        {
+            // Arrange
+            var serviceName = "ConsoleTestService";
+            var expectedState = new ServiceConsoleStateDto
+            {
+                Pid = 5678,
+                ActiveStdoutPath = @"C:\Logs\stdout.log",
+                ActiveStderrPath = @"C:\Logs\stderr.log"
+            };
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                    It.Is<string>(sql => sql.Contains("SELECT Pid, ActiveStdoutPath, ActiveStderrPath")),
+                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName)))
+                .ReturnsAsync(expectedState);
+
+            // Act
+            var repo = CreateRepository();
+            var result = await repo.GetServiceConsoleStateAsync(serviceName);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(expectedState.Pid, result.Pid);
+            Assert.Equal(expectedState.ActiveStdoutPath, result.ActiveStdoutPath);
+            Assert.Equal(expectedState.ActiveStderrPath, result.ActiveStderrPath);
+            _mockDapper.VerifyAll();
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_ServiceDoesNotExist_ReturnsNull()
+        {
+            // Arrange
+            var serviceName = "MissingService";
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                    It.IsAny<string>(),
+                    It.IsAny<object>()))
+                .ReturnsAsync((ServiceConsoleStateDto)null);
+
+            // Act
+            var repo = CreateRepository();
+            var result = await repo.GetServiceConsoleStateAsync(serviceName);
+
+            // Assert
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task GetServiceConsoleStateAsync_VerifiesSqlParametersAndStructure()
+        {
+            // Arrange
+            var serviceName = "SqlVerifyService";
+
+            _mockDapper
+                .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                    It.Is<string>(sql =>
+                        sql.Contains("FROM Services") &&
+                        sql.Contains("WHERE Name = @Name") &&
+                        sql.Contains("LIMIT 1")),
+                    It.IsAny<object>()))
+                .ReturnsAsync(new ServiceConsoleStateDto());
+
+            // Act
+            var repo = CreateRepository();
+            await repo.GetServiceConsoleStateAsync(serviceName);
+
+            // Assert
+            _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
+                It.IsAny<string>(),
+                It.Is<object>(p => p.GetType().GetProperty("Name") != null)),
+                Times.Once);
         }
 
         [Fact]

@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
@@ -508,9 +509,14 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, decrypt: false);
+                // 1. Fetch the data from the repository
+                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, _cts.Token);
 
-                if (serviceDto?.Pid == null)
+                // 2. Use Clone to create a local, immutable snapshot for this UI tick
+                // This protects the UI from "dirty reads" if the repository modifies objects in memory
+                var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
+
+                if (stateSnapshot?.Pid == null)
                 {
                     ResetConsole(true);
                     SelectedService.Pid = null;
@@ -520,17 +526,18 @@ namespace Servy.Manager.ViewModels
                     return;
                 }
 
-                if (currentSelection.Pid != serviceDto.Pid
-                    || _stdoutPath != serviceDto.ActiveStdoutPath
-                    || _stderrPath != serviceDto.ActiveStderrPath
+                // 3. Compare and update using the snapshot
+                if (currentSelection.Pid != stateSnapshot.Pid
+                    || _stdoutPath != stateSnapshot.ActiveStdoutPath
+                    || _stderrPath != stateSnapshot.ActiveStderrPath
                     )
                 {
-                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
-                    _stdoutPath = serviceDto.ActiveStdoutPath;
-                    _stderrPath = serviceDto.ActiveStderrPath;
-                    SelectedService.StdoutPath = serviceDto.ActiveStdoutPath;
-                    SelectedService.StderrPath = serviceDto.ActiveStderrPath;
-                    SwitchService(serviceDto.ActiveStdoutPath, serviceDto.ActiveStderrPath);
+                    currentSelection.Pid = stateSnapshot.Pid;   // write to captured local, not SelectedService
+                    _stdoutPath = stateSnapshot.ActiveStdoutPath;
+                    _stderrPath = stateSnapshot.ActiveStderrPath;
+                    SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                    SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+                    SwitchService(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 
