@@ -853,7 +853,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var xml = await repo.ExportXmlAsync("A", TestContext.Current.CancellationToken);
 
             Assert.Contains("<ServiceDto", xml);
-            Assert.Contains("p1", xml);
+            Assert.DoesNotContain("p1", xml);
         }
 
         [Fact]

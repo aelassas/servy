@@ -132,7 +132,7 @@ namespace Servy.Core.UnitTests.Services
 
             // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings
             Assert.Equal(expected.UserAccount, actual.UserAccount);
-            Assert.Equal(expected.Password, actual.Password);
+            Assert.Null(actual.Password);
         }
 
         [Fact]
