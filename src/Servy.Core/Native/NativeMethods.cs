@@ -64,12 +64,6 @@ namespace Servy.Core.Native
             public uint dwPreshutdownTimeout;
         }
 
-        /// <summary>Access right to all control manager operations.</summary>
-        public const int SC_MANAGER_ALL_ACCESS = 0xF003F;
-
-        /// <summary>Access right to all service operations.</summary>
-        public const int SERVICE_ALL_ACCESS = 0xF01FF;
-
         /// <summary>Permission to query the status of a service.</summary>
         public const int SERVICE_QUERY_STATUS = 0x0004;
 
