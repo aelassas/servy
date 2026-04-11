@@ -359,7 +359,7 @@ function Invoke-ServyCli {
         $killed = $process.HasExited
         if ($killed) { $process.WaitForExit() }  # Flush async stderr
       }
-      catch { }
+      catch { Write-Warning "Failed to kill timed-out process: $_" }
 
       if ($killed) {
         throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds and was terminated."
