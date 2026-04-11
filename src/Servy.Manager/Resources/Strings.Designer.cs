@@ -277,6 +277,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à User Session.
+        /// </summary>
+        public static string Column_LogOnAs {
+            get {
+                return ResourceManager.GetString("Column_LogOnAs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Message.
         /// </summary>
         public static string Column_Message {
@@ -345,15 +354,6 @@ namespace Servy.Manager.Resources {
         public static string Column_Time {
             get {
                 return ResourceManager.GetString("Column_Time", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à User Session.
-        /// </summary>
-        public static string Column_UserSession {
-            get {
-                return ResourceManager.GetString("Column_UserSession", resourceCulture);
             }
         }
         

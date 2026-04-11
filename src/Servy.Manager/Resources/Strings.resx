@@ -168,7 +168,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Column_StartupType" xml:space="preserve">
     <value>Startup Type</value>
   </data>
-  <data name="Column_UserSession" xml:space="preserve">
+  <data name="Column_LogOnAs" xml:space="preserve">
     <value>User Session</value>
   </data>
 

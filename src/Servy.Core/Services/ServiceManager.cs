@@ -948,7 +948,7 @@ namespace Servy.Core.Services
                             Name = name,
                             Status = status,
                             StartupType = startupType,
-                            UserSession = user,
+                            LogOnAs = user,
                             Description = description,
                         });
                     }
