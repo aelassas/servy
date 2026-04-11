@@ -393,6 +393,56 @@ namespace Servy.Core.Config
         public const int MinPreLaunchRetryAttempts = 0;
 
         /// <summary>
+        /// Maximum timeout in seconds to wait for the process to start (24 hours).
+        /// </summary>
+        public const int MaxStartTimeout = 86_400;
+
+        /// <summary>
+        /// Maximum timeout in seconds to wait for exit (24 hours).
+        /// </summary>
+        public const int MaxStopTimeout = 86_400;
+
+        /// <summary>
+        /// Maximum allowed pre-stop timeout in seconds (24 hours).
+        /// </summary>
+        public const int MaxPreStopTimeoutSeconds = 86_400;
+
+        /// <summary>
+        /// Maximum rotation size in MB (10 GB).
+        /// </summary>
+        public const int MaxRotationSize = 10_240;
+
+        /// <summary>
+        /// Maximum number of rotated log files to keep.
+        /// </summary>
+        public const int MaxMaxRotations = 10_000;
+
+        /// <summary>
+        /// Maximum heartbeat interval in seconds (24 hours).
+        /// </summary>
+        public const int MaxHeartbeatInterval = 86_400;
+
+        /// <summary>
+        /// Maximum allowed failed health checks.
+        /// </summary>
+        public const int MaxMaxFailedChecks = 100;
+
+        /// <summary>
+        /// Maximum allowed restart attempts.
+        /// </summary>
+        public const int MaxMaxRestartAttempts = 100;
+
+        /// <summary>
+        /// Maximum pre-launch timeout in seconds (24 hours).
+        /// </summary>
+        public const int MaxPreLaunchTimeoutSeconds = 86_400;
+
+        /// <summary>
+        /// Maximum pre-launch retry attempts.
+        /// </summary>
+        public const int MaxPreLaunchRetryAttempts = 100;
+
+        /// <summary>
         /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.
         /// </summary>
         /// <remarks>
