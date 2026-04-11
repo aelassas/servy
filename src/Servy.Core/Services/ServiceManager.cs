@@ -8,6 +8,7 @@ using Servy.Core.Logging;
 using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -593,11 +594,11 @@ namespace Servy.Core.Services
                     using (var sc = _controllerFactory(serviceName))
                     {
                         sc.Refresh();
-                        DateTime waitUntil = DateTime.Now.AddSeconds(ServiceStopTimeoutSeconds);
+                        var sw = Stopwatch.StartNew();
 
-                        while (sc.Status != ServiceControllerStatus.Stopped && DateTime.Now < waitUntil)
+                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < ServiceStopTimeoutSeconds)
                         {
-                            await Task.Delay(500); // Poll every half-second
+                            await Task.Delay(ScmPollIntervalMs);
                             sc.Refresh();
                         }
                     }
