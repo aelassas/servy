@@ -315,9 +315,9 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, decrypt: false);
+                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, _cts.Token);
 
-                if (serviceDto?.Pid == null)
+                if (!currentPid.HasValue)
                 {
                     ResetGraphs(true);
 
@@ -328,9 +328,9 @@ namespace Servy.Manager.ViewModels
                     return;
                 }
 
-                if (currentSelection.Pid != serviceDto.Pid)
+                if (currentSelection.Pid != currentPid)
                 {
-                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
+                    currentSelection.Pid = currentPid;   // write to captured local, not SelectedService
                     ResetGraphs(true);
 
                     // IMPORTANT: Tell the command the PID is now available (or gone)
@@ -341,14 +341,14 @@ namespace Servy.Manager.ViewModels
                 SetPidText();
 
                 // Fetch raw metrics
-                var processMetrics = await Task.Run(() =>
+                var processMetrics = await Task.Run((Func<ProcessMetrics>)(() =>
                 {
                     // 1. Perform background maintenance on the PID cache
                     ProcessHelper.MaintainCache();
 
                     // 2. Retrieve tree-wide metrics
-                    return ProcessHelper.GetProcessTreeMetrics(pid);
-                });
+                    return ProcessHelper.GetProcessTreeMetrics((int)pid);
+                }));
                 double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
 
                 // Update UI Texts

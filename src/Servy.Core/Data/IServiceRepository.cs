@@ -1,5 +1,4 @@
-﻿using Servy.Core.Domain;
-using Servy.Core.DTOs;
+﻿using Servy.Core.DTOs;
 
 namespace Servy.Core.Data
 {
@@ -101,6 +100,28 @@ namespace Servy.Core.Data
         /// <param name="decrypt">Optional flag to decrypt sensitive data.</param>
         /// <returns>The matching <see cref="ServiceDto"/> or <c>null</c> if not found.</returns>
         ServiceDto? GetByName(string name, bool decrypt = true);
+
+        /// <summary>
+        /// Lightweight query to fetch only the Process ID (PID) for a given service.
+        /// Used by high-frequency UI timers to check running state without allocating full DTOs.
+        /// </summary>
+        Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously retrieves a lightweight projection of a service's running state.
+        /// </summary>
+        /// <param name="serviceName">The unique name of the service to query.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>
+        /// A <see cref="ServiceConsoleStateDto"/> containing the PID and active log paths; 
+        /// or <see langword="null"/> if the service is not found.
+        /// </returns>
+        /// <remarks>
+        /// This method is optimized for high-frequency UI polling (e.g., in the Console tab).
+        /// It fetches only the columns necessary to determine if a service has restarted 
+        /// or changed its active log targets, minimizing database I/O and memory allocations.
+        /// </remarks>
+        Task<ServiceConsoleStateDto?> GetServiceConsoleStateAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Retrieves all <see cref="ServiceDto"/> records in the repository.

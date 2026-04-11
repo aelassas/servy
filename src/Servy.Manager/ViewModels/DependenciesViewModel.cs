@@ -305,9 +305,9 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var serviceDto = await _serviceRepository.GetByNameAsync(currentSelection.Name, decrypt: false);
+                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, _cts.Token);
 
-                if (serviceDto?.Pid == null)
+                if (!currentPid.HasValue)
                 {
                     ResetPid();
                     SelectedService.Pid = null;
@@ -315,9 +315,9 @@ namespace Servy.Manager.ViewModels
                     return;
                 }
 
-                if (currentSelection.Pid != serviceDto.Pid)
+                if (currentSelection.Pid != currentPid)
                 {
-                    currentSelection.Pid = serviceDto.Pid;   // write to captured local, not SelectedService
+                    currentSelection.Pid = currentPid;   // write to captured local, not SelectedService
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 

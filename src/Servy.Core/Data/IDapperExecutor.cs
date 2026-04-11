@@ -53,5 +53,10 @@ namespace Servy.Core.Data
         /// <param name="command">The SQL command.</param>
         /// <returns>A task representing the asynchronous operation, with the resulting <typeparamref name="T"/> entity, or <c>null</c> if not found.</returns>
         Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command);
+
+        /// <summary>
+        /// Executes a query asynchronously and returns the first row, or a default value if the sequence contains no elements.
+        /// </summary>
+        Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null);
     }
 }
