@@ -346,13 +346,13 @@ namespace Servy.Manager.ViewModels
                 SetPidText();
 
                 // Fetch raw metrics
-                var processMetrics = await Task.Run((Func<ProcessMetrics>)(() =>
+                var processMetrics = await Task.Run((() =>
                 {
                     // 1. Perform background maintenance on the PID cache
                     ProcessHelper.MaintainCache();
 
                     // 2. Retrieve tree-wide metrics
-                    return ProcessHelper.GetProcessTreeMetrics((int)pid);
+                    return ProcessHelper.GetProcessTreeMetrics(pid);
                 }));
                 double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
 
