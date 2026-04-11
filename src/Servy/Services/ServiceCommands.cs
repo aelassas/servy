@@ -252,8 +252,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error("Unexpected error in service operation.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -293,8 +294,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error("Unexpected error in service operation.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -336,8 +338,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error("Unexpected error in service operation.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -372,8 +375,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error("Unexpected error in service operation.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -415,8 +419,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error("Unexpected error in service operation.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
