@@ -15,15 +15,45 @@ namespace Servy.CLI.Validators
     /// </summary>
     public class ServiceInstallValidator : IServiceInstallValidator
     {
-
         ///<inheritdoc/>
         public CommandResult Validate(InstallServiceOptions opts)
         {
             if (string.IsNullOrWhiteSpace(opts.ServiceName) || string.IsNullOrWhiteSpace(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_ValidationError);
 
+            if (opts.ServiceName.Length > AppConfig.MaxServiceNameLength)
+            {
+                return CommandResult.Fail(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
+            }
+
             if (!ProcessHelper.ValidatePath(opts.ProcessPath))
                 return CommandResult.Fail(Strings.Msg_InvalidPath);
+
+            if (opts.ServiceDisplayName?.Length > AppConfig.MaxDisplayNameLength)
+            {
+                return CommandResult.Fail(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
+            }
+
+            if (opts.ServiceDescription?.Length > AppConfig.MaxDescriptionLength)
+            {
+                return CommandResult.Fail(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
+            }
+
+            // Validate all 6 parameter fields
+            var paramFields = new[]
+            {
+                opts.ProcessParameters,
+                opts.PreLaunchParameters,
+                opts.PostLaunchParameters,
+                opts.PreStopParameters,
+                opts.PostStopParameters,
+                opts.FailureProgramParameters
+            };
+
+            if (paramFields.Any(p => p?.Length > AppConfig.MaxArgumentLength))
+            {
+                return CommandResult.Fail(string.Format(Strings.Msg_ArgumentsLengthReached, AppConfig.MaxArgumentLength));
+            }
 
             if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && !ProcessHelper.ValidatePath(opts.StartupDirectory, false))
             {

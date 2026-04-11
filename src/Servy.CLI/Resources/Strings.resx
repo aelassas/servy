@@ -242,5 +242,19 @@
   <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
     <value>The specified post-stop startup directory is invalid.</value>
   </data>
+
+  <!--Miscellaneous-->
+  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
+    <value>Service name exceeds {0} characters.</value>
+  </data>
+  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
+    <value>Display name exceeds {0} characters.</value>
+  </data>
+  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
+    <value>Description exceeds {0} characters.</value>
+  </data>
+  <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
+    <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
+  </data>
   
 </root>

@@ -127,30 +127,54 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceName}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ServiceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" 
+                                 Margin="0,5"
+                                 Text="{Binding ServiceName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceName}"
                                  AutomationProperties.AutomationId="TextBoxServiceName"
                                  AutomationProperties.HelpText="Enter the system name of the service."/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDisplayName}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ServiceDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding ServiceDisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceDisplayName}"
                                  AutomationProperties.AutomationId="TextBoxServiceDisplayName"
                                  AutomationProperties.HelpText="Enter the display name of the service."/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                            Text="{x:Static resx:Strings.Info_ServiceDisplayName}" 
-                            FontStyle="Normal" 
-                            Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                            TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ServiceDisplayName}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDescription}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ServiceDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding ServiceDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ServiceDescription}"
                                  AutomationProperties.AutomationId="TextBoxServiceDescription"
                                  AutomationProperties.HelpText="Enter the description of the service."/>
 
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding ProcessPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="4" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding ProcessPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessPath}"
                                  AutomationProperties.AutomationId="TextBoxProcessPath"
                                  AutomationProperties.HelpText="Enter the executable path for the service."/>
@@ -159,13 +183,19 @@
                                 AutomationProperties.AutomationId="ButtonBrowseProcessPath"
                                 AutomationProperties.HelpText="Browse to select the executable process path."/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessPath}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessPath}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding StartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="6" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding StartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_StartupDirectory}"
                                  AutomationProperties.AutomationId="TextBoxStartupDirectory"
                                  AutomationProperties.HelpText="Enter the startup working directory."/>
@@ -174,65 +204,83 @@
                                 AutomationProperties.AutomationId="ButtonBrowseStartupDirectory"
                                 AutomationProperties.HelpText="Browse to select the startup directory."/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessParameters}"
                                  AutomationProperties.AutomationId="TextBoxProcessParameters"
                                  AutomationProperties.HelpText="Enter the command line parameters for the process."/>
                         <TextBlock Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupType}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="10" Grid.Column="1"
+                        <ComboBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="2"
+                                  Margin="0,5" 
                                   ItemsSource="{Binding StartupTypes}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedStartupType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="StartupType"
-                                  Margin="0,5" Grid.ColumnSpan="2"
                                   AutomationProperties.Name="{x:Static resx:Strings.Label_StartupType}"
                                   AutomationProperties.AutomationId="ComboBoxStartupType"
                                   AutomationProperties.HelpText="Select the service startup type."/>
 
                         <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPriority}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="11" Grid.Column="1"
+                        <ComboBox Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
+                                  Margin="0,5" 
                                   ItemsSource="{Binding ProcessPriorities}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedProcessPriority, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="Priority"
-                                  Margin="0,5" Grid.ColumnSpan="2"
                                   AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessPriority}"
                                   AutomationProperties.AutomationId="ComboBoxProcessPriority"
                                   AutomationProperties.HelpText="Select the process priority level."/>
 
                         <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartTimeout}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding StartTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding StartTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_StartTimeout}"
                                  AutomationProperties.AutomationId="TextBoxStartTimeout"
                                  AutomationProperties.HelpText="Enter the timeout in seconds for starting the service."/>
                         <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StartTimeout}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartTimeout}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="14" Grid.Column="0" Text="{x:Static resx:Strings.Label_StopTimeout}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding StopTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding StopTimeout, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_StopTimeout}"
                                  AutomationProperties.AutomationId="TextBoxStopTimeout"
                                  AutomationProperties.HelpText="Enter the timeout in seconds for stopping the service."/>
                         <TextBlock Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StopTimeout}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StopTimeout}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
                     </Grid>
                 </TabItem>
 
@@ -263,7 +311,13 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding StdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="0" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding StdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_StdoutPath}"
                                  AutomationProperties.AutomationId="TextBoxStdoutPath"
                                  AutomationProperties.HelpText="Enter the path for the standard output log file."/>
@@ -273,7 +327,13 @@
                                 AutomationProperties.HelpText="Browse to select the standard output log file."/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding StderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding StderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_StderrPath}"
                                  AutomationProperties.AutomationId="TextBoxStderrPath"
                                  AutomationProperties.HelpText="Enter the path for the standard error log file."/>
@@ -283,78 +343,90 @@
                                 AutomationProperties.HelpText="Browse to select the standard error log file."/>
 
                         <CheckBox Grid.Row="2" Grid.Column="1"
-                          Content="{x:Static resx:Strings.Label_EnableSizeRotation}"
-                          IsChecked="{Binding EnableSizeRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          Margin="0,5"
-                          AutomationProperties.Name="{x:Static resx:Strings.Label_EnableSizeRotation}"
-                          AutomationProperties.AutomationId="CheckBoxEnableSizeRotation"
-                          AutomationProperties.HelpText="Check to enable log rotation based on file size."/>
+                                  Content="{x:Static resx:Strings.Label_EnableSizeRotation}"
+                                  IsChecked="{Binding EnableSizeRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_EnableSizeRotation}"
+                                  AutomationProperties.AutomationId="CheckBoxEnableSizeRotation"
+                                  AutomationProperties.HelpText="Check to enable log rotation based on file size."/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_RotationSize}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableSizeRotation}"
+                        <TextBox Grid.Row="3" Grid.Column="1" 
+                                 Margin="0,5"
+                                 IsEnabled="{Binding EnableSizeRotation}"
+                                 Text="{Binding RotationSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_RotationSize}"
                                  AutomationProperties.AutomationId="TextBoxRotationSize"
                                  AutomationProperties.HelpText="Enter the maximum log file size before rotation."/>
                         <TextBlock Grid.Row="3" Grid.Column="2" Text="{x:Static resx:Strings.Label_RotationSizeUnity}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
                         <CheckBox Grid.Row="4" Grid.Column="1"
-                         Content="{x:Static resx:Strings.Label_EnableDateRotation}"
-                         IsChecked="{Binding EnableDateRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,5"
-                         AutomationProperties.Name="{x:Static resx:Strings.Label_EnableDateRotation}"
-                         AutomationProperties.AutomationId="CheckBoxEnableDateRotation"
-                         AutomationProperties.HelpText="Check to enable log rotation based on dates."/>
+                                  Content="{x:Static resx:Strings.Label_EnableDateRotation}"
+                                  IsChecked="{Binding EnableDateRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_EnableDateRotation}"
+                                  AutomationProperties.AutomationId="CheckBoxEnableDateRotation"
+                                  AutomationProperties.HelpText="Check to enable log rotation based on dates."/>
 
                         <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_DateRotationType}" Margin="0,5,10,5"/>
-                        <ComboBox Grid.Row="5" 
-                                  Grid.Column="1"
+                        <ComboBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" 
+                                  Margin="0,5"
                                   ItemsSource="{Binding DateRotationTypes}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValue="{Binding SelectedDateRotationType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                   SelectedValuePath="DateRotationType"
-                                  Margin="0,5"
-                                  Grid.ColumnSpan="2" 
                                   IsEnabled="{Binding EnableDateRotation}"
                                   AutomationProperties.Name="{x:Static resx:Strings.Label_DateRotationType}"
                                   AutomationProperties.AutomationId="ComboBoxDateRotationType"
                                   AutomationProperties.HelpText="Select the interval for date-based log rotation."/>
                         <TextBlock Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
-                          Text="{x:Static resx:Strings.Info_DateRotation}" 
-                          FontStyle="Normal" 
-                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                          TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_DateRotation}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxRotations}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding MaxRotations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" IsEnabled="{Binding EnableRotation}"
+                        <TextBox Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2" 
+                                 Margin="0,5"
+                                 IsEnabled="{Binding EnableRotation}"
+                                 Text="{Binding MaxRotations, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_MaxRotations}"
                                  AutomationProperties.AutomationId="TextBoxMaxRotations"
                                  AutomationProperties.HelpText="Enter the maximum number of rotated logs to keep."/>
                         <TextBlock Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
-                          Text="{x:Static resx:Strings.Info_MaxRotations}" 
-                          FontStyle="Normal" 
-                          Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                          TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_MaxRotations}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <CheckBox Grid.Row="9" Grid.Column="1"
-                          Content="{x:Static resx:Strings.Label_UseLocalTimeForRotation}"
-                          IsChecked="{Binding UseLocalTimeForRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          Margin="0,5"
-                          AutomationProperties.Name="{x:Static resx:Strings.Label_UseLocalTimeForRotation}"
-                          AutomationProperties.AutomationId="CheckBoxUseLocalTimeForRotation"
-                          AutomationProperties.HelpText="Check to use local time instead of UTC for log rotations."/>
+                                  Content="{x:Static resx:Strings.Label_UseLocalTimeForRotation}"
+                                  IsChecked="{Binding UseLocalTimeForRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_UseLocalTimeForRotation}"
+                                  AutomationProperties.AutomationId="CheckBoxUseLocalTimeForRotation"
+                                  AutomationProperties.HelpText="Check to use local time instead of UTC for log rotations."/>
 
                         <CheckBox Grid.Row="10" Grid.Column="1"
-                           Content="{x:Static resx:Strings.Label_EnableDebugLogs}"
-                           IsChecked="{Binding EnableDebugLogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                           Margin="0,5"
-                           AutomationProperties.Name="{x:Static resx:Strings.Label_EnableDebugLogs}"
-                           AutomationProperties.AutomationId="CheckBoxEnableDebugLogs"
-                           AutomationProperties.HelpText="Check to enable diagnostic debug logging."/>
+                                  Content="{x:Static resx:Strings.Label_EnableDebugLogs}"
+                                  IsChecked="{Binding EnableDebugLogs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_EnableDebugLogs}"
+                                  AutomationProperties.AutomationId="CheckBoxEnableDebugLogs"
+                                  AutomationProperties.HelpText="Check to enable diagnostic debug logging."/>
                         <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
-                           Text="{x:Static resx:Strings.Info_EnableDebugLogs}" 
-                           FontStyle="Normal" 
-                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                           TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_EnableDebugLogs}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
                     </Grid>
                 </TabItem>
 
@@ -387,23 +459,37 @@
                         </Grid.ColumnDefinitions>
 
                         <CheckBox Grid.Row="0" 
-                          Grid.Column="1" 
-                          Content="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
-                          IsChecked="{Binding EnableHealthMonitoring, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          Margin="0,5"
-                          AutomationProperties.Name="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
-                          AutomationProperties.AutomationId="CheckBoxEnableHealthMonitoring"
-                          AutomationProperties.HelpText="Check to enable background health monitoring for this service."/>
+                                  Grid.Column="1" 
+                                  Content="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
+                                  IsChecked="{Binding EnableHealthMonitoring, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_EnableHealthMonitoring}"
+                                  AutomationProperties.AutomationId="CheckBoxEnableHealthMonitoring"
+                                  AutomationProperties.HelpText="Check to enable background health monitoring for this service."/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_HeartbeatInterval}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding HeartbeatInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 IsEnabled="{Binding EnableHealthMonitoring}"
+                                 Text="{Binding HeartbeatInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_HeartbeatInterval}"
                                  AutomationProperties.AutomationId="TextBoxHeartbeatInterval"
                                  AutomationProperties.HelpText="Enter the health check heartbeat interval in seconds."/>
                         <TextBlock Grid.Row="1" Grid.Column="2" Text="{x:Static resx:Strings.Label_Seconds}" VerticalAlignment="Center" Margin="5,5,0,5"/>
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxFailedChecks}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MaxFailedChecks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"
+                        <TextBox Grid.Row="2" Grid.Column="1" 
+                                 Margin="0,5"
+                                 IsEnabled="{Binding EnableHealthMonitoring}"
+                                 Text="{Binding MaxFailedChecks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_MaxFailedChecks}"
                                  AutomationProperties.AutomationId="TextBoxMaxFailedChecks"
                                  AutomationProperties.HelpText="Enter the maximum number of failed checks before triggering recovery."/>
@@ -411,24 +497,30 @@
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_RecoveryAction}" Margin="0,5,10,5"/>
                         <ComboBox Grid.Row="3" 
-                          Grid.Column="1"
-                          ItemsSource="{Binding RecoveryActions, UpdateSourceTrigger=PropertyChanged}"
-                          DisplayMemberPath="DisplayName"
-                          SelectedValue="{Binding SelectedRecoveryAction, Mode=TwoWay}"
-                          SelectedValuePath="RecoveryAction"
-                          Margin="0,5"
-                          IsEnabled="{Binding EnableHealthMonitoring}"
-                          Grid.ColumnSpan="2"
-                          AutomationProperties.Name="{x:Static resx:Strings.Label_RecoveryAction}"
-                          AutomationProperties.AutomationId="ComboBoxRecoveryAction"
-                          AutomationProperties.HelpText="Select the action to take when the service fails health checks."/>
+                                  Grid.Column="1" Grid.ColumnSpan="2"
+                                  Margin="0,5"
+                                  ItemsSource="{Binding RecoveryActions, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValue="{Binding SelectedRecoveryAction, Mode=TwoWay}"
+                                  SelectedValuePath="RecoveryAction"
+                                  IsEnabled="{Binding EnableHealthMonitoring}"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_RecoveryAction}"
+                                  AutomationProperties.AutomationId="ComboBoxRecoveryAction"
+                                  AutomationProperties.HelpText="Select the action to take when the service fails health checks."/>
 
                         <TextBlock Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3"
                                    Text="{x:Static resx:Strings.Info_RecoveryAction}" 
                                    FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                         <TextBlock Grid.Row="5" Grid.Column="0" Text="{x:Static resx:Strings.Label_MaxRestartAttempts}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding MaxRestartAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" IsEnabled="{Binding EnableHealthMonitoring}"
+                        <TextBox Grid.Row="5" Grid.Column="1" 
+                                 Margin="0,5"
+                                 IsEnabled="{Binding EnableHealthMonitoring}"
+                                 Text="{Binding MaxRestartAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_MaxRestartAttempts}"
                                  AutomationProperties.AutomationId="TextBoxMaxRestartAttempts"
                                  AutomationProperties.HelpText="Enter the maximum number of restart attempts."/>
@@ -437,7 +529,13 @@
                         <TextBlock Grid.Row="6"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_FailureProgram}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding FailureProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="7" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding FailureProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Failure Program Path"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramPath"
                                  AutomationProperties.HelpText="Enter the path to the executable to run upon failure."/>
@@ -446,13 +544,19 @@
                                 AutomationProperties.AutomationId="ButtonBrowseFailureProgramPath"
                                 AutomationProperties.HelpText="Browse to select the failure program executable."/>
                         <TextBlock Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessPath}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessPath}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding FailureProgramStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="9" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding FailureProgramStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Failure Program Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramStartupDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the failure program."/>
@@ -462,21 +566,27 @@
                                 AutomationProperties.HelpText="Browse to select the failure program startup directory."/>
                         <TextBlock Grid.Row="10"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
                         <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Failure Program Parameters"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the failure program."/>
                         <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
                     </Grid>
                 </TabItem>
 
@@ -508,10 +618,10 @@
                                  AutomationProperties.AutomationId="TextBoxEnvVars"
                                  AutomationProperties.HelpText="Enter environment variables for the service."/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                Text="{x:Static resx:Strings.Info_EnvironmentVariables}" 
-                                FontStyle="Normal" 
-                                Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_EnvironmentVariables}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_ServiceDependencies}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ServiceDependencies, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -560,9 +670,13 @@
                                      AutomationProperties.HelpText="Run the service under a specific user account."/>
 
                         <TextBox Grid.Row="1" Grid.Column="1" 
-                                 Text="{Binding UserAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Margin="0,0,0,5"
                                  IsEnabled="{Binding RunAsLocalSystem, Converter={StaticResource InverseBooleanConverter}}"
+                                 Text="{Binding UserAccount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="User Account Name"
                                  AutomationProperties.AutomationId="TextBoxUserAccount"
                                  AutomationProperties.HelpText="Enter the username for the service account."/>
@@ -632,7 +746,13 @@
                         <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PreLaunch}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PreLaunchExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Process Path"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchProcessPath"
                                  AutomationProperties.HelpText="Enter the pre-launch executable path."/>
@@ -641,13 +761,19 @@
                                 AutomationProperties.AutomationId="ButtonBrowsePreLaunchProcessPath"
                                 AutomationProperties.HelpText="Browse to select the pre-launch executable."/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessPath}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessPath}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="3" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchStartupDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the pre-launch process."/>
@@ -657,21 +783,27 @@
                                 AutomationProperties.HelpText="Browse to select the pre-launch startup directory."/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PreLaunchStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the pre-launch process."/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_EnvironmentVariables}" Margin="0,5,10,5"/>
                         <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreLaunchEnvironmentVariables, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2" 
@@ -682,7 +814,13 @@
                         <TextBlock Grid.Row="9"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_EnvironmentVariables}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StdoutPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="10" Grid.Column="1" Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="10" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchStdoutPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Standard Output Path"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchStdout"
                                  AutomationProperties.HelpText="Enter the path for the pre-launch standard output log."/>
@@ -692,7 +830,13 @@
                                 AutomationProperties.HelpText="Browse to select the pre-launch standard output log file."/>
 
                         <TextBlock Grid.Row="11" Grid.Column="0" Text="{x:Static resx:Strings.Label_StderrPath}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="11" Grid.Column="1" Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="11" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchStderrPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Standard Error Path"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchStderr"
                                  AutomationProperties.HelpText="Enter the path for the pre-launch standard error log."/>
@@ -702,29 +846,41 @@
                                 AutomationProperties.HelpText="Browse to select the pre-launch standard error log file."/>
 
                         <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchTimeoutSeconds}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="12" Grid.Column="1" Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Timeout"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchTimeout"
                                  AutomationProperties.HelpText="Enter the pre-launch timeout in seconds."/>
                         <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_PreLaunchTimeout}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_PreLaunchTimeout}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="14" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreLaunchRetryAttempts}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="14" Grid.Column="1" Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PreLaunchRetryAttempts, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Launch Retry Attempts"
                                  AutomationProperties.AutomationId="TextBoxPreLaunchRetries"
                                  AutomationProperties.HelpText="Enter the number of retry attempts for the pre-launch process."/>
 
                         <CheckBox Grid.Row="15" Grid.Column="1"
-                          Content="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
-                          IsChecked="{Binding PreLaunchIgnoreFailure, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                          Margin="0,5"
-                          AutomationProperties.Name="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
-                          AutomationProperties.AutomationId="CheckBoxPreLaunchIgnoreFailure"
-                          AutomationProperties.HelpText="Check to start the service even if the pre-launch process fails."/>
+                                  Content="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
+                                  IsChecked="{Binding PreLaunchIgnoreFailure, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_PreLaunchIgnoreFailure}"
+                                  AutomationProperties.AutomationId="CheckBoxPreLaunchIgnoreFailure"
+                                  AutomationProperties.HelpText="Check to start the service even if the pre-launch process fails."/>
 
                     </Grid>
                 </TabItem>
@@ -754,7 +910,13 @@
                         <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PostLaunch}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PostLaunchExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PostLaunchExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Launch Process Path"
                                  AutomationProperties.AutomationId="TextBoxPostLaunchPath"
                                  AutomationProperties.HelpText="Enter the post-launch executable path."/>
@@ -763,13 +925,19 @@
                                 AutomationProperties.AutomationId="ButtonBrowsePostLaunchPath"
                                 AutomationProperties.HelpText="Browse to select the post-launch executable."/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessPath}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessPath}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PostLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="3" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PostLaunchStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Launch Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxPostLaunchDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the post-launch process."/>
@@ -779,21 +947,27 @@
                                 AutomationProperties.HelpText="Browse to select the post-launch startup directory."/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PostLaunchStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Launch Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostLaunchParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-launch process."/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                     </Grid>
                 </TabItem>
@@ -826,7 +1000,13 @@
                         <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PreStop}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PreStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Stop Process Path"
                                  AutomationProperties.AutomationId="TextBoxPreStopPath"
                                  AutomationProperties.HelpText="Enter the pre-stop executable path."/>
@@ -841,7 +1021,13 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="3" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PreStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Stop Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxPreStopDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the pre-stop process."/>
@@ -851,40 +1037,52 @@
                                 AutomationProperties.HelpText="Browse to select the pre-stop startup directory."/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PreStopStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                                    Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-                                    FontStyle="Normal" 
-                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                    TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPreStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the pre-stop process."/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
-                                    Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-                                    FontStyle="Normal" 
-                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                    TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_PreStopTimeoutSeconds}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="8" Grid.Column="1" Text="{Binding PreStopTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PreStopTimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Pre-Stop Timeout"
                                  AutomationProperties.AutomationId="TextBoxPreStopTimeout"
                                  AutomationProperties.HelpText="Enter the pre-stop timeout in seconds."/>
                         <TextBlock Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
-                             Text="{x:Static resx:Strings.Info_PreStopTimeout}" 
-                             FontStyle="Normal" 
-                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                             TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_PreStopTimeout}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <CheckBox Grid.Row="10" Grid.Column="1"
-                            Content="{x:Static resx:Strings.Label_PreStopLogAsError}"
-                            IsChecked="{Binding PreStopLogAsError, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            Margin="0,5"
-                            AutomationProperties.Name="{x:Static resx:Strings.Label_PreStopLogAsError}"
-                            AutomationProperties.AutomationId="CheckBoxPreStopLogAsError"
-                            AutomationProperties.HelpText="Check to log pre-stop process failures as errors."/>
+                                  Content="{x:Static resx:Strings.Label_PreStopLogAsError}"
+                                  IsChecked="{Binding PreStopLogAsError, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  Margin="0,5"
+                                  AutomationProperties.Name="{x:Static resx:Strings.Label_PreStopLogAsError}"
+                                  AutomationProperties.AutomationId="CheckBoxPreStopLogAsError"
+                                  AutomationProperties.HelpText="Check to log pre-stop process failures as errors."/>
 
                     </Grid>
                 </TabItem>
@@ -914,7 +1112,13 @@
                         <TextBlock Grid.Row="0"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_PostStop}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
 
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PostStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="1" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PostStopExecutablePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Stop Process Path"
                                  AutomationProperties.AutomationId="TextBoxPostStopPath"
                                  AutomationProperties.HelpText="Enter the post-stop executable path."/>
@@ -923,13 +1127,19 @@
                                 AutomationProperties.AutomationId="ButtonBrowsePostStopPath"
                                 AutomationProperties.HelpText="Browse to select the post-stop executable."/>
                         <TextBlock Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-               Text="{x:Static resx:Strings.Info_ProcessPath}" 
-               FontStyle="Normal" 
-               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-               TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessPath}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PostStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5"
+                        <TextBox Grid.Row="3" Grid.Column="1" 
+                                 Margin="0,5"
+                                 Text="{Binding PostStopStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Stop Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxPostStopDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the post-stop process."/>
@@ -939,21 +1149,27 @@
                                 AutomationProperties.HelpText="Browse to select the post-stop startup directory."/>
                         <TextBlock Grid.Row="4"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_PostStopStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
                         <TextBlock Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-               Text="{x:Static resx:Strings.Info_StartupDirectory}" 
-               FontStyle="Normal" 
-               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-               TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_StartupDirectory}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="0,5" Grid.ColumnSpan="2"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Margin="0,5"
+                                 Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="18" MinHeight="18" MaxHeight="18" MaxLines="1" 
+                                 TextWrapping="NoWrap" AcceptsReturn="False"
+                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
+                                 VerticalContentAlignment="Center"
                                  AutomationProperties.Name="Post-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-stop process."/>
                         <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
-               Text="{x:Static resx:Strings.Info_ProcessParameters}" 
-               FontStyle="Normal" 
-               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-               TextWrapping="Wrap"/>
+                                   Text="{x:Static resx:Strings.Info_ProcessParameters}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap"/>
 
                     </Grid>
                 </TabItem>
