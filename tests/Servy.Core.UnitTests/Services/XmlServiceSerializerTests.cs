@@ -132,7 +132,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expected.EnvironmentVariables, actual.EnvironmentVariables);
             Assert.Equal(expected.ServiceDependencies, actual.ServiceDependencies);
             Assert.Equal(expected.UserAccount, actual.UserAccount);
-            Assert.Equal(expected.Password, actual.Password);
+            Assert.Null(actual.Password);
         }
 
         [Fact]

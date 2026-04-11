@@ -858,7 +858,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             var xml = await repo.ExportXmlAsync("A");
 
             Assert.Contains("<ServiceDto", xml);
-            Assert.Contains("p1", xml);
+            Assert.DoesNotContain("p1", xml);
         }
 
         [Fact]

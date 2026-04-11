@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Xml.Serialization;
 
 namespace Servy.Core.DTOs
 {
@@ -178,6 +179,8 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional password for the user account (stored encrypted in the database).
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public string Password { get; set; }
 
         /// <summary>
@@ -424,7 +427,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
         public bool ShouldSerializeRunAsLocalSystem() => RunAsLocalSystem.HasValue;
         public bool ShouldSerializeUserAccount() => !string.IsNullOrWhiteSpace(UserAccount);
-        public bool ShouldSerializePassword() => !string.IsNullOrWhiteSpace(Password);
+        public bool ShouldSerializePassword() => false;
         public bool ShouldSerializePreLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PreLaunchExecutablePath);
         public bool ShouldSerializePreLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PreLaunchStartupDirectory);
         public bool ShouldSerializePreLaunchParameters() => !string.IsNullOrWhiteSpace(PreLaunchParameters);
