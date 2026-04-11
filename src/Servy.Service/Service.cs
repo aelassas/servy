@@ -230,7 +230,7 @@ namespace Servy.Service
         private uint _checkPoint = 0;
         private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
-        private bool _isRebooting = false;
+        private volatile bool _isRebooting = false;
 
         #endregion
 
@@ -2424,7 +2424,7 @@ namespace Servy.Service
                 }
 
                 // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
-                var totalTimeoutMs = ((childCount + 1) * timeoutMs) + 10000;
+                var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + 10_000L;
 
                 Task<bool?> stopTask = Task.Run(() =>
                 {

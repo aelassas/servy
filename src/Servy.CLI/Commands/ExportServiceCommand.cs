@@ -160,7 +160,9 @@ namespace Servy.CLI.Commands
 
             var violatedFolder = protectedFolders
                 .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                          fullPath.StartsWith(folder, StringComparison.OrdinalIgnoreCase));
+                                          fullPath.StartsWith(
+                                              folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                                              StringComparison.OrdinalIgnoreCase));
 
             if (violatedFolder != null)
             {

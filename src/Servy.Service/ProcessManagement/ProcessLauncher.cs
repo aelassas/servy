@@ -43,7 +43,7 @@ namespace Servy.Service.ProcessManagement
 
             if (redirectOutput)
             {
-                psi.StandardErrorEncoding = Encoding.UTF8;
+                psi.StandardOutputEncoding = Encoding.UTF8;
                 psi.StandardErrorEncoding = Encoding.UTF8;
             }
 
