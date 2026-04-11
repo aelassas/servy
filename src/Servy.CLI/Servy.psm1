@@ -1285,8 +1285,14 @@ function Export-ServyServiceConfig {
     [ValidateSet("xml", "json")]
     [string] $ConfigFileType,
 
+    # Export: Validate that the target directory is writable/exists
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
+    [ValidateScript({
+        $parent = Split-Path $_ -Parent
+        if ([string]::IsNullOrEmpty($parent)) { return $true }
+        Test-Path $parent -PathType Container
+    })]
     [string] $Path
   )
 
@@ -1335,8 +1341,10 @@ function Import-ServyServiceConfig {
     [ValidateSet("xml", "json")]
     [string] $ConfigFileType,
 
+    # Import: Validate that the source file actually exists
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
+    [ValidateScript({ Test-Path $_ -PathType Leaf })]
     [string] $Path,
     [switch] $Install
   )
