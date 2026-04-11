@@ -220,8 +220,9 @@ foreach ($evt in $eventsToProcess) {
   }
 
   $subject = "Servy - $serviceName Failure"
+  $safeLogText = [System.Net.WebUtility]::HtmlEncode($logText)
   $body = "A failure has been detected in service '$serviceName'." +
-  [Environment]::NewLine + "Details: $logText"
+  [Environment]::NewLine + "Details: $safeLogText"
   $htmlBody = $body -replace "`r?`n", "<br>"
     
   if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
