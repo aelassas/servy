@@ -219,7 +219,7 @@ namespace Servy.Service
         private readonly object _healthCheckLock = new object();
         private readonly object _teardownLock = new object();
         private readonly object _fileLock = new object();
-        private bool _isRecovering = false;
+        private volatile bool _isRecovering = false;
         private int _maxRestartAttempts = 3; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _recoveryActionEnabled = false;
