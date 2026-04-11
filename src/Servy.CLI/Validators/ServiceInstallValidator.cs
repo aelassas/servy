@@ -78,19 +78,18 @@ namespace Servy.CLI.Validators
             if (!ValidateEnumOption<ProcessPriority>(opts.ProcessPriority))
                 return CommandResult.Fail(Strings.Msg_InvalidProcessPriority);
 
-            if (!string.IsNullOrWhiteSpace(opts.StartTimeout) && (!int.TryParse(opts.StartTimeout, out var startTimeout) || startTimeout < AppConfig.MinStartTimeout))
+            if (!string.IsNullOrWhiteSpace(opts.StartTimeout) && (!int.TryParse(opts.StartTimeout, out var startTimeout) || startTimeout < AppConfig.MinStartTimeout || startTimeout > AppConfig.MaxStartTimeout))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidStartTimeout);
             }
 
-            if (!string.IsNullOrWhiteSpace(opts.StopTimeout) && (!int.TryParse(opts.StopTimeout, out var stopTimeout) || stopTimeout < AppConfig.MinStopTimeout))
+            if (!string.IsNullOrWhiteSpace(opts.StopTimeout) && (!int.TryParse(opts.StopTimeout, out var stopTimeout) || stopTimeout < AppConfig.MinStopTimeout || stopTimeout > AppConfig.MaxStopTimeout))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidStopTimeout);
             }
 
             if ((opts.EnableRotation || opts.EnableSizeRotation)
-                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize)
-                )
+                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize || rotation > AppConfig.MaxRotationSize))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
             }
@@ -98,23 +97,23 @@ namespace Servy.CLI.Validators
             if (!ValidateEnumOption<DateRotationType>(opts.DateRotationType))
                 return CommandResult.Fail(Strings.Msg_InvalidDateRotationType);
 
-            if (!string.IsNullOrWhiteSpace(opts.MaxRotations) && (!int.TryParse(opts.MaxRotations, out var maxRotations) || maxRotations < 0))
+            if (!string.IsNullOrWhiteSpace(opts.MaxRotations) && (!int.TryParse(opts.MaxRotations, out var maxRotations) || maxRotations < 0 || maxRotations > AppConfig.MaxMaxRotations))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidMaxRotations);
             }
 
             if (opts.EnableHealthMonitoring)
             {
-                if (!int.TryParse(opts.HeartbeatInterval, out var hb) || hb < AppConfig.MinHeartbeatInterval)
+                if (!int.TryParse(opts.HeartbeatInterval, out var hb) || hb < AppConfig.MinHeartbeatInterval || hb > AppConfig.MaxHeartbeatInterval)
                     return CommandResult.Fail(Strings.Msg_InvalidHeartbeatInterval);
 
-                if (!int.TryParse(opts.MaxFailedChecks, out var failed) || failed < AppConfig.MinMaxFailedChecks)
+                if (!int.TryParse(opts.MaxFailedChecks, out var failed) || failed < AppConfig.MinMaxFailedChecks || failed > AppConfig.MaxMaxFailedChecks)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxFailedChecks);
 
                 if (!ValidateEnumOption<RecoveryAction>(opts.RecoveryAction))
                     return CommandResult.Fail(Strings.Msg_InvalidRecoveryAction);
 
-                if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts)
+                if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts)
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
 
@@ -166,12 +165,12 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStderrPath);
             }
 
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && (!int.TryParse(opts.PreLaunchTimeout, out int preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && (!int.TryParse(opts.PreLaunchTimeout, out int preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds || preLaunchTimeoutValue > AppConfig.MaxPreLaunchTimeoutSeconds))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchTimeout);
             }
 
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && (!int.TryParse(opts.PreLaunchRetryAttempts, out int preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts))
+            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && (!int.TryParse(opts.PreLaunchRetryAttempts, out int preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts || preLaunchRetryAttemptsValue > AppConfig.MaxPreLaunchRetryAttempts))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreLaunchRetryAttempts);
             }
@@ -194,7 +193,7 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(Strings.Msg_InvalidPreStopStartupDirectory);
             }
 
-            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && (!int.TryParse(opts.PreStopTimeout, out int preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds))
+            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && (!int.TryParse(opts.PreStopTimeout, out int preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds || preStopTimeoutValue > AppConfig.MaxPreStopTimeoutSeconds))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidPreStopTimeout);
             }
