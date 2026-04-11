@@ -11,12 +11,41 @@ using Servy.Service.ProcessManagement;
 using System.Diagnostics;
 using System.ServiceProcess;
 using Servy.Core.Data;
+using System.Text.RegularExpressions;
 
 namespace Servy.Service.Helpers
 {
     /// <inheritdoc />
     public class ServiceHelper : IServiceHelper
     {
+        #region Logging Security
+
+        /// <summary>
+        /// A collection of keywords used to identify potentially sensitive information 
+        /// in configuration keys or environment variable names.
+        /// </summary>
+        private static readonly HashSet<string> SensitiveKeyWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "PASSWORD", "PWD", "SECRET", "KEY", "TOKEN", "AUTH", "CREDENTIAL", "CONNECTIONSTRING",
+            "CERTIFICATE", // For PFX/PEM paths or thumbprints
+            "API",         // Catches API_URL_KEY or API_SECRET
+            "PRIVATE"      // Catches PRIVATE_KEY or PRIVATE_TOKEN
+        };
+
+        /// <summary>
+        /// A compiled regular expression designed to identify and mask sensitive credentials 
+        /// within raw command-line argument strings.
+        /// </summary>
+        /// <remarks>
+        /// Includes a 200ms match timeout to mitigate potential ReDoS (Regular Expression Denial of Service) 
+        /// attacks when processing exceptionally long or malformed argument strings.
+        /// </remarks>
+        private static readonly Regex MaskingRegex = new Regex(
+            @"(?i)(password|pwd|secret|key|token|auth|api|private)(?:[:=\s]+)([^\s""]+)",
+            RegexOptions.Compiled,
+            TimeSpan.FromMilliseconds(200));
+
+        #endregion
 
         #region Private Fields
 
@@ -120,26 +149,26 @@ namespace Servy.Service.Helpers
                     $"[Startup Parameters - SENSITIVE DATA]\n" +
                     "NOTE: This section contains sensitive parameters including executable arguments and environment variables.\n" +
                     "--------Main (Sensitive)-------\n" +
-                    $"- realArgs: {options.ExecutableArgs}\n\n" +
+                    $"- realArgs: {MaskRawArguments(options.ExecutableArgs)}\n\n" +
 
                     "--------Recovery (Sensitive)---\n" +
-                    $"- failureProgramArgs: {options.FailureProgramArgs}\n\n" +
+                    $"- failureProgramArgs: {MaskRawArguments(options.FailureProgramArgs)}\n\n" +
 
                     "--------Advanced (Sensitive)---\n" +
                     $"- environmentVariables: {envVarsFormatted}\n\n" +
 
                     "--------Pre-Launch (Sensitive)-\n" +
-                    $"- preLaunchExecutableArgs: {options.PreLaunchExecutableArgs}\n" +
+                    $"- preLaunchExecutableArgs: {MaskRawArguments(options.PreLaunchExecutableArgs)}\n" +
                     $"- preLaunchEnvironmentVariables: {preLaunchEnvVarsFormatted}\n\n" +
 
                     "--------Post-Launch (Sensitive)\n" +
-                    $"- postLaunchExecutableArgs: {options.PostLaunchExecutableArgs}\n\n" +
+                    $"- postLaunchExecutableArgs: {MaskRawArguments(options.PostLaunchExecutableArgs)}\n\n" +
 
                     "--------Pre-Stop (Sensitive)---\n" +
-                    $"- preStopExecutableArgs: {options.PreStopExecutableArgs}\n\n" +
+                    $"- preStopExecutableArgs: {MaskRawArguments(options.PreStopExecutableArgs)}\n\n" +
 
                     "--------Post-Stop (Sensitive)--\n" +
-                    $"- postStopExecutableArgs: {options.PostStopExecutableArgs}\n"
+                    $"- postStopExecutableArgs: {MaskRawArguments(options.PostStopExecutableArgs)}\n"
                 );
             }
         }
@@ -336,24 +365,57 @@ namespace Servy.Service.Helpers
         #region Private Helpers
 
         /// <summary>
-        /// Converts a list of <see cref="EnvironmentVariable"/> objects to a formatted string.
-        /// Each variable is formatted as "Name=Value" and separated by "; ".
-        /// Returns "(null)" if the list is null.
+        /// Converts a collection of environment variables into a single formatted string,
+        /// automatically masking values for keys recognized as sensitive.
         /// </summary>
-        /// <param name="vars">The list of environment variables to format.</param>
-        /// <returns>A formatted string representing the environment variables.</returns>
-        private static string EnvironmentVariablesToString(List<EnvironmentVariable> vars)
+        /// <param name="vars">The collection of environment variables to process.</param>
+        /// <returns>A semicolon-separated string of key-value pairs, or "None" if the collection is null.</returns>
+        private string EnvironmentVariablesToString(IEnumerable<EnvironmentVariable> vars)
         {
-            string envVarsFormatted = vars != null
-                ? string.Join("; ", vars.Select(ev => $"{ev.Name}={ev.Value}"))
-                : "(null)";
+            if (vars == null) return "None";
 
-            return envVarsFormatted;
+            return string.Join("; ", vars.Select(v =>
+                $"{v.Name}={MaskSensitiveValue(v.Name, v.Value)}"));
         }
 
-        #endregion
+        /// <summary>
+        /// Evaluates a key-value pair and returns a masked string if the key matches 
+        /// known sensitive patterns.
+        /// </summary>
+        /// <param name="key">The name of the variable or setting.</param>
+        /// <param name="value">The raw value to potentially mask.</param>
+        /// <returns>The original value, or "********" if the key is deemed sensitive.</returns>
+        private static string MaskSensitiveValue(string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
 
-        #region Private Helpers
+            bool isSensitive = SensitiveKeyWords.Any(k => key.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            return isSensitive ? "********" : value;
+        }
+
+        /// <summary>
+        /// Uses a timed regular expression to identify and mask sensitive credentials 
+        /// within a raw command-line argument string.
+        /// </summary>
+        /// <param name="args">The raw string of executable arguments.</param>
+        /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
+        private string? MaskRawArguments(string? args)
+        {
+            if (string.IsNullOrEmpty(args)) return args;
+
+            try
+            {
+                return MaskingRegex.Replace(args, "$1=********");
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Fallback: If the regex times out, we return a fully masked warning 
+                // to ensure no secrets are leaked due to a processing error.
+                Logger.Warn("Regex timeout occurred while masking arguments. Output has been fully masked for security.");
+                return "[MASKED DUE TO TIMEOUT]";
+            }
+        }
 
         /// <summary>
         /// Validates the critical configuration paths and service identity within the startup options.
