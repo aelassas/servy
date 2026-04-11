@@ -26,6 +26,7 @@ namespace Servy.Core.Services
 
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
+        private const int ScmPollIntervalMs = 500;
 
         public const string LocalSystemAccount = "LocalSystem";
 
@@ -597,7 +598,7 @@ namespace Servy.Core.Services
 
                         while (sc.Status != ServiceControllerStatus.Stopped && DateTime.Now < waitUntil)
                         {
-                            await Task.Delay(500); // Poll every half-second
+                            await Task.Delay(ScmPollIntervalMs);
                             sc.Refresh();
                         }
                     }
