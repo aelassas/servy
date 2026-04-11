@@ -9,6 +9,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -28,7 +29,10 @@ namespace Servy.Manager.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
-        private readonly SemaphoreSlim _commandLock = new SemaphoreSlim(1, 1);
+        /// <summary>
+        /// Per-service locking mechanism to prevent Head-of-Line blocking.
+        /// </summary>
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _serviceLocks = new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
 
         #region Private Fields
 
@@ -98,7 +102,8 @@ namespace Servy.Manager.Services
             string errorMessage = null;
             string infoMessage = null;
 
-            await _commandLock.WaitAsync();
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
 
             try
             {
@@ -137,7 +142,7 @@ namespace Servy.Manager.Services
             }
             finally
             {
-                _commandLock.Release();
+                serviceLock.Release();
             }
 
             if (showMessageBox)
@@ -160,7 +165,8 @@ namespace Servy.Manager.Services
             string errorMessage = null;
             string infoMessage = null;
 
-            await _commandLock.WaitAsync();
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
 
             try
             {
@@ -194,7 +200,7 @@ namespace Servy.Manager.Services
             finally
             {
                 // 2. Release the lock immediately after the engine operation completes
-                _commandLock.Release();
+                serviceLock.Release();
             }
 
             if (showMessageBox)
@@ -218,7 +224,8 @@ namespace Servy.Manager.Services
             string errorMessage = null;
             string infoMessage = null;
 
-            await _commandLock.WaitAsync();
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
 
             try
             {
@@ -260,7 +267,7 @@ namespace Servy.Manager.Services
             finally
             {
                 // 2. Release the lock immediately after the operation finishes
-                _commandLock.Release();
+                serviceLock.Release();
             }
 
             if (showMessageBox)
@@ -330,6 +337,10 @@ namespace Servy.Manager.Services
         {
             if (service == null) return false;
 
+            // Apply per-service lock to prevent concurrent installs/uninstalls
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
+
             try
             {
                 var exists = _serviceManager.IsServiceInstalled(service.Name);
@@ -382,12 +393,19 @@ namespace Servy.Manager.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 return false;
             }
+            finally
+            {
+                serviceLock.Release();
+            }
         }
 
         /// <inheritdoc />
         public async Task<bool> UninstallServiceAsync(Service service)
         {
             if (service == null) return false;
+
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
 
             try
             {
@@ -412,12 +430,19 @@ namespace Servy.Manager.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 return false;
             }
+            finally
+            {
+                serviceLock.Release();
+            }
         }
 
         /// <inheritdoc />
         public async Task<bool> RemoveServiceAsync(Service service)
         {
             if (service == null) return false;
+
+            var serviceLock = GetLockForService(service.Name);
+            await serviceLock.WaitAsync();
 
             try
             {
@@ -453,6 +478,10 @@ namespace Servy.Manager.Services
                 Logger.Error($"Failed to remove {service.Name}.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                 return false;
+            }
+            finally
+            {
+                serviceLock.Release();
             }
         }
 
@@ -630,6 +659,17 @@ namespace Servy.Manager.Services
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Retrieves or creates a dedicated lock for a specific service.
+        /// </summary>
+        private SemaphoreSlim GetLockForService(string serviceName)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            return _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
+        }
 
         /// <summary>
         /// Retrieves the domain representation of a service by its name.
