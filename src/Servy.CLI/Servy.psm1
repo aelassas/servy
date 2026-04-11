@@ -403,7 +403,7 @@ function Invoke-ServyCli {
   finally {
     if ($null -ne $process) {
         try { $process.CancelErrorRead() } catch {}
-        Start-Sleep -Milliseconds 50  # let in-flight events drain
+        try { $process.WaitForExit() } catch {}  # flush async stdout/stderr
     }    
 
     # Capture stderr BEFORE cleanup
