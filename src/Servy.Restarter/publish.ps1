@@ -25,7 +25,6 @@
 
 [CmdletBinding()]
 param(
-    [string]$Version            = "1.0.0",
     [string]$Tfm                = "net10.0-windows",
     [string]$Runtime            = "win-x64",
     [string]$BuildConfiguration = "Release",

@@ -34,7 +34,8 @@
 # Main setup bundle script for building both self-contained and framework-dependent installers
 
 param(
-    [string]$Tfm      = "net10.0",    
+    [string]$Tfm      = "net10.0", 
+    [ValidatePattern("^\d+\.\d+$")]
     [string]$Version = "7.9"
 )
 

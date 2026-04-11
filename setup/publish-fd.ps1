@@ -26,6 +26,7 @@
 [CmdletBinding()]
 param(
     [string]$Tfm = "net10.0",
+    [ValidatePattern("^\d+\.\d+$")]
     [string]$Version = "1.0",
     [switch]$Pause
 )
