@@ -756,30 +756,50 @@ namespace Servy.Manager.ViewModels
                     return;
 
                 SetIsBusy(true);
-                var failed = new List<string>();
 
-                // 3. Execute the operation delegate in a loop
-                foreach (var service in selectedServices)
+                // 3. Dispatch all operations concurrently: Scale based on hardware
+                // Use a factor of 2 to keep the pipeline full during I/O wait times, 
+                // but cap it at a reasonable limit (e.g., 8) to prevent SCM saturation.
+                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, 8);
+
+                using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
-                    if (!await operation(service))
+                    var operationTasks = selectedServices.Select(async service =>
                     {
-                        failed.Add(service.Name);
+                        // Wait for a slot to open up before starting this specific service
+                        await throttler.WaitAsync();
+                        try
+                        {
+                            bool success = await operation(service);
+                            return new { ServiceName = service.Name, Success = success };
+                        }
+                        finally
+                        {
+                            // Release the slot for the next service in the queue
+                            throttler.Release();
+                        }
+                    });
+
+                    // Await all tasks, but they will internally throttle themselves
+                    var results = await Task.WhenAll(operationTasks);
+
+
+                    // Filter out the failed ones
+                    var failed = results.Where(r => !r.Success).Select(r => r.ServiceName).ToList();
+
+                    // 4. Handle results and UI feedback
+                    if (failed.Count == 0)
+                    {
+                        await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
                     }
-                }
+                    else
+                    {
+                        var message = failed.Count == selectedServices.Count
+                            ? Strings.Msg_AllOperationsFailed
+                            : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
 
-                // 4. Handle results and UI feedback
-                if (failed.Count == 0)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_OperationCompletedSuccessfully, AppConfig.Caption);
-                }
-                else
-                {
-                    // If some or all failed, use Warning level and provide details
-                    var message = failed.Count == selectedServices.Count
-                        ? Strings.Msg_AllOperationsFailed
-                        : string.Format(Strings.Msg_OperationCompletedWithErrorsDetails, string.Join(", ", failed));
-
-                    await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                        await _messageBoxService.ShowWarningAsync(message, AppConfig.Caption);
+                    }
                 }
             }
             catch (Exception ex)
