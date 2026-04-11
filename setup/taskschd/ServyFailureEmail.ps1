@@ -97,6 +97,7 @@ function Send-NotificationEmail {
     [string]$scriptDir
   )
 
+  # Mask sensitive data in the body before sending
   $Body = $Body -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
 
   # --- CONFIGURATION FROM XML ---
@@ -106,20 +107,34 @@ function Send-NotificationEmail {
   $to = $SmtpConfig.SmtpConfig.To
   
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
+  $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
 
   # --- VALIDATION GATE ---
+  
+  # 1. Server check
   if ([string]::IsNullOrEmpty($smtpServer) -or $smtpServer -eq "smtp.example.com") {
-    $warnMsg = "ServyFailureEmail: SMTP Server is not configured. Skipping email."
-    Write-FallbackError -Message $warnMsg -scriptDir $scriptDir
+    Write-FallbackError -Message "ServyFailureEmail: SMTP Server is not configured. Skipping email." -scriptDir $scriptDir
     return $false
   }
 
+  # 2. Email format checks (Prevent .NET FormatException)
+  if ($from -notmatch $emailRegex) {
+    Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -scriptDir $scriptDir
+    return $false
+  }
+
+  if ($to -notmatch $emailRegex) {
+    Write-FallbackError -Message "ServyFailureEmail: Invalid 'To' email format ($to) in smtp-config.xml." -scriptDir $scriptDir
+    return $false
+  }
+
+  # 3. Credential check
   if (-not (Test-Path $credPath)) {
-    $warnMsg = "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email."
-    Write-FallbackError -Message $warnMsg -scriptDir $scriptDir
+    Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir
     return $false
   }
 
+  # --- EXECUTION ---
   try {
     $cred = Import-Clixml $credPath
 
