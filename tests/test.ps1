@@ -27,7 +27,7 @@
 $ErrorActionPreference = "Stop"
 
 # Directories
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScriptDir = $PSScriptRoot
 $TestResultsDir = Join-Path -Path $ScriptDir -ChildPath "TestResults"
 $CoverageReportDir = Join-Path -Path $ScriptDir -ChildPath "coveragereport"
 
@@ -46,6 +46,12 @@ if (Test-Path $CoverageReportDir) {
 $TestProjects = @(
     Join-Path $ScriptDir "Servy.Core.UnitTests\Servy.Core.UnitTests.csproj"
     Join-Path $ScriptDir "Servy.Infrastructure.UnitTests\Servy.Infrastructure.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Restarter.UnitTests\Servy.Restarter.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Service.UnitTests\Servy.Service.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.UI.UnitTests\Servy.UI.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.UnitTests\Servy.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.Manager.UnitTests\Servy.Manager.UnitTests.csproj"
+    Join-Path $ScriptDir "Servy.CLI.UnitTests\Servy.CLI.UnitTests.csproj"
 )
 
 # Run tests and collect coverage for each project

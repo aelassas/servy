@@ -37,31 +37,46 @@ jobs:
       - name: Build solution
         run: dotnet build Servy.sln --configuration Debug --no-restore
 
-      - name: Run Servy.Core.UnitTests with coverage
+      - name: Run all unit tests with coverage
+        shell: pwsh
         run: |
-          dotnet test tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj --configuration Debug --no-build `
-            --collect:"XPlat Code Coverage" `
-            --results-directory ./TestResults/Core `
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          $testProjects = @(
+              @{ Path = "tests/Servy.Core.UnitTests/Servy.Core.UnitTests.csproj"; Dir = "Core"; Filter = $null }
+              @{ Path = "tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj"; Dir = "Infrastructure"; Filter = $null }
+              @{ Path = "tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj"; Dir = "Restarter"; Filter = $null }
+              @{ Path = "tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj"; Dir = "Service"; Filter = "Category!=ReflectionValidation" }
+              @{ Path = "tests/Servy.UI.UnitTests/Servy.UI.UnitTests.csproj"; Dir = "UI"; Filter = $null }
+              @{ Path = "tests/Servy.UnitTests/Servy.UnitTests.csproj"; Dir = "UnitTests"; Filter = $null }
+              @{ Path = "tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj"; Dir = "Manager"; Filter = $null }
+              @{ Path = "tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj"; Dir = "CLI"; Filter = $null }
+          )
 
-      - name: Run Servy.Infrastructure.UnitTests with coverage
-        run: |
-          dotnet test tests/Servy.Infrastructure.UnitTests/Servy.Infrastructure.UnitTests.csproj --configuration Debug --no-build `
-            --collect:"XPlat Code Coverage" `
-            --results-directory ./TestResults/Infrastructure `
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          $failed = $false
 
-      - name: Run remaining unit tests without coverage
-        run: |
-          dotnet test tests/Servy.Restarter.UnitTests/Servy.Restarter.UnitTests.csproj --configuration Debug --no-build && `
-          dotnet test tests/Servy.Service.UnitTests/Servy.Service.UnitTests.csproj --configuration Debug --no-build --filter "Category!=ReflectionValidation" && `
-          dotnet test tests/Servy.UnitTests/Servy.UnitTests.csproj --configuration Debug --no-build && `
-          dotnet test tests/Servy.CLI.UnitTests/Servy.CLI.UnitTests.csproj --configuration Debug --no-build && `
-          dotnet test tests/Servy.Manager.UnitTests/Servy.Manager.UnitTests.csproj --configuration Debug --no-build && `
-          dotnet test tests/Servy.UI.UnitTests/Servy.UI.UnitTests.csproj --configuration Debug --no-build
+          foreach ($proj in $testProjects) {
+              Write-Host "Running tests for $($proj.Dir)..." -ForegroundColor Cyan
+              
+              if ($proj.Filter) {
+                  & dotnet test $proj.Path --configuration Debug --no-build --filter $proj.Filter --collect:"XPlat Code Coverage" --results-directory "./TestResults/$($proj.Dir)" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+              } else {
+                  & dotnet test $proj.Path --configuration Debug --no-build --collect:"XPlat Code Coverage" --results-directory "./TestResults/$($proj.Dir)" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+              }
+              
+              if ($LASTEXITCODE -ne 0) { 
+                  $failed = $true 
+                  Write-Error "Tests failed for project: $($proj.Dir)"
+              }
+          }
+
+          if ($failed) { 
+              Write-Error "One or more test projects failed. Review the logs above."
+              exit 1 
+          }
 
       - name: Merge and normalize coverage paths (PowerShell)
         shell: pwsh
+        # We use always() here so coverage is merged and uploaded even if a test failed above.
+        if: always() 
         run: |
           $workspace = $env:GITHUB_WORKSPACE
           $fixedDir = Join-Path $workspace "TestResults\fixed"
@@ -88,22 +103,22 @@ jobs:
           & $dotnet tool run reportgenerator -reports:$($coverageFiles -join ";") -targetdir:$fixedDir -reporttypes:Cobertura
           Pop-Location
 
-          # Normalize filename paths for both Core and Infrastructure
+          # Normalize filename paths dynamically for ALL Servy projects
           $mergedFile = Join-Path $fixedDir "Cobertura.xml"
           $content = Get-Content $mergedFile -Raw
           $content = [regex]::Replace($content, 'filename="([^"]*)"', {
               param($match)
               $origPath = $match.Groups[1].Value -replace '\\', '/'
-              if ($origPath -match 'src/Servy\.Core/(.*)') {
-                  return "filename=`"src/Servy.Core/$($matches[1])`""
-              }
-              elseif ($origPath -match 'src/Servy\.Infrastructure/(.*)') {
-                  return "filename=`"src/Servy.Infrastructure/$($matches[1])`""
+              
+              # This regex dynamically matches any project folder starting with 'Servy'
+              if ($origPath -match 'src/(Servy[^/]*)/(.*)') {
+                  return "filename=`"src/$($matches[1])/$($matches[2])`""
               }
               else {
                   return "filename=`"$origPath`""
               }
           })
+          
           $normalizedFile = Join-Path $fixedDir "coverage.cobertura.xml"
           $content | Out-File -FilePath $normalizedFile -Encoding utf8
 
@@ -114,6 +129,7 @@ jobs:
       - name: Upload coverage to Codecov
         id: codecov
         uses: codecov/codecov-action@v5
+        if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}          
           files: TestResults/fixed/coverage.cobertura.xml
@@ -124,7 +140,7 @@ jobs:
           commit_parent: ${{ github.event.before }}         
           
       - name: Notify Codecov Status in case of failure
-        if: steps.codecov.outcome != 'success'
+        if: always() && steps.codecov.outcome != 'success'
         uses: actions/github-script@v7
         with:
           script: |
@@ -147,6 +163,7 @@ jobs:
       - name: Upload coverage to Coveralls
         id: coveralls
         uses: coverallsapp/github-action@v2
+        if: always()
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-path: ${{ github.workspace }}
@@ -158,7 +175,7 @@ jobs:
           COVERALLS_GIT_BRANCH: ${{ github.head_ref || github.ref_name }}
 
       - name: Notify Coveralls Status in case of failure
-        if: steps.coveralls.outcome != 'success'
+        if: always() && steps.coveralls.outcome != 'success'
         uses: actions/github-script@v7
         with:
           script: |
