@@ -61,6 +61,7 @@ foreach ($Proj in $TestProjects) {
         --collect:"XPlat Code Coverage" `
         --results-directory $TestResultsDir `
         -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+    if ($LASTEXITCODE -ne 0) { Write-Error "dotnet test failed for $Proj"; exit $LASTEXITCODE }
 }
 
 # Generate a global coverage report
@@ -70,5 +71,6 @@ reportgenerator `
     -reports:$CoverageFiles `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html
+if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
