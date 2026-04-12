@@ -8,7 +8,7 @@
     and generates a portable 7z package containing the published executables.
 
 .PARAMETER Tfm
-    Target framework moniker prefix (e.g., "net8.0", "net10.0").
+    Target framework moniker prefix (e.g., "net10.0").
 
 .PARAMETER Version
     Application version used for installer and ZIP output file names.

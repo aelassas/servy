@@ -44,60 +44,62 @@ param(
     [switch]$DryRun
 )
 
+$ErrorActionPreference = "Stop"
+
 # -----------------------------
 # Variables
 # -----------------------------
 $currentVersionRegex = "net\d+\.\d+"
 $netVersion = "net$Version"
-$baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$baseDir = $PSScriptRoot
 
 Write-Host "Updating .NET runtime to $netVersion..." -ForegroundColor Cyan
-if ($DryRun) {
-    Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow
-}
+if ($DryRun) { Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow }
 
 # Statistics counters
 $global:totalFilesScanned = 0
 $global:filesModified     = 0
 $global:totalReplacements = 0
 
-# -----------------------------
-# Helper function
-# -----------------------------
+# ----------------------------------------------------------------------
+# Helper: Get-FileEncoding (Preserves UTF-8 BOM status)
+# ----------------------------------------------------------------------
+function Get-FileEncoding {
+    param([string]$Path)
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8 # With BOM
+    }
+    return New-Object System.Text.UTF8Encoding($false) # Without BOM
+}
+
+# ----------------------------------------------------------------------
+# Helper: Update-Files
+# ----------------------------------------------------------------------
 function Update-Files {
     param(
-        [Parameter(Mandatory)]
-        [System.IO.FileInfo[]]$Files,
-
-        [Parameter(Mandatory)]
-        [string]$Pattern,
-
-        [Parameter(Mandatory)]
-        [string]$Replacement,
-
-        [Parameter(Mandatory)]
-        [bool]$DryRun
+        [Parameter(Mandatory)] $Files,
+        [Parameter(Mandatory)] [string]$Pattern,
+        [Parameter(Mandatory)] [string]$Replacement,
+        [Parameter(Mandatory)] [bool]$DryRun
     )
 
     foreach ($file in $Files) {
-        $path = $file.FullName
+        if ($null -eq $file) { continue }
+        $path = if ($file -is [string]) { $file } else { $file.FullName }
+        
+        if (-not (Test-Path $path)) {
+            Write-Warning "Skipping missing file: $path"
+            continue
+        }
+
         $global:totalFilesScanned++
 
         try {
-            # --- Detect encoding ---
-            $stream = [System.IO.File]::Open($path, 'Open', 'Read')
-            try {
-                $reader = New-Object System.IO.StreamReader($stream, $true)
-                $content = $reader.ReadToEnd()
-                $encoding = $reader.CurrentEncoding
-            }
-            finally {
-                $reader.Close()
-                $stream.Close()
-            }
+            $encoding = Get-FileEncoding $path
+            $content = [System.IO.File]::ReadAllText($path, $encoding)
 
-            # --- Count matches ---
-            $regexMatches  = [regex]::Matches($content, $Pattern)
+            $regexMatches = [regex]::Matches($content, $Pattern)
             $matchCount = $regexMatches.Count
 
             if ($matchCount -gt 0) {
@@ -105,51 +107,50 @@ function Update-Files {
                 $global:totalReplacements += $matchCount
 
                 if ($DryRun) {
-                    Write-Host "DRY-RUN: Would update $path ($matchCount replacements)"
+                    Write-Host "DRY-RUN: Would update $path ($matchCount matches)" -ForegroundColor Gray
                 } else {
-                    $NewContent = [regex]::Replace($content, $Pattern, $Replacement)
-
-                    # Write using SAME encoding
-                    $Bytes = $encoding.GetBytes($NewContent)
-                    [System.IO.File]::WriteAllBytes($path, $Bytes)
-
-                    Write-Host "UPDATED: $path ($matchCount replacements)"
+                    $newContent = [regex]::Replace($content, $Pattern, $Replacement)
+                    [System.IO.File]::WriteAllText($path, $newContent, $encoding)
+                    Write-Host "UPDATED ($($encoding.BodyName)): $path" -ForegroundColor Green
                 }
-            }
-            else {
-                Write-Host "NO-CHANGE: $path"
             }
         }
         catch {
             Write-Error "Failed to update file: $path. $_"
-            exit 1
         }
     }
 }
 
-# -----------------------------
-# Process files
-# -----------------------------
-$ps1Files      = Get-ChildItem -Path $baseDir -Recurse -Filter *.ps1
-$issFiles      = Get-ChildItem -Path $baseDir -Recurse -Filter *.iss
-$csprojFiles   = Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj
-$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
-$publishPath   = Join-Path $baseDir ".github\workflows\publish.yml"
+# ----------------------------------------------------------------------
+# Execution Logic
+# ----------------------------------------------------------------------
 
-Update-Files -Files $ps1Files    -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
-Update-Files -Files $issFiles    -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
-Update-Files -Files $csprojFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
-Update-Files -Files (Get-Item $appConfigPath) -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
-Update-Files -Files (Get-Item $publishPath)   -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+# 1. Bulk file updates (PowerShell, Inno, Projects)
+$bulkFiles = Get-ChildItem -Path $baseDir -Recurse -Include *.ps1, *.iss, *.csproj -ErrorAction SilentlyContinue
+Update-Files -Files $bulkFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+
+# 2. Specific Config/Workflow updates (Safe Pathing)
+$specificFiles = @(
+    (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"),
+    (Join-Path $baseDir ".github\workflows\publish.yml")
+)
+Update-Files -Files $specificFiles -Pattern $currentVersionRegex -Replacement $netVersion -DryRun:$DryRun
+
+# 3. GitHub Action specific update
+$actionFile = Join-Path $baseDir ".github\actions\setup-dotnet\action.yml"
+$actionPattern = "(default:\s*')\d+\.\d+(')"
+
+# Use ${1} to prevent the engine from thinking you want group #11
+$actionReplacement = "`${1}$Version`${2}"
+
+Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionReplacement -DryRun:$DryRun
 
 # -----------------------------
 # Summary
 # -----------------------------
-Write-Host ""
-Write-Host "========================================="
+Write-Host "`n========================================="
 Write-Host "              SUMMARY"
 Write-Host "========================================="
-
 Write-Host "Files scanned:      $global:totalFilesScanned"
 Write-Host "Files modified:     $global:filesModified"
 Write-Host "Total replacements: $global:totalReplacements"
@@ -157,5 +158,5 @@ Write-Host "Total replacements: $global:totalReplacements"
 if ($DryRun) {
     Write-Host "`nDry run complete. No files were modified." -ForegroundColor Yellow
 } else {
-    Write-Host "`n.NET runtime updated to $netVersion" -ForegroundColor Green
-}
+    Write-Host "`n.NET runtime migration to v$Version successful." -ForegroundColor Green
+} 
