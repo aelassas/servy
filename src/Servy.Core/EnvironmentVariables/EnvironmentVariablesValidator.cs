@@ -44,9 +44,9 @@ namespace Servy.Core.EnvironmentVariables
                 // Count unescaped '=' in variable
                 int unescapedEqualsCount = CountUnescapedChar(variable, '=');
 
-                if (unescapedEqualsCount != 1)
+                if (unescapedEqualsCount < 1)
                 {
-                    errorMessage = "Each variable must contain exactly one unescaped '=' character.";
+                    errorMessage = "Each variable must contain an unescaped '=' character to separate the key from the value.";
                     return false;
                 }
 
