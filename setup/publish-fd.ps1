@@ -46,14 +46,16 @@ $sevenZipExe  = "C:\Program Files\7-Zip\7z.exe"
 # Directories
 $scriptDir = $PSScriptRoot
 $rootDir   = (Resolve-Path (Join-Path $scriptDir "..")).Path
-$servyDir  = Join-Path $rootDir "src\Servy"
-$cliDir    = Join-Path $rootDir "src\Servy.CLI"
+
+$servyDir   = Join-Path $rootDir "src\Servy"
+$cliDir     = Join-Path $rootDir "src\Servy.CLI"
 $managerDir = Join-Path $rootDir "src\Servy.Manager"
 
-# Output Artifacts
+# Keep as strings to avoid Resolve-Path crashes on clean builds
 $issFile       = Join-Path $scriptDir "servy-fd.iss"
 $packageFolder = Join-Path $scriptDir "servy-$Version-x64-frameworkdependent"
 $outputZip     = "$packageFolder.7z"
+$installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer-fd.exe"
 
 # ========================
 # Functions
@@ -78,19 +80,16 @@ function Remove-ItemSafely {
 # Step 1: Build Applications
 # ========================
 $projects = @($servyDir, $cliDir, $managerDir)
-
 foreach ($project in $projects) {
     $projectName = Split-Path $project -Leaf
     Write-Host "--- Publishing $projectName (Framework-Dependent) ---" -ForegroundColor Cyan
     
-    # We call the standardized project-level publish script.
     $publishScript = Join-Path $project "publish-fd.ps1"
     if (Test-Path $publishScript) {
         & $publishScript -BuildConfiguration $BuildConfiguration -Tfm $Tfm
         Check-LastExitCode "$publishScript failed"
     }
     else {
-        # Fallback if specific FD script is missing
         Write-Warning "Specific FD script missing for $projectName. Using dotnet publish."
         & dotnet restore $project
         Check-LastExitCode "dotnet restore failed"
@@ -98,7 +97,6 @@ foreach ($project in $projects) {
         & dotnet clean $project -c $BuildConfiguration
         Check-LastExitCode "Project clean failed"
         
-        # Explicitly disable PDB copying during publish to prevent MSB3030
         & dotnet publish $project `
             -c $BuildConfiguration `
             -f $Tfm `
@@ -113,12 +111,18 @@ foreach ($project in $projects) {
 # Step 2: Build Installer
 # ========================
 Write-Host "--- Building Installer ---" -ForegroundColor Cyan
+
+
 if (-not (Test-Path $innoCompiler)) {
     Write-Error "Inno Setup Compiler (ISCC.exe) not found at: $innoCompiler"
     exit 1
 }
+
 & $innoCompiler $issFile /DMyAppVersion=$Version
 Check-LastExitCode "Inno Setup compilation failed"
+
+# Optional: Add signing check here if we use it for FD builds as well
+# if (Test-Path $installerPath) { ... }
 
 # ========================
 # Step 3: Prepare ZIP package
@@ -151,13 +155,11 @@ try {
         }
     }
 
-    # 2. Standardize CLI executable name
     $cliExe = Join-Path $packageFolder "servy-cli\Servy.CLI.exe"
     if (Test-Path $cliExe) {
         Rename-Item -Path $cliExe -NewName "servy-cli.exe" -Force
     }
 
-    # 3. Include Task Scheduler Hooks
     $taskSchdSource = Join-Path $scriptDir "taskschd"
     if (Test-Path $taskSchdSource) {
         $taskSchdDest = Join-Path $packageFolder "taskschd"
@@ -165,7 +167,6 @@ try {
         Copy-Item -Path (Join-Path $taskSchdSource "*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
     }
 
-    # 4. Include PowerShell Module artifacts (Critical Check)
     $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
     foreach ($art in $cliArtifacts) {
         $sourcePath = Join-Path $cliDir $art

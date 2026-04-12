@@ -45,13 +45,15 @@ $sevenZipExe  = "C:\Program Files\7-Zip\7z.exe"
 
 # Directories
 $scriptDir = $PSScriptRoot
+# Resolve the root once at the start (this is safe as the script is running inside it)
 $rootDir   = (Resolve-Path (Join-Path $scriptDir "..")).Path
-$servyDir  = Join-Path $rootDir "src\Servy"
-$cliDir    = Join-Path $rootDir "src\Servy.CLI"
-$managerDir = Join-Path $rootDir "src\Servy.Manager"
-$signPath  = Join-Path $rootDir "setup\signpath.ps1"
 
-# Output Artifacts
+$servyDir   = Join-Path $rootDir "src\Servy"
+$cliDir     = Join-Path $rootDir "src\Servy.CLI"
+$managerDir = Join-Path $rootDir "src\Servy.Manager"
+
+# Define paths as strings. Do not resolve them yet.
+$signPath      = Join-Path $rootDir "setup\signpath.ps1"
 $issFile       = Join-Path $scriptDir "servy.iss"
 $packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
 $outputZip     = "$packageFolder.7z"
@@ -106,17 +108,33 @@ foreach ($project in $projects) {
 # Step 2: Build & Sign Installer
 # ========================
 Write-Host "--- Building Installer ---" -ForegroundColor Cyan
+
 if (-not (Test-Path $innoCompiler)) {
     Write-Error "Inno Setup Compiler (ISCC.exe) not found at: $innoCompiler"
     exit 1
 }
+
+# Run Inno Setup
 & $innoCompiler $issFile /DMyAppVersion=$Version
 Check-LastExitCode "Inno Setup compilation failed"
 
-if (Test-Path $signPath) {
-    Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
-    & $signPath -Path $installerPath
-    Check-LastExitCode "Signing artifacts failed"
+# Validate the installer exists before attempting to sign
+if (Test-Path $installerPath) {
+    # Resolve the absolute path for the signer
+    $resolvedInstaller = (Resolve-Path $installerPath).Path
+    
+    # Validate the signing script exists before trying to execute it
+    if (Test-Path $signPath) {
+        $resolvedSigner = (Resolve-Path $signPath).Path
+        Write-Host "--- Signing Artifacts ---" -ForegroundColor Cyan
+        & $resolvedSigner -Path $resolvedInstaller
+        Check-LastExitCode "Signing artifacts failed"
+    } else {
+        Write-Warning "Signing script not found at $signPath. Installer will remain unsigned."
+    }
+} else {
+    Write-Error "Installer executable not found at $installerPath after Inno Setup build."
+    exit 1
 }
 
 # ========================
@@ -164,7 +182,6 @@ try {
         }
     }
 
-    # 4. Compress
     if (-not (Test-Path $sevenZipExe)) {
         throw "7-Zip executable not found at: $sevenZipExe"
     }
