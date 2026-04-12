@@ -65,6 +65,7 @@ foreach ($Proj in $TestProjects) {
     Write-Host "Building $($Proj)..."
     $Platform = "x64"
     & $MsbuildPath $Proj /p:Configuration=Debug /p:Platform=$Platform /p:DebugType=portable /p:DebugSymbols=true /verbosity:minimal
+    if ($LASTEXITCODE -ne 0) { Write-Error "Test failed for $Proj"; exit $LASTEXITCODE }
 
     # Get project name without extension
     $ProjName = [System.IO.Path]::GetFileNameWithoutExtension($Proj)
@@ -86,6 +87,7 @@ foreach ($Proj in $TestProjects) {
             --format "cobertura" `
             --include-directory "$ProjDir" `
             --exclude "[Servy.Core]*"
+        if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
     } else {
         coverlet "$DllPath" `
             --target "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe" `
@@ -93,6 +95,7 @@ foreach ($Proj in $TestProjects) {
             --output (Join-Path $TestResultsDir "$ProjName.coverage.xml") `
             --format "cobertura" `
             --include-directory "$ProjDir"
+        if ($LASTEXITCODE -ne 0) { Write-Error "coverlet failed for $ProjName"; exit $LASTEXITCODE }
     }
 
 }
@@ -104,5 +107,6 @@ reportgenerator `
     -reports:$coverageFiles `
     -targetdir:$CoverageReportDir `
     -reporttypes:Html
+if ($LASTEXITCODE -ne 0) { Write-Error "reportgenerator failed"; exit $LASTEXITCODE }
 
 Write-Host "Coverage report generated at $CoverageReportDir"
