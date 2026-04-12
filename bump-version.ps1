@@ -38,66 +38,55 @@ Write-Host "Updating Servy version to $Version..."
 # Base directory of the script
 $baseDir = $PSScriptRoot
 
-# 1. Update setup\publish.ps1
-$publishPath = Join-Path $baseDir "setup\publish.ps1"
-if (-Not (Test-Path $publishPath)) { Write-Error "File not found: $publishPath"; exit 1 }
-$content = [System.IO.File]::ReadAllText($publishPath)
-$content = [regex]::Replace(
-    $content,
-    '(\$version\s*=\s*")[^"]*(")',
-    { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($publishPath, $content)
-Write-Host "Updated $publishPath"
-
-# 2. Update src\Servy.Core\Config\AppConfig.cs
-$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
-if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
-$content = [System.IO.File]::ReadAllText($appConfigPath)
-$content = [regex]::Replace(
-    $content,
-    '(public static readonly string Version\s*=\s*")[^"]*(";)',
-    { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($appConfigPath, $content)
-Write-Host "Updated $appConfigPath"
-
-# 4. Update all AssemblyInfo.cs files recursively
-Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs | ForEach-Object {
-    $assemblyInfo = $_.FullName
-    $content = [System.IO.File]::ReadAllText($assemblyInfo)
-
-    # Update [assembly: AssemblyVersion("1.0.0.0")]
-    $content = [regex]::Replace(
-        $content,
-        '(\[assembly:\s*AssemblyVersion\(")[^"]*("\)\])',
-        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
-    )
-
-    # Update [assembly: AssemblyFileVersion("1.0.0.0")]
-    $content = [regex]::Replace(
-        $content,
-        '(\[assembly:\s*AssemblyFileVersion\(")[^"]*("\)\])',
-        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
-    )
-
-    [System.IO.File]::WriteAllText($assemblyInfo, $content)
-    Write-Host "Updated $assemblyInfo"
+# ----------------------------------------------------------------------
+# Helper: Safe File Update (Prevents script crash on missing files)
+# ----------------------------------------------------------------------
+function Update-FileContent {
+    param([string]$Path, [string]$Pattern, [string]$Replacement)
+    
+    if (Test-Path $Path) {
+        $content = [System.IO.File]::ReadAllText($Path)
+        # Use ExplicitCapture and IgnoreCase for legacy AssemblyInfo files
+        $newContent = [regex]::Replace($content, $Pattern, { 
+            param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
+        }, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        
+        [System.IO.File]::WriteAllText($Path, $newContent)
+        Write-Host "Updated: $Path" -ForegroundColor Green
+    } else {
+        Write-Warning "Skipping missing file: $Path"
+    }
 }
 
-# -----------------------------
+# 1. Update setup\publish.ps1
+Update-FileContent `
+    -Path (Join-Path $baseDir "setup\publish.ps1") `
+    -Pattern '(\$version\s*=\s*")[^"]*(")' `
+    -Replacement $Version
+
+# 2. Update src\Servy.Core\Config\AppConfig.cs
+Update-FileContent `
+    -Path (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs") `
+    -Pattern '(public static readonly string Version\s*=\s*")[^"]*(";)' `
+    -Replacement $Version
+
+# 3. Update all AssemblyInfo.cs files (Recursive)
+Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
+    $path = $_.FullName
+    $content = [System.IO.File]::ReadAllText($path)
+
+    # Chain AssemblyVersion and AssemblyFileVersion updates
+    $content = [regex]::Replace($content, '(\[assembly:\s*AssemblyVersion\(")[^"]*("\)\])', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }, "IgnoreCase")
+    $content = [regex]::Replace($content, '(\[assembly:\s*AssemblyFileVersion\(")[^"]*("\)\])', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }, "IgnoreCase")
+
+    [System.IO.File]::WriteAllText($path, $content)
+    Write-Host "Updated AssemblyInfo: $path" -ForegroundColor Gray
+}
+
 # 4. Update src\Servy.CLI\Servy.psd1
-# -----------------------------
-$psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
-if (-Not (Test-Path $psd1Path)) { Write-Error "File not found: $psd1Path"; exit 1 }
+Update-FileContent `
+    -Path (Join-Path $baseDir "src\Servy.CLI\Servy.psd1") `
+    -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
+    -Replacement $fullVersion
 
-$content = [System.IO.File]::ReadAllText($psd1Path)
-$content = [regex]::Replace(
-    $content,
-    "(ModuleVersion\s*=\s*')[^']*(')",
-    { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($psd1Path, $content)
-Write-Host "Updated $psd1Path"
-
-Write-Host "All version updates complete."
+Write-Host "`nAll legacy and metadata version updates complete." -ForegroundColor Green
