@@ -52,7 +52,7 @@ $scriptDir = $PSScriptRoot
 # Paths and build settings
 # ---------------------------------------------------------------------------------
 $serviceDir         = Join-Path $scriptDir  "..\Servy.Service" | Resolve-Path
-$resourcesFolder    = Join-Path $scriptDir  "..\Servy\Resources" | Resolve-Path
+$resourcesFolder    = Join-Path $scriptDir  "..\Servy\Resources"
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 
@@ -60,6 +60,12 @@ $runtime            = "win-x64"
 if (-not (Test-Path $serviceDir)) {
     Write-Error "CRITICAL: Service project directory not found at $serviceDir"
     exit 1
+}
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
 }
 
 # ---------------------------------------------------------------------------------

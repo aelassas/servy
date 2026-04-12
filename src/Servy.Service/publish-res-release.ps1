@@ -49,7 +49,7 @@ $scriptDir = $PSScriptRoot
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
 $restarterDir       = Join-Path $scriptDir "..\Servy.Restarter" | Resolve-Path
-$resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources" | Resolve-Path
+$resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources"
 $buildConfiguration = "Release"
 $runtime            = "win-x64"
 
@@ -59,6 +59,11 @@ if (-not (Test-Path $restarterDir)) {
     exit 1
 }
 
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
+}
 
 # ---------------------------------------------------------------------------------
 # Step 1: Publish Servy.Restarter project
