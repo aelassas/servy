@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Enums;
 using Servy.Manager.Resources;
-using System;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -70,6 +69,8 @@ namespace Servy.Manager.Converters
             {
                 if (str == Strings.Label_Fetching)
                     return ServiceStatus.None;
+                if (str == Strings.Status_NotInstalled)
+                    return ServiceStatus.NotInstalled;
                 if (str == Strings.Status_Stopped)
                     return ServiceStatus.Stopped;
                 if (str == Strings.Status_StartPending)
