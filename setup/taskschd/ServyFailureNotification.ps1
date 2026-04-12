@@ -42,14 +42,14 @@ function Show-Notification {
   $LogText = $LogText -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
 
   if ($PSVersionTable.PSVersion.Major -lt 5) {
-    $verError = "ServyToast: Toasts require PowerShell 5.0+ (Detected: $($PSVersionTable.PSVersion.Major))."
-    Write-FallbackError -Message $verError -scriptDir $scriptDir
+    Write-FallbackError -Message "ServyToast: Toasts require PowerShell 5.0+." -scriptDir $scriptDir
     return
   }
 
   $ToastTitle = "Servy - $ServiceName"
     
   try {
+    # Load WinRT assemblies
     [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
         
     $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent(
@@ -57,24 +57,40 @@ function Show-Notification {
     )
 
     $rawXml = [xml]$template.GetXml()
-    $titleNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "1" }
-    $bodyNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "2" }
 
+    # --- VALIDATION GATE ---
+    # Select nodes based on standard ToastText02 schema
+    $titleNode = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "1" }
+    $bodyNode  = $rawXml.toast.visual.binding.text | Where-Object { $_.id -eq "2" }
+
+    if ($null -eq $titleNode -or $null -eq $bodyNode) {
+        # If the specific IDs are missing, fallback to ordinal selection
+        $titleNode = $rawXml.toast.visual.binding.text[0]
+        $bodyNode  = $rawXml.toast.visual.binding.text[1]
+    }
+
+    if ($null -eq $titleNode -or $null -eq $bodyNode) {
+        throw "Unsupported Toast XML structure: Could not locate text nodes for Title or Body."
+    }
+
+    # Append content
     [void]$titleNode.AppendChild($rawXml.CreateTextNode($ToastTitle))
     [void]$bodyNode.AppendChild($rawXml.CreateTextNode($LogText))
 
+    # Re-wrap in WinRT XML DOM
     $serializedXml = New-Object Windows.Data.Xml.Dom.XmlDocument
     $serializedXml.LoadXml($rawXml.OuterXml)
 
+    # Initialize Notification
     $toast = New-Object Windows.UI.Notifications.ToastNotification($serializedXml)
     $toast.Tag = "Servy"
     $toast.Group = "Servy"
     $toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
+    # Event Handlers (Async Error Capture)
     $null = $toast.add_Failed({
         param($evtSender, $evtArgs)
-        $asyncError = "ServyToast: Delivery failed. ErrorCode: $($evtArgs.ErrorCode)"
-        Write-FallbackError -Message $asyncError -scriptDir $scriptDir
+        Write-FallbackError -Message "ServyToast: Delivery failed (0x$($evtArgs.ErrorCode.ToString('X')))." -scriptDir $scriptDir
       })
 
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("PowerShell")
