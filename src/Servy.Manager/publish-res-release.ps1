@@ -46,7 +46,7 @@ $scriptDir = $PSScriptRoot
 # Absolute paths to relevant folders and project
 $managerProject        = Join-Path $scriptDir "..\Servy.Manager\Servy.Manager.csproj" | Resolve-Path
 $servicePublishScript  = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-$rsourcesFolder       = Join-Path $scriptDir "..\Servy.Manager\Resources" | Resolve-Path
+$resourcesFolder       = Join-Path $scriptDir "..\Servy.Manager\Resources"
 $buildConfiguration    = "Release"
 $platform              = "x64"
 $buildOutput           = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
@@ -55,6 +55,12 @@ $resourcesBuildOutput  = Join-Path $scriptDir "..\Servy.Manager\bin\$platform\$b
 if (-not (Test-Path $managerProject)) {
     Write-Error "CRITICAL: Manager Project not found at $managerProject"
     exit 1
+}
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
 }
 
 # ------------------------------------------------------------------------
@@ -85,10 +91,10 @@ foreach ($File in $filesToCopy) {
     $sourcePath = Join-Path $buildOutput $File.Source
 
     if ($File.Source -like "*.dll") {
-        Copy-Item -Path $sourcePath -Destination $rsourcesFolder -Force
-        Write-Host "Copied $($File.Source) -> $rsourcesFolder"
+        Copy-Item -Path $sourcePath -Destination $resourcesFolder -Force
+        Write-Host "Copied $($File.Source) -> $resourcesFolder"
     } else {
-        $destPath = Join-Path $rsourcesFolder $File.Destination
+        $destPath = Join-Path $resourcesFolder $File.Destination
         Copy-Item -Path $sourcePath -Destination $destPath -Force
         Write-Host "Copied $($File.Source) -> $($File.Destination)"
     }
@@ -100,7 +106,7 @@ foreach ($File in $filesToCopy) {
 <#
 $InfraServiceProject = Join-Path $scriptDir "..\Servy.Infrastructure\Servy.Infrastructure.csproj"
 $InfraSourcePath     = Join-Path $scriptDir "..\Servy.Infrastructure\bin\$buildConfiguration\Servy.Infrastructure.pdb"
-$InfraDestPath       = Join-Path $rsourcesFolder "Servy.Infrastructure.pdb"
+$InfraDestPath       = Join-Path $resourcesFolder "Servy.Infrastructure.pdb"
 
 & msbuild $InfraServiceProject /t:Clean,Rebuild /p:Configuration=$buildConfiguration
 

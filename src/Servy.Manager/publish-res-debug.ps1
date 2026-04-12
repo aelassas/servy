@@ -41,7 +41,7 @@ function Check-LastExitCode {
 $scriptDir            = $PSScriptRoot
 $managerProject       = Join-Path $scriptDir "..\Servy.Manager\Servy.Manager.csproj" | Resolve-Path
 $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-$resourcesFolder      = Join-Path $scriptDir "..\Servy.Manager\Resources" | Resolve-Path
+$resourcesFolder      = Join-Path $scriptDir "..\Servy.Manager\Resources"
 $buildConfiguration   = "Debug"
 $platform             = "x64"
 $buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
@@ -50,6 +50,12 @@ $resourcesBuildOutput = Join-Path $scriptDir "..\Servy.Manager\bin\$platform\$bu
 if (-not (Test-Path $managerProject)) {
     Write-Error "CRITICAL: Manager Project not found at $managerProject"
     exit 1
+}
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
 }
 
 # ------------------------------------------------------------------------

@@ -40,7 +40,7 @@ $scriptDir = $PSScriptRoot
 # Absolute paths and configuration
 # ----------------------------------------------------------------------
 $restarterPublishScript = Join-Path $scriptDir "..\Servy.Restarter\publish.ps1" | Resolve-Path
-$resourcesFolder        = Join-Path $scriptDir "..\Servy.Service\Resources" | Resolve-Path
+$resourcesFolder        = Join-Path $scriptDir "..\Servy.Service\Resources"
 $buildConfiguration     = "Debug"
 $platform               = "x64"
 $buildOutput            = Join-Path $scriptDir "..\Servy.Restarter\bin\$platform\$buildConfiguration"
@@ -49,6 +49,13 @@ if (-not (Test-Path $restarterPublishScript)) {
     Write-Error "CRITICAL: Restarter publish script not found at $restarterPublishScript"
     exit 1
 }
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
+}
+
 
 # ----------------------------------------------------------------------
 # Step 1: Build Servy.Restarter in Debug mode

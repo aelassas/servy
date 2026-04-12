@@ -44,7 +44,7 @@ function Check-LastExitCode {
 $scriptDir            = $PSScriptRoot
 $cliProject           = Join-Path $scriptDir "..\Servy.CLI\Servy.CLI.csproj" | Resolve-Path
 $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-$resourcesFolder      = Join-Path $scriptDir "..\Servy.CLI\Resources" | Resolve-Path
+$resourcesFolder      = Join-Path $scriptDir "..\Servy.CLI\Resources"
 $buildConfiguration   = "Debug"
 $platform             = "x64"
 $buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$buildConfiguration"
@@ -53,6 +53,12 @@ $resourcesBuildOutput = Join-Path $scriptDir "..\Servy.CLI\bin\$platform\$buildC
 if (-not (Test-Path $cliProject)) {
     Write-Error "CRITICAL: CLI Project not found at $cliProject"
     exit 1
+}
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
 }
 
 # ------------------------------------------------------------------------

@@ -47,7 +47,7 @@ $scriptDir = $PSScriptRoot
 # Absolute paths to relevant folders and project
 $servyProject         = Join-Path $scriptDir "..\Servy\Servy.csproj" | Resolve-Path
 $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-$resourcesFolder      = Join-Path $scriptDir "..\Servy\Resources" | Resolve-Path
+$resourcesFolder      = Join-Path $scriptDir "..\Servy\Resources"
 $buildConfiguration   = "Release"
 $platform             = "x64"
 $buildOutput          = Join-Path $scriptDir "..\Servy.Service\bin\$platform\$buildConfiguration"
@@ -57,11 +57,18 @@ $signPath             = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolv
 # Safety check: Resolve-Path will fail if the directory structure is missing
 try {
     $servicePublishScript = Join-Path $scriptDir "..\Servy.Service\publish.ps1" | Resolve-Path
-    $resourcesFolder      = Join-Path $scriptDir "..\Servy\Resources"
 } catch {
     Write-Error "CRITICAL: Could not resolve project paths. Ensure the folder structure is correct."
     exit 1
 }
+
+
+# Guarded Creation
+if (-not (Test-Path $resourcesFolder)) {
+    Write-Host "Creating missing resources folder: $resourcesFolder" -ForegroundColor Gray
+    New-Item -ItemType Directory -Path $resourcesFolder -Force | Out-Null
+}
+
 
 # ------------------------------------------------------------------------
 # 1. Build Servy.Service
