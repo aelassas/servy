@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Servy.Core.Helpers
@@ -46,7 +45,7 @@ namespace Servy.Core.Helpers
         /// </list>
         /// </remarks>
         private static readonly Regex HandleOutputRegex = new Regex(
-            @"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)", 
+            @"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline,
             TimeSpan.FromSeconds(1));
 
@@ -70,30 +69,42 @@ namespace Servy.Core.Helpers
             {
                 FileName = handleExePath,
                 RedirectStandardOutput = true,
-                RedirectStandardError = true,
+                RedirectStandardError = true, // We redirect this, so we MUST drain it
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 Arguments = $"{ProcessHelper.EscapeProcessArgument(filePath)} /accepteula"
             };
 
-            using (var process = Process.Start(psi))
+            using (var process = new Process { StartInfo = psi })
             {
-                if (process == null)
+                // Use a StringBuilder to capture stderr in the background to avoid deadlocks
+                var errorBuilder = new System.Text.StringBuilder();
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) errorBuilder.AppendLine(e.Data); };
+
+                if (!process.Start())
                     throw new InvalidOperationException($"Failed to start process: {handleExePath}");
 
+                // Start asynchronous read on stderr
+                process.BeginErrorReadLine();
+
+                // Read stdout synchronously (this is now safe because stderr is being drained asynchronously)
                 string output = process.StandardOutput.ReadToEnd();
+
                 if (!process.WaitForExit(5000))
                 {
-                    process.Kill();
-                    throw new TimeoutException("handle.exe did not respond within 5 seconds");
+                    try { process.Kill(); } catch { /* Ignore cleanup errors */ }
+                    throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }
 
-                // Parse output lines like:
-                // notepad.exe       pid: 1234   type: File    123: C:\Path\To\File.dll
+                // Check for specific handle.exe errors (like "No matching handles found")
+                if (string.IsNullOrWhiteSpace(output) && errorBuilder.Length > 0)
+                {
+                    Logger.Warn($"handle.exe produced error output: {errorBuilder}");
+                }
+
                 try
                 {
                     var matches = HandleOutputRegex.Matches(output);
-
                     foreach (Match match in matches)
                     {
                         if (match.Success && int.TryParse(match.Groups["pid"].Value, out int pid))
@@ -114,6 +125,5 @@ namespace Servy.Core.Helpers
 
             return processes;
         }
-
     }
 }
