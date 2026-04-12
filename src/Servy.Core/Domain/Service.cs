@@ -251,7 +251,7 @@ namespace Servy.Core.Domain
         public bool PreLaunchIgnoreFailure { get; set; } = false;
 
         /// <summary>
-        /// Optional path to an executable that runs before the service starts.
+        /// Optional path to an executable that runs after the service starts.
         /// </summary>
         public string? PostLaunchExecutablePath { get; set; }
 
