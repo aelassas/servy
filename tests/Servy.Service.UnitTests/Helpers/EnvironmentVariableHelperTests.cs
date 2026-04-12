@@ -151,5 +151,83 @@ namespace Servy.Service.UnitTests.Helpers
             Assert.Equal("bar", expanded["C"]);
             Assert.Contains("foo_bar", expanded["D"]);
         }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldBlockProtectedVariableOverride()
+        {
+            // Arrange
+            string systemPath = Environment.GetEnvironmentVariable("PATH");
+            var vars = new List<EnvironmentVariable>
+            {
+                // Attempting to hijack the PATH
+                new EnvironmentVariable { Name = "PATH", Value = "C:\\Attacker\\Bin" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            // The custom value should be ignored; the system value must remain intact.
+            Assert.NotEqual("C:\\Attacker\\Bin", expanded["PATH"]);
+            Assert.Equal(systemPath, expanded["PATH"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldBeCaseInsensitiveForProtectedVariables()
+        {
+            // Arrange
+            string systemComSpec = Environment.GetEnvironmentVariable("COMSPEC");
+            var vars = new List<EnvironmentVariable>
+            {
+                // Attempting to bypass using casing
+                new EnvironmentVariable { Name = "pAtH", Value = "C:\\Malicious" },
+                new EnvironmentVariable { Name = "comspec", Value = "C:\\Malicious\\cmd.exe" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.NotEqual("C:\\Malicious", expanded["PATH"]);
+            Assert.NotEqual("C:\\Malicious\\cmd.exe", expanded["COMSPEC"]);
+            Assert.Equal(systemComSpec, expanded["COMSPEC"], ignoreCase: true);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldBlockAllVariablesInProtectedSet()
+        {
+            // Arrange
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "SYSTEMROOT", Value = "C:\\Fake" },
+                new EnvironmentVariable { Name = "TEMP", Value = "C:\\FakeTemp" },
+                new EnvironmentVariable { Name = "USERNAME", Value = "Administrator" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.NotEqual("C:\\Fake", expanded["SYSTEMROOT"]);
+            Assert.NotEqual("C:\\FakeTemp", expanded["TEMP"]);
+            Assert.NotEqual("Administrator", expanded["USERNAME"]);
+        }
+
+        [Fact]
+        public void ExpandEnvironmentVariables_ShouldAllowOverridingNonProtectedVariables()
+        {
+            // Arrange
+            // Create a custom variable that isn't in the blocklist
+            var vars = new List<EnvironmentVariable>
+            {
+                new EnvironmentVariable { Name = "CUSTOM_APP_SETTING", Value = "SafeValue" }
+            };
+
+            // Act
+            var expanded = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // Assert
+            Assert.Equal("SafeValue", expanded["CUSTOM_APP_SETTING"]);
+        }
     }
 }
