@@ -1027,116 +1027,115 @@ function Install-ServyService {
 
   $argsList = @()
 
-  # 1. Define parameter pairs for PS 2.0 compatibility
-  $paramPairs = @(
-    @("--name",                     $Name),
-    @("--displayName",              $DisplayName),
-    @("--path",                     $Path),
-    @("--description",              $Description),
-    @("--startupDir",               $StartupDir),
-    @("--params",                   $Params),
-    @("--startupType",              $StartupType),
-    @("--priority",                 $Priority),
-    @("--stdout",                   $Stdout),
-    @("--stderr",                   $Stderr),
-    @("--startTimeout",             $StartTimeout),
-    @("--stopTimeout",              $StopTimeout),
-    @("--rotationSize",             $RotationSize),
-    @("--dateRotationType",         $DateRotationType),
-    @("--maxRotations",             $MaxRotations),
-    @("--heartbeatInterval",        $HeartbeatInterval),
-    @("--maxFailedChecks",          $MaxFailedChecks),
-    @("--recoveryAction",           $RecoveryAction),
-    @("--maxRestartAttempts",       $MaxRestartAttempts),
-    @("--failureProgramPath",       $FailureProgramPath),
-    @("--failureProgramStartupDir", $FailureProgramStartupDir),
-    @("--failureProgramParams",     $FailureProgramParams),
-    @("--envVars",                  $EnvVars),
-    @("--deps",                     $Deps),
-    @("--user",                     $User),
-    @("--preLaunchPath",            $PreLaunchPath),
-    @("--preLaunchStartupDir",      $PreLaunchStartupDir),
-    @("--preLaunchParams",          $PreLaunchParams),
-    @("--preLaunchEnv",             $PreLaunchEnv),
-    @("--preLaunchStdout",          $PreLaunchStdout),
-    @("--preLaunchStderr",          $PreLaunchStderr),
-    @("--preLaunchTimeout",         $PreLaunchTimeout),
-    @("--preLaunchRetryAttempts",   $PreLaunchRetryAttempts),
-    @("--postLaunchPath",           $PostLaunchPath),
-    @("--postLaunchStartupDir",     $PostLaunchStartupDir),
-    @("--postLaunchParams",         $PostLaunchParams),
-    @("--preStopPath",              $PreStopPath),
-    @("--preStopStartupDir",        $PreStopStartupDir),
-    @("--preStopParams",            $PreStopParams),
-    @("--preStopTimeout",           $PreStopTimeout),
-    @("--postStopPath",             $PostStopPath),
-    @("--postStopStartupDir",       $PostStopStartupDir),
-    @("--postStopParams",           $PostStopParams)
-  )
-
-  # 2. Iterate through pairs to build arguments
-  foreach ($pair in $paramPairs) {
-    $cliFlag = $pair[0] # e.g., "--preLaunchTimeout"
-    $val     = $pair[1]
-    
-    # Transform --preLaunchTimeout -> PreLaunchTimeout (PascalCase)
-    # 1. Trim --
-    # 2. Uppercase the first letter to match PS parameter naming
-    $rawName = $cliFlag.TrimStart('-')
-    $paramName = $rawName.Substring(0, 1).ToUpper() + $rawName.Substring(1)
-
-    $isBound = $PSBoundParameters.ContainsKey($paramName)
-
-    # Only add the argument if the user EXPLICITLY provided it.
-    # We no longer fall back to $hasValue for non-strings to avoid 
-    # passing default 0s for ints or false for booleans.
-    if ($isBound) {
-      if ($val -is [System.Security.SecureString]) {
-        # Password handled separately via environment variables
-        continue
-      }
-      $argsList = Add-Arg $argsList $cliFlag $val
+  # 1. Explicit Parameter Mapping: CLI Flag => PowerShell Parameter Name
+    # This removes reliance on Substring/Case-sensitivity convention logic.
+    $paramMapping = @{
+        "--name"                     = "Name"
+        "--displayName"              = "DisplayName"
+        "--path"                     = "Path"
+        "--description"              = "Description"
+        "--startupDir"               = "StartupDir"
+        "--params"                   = "Params"
+        "--startupType"              = "StartupType"
+        "--priority"                 = "Priority"
+        "--stdout"                   = "Stdout"
+        "--stderr"                   = "Stderr"
+        "--startTimeout"             = "StartTimeout"
+        "--stopTimeout"              = "StopTimeout"
+        "--rotationSize"             = "RotationSize"
+        "--dateRotationType"         = "DateRotationType"
+        "--maxRotations"             = "MaxRotations"
+        "--heartbeatInterval"        = "HeartbeatInterval"
+        "--maxFailedChecks"          = "MaxFailedChecks"
+        "--recoveryAction"           = "RecoveryAction"
+        "--maxRestartAttempts"       = "MaxRestartAttempts"
+        "--failureProgramPath"       = "FailureProgramPath"
+        "--failureProgramStartupDir" = "FailureProgramStartupDir"
+        "--failureProgramParams"     = "FailureProgramParams"
+        "--envVars"                  = "EnvVars"
+        "--deps"                     = "Deps"
+        "--user"                     = "User"
+        "--preLaunchPath"            = "PreLaunchPath"
+        "--preLaunchStartupDir"      = "PreLaunchStartupDir"
+        "--preLaunchParams"          = "PreLaunchParams"
+        "--preLaunchEnv"             = "PreLaunchEnv"
+        "--preLaunchStdout"          = "PreLaunchStdout"
+        "--preLaunchStderr"          = "PreLaunchStderr"
+        "--preLaunchTimeout"         = "PreLaunchTimeout"
+        "--preLaunchRetryAttempts"   = "PreLaunchRetryAttempts"
+        "--postLaunchPath"           = "PostLaunchPath"
+        "--postLaunchStartupDir"     = "PostLaunchStartupDir"
+        "--postLaunchParams"         = "PostLaunchParams"
+        "--preStopPath"              = "PreStopPath"
+        "--preStopStartupDir"        = "PreStopStartupDir"
+        "--preStopParams"            = "PreStopParams"
+        "--preStopTimeout"           = "PreStopTimeout"
+        "--postStopPath"             = "PostStopPath"
+        "--postStopStartupDir"       = "PostStopStartupDir"
+        "--postStopParams"           = "PostStopParams"
     }
-  }
 
-  # 3. Handle switch/flag parameters separately
-  if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
-  if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
-  if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
-  if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
-  if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
-  if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
-  if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
-  if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
+    # 2. Iterate through mapping to build arguments
+    foreach ($entry in $paramMapping.GetEnumerator()) {
+        $cliFlag   = $entry.Key
+        $paramName = $entry.Value
 
-  # 4. Inject password via Environment Variables securely
-  $plainPassword = $null
-  if ($null -ne $Password) {
-    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+        # Use $PSBoundParameters to ensure we only pass what the user explicitly provided
+        if ($PSBoundParameters.ContainsKey($paramName)) {
+            $val = $PSBoundParameters[$paramName]
+            
+            # Skip password (handled via environment variables)
+            if ($paramName -eq "Password") { continue }
+
+            $argsList = Add-Arg $argsList $cliFlag $val
+        }
+    }
+
+    # 3. Handle standalone Flags/Switches separately
+    if ($EnableRotation) { Write-Warning "-EnableRotation is deprecated. Use -EnableSizeRotation instead." }
+    if ($EnableRotation -or $EnableSizeRotation) { $argsList = Add-Arg $argsList "--enableSizeRotation" -Flag }
+    if ($EnableDateRotation)                     { $argsList = Add-Arg $argsList "--enableDateRotation" -Flag }
+    if ($UseLocalTimeForRotation)                { $argsList = Add-Arg $argsList "--useLocalTimeForRotation" -Flag }
+    if ($EnableHealth)                           { $argsList = Add-Arg $argsList "--enableHealth" -Flag }
+    if ($PreLaunchIgnoreFailure)                 { $argsList = Add-Arg $argsList "--preLaunchIgnoreFailure" -Flag }
+    if ($EnableDebugLogs)                        { $argsList = Add-Arg $argsList "--debug" -Flag }
+    if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
+
+    # 4. Secure Password Marshaling (Memory Safety)
+    $plainPassword = $null
+    $secureEnv = @{}
+    
+    if ($null -ne $Password) {
+        # SecureString -> Unmanaged BSTR
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+        try {
+            # Unmanaged BSTR -> Managed String
+            $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+            
+            if ($null -ne $plainPassword -and $plainPassword.Length -gt 0) {
+                $secureEnv["SERVY_PASSWORD"] = $plainPassword
+            }
+        }
+        finally {
+            # CRITICAL: Manual zero-out of the unmanaged memory buffer
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+    }
+
+    # 5. CLI Invocation with deterministic cleanup
     try {
-      $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+        Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -EnvironmentVariables $secureEnv -ErrorContext "Failed to install service '$Name'"
     }
     finally {
-      # CRITICAL: Zero out the unmanaged memory immediately
-      [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        # Explicitly clear managed references to prevent sensitive data lingering in the heap
+        $plainPassword = $null
+        if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
+            $secureEnv["SERVY_PASSWORD"] = $null
+        }
+        
+        # Help GC by clearing the ArrayList
+        $argsList = $null
     }
-  }
-  $secureEnv = @{}
-  if ($null -ne $plainPassword -and $plainPassword.Trim() -ne "") {
-    $secureEnv["SERVY_PASSWORD"] = $plainPassword
-  }
-
-  # 4. Invoke CLI
-  try {
-    Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -Environment $secureEnv -ErrorContext "Failed to install service '$Name'"
-  }
-  finally {
-    # Explicitly clear the managed string variable to encourage GC collection
-    $plainPassword = $null
-    if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
-      $secureEnv["SERVY_PASSWORD"] = $null
-    }
-  }
 }
 
 function Uninstall-ServyService {
