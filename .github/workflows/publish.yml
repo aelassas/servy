@@ -572,7 +572,7 @@ jobs:
           # Task Scheduler setup
           $destPath = Join-Path $pkg "taskschd"
           if (-not (Test-Path $destPath)) { New-Item -Path $destPath -ItemType Directory -Force }
-          Copy-Item -Path "setup\taskschd\*" -Destination $destPath -Recurse -Force -Exclude "smtp-cred.xml"
+          Copy-Item -Path "setup\taskschd\*" -Destination $destPath -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
 
           $zip = "$name.7z"
 
