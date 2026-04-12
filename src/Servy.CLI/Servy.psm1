@@ -1070,16 +1070,26 @@ param(
 
   # 2. Iterate through pairs to build arguments
   foreach ($pair in $paramPairs) {
-    $paramName = $pair[0].TrimStart('-')
+    $cliFlag = $pair[0] # e.g., "--preLaunchTimeout"
+    $val     = $pair[1]
+    
+    # Transform --preLaunchTimeout -> PreLaunchTimeout (PascalCase)
+    # 1. Trim --
+    # 2. Uppercase the first letter to match PS parameter naming
+    $rawName = $cliFlag.TrimStart('-')
+    $paramName = $rawName.Substring(0,1).ToUpper() + $rawName.Substring(1)
 
-    $hasValue = $false
+    $isBound = $PSBoundParameters.ContainsKey($paramName)
 
-    if ($pair[1] -is [string]) {
-      $hasValue = $pair[1].Trim() -ne ""
-    }
-
-    if ($PSBoundParameters.ContainsKey($paramName) -or $hasValue) {
-      $argsList = Add-Arg $argsList $pair[0] $pair[1]
+    # Only add the argument if the user EXPLICITLY provided it.
+    # We no longer fall back to $hasValue for non-strings to avoid 
+    # passing default 0s for ints or false for booleans.
+    if ($isBound) {
+        if ($val -is [System.Security.SecureString]) {
+             # Password handled separately via environment variables
+             continue
+        }
+        $argsList = Add-Arg $argsList $cliFlag $val
     }
   }
 
