@@ -370,7 +370,7 @@ function Invoke-ServyCli {
       else {
         throw "$($ErrorContext): Operation timed out after $($script:ServyTimeoutSeconds) seconds. WARNING: Failed to terminate the process (PID: $($process.Id)) - it may still be running."
       }
-    }
+    }    
 
     # Flush async streams with a bounded wait
     if (-not $process.WaitForExit(5000)) {
@@ -406,7 +406,7 @@ function Invoke-ServyCli {
   finally {
     if ($null -ne $process) {
         try { $process.CancelErrorRead() } catch {}
-        Start-Sleep -Milliseconds 50  # let in-flight events drain
+        try { $process.WaitForExit() } catch {}  # let in-flight events drain
     }    
 
     # Capture stderr BEFORE cleanup
