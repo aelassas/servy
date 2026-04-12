@@ -87,8 +87,17 @@ Check-LastExitCode "MSBuild failed"
 # Step 3: Sign the published executable if signing is enabled
 if ($BuildConfiguration -eq "Release") {
     $exePath = Join-Path $publishFolder "Servy.exe" | Resolve-Path
-    & $signPath $exePath
-    Check-LastExitCode "Code signing failed"
+    if (Test-Path $exePath) {
+        if ($null -ne $signPath) {
+            Write-Host "=== Signing Servy.exe ===" -ForegroundColor Cyan
+            & $signPath $exePath
+            Check-LastExitCode "Code signing failed"
+        }
+    }
+    else {
+        Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
+        exit 1
+    }
 }
 
 if ($Pause) { 
