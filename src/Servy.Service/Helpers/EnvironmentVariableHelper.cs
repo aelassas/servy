@@ -1,4 +1,5 @@
 ﻿using Servy.Core.EnvironmentVariables;
+using Servy.Core.Logging;
 using System.Collections;
 
 namespace Servy.Service.Helpers
@@ -32,6 +33,27 @@ namespace Servy.Service.Helpers
     public static class EnvironmentVariableHelper
     {
         /// <summary>
+        /// Protected system variables that should never be overridden by user configuration
+        /// to prevent privilege escalation and system instability.
+        /// </summary>
+        private static readonly HashSet<string> ProtectedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "PATH",           // DLL/Binary hijacking
+            "COMSPEC",        // Shell hijacking
+            "SYSTEMROOT",     // System API redirection
+            "WINDIR",         // System directory redirection
+            "SYSTEMDRIVE",    // Core drive redirection
+            "TEMP",           // Sandbox escape/hijacking
+            "TMP",            // Sandbox escape/hijacking
+            "PATHEXT",        // Extension hijacking
+            "PSMODULEPATH",   // PowerShell module hijacking
+            "USERNAME",       // Identity spoofing
+            "USERPROFILE",    // Profile redirection
+            "ALLUSERSPROFILE",
+            "PROGRAMDATA"
+        };
+
+        /// <summary>
         /// Builds a dictionary of environment variables by merging the current system environment
         /// with the provided custom environment variables. All values are expanded so that system
         /// and custom variables can reference each other (e.g. %ProgramData%, %MY_CUSTOM_VAR%).
@@ -45,23 +67,34 @@ namespace Servy.Service.Helpers
         /// </returns>
         public static Dictionary<string, string?> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
         {
-            // Start with current environment
             var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+            // 1. Load System Environment
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
             {
                 result[(string)entry.Key] = (string?)entry.Value;
             }
 
-            // Add or override with custom variables (raw values first)
+            // 2. Merge Custom Variables with SECURITY CHECK
             if (environmentVariables != null)
             {
                 foreach (var envVar in environmentVariables)
                 {
+                    if (string.IsNullOrWhiteSpace(envVar.Name)) continue;
+
+                    if (ProtectedVariables.Contains(envVar.Name))
+                    {
+                        // Log the violation - this is critical for auditing
+                        Logger.Warn($"Security: Blocked an attempt to override protected variable '{envVar.Name}'. Custom values for this variable are ignored to prevent privilege escalation.");
+                        continue;
+                    }
+
                     result[envVar.Name] = envVar.Value;
                 }
             }
 
-            // Now expand all values using the merged dictionary
+            // 3. Recursive Expansion
+            // We use ToList() to avoid "Collection was modified" exceptions
             foreach (var key in result.Keys.ToList())
             {
                 result[key] = ExpandWithDictionary(result[key]!, result);
@@ -105,11 +138,11 @@ namespace Servy.Service.Helpers
                 string token = "%" + kvp.Key + "%";
                 string replacement = kvp.Value ?? string.Empty;
 
-                // FIX: Detect and skip self-referencing tokens.
+                // Detect and skip self-referencing tokens.
                 // If the replacement value already contains the token we are trying to resolve, 
                 // skip it. This prevents unbounded exponential string growth during dictionary mutation
                 // and safely short-circuits both direct and indirect circular references.
-                if (replacement.Contains(token, StringComparison.OrdinalIgnoreCase))
+                if (replacement.IndexOf(token, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     continue;
                 }
