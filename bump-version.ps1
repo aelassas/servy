@@ -1,4 +1,5 @@
-﻿<#
+﻿#requires -Version 3.0
+<#
 .SYNOPSIS
 Updates the version of Servy across scripts, AppConfig, and project files.
 

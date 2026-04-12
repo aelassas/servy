@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Signs a file using SignPath when SIGN=true is set in a .signpath configuration file.
