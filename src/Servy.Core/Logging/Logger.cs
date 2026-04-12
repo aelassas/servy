@@ -255,11 +255,12 @@ namespace Servy.Core.Logging
         /// Use this for non-critical issues or unexpected states that do not halt execution.
         /// </summary>
         /// <param name="message">The warning message to log.</param>
-        public static void Warn(string? message)
+        /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
+        public static void Warn(string? message, Exception? ex = null)
         {
             if (_currentLogLevel <= LogLevel.Warn)
             {
-                Log(LogLevel.Warn, message);
+                Log(LogLevel.Warn, ex != null ? $"{message}{Environment.NewLine}Exception: {ex}" : message);
             }
         }
 
