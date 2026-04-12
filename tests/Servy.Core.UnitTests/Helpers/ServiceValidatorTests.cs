@@ -40,6 +40,19 @@ namespace Servy.Tests.Helpers
         }
 
         [Fact]
+        public void ValidateDto_Fails_WhenExecutablePathIsNull()
+        {
+            // Hits the null branch of dto.DisplayName?.Length
+            var dto = GetValidDto();
+            dto.ExecutablePath = null!;
+
+            var (isValid, error) = ServiceValidator.ValidateDto(dto);
+
+            Assert.False(isValid);
+            Assert.Contains("Executable path is required.", error);
+        }
+
+        [Fact]
         public void ValidateDto_Succeeds_WhenDisplayNameIsNull()
         {
             // Hits the null branch of dto.DisplayName?.Length

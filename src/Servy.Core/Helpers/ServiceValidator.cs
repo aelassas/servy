@@ -34,7 +34,7 @@ namespace Servy.Core.Helpers
 
             // Protect against uint overflow in ChangeServiceConfig2 (SCM)
             if (dto.StopTimeout.HasValue && dto.StopTimeout < AppConfig.MinStopTimeout)
-                return (false, "Stop Timeout must be between 30s and 1 hour.");
+                return (false, $"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).");
 
             if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && (dto.RotationSize < AppConfig.MinRotationSize))
                 return (false, "Rotation size is too small.");
