@@ -62,7 +62,7 @@ $installParams = @{
     EnvVars                   = "var1=val1; var2=val2;"
     Deps                      = "Tcpip;Dnscache"
     # User                    = ".\DummySvc"
-    # Password                = "ChangeMe!"
+    # Password                = ("ChangeMe!" | ConvertTo-SecureString -AsPlainText -Force)
 
     PreLaunchPath             = "C:\Windows\System32\cmd.exe"
     PreLaunchStartupDir       = "C:\Windows\Temp"

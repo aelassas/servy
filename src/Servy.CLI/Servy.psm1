@@ -921,7 +921,7 @@ param(
     [string] $User,
 
     [ValidateNotNullOrEmpty()]
-    [string] $Password,
+    [System.Security.SecureString]$Password,
 
     # Pre-launch
     [ValidateScript({ 
@@ -1094,13 +1094,33 @@ param(
   if ($PreStopLogAsError)                      { $argsList = Add-Arg $argsList "--preStopLogAsError" -Flag }
 
   # 4. Inject password via Environment Variables securely
+  $plainPassword = $null
+  if ($null -ne $Password) {
+      $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+      try {
+          $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+      }
+      finally {
+          # CRITICAL: Zero out the unmanaged memory immediately
+          [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+      }
+  }
   $secureEnv = @{}
-  if ($null -ne $Password -and $Password.Trim() -ne "") {
-      $secureEnv["SERVY_PASSWORD"] = $Password
+  if ($null -ne $plainPassword -and $plainPassword.Trim() -ne "") {
+      $secureEnv["SERVY_PASSWORD"] = $plainPassword
   }
 
   # 4. Invoke CLI
-  Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to install service '$Name'"
+  try {
+    Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -Environment $secureEnv -ErrorContext "Failed to install service '$Name'"
+  }
+  finally {
+      # Explicitly clear the managed string variable to encourage GC collection
+      $plainPassword = $null
+      if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
+          $secureEnv["SERVY_PASSWORD"] = $null
+      }
+  }
 }
 
 function Uninstall-ServyService {
