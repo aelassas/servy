@@ -14,6 +14,7 @@ namespace Servy.Core.Helpers
         {
             // 1. Mandatory Fields & Lengths
             if (string.IsNullOrWhiteSpace(dto.Name)) return (false, "Service name is required.");
+            if (string.IsNullOrWhiteSpace(dto.ExecutablePath)) return (false, "Executable path is required.");
             if (dto.Name.Length > AppConfig.MaxServiceNameLength)
                 return (false, $"Service name exceeds {AppConfig.MaxServiceNameLength} characters.");
 
