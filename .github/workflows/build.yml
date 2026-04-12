@@ -2,8 +2,7 @@
 # GitHub Actions Workflow - Build
 # -------------------------------------------
 # Builds the Servy .NET solution on Windows
-# (Main Branch). Includes critical reflection 
-# compatibility checks.
+# (Main Branch).
 # ===========================================
 
 name: build
