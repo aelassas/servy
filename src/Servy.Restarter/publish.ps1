@@ -79,8 +79,16 @@ if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
     $exePath = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\$projectName.exe"
     
     if (Test-Path $exePath) {
-        & $signPath -Path $exePath
-        Check-LastExitCode "Code signing failed"
+        if ($null -ne $signPath) {
+            Write-Host "=== Signing Servy.Restarter.exe ===" -ForegroundColor Cyan
+            & $signPath $exePath
+            Check-LastExitCode "Code signing failed"
+        }
+    }
+    else {
+        # Critical failure: If the file isn't there, the build is invalid.
+        Write-Error "Published executable not found at: $exePath. Ensure the project output name matches 'Servy.CLI.exe'."
+        exit 1
     }
 }
 

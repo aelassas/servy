@@ -112,8 +112,18 @@ Check-LastExitCode "dotnet publish failed"
 if ($BuildConfiguration -eq "Release") {
     $publishFolder = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
     $exePath       = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
-    & $signPath $exePath
-    Check-LastExitCode "Code signing failed"
+
+    if (Test-Path $exePath) {
+        if ($null -ne $signPath) {
+            Write-Host "=== Signing Servy.Manager.exe ===" -ForegroundColor Cyan
+            & $signPath $exePath
+            Check-LastExitCode "Code signing failed"
+        }
+    }
+    else {
+        Write-Error "Published executable not found at: $exePath. Ensure TFM and Runtime variables match the project output."
+        exit 1
+    }
 }
 
 Write-Host "=== Servy.Manager.csproj published successfully ==="
