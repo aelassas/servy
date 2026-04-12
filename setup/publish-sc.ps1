@@ -1,3 +1,4 @@
+#requires -Version 3.0
 <#
 .SYNOPSIS
     Builds the Servy self-contained installer and portable ZIP package.
@@ -125,48 +126,66 @@ Write-Host "--- Packaging Portable ZIP ---" -ForegroundColor Cyan
 
 Remove-ItemSafely -Path $outputZip
 Remove-ItemSafely -Path $packageFolder
-[void](New-Item -ItemType Directory -Path $packageFolder)
 
-# Consolidate executables
-$binaries = @{
-    "Servy.exe"         = Join-Path $servyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.exe"
-    "servy-cli.exe"     = Join-Path $cliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.CLI.exe"
-    "Servy.Manager.exe" = Join-Path $managerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.Manager.exe"
-}
+try {
+    [void](New-Item -ItemType Directory -Path $packageFolder)
 
-foreach ($item in $binaries.GetEnumerator()) {
-    if (Test-Path $item.Value) {
-        Copy-Item -Path $item.Value -Destination (Join-Path $packageFolder $item.Name) -Force
+    # 1. Consolidate binaries
+    $binaries = @{
+        "Servy.exe"         = Join-Path $servyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.exe"
+        "servy-cli.exe"     = Join-Path $cliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.CLI.exe"
+        "Servy.Manager.exe" = Join-Path $managerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish\Servy.Manager.exe"
     }
+
+    foreach ($item in $binaries.GetEnumerator()) {
+        if (Test-Path $item.Value) {
+            Copy-Item -Path $item.Value -Destination (Join-Path $packageFolder $item.Name) -Force
+        } else {
+            throw "Critical binary missing: $($item.Value)"
+        }
+    }
+
+    # 2. Include Task Scheduler hooks
+    $taskSchdSource = Join-Path $scriptDir "taskschd"
+    if (Test-Path $taskSchdSource) {
+        $taskSchdDest = Join-Path $packageFolder "taskschd"
+        [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
+        Copy-Item -Path (Join-Path $taskSchdSource "*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
+    }
+
+    # 3. Include PowerShell Module artifacts with Test-Path guards
+    $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
+    foreach ($art in $cliArtifacts) {
+        $sourcePath = Join-Path $cliDir $art
+        if (Test-Path $sourcePath) {
+            Copy-Item -Path $sourcePath -Destination $packageFolder -Force
+        } else {
+            throw "Required CLI artifact missing: $sourcePath"
+        }
+    }
+
+    # 4. Compress
+    if (-not (Test-Path $sevenZipExe)) {
+        throw "7-Zip executable not found at: $sevenZipExe"
+    }
+
+    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
+    $process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
+
+    if ($process.ExitCode -ne 0) {
+        throw "7-Zip failed with exit code $($process.ExitCode)"
+    }
+
+    Write-Host "Success: $outputZip" -ForegroundColor Green
 }
-
-# Include PowerShell Module and Task Scheduler hooks
-$taskSchdDest = Join-Path $packageFolder "taskschd"
-[void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
-Copy-Item -Path (Join-Path $scriptDir "taskschd\*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml"
-
-$cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
-foreach ($art in $cliArtifacts) {
-    Copy-Item -Path (Join-Path $cliDir $art) -Destination $packageFolder -Force
-}
-
-# Compress
-if (-not (Test-Path $sevenZipExe)) {
-    Write-Error "7-Zip executable not found at: $sevenZipExe. Compression failed."
+catch {
+    Write-Error "Packaging failed: $_"
     exit 1
 }
-
-$zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
-$process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
-    
-if ($process.ExitCode -ne 0) {
-    Write-Error "7-Zip failed with exit code $($process.ExitCode)"
-    exit $process.ExitCode
+finally {
+    # ALWAYS clean up the temporary workspace folder, even on failure
+    Remove-ItemSafely -Path $packageFolder
 }
-
-# Only remove the folder if the ZIP was successful
-Remove-ItemSafely -Path $packageFolder
-Write-Host "Success: $outputZip" -ForegroundColor Green
 
 if ($Pause) {
     Write-Host "`nPress any key to exit..."

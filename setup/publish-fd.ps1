@@ -1,3 +1,4 @@
+#requires -Version 3.0
 <#
 .SYNOPSIS
     Builds the framework-dependent Servy installer and ZIP package.
@@ -126,59 +127,80 @@ Write-Host "--- Packaging FD ZIP ---" -ForegroundColor Cyan
 
 Remove-ItemSafely -Path $outputZip
 Remove-ItemSafely -Path $packageFolder
-[void](New-Item -ItemType Directory -Path $packageFolder)
 
-# Define internal structure for FD package
-$subFolders = @{
-    "servy-app"     = Join-Path $servyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
-    "servy-cli"     = Join-Path $cliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
-    "servy-manager" = Join-Path $managerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
-}
+try {
+    [void](New-Item -ItemType Directory -Path $packageFolder)
 
-foreach ($entry in $subFolders.GetEnumerator()) {
-    $dest = Join-Path $packageFolder $entry.Key
-    if (Test-Path $entry.Value) {
-        Write-Host "Copying $($entry.Key)..."
-        [void](New-Item -ItemType Directory -Path $dest -Force)
-        Copy-Item -Path "$($entry.Value)\*" -Destination $dest -Recurse -Force
+    # 1. Consolidate binaries into subfolders
+    $subFolders = @{
+        "servy-app"     = Join-Path $servyDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
+        "servy-cli"     = Join-Path $cliDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
+        "servy-manager" = Join-Path $managerDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
     }
+
+    foreach ($entry in $subFolders.GetEnumerator()) {
+        $source = $entry.Value
+        $dest = Join-Path $packageFolder $entry.Key
+        
+        if (Test-Path $source) {
+            Write-Host "Copying $($entry.Key)..."
+            [void](New-Item -ItemType Directory -Path $dest -Force)
+            Copy-Item -Path "$source\*" -Destination $dest -Recurse -Force
+        } else {
+            throw "Critical publish directory missing: $source. Ensure Step 1 succeeded."
+        }
+    }
+
+    # 2. Standardize CLI executable name
+    $cliExe = Join-Path $packageFolder "servy-cli\Servy.CLI.exe"
+    if (Test-Path $cliExe) {
+        Rename-Item -Path $cliExe -NewName "servy-cli.exe" -Force
+    }
+
+    # 3. Include Task Scheduler Hooks
+    $taskSchdSource = Join-Path $scriptDir "taskschd"
+    if (Test-Path $taskSchdSource) {
+        $taskSchdDest = Join-Path $packageFolder "taskschd"
+        [void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
+        Copy-Item -Path (Join-Path $taskSchdSource "*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml", "*.dat", "*.log"
+    }
+
+    # 4. Include PowerShell Module artifacts (Critical Check)
+    $cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
+    foreach ($art in $cliArtifacts) {
+        $sourcePath = Join-Path $cliDir $art
+        if (Test-Path $sourcePath) {
+            Copy-Item -Path $sourcePath -Destination $packageFolder -Force
+        } else {
+            throw "Required CLI artifact missing: $sourcePath"
+        }
+    }
+
+    # ========================
+    # Step 4: Create ZIP
+    # ========================
+    if (-not (Test-Path $sevenZipExe)) {
+        throw "7-Zip executable not found at: $sevenZipExe"
+    }
+
+    # Compress contents of the folder, not the folder itself
+    $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
+    $process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
+
+    if ($process.ExitCode -ne 0) {
+        throw "7-Zip failed with exit code $($process.ExitCode)"
+    }
+
+    Write-Host "Success: $outputZip" -ForegroundColor Green
 }
-
-# Standardize CLI executable name in the package
-$cliExe = Join-Path $packageFolder "servy-cli\Servy.CLI.exe"
-if (Test-Path $cliExe) {
-    Rename-Item -Path $cliExe -NewName "servy-cli.exe" -Force
-}
-
-# Include Task Scheduler Hooks and PowerShell Module
-$taskSchdDest = Join-Path $packageFolder "taskschd"
-[void](New-Item -Path $taskSchdDest -ItemType Directory -Force)
-Copy-Item -Path (Join-Path $scriptDir "taskschd\*") -Destination $taskSchdDest -Recurse -Force -Exclude "smtp-cred.xml"
-
-$cliArtifacts = @("Servy.psm1", "Servy.psd1", "servy-module-examples.ps1")
-foreach ($art in $cliArtifacts) {
-    Copy-Item -Path (Join-Path $cliDir $art) -Destination $packageFolder -Force
-}
-
-# ========================
-# Step 4: Create ZIP
-# ========================
-if (-not (Test-Path $sevenZipExe)) {
-    Write-Error "7-Zip executable not found at: $sevenZipExe. Compression failed."
+catch {
+    Write-Error "Build failed at Step 3/4: $_"
     exit 1
 }
-
-$zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
-$process = Start-Process -FilePath $sevenZipExe -ArgumentList $zipArgs -Wait -NoNewWindow -PassThru
-    
-if ($process.ExitCode -ne 0) {
-    Write-Error "7-Zip failed with exit code $($process.ExitCode)"
-    exit $process.ExitCode
+finally {
+    # Ensure no partial/dirty folders remain on disk
+    Remove-ItemSafely -Path $packageFolder
 }
-
-# Only remove the folder if the ZIP was successful
-Remove-ItemSafely -Path $packageFolder
-Write-Host "Success: $outputZip" -ForegroundColor Green
 
 if ($Pause) {
     Write-Host "`nPress any key to exit..."
