@@ -44,21 +44,44 @@ Write-Host "Updating Servy version to $Version..."
 # Base directory of the script
 $baseDir = $PSScriptRoot
 
-# -----------------------------
-# Helper: Safe File Update
-# -----------------------------
+# ----------------------------------------------------------------------
+# Helper: Get-FileEncoding
+# Detects if a file is UTF8 with or without BOM
+# ----------------------------------------------------------------------
+function Get-FileEncoding {
+    param([string]$Path)
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8 # With BOM
+    }
+    return New-Object System.Text.UTF8Encoding($false) # Without BOM
+}
+
+# ----------------------------------------------------------------------
+# Helper: Update-FileContent
+# Safely updates file content while preserving the original encoding.
+# ----------------------------------------------------------------------
 function Update-FileContent {
     param([string]$Path, [string]$Pattern, [string]$Replacement)
     
     if (Test-Path $Path) {
-        $content = [System.IO.File]::ReadAllText($Path)
+        # 1. Detect existing encoding before we touch the file
+        $encoding = Get-FileEncoding $Path
+        
+        # 2. Read content using the detected encoding
+        $content = [System.IO.File]::ReadAllText($Path, $encoding)
+        
+        # 3. Perform the regex replacement
         $newContent = [regex]::Replace($content, $Pattern, { 
             param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
         })
-        [System.IO.File]::WriteAllText($Path, $newContent)
-        Write-Host "Successfully updated: $Path" -ForegroundColor Green
+        
+        # 4. Write back using the EXACT same encoding/BOM status
+        [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
+        
+        Write-Host "Successfully updated ($($encoding.BodyName)): $Path" -ForegroundColor Green
     } else {
-        # Log warning instead of crashing the entire pipeline
+        # Prevents build pipeline crashes if files are moved/renamed
         Write-Warning "Skipping missing file: $Path"
     }
 }
@@ -98,9 +121,8 @@ Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyCont
 # -----------------------------
 # 4. Update src\Servy.CLI\Servy.psd1
 # -----------------------------
-Update-FileContent `
-    -Path (Join-Path $baseDir "src\Servy.CLI\Servy.psd1") `
-    -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
-    -Replacement $fullVersioncd 
+$psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
+
+Update-FileContent -Path $psd1Path -Pattern "(ModuleVersion\s*=\s*')[^']*(')" -Replacement $fullVersion
 
 Write-Host "All version updates complete."
