@@ -35,7 +35,7 @@ jobs:
     steps:
       # 1. Checkout the repository with full history to allow pushing commits
       - name: Checkout repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
