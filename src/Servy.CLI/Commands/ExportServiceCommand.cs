@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace Servy.CLI.Commands
 {
     /// <summary>
-    /// Command to restart an existing Windows service.
+    /// Command to export an existing Windows service.
     /// </summary>
     public class ExportServiceCommand : BaseCommand
     {

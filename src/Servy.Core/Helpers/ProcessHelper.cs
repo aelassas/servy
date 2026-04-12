@@ -276,7 +276,7 @@ namespace Servy.Core.Helpers
         /// <item><description>1.1 -> "1.1%"</description></item>
         /// <item><description>1.49 -> "1.4%"</description></item>
         /// <item><description>1.51 -> "1.5%"</description></item>
-        /// <item><description>1.57 -> "1.5%"</description></item>
+        /// <item><description>1.57 -> "1.6%"</description></item>
         /// <item><description>1.636 -> "1.6%"</description></item>
         /// </list>
         /// </returns>
@@ -309,6 +309,8 @@ namespace Servy.Core.Helpers
         /// </returns>
         public static string FormatRamUsage(long ramUsage)
         {
+            if (ramUsage < 0) return "0 B";
+
             const double KB = 1024.0;
             const double MB = KB * 1024.0;
             const double GB = MB * 1024.0;
