@@ -58,6 +58,7 @@ function Write-FallbackError {
   Write-Host "ERROR: $Message" -ForegroundColor Red
 
   try {
+    # Ensure source exists before writing to event log
     Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
       -EntryType Warning -Message $Message -ErrorAction Stop
   } catch {
@@ -70,7 +71,6 @@ function Write-FallbackError {
 # 3. Load Configuration
 # -------------------------------
 $configPath = Join-Path $scriptDir "smtp-config.xml"
-
 if (-not (Test-Path $configPath)) {
   $errorMsg = "ServyFailureEmail: Configuration file not found at '$configPath'. Stopping script."
   Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
@@ -79,8 +79,7 @@ if (-not (Test-Path $configPath)) {
 
 try {
   [xml]$SmtpConfig = Get-Content $configPath -ErrorAction Stop
-}
-catch {
+} catch {
   $errorMsg = "ServyFailureEmail: Failed to parse XML configuration. Error: $($_.Exception.Message)"
   Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
   exit 1
@@ -100,24 +99,47 @@ function Send-NotificationEmail {
   # Mask sensitive data in the body before sending
   $Body = $Body -replace '(?i)(password|secret|key|token)\s*[:=]\s*\S+', '$1=***'
 
-  # --- CONFIGURATION FROM XML ---
-  $smtpServer = $SmtpConfig.SmtpConfig.Server
-  $smtpPort = [int]$SmtpConfig.SmtpConfig.Port
-  $from = $SmtpConfig.SmtpConfig.From
-  $to = $SmtpConfig.SmtpConfig.To
+  # --- HARDENED CONFIGURATION ACCESS ---
+  
+  # 1. Check root structure
+  $configRoot = $SmtpConfig.SmtpConfig
+  if ($null -eq $configRoot) {
+    Write-FallbackError -Message "ServyFailureEmail: Could not find <SmtpConfig> root element." -scriptDir $scriptDir
+    return $false
+  }
+
+  $smtpServer = $configRoot.Server
+  $from       = $configRoot.From
+  $to         = $configRoot.To
+  
+  # 2. Safe Port Resolution (Prevents [int]$null becoming 0)
+  $rawPort = $configRoot.Port
+  $smtpPort = if ($null -ne $rawPort -and $rawPort -match '^\d+$') { [int]$rawPort } else { 0 }
   
   $credPath = Join-Path $scriptDir "smtp-cred.xml"
   $emailRegex = '^[^@]+@[^@]+\.[^@]+$'
 
   # --- VALIDATION GATE ---
   
-  # 1. Server check
-  if ([string]::IsNullOrEmpty($smtpServer) -or $smtpServer -eq "smtp.example.com") {
-    Write-FallbackError -Message "ServyFailureEmail: SMTP Server is not configured. Skipping email." -scriptDir $scriptDir
+  # Check for missing essential fields
+  if ([string]::IsNullOrEmpty($smtpServer) -or [string]::IsNullOrEmpty($from) -or [string]::IsNullOrEmpty($to)) {
+    Write-FallbackError -Message "ServyFailureEmail: Incomplete configuration in smtp-config.xml (Server, From, or To is missing)." -scriptDir $scriptDir
     return $false
   }
 
-  # 2. Email format checks (Prevent .NET FormatException)
+  # Check for invalid port
+  if ($smtpPort -le 0 -or $smtpPort -gt 65535) {
+    Write-FallbackError -Message "ServyFailureEmail: Invalid or missing Port ($smtpPort) in smtp-config.xml." -scriptDir $scriptDir
+    return $false
+  }
+
+  # Default placeholder check
+  if ($smtpServer -eq "smtp.example.com") {
+    Write-FallbackError -Message "ServyFailureEmail: SMTP Server is still set to default placeholder. Email skipped." -scriptDir $scriptDir
+    return $false
+  }
+
+  # Email format checks (Prevent .NET ArgumentException/FormatException)
   if ($from -notmatch $emailRegex) {
     Write-FallbackError -Message "ServyFailureEmail: Invalid 'From' email format ($from) in smtp-config.xml." -scriptDir $scriptDir
     return $false
@@ -128,7 +150,6 @@ function Send-NotificationEmail {
     return $false
   }
 
-  # 3. Credential check
   if (-not (Test-Path $credPath)) {
     Write-FallbackError -Message "ServyFailureEmail: Credential file not found at '$credPath'. Skipping email." -scriptDir $scriptDir
     return $false
@@ -152,12 +173,14 @@ function Send-NotificationEmail {
     $smtp.Send($mailMessage)
     return $true
   } catch {
-    $errorMsg = "ServyFailureEmail: Failed to send notification. Error: $($_.Exception.Message)"
+    $errorMsg = "ServyFailureEmail: Failed to send notification to $to. Error: $($_.Exception.Message)"
     Write-FallbackError -Message $errorMsg -scriptDir $scriptDir
     return $false 
   } finally {
     if ($null -ne $mailMessage) { $mailMessage.Dispose() }
-    if ($null -ne $smtp) { $smtp.Dispose() }
+    # .NET 3.5 SmtpClient doesn't implement IDisposable (PS 2.0 limitation)
+    # but we null it for GC safety.
+    $smtp = $null
   }
 }
 
@@ -173,14 +196,15 @@ if (-not (Test-Path $helperScript)) {
   exit 1
 }
 
+# Dot-source the helper script
 . $helperScript
-$lastProcessed = $null
 
+$lastProcessed = $null
 if (Test-Path $timestampFile) {
   try {
     $lastProcessed = [DateTime]::Parse((Get-Content $timestampFile -ErrorAction Stop))
   } catch { 
-    # Warning handled visually; logic continues to process available events
+    # Fallback to null if file is corrupt, resulting in processing the most recent event
   }
 }
 
@@ -194,13 +218,11 @@ if ($null -eq $errors -or $errors.Count -eq 0) {
   exit 0
 }
 
-# Determine which events to process based on chronological order
+# Chronological sorting for email sequence
 if ($null -eq $lastProcessed) {
   # Notify only for the single most recent error to avoid flooding on first run
   $eventsToProcess = @($errors[0])
-}
-else {
-  # Sort ascending so emails are sent in the order they happened
+} else {
   $eventsToProcess = $errors | Sort-Object TimeCreated
 }
 
@@ -223,15 +245,14 @@ foreach ($evt in $eventsToProcess) {
   $safeLogText = [System.Net.WebUtility]::HtmlEncode($logText)
   $body = "A failure has been detected in service '$serviceName'." +
   [Environment]::NewLine + "Details: $safeLogText"
+  
+  # Basic HTML formatting
   $htmlBody = $body -replace "`r?`n", "<br>"
     
   if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
     Write-Host "Email Notification sent for '$serviceName'."
-    # Track the most recent successfully notified event
     $lastSuccessfulTimestamp = $evt.TimeCreated
   } else {
-    # If email fails, we STOP processing subsequent errors.
-    # This ensures the next run starts from this failed event.
     Write-Host "Aborting further processing due to email failure." -ForegroundColor Yellow
     break
   }
