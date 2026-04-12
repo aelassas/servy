@@ -32,7 +32,8 @@ $script:ServyTimeoutSeconds = 600
 if ($PSVersionTable.PSVersion.Major -ge 3) {
   # PS3+ has automatic $PSScriptRoot
   $ModuleRoot = $PSScriptRoot
-} else {
+}
+else {
   # PS2 does not have $PSScriptRoot
   $ModuleRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
@@ -114,8 +115,8 @@ function Add-Arg {
   elseif ($null -ne $value -and $value.Trim() -ne "") {
     # Fast path: no escaping needed if no special characters
     if ($value.IndexOf('"') -lt 0 -and $value.IndexOf('\') -lt 0) {
-        [void]$list.Add("$($key)=`"$value`"")
-        return $list
+      [void]$list.Add("$($key)=`"$value`"")
+      return $list
     }
 
     # Escape backslashes before quotes (must be done BEFORE escaping quotes)
@@ -150,37 +151,37 @@ function Format-SecureLogMessage {
         $safeLog = Format-SecureLogMessage -Text $rawLog
         # Returns: 'Error 1: --password "***" --user admin --preLaunchEnv "***"'
   #>
-    param(
-        [string]$Text
-    )
+  param(
+    [string]$Text
+  )
 
-    if ([string]::IsNullOrWhiteSpace($Text)) { 
-        return $Text 
-    }
+  if ([string]::IsNullOrWhiteSpace($Text)) { 
+    return $Text 
+  }
 
-    # Define all CLI parameters that may contain sensitive data or injected variables
-    $sensitiveFields = @(
-        "params",
-        "failureProgramParams",
-        "password",
-        "envVars",
-        "preLaunchParams",
-        "preLaunchEnv",
-        "postLaunchParams",
-        "preStopParams",
-        "postStopParams"
-    )
+  # Define all CLI parameters that may contain sensitive data or injected variables
+  $sensitiveFields = @(
+    "params",
+    "failureProgramParams",
+    "password",
+    "envVars",
+    "preLaunchParams",
+    "preLaunchEnv",
+    "postLaunchParams",
+    "preStopParams",
+    "postStopParams"
+  )
 
-    # Construct the regex pattern dynamically
-    # Breakdown:
-    # (?i)                  : Case-insensitive evaluation
-    # (--(?:...)[=\s]+)     : Group $1 -> Matches the flag (e.g., --password) plus trailing spaces or equals signs
-    # ("[\]*"|'[^']*'|\S+)  : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
-    $fieldsRegex = $sensitiveFields -join '|'
-    $pattern = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)("[^"]*"|''[^'']*''|\S+)'
+  # Construct the regex pattern dynamically
+  # Breakdown:
+  # (?i)                  : Case-insensitive evaluation
+  # (--(?:...)[=\s]+)     : Group $1 -> Matches the flag (e.g., --password) plus trailing spaces or equals signs
+  # ("[\]*"|'[^']*'|\S+)  : Group $2 -> Matches the value (handles double quotes, single quotes, or unquoted contiguous strings)
+  $fieldsRegex = $sensitiveFields -join '|'
+  $pattern = '(?i)(--(?:' + $fieldsRegex + ')[=\s]+)("[^"]*"|''[^'']*''|\S+)'
 
-    # Replace the sensitive value with "***" while preserving the flag prefix
-    return $Text -replace $pattern, '$1"***"'
+  # Replace the sensitive value with "***" while preserving the flag prefix
+  return $Text -replace $pattern, '$1"***"'
 }
 
 function Invoke-ServyCli {
@@ -233,7 +234,7 @@ function Invoke-ServyCli {
 
   # Validate command (single token)
   if ($Command -match '\s') {
-      throw "Command must be a single word without spaces: '$Command'"
+    throw "Command must be a single word without spaces: '$Command'"
   }
 
   if ($script:ServyTimeoutSeconds -lt 1) {
@@ -242,9 +243,9 @@ function Invoke-ServyCli {
 
   # Build argument list
   $finalArgs = @()
-  if ($Command)   { $finalArgs += $Command }
+  if ($Command) { $finalArgs += $Command }
   if ($Arguments) { $finalArgs += $Arguments }
-  if ($Quiet)     { $finalArgs += "--quiet" }
+  if ($Quiet) { $finalArgs += "--quiet" }
 
   # Convert array to space-separated string to bypass PS argument mangling
   $argString = $finalArgs -join ' '
@@ -253,9 +254,9 @@ function Invoke-ServyCli {
   # Windows limit is 32,767 characters. We check against 32,000 to be safe
   # and account for the executable path length.
   if ($argString.Length -gt 32000) {
-      throw "$($ErrorContext): Command-line arguments exceed Windows maximum length ($($argString.Length) characters). " +
-            "To resolve this, shorten your environment variables/parameters or use the 'import' command " +
-            "with a configuration file instead."
+    throw "$($ErrorContext): Command-line arguments exceed Windows maximum length ($($argString.Length) characters). " +
+    "To resolve this, shorten your environment variables/parameters or use the 'import' command " +
+    "with a configuration file instead."
   }
 
   $process = $null
@@ -269,7 +270,7 @@ function Invoke-ServyCli {
     $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
 
     if (-not $script:ServyCliFound -and -not (Test-Path $script:ServyCliPath)) {
-        throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
+      throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
     }
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
     # complex raw argument strings WHILE retaining pipeline output capture.  
@@ -283,9 +284,9 @@ function Invoke-ServyCli {
 
     # SECURITY FIX: Inject environment variables securely directly into the child process block
     if ($EnvironmentVariables) {
-        foreach ($key in $EnvironmentVariables.Keys) {
-            $psi.EnvironmentVariables[$key] = $EnvironmentVariables[$key]
-        }
+      foreach ($key in $EnvironmentVariables.Keys) {
+        $psi.EnvironmentVariables[$key] = $EnvironmentVariables[$key]
+      }
     }
 
     $process = New-Object System.Diagnostics.Process
@@ -296,8 +297,8 @@ function Invoke-ServyCli {
 
     # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
     $errorEvent = Register-ObjectEvent -InputObject $process `
-        -EventName "ErrorDataReceived" `
-        -Action ([ScriptBlock]::Create(@"
+      -EventName "ErrorDataReceived" `
+      -Action ([ScriptBlock]::Create(@"
             if (`$EventArgs.Data) { 
                 [void]`$global:$errorVarName.Add(`$EventArgs.Data) 
             }
@@ -312,7 +313,7 @@ function Invoke-ServyCli {
 
     if (-not $started) {
       throw "Failed to start Servy CLI process '$($script:ServyCliPath)'. " +
-            "Verify the file exists, is not locked, and the current user has execute permissions."
+      "Verify the file exists, is not locked, and the current user has execute permissions."
     }
 
     # BEGIN ASYNC READ
@@ -325,26 +326,26 @@ function Invoke-ServyCli {
 
     # Read stdout synchronously, line-by-line to prevent OOM
     try {
-        while (-not $process.StandardOutput.EndOfStream) {
-            $line = $process.StandardOutput.ReadLine()
+      while (-not $process.StandardOutput.EndOfStream) {
+        $line = $process.StandardOutput.ReadLine()
             
-            if ($stdoutBuilder.Length -lt $maxStdoutChars) {
-                [void]$stdoutBuilder.AppendLine($line)
-            }
-            elseif (-not $isTruncated) {
-                [void]$stdoutBuilder.AppendLine("... [Output truncated to prevent memory exhaustion] ...")
-                $isTruncated = $true
-            }
-            
-            # CRITICAL: We must continue iterating even after the truncation limit is hit 
-            # to drain the stdout pipe. If we simply 'break' the loop, the child process 
-            # will deadlock once its OS output buffer (typically 4KB) fills up.
+        if ($stdoutBuilder.Length -lt $maxStdoutChars) {
+          [void]$stdoutBuilder.AppendLine($line)
         }
-        $stdout = $stdoutBuilder.ToString()
+        elseif (-not $isTruncated) {
+          [void]$stdoutBuilder.AppendLine("... [Output truncated to prevent memory exhaustion] ...")
+          $isTruncated = $true
+        }
+            
+        # CRITICAL: We must continue iterating even after the truncation limit is hit 
+        # to drain the stdout pipe. If we simply 'break' the loop, the child process 
+        # will deadlock once its OS output buffer (typically 4KB) fills up.
+      }
+      $stdout = $stdoutBuilder.ToString()
     }
     catch {
-        $stdout = $null
-        Write-Warning "Failed to read CLI stdout: $_"
+      $stdout = $null
+      Write-Warning "Failed to read CLI stdout: $_"
     }
 
     # Start the wait with the defined timeout
@@ -374,7 +375,7 @@ function Invoke-ServyCli {
 
     # Flush async streams with a bounded wait
     if (-not $process.WaitForExit(5000)) {
-        # Async flush timed out - proceed with whatever stderr we captured
+      # Async flush timed out - proceed with whatever stderr we captured
     }
 
     # COLLECT stderr
@@ -393,27 +394,28 @@ function Invoke-ServyCli {
     
     # SECURITY FIX: Scrub stdout and stderr in the generic catch block
     if (-not [string]::IsNullOrEmpty($stdout)) { 
-        $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
-        $partialOutput += " Stdout: $scrubbedStdout" 
+      $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
+      $partialOutput += " Stdout: $scrubbedStdout" 
     }
     if (-not [string]::IsNullOrEmpty($stderr)) { 
-        $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
-        $partialOutput += " Stderr: $scrubbedStderr" 
+      $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
+      $partialOutput += " Stderr: $scrubbedStderr" 
     }
     
     throw "$($ErrorContext): $_.`n$partialOutput".TrimEnd()
   }
   finally {
     if ($null -ne $process) {
-        try { $process.CancelErrorRead() } catch {}
-        try { $process.WaitForExit() } catch {}  # let in-flight events drain
+      try { $process.CancelErrorRead() } catch {}
+      try { $process.WaitForExit() } catch {}  # let in-flight events drain
     }    
 
     # Capture stderr BEFORE cleanup
     try {
-        $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
-        if ($list) { $stderr = $list -join [Environment]::NewLine }
-    } catch {}
+      $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
+      if ($list) { $stderr = $list -join [Environment]::NewLine }
+    }
+    catch {}
 
     # CRITICAL: Clean up events and global variables even if the code fails
     if ($errorEvent) {
@@ -456,12 +458,12 @@ function Assert-Administrator {
     .NOTES
         Requires the System.Security.Principal namespace.
   #>
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+  $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+  $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     
-    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
-    }
+  if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw "This operation requires Administrator privileges. Run PowerShell as Administrator."
+  }
 }
 
 function Invoke-ServyServiceCommand {
@@ -499,12 +501,12 @@ function Invoke-ServyServiceCommand {
 
     [switch] $Quiet
   )
-    Assert-Administrator
+  Assert-Administrator
 
-    $argsList = @()
-    $argsList = Add-Arg $argsList "--name" $Name
+  $argsList = @()
+  $argsList = Add-Arg $argsList "--name" $Name
 
-    Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext "Failed to $Command service '$Name'"
+  Invoke-ServyCli -Command $Command -Quiet:$Quiet -Arguments $argsList -ErrorContext "Failed to $Command service '$Name'"
 }
 
 # ----------------------------------------------------------------
@@ -567,10 +569,11 @@ function Get-ServyHelp {
 
   $argsList = @()
   if ($Command) {
-      $argsList = Add-Arg $argsList "--help" -Flag
-      Invoke-ServyCli -Command $Command -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
-  } else {
-      Invoke-ServyCli -Command "--help" -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
+    $argsList = Add-Arg $argsList "--help" -Flag
+    Invoke-ServyCli -Command $Command -Arguments $argsList -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
+  }
+  else {
+    Invoke-ServyCli -Command "--help" -Quiet:$Quiet -ErrorContext "Failed to display Servy CLI help"
   }
 
 }
@@ -803,7 +806,7 @@ function Install-ServyService {
         will fail, and the argument will not be passed to the executable.            
     #>
   [CmdletBinding()]
-param(
+  param(
     # Execution Settings
     [switch] $Quiet,
 
@@ -824,13 +827,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Executable not found: $_" } 
-    })]
+      })]
     [string] $Path,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Startup directory not found: $_" } 
-    })]
+      })]
     [string] $StartupDir,
 
     [string] $Params,
@@ -847,14 +850,14 @@ param(
         $parent = Split-Path $_ -Parent
         if (Test-Path $parent -PathType Container) { $true } 
         else { throw "Parent directory for Stdout does not exist: $parent" } 
-    })]
+      })]
     [string] $Stdout,
 
     [ValidateScript({ 
         $parent = Split-Path $_ -Parent
         if (Test-Path $parent -PathType Container) { $true } 
         else { throw "Parent directory for Stderr does not exist: $parent" } 
-    })]
+      })]
     [string] $Stderr,
 
     # Timeouts
@@ -901,13 +904,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Failure program executable not found: $_" } 
-    })]
+      })]
     [string] $FailureProgramPath,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Failure program startup directory not found: $_" } 
-    })]
+      })]
     [string] $FailureProgramStartupDir,
 
     [string] $FailureProgramParams,
@@ -930,13 +933,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Pre-launch executable not found: $_" } 
-    })]
+      })]
     [string] $PreLaunchPath,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Pre-launch startup directory not found: $_" } 
-    })]
+      })]
     [string] $PreLaunchStartupDir,
 
     [string] $PreLaunchParams,
@@ -948,14 +951,14 @@ param(
         $parent = Split-Path $_ -Parent
         if (Test-Path $parent -PathType Container) { $true } 
         else { throw "Parent directory for PreLaunchStdout does not exist: $parent" } 
-    })]
+      })]
     [string] $PreLaunchStdout,
 
     [ValidateScript({ 
         $parent = Split-Path $_ -Parent
         if (Test-Path $parent -PathType Container) { $true } 
         else { throw "Parent directory for PreLaunchStderr does not exist: $parent" } 
-    })]
+      })]
     [string] $PreLaunchStderr,
 
     [ValidateRange(0, 2147483647)]
@@ -970,13 +973,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Post-launch executable not found: $_" } 
-    })]
+      })]
     [string] $PostLaunchPath,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Post-launch startup directory not found: $_" } 
-    })]
+      })]
     [string] $PostLaunchStartupDir,
 
     [string] $PostLaunchParams,
@@ -988,13 +991,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Pre-stop executable not found: $_" } 
-    })]
+      })]
     [string] $PreStopPath,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Pre-stop startup directory not found: $_" } 
-    })]
+      })]
     [string] $PreStopStartupDir,
 
     [string] $PreStopParams,
@@ -1008,13 +1011,13 @@ param(
     [ValidateScript({ 
         if (Test-Path $_ -PathType Leaf) { $true } 
         else { throw "Post-stop executable not found: $_" } 
-    })]
+      })]
     [string] $PostStopPath,
 
     [ValidateScript({ 
         if (Test-Path $_ -PathType Container) { $true } 
         else { throw "Post-stop startup directory not found: $_" } 
-    })]
+      })]
     [string] $PostStopStartupDir,
 
     [string] $PostStopParams
@@ -1080,7 +1083,7 @@ param(
     # 1. Trim --
     # 2. Uppercase the first letter to match PS parameter naming
     $rawName = $cliFlag.TrimStart('-')
-    $paramName = $rawName.Substring(0,1).ToUpper() + $rawName.Substring(1)
+    $paramName = $rawName.Substring(0, 1).ToUpper() + $rawName.Substring(1)
 
     $isBound = $PSBoundParameters.ContainsKey($paramName)
 
@@ -1088,11 +1091,11 @@ param(
     # We no longer fall back to $hasValue for non-strings to avoid 
     # passing default 0s for ints or false for booleans.
     if ($isBound) {
-        if ($val -is [System.Security.SecureString]) {
-             # Password handled separately via environment variables
-             continue
-        }
-        $argsList = Add-Arg $argsList $cliFlag $val
+      if ($val -is [System.Security.SecureString]) {
+        # Password handled separately via environment variables
+        continue
+      }
+      $argsList = Add-Arg $argsList $cliFlag $val
     }
   }
 
@@ -1109,18 +1112,18 @@ param(
   # 4. Inject password via Environment Variables securely
   $plainPassword = $null
   if ($null -ne $Password) {
-      $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
-      try {
-          $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-      }
-      finally {
-          # CRITICAL: Zero out the unmanaged memory immediately
-          [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-      }
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+    try {
+      $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+    }
+    finally {
+      # CRITICAL: Zero out the unmanaged memory immediately
+      [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+    }
   }
   $secureEnv = @{}
   if ($null -ne $plainPassword -and $plainPassword.Trim() -ne "") {
-      $secureEnv["SERVY_PASSWORD"] = $plainPassword
+    $secureEnv["SERVY_PASSWORD"] = $plainPassword
   }
 
   # 4. Invoke CLI
@@ -1128,11 +1131,11 @@ param(
     Invoke-ServyCli -Command "install" -Arguments $argsList -Quiet:$Quiet -Environment $secureEnv -ErrorContext "Failed to install service '$Name'"
   }
   finally {
-      # Explicitly clear the managed string variable to encourage GC collection
-      $plainPassword = $null
-      if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
-          $secureEnv["SERVY_PASSWORD"] = $null
-      }
+    # Explicitly clear the managed string variable to encourage GC collection
+    $plainPassword = $null
+    if ($secureEnv.ContainsKey("SERVY_PASSWORD")) {
+      $secureEnv["SERVY_PASSWORD"] = $null
+    }
   }
 }
 
@@ -1329,7 +1332,7 @@ function Export-ServyServiceConfig {
         $parent = Split-Path $_ -Parent
         if ([string]::IsNullOrEmpty($parent)) { return $true }
         Test-Path $parent -PathType Container
-    })]
+      })]
     [string] $Path
   )
 
