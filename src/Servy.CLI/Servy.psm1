@@ -107,6 +107,7 @@ function Add-Arg {
 
   if ($Flag) {
     [void]$list.Add($key)
+    return $list # CRITICAL: Exit immediately to prevent fall-through
   }
 
   # Note: [string]::IsNullOrWhiteSpace is not available in .NET 3.5 (PS 2.0 default)
