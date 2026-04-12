@@ -39,20 +39,40 @@ Write-Host "Updating Servy version to $Version..."
 $baseDir = $PSScriptRoot
 
 # ----------------------------------------------------------------------
-# Helper: Safe File Update (Prevents script crash on missing files)
+# Helper: Get-FileEncoding
+# Detects if a file is UTF8 with or without BOM
+# ----------------------------------------------------------------------
+function Get-FileEncoding {
+    param([string]$Path)
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8 # With BOM
+    }
+    return New-Object System.Text.UTF8Encoding($false) # Without BOM
+}
+
+# ----------------------------------------------------------------------
+# Helper: Update-FileContent (Hardened & Encoding-Aware)
 # ----------------------------------------------------------------------
 function Update-FileContent {
     param([string]$Path, [string]$Pattern, [string]$Replacement)
     
     if (Test-Path $Path) {
+        # 1. Detect Encoding
+        $encoding = Get-FileEncoding $Path
+        
+        # 2. Read
         $content = [System.IO.File]::ReadAllText($Path)
-        # Use ExplicitCapture and IgnoreCase for legacy AssemblyInfo files
+        
+        # 3. Replace
         $newContent = [regex]::Replace($content, $Pattern, { 
             param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
         }, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
         
-        [System.IO.File]::WriteAllText($Path, $newContent)
-        Write-Host "Updated: $Path" -ForegroundColor Green
+        # 4. Write back using the same encoding
+        [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
+        
+        Write-Host "Updated ($($encoding.BodyName)): $Path" -ForegroundColor Green
     } else {
         Write-Warning "Skipping missing file: $Path"
     }
