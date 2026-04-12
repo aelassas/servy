@@ -258,7 +258,7 @@ namespace Servy.Core.Logging
         /// </summary>
         /// <param name="message">The warning message to log.</param>
         /// <param name="ex">An optional <see cref="Exception"/> to include in the log trace.</param>
-        public static void Warn(string? message, Exception? ex = null)
+        public static void Warn(string message, Exception ex = null)
         {
             if (_currentLogLevel <= LogLevel.Warn)
             {
