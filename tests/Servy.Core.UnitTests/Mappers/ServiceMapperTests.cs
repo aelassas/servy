@@ -276,7 +276,6 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal(dto.PostLaunchStartupDirectory, service.PostLaunchStartupDirectory);
             Assert.Equal(dto.PostLaunchParameters, service.PostLaunchParameters);
 
-            // New v7.9 Assertions
             Assert.Equal(dto.StartTimeout, service.StartTimeout);
             Assert.Equal(dto.StopTimeout, service.StopTimeout);
             Assert.Equal(dto.PreStopExecutablePath, service.PreStopExecutablePath);

@@ -42,83 +42,65 @@ $fileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Ver
 Write-Host "Updating Servy version to $Version..."
 
 # Base directory of the script
-$baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$baseDir = $PSScriptRoot
+
+# -----------------------------
+# Helper: Safe File Update
+# -----------------------------
+function Update-FileContent {
+    param([string]$Path, [string]$Pattern, [string]$Replacement)
+    
+    if (Test-Path $Path) {
+        $content = [System.IO.File]::ReadAllText($Path)
+        $newContent = [regex]::Replace($content, $Pattern, { 
+            param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
+        })
+        [System.IO.File]::WriteAllText($Path, $newContent)
+        Write-Host "Successfully updated: $Path" -ForegroundColor Green
+    } else {
+        # Log warning instead of crashing the entire pipeline
+        Write-Warning "Skipping missing file: $Path"
+    }
+}
 
 # -----------------------------
 # 1. Update setup\publish.ps1
 # -----------------------------
-$publishPath = Join-Path $baseDir "setup\publish.ps1"
-if (-Not (Test-Path $publishPath)) { Write-Error "File not found: $publishPath"; exit 1 }
-
-$content = [System.IO.File]::ReadAllText($publishPath)
-$content = [regex]::Replace(
-    $content,
-    '(\[string\]\$Version\s*=\s*")[^"]*(")',
-    { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($publishPath, $content)
-Write-Host "Updated $publishPath"
+Update-FileContent `
+    -Path (Join-Path $baseDir "setup\publish.ps1") `
+    -Pattern '(\[string\]\$Version\s*=\s*")[^"]*(")' `
+    -Replacement $Version
 
 # -----------------------------
 # 2. Update src\Servy.Core\Config\AppConfig.cs
 # -----------------------------
-$appConfigPath = Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs"
-if (-Not (Test-Path $appConfigPath)) { Write-Error "File not found: $appConfigPath"; exit 1 }
-
-$content = [System.IO.File]::ReadAllText($appConfigPath)
-$content = [regex]::Replace(
-    $content,
-    '(public static readonly string Version\s*=\s*")[^"]*(";)',
-    { param($m) "$($m.Groups[1].Value)$Version$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($appConfigPath, $content)
-Write-Host "Updated $appConfigPath"
+Update-FileContent `
+    -Path (Join-Path $baseDir "src\Servy.Core\Config\AppConfig.cs") `
+    -Pattern '(public static readonly string Version\s*=\s*")[^"]*(";)' `
+    -Replacement $Version
 
 # -----------------------------
 # 3. Update all *.csproj files recursively
 # -----------------------------
-Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj | ForEach-Object {
+Get-ChildItem -Path $baseDir -Recurse -Filter *.csproj -ErrorAction SilentlyContinue | ForEach-Object {
     $csproj = $_.FullName
     $content = [System.IO.File]::ReadAllText($csproj)
 
-    # Update <Version>
-    $content = [regex]::Replace(
-        $content,
-        '(<Version>)[^<]*(</Version>)',
-        { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
-    )
-
-    # Update <FileVersion>
-    $content = [regex]::Replace(
-        $content,
-        '(<FileVersion>)[^<]*(</FileVersion>)',
-        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
-    )
-
-    # Update <AssemblyVersion>
-    $content = [regex]::Replace(
-        $content,
-        '(<AssemblyVersion>)[^<]*(</AssemblyVersion>)',
-        { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }
-    )
+    # Chain replacements to avoid multiple IO hits
+    $content = [regex]::Replace($content, '(<Version>)[^<]*(</Version>)', { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" })
+    $content = [regex]::Replace($content, '(<FileVersion>)[^<]*(</FileVersion>)', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" })
+    $content = [regex]::Replace($content, '(<AssemblyVersion>)[^<]*(</AssemblyVersion>)', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" })
 
     [System.IO.File]::WriteAllText($csproj, $content)
-    Write-Host "Updated $csproj"
+    Write-Host "Updated project: $csproj" -ForegroundColor Gray
 }
 
 # -----------------------------
 # 4. Update src\Servy.CLI\Servy.psd1
 # -----------------------------
-$psd1Path = Join-Path $baseDir "src\Servy.CLI\Servy.psd1"
-if (-Not (Test-Path $psd1Path)) { Write-Error "File not found: $psd1Path"; exit 1 }
-
-$content = [System.IO.File]::ReadAllText($psd1Path)
-$content = [regex]::Replace(
-    $content,
-    "(ModuleVersion\s*=\s*')[^']*(')",
-    { param($m) "$($m.Groups[1].Value)$fullVersion$($m.Groups[2].Value)" }
-)
-[System.IO.File]::WriteAllText($psd1Path, $content)
-Write-Host "Updated $psd1Path"
+Update-FileContent `
+    -Path (Join-Path $baseDir "src\Servy.CLI\Servy.psd1") `
+    -Pattern "(ModuleVersion\s*=\s*')[^']*(')" `
+    -Replacement $fullVersioncd 
 
 Write-Host "All version updates complete."
