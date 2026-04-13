@@ -191,7 +191,19 @@ namespace Servy.Tests.Helpers
             var (isValid, error) = ServiceValidator.ValidateDto(dto);
 
             Assert.False(isValid);
-            Assert.Equal("Invalid Start Timeout.", error);
+            Assert.Equal($"Start Timeout must be at least {AppConfig.MinStartTimeout} second(s).", error);
+        }
+
+        [Fact]
+        public void ValidateDto_Fails_WhenStartTimeoutTooHigh()
+        {
+            var dto = GetValidDto();
+            dto.StartTimeout = AppConfig.MaxStartTimeout + 1;
+
+            var (isValid, error) = ServiceValidator.ValidateDto(dto);
+
+            Assert.False(isValid);
+            Assert.Equal($"Start Timeout exceeds maximum ({AppConfig.MaxStartTimeout}).", error);
         }
 
         [Theory]
@@ -205,6 +217,18 @@ namespace Servy.Tests.Helpers
 
             Assert.False(isValid);
             Assert.Equal($"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).", error);
+        }
+
+        [Fact]
+        public void ValidateDto_Fails_WhenStopTimeoutTooHigh()
+        {
+            var dto = GetValidDto();
+            dto.StopTimeout = AppConfig.MaxStopTimeout + 1;
+
+            var (isValid, error) = ServiceValidator.ValidateDto(dto);
+
+            Assert.False(isValid);
+            Assert.Equal($"Stop Timeout exceeds maximum ({AppConfig.MaxStopTimeout}).", error);
         }
 
         [Fact]
