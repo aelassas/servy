@@ -15,7 +15,7 @@ namespace Servy.Restarter
         /// <summary>
         /// Initializes a new instance of <see cref="ServiceRestarter"/>.
         /// </summary>
-        public ServiceRestarter(Func<string, IServiceController>? controllerFactory = null)
+        public ServiceRestarter(Func<string, IServiceController> controllerFactory = null)
         {
             _controllerFactory = controllerFactory ?? (name => new ServiceController(name));
         }
