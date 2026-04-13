@@ -87,6 +87,7 @@ namespace Servy.CLI.Validators
             }
 
             if ((opts.EnableRotation || opts.EnableSizeRotation)
+                && !string.IsNullOrWhiteSpace(opts.RotationSize)
                 && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize || rotation > AppConfig.MaxRotationSize))
             {
                 return CommandResult.Fail(Strings.Msg_InvalidRotationSize);
@@ -111,7 +112,8 @@ namespace Servy.CLI.Validators
                 if (!ValidateEnumOption<RecoveryAction>(opts.RecoveryAction))
                     return CommandResult.Fail(Strings.Msg_InvalidRecoveryAction);
 
-                if (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts)
+                if (!string.IsNullOrWhiteSpace(opts.MaxRestartAttempts)
+                   && (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts))
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
 

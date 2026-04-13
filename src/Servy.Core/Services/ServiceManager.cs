@@ -9,6 +9,7 @@ using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using static Servy.Core.Native.NativeMethods;
@@ -26,6 +27,7 @@ namespace Servy.Core.Services
 
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
+        private const int ScmPollIntervalMs = 500;
 
         public const string LocalSystemAccount = "LocalSystem";
 
@@ -35,19 +37,16 @@ namespace Servy.Core.Services
 
         public const uint SC_MANAGER_CONNECT = 0x0001;
         public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
-        public const uint SC_MANAGER_ENUMERATE_SERVICE = 0x0004;
 
         #endregion
 
         #region Service Access Rights
 
-        public const uint SERVICE_QUERY_CONFIG = 0x0001;
         public const uint SERVICE_CHANGE_CONFIG = 0x0002;
         public const uint SERVICE_QUERY_STATUS = 0x0004;
         public const uint SERVICE_START = 0x0010;
         public const uint SERVICE_STOP = 0x0020;
         public const uint SERVICE_DELETE = 0x00010000; // Standardized to 8-digit hex for clarity
-        public const int SERVICE_CONFIG_DELAYED_AUTO_START_INFO = 3;
 
         #endregion
 
@@ -363,6 +362,8 @@ namespace Servy.Core.Services
                     lpPassword: lpPassword
                 );
 
+                int createServiceError = Marshal.GetLastWin32Error();
+
                 // Persist service in database
                 var dto = new ServiceDto
                 {
@@ -527,8 +528,8 @@ namespace Servy.Core.Services
                         return OperationResult.Success();
                     }
 
-                    int error = Marshal.GetLastWin32Error();
-                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {error}";
+
+                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
                     Logger.Error(creationErrorMsg);
                     return OperationResult.Failure(creationErrorMsg);
                 }
@@ -593,11 +594,11 @@ namespace Servy.Core.Services
                     using (var sc = _controllerFactory(serviceName))
                     {
                         sc.Refresh();
-                        DateTime waitUntil = DateTime.Now.AddSeconds(ServiceStopTimeoutSeconds);
+                        var sw = Stopwatch.StartNew();
 
-                        while (sc.Status != ServiceControllerStatus.Stopped && DateTime.Now < waitUntil)
+                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < ServiceStopTimeoutSeconds)
                         {
-                            await Task.Delay(500); // Poll every half-second
+                            await Task.Delay(ScmPollIntervalMs); // Poll every half-second
                             sc.Refresh();
                         }
                     }
@@ -920,7 +921,7 @@ namespace Servy.Core.Services
                                     {
                                         if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, descPtr, bytesNeeded, ref bytesNeeded))
                                         {
-                                            var descStruct = Marshal.PtrToStructure<SERVICE_DESCRIPTION>(descPtr);
+                                            var descStruct = Marshal.PtrToStructure<ServiceDescription>(descPtr);
                                             description = Marshal.PtrToStringAuto(descStruct.lpDescription) ?? string.Empty;
                                         }
                                     }

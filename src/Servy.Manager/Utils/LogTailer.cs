@@ -18,6 +18,16 @@ namespace Servy.Manager.Utils
         private const int MaxSafeLines = 10_000;
 
         /// <summary>
+        /// Number of lines to accumulate before flushing a batch to the UI.
+        /// </summary>
+        private const int LogBatchFlushThreshold = 500;
+
+        /// <summary>
+        /// Delay in milliseconds before retrying after a file-access error (e.g. rotation).
+        /// </summary>
+        private const int FileRetryDelayMs = 500;
+
+        /// <summary>
         /// Delegate for handling a batch of new log lines.
         /// </summary>
         /// <param name="lines">The list of newly discovered log lines.</param>
@@ -67,7 +77,7 @@ namespace Servy.Manager.Utils
                     catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
                     {
                         // The file was likely rotated or deleted between File.Exists and here
-                        await Task.Delay(500, token);
+                        await Task.Delay(FileRetryDelayMs, token);
                         continue;
                     }
                     catch (IOException)
@@ -102,7 +112,7 @@ namespace Servy.Manager.Utils
                                 while ((line = await reader.ReadLineAsync()) != null)
                                 {
                                     batch.Add(new LogLine(line, type));
-                                    if (batch.Count >= 500)
+                                    if (batch.Count >= LogBatchFlushThreshold)
                                     {
                                         OnNewLines?.Invoke(batch);
                                         batch = new List<LogLine>();

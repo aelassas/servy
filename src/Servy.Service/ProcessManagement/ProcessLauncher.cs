@@ -59,6 +59,14 @@ namespace Servy.Service.ProcessManagement
             // 5. Launch the process
             var process = factory.Create(psi, logger);
 
+            process.Start();
+
+            // 6. Handle execution mode
+            if (options.FireAndForget)
+            {
+                return process;
+            }
+
             var stdoutBuffer = new StringBuilder();
             var stderrBuffer = new StringBuilder();
 
@@ -78,8 +86,6 @@ namespace Servy.Service.ProcessManagement
                         stderrBuffer.AppendLine(e.Data);
                 };
             }
-
-            process.Start();
 
             // 6. Handle execution mode
             if (options.FireAndForget)

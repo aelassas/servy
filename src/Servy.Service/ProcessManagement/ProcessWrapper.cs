@@ -484,12 +484,17 @@ namespace Servy.Service.ProcessManagement
                 }
             }
 
-            // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
-            // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
-            _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
-            _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
-
-            _ = FreeConsole();
+            try
+            {
+                // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
+                // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
+                _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
+                _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
+            }
+            finally
+            {
+                _ = FreeConsole();
+            }
 
             return true;
         }
