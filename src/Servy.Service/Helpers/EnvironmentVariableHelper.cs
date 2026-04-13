@@ -143,12 +143,9 @@ namespace Servy.Service.Helpers
             }
 
             // 4. Final layer: Apply OS-level expansion for any remaining unmapped system placeholders
-            foreach (var key in result.Keys.ToList())
+            foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
             {
-                if (!string.IsNullOrEmpty(result[key]))
-                {
-                    result[key] = Environment.ExpandEnvironmentVariables(result[key]);
-                }
+                result[key] = Environment.ExpandEnvironmentVariables(result[key]);
             }
 
             return result;

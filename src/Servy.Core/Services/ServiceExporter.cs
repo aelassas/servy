@@ -76,7 +76,7 @@ namespace Servy.Core.Services
         /// Custom StringWriter that reports UTF-8 as its encoding.
         /// Required because the default StringWriter reports UTF-16.
         /// </summary>
-        private class Utf8StringWriter : StringWriter
+        private sealed class Utf8StringWriter : StringWriter
         {
             public override Encoding Encoding => Encoding.UTF8;
         }

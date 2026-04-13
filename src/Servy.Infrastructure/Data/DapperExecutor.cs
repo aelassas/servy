@@ -28,7 +28,8 @@ namespace Servy.Infrastructure.Data
         private const int MaxJitterMs = 50;
 
         // Thread-safe random for jitter calculation
-        private static readonly Random _jitterer = new Random();
+        private static readonly ThreadLocal<Random> _threadLocalJitterer =
+            new ThreadLocal<Random>(() => new Random(Guid.NewGuid().GetHashCode()));
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
@@ -97,15 +98,13 @@ namespace Servy.Infrastructure.Data
         /// <returns>The delay in milliseconds.</returns>
         private int CalculateBackoff(int attempt)
         {
-            // Exponential: 100, 200, 400...
-            int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
+            // Exponential: 100, 200, 400... 
+            // Optimization: bit-shifting (1 << attempt) is faster than Math.Pow
+            int backoff = InitialDelayMs * (1 << attempt);
 
-            // Jitter: 0 to 50ms
-            int jitter;
-            lock (_jitterer)
-            {
-                jitter = _jitterer.Next(0, MaxJitterMs + 1);
-            }
+            // Jitter: 0 to 50ms 
+            // Accessing .Value is thread-safe and lock-free
+            int jitter = _threadLocalJitterer.Value.Next(0, MaxJitterMs + 1);
 
             return backoff + jitter;
         }
