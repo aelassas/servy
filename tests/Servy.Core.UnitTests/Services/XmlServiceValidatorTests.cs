@@ -91,7 +91,7 @@ namespace Servy.Core.UnitTests.Services
             var result = XmlServiceValidator.TryValidate(xml, out var error);
 
             Assert.False(result);
-            Assert.Equal("Invalid Start Timeout.", error);
+            Assert.Equal($"Start Timeout must be at least {AppConfig.MinStartTimeout} second(s).", error);
         }
 
         [Fact]
