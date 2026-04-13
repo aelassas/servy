@@ -50,7 +50,7 @@ namespace Servy.Core.UnitTests.Services
             var xml = ServiceExporter.ExportXml(service);
 
             Assert.False(string.IsNullOrWhiteSpace(xml));
-            Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-16\"?>", xml);
+            Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", xml);
             Assert.Contains("<Name>MyService</Name>", xml);
            
         }
@@ -67,7 +67,7 @@ namespace Servy.Core.UnitTests.Services
                 var content = File.ReadAllText(tempFile);
 
                 Assert.False(string.IsNullOrWhiteSpace(content));
-                Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-16\"?>", content.Trim());
+                Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", content.Trim());
                 Assert.Contains("<Name>MyService</Name>", content);
             }
             finally
