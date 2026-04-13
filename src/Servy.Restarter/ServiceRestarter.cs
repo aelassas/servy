@@ -15,7 +15,7 @@ namespace Servy.Restarter
         /// <summary>
         /// Initializes a new instance of <see cref="ServiceRestarter"/>.
         /// </summary>
-        public ServiceRestarter(Func<string, IServiceController> controllerFactory = null)
+        public ServiceRestarter(Func<string, IServiceController>? controllerFactory = null)
         {
             _controllerFactory = controllerFactory ?? (name => new ServiceController(name));
         }
@@ -43,10 +43,11 @@ namespace Servy.Restarter
                     try
                     {
                         controller.Stop();
-                        var remaining = timeout - stopwatch.Elapsed;
-                        if (remaining <= TimeSpan.Zero) throw new System.TimeoutException();
+                        var startRemaining = timeout - stopwatch.Elapsed;
+                        if (startRemaining <= TimeSpan.Zero)
+                            throw new System.TimeoutException($"No time remaining to start service '{serviceName}'.");
 
-                        controller.WaitForStatus(ServiceControllerStatus.Stopped, remaining);
+                        controller.WaitForStatus(ServiceControllerStatus.Stopped, startRemaining);
                     }
                     catch (InvalidOperationException)
                     {
