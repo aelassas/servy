@@ -33,7 +33,7 @@ namespace Servy.Core.Services
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
         private const int ScmPollIntervalMs = 500;
-
+        private const int MaxParallelScmQueries = 8;
         public const string LocalSystemAccount = "LocalSystem";
 
         #endregion
@@ -540,6 +540,7 @@ namespace Servy.Core.Services
                         return OperationResult.Success();
                     }
 
+
                     string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
                     Logger.Error(creationErrorMsg);
                     return OperationResult.Failure(creationErrorMsg);
@@ -609,7 +610,7 @@ namespace Servy.Core.Services
 
                         while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < ServiceStopTimeoutSeconds)
                         {
-                            await Task.Delay(500); // Poll every half-second
+                            await Task.Delay(ScmPollIntervalMs); // Poll every half-second
                             sc.Refresh();
                         }
                     }
@@ -856,7 +857,7 @@ namespace Servy.Core.Services
                 Parallel.ForEach(services, new ParallelOptions
                 {
                     CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = Environment.ProcessorCount
+                    MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MaxParallelScmQueries),
                 },
                 service =>
                 {
