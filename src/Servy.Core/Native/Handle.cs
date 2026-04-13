@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
-using static Servy.Service.Native.NativeMethods;
+using static Servy.Core.Native.NativeMethods;
 
-namespace Servy.Service.Native
+namespace Servy.Core.Native
 {
     /// <summary>
     /// Represents a safe wrapper around a native handle, ensuring it is properly released when disposed.
@@ -23,7 +23,7 @@ namespace Servy.Service.Native
         /// Initializes a new instance of the <see cref="Handle"/> struct with the specified native handle.
         /// </summary>
         /// <param name="handle">The unmanaged handle to wrap.</param>
-        internal Handle(IntPtr handle) => this.handle = handle;
+        public Handle(IntPtr handle) => this.handle = handle;
 
         /// <summary>
         /// Releases the underlying handle by invoking the native <c>CloseHandle</c> function.

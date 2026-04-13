@@ -1,9 +1,9 @@
 ﻿using Servy.Core.Logging;
-using Servy.Service.Native;
+using Servy.Core.Native;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using static Servy.Service.Native.NativeMethods;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Service.ProcessManagement
 {

@@ -1,4 +1,4 @@
-﻿using Servy.Service.Native;
+﻿using Servy.Core.Native;
 using System.ServiceProcess;
 
 namespace Servy.Service
