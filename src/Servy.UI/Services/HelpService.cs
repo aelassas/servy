@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Servy.Core.Config;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.UI.Resources;
 using System.Diagnostics;
 using System.Net.Http;
 
@@ -43,10 +44,6 @@ namespace Servy.UI.Services
         /// <inheritdoc />
         public async Task CheckUpdates(string caption)
         {
-            const string noUpdate = "No updates currently available.";
-            const string updateAvailable = "A new version of Servy is available. Do you want to download it?";
-            const string timeoutMessage = "The update check timed out. Please try again later.";
-
             try
             {
                 // 10 seconds is the ideal 'patience window' for a manual UI trigger
@@ -57,7 +54,6 @@ namespace Servy.UI.Services
 
                     var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
 
-                    // GetAsync responds to the CancellationToken
                     var response = await http.GetAsync(url, cts.Token);
                     response.EnsureSuccessStatusCode();
 
@@ -67,7 +63,7 @@ namespace Servy.UI.Services
 
                     if (string.IsNullOrEmpty(tagName))
                     {
-                        await _messageBoxService.ShowInfoAsync(noUpdate, caption);
+                        await _messageBoxService.ShowInfoAsync(Strings.Msg_NoUpdatesAvailable, caption);
                         return;
                     }
 
@@ -76,7 +72,7 @@ namespace Servy.UI.Services
 
                     if (latestVersion > currentVersion)
                     {
-                        var res = await _messageBoxService.ShowConfirmAsync(updateAvailable, caption);
+                        var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UpdateAvailablePrompt, caption);
                         if (res)
                         {
                             using (Process.Start(new ProcessStartInfo
@@ -93,7 +89,7 @@ namespace Servy.UI.Services
                     }
                     else
                     {
-                        await _messageBoxService.ShowInfoAsync(noUpdate, caption);
+                        await _messageBoxService.ShowInfoAsync(Strings.Msg_NoUpdatesAvailable, caption);
                     }
                 }
             }
@@ -101,12 +97,14 @@ namespace Servy.UI.Services
             {
                 // Specific handling for the 10-second timeout
                 Logger.Warn("Update check timed out.");
-                await _messageBoxService.ShowErrorAsync(timeoutMessage, caption);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UpdateCheckTimeout, caption);
             }
             catch (Exception ex)
             {
                 Logger.Error("Failed to check for updates", ex);
-                await _messageBoxService.ShowErrorAsync("Failed to check updates: " + ex.Message, caption);
+                // Use string.Format to ensure the error prefix is also localized
+                string errorMessage = string.Format(Strings.Msg_UpdateCheckFailed, ex.Message);
+                await _messageBoxService.ShowErrorAsync(errorMessage, caption);
             }
         }
 
