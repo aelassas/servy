@@ -1680,6 +1680,7 @@ namespace Servy.Service
                     if (!_isTearingDown && !_disposed)
                     {
                         await InitiateRecoveryAsync();
+                        return; // Successfully handed off to the recovery orchestrator
                     }
                 }
                 catch (OperationCanceledException)
@@ -1690,7 +1691,12 @@ namespace Servy.Service
                 {
                     _logger?.Error($"Unexpected error during scheduled recovery: {ex.Message}");
                 }
+
+                // SAFETY RESET: If we reach this line, InitiateRecoveryAsync was skipped
+                // or the delay threw an exception. We MUST clear the gatekeeper flag.
+                _isRecovering = false;
             }
+
         }
 
         /// <summary>
@@ -1800,15 +1806,10 @@ namespace Servy.Service
             finally
             {
                 // GUARANTEED EXECUTION: The gate always opens.
-                await _healthCheckSemaphore.WaitAsync();
-                try
-                {
-                    _isRecovering = false;
-                }
-                finally
-                {
-                    _healthCheckSemaphore.Release();
-                }
+                // Because _isRecovering is volatile, it is safe
+                // to toggle directly without risking a deadlock
+                // in the finally block.
+                _isRecovering = false;
             }
         }
 
