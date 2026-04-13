@@ -151,7 +151,7 @@ namespace Servy.Service.ProcessManagement
         /// Applies environment variables and command-line flags to ensure consistent UTF-8 I/O behavior for known runtimes.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
-        private static void ApplyLanguageFixes(ProcessStartInfo psi)
+        internal static void ApplyLanguageFixes(ProcessStartInfo psi)
         {
             // Python: Enable UTF-8 mode and disable I/O buffering for real-time log capturing
             if (psi.FileName.IndexOf("python", StringComparison.OrdinalIgnoreCase) >= 0 ||

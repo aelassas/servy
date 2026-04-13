@@ -1180,7 +1180,7 @@ namespace Servy.Service
             }
 
             // Ensure UTF-8 encoding and buffered mode for python
-            EnsurePythonUTF8EncodingAndBufferedMode(psi);
+            ProcessLauncher.ApplyLanguageFixes(psi);
             EnsureJavaUTF8Encoding(psi);
 
             _childProcess = _processFactory.Create(psi, _logger);
@@ -1276,33 +1276,6 @@ namespace Servy.Service
             finally
             {
                 _childProcess = null;
-            }
-        }
-
-        /// <summary>
-        /// Ensures that Python processes use UTF-8 encoding for standard I/O and operate in unbuffered mode.
-        /// </summary>
-        /// <param name="psi">The <see cref="ProcessStartInfo"/> used to start the Python process.</param>
-        /// <remarks>
-        /// This method detects Python executables or scripts and configures the following environment variables:
-        /// <list type="bullet">
-        /// <item><description><c>PYTHONLEGACYWINDOWSSTDIO=0</c> - Enables wide-character I/O APIs.</description></item>
-        /// <item><description><c>PYTHONIOENCODING=utf-8</c> - Forces UTF-8 for <c>stdout</c> and <c>stderr</c>.</description></item>
-        /// <item><description><c>PYTHONUTF8=1</c> - Enables UTF-8 mode globally (Python 3.7+).</description></item>
-        /// <item><description><c>PYTHONUNBUFFERED=1</c> - Disables I/O buffering to ensure real-time output.</description></item>
-        /// </list>
-        /// </remarks>
-        private void EnsurePythonUTF8EncodingAndBufferedMode(ProcessStartInfo psi)
-        {
-            var fileName = psi.FileName != null ? psi.FileName.ToLowerInvariant() : string.Empty;
-            var args = psi.Arguments != null ? psi.Arguments.ToLowerInvariant() : string.Empty;
-
-            if (fileName.Contains("python") || args.Contains(".py"))
-            {
-                psi.EnvironmentVariables["PYTHONLEGACYWINDOWSSTDIO"] = "0";
-                psi.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
-                psi.EnvironmentVariables["PYTHONUTF8"] = "1";
-                psi.EnvironmentVariables["PYTHONUNBUFFERED"] = "1";
             }
         }
 
