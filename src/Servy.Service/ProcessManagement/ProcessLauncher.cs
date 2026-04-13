@@ -153,13 +153,24 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Applies environment variables and command-line flags to ensure consistent UTF-8 I/O behavior for known runtimes.
+        /// Detection is scoped to the executable filename and extension to avoid false positives from arguments.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
         internal static void ApplyLanguageFixes(ProcessStartInfo psi)
         {
-            // Python: Enable UTF-8 mode and disable I/O buffering for real-time log capturing
-            if (psi.FileName.IndexOf("python", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                psi.Arguments.IndexOf(".py", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (psi == null || string.IsNullOrEmpty(psi.FileName))
+            {
+                return;
+            }
+
+            string extension = Path.GetExtension(psi.FileName);
+
+            // Python: Enable UTF-8 mode and disable I/O buffering for real-time log capturing.
+            // Scoped to executables containing "python" or files with a .py extension.
+            bool isPython = psi.FileName.IndexOf("python", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            string.Equals(extension, ".py", StringComparison.OrdinalIgnoreCase);
+
+            if (isPython)
             {
                 psi.Environment["PYTHONLEGACYWINDOWSSTDIO"] = "0";
                 psi.Environment["PYTHONIOENCODING"] = "utf-8";
@@ -167,12 +178,18 @@ namespace Servy.Service.ProcessManagement
                 psi.Environment["PYTHONUNBUFFERED"] = "1";
             }
 
-            // Java: Ensure file encoding is set to UTF-8 if not explicitly defined by the user
-            if ((psi.FileName.IndexOf("java", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                 psi.Arguments.IndexOf(".java", StringComparison.OrdinalIgnoreCase) >= 0) &&
-                psi.Arguments.IndexOf("-Dfile.encoding", StringComparison.OrdinalIgnoreCase) < 0)
+            // Java: Ensure file encoding is set to UTF-8 if not explicitly defined by the user.
+            // Scoped to executables containing "java" or self-executing .jar archives.
+            bool isJava = psi.FileName.IndexOf("java", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                          string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase);
+
+            if (isJava)
             {
-                psi.Arguments = $"-Dfile.encoding=UTF-8 {psi.Arguments}".Trim();
+                string currentArgs = psi.Arguments ?? string.Empty;
+                if (currentArgs.IndexOf("-Dfile.encoding", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    psi.Arguments = $"-Dfile.encoding=UTF-8 {currentArgs}".Trim();
+                }
             }
         }
     }
