@@ -25,6 +25,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -34,6 +35,19 @@ namespace Servy.Service
 {
     public partial class Service : ServiceBase, IDisposable
     {
+        #region Static Fields
+
+        /// <summary>
+        /// Compiled regex to identify standard environment variable placeholders.
+        /// Includes a match timeout to prevent ReDoS attacks.
+        /// </summary>
+        private static readonly Regex EnvVarPlaceholderRegex = new Regex(
+            @"(%[a-zA-Z_][a-zA-Z0-9_]*%)",
+            RegexOptions.Compiled,
+            TimeSpan.FromMilliseconds(200)); // 200ms is generous for this pattern
+
+        #endregion
+
         #region Enums
 
         /// <summary>
@@ -1447,40 +1461,28 @@ namespace Servy.Service
 
         /// <summary>
         /// Logs a warning for any unexpanded environment variable placeholders found in the given string.
-        /// Placeholders are identified as text surrounded by '%' signs (e.g., %VAR_NAME%).
         /// </summary>
-        /// <param name="input">The string to inspect for unexpanded environment variable placeholders.</param>
-        /// <param name="context">
-        /// A descriptive name of the context where the string is used, 
-        /// e.g., "Executable Path", "Arguments", or "Working Directory".
-        /// This helps in logging clear warning messages.
-        /// </param>
-        /// <remarks>
-        /// This method does not throw exceptions and will safely ignore null or empty input strings.
-        /// Warnings are logged via the service logger (_logger) if configured.
-        /// </remarks>
+        /// <param name="input">The string to inspect.</param>
+        /// <param name="context">The descriptive context (e.g., "Arguments").</param>
         private void LogUnexpandedPlaceholders(string input, string context)
         {
             if (string.IsNullOrEmpty(input))
                 return;
 
-            int start = input.IndexOf('%');
-            while (start >= 0)
+            try
             {
-                int end = input.IndexOf('%', start + 1);
-                if (end > start)
+                var matches = EnvVarPlaceholderRegex.Matches(input);
+
+                foreach (Match match in matches)
                 {
-                    string placeholder = input.Substring(start, end - start + 1);
-                    if (!string.IsNullOrEmpty(placeholder))
-                    {
-                        _logger?.Warn($"Unexpanded environment variable {placeholder} in {context}");
-                    }
-                    start = input.IndexOf('%', end + 1);
+                    string placeholder = match.Value;
+                    _logger?.Warn($"Unexpanded environment variable {placeholder} in {context}");
                 }
-                else
-                {
-                    break;
-                }
+            }
+            catch (RegexMatchTimeoutException ex)
+            {
+                // Log that the check itself timed out to avoid silent failure
+                _logger?.Error($"Regex timeout while inspecting placeholders in {context}. Input length: {input.Length}", ex);
             }
         }
 
