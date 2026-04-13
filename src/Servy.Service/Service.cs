@@ -35,7 +35,7 @@ namespace Servy.Service
         /// This semaphore prevents concurrent read/write conflicts (such as updating persistent restart attempts on disk)
         /// without blocking the thread pool or the Windows Service Control Manager (SCM).
         /// </summary>
-        private static readonly SemaphoreSlim _fileSemaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _fileSemaphore = new SemaphoreSlim(1, 1);
 
         /// <summary>
         /// Acts as an asynchronous gatekeeper for health monitoring and recovery orchestration.
