@@ -574,16 +574,15 @@ namespace Servy.Manager.Views
         /// </summary>
         /// <param name="e">An <see cref="EventArgs"/> object that contains the event data.</param>
         /// <remarks>
-        /// This override ensures that when the main window is closed, all child processes
-        /// spawned by the current process are terminated. This prevents orphaned processes
-        /// from remaining in the system after the application exits.
-        /// 
-        /// The method retrieves the current process ID and passes it to
-        /// <see cref="ProcessKiller.KillChildren(int)"/> to terminate all descendants.
-        /// Any exceptions thrown during this cleanup are caught and logged for debugging.
+        /// This override ensures that when the main window is closed:
+        /// 1. All child processes spawned by Servy are terminated to prevent orphans.
+        /// 2. All ViewModels are explicitly cleaned up to stop DispatcherTimers and cancel 
+        ///    async background tasks.
+        /// 3. Secure data and the global logger are safely disposed.
         /// </remarks>
         protected override void OnClosed(EventArgs e)
         {
+            // 1. Terminate orphaned child processes
             try
             {
                 var currentPID = Process.GetCurrentProcess().Id;
@@ -594,16 +593,36 @@ namespace Servy.Manager.Views
                 Logger.Error("Error killing child processes.", ex);
             }
 
-            _secureData?.Dispose();
-
+            // 2. Explicitly stop timers and cancel background work
+            // This is CRITICAL to prevent memory leaks and "zombie" ticks
             try
             {
-                // Dispose logger
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.Cleanup();
+                }
+
+                GetPerformanceVm()?.Cleanup();
+                GetConsoleVm()?.Cleanup();
+                GetDependenciesVm()?.Cleanup();
+                GetLogsVm()?.Cleanup();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Error during ViewModel cleanup in OnClosed.", ex);
+            }
+
+            // 3. Dispose managed security resources
+            _secureData?.Dispose();
+
+            // 4. Shutdown logging subsystem
+            try
+            {
                 Logger.Shutdown();
             }
             catch
             {
-                // Fail-silent
+                // Fail-silent on logger shutdown
             }
 
             base.OnClosed(e);

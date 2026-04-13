@@ -906,20 +906,6 @@ namespace Servy.Manager.ViewModels
         /// A <see cref="ServiceDto"/> containing updated metadata if a database synchronization is required; 
         /// otherwise, <c>null</c> if the database is already in sync.
         /// </returns>
-        /// <remarks>
-        /// <para>
-        /// This method performs the heavy lifting for the background refresh cycle, including:
-        /// <list type="bullet">
-        /// <item><description>Retrieving tree-wide CPU and RAM metrics via <see cref="ProcessHelper"/>.</description></item>
-        /// <item><description>Updating installation status, service status (Running/Stopped), and user sessions.</description></item>
-        /// <item><description>Comparing OS-reported metadata (Description/StartupType) against the provided DTO.</description></item>
-        /// </list>
-        /// </para>
-        /// <para>
-        /// <b>Performance Note:</b> This method does not perform database writes. It returns drifted DTOs 
-        /// to allow the caller to perform an atomic <c>UpsertBatchAsync</c>, significantly reducing SQLite I/O contention.
-        /// </para>
-        /// </remarks>
         private async Task<ServiceDto> RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto)
         {
             try
@@ -927,14 +913,7 @@ namespace Servy.Manager.ViewModels
                 var token = _cancellationTokenSource?.Token ?? CancellationToken.None;
                 token.ThrowIfCancellationRequested();
 
-                // Use the pre-fetched DTO to update PID
-                if (serviceDto != null && service.Pid != serviceDto.Pid)
-                {
-                    service.Pid = serviceDto.Pid;
-                    service.IsPidEnabled = service.Pid != null;
-                }
-
-                // Heavy work: CPU/RAM
+                // Heavy work: CPU/RAM (Kept on background thread)
                 double? cpuUsage = null;
                 long? ramUsage = null;
                 if (service.Pid.HasValue)
@@ -949,38 +928,50 @@ namespace Servy.Manager.ViewModels
                     cpuUsage = processMetrics.CpuUsage;
                     ramUsage = processMetrics.RamUsage;
                 }
-                service.CpuUsage = cpuUsage;
-                service.RamUsage = ramUsage;
 
-                // Load startup type from repository if null
-                if (service.StartupType == null && serviceDto != null)
+                // Push all UI model updates to the Dispatcher to prevent ICommand cross-thread exceptions
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    service.StartupType = (ServiceStartType)serviceDto.StartupType;
-                }
+                    // Use the pre-fetched DTO to update PID
+                    if (serviceDto != null && service.Pid != serviceDto.Pid)
+                    {
+                        service.Pid = serviceDto.Pid;
+                        service.IsPidEnabled = service.Pid != null;
+                    }
 
-                // Update from OS Info (Dictionary)
-                if (allServices.TryGetValue(service.Name, out var info) && info != null)
-                {
-                    service.IsInstalled = true;
+                    service.CpuUsage = cpuUsage;
+                    service.RamUsage = ramUsage;
 
-                    if (service.Status != info.Status)
-                        service.Status = info.Status;
+                    // Load startup type from repository if null
+                    if (service.StartupType == null && serviceDto != null)
+                    {
+                        service.StartupType = (ServiceStartType)serviceDto.StartupType;
+                    }
 
-                    if (service.StartupType != info.StartupType)
-                        service.StartupType = info.StartupType;
+                    // Update from OS Info (Dictionary)
+                    if (allServices.TryGetValue(service.Name, out var info) && info != null)
+                    {
+                        service.IsInstalled = true;
 
-                    var user = string.IsNullOrEmpty(info.LogOnAs) ? AppConfig.LocalSystem : info.LogOnAs;
-                    if (service.LogOnAs != user)
-                        service.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(user);
+                        if (service.Status != info.Status)
+                            service.Status = info.Status;
 
-                    if (service.Description != info.Description)
-                        service.Description = info.Description;
-                }
-                else
-                {
-                    service.IsInstalled = false;
-                    service.Status = ServiceStatus.NotInstalled;
-                }
+                        if (service.StartupType != info.StartupType)
+                            service.StartupType = info.StartupType;
+
+                        var user = string.IsNullOrEmpty(info.LogOnAs) ? AppConfig.LocalSystem : info.LogOnAs;
+                        if (service.LogOnAs != user)
+                            service.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(user);
+
+                        if (service.Description != info.Description)
+                            service.Description = info.Description;
+                    }
+                    else
+                    {
+                        service.IsInstalled = false;
+                        service.Status = ServiceStatus.NotInstalled;
+                    }
+                });
 
                 // Repository update ONLY if something actually changed in the Metadata
                 if (serviceDto != null)

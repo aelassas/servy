@@ -5,12 +5,10 @@ using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
-using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
 using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -183,7 +181,7 @@ namespace Servy.Manager.ViewModels
             RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
-            
+
             InitTimer();
         }
 
@@ -276,6 +274,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OnTickAsync()
         {
+            // Capture the token at the start of the tick. 
+            // If _cts is null, we shouldn't be here, but we guard it anyway.
+            var token = _cts?.Token ?? CancellationToken.None;
+
             try
             {
                 var currentSelection = SelectedService;
@@ -292,7 +294,7 @@ namespace Servy.Manager.ViewModels
                 }
                 _hadSelectedService = true;
 
-                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, _cts.Token);
+                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
 
                 if (!currentPid.HasValue)
                 {
@@ -338,9 +340,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="parameter">Unused command parameter.</param>
         private async Task SearchServicesAsync(object parameter)
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = new CancellationTokenSource();
+            ResetCts();
             var token = _cts.Token;
 
             try
@@ -391,6 +391,21 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Resets the <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
+        /// and disposing of the existing instance before creating a fresh one.
+        /// </summary>
+        /// <remarks>
+        /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
+        /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
+        /// </remarks>
+        private void ResetCts()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+        }
+
         #endregion
 
         #region Public Methods
@@ -422,7 +437,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StartMonitoring()
         {
+            // Ensure we have a fresh, active cancellation token
+            ResetCts();
+
+            // Atomically signal start
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
+
+            // Start timer
             InitTimer();
             _timer?.Start();
         }
