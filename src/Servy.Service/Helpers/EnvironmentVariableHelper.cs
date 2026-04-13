@@ -53,6 +53,10 @@ namespace Servy.Service.Helpers
             "PROGRAMDATA"
         };
 
+        // Safety caps to prevent unbounded growth from complex recursive nesting
+        private const int MaxExpansionPasses = 5;
+        private const int MaxStringLength = 32768;
+
         /// <summary>
         /// Builds a dictionary of environment variables by merging the current system environment
         /// with the provided custom environment variables. All values are expanded so that system
@@ -63,7 +67,7 @@ namespace Servy.Service.Helpers
         /// </param>
         /// <returns>
         /// A dictionary containing system environment variables combined with the provided custom ones,
-        /// with all values fully expanded.
+        /// with all values fully expanded using a multi-pass fixed-point resolution to safely handle cross-references.
         /// </returns>
         public static Dictionary<string, string?> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
         {
@@ -93,11 +97,55 @@ namespace Servy.Service.Helpers
                 }
             }
 
-            // 3. Recursive Expansion
+            // 3. Recursive Expansion (Multi-pass Fixed-Point Resolution)
             // We use ToList() to avoid "Collection was modified" exceptions
+            bool changed;
+            int pass = 0;
+
+            do
+            {
+                changed = false;
+
+                // Snapshot the current state to prevent cascading mutations during a single pass
+                var snapshot = result.ToDictionary(k => k.Key, k => k.Value, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var key in result.Keys.ToList())
+                {
+                    string? original = result[key];
+                    if (string.IsNullOrEmpty(original)) continue;
+
+                    string expanded = ExpandWithDictionary(original, snapshot);
+
+                    // Exponential growth guard
+                    if (expanded != null && expanded.Length > MaxStringLength)
+                    {
+                        Logger.Warn($"Expansion of '{key}' exceeded {MaxStringLength} characters. Truncating to prevent memory exhaustion.");
+                        expanded = expanded.Substring(0, MaxStringLength);
+                    }
+
+                    if (!string.Equals(original, expanded, StringComparison.Ordinal))
+                    {
+                        result[key] = expanded;
+                        changed = true;
+                    }
+                }
+
+                pass++;
+            }
+            while (changed && pass < MaxExpansionPasses);
+
+            if (pass >= MaxExpansionPasses)
+            {
+                Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
+            }
+
+            // 4. Final layer: Apply OS-level expansion for any remaining unmapped system placeholders
             foreach (var key in result.Keys.ToList())
             {
-                result[key] = ExpandWithDictionary(result[key]!, result);
+                if (!string.IsNullOrEmpty(result[key]))
+                {
+                    result[key] = Environment.ExpandEnvironmentVariables(result[key]!);
+                }
             }
 
             return result;
@@ -115,9 +163,22 @@ namespace Servy.Service.Helpers
         /// </returns>
         public static string ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
         {
-            return ExpandWithDictionary(input, expandedEnv);
+            if (string.IsNullOrEmpty(input)) return input;
+
+            // Since 'expandedEnv' is already resolved to a fixed point by the dictionary builder,
+            // only one pass is needed here.
+            string result = ExpandWithDictionary(input, expandedEnv);
+            return Environment.ExpandEnvironmentVariables(result);
         }
 
+        /// <summary>
+        /// Expands environment variables in a string using the provided dictionary of variables.
+        /// Custom variables override system variables. Windows built-in expansion is also applied
+        /// to handle system-defined placeholders such as %SystemRoot%.
+        /// </summary>
+        /// <param name="value">The string to expand.</param>
+        /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
+        /// <returns>The expanded string.</returns>
         /// <summary>
         /// Expands environment variables in a string using the provided dictionary of variables.
         /// Custom variables override system variables. Windows built-in expansion is also applied
@@ -135,13 +196,17 @@ namespace Servy.Service.Helpers
 
             foreach (var kvp in variables)
             {
-                string token = "%" + kvp.Key + "%";
-                string replacement = kvp.Value ?? string.Empty;
+                if (string.IsNullOrEmpty(kvp.Key) || string.IsNullOrEmpty(kvp.Value)) continue;
 
-                // Detect and skip self-referencing tokens.
-                // If the replacement value already contains the token we are trying to resolve, 
-                // skip it. This prevents unbounded exponential string growth during dictionary mutation
-                // and safely short-circuits both direct and indirect circular references.
+                string token = "%" + kvp.Key + "%";
+                string replacement = kvp.Value;
+
+                // SELF-REFERENCE GUARD:
+                // If the replacement value contains the token itself (e.g., PATH=%PATH%;bin), 
+                // we must skip it here. This prevents exponential string growth during 
+                // our multi-pass custom expansion. 
+                // The final pass of 'Environment.ExpandEnvironmentVariables' will 
+                // correctly resolve these using the actual system-level values.
                 if (replacement.IndexOf(token, StringComparison.OrdinalIgnoreCase) > -1)
                 {
                     continue;
@@ -152,12 +217,16 @@ namespace Servy.Service.Helpers
                 {
                     expanded = expanded.Substring(0, index) + replacement + expanded.Substring(index + token.Length);
                     index += replacement.Length; // move past the inserted value
+
+                    // Inline length guard to prevent memory exhaustion
+                    if (expanded.Length > MaxStringLength)
+                    {
+                        return expanded.Substring(0, MaxStringLength);
+                    }
                 }
             }
 
-            // Also apply Windows built-in expansion (covers %SystemRoot% etc.)
-            return Environment.ExpandEnvironmentVariables(expanded);
+            return expanded;
         }
-
     }
 }
