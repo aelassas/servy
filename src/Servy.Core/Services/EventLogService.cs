@@ -56,7 +56,11 @@ namespace Servy.Core.Services
                 // ESCAPE SOURCE NAME
                 if (!string.IsNullOrEmpty(_sourceName))
                 {
-                    var escapedSource = _sourceName.Replace("'", "&apos;");
+                    var escapedSource = _sourceName
+                        .Replace("&", "&amp;")
+                        .Replace("<", "&lt;")
+                        .Replace(">", "&gt;")
+                        .Replace("'", "&apos;");
                     systemFilters.Add($"Provider[@Name='{escapedSource}']");
                 }
 

@@ -38,20 +38,6 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Properties - Log Data
-
-        /// <summary>
-        /// Gets the full collection of log lines received from the service.
-        /// </summary>
-        public BulkObservableCollection<LogLine> RawLines { get; } = new BulkObservableCollection<LogLine>();
-
-        /// <summary>
-        /// Gets the filtered view of log lines based on the <see cref="DependencySearchText"/>.
-        /// </summary>
-        public ICollectionView VisibleLines { get; }
-
-        #endregion
-
         #region Properties - Service Data
 
         /// <summary>

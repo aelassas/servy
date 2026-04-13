@@ -51,14 +51,14 @@ namespace Servy.Manager.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceCommands"/> class.
         /// </summary>
-        /// <param name="serviceManager">The <see cref="ServiceManager"/> used to manage Windows services.</param>
+        /// <param name="serviceManager">The <see cref="IServiceManager"/> used to manage Windows services.</param>
         /// <param name="serviceRepository">The repository interface for accessing service data.</param>
         /// <param name="messageBoxService">The service used to show message boxes to the user.</param>
         /// <param name="fileDialogService">The service used to show file dialogs.</param>
         /// <param name="removeServiceCallback">A callback invoked when a service should be removed from the UI or collection.</param>
         /// <param name="refreshCallback">A callback invoked when a services list should be refreshed.</param>
         public ServiceCommands(
-            ServiceManager serviceManager,
+            IServiceManager serviceManager,
             IServiceRepository serviceRepository,
             IMessageBoxService messageBoxService,
             IFileDialogService fileDialogService,

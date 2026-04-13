@@ -32,6 +32,16 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
+        #region Constants
+
+        /// <summary>
+        /// Maximum number of concurrent SCM operations during bulk start/stop/restart.
+        /// Caps at this value to prevent SCM saturation regardless of core count.
+        /// </summary>
+        private const int MaxBulkOperationParallelism = 8;
+
+        #endregion
+
         #region Private Fields
 
         private readonly IServiceManager _serviceManager;
@@ -760,7 +770,7 @@ namespace Servy.Manager.ViewModels
                 // 3. Dispatch all operations concurrently: Scale based on hardware
                 // Use a factor of 2 to keep the pipeline full during I/O wait times, 
                 // but cap it at a reasonable limit (e.g., 8) to prevent SCM saturation.
-                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, 8);
+                int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism);
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
