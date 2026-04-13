@@ -1,4 +1,4 @@
-﻿using Servy.Service.Native;
+﻿using Servy.Core.Native;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

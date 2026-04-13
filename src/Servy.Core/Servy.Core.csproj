@@ -120,6 +120,8 @@
     <Compile Include="Helpers\ServiceValidator.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Native\Errors.cs" />
+    <Compile Include="Native\Handle.cs" />
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Services\IJsonServiceSerializer.cs" />
     <Compile Include="Services\IXmlServiceSerializer.cs" />

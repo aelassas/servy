@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Helpers
 {
@@ -17,33 +18,6 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public static class ProcessKiller
     {
-        #region Win32 API
-
-        /// <summary>
-        /// Represents the basic information of a process used for querying the parent PID via Win32 API.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct ProcessBasicInformation
-        {
-            public IntPtr Reserved1;
-            public IntPtr PebBaseAddress;
-            public IntPtr Reserved2_0;
-            public IntPtr Reserved2_1;
-            public IntPtr UniqueProcessId;
-            public IntPtr InheritedFromUniqueProcessId;
-        }
-
-        [DllImport("ntdll.dll")]
-        private static extern int NtQueryInformationProcess(
-            IntPtr processHandle,
-            int processInformationClass,
-            ref ProcessBasicInformation processInformation,
-            uint processInformationLength,
-            out uint returnLength
-        );
-
-        #endregion
-
         /// <summary>
         /// Recursively kills all child processes of a specified parent process.
         /// </summary>
