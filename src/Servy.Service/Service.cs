@@ -1829,6 +1829,7 @@ namespace Servy.Service
 
             bool needsRecovery = false;
             bool shouldStop = false;
+            bool performStabilityCheck = false;
 
             lock (_healthCheckLock)
             {
@@ -1876,11 +1877,15 @@ namespace Servy.Service
                         _failedChecks = 0;
                     }
 
-                    // STABILITY CHECK
-                    // This is where we check if we've been healthy long enough to reset the 
-                    // PERSISTENT restart counter (the one that survives reboots).
-                    ConditionalResetRestartAttempts(_options);
+                    performStabilityCheck = true;
                 }
+            }
+
+            if (performStabilityCheck)
+            {
+                // STABILITY CHECK (Disk I/O)
+                // This is safely outside the health lock, preventing it from stalling OnProcessExited.
+                ConditionalResetRestartAttempts(_options);
             }
 
             if (shouldStop) Stop();
