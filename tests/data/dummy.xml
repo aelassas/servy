@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-16"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>DummyService</Name>
   <DisplayName>DummyService</DisplayName>
@@ -15,6 +15,7 @@
   <EnableDateRotation>true</EnableDateRotation>
   <DateRotationType>1</DateRotationType>
   <MaxRotations>3</MaxRotations>
+  <UseLocalTimeForRotation>false</UseLocalTimeForRotation>
   <EnableHealthMonitoring>true</EnableHealthMonitoring>
   <HeartbeatInterval>5</HeartbeatInterval>
   <MaxFailedChecks>1</MaxFailedChecks>
@@ -23,12 +24,12 @@
   <FailureProgramPath>C:\Windows\System32\cmd.exe</FailureProgramPath>
   <FailureProgramStartupDirectory>C:\Windows\Temp</FailureProgramStartupDirectory>
   <FailureProgramParameters>/c exit 0 --param 2001</FailureProgramParameters>
-  <EnvironmentVariables>var1=val1; var2=val2;</EnvironmentVariables>
+  <EnvironmentVariables>var1=val1;var2=val2</EnvironmentVariables>
   <RunAsLocalSystem>true</RunAsLocalSystem>
   <PreLaunchExecutablePath>C:\Windows\System32\cmd.exe</PreLaunchExecutablePath>
   <PreLaunchStartupDirectory>C:\Windows\Temp</PreLaunchStartupDirectory>
   <PreLaunchParameters>/c exit 0 --param 2002</PreLaunchParameters>
-  <PreLaunchEnvironmentVariables>preVar1=val1; preVar2=val2;</PreLaunchEnvironmentVariables>
+  <PreLaunchEnvironmentVariables>preVar1=val1;preVar2=val2</PreLaunchEnvironmentVariables>
   <PreLaunchStdoutPath>C:\Windows\Temp\dummy-pre-stdout.log</PreLaunchStdoutPath>
   <PreLaunchStderrPath>C:\Windows\Temp\dummy-pre-stderr.log</PreLaunchStderrPath>
   <PreLaunchTimeoutSeconds>5</PreLaunchTimeoutSeconds>
@@ -38,4 +39,8 @@
   <PostLaunchStartupDirectory>C:\Windows\Temp</PostLaunchStartupDirectory>
   <PostLaunchParameters>/c exit 0 --param 2003</PostLaunchParameters>
   <EnableDebugLogs>true</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+  <PreStopTimeoutSeconds>5</PreStopTimeoutSeconds>
+  <PreStopLogAsError>false</PreStopLogAsError>
 </ServiceDto>
