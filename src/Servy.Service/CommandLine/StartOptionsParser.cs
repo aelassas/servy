@@ -25,7 +25,7 @@ namespace Servy.Service.CommandLine
         {
             if (fullArgs == null || fullArgs.Length == 0)
             {
-                return new StartOptions();
+                throw new ArgumentException("No arguments provided");
             }
 
             var serviceName = fullArgs.Length > 1 ? fullArgs[1] : string.Empty;

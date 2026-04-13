@@ -191,6 +191,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
             ServiceCommands = serviceCommands;
+            _cts = new CancellationTokenSource();
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());

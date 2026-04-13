@@ -26,7 +26,7 @@ namespace Servy.Validators
         /// <param name="messageBoxService">MessageBox service.</param>
         public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
         {
-            _messageBoxService = messageBoxService;
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
         }
 
         /// <inheritdoc/>
