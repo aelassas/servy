@@ -31,11 +31,18 @@ namespace Servy.Core.Helpers
                 return (false, "One or more argument strings exceed the Windows command-line limit.");
 
             // 3. Numeric Guardrails (Prevent Overflows & Invalid State)
-            if (dto.StartTimeout.HasValue && dto.StartTimeout < AppConfig.MinStartTimeout) return (false, "Invalid Start Timeout.");
+            if (dto.StartTimeout.HasValue && dto.StartTimeout < AppConfig.MinStartTimeout)
+                return (false, $"Start Timeout must be at least {AppConfig.MinStartTimeout} second(s).");
+
+            if (dto.StartTimeout.HasValue && dto.StartTimeout > AppConfig.MaxStartTimeout)
+                return (false, $"Start Timeout exceeds maximum ({AppConfig.MaxStartTimeout}).");
 
             // Protect against uint overflow in ChangeServiceConfig2 (SCM)
             if (dto.StopTimeout.HasValue && dto.StopTimeout < AppConfig.MinStopTimeout)
                 return (false, $"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).");
+
+            if (dto.StopTimeout.HasValue && dto.StopTimeout > AppConfig.MaxStopTimeout)
+                return (false, $"Stop Timeout exceeds maximum ({AppConfig.MaxStopTimeout}).");
 
             if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && (dto.RotationSize < AppConfig.MinRotationSize))
                 return (false, "Rotation size is too small.");
