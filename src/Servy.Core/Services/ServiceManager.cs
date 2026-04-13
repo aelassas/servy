@@ -28,7 +28,7 @@ namespace Servy.Core.Services
         private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
         private const int ScmPollIntervalMs = 500;
-
+        private const int MaxParallelScmQueries = 8;
         public const string LocalSystemAccount = "LocalSystem";
 
         #endregion
@@ -696,7 +696,7 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return OperationResult.Success();
 
-                    int timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds??0);
+                    int timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds ?? 0);
 
                     Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
@@ -852,7 +852,7 @@ namespace Servy.Core.Services
                 Parallel.ForEach(services, new ParallelOptions
                 {
                     CancellationToken = cancellationToken,
-                    MaxDegreeOfParallelism = Environment.ProcessorCount
+                    MaxDegreeOfParallelism = Math.Min(Environment.ProcessorCount, MaxParallelScmQueries),
                 },
                 service =>
                 {
