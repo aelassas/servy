@@ -29,6 +29,8 @@ namespace Servy.Manager.Services
         /// </summary>
         private readonly ConcurrentDictionary<string, SemaphoreSlim> _serviceLocks = new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
 
+        private bool _isDisposed;
+
         #region Private Fields
 
         private readonly IServiceManager _serviceManager;
@@ -649,6 +651,52 @@ namespace Servy.Manager.Services
                 Logger.Error($"Failed to copy PID to clipboard.", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
             }
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the unmanaged resources used by the <see cref="ServiceCommands"/> and optionally releases the managed resources.
+        /// </summary>
+        /// <param name="disposing">
+        /// <c>true</c> to release both managed and unmanaged resources; 
+        /// <c>false</c> to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                // Free managed objects here
+                foreach (var sem in _serviceLocks.Values)
+                {
+                    try
+                    {
+                        sem.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Fail-silent on disposal to prevent crash during shutdown
+                        Logger.Error("Error disposing semaphore during ServiceCommands teardown.", ex);
+                    }
+                }
+                _serviceLocks.Clear();
+            }
+
+            // Free unmanaged objects here (if any)
+
+            _isDisposed = true;
         }
 
         #endregion

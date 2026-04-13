@@ -705,6 +705,9 @@ namespace Servy.Manager.ViewModels
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
             }
+
+            // Dispose the command engine to clean up semaphores
+            ServiceCommands?.Dispose();
         }
 
         /// <summary>

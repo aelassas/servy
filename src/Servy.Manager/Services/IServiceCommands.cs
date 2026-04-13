@@ -7,7 +7,7 @@ namespace Servy.Manager.Services
     /// Provides methods for searching, starting, stopping, configuring,
     /// installing, uninstalling, removing, and importing/exporting services.
     /// </summary>
-    public interface IServiceCommands
+    public interface IServiceCommands : IDisposable
     {
         /// <summary>
         /// Searches for services matching the specified search text.
