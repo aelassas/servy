@@ -42,8 +42,8 @@ namespace Servy.Manager.ViewModels
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
 
-        private List<double> _cpuValues = new List<double>();
-        private List<double> _ramValues = new List<double>();
+        private Queue<double> _cpuValues = new Queue<double>();
+        private Queue<double> _ramValues = new Queue<double>();
 
         #endregion
 
@@ -196,7 +196,7 @@ namespace Servy.Manager.ViewModels
             _cts = new CancellationTokenSource();
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
-            
+
             InitTimer();
         }
 
@@ -239,8 +239,8 @@ namespace Servy.Manager.ViewModels
 
             // 2. Clear and SEED the data history with PerformanceHistoryCapacity zeros
             // This ensures the graph line spans the whole width immediately
-            _cpuValues = Enumerable.Repeat(0.0, PerformanceHistoryCapacity).ToList();
-            _ramValues = Enumerable.Repeat(0.0, PerformanceHistoryCapacity).ToList();
+            _cpuValues = new Queue<double>(Enumerable.Repeat(0.0, PerformanceHistoryCapacity));
+            _ramValues = new Queue<double>(Enumerable.Repeat(0.0, PerformanceHistoryCapacity));
 
             // 3. Reset the UI collections to empty (they will update on next tick)
             CpuPointCollection = new PointCollection();
@@ -380,13 +380,16 @@ namespace Servy.Manager.ViewModels
         /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
         /// <param name="newValue">The latest raw value captured from the process.</param>
         /// <param name="propertyName">The name of the property being updated (used to distinguish CPU vs RAM logic).</param>
-        private void AddPoint(List<double> valueHistory, double newValue, string propertyName)
+        private void AddPoint(Queue<double> valueHistory, double newValue, string propertyName)
         {
             var isCpu = propertyName == nameof(CpuPointCollection);
-            valueHistory.Add(newValue);
+            valueHistory.Enqueue(newValue);
 
             if (valueHistory.Count > PerformanceHistoryCapacity)
-                valueHistory.RemoveAt(0);
+            {
+                // O(1) removal. The internal head pointer simply moves forward.
+                valueHistory.Dequeue();
+            }
 
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
             double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
@@ -398,15 +401,20 @@ namespace Servy.Manager.ViewModels
             fillBuffer.Clear();
 
             double stepX = GraphWidth / 100.0;
-            for (int i = 0; i < valueHistory.Count; i++)
+            int i = 0;
+
+            // Queue doesn't support indexers (valueHistory[i]), so use foreach
+            foreach (var val in valueHistory)
             {
                 double x = i * stepX;
-                double ratio = Math.Min(Math.Max(valueHistory[i] / displayMax, 0), 1);
+                double ratio = Math.Min(Math.Max(val / displayMax, 0), 1);
                 double y = GraphHeight - (ratio * GraphHeight);
 
                 var point = new Point(x, y);
                 lineBuffer.Add(point);
                 fillBuffer.Add(point);
+
+                i++;
             }
 
             // Close the fill polygon
