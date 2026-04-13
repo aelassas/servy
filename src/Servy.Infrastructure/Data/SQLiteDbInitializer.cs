@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -62,7 +63,7 @@ namespace Servy.Infrastructure.Data
             // 2. Check if the index exists AND if it is NOT unique (0 means non-unique)
             // Using .Any() is safe: if no index matches, it simply returns false.
             bool needsUpgrade = indices.Any(i =>
-                (string)i.name == "idx_services_name_lower" && (long)i.unique == 0);
+                Convert.ToString(i.name) == "idx_services_name_lower" && Convert.ToInt64(i.unique) == 0);
 
             if (needsUpgrade)
             {

@@ -190,4 +190,7 @@
     <Error Condition="!Exists('..\..\packages\Fody.6.6.4\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Fody.6.6.4\build\Fody.targets'))" />
     <Error Condition="!Exists('..\..\packages\ConfigureAwait.Fody.3.3.2\build\ConfigureAwait.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\ConfigureAwait.Fody.3.3.2\build\ConfigureAwait.Fody.props'))" />
   </Target>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Core.UnitTests" />
+  </ItemGroup>
 </Project>
