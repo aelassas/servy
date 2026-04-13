@@ -35,4 +35,8 @@
     </AssemblyAttribute>
   </ItemGroup>
   
+  <ItemGroup>
+    <InternalsVisibleTo Include="Servy.Core.UnitTests" />
+  </ItemGroup>
+
 </Project>

@@ -155,8 +155,8 @@ function Format-SecureLogMessage {
     [string]$Text
   )
 
-  if ([string]::IsNullOrWhiteSpace($Text)) { 
-    return $Text 
+  if ($null -eq $Text -or $Text.Trim() -eq "") {
+      return $Text
   }
 
   # Define all CLI parameters that may contain sensitive data or injected variables
@@ -435,7 +435,7 @@ function Invoke-ServyCli {
   if ($null -ne $exitCode -and $exitCode -ne 0) {
     # SECURITY FIX: Scrub stderr before pushing to the session-persistent exit code exception
     $scrubbedStderrFinal = Format-SecureLogMessage -Text $stderr
-    $errorMessage = if (-not [string]::IsNullOrWhiteSpace($scrubbedStderrFinal)) { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
+    $errorMessage = if ($null -ne $scrubbedStderrFinal -and $scrubbedStderrFinal.Trim() -ne "") { $scrubbedStderrFinal.TrimEnd() } else { "Unknown error" }
     
     throw "$($ErrorContext): Servy CLI exited with code $exitCode. Details: $errorMessage"
   }

@@ -180,7 +180,7 @@ namespace Servy.Core.Services
         /// <param name="serviceHandle">Handle to the service.</param>
         /// <param name="description">The description text.</param>
         /// <exception cref="Win32Exception">Thrown if setting the description fails.</exception>
-        public void SetServiceDescription(IntPtr serviceHandle, string description)
+        internal void SetServiceDescription(IntPtr serviceHandle, string description)
         {
             if (string.IsNullOrEmpty(description))
                 return;
@@ -499,6 +499,13 @@ namespace Servy.Core.Services
                                 options.ServiceName,
                                 SERVICE_CHANGE_CONFIG
                             );
+
+                            if (existingServiceHandle == IntPtr.Zero)
+                            {
+                                var err = _win32ErrorProvider.GetLastWin32Error();
+                                Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
+                                return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                            }
 
                             try
                             {
