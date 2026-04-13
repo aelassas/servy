@@ -133,7 +133,7 @@ namespace Servy.CLI.UnitTests.Commands
 
             // Assert
             Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("JSON file is not valid: The provided executable path", result.Message);
+            Assert.Contains("JSON file is not valid: Executable path is required", result.Message);
 
             File.Delete(path);
         }

@@ -70,7 +70,7 @@ namespace Servy.Core.UnitTests.Services
             var result = JsonServiceValidator.TryValidate(json, out var error);
 
             Assert.False(result);
-            Assert.Equal("Stop Timeout must be between 30s and 1 hour.", error);
+            Assert.Equal($"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).", error);
         }
 
         [Fact]
