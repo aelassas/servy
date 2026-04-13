@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+using Servy.Core.Logging;
+using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -67,8 +69,9 @@ namespace Servy.Core.Native
                 var nt = new NTAccount(account);
                 return (SecurityIdentifier)nt.Translate(typeof(SecurityIdentifier));
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Warn($"Failed to resolve SID for account '{account}'.", ex);
                 return null;
             }
         }

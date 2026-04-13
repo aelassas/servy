@@ -306,8 +306,9 @@ namespace Servy.Core.Helpers
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug("MainModule.FileName not available, trying AppDomain fallback.", ex);
                 try
                 {
                     var exeName = AppDomain.CurrentDomain.FriendlyName;
@@ -317,9 +318,10 @@ namespace Servy.Core.Helpers
                         return File.GetLastWriteTimeUtc(exePath);
                     }
                 }
-                catch
+                catch (Exception innerEx)
                 {
                     // Ignore exceptions and fallback to UtcNow
+                    Logger.Debug("AppDomain fallback also failed, using UtcNow.", innerEx);
                 }
             }
 

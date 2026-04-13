@@ -60,7 +60,7 @@ namespace Servy.CLI.Commands
                 }
                 else
                 {
-                    Logger.Info(res.ErrorMessage);
+                    Logger.Error(res.ErrorMessage);
                     return CommandResult.Fail(res.ErrorMessage);
                 }
             });

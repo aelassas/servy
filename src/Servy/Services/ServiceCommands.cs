@@ -2,11 +2,9 @@
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
-using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;
@@ -30,6 +28,12 @@ namespace Servy.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
+        #region Constants
+
+        private const string UnexpectedError = "Unexpected error in service operation.";
+
+        #endregion
+
         #region Private Fields
 
         private readonly Func<ServiceDto> _modelToServiceDto;
@@ -256,8 +260,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -297,8 +302,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -340,8 +346,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -376,8 +383,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -419,8 +427,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -561,7 +570,7 @@ namespace Servy.Services
                     return;
                 }
 
-                var json =  File.ReadAllText(path);
+                var json = File.ReadAllText(path);
                 if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
                 {
                     await _messageBoxService.ShowErrorAsync(errorMsg, Caption);

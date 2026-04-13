@@ -197,7 +197,7 @@ namespace Servy.Core.Helpers
                                     proc.Dispose(); // Not the process we're looking for.
                                 }
                             }
-                            catch { /* Process already exited or access denied */ }
+                            catch (Exception ex) { Logger.Debug($"Could not inspect/kill child process.", ex); }
                         }
                     } while (Process32Next(snapshot, ref pe32));
                 }

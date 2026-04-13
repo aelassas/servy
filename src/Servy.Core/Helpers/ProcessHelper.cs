@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Logging;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -233,8 +234,9 @@ namespace Servy.Core.Helpers
                 CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
                 return new ProcessMetrics(0, 0);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Debug($"Failed to get process metrics for PID {pid}.", ex);
                 return new ProcessMetrics(0, 0);
             }
         }
