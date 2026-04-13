@@ -41,10 +41,11 @@ namespace Servy.Restarter
                     try
                     {
                         controller.Stop();
-                        var remaining = timeout - stopwatch.Elapsed;
-                        if (remaining <= TimeSpan.Zero) throw new System.TimeoutException();
+                        var startRemaining = timeout - stopwatch.Elapsed;
+                        if (startRemaining <= TimeSpan.Zero)
+                            throw new System.TimeoutException($"No time remaining to start service '{serviceName}'.");
 
-                        controller.WaitForStatus(ServiceControllerStatus.Stopped, remaining);
+                        controller.WaitForStatus(ServiceControllerStatus.Stopped, startRemaining);
                     }
                     catch (InvalidOperationException)
                     {
