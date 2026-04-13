@@ -90,7 +90,7 @@ namespace Servy.Services
                 return false;
             }
 
-            // Build DTO
+            // 1. Build the DTO (The Single Source of Truth for this operation)
             var dto = new ServiceDto
             {
                 Name = config.Name,
@@ -120,8 +120,11 @@ namespace Servy.Services
                 EnvironmentVariables = config.EnvironmentVariables,
                 ServiceDependencies = config.ServiceDependencies,
                 RunAsLocalSystem = config.RunAsLocalSystem,
+
+                // Trust the DTO to handle the identity logic
                 UserAccount = config.RunAsLocalSystem ? null : config.UserAccount,
                 Password = config.RunAsLocalSystem ? null : config.Password,
+
                 PreLaunchExecutablePath = config.PreLaunchExecutablePath,
                 PreLaunchStartupDirectory = config.PreLaunchStartupDirectory,
                 PreLaunchParameters = config.PreLaunchParameters,
@@ -152,7 +155,7 @@ namespace Servy.Services
                 PostStopParameters = config.PostStopParameters,
             };
 
-            // Validate
+            // 2. Validate the DTO
             if (!await _serviceConfigurationValidator.Validate(dto, wrapperExePath: wrapperExePath, confirmPassword: config.ConfirmPassword))
             {
                 return false; // Validation failed, errors shown in MessageBox
@@ -160,9 +163,8 @@ namespace Servy.Services
 
             if (_serviceManager.IsServiceInstalled(dto.Name))
             {
-                var res = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
-
-                if (!res)
+                var confirmExists = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, Caption);
+                if (!confirmExists)
                 {
                     return false;
                 }
@@ -177,69 +179,72 @@ namespace Servy.Services
                 var normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
                 var normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
 
-                var finalUserAccount = config.RunAsLocalSystem ? null : config.UserAccount;
-                var finalPassword = config.RunAsLocalSystem ? null : config.Password;
-
+                // 3. Map Install Options strictly from the validated DTO
                 var options = new InstallServiceOptions
                 {
-                    ServiceName = config.Name,
-                    Description = config.Description,
+                    ServiceName = dto.Name,
+                    DisplayName = dto.DisplayName,
+                    Description = dto.Description,
                     WrapperExePath = wrapperExePath,
-                    RealExePath = config.ExecutablePath,
-                    WorkingDirectory = config.StartupDirectory,
-                    RealArgs = config.Parameters,
-                    StartType = config.StartupType,
-                    ProcessPriority = config.Priority,
-                    StdoutPath = config.StdoutPath,
-                    StderrPath = config.StderrPath,
-                    EnableSizeRotation = config.EnableSizeRotation,
+                    RealExePath = dto.ExecutablePath,
+                    WorkingDirectory = dto.StartupDirectory,
+                    RealArgs = dto.Parameters,
+                    StartType = (ServiceStartType)dto.StartupType,
+                    ProcessPriority = (ProcessPriority)dto.Priority,
+                    Username = dto.UserAccount,
+                    Password = dto.Password,
+
+                    StdoutPath = dto.StdoutPath,
+                    StderrPath = dto.StderrPath,
+                    EnableSizeRotation = dto.EnableRotation ?? AppConfig.DefaultEnableRotation,
                     RotationSizeInBytes = rotationSizeValue,
-                    UseLocalTimeForRotation = config.UseLocalTimeForRotation,
-                    EnableHealthMonitoring = config.EnableHealthMonitoring,
+                    MaxRotations = dto.MaxRotations,
+                    EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
+                    DateRotationType = (DateRotationType)dto.DateRotationType,
+                    UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
+
+                    EnableHealthMonitoring = dto.EnableHealthMonitoring ?? AppConfig.DefaultEnableHealthMonitoring,
                     HeartbeatInterval = dto.HeartbeatInterval ?? AppConfig.DefaultHeartbeatInterval,
                     MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
-                    RecoveryAction = config.RecoveryAction,
+                    RecoveryAction = (RecoveryAction)dto.RecoveryAction,
                     MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
-                    EnvironmentVariables = normalizedEnvVars,
-                    ServiceDependencies = config.ServiceDependencies,
-                    Username = finalUserAccount,
-                    Password = finalPassword,
 
-                    PreLaunchExePath = config.PreLaunchExecutablePath,
-                    PreLaunchWorkingDirectory = config.PreLaunchStartupDirectory,
-                    PreLaunchArgs = config.PreLaunchParameters,
+                    EnvironmentVariables = normalizedEnvVars,
+                    ServiceDependencies = dto.ServiceDependencies,
+
+                    PreLaunchExePath = dto.PreLaunchExecutablePath,
+                    PreLaunchWorkingDirectory = dto.PreLaunchStartupDirectory,
+                    PreLaunchArgs = dto.PreLaunchParameters,
                     PreLaunchEnvironmentVariables = normalizedPreLaunchEnvVars,
-                    PreLaunchStdoutPath = config.PreLaunchStdoutPath,
-                    PreLaunchStderrPath = config.PreLaunchStderrPath,
+                    PreLaunchStdoutPath = dto.PreLaunchStdoutPath,
+                    PreLaunchStderrPath = dto.PreLaunchStderrPath,
                     PreLaunchTimeout = dto.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds,
                     PreLaunchRetryAttempts = dto.PreLaunchRetryAttempts ?? AppConfig.DefaultPreLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
+                    PreLaunchIgnoreFailure = dto.PreLaunchIgnoreFailure ?? AppConfig.DefaultPreLaunchIgnoreFailure,
 
-                    FailureProgramPath = config.FailureProgramPath,
-                    FailureProgramWorkingDirectory = config.FailureProgramStartupDirectory,
-                    FailureProgramArgs = config.FailureProgramParameters,
+                    FailureProgramPath = dto.FailureProgramPath,
+                    FailureProgramWorkingDirectory = dto.FailureProgramStartupDirectory,
+                    FailureProgramArgs = dto.FailureProgramParameters,
 
-                    PostLaunchExePath = config.PostLaunchExecutablePath,
-                    PostLaunchWorkingDirectory = config.PostLaunchStartupDirectory,
-                    PostLaunchArgs = config.PostLaunchParameters,
+                    PostLaunchExePath = dto.PostLaunchExecutablePath,
+                    PostLaunchWorkingDirectory = dto.PostLaunchStartupDirectory,
+                    PostLaunchArgs = dto.PostLaunchParameters,
 
-                    EnableDebugLogs = config.EnableDebugLogs,
-                    DisplayName = config.DisplayName,
-                    MaxRotations = dto.MaxRotations,
-                    EnableDateRotation = config.EnableDateRotation,
-                    DateRotationType = config.DateRotationType,
                     StartTimeout = dto.StartTimeout,
                     StopTimeout = dto.StopTimeout,
 
-                    PreStopExePath = config.PreStopExecutablePath,
-                    PreStopWorkingDirectory = config.PreStopStartupDirectory,
-                    PreStopArgs = config.PreStopParameters,
+                    PreStopExePath = dto.PreStopExecutablePath,
+                    PreStopWorkingDirectory = dto.PreStopStartupDirectory,
+                    PreStopArgs = dto.PreStopParameters,
                     PreStopTimeout = dto.PreStopTimeoutSeconds,
-                    PreStopLogAsError = config.PreStopLogAsError,
+                    PreStopLogAsError = dto.PreStopLogAsError,
 
-                    PostStopExePath = config.PostStopExecutablePath,
-                    PostStopWorkingDirectory = config.PostStopStartupDirectory,
-                    PostStopArgs = config.PostStopParameters
+                    PostStopExePath = dto.PostStopExecutablePath,
+                    PostStopWorkingDirectory = dto.PostStopStartupDirectory,
+                    PostStopArgs = dto.PostStopParameters,
+
+                    // Fields not tracked in the persistent DTO fall back to the config
+                    EnableDebugLogs = config.EnableDebugLogs
                 };
 
                 var res = await _serviceManager.InstallServiceAsync(options);
