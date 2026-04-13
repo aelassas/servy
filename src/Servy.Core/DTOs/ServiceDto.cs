@@ -8,7 +8,6 @@ namespace Servy.Core.DTOs
     /// </summary>
     public class ServiceDto : ICloneable
     {
-
         #region Properties
 
         /// <summary>

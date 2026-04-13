@@ -127,11 +127,6 @@ namespace Servy.Service
 
         #endregion
 
-        #region P/Invoke and Structs
-
-
-        #endregion
-
         #region Private Fields
 
         /// <summary>The interval, in milliseconds, at which the launcher checks the process status and invokes the OnScmHeartbeat delegate.</summary>
