@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Xunit;
@@ -11,6 +10,7 @@ namespace Servy.Tests.Helpers
         private ServiceDto GetValidDto() => new ServiceDto
         {
             Name = "ServyTest",
+            ExecutablePath = @"C:\Apps\app.exe",
             DisplayName = "Servy Test Service",
             Description = "Standard valid description.",
             Parameters = "--worker",
@@ -27,6 +27,7 @@ namespace Servy.Tests.Helpers
             var dto = new ServiceDto
             {
                 Name = "MinimalService",
+                ExecutablePath = @"C:\Apps\app.exe",
                 StartTimeout = null,
                 StopTimeout = null,
                 EnableRotation = null,
@@ -204,7 +205,7 @@ namespace Servy.Tests.Helpers
             var (isValid, error) = ServiceValidator.ValidateDto(dto);
 
             Assert.False(isValid);
-            Assert.Equal("Stop Timeout must be between 30s and 1 hour.", error);
+            Assert.Equal($"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).", error);
         }
 
         [Fact]
