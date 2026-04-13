@@ -22,9 +22,6 @@ namespace Servy.Infrastructure.Data
         private const int InitialDelayMs = 100;
         private const int MaxJitterMs = 50;
 
-        // Thread-safe random for jitter calculation
-        private static readonly Random _jitterer = new Random();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
         /// </summary>
@@ -95,12 +92,8 @@ namespace Servy.Infrastructure.Data
             // Exponential: 100, 200, 400...
             int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
 
-            // Jitter: 0 to 50ms
-            int jitter;
-            lock (_jitterer)
-            {
-                jitter = _jitterer.Next(0, MaxJitterMs + 1);
-            }
+            // Jitter: 0 to 50ms (Thread-safe and lock-free)
+            int jitter = Random.Shared.Next(0, MaxJitterMs + 1);
 
             return backoff + jitter;
         }
