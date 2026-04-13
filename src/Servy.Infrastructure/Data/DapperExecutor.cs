@@ -25,6 +25,10 @@ namespace Servy.Infrastructure.Data
         private readonly IAppDbContext _dbContext;
         private const int MaxRetries = 3;
         private const int InitialDelayMs = 100;
+        private const int MaxJitterMs = 50;
+
+        // Thread-safe random for jitter calculation
+        private static readonly Random _jitterer = new Random();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
@@ -38,7 +42,7 @@ namespace Servy.Infrastructure.Data
         #region Execution Wrappers
 
         /// <summary>
-        /// Wraps a synchronous database action with a retry policy for SQLite busy/locked states.
+        /// Wraps a synchronous database action with a retry policy using exponential backoff and jitter.
         /// </summary>
         private T ExecuteWithRetry<T>(Func<T> action)
         {
@@ -51,15 +55,19 @@ namespace Servy.Infrastructure.Data
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
                     if (i == MaxRetries - 1) throw;
-                    Logger.Warn(string.Format("Database busy (attempt {0}/{1}). Retrying...", i + 1, MaxRetries));
-                    Thread.Sleep(InitialDelayMs * (i + 1));
+
+                    int delay = CalculateBackoff(i);
+                    Logger.Warn($"Database busy (attempt {i + 1}/{MaxRetries}). Retrying in {delay}ms...");
+
+                    // Note: Caller must ensure this is not executed on the UI thread to avoid freezes.
+                    Thread.Sleep(delay);
                 }
             }
-            return default(T);
+            return default;
         }
 
         /// <summary>
-        /// Wraps an asynchronous database action with a retry policy for SQLite busy/locked states.
+        /// Wraps an asynchronous database action with a retry policy using exponential backoff and jitter.
         /// </summary>
         private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
         {
@@ -72,11 +80,34 @@ namespace Servy.Infrastructure.Data
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
                     if (i == MaxRetries - 1) throw;
-                    Logger.Warn(string.Format("Database busy (async attempt {0}/{1}). Retrying...", i + 1, MaxRetries));
-                    await Task.Delay(InitialDelayMs * (i + 1)).ConfigureAwait(false);
+
+                    int delay = CalculateBackoff(i);
+                    Logger.Warn($"Database busy (async attempt {i + 1}/{MaxRetries}). Retrying in {delay}ms...");
+
+                    await Task.Delay(delay).ConfigureAwait(false);
                 }
             }
-            return default(T);
+            return default;
+        }
+
+        /// <summary>
+        /// Calculates the delay for the next retry attempt using exponential backoff and jitter.
+        /// </summary>
+        /// <param name="attempt">The zero-based attempt index.</param>
+        /// <returns>The delay in milliseconds.</returns>
+        private int CalculateBackoff(int attempt)
+        {
+            // Exponential: 100, 200, 400...
+            int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
+
+            // Jitter: 0 to 50ms
+            int jitter;
+            lock (_jitterer)
+            {
+                jitter = _jitterer.Next(0, MaxJitterMs + 1);
+            }
+
+            return backoff + jitter;
         }
 
         #endregion

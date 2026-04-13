@@ -890,9 +890,14 @@ namespace Servy.Manager.ViewModels
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
                 }
 
-                // Note: ServicesView.Refresh() has been explicitly removed.
-                // Property updates (CPU, RAM, Status) are handled by INotifyPropertyChanged.
-                // Additions and removals are handled via ObservableCollection in SearchServicesAsync.
+                // Refresh UI only if not cancelled
+                if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        ServicesView.Refresh();
+                    }, DispatcherPriority.Background);
+                }
             }
             catch (OperationCanceledException)
             {
