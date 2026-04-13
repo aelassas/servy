@@ -53,21 +53,21 @@ fs.appendFileSync(filePath, '\n', "utf8")
 // fs.writeFileSync(filePath, (new Date()).toISOString(), 'utf-8')
 
 // simulate some work
-// await new Promise((res) => setTimeout(res, 6 * 1000))
-// process.stdout.write('stdout boo!\n')
-// process.stderr.write('stderr boo!\n')
+await new Promise((res) => setTimeout(res, 6 * 1000))
+process.stdout.write('stdout boo!\n')
+process.stderr.write('stderr boo!\n')
 
 // process.exit(0)
 
 // start wexflow
-const workingDir = 'C:\\Program Files\\Wexflow Server\\Wexflow.Server\\';
-const child = spawn(
-  'C:\\Program Files\\dotnet\\dotnet.exe',
-  ['Wexflow.Server.dll'],
-  {
-    cwd: workingDir
-  }
-);
+// const workingDir = 'C:\\Program Files\\Wexflow Server\\Wexflow.Server\\';
+// const child = spawn(
+//   'C:\\Program Files\\dotnet\\dotnet.exe',
+//   ['Wexflow.Server.dll'],
+//   {
+//     cwd: workingDir
+//   }
+// );
 
 // start child process notepad.exe (Windows) detached
 // const child = spawn('notepad.exe', [], {
@@ -81,7 +81,7 @@ const child = spawn(
 // const child = spawn('C:\\Users\\aelassas\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', ['-u', 'E:\\dev\\servy\\src\\tests\\ctrlc.py'])
 // child.unref()
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+// const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // while (true) {
 //   process.stdout.write('[stdout] App is running. Press any key to stop.\n')
