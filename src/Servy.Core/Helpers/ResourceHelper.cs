@@ -41,11 +41,11 @@ namespace Servy.Core.Helpers
         /// <param name="isCli">Whether we are in CLI or not.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
         public async Task<bool> CopyEmbeddedResource(
-            Assembly assembly, 
-            string resourceNamespace, 
-            string fileName, 
-            string extension, 
-            bool stopServices = true, 
+            Assembly assembly,
+            string resourceNamespace,
+            string fileName,
+            string extension,
+            bool stopServices = true,
             bool isCli = false)
         {
             try
@@ -117,9 +117,9 @@ namespace Servy.Core.Helpers
         /// <param name="extension">The file extension (e.g., "exe" or "dll").</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
         public bool CopyEmbeddedResourceSync(
-            Assembly assembly, 
-            string resourceNamespace, 
-            string fileName, 
+            Assembly assembly,
+            string resourceNamespace,
+            string fileName,
             string extension)
         {
             try
@@ -172,8 +172,9 @@ namespace Servy.Core.Helpers
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Debug("MainModule.FileName not available, trying AppDomain fallback.", ex);
                 try
                 {
                     var exeName = AppDomain.CurrentDomain.FriendlyName;
@@ -183,9 +184,10 @@ namespace Servy.Core.Helpers
                         return File.GetLastWriteTimeUtc(exePath);
                     }
                 }
-                catch
+                catch (Exception innerEx)
                 {
                     // Ignore exceptions and fallback to UtcNow
+                    Logger.Debug("AppDomain fallback also failed, using UtcNow.", innerEx);
                 }
             }
 
@@ -206,12 +208,12 @@ namespace Servy.Core.Helpers
         /// <param name="resourceName">Output parameter containing the full manifest resource name used for extraction.</param>
         /// <returns>True if the resource needs to be copied; false if the existing file is up to date.</returns>
         private bool ShouldCopyResource(
-            Assembly assembly, 
+            Assembly assembly,
             string resourceNamespace,
-            string fileName, 
-            string extension, 
-            out string targetPath, 
-            out string targetFileName, 
+            string fileName,
+            string extension,
+            out string targetPath,
+            out string targetFileName,
             out string resourceName)
         {
             targetFileName = fileName + "." + extension;

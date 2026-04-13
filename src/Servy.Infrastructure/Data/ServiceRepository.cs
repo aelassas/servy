@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System.Xml.Serialization;
@@ -645,8 +646,9 @@ namespace Servy.Infrastructure.Data
                 await UpsertAsync(service);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error("Failed to import service from XML.", ex);
                 return false;
             }
         }
@@ -675,8 +677,9 @@ namespace Servy.Infrastructure.Data
                 await UpsertAsync(service);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error("Failed to import service from JSON.", ex);
                 return false;
             }
         }

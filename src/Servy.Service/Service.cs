@@ -1566,26 +1566,33 @@ namespace Servy.Service
             if (string.IsNullOrWhiteSpace(_serviceName))
                 return;
 
-            var serviceDto = _serviceRepository.GetByName(_serviceName);
-
-            if (serviceDto != null)
+            try
             {
-                serviceDto.Pid = pid;
-                if (setPreviousStopTimeout)
-                    serviceDto.PreviousStopTimeout = _options?.StopTimeout;
+                var serviceDto = _serviceRepository.GetByName(_serviceName);
 
-                if (pid == null)
+                if (serviceDto != null)
                 {
-                    serviceDto.ActiveStdoutPath = null;
-                    serviceDto.ActiveStderrPath = null;
-                }
-                else
-                {
-                    serviceDto.ActiveStdoutPath = _options?.StdOutPath;
-                    serviceDto.ActiveStderrPath = _options?.StdErrPath;
-                }
+                    serviceDto.Pid = pid;
+                    if (setPreviousStopTimeout)
+                        serviceDto.PreviousStopTimeout = _options?.StopTimeout;
 
-                _serviceRepository.Update(serviceDto);
+                    if (pid == null)
+                    {
+                        serviceDto.ActiveStdoutPath = null;
+                        serviceDto.ActiveStderrPath = null;
+                    }
+                    else
+                    {
+                        serviceDto.ActiveStdoutPath = _options?.StdOutPath;
+                        serviceDto.ActiveStderrPath = _options?.StdErrPath;
+                    }
+
+                    _serviceRepository.Update(serviceDto);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error($"Failed to persist PID {pid} for service '{_serviceName}'.", ex);
             }
         }
 
@@ -1906,7 +1913,7 @@ namespace Servy.Service
                     if (isFailed)
                     {
                         int? exitCode = null;
-                        try { exitCode = process?.ExitCode; } catch { /* Ignore Error */ }
+                        try { exitCode = process?.ExitCode; } catch (Exception ex) { _logger?.Debug($"Could not read ExitCode for health check.", ex); }
 
                         if (exitCode == 0)
                         {

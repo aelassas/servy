@@ -26,6 +26,12 @@ namespace Servy.Services
     /// <exception cref="ArgumentNullException">Thrown if any argument is null.</exception>
     public class ServiceCommands : IServiceCommands
     {
+        #region Constants
+
+        private const string UnexpectedError = "Unexpected error in service operation.";
+
+        #endregion
+
         #region Private Fields
 
         private readonly Func<ServiceDto> _modelToServiceDto;
@@ -252,8 +258,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -293,8 +300,9 @@ namespace Servy.Services
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_AdminRightsRequired, Caption);
                 return false;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -336,8 +344,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -372,8 +381,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
@@ -415,8 +425,9 @@ namespace Servy.Services
                     return false;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
             }
