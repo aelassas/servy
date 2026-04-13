@@ -30,6 +30,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using ITimer = Servy.Service.Timers.ITimer;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Service
 {
@@ -111,102 +112,6 @@ namespace Servy.Service
         /// Below this threshold the default SCM timeout is sufficient.
         /// </summary>
         private const int ScmStartupRequestThresholdSeconds = 20;
-
-        /// <summary>
-        /// The service can perform cleanup tasks during a system shutdown. 
-        /// Setting this flag in the 'acceptedCommands' bitmask enables the service 
-        /// to receive the SERVICE_CONTROL_PRESHUTDOWN notification.
-        /// </summary>
-        private const int SERVICE_ACCEPT_PRESHUTDOWN = 0x00000100;
-
-        /// <summary>
-        /// The service is running. This corresponds to the <c>SERVICE_RUNNING</c> state.
-        /// </summary>
-        private const int SERVICE_RUNNING = 0x00000004;
-
-        /// <summary>
-        /// The control code sent by the SCM to notify a service that the system is 
-        /// about to shut down. This notification provides a longer timeout window 
-        /// than the standard SERVICE_CONTROL_SHUTDOWN signal.
-        /// </summary>
-        private const int SERVICE_CONTROL_PRESHUTDOWN = 0x0000000F;
-
-        /// <summary>
-        /// The service is stopping. This corresponds to the <c>SERVICE_STOP_PENDING</c> state.
-        /// </summary>
-        private const int SERVICE_STOP_PENDING = 0x00000003;
-
-        /// <summary>
-        /// The service is not running. This corresponds to the <c>SERVICE_STOPPED</c> state.
-        /// </summary>
-        private const int SERVICE_STOPPED = 0x00000001;
-
-        /// <summary>
-        /// The service can be stopped. This control code allows the SCM to send the <c>SERVICE_CONTROL_STOP</c> request.
-        /// </summary>
-        private const int SERVICE_ACCEPT_STOP = 0x00000001;
-
-        /// <summary>
-        /// The service runs in its own process. Corresponds to <c>SERVICE_WIN32_OWN_PROCESS</c>.
-        /// </summary>
-        private const int SERVICE_WIN32_OWN_PROCESS = 0x00000010;
-
-        #endregion
-
-        #region P/Invoke and Structs
-
-        /// <summary>
-        /// Updates the service control manager's status information for the calling service.
-        /// </summary>
-        /// <param name="hServiceStatus">A handle to the status information structure for the current service.</param>
-        /// <param name="lpServiceStatus">A pointer to the <see cref="SERVICE_STATUS"/> structure containing the latest status information.</param>
-        /// <returns>If the function succeeds, the return value is true.</returns>
-        [DllImport("advapi32.dll", SetLastError = true)]
-        private static extern bool SetServiceStatus(IntPtr hServiceStatus, ref SERVICE_STATUS lpServiceStatus);
-
-        /// <summary>
-        /// Retrieves the number of milliseconds that have elapsed since the system was started.
-        /// </summary>
-        /// <returns>The number of milliseconds since the system was started.</returns>
-        /// <remarks>
-        /// This native method is used in .NET Framework 4.8 as a replacement for 
-        /// <see cref="System.Environment.TickCount"/> to avoid the 32-bit signed integer rollover 
-        /// (which occurs every 24.9 days). <c>GetTickCount64</c> provides a 64-bit unsigned 
-        /// integer that does not wrap around for approximately 584 million years.
-        /// </remarks>
-        [DllImport("kernel32.dll")]
-        private static extern ulong GetTickCount64();
-
-        /// <summary>
-        /// Contains status information for a service.
-        /// </summary>
-        /// <remarks>
-        /// See <see href="https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_status">SERVICE_STATUS documentation</see> for details.
-        /// </remarks>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct SERVICE_STATUS
-        {
-            /// <summary>The type of service.</summary>
-            public int dwServiceType;
-
-            /// <summary>The current state of the service (e.g., STARTING, RUNNING, STOPPING).</summary>
-            public int dwCurrentState;
-
-            /// <summary>The control codes the service accepts and processes in its handler function.</summary>
-            public int dwControlsAccepted;
-
-            /// <summary>The error code the service uses to report an error that occurs when it is starting or stopping.</summary>
-            public int dwWin32ExitCode;
-
-            /// <summary>A service-specific error code that the service returns when an error occurs while the service is starting or stopping.</summary>
-            public int dwServiceSpecificExitCode;
-
-            /// <summary>The check-point value that the service increments periodically to report its progress during a lengthy start, stop, pause, or continue operation.</summary>
-            public int dwCheckPoint;
-
-            /// <summary>The estimated time required for a pending start, stop, pause, or continue operation, in milliseconds.</summary>
-            public int dwWaitHint;
-        }
 
         #endregion
 
