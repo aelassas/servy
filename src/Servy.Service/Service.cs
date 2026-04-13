@@ -1881,6 +1881,7 @@ namespace Servy.Service
 
                 bool needsRecovery = false;
                 bool shouldStop = false;
+                bool performStabilityCheck = false;
 
                 // 1. FAST ASYNCHRONOUS LOCK: Only evaluate memory state
                 await _healthCheckSemaphore.WaitAsync();
@@ -1930,15 +1931,21 @@ namespace Servy.Service
                             _failedChecks = 0;
                         }
 
-                        // STABILITY CHECK
-                        // This is where we check if we've been healthy long enough to reset the 
-                        // PERSISTENT restart counter (the one that survives reboots).
-                        await ConditionalResetRestartAttemptsAsync(_options!);
+                        // Flag to perform disk-bound stability check outside the lock
+                        performStabilityCheck = true;
                     }
                 }
                 finally
                 {
                     _healthCheckSemaphore.Release();
+                }
+
+                // Actions outside the critical section
+                if (performStabilityCheck)
+                {
+                    // STABILITY CHECK (Disk I/O)
+                    // This is safely outside the health lock, preventing it from stalling OnProcessExited.
+                    await ConditionalResetRestartAttemptsAsync(_options!);
                 }
 
                 if (shouldStop) Stop();
