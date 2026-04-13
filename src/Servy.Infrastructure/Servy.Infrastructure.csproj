@@ -92,6 +92,7 @@
     <Compile Include="Data\AppDbContext.cs" />
     <Compile Include="Data\DapperExecutor.cs" />
     <Compile Include="Data\ServiceRepository.cs" />
+    <Compile Include="Data\SqlConstants.cs" />
     <Compile Include="Data\SQLiteDbInitializer.cs" />
     <Compile Include="Helpers\DatabaseInitializer.cs" />
     <Compile Include="Helpers\DatabaseValidator.cs" />
