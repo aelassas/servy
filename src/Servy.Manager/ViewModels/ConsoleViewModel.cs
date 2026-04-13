@@ -320,9 +320,7 @@ namespace Servy.Manager.ViewModels
                 // 1. Increment session and cancel previous work
                 int sessionId = Interlocked.Increment(ref _currentSessionId);
 
-                _cts?.Cancel();
-                _cts?.Dispose();
-                _cts = new CancellationTokenSource();
+                ResetCts();
                 var token = _cts.Token;
 
                 RawLines.Clear();
@@ -502,6 +500,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task OnTickAsync()
         {
+            // Capture the token at the start of the tick. 
+            // If _cts is null, we shouldn't be here, but we guard it anyway.
+            var token = _cts?.Token ?? CancellationToken.None;
+
             try
             {
                 var currentSelection = SelectedService;
@@ -519,7 +521,7 @@ namespace Servy.Manager.ViewModels
                 _hadSelectedService = true;
 
                 // 1. Fetch the data from the repository
-                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, _cts.Token);
+                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
 
                 // 2. Use Clone to create a local, immutable snapshot for this UI tick
                 // This protects the UI from "dirty reads" if the repository modifies objects in memory
@@ -629,6 +631,21 @@ namespace Servy.Manager.ViewModels
             }
         }
 
+        /// <summary>
+        /// Resets the <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
+        /// and disposing of the existing instance before creating a fresh one.
+        /// </summary>
+        /// <remarks>
+        /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
+        /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
+        /// </remarks>
+        private void ResetCts()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new CancellationTokenSource();
+        }
+
         #endregion
 
         #region Public Methods
@@ -638,6 +655,10 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void StartMonitoring()
         {
+            // Ensure we have a fresh, active cancellation token
+            ResetCts();
+
+            // Atomically signal start
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
 
             // Start timer
