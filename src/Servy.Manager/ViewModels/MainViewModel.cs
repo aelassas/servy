@@ -571,7 +571,7 @@ namespace Servy.Manager.ViewModels
                 }, DispatcherPriority.Background);
 
                 stopwatch.Stop();
-                FooterText = UI.Helpers.Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
+                SetFooterText(stopwatch);
 
                 // Setp 5: refresh all service statuses and details in the background
                 _ = Task.Run(async () =>
@@ -737,6 +737,17 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Updates the <see cref="FooterText"/> with the current service count and the time elapsed 
+        /// during the last operation.
+        /// </summary>
+        /// <param name="stopwatch">
+        /// The <see cref="Stopwatch"/> instance used to measure the duration of the 
+        /// preceding operation (e.g., search or refresh).
+        /// </param>
+        private void SetFooterText(Stopwatch stopwatch) =>
+            FooterText = UI.Helpers.Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
 
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
@@ -1037,30 +1048,42 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Removes a service from the services collection, unsubscribes from its events,
-        /// and refreshes the view.
+        /// and refreshes the view. This method is thread-safe and dispatches to the UI thread.
         /// </summary>
         /// <param name="serviceName">Name of the service to remove.</param>
         public void RemoveService(string serviceName)
         {
-            ServiceRowViewModel itemToRemove;
-
-            lock (_servicesLock)
+            // We dispatch first. The lock must be inside the Dispatcher call to ensure
+            // we don't hold the lock while waiting for the UI thread (preventing deadlocks).
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
-                if (itemToRemove == null) return;
+                var stopwatch = Stopwatch.StartNew();
+                ServiceRowViewModel itemToRemove;
 
-                // 1. Unsubscribe the MainViewModel from the RowViewModel events
-                itemToRemove.PropertyChanged -= Service_PropertyChanged;
+                lock (_servicesLock)
+                {
+                    itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
+                    if (itemToRemove == null) return;
 
-                // 2. Remove from the collection
-                _services.Remove(itemToRemove);
-            }
+                    // 1. Unsubscribe from RowViewModel events to prevent leaks
+                    itemToRemove.PropertyChanged -= Service_PropertyChanged;
 
-            // 3. Call Dispose on the ViewModel to let it clean up its own 
-            // subscriptions to the underlying Service model.
-            itemToRemove.Dispose();
+                    // 2. Mutate the ObservableCollection on the UI thread
+                    _services.Remove(itemToRemove);
+                }
 
-            ServicesView.Refresh();
+                // 3. Cleanup the ViewModel. We do this outside the lock but 
+                // still on the UI thread to ensure any internal UI cleanup in Dispose is safe.
+                itemToRemove.Dispose();
+
+                // 4. ListCollectionView.Refresh must also be on the UI thread
+                ServicesView.Refresh();
+
+                // Update the footer text to reflect the new count
+                stopwatch.Stop();
+                SetFooterText(stopwatch);
+                UpdateSelectAllState();
+            });
         }
 
         /// <summary>
