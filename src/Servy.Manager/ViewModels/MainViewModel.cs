@@ -863,7 +863,7 @@ namespace Servy.Manager.ViewModels
                     // Refresh UI only if not cancelled
                     if (_cts != null && !_cts.IsCancellationRequested)
                     {
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        await _dispatcher.InvokeAsync(() =>
                         {
                             ServicesView.Refresh();
                         }, DispatcherPriority.Background);
