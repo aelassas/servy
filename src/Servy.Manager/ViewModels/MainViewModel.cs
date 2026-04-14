@@ -295,7 +295,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Command to open documentation.
         /// </summary>
-        public ICommand OpenDocumentationCommand { get; }
+        public IAsyncCommand OpenDocumentationCommand { get; }
 
         /// <summary>
         /// Command to check for updates.
@@ -349,7 +349,7 @@ namespace Servy.Manager.ViewModels
             StartSelectedCommand = new AsyncCommand(StartSelectedAsync);
             StopSelectedCommand = new AsyncCommand(StopSelectedAsync);
             RestartSelectedCommand = new AsyncCommand(RestartSelectedAsync);
-            OpenDocumentationCommand = new RelayCommand<object>(_ => OpenDocumentation());
+            OpenDocumentationCommand = new AsyncCommand(OpenDocumentation);
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
@@ -646,9 +646,9 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Opens the Servy documentation page in the default browser.
         /// </summary>
-        private void OpenDocumentation()
+        private async Task OpenDocumentation(object parameter)
         {
-            _helpService.OpenDocumentation();
+            await _helpService.OpenDocumentation(AppConfig.Caption);
         }
 
         /// <summary>

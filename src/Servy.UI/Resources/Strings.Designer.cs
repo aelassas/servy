@@ -61,6 +61,15 @@ namespace Servy.UI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Failed to open the documentation. Please ensure a web browser is installed. Details: {0}.
+        /// </summary>
+        public static string Msg_DocumentationOpenFailed {
+            get {
+                return ResourceManager.GetString("Msg_DocumentationOpenFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à No updates currently available..
         /// </summary>
         public static string Msg_NoUpdatesAvailable {

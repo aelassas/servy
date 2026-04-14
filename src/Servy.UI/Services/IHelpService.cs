@@ -10,7 +10,8 @@ namespace Servy.UI.Services
         /// <summary>
         /// Opens the documentation for the application.
         /// </summary>
-        void OpenDocumentation();
+        /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
+        Task OpenDocumentation(string caption);
 
         /// <summary>
         /// Checks for application updates and optionally displays a message box with the result.

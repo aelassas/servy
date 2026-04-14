@@ -30,17 +30,38 @@ namespace Servy.UI.Services
         }
 
         /// <inheritdoc />
-        public void OpenDocumentation()
+        public async Task OpenDocumentation(string caption)
         {
-            using (Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = AppConfig.DocumentationLink,
-                UseShellExecute = true
-            }))
+                var psi = new ProcessStartInfo
+                {
+                    FileName = AppConfig.DocumentationLink,
+                    UseShellExecute = true
+                };
+
+                // Process.Start can return null if it hands off to an existing browser instance
+                var process = Process.Start(psi);
+                if (process != null)
+                {
+                    using (process)
+                    {
+                        // Native handle is closed immediately after launch 
+                        // to prevent leaks in the Manager UI.
+                    }
+                }
+                else
+                {
+                    Logger.Debug("Documentation link opened in an existing process.");
+                }
+            }
+            catch (Exception ex)
             {
-                // The using block ensures the native process handle is closed 
-                // immediately after the process is launched, preventing a 
-                // handle leak in the calling application.
+                // Prevent UI crash and notify the user if the browser cannot be launched
+                Logger.Error($"Failed to open documentation link: {AppConfig.DocumentationLink}", ex);
+
+                string errorMessage = string.Format(Strings.Msg_DocumentationOpenFailed, ex.Message);
+                await _messageBoxService.ShowErrorAsync(errorMessage, caption);
             }
         }
 
