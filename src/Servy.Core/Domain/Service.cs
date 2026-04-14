@@ -461,7 +461,7 @@ namespace Servy.Core.Domain
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
                 EnableSizeRotation = EnableRotation,
-                RotationSizeInBytes = (ulong)RotationSize * 1024UL * 1024UL,
+                RotationSizeInBytes = (ulong)Math.Max(1, RotationSize) * 1024UL * 1024UL,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 UseLocalTimeForRotation = UseLocalTimeForRotation,
                 HeartbeatInterval = HeartbeatInterval,
