@@ -15,6 +15,6 @@ namespace Servy.Core.Native
         /// <summary>
         /// One or more parameters are invalid.
         /// </summary>
-        public const int ERROR_INVALID_PARAMETER = 7;
+        public const int ERROR_INVALID_PARAMETER = 87;
     }
 }
