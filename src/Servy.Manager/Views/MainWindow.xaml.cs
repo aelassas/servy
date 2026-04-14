@@ -28,7 +28,6 @@ namespace Servy.Manager.Views
     /// </summary>
     public partial class MainWindow : Window
     {
-        private SecureData? _secureData;
         private IMessageBoxService? _messageBoxService;
 
         /// <summary>
@@ -600,10 +599,7 @@ namespace Servy.Manager.Views
                 Logger.Error("Error during ViewModel cleanup in OnClosed.", ex);
             }
 
-            // 3. Dispose managed security resources
-            _secureData?.Dispose();
-
-            // 4. Shutdown logging subsystem
+            // 3. Shutdown logging subsystem
             try
             {
                 Logger.Shutdown();

@@ -21,7 +21,8 @@ namespace Servy.Manager
         {
             if (service == null) return null;
 
-            var app = (App)Application.Current;
+            // Guard against null Application.Current during shutdown
+            if (!(Application.Current is App app)) return null;
 
             double? cpuUsage = null;
             long? ramUsage = null;

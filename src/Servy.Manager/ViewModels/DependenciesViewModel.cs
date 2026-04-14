@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
@@ -205,8 +206,13 @@ namespace Servy.Manager.ViewModels
         {
             if (_timer == null)
             {
-                var app = (App)Application.Current;
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
+                // Capture while on the UI thread during creation
+                var intervalMs = AppConfig.DefaultDependenciesRefreshIntervalInMs;
+                if (Application.Current is App app)
+                {
+                    intervalMs = app.DependenciesRefreshIntervalInMs;
+                }
+                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
                 _timer.Tick += OnTick;
             }
         }
