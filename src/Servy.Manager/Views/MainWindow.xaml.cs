@@ -64,33 +64,38 @@ namespace Servy.Manager.Views
                 app.ServiceRepository
             );
 
-            // Initialize service commands and helpers
+            // Initialize helpers
             var fileDialogService = new FileDialogService();
             _messageBoxService = new MessageBoxService();
             var helpService = new HelpService(_messageBoxService);
-
-            // Create main ViewModel
-            var viewModel = new MainViewModel(
-                serviceManager,
-                app.ServiceRepository,
-                null,                   // We'll set ServiceCommands next
-                helpService,
-                _messageBoxService
-            );
-
             var serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
 
+            // Break the circular dependency using local proxy functions.
+            // This allows us to pass the required delegates to ServiceCommands before 
+            // the MainViewModel is fully instantiated.
+            MainViewModel? viewModel = null;
+            Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
+            Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
+
+            // 1. Create ServiceCommands first, passing the proxies
             var serviceCommands = new ServiceCommands(
                 serviceManager,
                 app.ServiceRepository,
                 _messageBoxService,
                 fileDialogService,
-                viewModel.RemoveService,
-                viewModel.Refresh,
+                removeServiceProxy,
+                refreshProxy,
                 serviceConfigurationValidator
             );
 
-            viewModel.ServiceCommands = serviceCommands;
+            // 2. Create the MainViewModel, passing the fully initialized ServiceCommands
+            viewModel = new MainViewModel(
+                serviceManager,
+                app.ServiceRepository,
+                serviceCommands, // No longer null!
+                helpService,
+                _messageBoxService
+            );
 
             return viewModel;
         }
