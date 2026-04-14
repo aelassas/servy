@@ -614,9 +614,21 @@ namespace Servy.Core.Native
         /// <summary>
         /// Process access rights.
         /// </summary>
+        [Flags]
         public enum ProcessAccess : uint
         {
+            /// <summary>
+            /// Required to retrieve certain information about a process, such as its token, 
+            /// exit code, and priority class.
+            /// </summary>
             QueryInformation = 0x0400,
+
+            /// <summary>
+            /// Required to retrieve a subset of the information about a process (see GetExitCodeProcess).
+            /// A handle that has this access right can be opened for any process regardless of 
+            /// the user's security context.
+            /// </summary>
+            QueryLimitedInformation = 0x1000,
         }
 
         /// <summary>
