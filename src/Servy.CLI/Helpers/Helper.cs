@@ -45,34 +45,52 @@ namespace Servy.CLI.Helpers
         }
 
         /// <summary>
-        /// Awaits the execution of a <see cref="CommandResult"/>-returning task,
-        /// prints its message to the console, and returns an appropriate exit code.
+        /// Prints the message from a <see cref="CommandResult"/> to the console 
+        /// and returns its defined exit code.
         /// </summary>
-        /// <param name="task">The task that produces a <see cref="CommandResult"/>.</param>
-        /// <returns>
-        /// A <see cref="Task{Int32}"/> representing the asynchronous operation,
-        /// with 0 if <see cref="CommandResult.Success"/> is <c>true</c>, or 1 otherwise.
-        /// </returns>
-        public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)
+        /// <param name="result">The command result to process.</param>
+        /// <returns>The exit code defined in the <paramref name="result"/>.</returns>
+        public static int PrintAndReturn(CommandResult result)
         {
-            var result = await task;
             if (result == null) return 1;
-            if (!string.IsNullOrEmpty(result.Message))
+
+            if (!string.IsNullOrWhiteSpace(result.Message))
             {
                 if (result.Success)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    await Console.Out.WriteLineAsync(result.Message);
+                    Console.WriteLine(result.Message);
                 }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    await Console.Error.WriteLineAsync(result.Message);
+                    Console.Error.WriteLine(result.Message);
                 }
-
                 Console.ResetColor();
             }
+
             return result.ExitCode;
+        }
+
+        /// <summary>
+        /// Awaits the execution of a <see cref="CommandResult"/>-returning task,
+        /// prints its message to the console, and returns its defined exit code.
+        /// </summary>
+        /// <param name="task">The task that produces a <see cref="CommandResult"/>.</param>
+        /// <returns>
+        /// A <see cref="Task{Int32}"/> representing the asynchronous operation,
+        /// containing the exit code defined in the resulting <see cref="CommandResult"/>.
+        /// </returns>
+        /// <remarks>
+        /// Respects <see cref="CommandResult.ExitCode"/> and skips printing for null 
+        /// or whitespace messages, matching the sync variant.
+        /// </remarks>
+        public static async Task<int> PrintAndReturnAsync(Task<CommandResult> task)
+        {
+            var result = await task;
+
+            // Re-use the sync logic to ensure behavior is identical across both paths
+            return PrintAndReturn(result);
         }
 
     }
