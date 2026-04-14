@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Enums;
 using Servy.Manager.Resources;
-using System;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -34,6 +33,8 @@ namespace Servy.Manager.Converters
                         return Strings.StartupType_Manual;
                     case ServiceStartType.Disabled:
                         return Strings.StartupType_Disabled;
+                    case ServiceStartType.Unknown:
+                        return Strings.StartupType_Unknown;
                 }
             }
 
@@ -63,6 +64,8 @@ namespace Servy.Manager.Converters
                     return ServiceStartType.Manual;
                 if (str == Strings.StartupType_Disabled)
                     return ServiceStartType.Disabled;
+                if (str == Strings.StartupType_Unknown)
+                    return ServiceStartType.Unknown;
             }
 
             return Binding.DoNothing;

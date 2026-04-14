@@ -1757,7 +1757,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetServiceStartupType_ShouldLogAndReturnNull_WhenControllerThrows()
+        public void GetServiceStartupType_ShouldLogAndReturnUnknown_WhenControllerThrows()
         {
             // Arrange
             string serviceName = "FaultyService";
@@ -1770,7 +1770,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetServiceStartupType(serviceName, CancellationToken.None);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(ServiceStartType.Unknown, result);
         }
 
         #endregion

@@ -287,7 +287,10 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="StartupType_Disabled" xml:space="preserve">
     <value>Disabled</value>
   </data>
-
+  <data name="StartupType_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  
   <data name="Label_LocalSytem" xml:space="preserve">
     <value>Local System</value>
   </data>

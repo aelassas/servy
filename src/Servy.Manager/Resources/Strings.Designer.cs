@@ -1323,6 +1323,15 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Unknown.
+        /// </summary>
+        public static string StartupType_Unknown {
+            get {
+                return ResourceManager.GetString("StartupType_Unknown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Continue Pending.
         /// </summary>
         public static string Status_ContinuePending {

@@ -6,6 +6,11 @@
     public enum ServiceStartType : uint
     {
         /// <summary>
+        /// The startup type could not be determined due to an error or unrecognized state.
+        /// </summary>
+        Unknown = 0,
+
+        /// <summary>
         /// The service starts automatically by the Service Control Manager during system startup.
         /// </summary>
         Automatic = 0x00000002,
