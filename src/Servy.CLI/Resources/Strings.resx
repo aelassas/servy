@@ -23,6 +23,9 @@
   <data name="Msg_AdminPrivilegesRequired" xml:space="preserve">
     <value>Access Denied. Please restart your shell as Administrator to run the '{0}' command.</value>
   </data>
+  <data name="Msg_UnknownError" xml:space="preserve">
+    <value>An unknown error occurred.</value>
+  </data>
 
   <data name="Msg_Preparing" xml:space="preserve">
     <value>Preparing environment...</value>

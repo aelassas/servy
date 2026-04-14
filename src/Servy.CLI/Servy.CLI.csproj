@@ -98,6 +98,7 @@
     <Compile Include="Enums\ConfigFileType.cs" />
     <Compile Include="Helpers\ConsoleHelper.cs" />
     <Compile Include="Helpers\Helper.cs" />
+    <Compile Include="Helpers\ResultExtensions.cs" />
     <Compile Include="Models\CommandResult.cs" />
     <Compile Include="Options\ExportServiceOptions.cs" />
     <Compile Include="Options\GlobalOptionsBase.cs" />

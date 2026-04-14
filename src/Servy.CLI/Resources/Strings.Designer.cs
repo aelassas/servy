@@ -691,6 +691,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à An unknown error occurred..
+        /// </summary>
+        public static string Msg_UnknownError {
+            get {
+                return ResourceManager.GetString("Msg_UnknownError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Unsupported configuration file type: {0}.
         /// </summary>
         public static string Msg_UnsupportedFileType {
