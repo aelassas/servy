@@ -1018,7 +1018,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Simple nested class to hold the results of background work securely
         /// </summary>
-        private class ServiceUpdateInfo
+        private sealed class ServiceUpdateInfo
         {
             public Service Target { get; }
 
