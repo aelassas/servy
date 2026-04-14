@@ -308,7 +308,7 @@ namespace Servy.Manager.Services
                 {
                     if (service == null)
                     {
-                        process.Start();
+                        StartProcess(process, app);
                         return;
                     }
 
@@ -322,7 +322,7 @@ namespace Servy.Manager.Services
                     // Pass false to skip splash screen
                     process.StartInfo.Arguments = $"\"false\" \"{service.Name}\"{forceFlag}";
 
-                    process.Start();
+                    StartProcess(process, app);
                 }
             }
             catch (Exception ex)
@@ -796,6 +796,24 @@ namespace Servy.Manager.Services
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to launch an external process and logs a warning if the start operation fails.
+        /// </summary>
+        /// <param name="process">The <see cref="Process"/> instance configured with the necessary start information.</param>
+        /// <param name="app">The application context containing the publish path used for logging failure details.</param>
+        /// <remarks>
+        /// This method does not throw an exception on failure; instead, it utilizes the 
+        /// <see cref="Logger.Warn(string)"/> method to record the failed attempt to launch 
+        /// the external configuration tool.
+        /// </remarks>
+        private void StartProcess(Process process, App app)
+        {
+            if (!process.Start())
+            {
+                Logger.Warn($"Failed to start external process {app.ConfigurationAppPublishPath}.");
+            }
         }
 
         #endregion

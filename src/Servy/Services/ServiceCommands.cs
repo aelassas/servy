@@ -632,7 +632,10 @@ namespace Servy.Services
                 }
             })
             {
-                process.Start();
+                if (!process.Start())
+                {
+                    Logger.Warn($"Failed to start external process {app.ManagerAppPublishPath}.");
+                }
             }
 
         }
