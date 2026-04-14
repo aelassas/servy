@@ -817,7 +817,7 @@ namespace Servy.Manager.ViewModels
                     snapshot = _services.Select(r => r.Service).ToList();
                 }
 
-                // 2. Fetch OS Info in bulk
+                // 2. Fetch OS Info in bulk (Off UI thread)
                 var stopwatch = Stopwatch.StartNew();
                 var allServicesList = await Task.Run(() => _serviceManager.GetAllServices(token), token);
                 stopwatch.Stop();
@@ -828,8 +828,10 @@ namespace Servy.Manager.ViewModels
                 var allDtosList = await _serviceRepository.GetAllAsync(decrypt: true, token);
                 var allDtosDict = allDtosList.ToDictionary(d => d.Name, StringComparer.OrdinalIgnoreCase);
 
-                // 4. Process in parallel using the semaphore
+                // 4. Process data collection in parallel
+                // We collect the updates in thread-safe bags instead of applying them immediately
                 var changedDtos = new System.Collections.Concurrent.ConcurrentBag<ServiceDto>();
+                var uiUpdates = new System.Collections.Concurrent.ConcurrentBag<ServiceUpdateInfo>();
 
                 using (var semaphore = new SemaphoreSlim(Environment.ProcessorCount))
                 {
@@ -840,12 +842,14 @@ namespace Servy.Manager.ViewModels
                         {
                             allDtosDict.TryGetValue(service.Name, out var dto);
 
-                            var updatedDto = await RefreshServiceInternal(service, allServicesDict, dto, token);
+                            // Collect updates without touching the UI model yet
+                            var result = await GetServiceUpdateInfoAsync(service, allServicesDict, dto, token);
 
-                            if (updatedDto != null)
-                            {
-                                changedDtos.Add(updatedDto);
-                            }
+                            if (result.UpdateInfo != null)
+                                uiUpdates.Add(result.UpdateInfo);
+
+                            if (result.UpdatedDto != null)
+                                changedDtos.Add(result.UpdatedDto);
                         }
                         finally
                         {
@@ -856,7 +860,24 @@ namespace Servy.Manager.ViewModels
                     await Task.WhenAll(tasks);
                 }
 
-                // 5. Execute a single atomic database batch write for all drifted services
+                // 5. Batch-Apply all UI updates to the UI thread in one go
+                // This prevents the "Collection modified" crash by ensuring 
+                // property changes happen in a controlled, sequential batch.
+                if (!uiUpdates.IsEmpty)
+                {
+                    await _dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var info in uiUpdates)
+                        {
+                            ApplyServiceUpdate(info);
+                        }
+
+                        // Run this once after the batch finishes to stabilize the UI state
+                        UpdateSelectAllState();
+                    }, DispatcherPriority.Background);
+                }
+
+                // 6. Execute a single atomic database batch write for all drifted services
                 if (changedDtos.Any())
                 {
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
@@ -873,96 +894,141 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Synchronizes a service's live state with both the Windows Service Control Manager (SCM) and process performance counters.
+        /// Pure logic method to calculate what needs to change without touching UI models.
         /// </summary>
-        /// <param name="service">The UI-bound <see cref="Service"/> model to update.</param>
-        /// <param name="allServices">A pre-fetched dictionary of OS-level service information to reduce syscall overhead.</param>
-        /// <param name="serviceDto">The current database state for the service, used to detect metadata drift.</param>
-        /// <param name="token">Cancellation token injected from the parent caller.</param>
-        private async Task<ServiceDto> RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto, CancellationToken token)
+        private async Task<(ServiceUpdateInfo UpdateInfo, ServiceDto UpdatedDto)> GetServiceUpdateInfoAsync(
+            Service service,
+            Dictionary<string, ServiceInfo> allServices,
+            ServiceDto serviceDto,
+            CancellationToken token)
         {
             try
             {
                 token.ThrowIfCancellationRequested();
 
-                // Heavy work: CPU/RAM (Kept on background thread)
-                double? cpuUsage = null;
-                long? ramUsage = null;
+                // Gather metrics (Heavy background work)
+                double? cpu = null;
+                long? ram = null;
                 if (service.Pid.HasValue)
                 {
                     ProcessHelper.MaintainCache();
-
-                    var processMetrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);
-                    cpuUsage = processMetrics.CpuUsage;
-                    ramUsage = processMetrics.RamUsage;
+                    var metrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);
+                    cpu = metrics.CpuUsage;
+                    ram = metrics.RamUsage;
                 }
 
-                // Push all UI model updates to the Dispatcher to prevent ICommand cross-thread exceptions
-                _dispatcher.Invoke(() =>
+                var update = new ServiceUpdateInfo(service)
                 {
-                    if (serviceDto != null && service.Pid != serviceDto.Pid)
-                    {
-                        service.Pid = serviceDto.Pid;
-                        service.IsPidEnabled = service.Pid != null;
-                    }
+                    CpuUsage = cpu,
+                    RamUsage = ram
+                };
 
-                    service.CpuUsage = cpuUsage;
-                    service.RamUsage = ramUsage;
+                if (allServices.TryGetValue(service.Name, out var info) && info != null)
+                {
+                    update.IsInstalled = true;
+                    update.Status = info.Status;
+                    update.StartupType = info.StartupType;
+                    update.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(info.LogOnAs ?? AppConfig.LocalSystem);
+                    update.Description = info.Description;
+                }
+                else
+                {
+                    update.IsInstalled = false;
+                    update.Status = ServiceStatus.NotInstalled;
+                }
 
-                    if (service.StartupType == null && serviceDto != null)
-                    {
-                        service.StartupType = (ServiceStartType)serviceDto.StartupType;
-                    }
-
-                    if (allServices.TryGetValue(service.Name, out var info) && info != null)
-                    {
-                        service.IsInstalled = true;
-
-                        if (service.Status != info.Status)
-                            service.Status = info.Status;
-
-                        if (service.StartupType != info.StartupType)
-                            service.StartupType = info.StartupType;
-
-                        var user = string.IsNullOrEmpty(info.LogOnAs) ? AppConfig.LocalSystem : info.LogOnAs;
-                        if (service.LogOnAs != user)
-                            service.LogOnAs = ServiceMapper.GetLogOnAsDisplayName(user);
-
-                        if (service.Description != info.Description)
-                            service.Description = info.Description;
-                    }
-                    else
-                    {
-                        service.IsInstalled = false;
-                        service.Status = ServiceStatus.NotInstalled;
-                    }
-                });
-
+                ServiceDto resultDto = null;
                 if (serviceDto != null)
                 {
-                    bool needsUpdate = !string.Equals(serviceDto.Description, service.Description, StringComparison.Ordinal) ||
-                                       serviceDto.StartupType != (int)service.StartupType;
+                    // Sync PID from DB state if drifted
+                    if (service.Pid != serviceDto.Pid)
+                    {
+                        update.RequiresPidUpdate = true;
+                        update.NewPid = serviceDto.Pid;
+                    }
+
+                    // Check for DB metadata drift
+                    var currentDescription = update.Description ?? service.Description;
+                    var currentStartupType = update.StartupType ?? service.StartupType;
+
+                    bool needsUpdate = !string.Equals(serviceDto.Description, currentDescription, StringComparison.Ordinal) ||
+                                       serviceDto.StartupType != (int?)currentStartupType;
 
                     if (needsUpdate)
                     {
-                        serviceDto.Description = service.Description;
-                        serviceDto.StartupType = (int)service.StartupType;
-                        return serviceDto;
+                        serviceDto.Description = currentDescription;
+                        if (currentStartupType.HasValue)
+                        {
+                            serviceDto.StartupType = (int)currentStartupType.Value;
+                        }
+                        resultDto = serviceDto;
                     }
                 }
 
-                return null;
+                return (update, resultDto);
             }
             catch (OperationCanceledException)
             {
-                // Expected when cancelling
+                throw;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to refresh {service.Name}.", ex);
+                Logger.Error($"Failed to prepare refresh for {service.Name}.", ex);
+                return (null, null);
+            }
+        }
+
+        /// <summary>
+        /// Safely applies a gathered update to the UI model. Must be called from the UI thread.
+        /// </summary>
+        private void ApplyServiceUpdate(ServiceUpdateInfo info)
+        {
+            var s = info.Target;
+
+            if (info.RequiresPidUpdate)
+            {
+                s.Pid = info.NewPid;
+                s.IsPidEnabled = s.Pid != null;
             }
 
-            return null;
+            s.CpuUsage = info.CpuUsage;
+            s.RamUsage = info.RamUsage;
+            s.IsInstalled = info.IsInstalled;
+
+            if (info.Status.HasValue && s.Status != info.Status.Value)
+                s.Status = info.Status.Value;
+
+            if (info.StartupType.HasValue && s.StartupType != info.StartupType.Value)
+                s.StartupType = info.StartupType.Value;
+
+            if (info.LogOnAs != null && s.LogOnAs != info.LogOnAs)
+                s.LogOnAs = info.LogOnAs;
+
+            if (info.Description != null && s.Description != info.Description)
+                s.Description = info.Description;
+        }
+
+        /// <summary>
+        /// Simple nested class to hold the results of background work securely
+        /// </summary>
+        private class ServiceUpdateInfo
+        {
+            public Service Target { get; }
+
+            public bool RequiresPidUpdate { get; set; }
+            public int? NewPid { get; set; }
+            public double? CpuUsage { get; set; }
+            public long? RamUsage { get; set; }
+            public bool IsInstalled { get; set; }
+            public ServiceStatus? Status { get; set; }
+            public ServiceStartType? StartupType { get; set; }
+            public string LogOnAs { get; set; }
+            public string Description { get; set; }
+
+            public ServiceUpdateInfo(Service target)
+            {
+                Target = target;
+            }
         }
 
         /// <summary>
