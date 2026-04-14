@@ -1521,7 +1521,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="sender">The source of the event (the child process).</param>
         /// <param name="e">Event data containing no specific exit information.</param>
-        private void OnProcessExited(object sender, EventArgs e)
+        private async void OnProcessExited(object sender, EventArgs e)
         {
             if (_isTearingDown || _disposed) return;
 
@@ -1532,7 +1532,8 @@ namespace Servy.Service
             bool shouldStop = false;
             int exitCode = -1;
 
-            _healthCheckSemaphore.Wait();
+            // Use WaitAsync instead of Wait to avoid blocking thread pool threads
+            await _healthCheckSemaphore.WaitAsync();
 
             try
             {

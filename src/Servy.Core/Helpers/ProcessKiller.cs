@@ -144,6 +144,66 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
+        /// Kills all processes with the specified name, including their child and parent processes.
+        /// </summary>
+        /// <param name="processName">The name of the process to kill. Can include or exclude ".exe".</param>
+        /// <param name="killParents">Whether to kill parents as well.</param>
+        /// <returns>True if the operation succeeded; otherwise, false.</returns>
+        /// <remarks>
+        /// This method captures a snapshot of all running processes to ensure consistency 
+        /// during the recursive tree walk. It handles the ".exe" extension automatically.
+        /// </remarks>
+        public static bool KillProcessTreeAndParents(string processName, bool killParents = true)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(processName))
+                    return false;
+
+                if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    processName = processName.Substring(0, processName.Length - 4);
+
+                var allProcesses = Process.GetProcesses();
+                // CRITICAL: Identify the current process and its ancestors to avoid IDE suicide
+                var protectedPids = GetAncestorPids();
+
+                try
+                {
+                    var targetProcesses = allProcesses
+                        .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => !protectedPids.Contains(p.Id)) // Never kill protected processes
+                        .ToList();
+
+                    if (targetProcesses.Count == 0)
+                        return true;
+
+                    foreach (var proc in targetProcesses)
+                    {
+                        KillProcessTree(proc, allProcesses, protectedPids);
+                    }
+
+                    if (killParents)
+                    {
+                        foreach (var proc in targetProcesses)
+                        {
+                            KillParentProcesses(proc, allProcesses, protectedPids);
+                        }
+                    }
+
+                    return true;
+                }
+                finally
+                {
+                    foreach (var p in allProcesses) p.Dispose();
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Kills a specific process by PID, including its entire child tree and (optionally) its ancestors.
         /// </summary>
         /// <param name="pid">The specific Process ID to target.</param>
