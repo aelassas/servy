@@ -834,7 +834,7 @@ namespace Servy.Core.Services
             catch (Exception ex)
             {
                 Logger.Error($"Error getting service startup type for '{serviceName}'.", ex);
-                return null;
+                return ServiceStartType.Unknown;
             }
         }
 

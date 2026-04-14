@@ -1762,7 +1762,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void GetServiceStartupType_ShouldLogAndReturnNull_WhenControllerThrows()
+        public void GetServiceStartupType_ShouldLogAndReturnUnknown_WhenControllerThrows()
         {
             // Arrange
             string serviceName = "FaultyService";
@@ -1775,7 +1775,7 @@ namespace Servy.Core.UnitTests.Services
             var result = _serviceManager.GetServiceStartupType(serviceName, CancellationToken.None);
 
             // Assert
-            Assert.Null(result);
+            Assert.Equal(ServiceStartType.Unknown, result);
         }
 
         #endregion
@@ -1826,7 +1826,8 @@ namespace Servy.Core.UnitTests.Services
                     .Returns(false);
 
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
-                    .Callback(new QueryConfigOut((IntPtr h, IntPtr p, int s, out int req) => {
+                    .Callback(new QueryConfigOut((IntPtr h, IntPtr p, int s, out int req) =>
+                    {
                         req = size;
                         var config = new QUERY_SERVICE_CONFIG { lpServiceStartName = Marshal.StringToHGlobalAuto("CustomUser") };
                         Marshal.StructureToPtr(config, p, false);
@@ -1962,7 +1963,8 @@ namespace Servy.Core.UnitTests.Services
 
             // Second call: Fill the structure
             _mockWindowsServiceApi.Setup(x => x.QueryServiceConfig(svcHandle, It.Is<IntPtr>(p => p != IntPtr.Zero), size, out It.Ref<int>.IsAny))
-                .Callback(new QueryConfigOut((IntPtr h, IntPtr p, int s, out int req) => {
+                .Callback(new QueryConfigOut((IntPtr h, IntPtr p, int s, out int req) =>
+                {
                     req = size;
                     var config = new QUERY_SERVICE_CONFIG { lpServiceStartName = Marshal.StringToHGlobalAuto(expectedUser) };
                     Marshal.StructureToPtr(config, p, false);
