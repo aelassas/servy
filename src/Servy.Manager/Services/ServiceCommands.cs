@@ -643,8 +643,9 @@ namespace Servy.Manager.Services
         {
             try
             {
-                if (service.Pid == null) return;
-                Clipboard.SetText(service.Pid.ToString());
+                var pid = service.Pid;
+                if (pid == null) return;
+                Clipboard.SetText(pid.Value.ToString());
                 await _messageBoxService.ShowInfoAsync(Strings.Msg_PidCopied, AppConfig.Caption);
                 Logger.Info($"PID {service.Pid} of service {service.Name} copied to clipboard.");
             }
