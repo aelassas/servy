@@ -810,10 +810,10 @@ namespace Servy.ViewModels
             )
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
-            ServiceCommands = serviceCommands;
-            _messageBoxService = messageBoxService;
-            _serviceRepository = serviceRepository;
-            _helpService = helpService;
+            ServiceCommands = serviceCommands ?? throw new ArgumentNullException(nameof(serviceCommands));
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _helpService = helpService ?? throw new ArgumentNullException(nameof(helpService));
 
             // Initialize defaults
             ServiceName = string.Empty;
