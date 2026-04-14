@@ -128,8 +128,12 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
             Assert.Equal(expected.EnvironmentVariables, actual.EnvironmentVariables);
             Assert.Equal(expected.ServiceDependencies, actual.ServiceDependencies);
-            Assert.Equal(expected.UserAccount, actual.UserAccount);
+
+            // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings
+            Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
+            Assert.True(actual.RunAsLocalSystem);
+
         }
 
         [Fact]

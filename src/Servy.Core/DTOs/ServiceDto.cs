@@ -167,11 +167,15 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Whether to run the service as LocalSystem account.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public bool? RunAsLocalSystem { get; set; }
 
         /// <summary>
         /// Optional user account name to run the service under.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public string? UserAccount { get; set; }
 
         /// <summary>
@@ -423,8 +427,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeFailureProgramParameters() => !string.IsNullOrWhiteSpace(FailureProgramParameters);
         public bool ShouldSerializeEnvironmentVariables() => !string.IsNullOrWhiteSpace(EnvironmentVariables);
         public bool ShouldSerializeServiceDependencies() => !string.IsNullOrWhiteSpace(ServiceDependencies);
-        public bool ShouldSerializeRunAsLocalSystem() => RunAsLocalSystem.HasValue;
-        public bool ShouldSerializeUserAccount() => !string.IsNullOrWhiteSpace(UserAccount);
+        public bool ShouldSerializeRunAsLocalSystem() => false;
+        public bool ShouldSerializeUserAccount() => false;
         public bool ShouldSerializePassword() => false;
         public bool ShouldSerializePreLaunchExecutablePath() => !string.IsNullOrWhiteSpace(PreLaunchExecutablePath);
         public bool ShouldSerializePreLaunchStartupDirectory() => !string.IsNullOrWhiteSpace(PreLaunchStartupDirectory);

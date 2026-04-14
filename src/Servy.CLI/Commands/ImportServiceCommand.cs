@@ -218,17 +218,17 @@ namespace Servy.CLI.Commands
                 return CommandResult.Ok(string.Format(Strings.Msg_ImportSuccessNoInstall, formatName));
 
             // 3. Deserialization
-            var service = deserializer(content);
-            if (service == null)
+            var dto = deserializer(content);
+            if (dto == null)
                 return CommandResult.Fail(Strings.Msg_ImportDeserializationFailure);
 
             // 4. Exhaustive Path Validation
-            var pathValidation = ValidateServicePaths(service);
+            var pathValidation = ValidateServicePaths(dto);
             if (!pathValidation.Success)
                 return pathValidation;
 
             // 5. Installation
-            return await TryInstallServiceAsync(service.Name, formatName);
+            return await TryInstallServiceAsync(dto.Name, formatName);
         }
 
         /// <summary>
