@@ -8,6 +8,18 @@ namespace Servy.Manager.Utils
     /// Provides functionality to monitor and stream lines from a text file in real-time.
     /// Handles initial history loading, file rotation, and batched updates.
     /// </summary>
+    /// <remarks>
+    /// CreationTime Tunneling / Unreliable File System Metadata
+    /// ------------------------------------------------------------------
+    /// On certain file systems (FAT32, Network Shares, NAS) or due to Windows 
+    /// "File System Tunneling," the CreationTime might not update if a file is 
+    /// deleted and recreated with the same name within the tunneling window 
+    /// (default 15s). 
+    ///
+    /// We use 'Length < lastPosition' as a secondary safety net for truncation.
+    /// However, if a rotation occurs and the new file immediately becomes larger 
+    /// than the old offset, a rotation might be missed on these platforms.
+    /// </remarks>
     public class LogTailer
     {
         /// <summary>
