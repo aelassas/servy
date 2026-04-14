@@ -7,7 +7,7 @@ namespace Servy.Core.ServiceDependencies
     public static class ServiceDependenciesValidator
     {
         // Allowed characters: letters, digits, hyphen, underscore
-        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_-]+$", RegexOptions.Compiled);
+        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled);
 
         /// <summary>
         /// Validates the input string containing service dependencies.
