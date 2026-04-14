@@ -495,9 +495,10 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Updates the PID display text based on the selected service's current state.
         /// </summary>
-        private void SetPidText()
+        /// <param name="service">Service model.</param>
+        private void SetPidText(ServiceItemBase service)
         {
-            var pidTxt = SelectedService.Pid?.ToString() ?? UiConstants.NotAvailable;
+            var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
         }
 
@@ -585,7 +586,7 @@ namespace Servy.Manager.ViewModels
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 
-                SetPidText();
+                SetPidText(currentSelection);
             }
             catch (OperationCanceledException)
             {
