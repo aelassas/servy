@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Principal;
+using System.Text;
 using System.Text.RegularExpressions;
 
 #pragma warning disable IDE0079
@@ -909,6 +910,73 @@ namespace Servy.Core.Native
             /// <summary>The estimated time required for a pending start, stop, pause, or continue operation, in milliseconds.</summary>
             public int dwWaitHint;
         }
+
+        /// <summary>
+        /// Enables subsequent open operations on a file or device to request read access.
+        /// </summary>
+        public const uint FILE_SHARE_READ = 0x00000001;
+
+        /// <summary>
+        /// Enables subsequent open operations on a file or device to request write access.
+        /// </summary>
+        public const uint FILE_SHARE_WRITE = 0x00000002;
+
+        /// <summary>
+        /// Enables subsequent open operations on a file or device to request delete access.
+        /// </summary>
+        public const uint FILE_SHARE_DELETE = 0x00000004;
+
+        /// <summary>
+        /// Opens a file or device only if it exists.
+        /// </summary>
+        public const uint OPEN_EXISTING = 3;
+
+        /// <summary>
+        /// Indicates that the file is being opened or created for a backup or restore operation. 
+        /// Required to obtain a handle to a directory.
+        /// </summary>
+        public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+
+        /// <summary>
+        /// Return the path with a drive letter (e.g., C:\).
+        /// </summary>
+        public const uint VOLUME_NAME_DOS = 0x0;
+
+        /// <summary>
+        /// Creates or opens a file or I/O device.
+        /// </summary>
+        /// <param name="lpFileName">The name of the file or device to be created or opened.</param>
+        /// <param name="dwDesiredAccess">The requested access to the file or device (Read, Write, etc.).</param>
+        /// <param name="dwShareMode">The requested sharing mode of the file or device.</param>
+        /// <param name="lpSecurityAttributes">A pointer to a SECURITY_ATTRIBUTES structure.</param>
+        /// <param name="dwCreationDisposition">An action to take on a file or device that exists or does not exist.</param>
+        /// <param name="dwFlagsAndAttributes">The file or device attributes and flags.</param>
+        /// <param name="hTemplateFile">A valid handle to a template file with GENERIC_READ access rights.</param>
+        /// <returns>An open handle to the specified file, device, named pipe, or mail slot.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern IntPtr CreateFile(
+            string lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
+
+        /// <summary>
+        /// Retrieves the final path for the specified file handle.
+        /// </summary>
+        /// <param name="hFile">A handle to a file or directory.</param>
+        /// <param name="lpszFilePath">A pointer to a buffer that receives the path of hFile.</param>
+        /// <param name="cchFilePath">The size of lpszFilePath, in TCHARs.</param>
+        /// <param name="dwFlags">The type of format to be returned.</param>
+        /// <returns>The length of the string copied to the buffer.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        public static extern uint GetFinalPathNameByHandle(
+            IntPtr hFile,
+            [Out] StringBuilder lpszFilePath,
+            uint cchFilePath,
+            uint dwFlags);
 
         /// <summary>
         /// Validates Windows credentials by resolving the identity and attempting a network logon.

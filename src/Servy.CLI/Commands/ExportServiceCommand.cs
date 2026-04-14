@@ -107,6 +107,7 @@ namespace Servy.CLI.Commands
         /// Safely persists the exported service configuration to a user-defined file path.
         /// Validates that the target is a supported file type, not a UNC path, 
         /// not a reserved device name, and not a protected system location.
+        /// Resolves NTFS junctions and symlinks to prevent path traversal bypasses.
         /// </summary>
         /// <param name="userPath">The target file path provided via the CLI.</param>
         /// <param name="content">The serialized configuration string.</param>
@@ -133,9 +134,39 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited to prevent data exfiltration.");
             }
 
-            // 4. Reserved Device Name Block (DOS/Data Loss Guard)
+            // 4. Link/Junction Resolution
+            // We resolve the final path to ensure that NTFS redirection (junctions/symlinks) 
+            // isn't being used to hide a destination inside a protected system folder.
+            string finalResolvedPath = fullPath;
+            string? directoryPath = Path.GetDirectoryName(fullPath);
+
+            if (!string.IsNullOrEmpty(directoryPath) && Directory.Exists(directoryPath))
+            {
+                var dirInfo = new DirectoryInfo(directoryPath);
+
+                // Iteratively resolve link targets to handle chained junctions
+                while (dirInfo != null && !string.IsNullOrEmpty(dirInfo.LinkTarget))
+                {
+                    var target = dirInfo.ResolveLinkTarget(true);
+                    if (target is DirectoryInfo resolvedDir)
+                    {
+                        dirInfo = resolvedDir;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (dirInfo != null)
+                {
+                    finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
+                }
+            }
+
+            // 5. Reserved Device Name Block (DOS/Data Loss Guard)
             // Prevents writing to CON, NUL, COM1, etc., which can hang the process or discard data.
-            string fileName = Path.GetFileNameWithoutExtension(fullPath);
+            string fileName = Path.GetFileNameWithoutExtension(finalResolvedPath);
             try
             {
                 if (ReservedDeviceNames.Contains(fileName) || ReservedPortRegex.IsMatch(fileName))
@@ -149,8 +180,8 @@ namespace Servy.CLI.Commands
                 throw new SecurityException("Security Alert: Filename validation timed out. Export aborted for safety.");
             }
 
-            // 5. System Protection: Block writing to critical Windows directories
-            string[] protectedFolders = 
+            // 6. System Protection: Block writing to critical Windows directories
+            string[] protectedFolders =
             {
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
                 Environment.GetFolderPath(Environment.SpecialFolder.System),
@@ -158,25 +189,26 @@ namespace Servy.CLI.Commands
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
             };
 
+            // We use finalResolvedPath here to catch junction-based bypasses.
             var violatedFolder = protectedFolders
                 .FirstOrDefault(folder => !string.IsNullOrEmpty(folder) &&
-                                          fullPath.StartsWith(
+                                          finalResolvedPath.StartsWith(
                                               folder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
                                               StringComparison.OrdinalIgnoreCase));
 
             if (violatedFolder != null)
             {
-                throw new SecurityException($"Access Denied: Exporting to protected system directory '{violatedFolder}' is prohibited.");
+                throw new SecurityException($"Access Denied: The resolved path targets protected system directory '{violatedFolder}'. Export prohibited.");
             }
 
-            // 6. Directory Creation
+            // 7. Directory Creation
             string? parentDir = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
             {
                 Directory.CreateDirectory(parentDir);
             }
 
-            // 7. Final Atomic Write
+            // 8. Final Atomic Write
             File.WriteAllText(fullPath, content);
         }
     }
