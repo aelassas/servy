@@ -29,6 +29,7 @@ namespace Servy.Core.IO
         private readonly bool _useLocalTimeForRotation;
         private DateTime _lastRotationDate;
         private readonly int _maxRotations; // 0 = unlimited
+        private int _consecutiveDeletionFailures;
         private readonly object _lock = new object();
 
         /// <summary>
@@ -366,17 +367,29 @@ namespace Servy.Core.IO
                 .ToList();
 
             if (rotatedFiles.Count <= _maxRotations)
+            {
+                // Reset counter if we are successfully within limits
+                _consecutiveDeletionFailures = 0;
                 return;
+            }
 
             foreach (var file in rotatedFiles.Skip(_maxRotations))
             {
                 try
                 {
                     File.Delete(file);
+                    _consecutiveDeletionFailures = 0; // Reset on any successful deletion
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Silently ignore to ensure logging resilience.
+                    _consecutiveDeletionFailures++;
+                    Logger.Warn($"Failed to delete old log file '{file}': {ex.Message}. Consecutive failures: {_consecutiveDeletionFailures}");
+
+                    // If we hit a threshold (e.g., 10), we log a more severe error to alert operators.
+                    if (_consecutiveDeletionFailures >= 10)
+                    {
+                        Logger.Error($"Persistent failure to enforce log rotation limit for '{_file.Name}'. Disk space growth is no longer bounded.");
+                    }
                 }
             }
         }
