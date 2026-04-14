@@ -1022,7 +1022,7 @@ namespace Servy.Core.Services
             }
             catch (Win32Exception ex)
             {
-                // Fix Log the specific error and provide a diagnostic trail.
+                // Log the specific error and provide a diagnostic trail.
                 // We use Debug level to avoid bloating logs with expected protected service errors.
                 Logger.Debug($"Access denied or Win32 error reading StartType for '{service.ServiceName}'. Falling back to Manual.", ex);
 

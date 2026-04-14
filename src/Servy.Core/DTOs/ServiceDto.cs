@@ -272,12 +272,16 @@ namespace Servy.Core.DTOs
         /// Gets or sets the absolute file path where standard output is currently being redirected.
         /// Returns <see langword="null"/> if the service is not redirected or not running.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public string ActiveStdoutPath { get; set; }
 
         /// <summary>
         /// Gets or sets the absolute file path where standard error output is currently being redirected.
         /// Returns <see langword="null"/> if the service is not redirected or not running.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public string ActiveStderrPath { get; set; }
 
         /// <summary>
@@ -447,8 +451,8 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
         public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
         public bool ShouldSerializePreviousStopTimeout() => PreviousStopTimeout.HasValue;
-        public bool ShouldSerializeActiveStdoutPath() => !string.IsNullOrWhiteSpace(ActiveStdoutPath);
-        public bool ShouldSerializeActiveStderrPath() => !string.IsNullOrWhiteSpace(ActiveStderrPath);
+        public bool ShouldSerializeActiveStdoutPath() => false;
+        public bool ShouldSerializeActiveStderrPath() => false;
         public bool ShouldSerializePreStopExecutablePath() => !string.IsNullOrWhiteSpace(PreStopExecutablePath);
         public bool ShouldSerializePreStopStartupDirectory() => !string.IsNullOrWhiteSpace(PreStopStartupDirectory);
         public bool ShouldSerializePreStopParameters() => !string.IsNullOrWhiteSpace(PreStopParameters);
