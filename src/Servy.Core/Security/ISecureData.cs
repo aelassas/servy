@@ -1,9 +1,11 @@
-﻿namespace Servy.Core.Security
+﻿using System;
+
+namespace Servy.Core.Security
 {
     /// <summary>
     /// Provides an abstraction for securely encrypting and decrypting data.
     /// </summary>
-    public interface ISecureData
+    public interface ISecureData : IDisposable
     {
         /// <summary>
         /// Encrypts the specified plain text data.

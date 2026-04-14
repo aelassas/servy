@@ -6,10 +6,12 @@ using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
+using System.Windows.Threading;
 using Xunit;
 
 namespace Servy.Manager.UnitTests.ViewModels
@@ -31,14 +33,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
         }
 
-        private MainViewModel CreateViewModel()
+        private MainViewModel CreateViewModel(Dispatcher dispatcher = null)
         {
             return new MainViewModel(
                 _serviceManagerMock.Object,
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
                 _helpServiceMock.Object,
-                _messageBoxServiceMock.Object
+                _messageBoxServiceMock.Object,
+                dispatcher
             );
         }
 
@@ -105,6 +108,35 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.True(propertyChangedRaised);
                 Assert.Equal("Test", vm.SearchText);
+            }, createApp: true);
+        }
+
+        [Fact]
+        public void RemoveService_ShouldRemoveServiceFromCollection()
+        {
+            Helper.RunOnSTA(async () =>
+            {
+                // Arrange
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
+                var service1 = new Service { Name = "S1" };
+                var service2 = new Service { Name = "S2" };
+
+                var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object);
+                var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object);
+
+                var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var servicesList = (ObservableCollection<ServiceRowViewModel>)servicesField?.GetValue(vm);
+                servicesList?.Add(srvm1);
+                servicesList?.Add(srvm2);
+                vm.ServicesView.Refresh();
+
+                // Act
+                vm.RemoveService("S1");
+
+                // Assert
+                Assert.Single(vm.ServicesView.Cast<ServiceRowViewModel>());
+                Assert.Equal("S2", vm.ServicesView.Cast<ServiceRowViewModel>().First().Service.Name);
             }, createApp: true);
         }
 

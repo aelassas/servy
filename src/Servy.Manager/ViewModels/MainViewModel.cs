@@ -44,6 +44,7 @@ namespace Servy.Manager.ViewModels
 
         #region Private Fields
 
+        private readonly Dispatcher _dispatcher;
         private readonly IServiceManager _serviceManager;
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
@@ -333,7 +334,8 @@ namespace Servy.Manager.ViewModels
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IHelpService helpService,
-            IMessageBoxService messageBoxService
+            IMessageBoxService messageBoxService,
+            Dispatcher dispatcher = null
             )
         {
             _serviceManager = serviceManager;
@@ -341,6 +343,7 @@ namespace Servy.Manager.ViewModels
             ServiceCommands = serviceCommands;
             _helpService = helpService;
             _messageBoxService = messageBoxService;
+            _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
             _selectAll = false;
 
             // Create PerformanceVM only once
@@ -529,7 +532,7 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
 
                 // Step 2: allow WPF to repaint the button and show progress bar
-                await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                await _dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
 
                 // Step 3: fetch data off UI thread
                 var sw = Stopwatch.StartNew();
@@ -546,7 +549,7 @@ namespace Servy.Manager.ViewModels
                 Debug.WriteLine($"Created {vms.Count} ServiceRowViewModels in {sw.ElapsedMilliseconds} ms");
 
                 // Step 5: update collection on UI thread
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await _dispatcher.InvokeAsync(() =>
                 {
                     // Explicitly dispose of existing ViewModels before clearing the collection
                     foreach (var oldVm in _services)
@@ -904,7 +907,7 @@ namespace Servy.Manager.ViewModels
                 // Refresh UI only if not cancelled
                 if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    await _dispatcher.InvokeAsync(() =>
                     {
                         ServicesView.Refresh();
                     }, DispatcherPriority.Background);
@@ -954,7 +957,7 @@ namespace Servy.Manager.ViewModels
                 }
 
                 // Push all UI model updates to the Dispatcher to prevent ICommand cross-thread exceptions
-                Application.Current.Dispatcher.Invoke(() =>
+                _dispatcher.Invoke(() =>
                 {
                     // Use the pre-fetched DTO to update PID
                     if (serviceDto != null && service.Pid != serviceDto.Pid)
@@ -1031,7 +1034,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="busy"></param>
         private void SetIsBusy(bool busy)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            _dispatcher.Invoke(() =>
             {
                 IsBusy = busy;
 
@@ -1053,9 +1056,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceName">Name of the service to remove.</param>
         public void RemoveService(string serviceName)
         {
-            // We dispatch first. The lock must be inside the Dispatcher call to ensure
-            // we don't hold the lock while waiting for the UI thread (preventing deadlocks).
-            Application.Current.Dispatcher.Invoke(() =>
+            Action action = () =>
             {
                 var stopwatch = Stopwatch.StartNew();
                 ServiceRowViewModel itemToRemove;
@@ -1083,7 +1084,18 @@ namespace Servy.Manager.ViewModels
                 stopwatch.Stop();
                 SetFooterText(stopwatch);
                 UpdateSelectAllState();
-            });
+            };
+
+            // We dispatch first. The lock must be inside the Dispatcher call to ensure
+            // we don't hold the lock while waiting for the UI thread (preventing deadlocks).
+            if (_dispatcher.CheckAccess())
+            {
+                action();
+            }
+            else
+            {
+                _dispatcher.Invoke(action);
+            }
         }
 
         /// <summary>

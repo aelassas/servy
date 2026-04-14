@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -38,9 +39,11 @@ namespace Servy
 
         #endregion
 
-        #region Private Fields
+        #region Internal Properties
 
-        private SecureData _secureData;
+        internal AppDbContext DbContext { get; private set; }
+        internal IServiceRepository ServiceRepository { get; private set; }
+        internal ISecureData SecureData { get; private set; }
 
         #endregion
 
@@ -173,7 +176,7 @@ namespace Servy
             {
                 // Explicitly dispose of the secure data provider to clear 
                 // sensitive buffers and release key file handles.
-                _secureData?.Dispose();
+                SecureData?.Dispose();
             }
             finally
             {
@@ -326,18 +329,18 @@ namespace Servy
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    var dbContext = new AppDbContext(ConnectionString);
-                    DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
+                    DbContext = new AppDbContext(ConnectionString);
+                    DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
 
-                    var dapperExecutor = new DapperExecutor(dbContext);
+                    var dapperExecutor = new DapperExecutor(DbContext);
                     var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
-                    _secureData = new SecureData(protectedKeyProvider);
+                    SecureData = new SecureData(protectedKeyProvider);
                     var xmlSerializer = new XmlServiceSerializer();
                     var jsonSerializer = new JsonServiceSerializer();
 
-                    var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
+                    ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
 
-                    var resourceHelper = new ResourceHelper(serviceRepository);
+                    var resourceHelper = new ResourceHelper(ServiceRepository);
 
                     // Copy Sysinternals from embedded resources
                     if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))

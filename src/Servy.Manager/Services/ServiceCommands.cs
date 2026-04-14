@@ -421,7 +421,7 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => serviceDomain.Uninstall());
-                if (res.IsSuccess) RemoveService(service);
+                if (res.IsSuccess) await Task.Run(() => RemoveService(service));
 
                 return res.IsSuccess;
             }
@@ -458,7 +458,7 @@ namespace Servy.Manager.Services
                 }
 
                 var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
-                if (res > 0) RemoveService(service);
+                if (res > 0) await Task.Run(() => RemoveService(service));
 
                 var success = res > 0;
 
