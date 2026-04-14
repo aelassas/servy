@@ -84,6 +84,9 @@ namespace Servy.Core.Helpers
                 if (!process.Start())
                     throw new InvalidOperationException($"Failed to start process: {handleExePath}");
 
+                // Kick off the background thread that drains stderr
+                process.BeginErrorReadLine();
+
                 // Start asynchronous read on stderr
                 process.BeginErrorReadLine();
 
