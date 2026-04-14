@@ -221,16 +221,31 @@ namespace Servy
         /// <returns>A <see cref="Task"/> representing the asynchronous startup operation.</returns>
         private async Task InitializeApp(StartupEventArgs e)
         {
-
-            // Subscribe to unhandled exceptions
+            // Global AppDomain exceptions (often fatal)
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
-                MessageBox.Show("Unhandled exception: " + args.ExceptionObject);
+                var ex = args.ExceptionObject as Exception;
+                Logger.Error("Fatal AppDomain exception", ex);
+
+                // Standard Windows behavior for fatal exceptions is a simple message before termination
+                MessageBox.Show(
+                    "A fatal error occurred. The application will now close. Please check the logs for details.",
+                    "Servy - Fatal Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             };
 
+            // UI Thread exceptions (recoverable)
             DispatcherUnhandledException += (s, args) =>
             {
-                MessageBox.Show("UI thread exception: " + args.Exception);
+                Logger.Error("UI Thread exception", args.Exception);
+
+                MessageBox.Show(
+                    "An unexpected error occurred in the interface. Details have been logged.",
+                    "Servy - Unexpected Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
                 args.Handled = true;
             };
 
