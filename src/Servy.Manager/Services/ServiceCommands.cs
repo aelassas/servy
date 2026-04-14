@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -618,8 +617,6 @@ namespace Servy.Manager.Services
                 }
 
                 if (!await _serviceConfigurationValidator.Validate(dto)) return;
-
-                ServiceDtoHelper.ApplyDefaults(dto);
 
                 var res = await _serviceRepository.UpsertAsync(dto);
                 if (res > 0)

@@ -76,7 +76,9 @@ namespace Servy.UnitTests.Core.Helpers
             {
                 StartTimeout = customTimeout,
                 EnableRotation = customToggle,
-                RunAsLocalSystem = false // Assuming default is true
+                RunAsLocalSystem = false, // Assuming default is true
+                UserAccount = @".\test_svc",
+                Password = "secret",
             };
 
             // Act
@@ -85,7 +87,9 @@ namespace Servy.UnitTests.Core.Helpers
             // Assert
             Assert.Equal(customTimeout, dto.StartTimeout);
             Assert.Equal(customToggle, dto.EnableRotation);
-            Assert.False(dto.RunAsLocalSystem);
+            Assert.True(dto.RunAsLocalSystem);
+            Assert.Null(dto.UserAccount);
+            Assert.Null(dto.Password);
 
             // Verify that other (null) properties WERE still populated
             Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);

@@ -1,9 +1,8 @@
-﻿using System;
-using Newtonsoft.Json;
-using Xunit;
+﻿using Newtonsoft.Json;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Services;
-using Servy.Core.Config;
+using Xunit;
 
 namespace Servy.Core.UnitTests.Services
 {
@@ -131,8 +130,9 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(expected.PostStopParameters, actual.PostStopParameters);
 
             // Check that the Password/Account (Sensitive data) handled by UntrustedDataSettings
-            Assert.Equal(expected.UserAccount, actual.UserAccount);
+            Assert.Null(actual.UserAccount);
             Assert.Null(actual.Password);
+            Assert.True(actual.RunAsLocalSystem);
         }
 
         [Fact]
