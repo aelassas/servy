@@ -61,6 +61,7 @@ namespace Servy.Restarter
                 var remaining = timeout - stopwatch.Elapsed;
                 if (remaining <= TimeSpan.Zero)
                     throw new System.TimeoutException("Timeout expired before the service could be started.");
+                controller.Start();
                 controller.WaitForStatus(ServiceControllerStatus.Running, remaining);
             }
         }
