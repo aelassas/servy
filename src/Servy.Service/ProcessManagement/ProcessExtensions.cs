@@ -28,11 +28,24 @@ namespace Servy.Service.ProcessManagement
         }
 
         /// <summary>
-        /// Gets the child processes of the specified process.
+        /// Retrieves all child processes for the specified parent.
         /// </summary>
-        /// <param name="parentPid">Parent process PID.</param>
-        /// <param name="parentStartTime">Parent process start time</param>
-        /// <returns>Children.</returns>
+        /// <param name="parentPid">The PID of the parent.</param>
+        /// <param name="parentStartTime">The start time of the parent for identity validation.</param>
+        /// <returns>
+        /// A list of tuples containing the <see cref="Process"/> and its <see cref="IntPtr"/> handle. 
+        /// <br/><strong>CRITICAL:</strong> The caller assumes full ownership of the returned Process objects and must dispose of them to prevent native handle leaks.
+        /// </returns>
+        /// <remarks>
+        /// This method filters the global process list using a parent PID and a 2-second start-time buffer 
+        /// to mitigate PID reuse risks. 
+        /// <para>
+        /// <b>Ownership Transfer:</b> Processes that do not match the criteria are disposed of immediately 
+        /// within this method. However, processes that are included in the return list are <b>NOT</b> disposed. 
+        /// The caller is responsible for iterating the results and calling <c>Dispose()</c> on each 
+        /// <see cref="Process"/> object.
+        /// </para>
+        /// </remarks>
         public static unsafe List<(Process Process, Handle Handle)> GetChildren(int parentPid, DateTime parentStartTime)
         {
             var children = new List<(Process Process, Handle Handle)>();
