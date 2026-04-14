@@ -1,9 +1,7 @@
-﻿using Servy.Core.Helpers;
+﻿using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Security;
 using Servy.Core.Services;
-using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.Validators;
@@ -54,7 +52,7 @@ namespace Servy.Views
         {
             var app = (App)Application.Current;
 
-            // Initialize service manager
+            // 1. Initialize core infrastructure
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
             var serviceManager = new ServiceManager(
                 controllerFactory,
@@ -64,34 +62,39 @@ namespace Servy.Views
                 app.ServiceRepository
             );
 
-            // Initialize ViewModel
+            // 2. Initialize UI Services
+            var fileDialogService = new FileDialogService();
             var messageBoxService = new MessageBoxService();
             var helperService = new HelpService(messageBoxService);
+            var configValidator = new ServiceConfigurationValidator(messageBoxService);
 
-            var mainViewModel = new MainViewModel(
-                new FileDialogService(),
-                null,
+            // 3. Break the circular dependency using local proxy functions
+            // These capture the 'viewModel' variable in a closure before it is instantiated.
+            MainViewModel viewModel = null;
+
+            Func<ServiceDto> modelToDtoProxy = () => viewModel?.ModelToServiceDto();
+            Action<ServiceDto> bindDtoProxy = (dto) => viewModel?.BindServiceDtoToModel(dto);
+
+            // 4. Create ServiceCommands first, passing the proxies
+            var serviceCommands = new ServiceCommands(
+                modelToDtoProxy,
+                bindDtoProxy,
+                serviceManager,
+                messageBoxService,
+                fileDialogService,
+                configValidator
+            );
+
+            // 5. Create MainViewModel with the fully initialized ServiceCommands
+            viewModel = new MainViewModel(
+                fileDialogService,
+                serviceCommands, // We are no longer passing null here!
                 messageBoxService,
                 app.ServiceRepository,
                 helperService
             );
 
-            // Initialize service commands
-            var fileDialogService = new FileDialogService();
-
-            var serviceCommands = new ServiceCommands(
-                mainViewModel.ModelToServiceDto,
-                mainViewModel.BindServiceDtoToModel,
-                serviceManager,
-                messageBoxService,
-                fileDialogService,
-                new ServiceConfigurationValidator(messageBoxService)
-                );
-
-            mainViewModel.ServiceCommands = serviceCommands;
-
-            // Create main ViewModel
-            return mainViewModel;
+            return viewModel;
         }
 
         /// <summary>
