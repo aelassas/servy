@@ -1015,9 +1015,19 @@ namespace Servy.Core.Services
                     default: return ServiceStartType.Manual;
                 }
             }
-            catch
+            catch (Win32Exception ex)
             {
-                // Access Denied occurs on certain driver-type services
+                // Fix Log the specific error and provide a diagnostic trail.
+                // We use Debug level to avoid bloating logs with expected protected service errors.
+                Logger.Debug($"Access denied or Win32 error reading StartType for '{service.ServiceName}'. Falling back to Manual.", ex);
+
+                return ServiceStartType.Manual;
+            }
+            catch (Exception ex)
+            {
+                // Catch-all for unexpected failures (e.g. ObjectDisposedException)
+                Logger.Error($"Unexpected error mapping startup type for '{service.ServiceName}'.", ex);
+
                 return ServiceStartType.Manual;
             }
         }
