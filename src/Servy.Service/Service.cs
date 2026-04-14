@@ -175,9 +175,13 @@ namespace Servy.Service
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Service"/> class
-        /// using the default <see cref="ServiceHelper"/> implementation,
-        /// path validator and default factories for stream writer, timer, and process.
+        /// using the default production implementations for all dependencies.
         /// </summary>
+        /// <remarks>
+        /// This constructor is intended for the Windows Service Control Manager (SCM). 
+        /// It performs full subsystem initialization, including logging, database connectivity, 
+        /// and cryptographic setup.
+        /// </remarks>
         public Service() : this(
             new Helpers.ServiceHelper(new CommandLineProvider()),
             new EventLogLogger(AppConfig.ServiceNameEventSource),
@@ -190,8 +194,27 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Service"/> class.
+        /// Initializes a new instance of the <see cref="Service"/> class with full dependency injection.
         /// </summary>
+        /// <param name="serviceHelper">The service helper.</param>
+        /// <param name="logger">The logger wrapper.</param>
+        /// <param name="streamWriterFactory">The stream writer factory.</param>
+        /// <param name="timerFactory">The timer factory.</param>
+        /// <param name="processFactory">The process factory.</param>
+        /// <param name="pathValidator">The path validator.</param>
+        /// <param name="serviceRepository">The service repository.</param>
+        /// <remarks>
+        /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
+        /// <para>
+        /// Unlike the production constructors, this version <b>DOES NOT</b>:
+        /// <list type="bullet">
+        /// <item><description>Initialize the global <see cref="Logger"/> utility.</description></item>
+        /// <item><description>Setup the <see cref="SecureData"/> cryptographic subsystem.</description></item>
+        /// <item><description>Initialize the database schema or embedded resources.</description></item>
+        /// </list>
+        /// The caller is responsible for ensuring any required global state is initialized prior to use.
+        /// </para>
+        /// </remarks>
         public Service(
             IServiceHelper serviceHelper,
             ILogger logger,
@@ -214,8 +237,7 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Service"/> class.
-        /// Sets the service name, initializes the event log source, and assigns the required dependencies.
+        /// Initializes a new instance of the <see cref="Service"/> class with core dependencies and performs production setup.
         /// </summary>
         /// <param name="serviceHelper">The service helper instance to use.</param>
         /// <param name="logger">The logger instance to use for logging.</param>
@@ -223,6 +245,11 @@ namespace Servy.Service
         /// <param name="timerFactory">Factory to create timers for health monitoring.</param>
         /// <param name="processFactory">Factory to create process wrappers for launching and managing child processes.</param>
         /// <param name="pathValidator">Path Validator.</param>
+        /// <remarks>
+        /// This is the primary <b>Production Constructor</b>. It automatically initializes the 
+        /// <see cref="Logger"/>, validates the Windows Event Source, loads configuration from 
+        /// <c>appsettings.json</c>, and initializes the <see cref="SecureData"/> and database systems.
+        /// </remarks>
         public Service(
             IServiceHelper serviceHelper,
             ILogger logger,
