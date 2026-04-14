@@ -149,7 +149,8 @@ namespace Servy.Manager.ViewModels
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
-                SwitchService(_stdoutPath, _stderrPath);
+                // Safe fire-and-forget
+                _ = SwitchServiceAsync(_stdoutPath, _stderrPath);
 
                 StopMonitoring(false); // Pass false so we don't clear the console
                 StartMonitoring();
@@ -290,14 +291,17 @@ namespace Servy.Manager.ViewModels
                 // Wait for the user to stop typing
                 await Task.Delay(SearchDebounceDelayMs, token);
 
-                // Return to the UI thread to refresh the View
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                // Return to the UI thread to refresh the View safely
+                if (Application.Current?.Dispatcher is Dispatcher dispatcher)
                 {
-                    if (!token.IsCancellationRequested)
+                    await dispatcher.InvokeAsync(() =>
                     {
-                        VisibleLines.Refresh();
-                    }
-                }, DispatcherPriority.Background);
+                        if (!token.IsCancellationRequested)
+                        {
+                            VisibleLines.Refresh();
+                        }
+                    }, DispatcherPriority.Background);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -338,7 +342,7 @@ namespace Servy.Manager.ViewModels
         /// </remarks>
         /// <param name="stdoutPath">Path to the standard output log.</param>
         /// <param name="stderrPath">Path to the standard error log.</param>
-        private async void SwitchService(string stdoutPath, string stderrPath)
+        private async Task SwitchServiceAsync(string stdoutPath, string stderrPath)
         {
             try
             {
@@ -413,8 +417,15 @@ namespace Servy.Manager.ViewModels
             }
             catch (Exception ex)
             {
-                // Log the error so we know why the resume failed
-                Logger.Error("Failed to resume/switch logs.", ex);
+                try
+                {
+                    // Log the error so we know why the resume failed
+                    Logger.Error("Failed to resume/switch logs.", ex);
+                }
+                catch
+                {
+                    // Secondary catch blocks unhandled exception propagation if Logger itself fails
+                }
             }
         }
 
@@ -431,7 +442,7 @@ namespace Servy.Manager.ViewModels
                 _stderrPath = null;
             }
 
-            SwitchService(string.Empty, string.Empty);
+            _ = SwitchServiceAsync(string.Empty, string.Empty);
         }
 
         /// <summary>
@@ -448,7 +459,10 @@ namespace Servy.Manager.ViewModels
             var tailer = new LogTailer();
             tailer.OnNewLines += (lines) =>
             {
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                // Guard against null dispatcher during shutdown background ticks
+                if (!(Application.Current?.Dispatcher is Dispatcher dispatcher)) return;
+
+                dispatcher.InvokeAsync(() =>
                 {
                     // ONLY add the lines if this tailer still belongs to the ACTIVE session
                     if (sessionId != _currentSessionId) return;
@@ -469,6 +483,7 @@ namespace Servy.Manager.ViewModels
                     RequestScroll?.Invoke(false);
                 }, DispatcherPriority.Background);
             };
+
             _ = tailer.RunFromPosition(path, type, pos, created, token)
                 .ContinueWith(t =>
                 {
@@ -565,7 +580,8 @@ namespace Servy.Manager.ViewModels
                     _stderrPath = stateSnapshot.ActiveStderrPath;
                     SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
                     SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
-                    SwitchService(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
+
+                    _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
                     CopyPidCommand?.RaiseCanExecuteChanged();
                 }
 
@@ -610,9 +626,9 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
+                if (Application.Current?.Dispatcher is Dispatcher dispatcher && !Helper.IsRunningInUnitTest())
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
@@ -708,7 +724,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Sets the selection active state, used to manage UI selection preservation during log updates.
         /// </summary>
-        /// <param name="active"></param>
+        /// <param name="isActive"></param>
         public void SetSelectionActive(bool isActive)
         {
             if (_isSelectionActive == isActive) return;
@@ -723,7 +739,7 @@ namespace Servy.Manager.ViewModels
                 // Re-run the switch logic using the current paths.
                 // This will stop the old tailer, reload the merged history, 
                 // and start a fresh live tail.
-                SwitchService(_stdoutPath, _stderrPath);
+                _ = SwitchServiceAsync(_stdoutPath, _stderrPath);
             }
         }
 
