@@ -15,12 +15,14 @@ namespace Servy.Core.DTOs
         /// Primary key of the service record.
         /// </summary>
         [JsonIgnore]
+        [XmlIgnore]
         public int? Id { get; set; }
 
         /// <summary>
         /// Child Process PID.
         /// </summary>
         [JsonIgnore]
+        [XmlIgnore]
         public int? Pid { get; set; }
 
         /// <summary>
@@ -266,6 +268,8 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Previous Timeout in seconds to wait for the process to exit.
         /// </summary>
+        [JsonIgnore]
+        [XmlIgnore]
         public int? PreviousStopTimeout { get; set; }
 
         /// <summary>
@@ -450,7 +454,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializeEnableDebugLogs() => EnableDebugLogs.HasValue;
         public bool ShouldSerializeStartTimeout() => StartTimeout.HasValue;
         public bool ShouldSerializeStopTimeout() => StopTimeout.HasValue;
-        public bool ShouldSerializePreviousStopTimeout() => PreviousStopTimeout.HasValue;
+        public bool ShouldSerializePreviousStopTimeout() => false;
         public bool ShouldSerializeActiveStdoutPath() => false;
         public bool ShouldSerializeActiveStderrPath() => false;
         public bool ShouldSerializePreStopExecutablePath() => !string.IsNullOrWhiteSpace(PreStopExecutablePath);
