@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
 using Servy.Manager.Config;
@@ -315,7 +316,7 @@ namespace Servy.Manager.Services
                     }
 
                     // Pass false to skip splash screen
-                    process.StartInfo.Arguments = $"\"false\" \"{service.Name}\"{forceFlag}";
+                    process.StartInfo.Arguments = $"\"false\" {ProcessHelper.EscapeArgument(service.Name)}{forceFlag}";
 
                     StartProcess(process, app);
                 }
