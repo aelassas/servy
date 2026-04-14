@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Native;
 using Servy.Core.ServiceDependencies;
 using Servy.Core.Services;
 using System;
@@ -1107,7 +1108,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -1179,7 +1180,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))
@@ -1255,7 +1256,7 @@ namespace Servy.Core.UnitTests.Services
                 null))
                 .Returns(true);
 
-            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<Native.NativeMethods.ServiceStatus>.IsAny))
+            _mockWindowsServiceApi.Setup(x => x.ControlService(serviceHandle, It.IsAny<int>(), ref It.Ref<NativeMethods.ServiceStatus>.IsAny))
                 .Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.DeleteService(serviceHandle))

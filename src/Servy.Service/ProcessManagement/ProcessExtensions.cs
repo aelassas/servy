@@ -42,7 +42,7 @@ namespace Servy.Service.ProcessManagement
 
             foreach (var other in Process.GetProcesses())
             {
-                Handle handle = new Handle(IntPtr.Zero);
+                Handle handle = null;
                 bool addedToChildren = false;
 
                 try
@@ -57,7 +57,7 @@ namespace Servy.Service.ProcessManagement
                         otherId // Use the cached ID safely
                     );
 
-                    if (handle == IntPtr.Zero)
+                    if (handle == null || handle.IsInvalid)
                         continue;
 
                     // Skip processes that started before parent
@@ -73,7 +73,7 @@ namespace Servy.Service.ProcessManagement
                     }
 
                     if (NativeMethods.NtQueryInformationProcess(
-                        handle,
+                        handle.DangerousGetHandle(), // Explicitly pass the internal IntPtr
                         NativeMethods.ProcessInfoClass.ProcessBasicInformation,
                         out var info,
                         sizeof(NativeMethods.ProcessBasicInformation)) != 0)
@@ -98,7 +98,7 @@ namespace Servy.Service.ProcessManagement
                     if (!addedToChildren)
                     {
                         other.Dispose();
-                        handle.Dispose();
+                        handle?.Dispose();
                     }
                 }
             }

@@ -1,41 +1,35 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using static Servy.Core.Native.NativeMethods;
+﻿using Microsoft.Win32.SafeHandles;
+using System.Runtime.ConstrainedExecution;
 
 namespace Servy.Core.Native
 {
     /// <summary>
-    /// Represents a safe wrapper around a native handle, ensuring it is properly released when disposed.
+    /// Represents a safe wrapper around a Windows process handle.
     /// </summary>
     /// <remarks>
-    /// This struct encapsulates an unmanaged handle (<see cref="IntPtr"/>) and provides deterministic cleanup
-    /// through the <see cref="IDisposable"/> pattern. It calls the native <c>CloseHandle</c> function
-    /// defined in <see cref="NativeMethods"/> when disposed.
+    /// Deriving from <see cref="SafeHandleZeroOrMinusOneIsInvalid"/> ensures the handle 
+    /// is closed exactly once, even if the object is finalized or disposed multiple times.
     /// </remarks>
-    [StructLayout(LayoutKind.Sequential)]
-    public readonly struct Handle : IDisposable
+    public sealed class Handle : SafeHandleZeroOrMinusOneIsInvalid
     {
         /// <summary>
-        /// The underlying native handle.
+        /// Initializes a new instance of the <see cref="Handle"/> class.
         /// </summary>
-        private readonly IntPtr handle;
+        public Handle() : base(true)
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Handle"/> struct with the specified native handle.
+        /// Executes the code required to free the handle.
         /// </summary>
-        /// <param name="handle">The unmanaged handle to wrap.</param>
-        public Handle(IntPtr handle) => this.handle = handle;
-
         /// <summary>
-        /// Releases the underlying handle by invoking the native <c>CloseHandle</c> function.
+        /// Executes the native code required to free the handle.
         /// </summary>
-        public void Dispose() => CloseHandle(this.handle);
-
-        /// <summary>
-        /// Implicitly converts the <see cref="Handle"/> to an <see cref="IntPtr"/>.
-        /// </summary>
-        /// <param name="value">The <see cref="Handle"/> instance to convert.</param>
-        /// <returns>The underlying <see cref="IntPtr"/> value.</returns>
-        public static implicit operator IntPtr(Handle value) => value.handle;
+        /// <returns>True if the handle is released successfully; otherwise, in the event of a catastrophic failure, false.</returns>
+        [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.CloseHandle(handle);
+        }
     }
 }
