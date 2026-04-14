@@ -43,12 +43,19 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceRepository _serviceRepository;
         private DispatcherTimer _timer;
-        private CancellationTokenSource _cancellationTokenSource;
-        private CancellationTokenSource _searchCts;
+
+        // Controls left-panel service search
+        private CancellationTokenSource _serviceSearchCts;
+
+        // Controls console log filter debouncing
+        private CancellationTokenSource _logFilterCts;
+
+        // Controls performance polling and log tailing
+        private CancellationTokenSource _monitoringCts;
+
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
-        private CancellationTokenSource _cts;
         private string _consoleSearchText;
         private readonly int _maxLines;
         private string _stdoutPath;
@@ -258,12 +265,16 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task ApplyFilterWithDebounceAsync()
         {
-            // Cancel any pending search task
-            _searchCts?.Cancel();
-            _searchCts?.Dispose();
-            _searchCts = new CancellationTokenSource();
+            // Thread-safe CTS swap for debouncing
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _logFilterCts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
 
-            var token = _searchCts.Token;
+            var token = newCts.Token;
 
             try
             {
@@ -320,8 +331,8 @@ namespace Servy.Manager.ViewModels
                 // 1. Increment session and cancel previous work
                 int sessionId = Interlocked.Increment(ref _currentSessionId);
 
-                ResetCts();
-                var token = _cts.Token;
+                ResetMonitoringCts();
+                var token = _monitoringCts.Token;
 
                 RawLines.Clear();
                 OnPropertyChanged(nameof(Pid));
@@ -329,16 +340,13 @@ namespace Servy.Manager.ViewModels
                 // 2. Load History in parallel
                 int historyLimit = _maxLines / 2;
 
-                // Check if stderr is actually a different file from stdout
                 bool hasUniqueStderr = !string.IsNullOrEmpty(stderrPath) &&
                                        !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
 
-                // Always prepare StdOut task if path exists
                 var stdoutTask = !string.IsNullOrEmpty(stdoutPath)
                     ? new LogTailer().GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
                     : Task.FromResult<HistoryResult>(null);
 
-                // Only prepare StdErr task if it is a different file
                 var stderrTask = hasUniqueStderr
                     ? new LogTailer().GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit)
                     : Task.FromResult<HistoryResult>(null);
@@ -346,7 +354,7 @@ namespace Servy.Manager.ViewModels
                 // Wait for the necessary reads to complete
                 var results = await Task.WhenAll(stdoutTask, stderrTask);
 
-                // 3. SECURITY CHECK: If sessionId doesn't match, the user switched again while we were loading
+                // 3. SECURITY CHECK: If sessionId doesn't match, user switched again while loading
                 if (sessionId != _currentSessionId) return;
 
                 var outRes = results[0];
@@ -466,11 +474,9 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Handles the timer tick for performance monitoring. 
-        /// Uses interlocked flags to prevent re-entrancy and "resurrection" of the timer after stopping.
         /// </summary>
         private async void OnTick(object sender, EventArgs e)
         {
-            // 1. Atomic Guard: Must be monitoring AND not already running a tick
             if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
                 Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
             {
@@ -496,13 +502,10 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Asynchronously fetches the latest service status and updates the UI accordingly.
-        /// Handles log path changes if the service restarts with a new PID.
         /// </summary>
         private async Task OnTickAsync()
         {
-            // Capture the token at the start of the tick. 
-            // If _cts is null, we shouldn't be here, but we guard it anyway.
-            var token = _cts?.Token ?? CancellationToken.None;
+            var token = _monitoringCts?.Token ?? CancellationToken.None;
 
             try
             {
@@ -574,13 +577,18 @@ namespace Servy.Manager.ViewModels
         /// Searches for services based on the <see cref="SearchText"/>.
         /// Updates the <see cref="Services"/> collection on the UI thread.
         /// </summary>
-        /// <param name="parameter">Unused command parameter.</param>
         private async Task SearchServicesAsync(object parameter)
         {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-            var token = _cancellationTokenSource.Token;
+            // Thread-safe atomic swap for left-panel search
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
+
+            var token = newCts.Token;
 
             try
             {
@@ -635,15 +643,15 @@ namespace Servy.Manager.ViewModels
         /// Resets the <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
         /// and disposing of the existing instance before creating a fresh one.
         /// </summary>
-        /// <remarks>
-        /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
-        /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
-        /// </remarks>
-        private void ResetCts()
+        private void ResetMonitoringCts()
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = new CancellationTokenSource();
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
         }
 
         #endregion
@@ -656,7 +664,7 @@ namespace Servy.Manager.ViewModels
         public void StartMonitoring()
         {
             // Ensure we have a fresh, active cancellation token
-            ResetCts();
+            ResetMonitoringCts();
 
             // Atomically signal start
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
@@ -672,7 +680,8 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearConsole">If true, clears the console history and resets UI labels.</param>
         public void StopMonitoring(bool clearConsole)
         {
-            _cancellationTokenSource?.Cancel();
+            // Cancel the monitoring operations, NOT the left-panel search.
+            _monitoringCts?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
             _timer?.Stop();
 
@@ -710,15 +719,31 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            // 1. Cancel and dispose the CancellationTokenSource
-            if (_cts != null)
+            // 1. Dispose Monitoring CTS
+            var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+            if (oldMonitoringCts != null)
             {
-                _cts.Cancel();
-                _cts.Dispose();
-                _cts = null;
+                oldMonitoringCts.Cancel();
+                oldMonitoringCts.Dispose();
             }
 
-            // 2. Stop the timer, unsubscribe from the Tick event, and release the reference
+            // 2. Dispose Service Search CTS
+            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
+            if (oldSearchCts != null)
+            {
+                oldSearchCts.Cancel();
+                oldSearchCts.Dispose();
+            }
+
+            // 3. Dispose Log Filter Debounce CTS
+            var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
+            if (oldFilterCts != null)
+            {
+                oldFilterCts.Cancel();
+                oldFilterCts.Dispose();
+            }
+
+            // 4. Stop and Unhook the Timer
             if (_timer != null)
             {
                 _timer.Stop();

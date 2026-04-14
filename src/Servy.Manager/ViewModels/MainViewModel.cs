@@ -49,7 +49,9 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
         private readonly IHelpService _helpService;
-        private CancellationTokenSource _cancellationTokenSource;
+
+        private CancellationTokenSource _cts;
+
         private DispatcherTimer _refreshTimer;
         private readonly ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
@@ -204,20 +206,6 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Gets or sets the tri-state "Select All" value for the services.
         /// </summary>
-        /// <value>
-        /// <c>true</c> if all services are checked;  
-        /// <c>false</c> if no services are checked;  
-        /// <c>null</c> if some but not all services are checked.
-        /// </value>
-        /// <remarks>
-        /// When the property is set by the user (i.e. not during an internal update),  
-        /// all services in <c>_services</c> are updated to match the new value.  
-        /// An indeterminate (<c>null</c>) state set by the user is interpreted as <c>true</c>.  
-        /// After updating, <see cref="UpdateSelectAllState"/> is called to keep the header
-        /// checkbox state in sync.  
-        /// The <c>_isUpdatingSelectAll</c> flag prevents recursive updates when the property
-        /// is modified programmatically.
-        /// </remarks>
         public bool? SelectAll
         {
             get => _selectAll;
@@ -232,9 +220,6 @@ namespace Servy.Manager.ViewModels
                 {
                     _isUpdatingSelectAll = true;
 
-                    // If the previous state was True, the user wants to uncheck everything.
-                    // Otherwise (if it was False or Null/Indeterminate), they want to check everything.
-                    // We ignore the 'value' passed by the UI toggle cycle to enforce a binary result.
                     bool targetState = (value == true);
 
                     // Optimization: Use a local list to avoid multiple enumeration if _services is large
@@ -398,8 +383,6 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Triggers when a property on a service row changes.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void Service_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ServiceRowViewModel.IsChecked))
@@ -411,13 +394,7 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Updates the <see cref="SelectAll"/> property based on the current state of all services.
-        /// Sets it to <c>true</c> if all services are checked, <c>false</c> if none are checked,
-        /// or <c>null</c> if there is a mix of checked and unchecked services.
         /// </summary>
-        /// <remarks>
-        /// The <c>_isUpdatingSelectAll</c> flag is used to prevent recursive updates
-        /// when the <see cref="SelectAll"/> property changes.
-        /// </remarks>
         private void UpdateSelectAllState()
         {
             if (_isUpdatingSelectAll) return;
@@ -425,19 +402,16 @@ namespace Servy.Manager.ViewModels
             _isUpdatingSelectAll = true;
             try
             {
-                // Use All and Any for high-performance short-circuiting
                 if (_services.Any() && _services.All(s => s.IsChecked))
                 {
                     SelectAll = true;
                 }
                 else if (_services.Any(s => s.IsChecked))
                 {
-                    // If not All are checked, but at least one is, it's indeterminate
                     SelectAll = null;
                 }
                 else
                 {
-                    // None are checked
                     SelectAll = false;
                 }
             }
@@ -450,7 +424,6 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Creates a new <see cref="DispatcherTimer"/> configured with the application's refresh interval.
         /// </summary>
-        /// <returns>A <see cref="DispatcherTimer"/> instance ready to be started.</returns>
         private DispatcherTimer CreateTimer()
         {
             var app = (App)Application.Current;
@@ -459,7 +432,6 @@ namespace Servy.Manager.ViewModels
                 Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
             };
 
-            // Subscribe to the tick event
             timer.Tick += OnTick;
 
             return timer;
@@ -470,12 +442,8 @@ namespace Servy.Manager.ViewModels
         /// Stops the timer before invoking <see cref="RefreshAllServicesAsync"/> to prevent overlapping ticks,
         /// and restarts the timer afterward if it still exists.
         /// </summary>
-        /// <param name="sender">The <see cref="DispatcherTimer"/> that raised the event.</param>
-        /// <param name="e">Event data associated with the tick.</param>
         private async void OnTick(object sender, EventArgs e)
         {
-            // Atomically check if 0, and if so, set to 1.
-            // If it was already 1, return immediately.
             if (Interlocked.CompareExchange(ref _isRefreshingFlag, 1, 0) == 1)
             {
                 return;
@@ -483,12 +451,13 @@ namespace Servy.Manager.ViewModels
 
             try
             {
-                // Check cancellation before starting heavy work
-                if (_cancellationTokenSource?.IsCancellationRequested == true)
-                    return;
+                // Local copy pattern to protect against UI navigation/Search resets
+                var cts = _cts;
+                if (cts == null || cts.IsCancellationRequested) return;
 
-                // This runs the heavy fetching off the UI thread (via the Task.Run calls inside)
-                await RefreshAllServicesAsync();
+                var token = cts.Token;
+
+                await RefreshAllServicesAsync(token);
             }
             catch (OperationCanceledException)
             {
@@ -500,7 +469,6 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                // Atomically set back to 0
                 Interlocked.Exchange(ref _isRefreshingFlag, 0);
             }
         }
@@ -514,11 +482,16 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
-            // Step 0: cancel any previous search
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-            var token = _cancellationTokenSource.Token;
+            // Thread-safe CTS swap
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _cts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
+
+            var token = newCts.Token;
 
             try
             {
@@ -569,8 +542,6 @@ namespace Servy.Manager.ViewModels
 
                     // Notify that bulk action availability changed
                     OnPropertyChanged(nameof(HasSelectedServices));
-
-                    //ServicesView.Refresh();
                 }, DispatcherPriority.Background);
 
                 stopwatch.Stop();
@@ -581,7 +552,7 @@ namespace Servy.Manager.ViewModels
                 {
                     try
                     {
-                        await RefreshAllServicesAsync();
+                        await RefreshAllServicesAsync(token);
                     }
                     catch (OperationCanceledException)
                     {
@@ -591,7 +562,7 @@ namespace Servy.Manager.ViewModels
                     {
                         Logger.Error($"RefreshAllServicesAsync failed.", ex);
                     }
-                }, _cancellationTokenSource.Token);
+                }, token);
             }
             catch (OperationCanceledException)
             {
@@ -675,7 +646,6 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Checks for the latest Servy release on GitHub and prompts the user if an update is available.
-        /// If a newer version exists, opens the latest release page in the default browser; otherwise shows an informational message.
         /// </summary>
         private async Task CheckUpdatesAsync(object parameter)
         {
@@ -705,7 +675,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            _cancellationTokenSource?.Cancel(); // cancel any in-progress async work
+            // Thread-safe disposal pattern
+            var oldCts = Interlocked.Exchange(ref _cts, null);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
 
             if (_refreshTimer != null)
             {
@@ -724,9 +700,13 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void CreateAndStartTimer()
         {
+            if (_cts == null)
+            {
+                Interlocked.CompareExchange(ref _cts, new CancellationTokenSource(), null);
+            }
+
             if (_refreshTimer == null)
             {
-                _cancellationTokenSource = new CancellationTokenSource();
                 _refreshTimer = CreateTimer();
             }
 
@@ -745,20 +725,12 @@ namespace Servy.Manager.ViewModels
         /// Updates the <see cref="FooterText"/> with the current service count and the time elapsed 
         /// during the last operation.
         /// </summary>
-        /// <param name="stopwatch">
-        /// The <see cref="Stopwatch"/> instance used to measure the duration of the 
-        /// preceding operation (e.g., search or refresh).
-        /// </param>
         private void SetFooterText(Stopwatch stopwatch) =>
             FooterText = UI.Helpers.Helper.GetRowsInfo(_services.Count, stopwatch.Elapsed, Strings.Footer_ServiceRowText);
 
         /// <summary>
         /// Executes a bulk operation on all selected and installed services.
         /// </summary>
-        /// <param name="operation">The async function to execute for each service.</param>
-        /// <param name="confirmMessage">The message to display for user confirmation.</param>
-        /// <param name="logErrorMessage">The message to log if the entire bulk operation fails.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
         private async Task ExecuteBulkOperationAsync(
             Func<Service, Task<bool>> operation,
             string confirmMessage,
@@ -785,15 +757,12 @@ namespace Servy.Manager.ViewModels
                 SetIsBusy(true);
 
                 // 3. Dispatch all operations concurrently: Scale based on hardware
-                // Use a factor of 2 to keep the pipeline full during I/O wait times, 
-                // but cap it at a reasonable limit (e.g., 8) to prevent SCM saturation.
                 int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism);
 
                 using (var throttler = new SemaphoreSlim(maxDegreeOfParallelism))
                 {
                     var operationTasks = selectedServices.Select(async service =>
                     {
-                        // Wait for a slot to open up before starting this specific service
                         await throttler.WaitAsync();
                         try
                         {
@@ -802,14 +771,11 @@ namespace Servy.Manager.ViewModels
                         }
                         finally
                         {
-                            // Release the slot for the next service in the queue
                             throttler.Release();
                         }
                     });
 
-                    // Await all tasks, but they will internally throttle themselves
                     var results = await Task.WhenAll(operationTasks);
-
 
                     // Filter out the failed ones
                     var failed = results.Where(r => !r.Success).Select(r => r.ServiceName).ToList();
@@ -842,11 +808,11 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Refresh all services description, status, startup type, user and installation state without blocking the UI thread.
         /// </summary>
-        private async Task RefreshAllServicesAsync()
+        /// <param name="token">Explicit cancellation token to prevent mid-execution NullReferenceExceptions.</param>
+        private async Task RefreshAllServicesAsync(CancellationToken token)
         {
             try
             {
-                var token = _cancellationTokenSource?.Token ?? CancellationToken.None;
                 token.ThrowIfCancellationRequested();
 
                 // 1. Take snapshot of services safely
@@ -879,10 +845,7 @@ namespace Servy.Manager.ViewModels
                         {
                             allDtosDict.TryGetValue(service.Name, out var dto);
 
-                            // As properties mutate inside this method, INotifyPropertyChanged 
-                            // will fire. WPF handles marshaling these specific property updates 
-                            // to the UI thread automatically.
-                            var updatedDto = await RefreshServiceInternal(service, allServicesDict, dto);
+                            var updatedDto = await RefreshServiceInternal(service, allServicesDict, dto, token);
 
                             if (updatedDto != null)
                             {
@@ -896,21 +859,21 @@ namespace Servy.Manager.ViewModels
                     }).ToList();
 
                     await Task.WhenAll(tasks);
+
+                    // Refresh UI only if not cancelled
+                    if (_cts != null && !_cts.IsCancellationRequested)
+                    {
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            ServicesView.Refresh();
+                        }, DispatcherPriority.Background);
+                    }
                 }
 
                 // 5. Execute a single atomic database batch write for all drifted services
                 if (changedDtos.Any())
                 {
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
-                }
-
-                // Refresh UI only if not cancelled
-                if (_cancellationTokenSource != null && !_cancellationTokenSource.IsCancellationRequested)
-                {
-                    await _dispatcher.InvokeAsync(() =>
-                    {
-                        ServicesView.Refresh();
-                    }, DispatcherPriority.Background);
                 }
             }
             catch (OperationCanceledException)
@@ -929,15 +892,11 @@ namespace Servy.Manager.ViewModels
         /// <param name="service">The UI-bound <see cref="Service"/> model to update.</param>
         /// <param name="allServices">A pre-fetched dictionary of OS-level service information to reduce syscall overhead.</param>
         /// <param name="serviceDto">The current database state for the service, used to detect metadata drift.</param>
-        /// <returns>
-        /// A <see cref="ServiceDto"/> containing updated metadata if a database synchronization is required; 
-        /// otherwise, <c>null</c> if the database is already in sync.
-        /// </returns>
-        private async Task<ServiceDto> RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto)
+        /// <param name="token">Cancellation token injected from the parent caller.</param>
+        private async Task<ServiceDto> RefreshServiceInternal(Service service, Dictionary<string, ServiceInfo> allServices, ServiceDto serviceDto, CancellationToken token)
         {
             try
             {
-                var token = _cancellationTokenSource?.Token ?? CancellationToken.None;
                 token.ThrowIfCancellationRequested();
 
                 // Heavy work: CPU/RAM (Kept on background thread)
@@ -945,10 +904,6 @@ namespace Servy.Manager.ViewModels
                 long? ramUsage = null;
                 if (service.Pid.HasValue)
                 {
-                    // Parallelizing CPU and RAM tasks that only 1–5ms actually slows down the app
-                    // because the time it takes to manage two threads is greater than the time
-                    // saved by running them at once.
-                    // Parallelism is only a "win" if the tasks are "heavy."
                     ProcessHelper.MaintainCache();
 
                     var processMetrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);
@@ -959,7 +914,6 @@ namespace Servy.Manager.ViewModels
                 // Push all UI model updates to the Dispatcher to prevent ICommand cross-thread exceptions
                 _dispatcher.Invoke(() =>
                 {
-                    // Use the pre-fetched DTO to update PID
                     if (serviceDto != null && service.Pid != serviceDto.Pid)
                     {
                         service.Pid = serviceDto.Pid;
@@ -969,13 +923,11 @@ namespace Servy.Manager.ViewModels
                     service.CpuUsage = cpuUsage;
                     service.RamUsage = ramUsage;
 
-                    // Load startup type from repository if null
                     if (service.StartupType == null && serviceDto != null)
                     {
                         service.StartupType = (ServiceStartType)serviceDto.StartupType;
                     }
 
-                    // Update from OS Info (Dictionary)
                     if (allServices.TryGetValue(service.Name, out var info) && info != null)
                     {
                         service.IsInstalled = true;
@@ -1000,7 +952,6 @@ namespace Servy.Manager.ViewModels
                     }
                 });
 
-                // Repository update ONLY if something actually changed in the Metadata
                 if (serviceDto != null)
                 {
                     bool needsUpdate = !string.Equals(serviceDto.Description, service.Description, StringComparison.Ordinal) ||
@@ -1010,7 +961,7 @@ namespace Servy.Manager.ViewModels
                     {
                         serviceDto.Description = service.Description;
                         serviceDto.StartupType = (int)service.StartupType;
-                        return serviceDto; // Hand back to the caller for batching
+                        return serviceDto;
                     }
                 }
 
@@ -1031,7 +982,6 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         ///  Sets the busy state and updates the mouse cursor accordingly.
         /// </summary>
-        /// <param name="busy"></param>
         private void SetIsBusy(bool busy)
         {
             _dispatcher.Invoke(() =>
@@ -1053,7 +1003,6 @@ namespace Servy.Manager.ViewModels
         /// Removes a service from the services collection, unsubscribes from its events,
         /// and refreshes the view. This method is thread-safe and dispatches to the UI thread.
         /// </summary>
-        /// <param name="serviceName">Name of the service to remove.</param>
         public void RemoveService(string serviceName)
         {
             Action action = () =>
@@ -1066,28 +1015,18 @@ namespace Servy.Manager.ViewModels
                     itemToRemove = _services.FirstOrDefault(s => s.Service.Name == serviceName);
                     if (itemToRemove == null) return;
 
-                    // 1. Unsubscribe from RowViewModel events to prevent leaks
                     itemToRemove.PropertyChanged -= Service_PropertyChanged;
-
-                    // 2. Mutate the ObservableCollection on the UI thread
                     _services.Remove(itemToRemove);
                 }
 
-                // 3. Cleanup the ViewModel. We do this outside the lock but 
-                // still on the UI thread to ensure any internal UI cleanup in Dispose is safe.
                 itemToRemove.Dispose();
-
-                // 4. ListCollectionView.Refresh must also be on the UI thread
                 ServicesView.Refresh();
 
-                // Update the footer text to reflect the new count
                 stopwatch.Stop();
                 SetFooterText(stopwatch);
                 UpdateSelectAllState();
             };
 
-            // We dispatch first. The lock must be inside the Dispatcher call to ensure
-            // we don't hold the lock while waiting for the UI thread (preventing deadlocks).
             if (_dispatcher.CheckAccess())
             {
                 action();
