@@ -1,6 +1,4 @@
 ﻿using Servy.Core.Helpers;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace Servy.Core.UnitTests.Helpers
 {
@@ -56,7 +54,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void ResolvePath_EmptyInput_ReturnsEmpty()
         {
             var result = ProcessHelper.ResolvePath(string.Empty);
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]
