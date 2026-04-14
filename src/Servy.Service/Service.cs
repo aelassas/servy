@@ -1500,21 +1500,8 @@ namespace Servy.Service
                 }
                 else if (_recoveryActionEnabled)
                 {
-                    // If we are already recovering, don't increment or log more failures
-                    if (_isRecovering) return;
-
-                    _failedChecks++;
-                    // Identical log format to CheckHealth
-                    _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
-
-                    if (_failedChecks >= _maxFailedChecks)
-                    {
-                        needsRecovery = true;
-
-                        // Set this immediately to block the Timer from logging (2/1) 
-                        // while we are waiting for our Task.Delay to finish.
-                        _isRecovering = true;
-                    }
+                    // Unified recovery check
+                    needsRecovery = RegisterFailureAndCheckRecovery();
                 }
                 else
                 {
@@ -1568,6 +1555,29 @@ namespace Servy.Service
                 _isRecovering = false;
             }
 
+        }
+
+        /// <summary>
+        /// Atomically registers a health check failure and evaluates if recovery should be initiated.
+        /// Assumes the caller has already acquired the _healthCheckSemaphore.
+        /// </summary>
+        private bool RegisterFailureAndCheckRecovery()
+        {
+            // Gatekeeper: If we are already recovering, do not increment or log more failures
+            if (_isRecovering) return false;
+
+            _failedChecks++;
+            _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
+
+            if (_failedChecks >= _maxFailedChecks)
+            {
+                // Set this immediately to block other threads/timers from incrementing
+                // while we are waiting for the recovery task to execute.
+                _isRecovering = true;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -1764,18 +1774,8 @@ namespace Servy.Service
                     }
                     else
                     {
-                        _failedChecks++;
-                        _logger?.Warn($"Health check failed ({_failedChecks}/{_maxFailedChecks}).");
-
-                        if (_failedChecks >= _maxFailedChecks)
-                        {
-                            needsRecovery = true;
-
-                            // LOCK THE GATE HERE
-                            // This prevents threads waiting for the lock from 
-                            // logging "Health check failed (4/3)" etc.
-                            _isRecovering = true;
-                        }
+                        // Unified recovery check
+                        needsRecovery = RegisterFailureAndCheckRecovery();
                     }
                 }
                 else
