@@ -267,7 +267,7 @@ namespace Servy
 
                 // Load configuration from appsettings.json
                 var builder = new ConfigurationBuilder();
-#if :DEBUG
+#if DEBUG
                 builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 #else
                 builder.SetBasePath(AppFoldersHelper.GetApplicationDirectory())
