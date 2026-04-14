@@ -20,7 +20,7 @@ namespace Servy.Core.Logging
         public const int DefaultLogRotationSizeMB = 10;
 
         private static readonly object _lock = new object();
-        private static RotatingStreamWriter? _writer;
+        private static volatile RotatingStreamWriter? _writer;
         private static LogLevel _currentLogLevel = LogLevel.Info;
         private static string? _fileName;
         private static long _logRotationSizeMB = DefaultLogRotationSizeMB;
@@ -90,8 +90,12 @@ namespace Servy.Core.Logging
 
                 string logPath = Path.Combine(logDir, _fileName);
 
-                // Clean up existing writer if re-initializing or changing size
-                _writer?.Dispose();
+                // ATOMIC TEARDOWN:
+                // Capture the reference, nullify the static field, then dispose.
+                // This ensures waiting threads or 'fast-path' checks see null immediately.
+                var oldWriter = _writer;
+                _writer = null;
+                oldWriter?.Dispose();
 
                 // Convert MB to Bytes for the underlying writer
                 long rotationSizeInBytes = _logRotationSizeMB * 1024L * 1024;
@@ -284,7 +288,7 @@ namespace Servy.Core.Logging
         /// <param name="message">The content of the log entry.</param>
         private static void Log(LogLevel level, string? message)
         {
-            // We still check for null early to avoid locking if the logger isn't active
+            // 1. Volatile read: Thread sees 'null' as soon as InternalInitialize starts
             if (_writer == null) return;
 
             if (string.IsNullOrEmpty(message)) return;
@@ -293,7 +297,10 @@ namespace Servy.Core.Logging
             {
                 lock (_lock)
                 {
-                    if (_writer == null) return; // Re-check _writer inside the lock
+                    // 2. Double-check: If a thread was waiting for the lock while 
+                    // InternalInitialize was running, it will now correctly see 
+                    // either null or the NEW writer.
+                    if (_writer == null) return;
 
                     string levelName = (int)level >= 0 && (int)level < LevelStrings.Length
                         ? LevelStrings[(int)level]
