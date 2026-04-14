@@ -1,21 +1,19 @@
-﻿#if DEBUG
-using System.Reflection;
-#else
+﻿#if !DEBUG
 using Servy.Core.Config;
 #endif
+using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
-using System.Diagnostics;
-using System.ServiceProcess;
-using Servy.Core.Data;
-using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.ServiceProcess;
+using System.Text.RegularExpressions;
 
 namespace Servy.Service.Helpers
 {
@@ -279,14 +277,14 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var exePath = Assembly.GetExecutingAssembly().Location;
-                var dir = Path.GetDirectoryName(exePath);
+                var dir = AppFoldersHelper.GetApplicationDirectory();
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
-                if (string.IsNullOrEmpty(dir))
+
+                if (string.IsNullOrWhiteSpace(dir))
                 {
-                    Logger.Error($"Invalid executable path provided for restart recovery: {exePath}");
+                    Logger.Error("Execution Aborted: The directory path for the restarter is invalid or could not be resolved.");
                     return; // critical failure
                 }
 
