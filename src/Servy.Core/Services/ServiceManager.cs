@@ -839,18 +839,14 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc/>
-        public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default)
+        public List<ServiceInfo> GetAllServices(CancellationToken cancellationToken = default(CancellationToken))
         {
             var results = new ConcurrentBag<ServiceInfo>();
-
-            // Retrieve base services natively
             var services = _serviceControllerProvider.GetServices();
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
             if (scmHandle == IntPtr.Zero)
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
-
-            int delayedStructSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
 
             try
             {
@@ -863,122 +859,25 @@ namespace Servy.Core.Services
                 {
                     try
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
+                        if (cancellationToken.IsCancellationRequested) return;
 
-                        string name = service.ServiceName;
-                        string description = string.Empty;
-                        string user = "LocalSystem";
-
-                        // Map status directly from the native enum
-                        Enums.ServiceStatus status;
-                        switch (service.Status)
+                        ServiceInfo info = new ServiceInfo
                         {
-                            case ServiceControllerStatus.Running: status = Enums.ServiceStatus.Running; break;
-                            case ServiceControllerStatus.Stopped: status = Enums.ServiceStatus.Stopped; break;
-                            case ServiceControllerStatus.Paused: status = Enums.ServiceStatus.Paused; break;
-                            case ServiceControllerStatus.StartPending: status = Enums.ServiceStatus.StartPending; break;
-                            case ServiceControllerStatus.StopPending: status = Enums.ServiceStatus.StopPending; break;
-                            case ServiceControllerStatus.PausePending: status = Enums.ServiceStatus.PausePending; break;
-                            case ServiceControllerStatus.ContinuePending: status = Enums.ServiceStatus.ContinuePending; break;
-                            default: status = Enums.ServiceStatus.None; break;
-                        }
+                            Name = service.ServiceName,
+                            Status = MapStatus(service.Status),
+                            StartupType = MapStartupType(service), // Accessing service.StartType directly can throw Win32Exception on protected services
+                            LogOnAs = "LocalSystem",
+                            Description = string.Empty,
+                        };
 
-                        // Map startup type safely (can throw Win32Exception if access denied)
-                        ServiceStartType startupType = ServiceStartType.Automatic;
-                        try
-                        {
-                            switch (service.StartType)
-                            {
-                                case ServiceStartMode.Automatic: startupType = ServiceStartType.Automatic; break;
-                                case ServiceStartMode.Manual: startupType = ServiceStartType.Manual; break;
-                                case ServiceStartMode.Disabled: startupType = ServiceStartType.Disabled; break;
-                            }
-                        }
-                        catch { /* Fallback to automatic if access denied */ }
+                        // Fetch deep details natively
+                        PopulateNativeDetails(scmHandle, info);
 
-                        IntPtr svcHandle = _windowsServiceApi.OpenService(scmHandle, name, SERVICE_QUERY_CONFIG);
-                        if (svcHandle != IntPtr.Zero)
-                        {
-                            try
-                            {
-                                // 1. Get User (StartName) via QueryServiceConfig
-                                int bytesNeeded = 0;
-                                _windowsServiceApi.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out bytesNeeded);
-                                if (bytesNeeded > 0)
-                                {
-                                    IntPtr qscPtr = Marshal.AllocHGlobal(bytesNeeded);
-                                    try
-                                    {
-                                        if (_windowsServiceApi.QueryServiceConfig(svcHandle, qscPtr, bytesNeeded, out _))
-                                        {
-                                            var qsc = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(qscPtr);
-                                            var parsedUser = Marshal.PtrToStringAuto(qsc.lpServiceStartName);
-                                            if (!string.IsNullOrWhiteSpace(parsedUser))
-                                                user = parsedUser;
-                                        }
-                                    }
-                                    finally
-                                    {
-                                        Marshal.FreeHGlobal(qscPtr);
-                                    }
-                                }
-
-                                // 2. Get Description via QueryServiceConfig2
-                                bytesNeeded = 0;
-                                _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, ref bytesNeeded);
-                                if (bytesNeeded > 0)
-                                {
-                                    IntPtr descPtr = Marshal.AllocHGlobal(bytesNeeded);
-                                    try
-                                    {
-                                        if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, descPtr, bytesNeeded, ref bytesNeeded))
-                                        {
-                                            var descStruct = Marshal.PtrToStructure<ServiceDescription>(descPtr);
-                                            description = Marshal.PtrToStringAuto(descStruct.lpDescription) ?? string.Empty;
-                                        }
-                                    }
-                                    finally
-                                    {
-                                        Marshal.FreeHGlobal(descPtr);
-                                    }
-                                }
-
-                                // 3. Check delayed auto-start if Automatic
-                                if (startupType == ServiceStartType.Automatic)
-                                {
-                                    var info = new ServiceDelayedAutoStartInfo();
-                                    bytesNeeded = 0;
-                                    var ok = _windowsServiceApi.QueryServiceConfig2(
-                                        svcHandle,
-                                        SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
-                                        ref info,
-                                        delayedStructSize,
-                                        ref bytesNeeded);
-
-                                    if (ok && info.fDelayedAutostart)
-                                    {
-                                        startupType = ServiceStartType.AutomaticDelayedStart;
-                                    }
-                                }
-                            }
-                            finally
-                            {
-                                _windowsServiceApi.CloseServiceHandle(svcHandle);
-                            }
-                        }
-
-                        results.Add(new ServiceInfo
-                        {
-                            Name = name,
-                            Status = status,
-                            StartupType = startupType,
-                            LogOnAs = user,
-                            Description = description,
-                        });
+                        results.Add(info);
                     }
                     finally
                     {
-                        // CRITICAL: Prevent handle leaks in the finalizer queue
+                        // CRITICAL for .NET Framework to prevent handle exhaustion
                         service.Dispose();
                     }
                 });
@@ -1021,7 +920,159 @@ namespace Servy.Core.Services
             return null;
         }
 
-    }
+        #endregion
 
-    #endregion
+        #region Helpers
+
+        /// <summary>
+        /// Populates additional service details using native Windows APIs.
+        /// </summary>
+        /// <param name="scmHandle">A handle to the Service Control Manager database.</param>
+        /// <param name="info">The <see cref="ServiceInfo"/> object to be enriched with native data.</param>
+        /// <exception cref="ArgumentException">Thrown when the service name is null or whitespace.</exception>
+        private void PopulateNativeDetails(IntPtr scmHandle, ServiceInfo info)
+        {
+            if (string.IsNullOrWhiteSpace(info.Name)) throw new ArgumentException("Service name is empty!");
+            IntPtr svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG);
+            if (svcHandle == IntPtr.Zero) return;
+
+            try
+            {
+                info.LogOnAs = GetServiceUser(svcHandle) ?? info.LogOnAs;
+                info.Description = GetServiceDescription(svcHandle) ?? string.Empty;
+
+                if (info.StartupType == ServiceStartType.Automatic && IsDelayedStart(svcHandle))
+                {
+                    info.StartupType = ServiceStartType.AutomaticDelayedStart;
+                }
+            }
+            finally
+            {
+                _windowsServiceApi.CloseServiceHandle(svcHandle);
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the account name under which the service runs.
+        /// </summary>
+        /// <param name="svcHandle">A handle to the service.</param>
+        /// <returns>The account name string (e.g., "LocalSystem" or "DOMAIN\User"), or null if retrieval fails.</returns>
+        private string GetServiceUser(IntPtr svcHandle)
+        {
+            int bytesNeeded = 0;
+            _windowsServiceApi.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out bytesNeeded);
+            if (bytesNeeded <= 0) return null;
+
+            IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
+            try
+            {
+                if (_windowsServiceApi.QueryServiceConfig(svcHandle, ptr, bytesNeeded, out _))
+                {
+                    var config = Marshal.PtrToStructure<QUERY_SERVICE_CONFIG>(ptr);
+                    return Marshal.PtrToStringAuto(config.lpServiceStartName);
+                }
+                return null;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+
+        /// <summary>
+        /// Maps a native <see cref="ServiceControllerStatus"/> to the internal <see cref="Enums.ServiceStatus"/>.
+        /// </summary>
+        /// <param name="nativeStatus">The status returned by the ServiceController.</param>
+        /// <returns>The corresponding internal status enum value.</returns>
+        private Enums.ServiceStatus MapStatus(ServiceControllerStatus nativeStatus)
+        {
+            switch (nativeStatus)
+            {
+                case ServiceControllerStatus.Running: return Enums.ServiceStatus.Running;
+                case ServiceControllerStatus.Stopped: return Enums.ServiceStatus.Stopped;
+                case ServiceControllerStatus.Paused: return Enums.ServiceStatus.Paused;
+                case ServiceControllerStatus.StartPending: return Enums.ServiceStatus.StartPending;
+                case ServiceControllerStatus.StopPending: return Enums.ServiceStatus.StopPending;
+                case ServiceControllerStatus.PausePending: return Enums.ServiceStatus.PausePending;
+                case ServiceControllerStatus.ContinuePending: return Enums.ServiceStatus.ContinuePending;
+                default: return Enums.ServiceStatus.None;
+            }
+        }
+
+        /// <summary>
+        /// Maps the native start mode to the internal <see cref="ServiceStartType"/>.
+        /// </summary>
+        /// <param name="service">The service controller wrapper providing the start mode.</param>
+        /// <returns>The mapped start type. Defaults to <see cref="ServiceStartType.Manual"/> on failure.</returns>
+        /// <remarks>
+        /// Accessing the StartType property can throw a <see cref="System.ComponentModel.Win32Exception"/> 
+        /// (Access Denied) for certain protected system services.
+        /// </remarks>
+        private static ServiceStartType MapStartupType(IServiceControllerWrapper service)
+        {
+            try
+            {
+                switch (service.StartType)
+                {
+                    case ServiceStartMode.Automatic: return ServiceStartType.Automatic;
+                    case ServiceStartMode.Manual: return ServiceStartType.Manual;
+                    case ServiceStartMode.Disabled: return ServiceStartType.Disabled;
+                    default: return ServiceStartType.Manual;
+                }
+            }
+            catch
+            {
+                // Access Denied occurs on certain driver-type services
+                return ServiceStartType.Manual;
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the optional description associated with the service.
+        /// </summary>
+        /// <param name="svcHandle">A handle to the service.</param>
+        /// <returns>The description string, or null if retrieval fails or no description is set.</returns>
+        private string GetServiceDescription(IntPtr svcHandle)
+        {
+            int bytesNeeded = 0;
+            _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, ref bytesNeeded);
+            if (bytesNeeded <= 0) return null;
+
+            IntPtr ptr = Marshal.AllocHGlobal(bytesNeeded);
+            try
+            {
+                if (_windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, ptr, bytesNeeded, ref bytesNeeded))
+                {
+                    var descStruct = Marshal.PtrToStructure<ServiceDescription>(ptr);
+                    return Marshal.PtrToStringAuto(descStruct.lpDescription);
+                }
+                return null;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+
+        /// <summary>
+        /// Checks if the service is configured for a delayed automatic start.
+        /// </summary>
+        /// <param name="svcHandle">A handle to the service.</param>
+        /// <returns>True if the service is set to start with a delay; otherwise, false.</returns>
+        private bool IsDelayedStart(IntPtr svcHandle)
+        {
+            var info = new ServiceDelayedAutoStartInfo();
+            int bytesNeeded = 0;
+            int structSize = Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo));
+
+            return _windowsServiceApi.QueryServiceConfig2(
+                svcHandle,
+                SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                ref info,
+                structSize,
+                ref bytesNeeded) && info.fDelayedAutostart;
+        }
+
+        #endregion
+    }
 }

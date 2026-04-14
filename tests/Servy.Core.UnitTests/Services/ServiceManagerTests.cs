@@ -1875,8 +1875,8 @@ namespace Servy.Core.UnitTests.Services
 
             var result = _serviceManager.GetAllServices();
 
-            // Verify it hit the catch block and defaulted to Automatic
-            Assert.Equal(ServiceStartType.Automatic, result[0].StartupType);
+            // Verify it hit the catch block and defaulted to Manual
+            Assert.Equal(ServiceStartType.Manual, result[0].StartupType);
         }
 
         [Fact]
