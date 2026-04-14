@@ -37,7 +37,11 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private DispatcherTimer _timer;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
-        private CancellationTokenSource _cts;
+
+        // Separated to prevent the UI search from cancelling the live monitoring graph
+        private CancellationTokenSource _monitoringCts;
+        private CancellationTokenSource _serviceSearchCts;
+
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
@@ -193,7 +197,6 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
-            _cts = new CancellationTokenSource();
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
 
@@ -297,8 +300,8 @@ namespace Servy.Manager.ViewModels
         private async Task OnTickAsync()
         {
             // Capture the token at the start of the tick. 
-            // If _cts is null, we shouldn't be here, but we guard it anyway.
-            var token = _cts?.Token ?? CancellationToken.None;
+            // If _monitoringCts is null, we shouldn't be here, but we guard it anyway.
+            var token = _monitoringCts?.Token ?? CancellationToken.None;
 
             try
             {
@@ -447,9 +450,17 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private async Task SearchServicesAsync(object parameter)
         {
-            // Cancel previous search
-            ResetCts();
-            var token = _cts.Token;
+            // Thread-safe atomic swap for left-panel search
+            // This prevents searching from destroying the active monitoring token
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
+
+            var token = newCts.Token;
 
             try
             {
@@ -518,11 +529,15 @@ namespace Servy.Manager.ViewModels
         /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
         /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
         /// </remarks>
-        private void ResetCts()
+        private void ResetMonitoringCts()
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = new CancellationTokenSource();
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
         }
 
         #endregion
@@ -535,7 +550,7 @@ namespace Servy.Manager.ViewModels
         public void StartMonitoring()
         {
             // Ensure we have a fresh, active cancellation token
-            ResetCts();
+            ResetMonitoringCts();
 
             // Atomically signal start
             Interlocked.Exchange(ref _isMonitoringFlag, 1);
@@ -551,8 +566,8 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearPoints">True to reset the graph visualizations.</param>
         public void StopMonitoring(bool clearPoints)
         {
-            // cancel any in-progress async work
-            _cts?.Cancel();
+            // cancel any in-progress async monitoring work (do NOT cancel search)
+            _monitoringCts?.Cancel();
 
             // Atomically signal stop
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
@@ -579,15 +594,23 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            // 1. Cancel and dispose the CancellationTokenSource
-            if (_cts != null)
+            // 1. Cancel and dispose the Monitoring CancellationTokenSource
+            var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+            if (oldMonitoringCts != null)
             {
-                _cts.Cancel();
-                _cts.Dispose();
-                _cts = null;
+                oldMonitoringCts.Cancel();
+                oldMonitoringCts.Dispose();
             }
 
-            // 2. Stop the timer, unsubscribe from the Tick event, and release the reference
+            // 2. Cancel and dispose the Search CancellationTokenSource
+            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
+            if (oldSearchCts != null)
+            {
+                oldSearchCts.Cancel();
+                oldSearchCts.Dispose();
+            }
+
+            // 3. Stop the timer, unsubscribe from the Tick event, and release the reference
             if (_timer != null)
             {
                 _timer.Stop();

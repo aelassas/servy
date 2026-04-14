@@ -20,7 +20,6 @@ namespace Servy.Manager.ViewModels
     /// </summary>
     public class LogsViewModel : INotifyPropertyChanged
     {
-
         #region Private Fields
 
         private readonly IEventLogService _eventLogService;
@@ -312,11 +311,16 @@ namespace Servy.Manager.ViewModels
         {
             var stopwatch = Stopwatch.StartNew();
 
-            // Cancel previous search and dispose previous CTS
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = new CancellationTokenSource();
-            var token = _cancellationTokenSource.Token;
+            // Thread-safe atomic swap for CTS
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, newCts);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
+
+            var token = newCts.Token;
 
             try
             {
@@ -389,8 +393,8 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <returns></returns>
         private static List<EventLogLevel> GetLogLevels() => Enum.GetValues(typeof(EventLogLevel))
-                                                    .Cast<EventLogLevel>()
-                                                    .ToList();
+                                                            .Cast<EventLogLevel>()
+                                                            .ToList();
 
         #endregion
 
@@ -398,15 +402,19 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Cancels any ongoing search and cleans up the cancellation token.
+        /// Thread-safe execution prevents NullReferenceExceptions and ObjectDisposedExceptions 
+        /// during rapid tab navigation or window closure.
         /// </summary>
         public void Cleanup()
         {
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _cancellationTokenSource = null;
+            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
         }
 
         #endregion
-    
     }
 }
