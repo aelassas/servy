@@ -643,42 +643,46 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Ensures the restart attempts tracking file exists and retrieves the current counter value.
+        /// Internal unprotected read logic. Assumes _fileSemaphore is held by the caller.
         /// </summary>
-        /// <param name="ct">A cancellation token to observe while waiting for the semaphore or performing I/O.</param>
-        /// <returns>
-        /// The number of restart attempts recorded in the file. 
-        /// Returns 0 if the file is missing, corrupt, or if an error occurs during retrieval.
-        /// </returns>
-        /// <remarks>
-        /// This method uses an asynchronous semaphore to prevent race conditions during file access.
-        /// If the file content is invalid or unreadable, it automatically resets the file to "0" 
-        /// to maintain a clean recovery state for the managed process.
-        /// </remarks>
+        private async Task<int> ReadAttemptsInternalAsync(CancellationToken ct)
+        {
+            if (!File.Exists(_restartAttemptsFile))
+            {
+                _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
+                await WriteAttemptsInternalAsync(0, ct);
+                return 0;
+            }
+
+            string content = (await File.ReadAllTextAsync(_restartAttemptsFile, ct)).Trim();
+
+            if (int.TryParse(content, out var attempts) && attempts >= 0)
+                return attempts;
+
+            _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+            await WriteAttemptsInternalAsync(0, ct);
+            return 0;
+        }
+
+        /// <summary>
+        /// Internal unprotected write logic. Assumes _fileSemaphore is held by the caller.
+        /// </summary>
+        private async Task WriteAttemptsInternalAsync(int attempts, CancellationToken ct)
+        {
+            await File.WriteAllTextAsync(_restartAttemptsFile!, attempts.ToString(), ct);
+        }
+
+        /// <summary>
+        /// Ensures the restart attempts tracking file exists and retrieves the current counter value safely.
+        /// </summary>
         private async Task<int> EnsureRestartAttemptsFileAsync(CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return 0;
 
             await _fileSemaphore.WaitAsync(ct);
-
             try
             {
-                if (!File.Exists(_restartAttemptsFile))
-                {
-                    _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
-                    await ResetFileAsync(ct);
-                    return 0;
-                }
-
-                // Native async read
-                string content = (await File.ReadAllTextAsync(_restartAttemptsFile, ct)).Trim();
-
-                if (int.TryParse(content, out var attempts) && attempts >= 0)
-                    return attempts;
-
-                _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
-                await ResetFileAsync(ct);
-                return 0;
+                return await ReadAttemptsInternalAsync(ct);
             }
             catch (OperationCanceledException)
             {
@@ -697,15 +701,6 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Asynchronously resets the restart attempts counter to zero by overwriting the 
-        /// tracking file with the default initial value.
-        /// </summary>
-        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
-        /// <returns>A task that represents the asynchronous write operation.</returns>
-        private async Task ResetFileAsync(CancellationToken ct)
-            => await File.WriteAllTextAsync(_restartAttemptsFile!, "0", ct);
-
-        /// <summary>
         /// Asynchronously saves the current number of restart attempts to the persistent tracking file.
         /// </summary>
         /// <param name="attempts">The restart attempts count to persist.</param>
@@ -715,12 +710,11 @@ namespace Servy.Service
         {
             if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
 
-            // 1. Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
+            // Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
             await _fileSemaphore.WaitAsync(ct);
             try
-            {
-                // 2. Use the native async file API with the cancellation token
-                await File.WriteAllTextAsync(_restartAttemptsFile, attempts.ToString(), ct);
+            {                
+                await WriteAttemptsInternalAsync(attempts, ct);
             }
             catch (OperationCanceledException)
             {
@@ -739,6 +733,8 @@ namespace Servy.Service
 
         /// <summary>
         /// Evaluates whether the persistent restart attempts counter should be reset to zero.
+        /// The entire read-evaluate-write sequence is guarded to prevent TOCTOU race conditions 
+        /// between startup and health checks.
         /// </summary>
         /// <param name="options">The startup options containing heartbeat and timeout configurations used to calculate the stability threshold.</param>
         /// <remarks>
@@ -762,58 +758,71 @@ namespace Servy.Service
         /// </remarks>
         private async Task ConditionalResetRestartAttemptsAsync(StartOptions options)
         {
-            // If the counter is already 0, there is no need to check timestamps or files.
-            // This keeps the health check efficient.
-            if ((await EnsureRestartAttemptsFileAsync()) == 0) return;
+            if (string.IsNullOrWhiteSpace(_restartAttemptsFile)) return;
 
-            if (!File.Exists(_restartAttemptsFile)) return;
-
-            DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
-            DateTime systemBootTimeUtc;
-
+            // Wait for the lock to secure the entire transaction
+            await _fileSemaphore.WaitAsync();
             try
             {
-                // Environment.TickCount64 is a long (int64), representing milliseconds since boot.
-                systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
+                // 1. Protected Read (Exit early if already 0)
+                if ((await ReadAttemptsInternalAsync(default)) == 0) return;
+
+                if (!File.Exists(_restartAttemptsFile)) return;
+
+                DateTime lastWriteUtc = File.GetLastWriteTimeUtc(_restartAttemptsFile);
+                DateTime systemBootTimeUtc;
+
+                try
+                {
+                    systemBootTimeUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(Environment.TickCount64);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warn($"Failed to calculate system boot time: {ex.Message}");
+                    systemBootTimeUtc = DateTime.UtcNow;
+                }
+
+                // 2. Session Persistence Check
+                // If the file's last modification occurred before the current system boot, 
+                // the service is starting in a new OS session. We maintain the existing counter 
+                // to ensure recovery quotas (like RestartComputer) are respected across reboots.
+                // This also handles cases where the service has been stable for long periods.
+                if (lastWriteUtc < systemBootTimeUtc)
+                {
+                    _logger.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
+                    return;
+                }
+
+                // 3. Evaluate Thresholds
+                int detectionWindowSeconds = options.HeartbeatInterval * options.MaxFailedChecks;
+                
+                // Base threshold: detection window + buffer (min 30s or the detection window itself)
+                int bufferSeconds = Math.Max(detectionWindowSeconds, 30);
+                int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
+
+                // Cap at 1 hour, but ensure we always wait at least one full detection cycle
+                resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, 3600), detectionWindowSeconds);
+
+                if (_preLaunchEnabled)
+                {
+                    resetThresholdSeconds += options.PreLaunchTimeout;
+                }
+
+                // 4. Protected Write if threshold is met
+                double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
+                if (secondsSinceLastAttempt > resetThresholdSeconds)
+                {
+                    _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
+                    await WriteAttemptsInternalAsync(0, default);
+                }
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Failed to calculate system boot time: {ex.Message}");
-                // Safety: If we can't determine boot time, assume boot just happened now to prevent accidental reset
-                systemBootTimeUtc = DateTime.UtcNow;
+                _logger.Warn($"Error during conditional reset evaluation: {ex.Message}");
             }
-
-            // 1. Session Persistence Check
-            // If the file's last modification occurred before the current system boot, 
-            // the service is starting in a new OS session. We maintain the existing counter 
-            // to ensure recovery quotas (like RestartComputer) are respected across reboots.
-            // This also handles cases where the service has been stable for long periods.
-            if (lastWriteUtc < systemBootTimeUtc)
+            finally
             {
-                _logger.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
-                return;
-            }
-
-            // 2. Standard same-session reset logic
-            int detectionWindowSeconds = options.HeartbeatInterval * options.MaxFailedChecks;
-
-            // Base threshold: detection window + buffer (min 30s or the detection window itself)
-            int bufferSeconds = Math.Max(detectionWindowSeconds, 30);
-            int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
-
-            // Cap at 1 hour, but ensure we always wait at least one full detection cycle
-            resetThresholdSeconds = Math.Max(Math.Min(resetThresholdSeconds, 3600), detectionWindowSeconds);
-
-            if (_preLaunchEnabled)
-            {
-                resetThresholdSeconds += options.PreLaunchTimeout;
-            }
-
-            double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
-            if (secondsSinceLastAttempt > resetThresholdSeconds)
-            {
-                _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
-                await SaveRestartAttemptsAsync(0);
+                _fileSemaphore.Release();
             }
         }
 
