@@ -484,17 +484,22 @@ namespace Servy.Core.Services
                     if (isInstalled)
                     {
                         // Service exists - update its configuration
-                        _ = UpdateServiceConfig(
-                            scmHandle: scmHandle,
-                            serviceName: options.ServiceName,
-                            description: options.Description,
-                            binPath: binPath,
-                            startType: options.StartType,
-                            username: lpServiceStartName,
-                            password: lpPassword,
-                            lpDependencies: lpDependencies,
-                            displayName: displayName
-                        );
+                        var updated = UpdateServiceConfig(
+                           scmHandle: scmHandle,
+                           serviceName: options.ServiceName,
+                           description: options.Description,
+                           binPath: binPath,
+                           startType: options.StartType,
+                           username: lpServiceStartName,
+                           password: lpPassword,
+                           lpDependencies: lpDependencies,
+                           displayName: displayName
+                       );
+
+                        if (!updated)
+                        {
+                            Logger.Warn($"Failed to update existing service configuration for service '{options.ServiceName}'.");
+                        }
 
                         // Set delayed auto-start if necessary
                         if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
