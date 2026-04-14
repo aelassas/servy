@@ -14,6 +14,17 @@ namespace Servy.Manager
         /// <summary>
         /// Maps a <see cref="Core.Domain.Service"/> to a <see cref="Service"/>.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Performance Note:</b> This method performs a shallow mapping of static metadata only. 
+        /// Volatile OS-level states (Status, IsInstalled, StartupType) are initialized to placeholder 
+        /// defaults to prevent blocking the UI thread with SCM queries during bulk mapping.
+        /// </para>
+        /// <para>
+        /// These "Pending" values are expected to be reconciled by the background 
+        /// monitoring loop immediately following the initial load.
+        /// </para>
+        /// </remarks>
         /// <param name="service">The domain service instance.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
