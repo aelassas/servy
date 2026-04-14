@@ -178,7 +178,7 @@ namespace Servy.Core.Helpers
                 {
                     // Catching general exceptions (like Service Not Found)
                     throw new InvalidOperationException(
-                        $"An error occurred while stopping service '{serviceName}': {ex.Message}");
+                        $"An error occurred while stopping service '{serviceName}': {ex.Message}", ex);
                 }
             }
         }
