@@ -28,6 +28,7 @@ namespace Servy.Core.UnitTests.Services
                 EventId = id,
                 Level = Logging.EventLogReader.ParseLevel(level),
                 Time = time ?? DateTime.MinValue,
+                ProviderName = AppConfig.ServiceNameEventSource,
                 Message = message
             };
         }
