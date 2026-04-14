@@ -59,7 +59,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void ResolvePath_EmptyInput_ReturnsEmpty()
         {
             var result = ProcessHelper.ResolvePath(string.Empty);
-            Assert.Equal(string.Empty, result);
+            Assert.Null(result);
         }
 
         [Fact]

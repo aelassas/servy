@@ -336,7 +336,7 @@ namespace Servy.Core.Helpers
         /// </remarks>
         public static string ResolvePath(string inputPath)
         {
-            if (string.IsNullOrWhiteSpace(inputPath)) return inputPath;
+            if (string.IsNullOrWhiteSpace(inputPath)) return null;
 
             inputPath = inputPath.Trim();
 
