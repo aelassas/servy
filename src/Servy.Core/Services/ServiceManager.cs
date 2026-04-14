@@ -367,7 +367,7 @@ namespace Servy.Core.Services
                     lpPassword: lpPassword
                 );
 
-                int createServiceError = Marshal.GetLastWin32Error();
+                int createServiceError = _win32ErrorProvider.GetLastWin32Error();
 
                 // Persist service in database
                 var dto = new ServiceDto
@@ -846,7 +846,7 @@ namespace Servy.Core.Services
 
             IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
             if (scmHandle == IntPtr.Zero)
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to open Service Control Manager.");
+                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
 
             try
             {
