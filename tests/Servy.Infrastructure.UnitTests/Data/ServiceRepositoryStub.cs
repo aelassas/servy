@@ -160,6 +160,11 @@ namespace Servy.Infrastructure.UnitTests.Data
     {
         public string Encrypt(string value) => value;
         public string Decrypt(string value) => value;
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class XmlServiceSerializerStub : IXmlServiceSerializer
