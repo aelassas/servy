@@ -519,20 +519,27 @@ namespace Servy.Manager.ViewModels
                 // Step 5: update collection on UI thread
                 await _dispatcher.InvokeAsync(() =>
                 {
-                    // Explicitly dispose of existing ViewModels before clearing the collection
-                    foreach (var oldVm in _services)
+                    // Mutual exclusion: prevents the background refresh thread from
+                    // accessing the collection while we are rebuilding it.
+                    lock (_servicesLock)
                     {
-                        oldVm.Dispose();
+                        // Explicitly dispose of existing ViewModels before clearing the collection
+                        foreach (var oldVm in _services)
+                        {
+                            oldVm.Dispose();
+                        }
+
+                        _services.Clear();
+
+                        foreach (var vm in vms)
+                        {
+                            vm.PropertyChanged += Service_PropertyChanged;
+                            _services.Add(vm);
+                        }
                     }
 
-                    _services.Clear();
-
-                    foreach (var vm in vms)
-                    {
-                        vm.PropertyChanged += Service_PropertyChanged;
-                        _services.Add(vm);
-                    }
-
+                    // Properties updated outside the lock to avoid potential nested UI notifications
+                    // while holding a synchronization primitive.
                     SelectAll = false;
 
                     // Notify that bulk action availability changed
