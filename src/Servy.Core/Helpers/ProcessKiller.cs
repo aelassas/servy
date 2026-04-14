@@ -19,6 +19,15 @@ namespace Servy.Core.Helpers
     public static class ProcessKiller
     {
         /// <summary>
+        /// Safelist of processes that should NEVER be targeted by Servy's auto-killer
+        /// </summary>
+        private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "system", "idle", "csrss", "lsass", "wininit", "services",
+            "winlogon", "smss", "svchost", "explorer", "runtimebroker"
+        };
+
+        /// <summary>
         /// Recursively kills all child processes of a specified parent process.
         /// </summary>
         /// <param name="parentPid">The process ID of the parent whose children should be terminated.</param>
@@ -58,75 +67,6 @@ namespace Servy.Core.Helpers
 
             KillChildrenInternal(parentPid, parentStartTime, selfPid);
         }
-
-        /// <summary>
-        /// Takes a snapshot of the specified processes, as well as the heaps, modules, and threads used by these processes.
-        /// </summary>
-        /// <param name="dwFlags">The portions of the system to be included in the snapshot (e.g., TH32CS_SNAPPROCESS).</param>
-        /// <param name="th32ProcessID">The process identifier of the process to be included in the snapshot. Use 0 for the current process.</param>
-        /// <returns>An open handle to the specified snapshot if successful; otherwise, INVALID_HANDLE_VALUE (-1).</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr CreateToolhelp32Snapshot(uint dwFlags, uint th32ProcessID);
-
-        /// <summary>
-        /// Retrieves information about the first process encountered in a system snapshot.
-        /// </summary>
-        /// <param name="hSnapshot">A handle to the snapshot returned by a previous call to CreateToolhelp32Snapshot.</param>
-        /// <param name="lppe">A pointer to a <see cref="PROCESSENTRY32"/> structure.</param>
-        /// <returns>True if the first entry of the process list has been copied to the buffer; otherwise, false.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool Process32First(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
-
-        /// <summary>
-        /// Retrieves information about the next process recorded in a system snapshot.
-        /// </summary>
-        /// <param name="hSnapshot">A handle to the snapshot returned by a previous call to CreateToolhelp32Snapshot.</param>
-        /// <param name="lppe">A pointer to a <see cref="PROCESSENTRY32"/> structure.</param>
-        /// <returns>True if the next entry of the process list has been copied to the buffer; otherwise, false.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool Process32Next(IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
-
-        /// <summary>
-        /// Closes an open object handle.
-        /// </summary>
-        /// <param name="hObject">A valid handle to an open object.</param>
-        /// <returns>True if the function succeeds; otherwise, false.</returns>
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hObject);
-
-        /// <summary>
-        /// Describes an entry from a list of the processes residing in the system address space when a snapshot was taken.
-        /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
-        private struct PROCESSENTRY32
-        {
-            /// <summary>The size of the structure, in bytes. Before calling Process32First, set this to Marshal.SizeOf(typeof(PROCESSENTRY32)).</summary>
-            public uint dwSize;
-            /// <summary>This member is no longer used and is always set to zero.</summary>
-            public uint cntUsage;
-            /// <summary>The process identifier (PID).</summary>
-            public uint th32ProcessID;
-            /// <summary>This member is no longer used and is always set to zero.</summary>
-            public IntPtr th32DefaultHeapID;
-            /// <summary>This member is no longer used and is always set to zero.</summary>
-            public uint th32ModuleID;
-            /// <summary>The number of execution threads started by the process.</summary>
-            public uint cntThreads;
-            /// <summary>The identifier of the process that created this process (its parent process).</summary>
-            public uint th32ParentProcessID;
-            /// <summary>The base priority of any threads created by this process.</summary>
-            public int pcPriClassBase;
-            /// <summary>This member is no longer used and is always set to zero.</summary>
-            public uint dwFlags;
-            /// <summary>The name of the executable file for the process.</summary>
-            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-            public string szExeFile;
-        }
-
-        /// <summary>
-        /// Includes all processes in the system in the snapshot.
-        /// </summary>
-        private const uint TH32CS_SNAPPROCESS = 0x00000002;
 
         /// <summary>
         /// Internal recursive method that terminates child processes while validating 
@@ -208,62 +148,57 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Kills all processes with the specified name, including their child and parent processes.
+        /// Kills a specific process by PID, including its entire child tree and (optionally) its ancestors.
         /// </summary>
-        /// <param name="processName">The name of the process to kill. Can include or exclude ".exe".</param>
-        /// <param name="killParents">Whether to kill parents as well.</param>
-        /// <returns>True if the operation succeeded; otherwise, false.</returns>
-        /// <remarks>
-        /// This method captures a snapshot of all running processes to ensure consistency 
-        /// during the recursive tree walk. It handles the ".exe" extension automatically.
-        /// </remarks>
-        public static bool KillProcessTreeAndParents(string processName, bool killParents = true)
+        /// <param name="pid">The specific Process ID to target.</param>
+        /// <param name="killParents">Whether to traverse up the tree and kill parent processes.</param>
+        /// <returns>True if the process was found and termination was attempted; otherwise, false.</returns>
+        public static bool KillProcessTreeAndParents(int pid, bool killParents = true)
         {
+            if (pid <= 0) return false;
+
+            // CRITICAL: Protect the current process, IDE, and critical system components
+            var protectedPids = GetAncestorPids();
+            if (protectedPids.Contains(pid))
+            {
+                Logger.Warn($"Execution blocked: Attempted to kill protected process (PID {pid}).");
+                return false;
+            }
+
+            var allProcesses = Process.GetProcesses();
             try
             {
-                if (string.IsNullOrWhiteSpace(processName))
-                    return false;
+                var target = allProcesses.FirstOrDefault(p => p.Id == pid);
+                if (target == null) return true; // Already gone
 
-                if (processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                    processName = processName.Substring(0, processName.Length - 4);
+                // 1. Kill the children first (Bottom-up)
+                KillProcessTree(target, allProcesses, protectedPids);
 
-                var allProcesses = Process.GetProcesses();
-                // CRITICAL: Identify the current process and its ancestors to avoid IDE suicide
-                var protectedPids = GetAncestorPids();
+                // 2. Kill the parents if requested
+                if (killParents)
+                {
+                    KillParentProcesses(target, allProcesses, protectedPids);
+                }
 
+                // 3. Finally, kill the target itself if it survived the tree walk
                 try
                 {
-                    var targetProcesses = allProcesses
-                        .Where(p => string.Equals(p.ProcessName, processName, StringComparison.OrdinalIgnoreCase))
-                        .Where(p => !protectedPids.Contains(p.Id)) // Never kill protected processes
-                        .ToList();
-
-                    if (targetProcesses.Count == 0)
-                        return true;
-
-                    foreach (var proc in targetProcesses)
+                    if (!target.HasExited)
                     {
-                        KillProcessTree(proc, allProcesses, protectedPids);
+                        target.Kill();
                     }
-
-                    if (killParents)
-                    {
-                        foreach (var proc in targetProcesses)
-                        {
-                            KillParentProcesses(proc, allProcesses, protectedPids);
-                        }
-                    }
-
-                    return true;
                 }
-                finally
+                catch (Exception ex)
                 {
-                    foreach (var p in allProcesses) p.Dispose();
+                    Logger.Error($"Final termination failed for PID {pid}.", ex);
+                    return false;
                 }
+
+                return true;
             }
-            catch
+            finally
             {
-                return false;
+                foreach (var p in allProcesses) p.Dispose();
             }
         }
 
@@ -285,7 +220,6 @@ namespace Servy.Core.Helpers
             }
 
             var handleExePath = AppConfig.GetHandleExePath();
-
             if (!File.Exists(handleExePath))
             {
                 Logger.Error($"Handle.exe not found at: {handleExePath}");
@@ -300,14 +234,30 @@ namespace Servy.Core.Helpers
 
                 foreach (var procInfo in processes)
                 {
-                    if (string.IsNullOrEmpty(procInfo.ProcessName))
-                        continue; // skip null or empty names
+                    // 1. Validate procInfo
+                    if (procInfo.ProcessId <= 0) continue;
 
+                    // 2. Secondary Safelist Guardrail
+                    // Even if a system process locks a file, killing it is usually more 
+                    // destructive than failing the file operation.
+                    if (!string.IsNullOrEmpty(procInfo.ProcessName) &&
+                        CriticalSystemProcesses.Contains(procInfo.ProcessName))
+                    {
+                        Logger.Warn($"Skipping kill request for critical system process: {procInfo.ProcessName} (PID {procInfo.ProcessId})");
+                        success = false;
+                        continue;
+                    }
 
-                    if (!KillProcessTreeAndParents(procInfo.ProcessName))
+                    // 3. Surgical Kill by PID
+                    // Ensure KillProcessTreeAndParents has an overload that accepts 'int pid'
+                    if (!KillProcessTreeAndParents(procInfo.ProcessId))
                     {
                         Logger.Error($"Failed to kill process {procInfo.ProcessName} (PID {procInfo.ProcessId}).");
                         success = false;
+                    }
+                    else
+                    {
+                        Logger.Info($"Successfully terminated process tree for PID {procInfo.ProcessId} ({procInfo.ProcessName}) to release lock on {filePath}.");
                     }
                 }
             }
