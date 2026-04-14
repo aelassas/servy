@@ -299,8 +299,6 @@ namespace Servy.Manager.ViewModels
             LogsView = new ListCollectionView(_logs);
             SearchCommand = new AsyncCommand(Search);
             RowClickCommand = new RelayCommand<object>(OnRowClick);
-
-            _cancellationTokenSource = new CancellationTokenSource();
         }
 
         #endregion
@@ -316,9 +314,14 @@ namespace Servy.Manager.ViewModels
         {
             var stopwatch = Stopwatch.StartNew();
 
-            // Thread-safe atomic swap for CTS
+            // 1. Create the new token for THIS specific search
             var newCts = new CancellationTokenSource();
+
+            // 2. Atomic swap: the "Lazy" part. 
+            // If _cancellationTokenSource was null, oldCts is null.
+            // If a search was already running, oldCts is the previous one.
             var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, newCts);
+
             if (oldCts != null)
             {
                 oldCts.Cancel();
@@ -412,11 +415,19 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
+            // Use Interlocked to ensure we only dispose the token once
             var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
             if (oldCts != null)
             {
-                oldCts.Cancel();
-                oldCts.Dispose();
+                try
+                {
+                    oldCts.Cancel();
+                }
+                catch (ObjectDisposedException) { /* Already gone */ }
+                finally
+                {
+                    oldCts.Dispose();
+                }
             }
         }
 
