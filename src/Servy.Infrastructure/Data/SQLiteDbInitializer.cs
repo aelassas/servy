@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -10,145 +9,206 @@ namespace Servy.Infrastructure.Data
 {
     /// <summary>
     /// Provides helper methods to initialize the SQLite database schema for Servy.
+    /// Tracks database versions and applies sequential migrations dynamically based on central constants.
     /// </summary>
     [ExcludeFromCodeCoverage]
     public static class SQLiteDbInitializer
     {
         /// <summary>
-        /// Creates or updates the <c>Services</c> table and necessary indexes.
+        /// Analyzes the current database state, applies necessary migrations, 
+        /// and ensures all schema requirements match the current application version.
         /// </summary>
         /// <param name="connection">An open database connection to execute commands on.</param>
         public static void Initialize(DbConnection connection)
         {
-            var createTableSql = @"
-            CREATE TABLE IF NOT EXISTS Services (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                Name TEXT NOT NULL,
-                Description TEXT,
-                ExecutablePath TEXT NOT NULL,
-                StartupDirectory TEXT,
-                Parameters TEXT,
-                StartupType INTEGER NOT NULL,
-                Priority INTEGER NOT NULL,
-                StdoutPath TEXT,
-                StderrPath TEXT,
-                EnableRotation INTEGER NOT NULL,
-                RotationSize INTEGER NOT NULL,
-                EnableHealthMonitoring INTEGER NOT NULL,
-                HeartbeatInterval INTEGER NOT NULL,
-                MaxFailedChecks INTEGER NOT NULL,
-                RecoveryAction INTEGER NOT NULL,
-                MaxRestartAttempts INTEGER NOT NULL,
-                EnvironmentVariables TEXT,
-                ServiceDependencies TEXT,
-                RunAsLocalSystem INTEGER NOT NULL,
-                UserAccount TEXT,
-                Password TEXT,
-                PreLaunchExecutablePath TEXT,
-                PreLaunchStartupDirectory TEXT,
-                PreLaunchParameters TEXT,
-                PreLaunchEnvironmentVariables TEXT,
-                PreLaunchStdoutPath TEXT,
-                PreLaunchStderrPath TEXT,
-                PreLaunchTimeoutSeconds INTEGER NOT NULL,
-                PreLaunchRetryAttempts INTEGER NOT NULL,
-                PreLaunchIgnoreFailure INTEGER NOT NULL
-            );";
+            // 1. Ensure the version tracking table exists. 
+            // The CHECK constraint guarantees only a single row (Id = 1) can ever exist.
+            connection.Execute(@"
+                CREATE TABLE IF NOT EXISTS SchemaInfo (
+                    Id INTEGER PRIMARY KEY CHECK (Id = 1), 
+                    Version INTEGER NOT NULL
+                );");
 
+            // 2. Get the current database version
+            int currentVersion = GetSchemaVersion(connection);
+
+            // 3. Backward Compatibility: Handle unversioned legacy databases
+            if (currentVersion == 0 && TableExists(connection, "Services"))
+            {
+                UpgradeLegacyDatabaseToVersion1(connection);
+                UpdateSchemaVersion(connection, 1);
+                currentVersion = 1;
+            }
+
+            // 4. Sequential Migration Runner
+            if (currentVersion < 1)
+            {
+                ApplyVersion1(connection);
+                UpdateSchemaVersion(connection, 1);
+                currentVersion = 1; // Kept for future migration logic chaining
+            }
+
+            // --- FUTURE MIGRATIONS GO HERE ---
+            // if (currentVersion < 2) { ... }
+        }
+
+        /// <summary>
+        /// Retrieves the current schema version from the tracking table.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <returns>The current version integer, or 0 if the table is empty.</returns>
+        private static int GetSchemaVersion(DbConnection connection)
+        {
+            return connection.QueryFirstOrDefault<int>("SELECT Version FROM SchemaInfo WHERE Id = 1;");
+        }
+
+        /// <summary>
+        /// Upserts the schema version into the tracking table, ensuring only one row exists.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="version">The new schema version to record.</param>
+        private static void UpdateSchemaVersion(DbConnection connection, int version)
+        {
+            var sql = @"
+                INSERT INTO SchemaInfo (Id, Version) VALUES (1, @Version)
+                ON CONFLICT(Id) DO UPDATE SET Version = excluded.Version;";
+
+            connection.Execute(sql, new { Version = version });
+        }
+
+        /// <summary>
+        /// Checks if a specific table exists within the SQLite master schema.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        /// <param name="tableName">The exact name of the table to look for.</param>
+        /// <returns><c>true</c> if the table exists; otherwise, <c>false</c>.</returns>
+        private static bool TableExists(DbConnection connection, string tableName)
+        {
+            var result = connection.QueryFirstOrDefault<int>(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=@TableName;",
+                new { TableName = tableName });
+
+            return result == 1;
+        }
+
+        /// <summary>
+        /// Retrieves the expected columns dynamically from the Single Source of Truth (SqlConstants).
+        /// </summary>
+        /// <returns>An enumerable of trimmed column names.</returns>
+        private static IEnumerable<string> GetExpectedColumns()
+        {
+            return SqlConstants.InsertColumns
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(c => c.Trim());
+        }
+
+        /// <summary>
+        /// Creates the Version 1 schema for a brand new database. 
+        /// Consolidates all columns into a single CREATE statement dynamically built from SqlConstants.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        private static void ApplyVersion1(DbConnection connection)
+        {
+            var expectedColumns = GetExpectedColumns();
+
+            var columnDefinitions = new List<string>
+            {
+                "Id INTEGER PRIMARY KEY AUTOINCREMENT" // PK is not in InsertColumns
+            };
+
+            foreach (var col in expectedColumns)
+            {
+                columnDefinitions.Add($"{col} {GetSqlType(col)}");
+            }
+
+            var createTableSql = $"CREATE TABLE Services (\n    {string.Join(",\n    ", columnDefinitions)}\n);";
             connection.Execute(createTableSql);
 
-            // 1. Get the list of indices for the Services table
-            var indices = connection.Query("PRAGMA index_list('Services');");
+            // Create the UNIQUE functional index
+            var createIndexSql = "CREATE UNIQUE INDEX idx_services_name_lower ON Services(LOWER(Name));";
+            connection.Execute(createIndexSql);
+        }
 
-            // 2. Check if the index exists AND if it is NOT unique (0 means non-unique)
-            // Using .Any() is safe: if no index matches, it simply returns false.
+        /// <summary>
+        /// Safely brings an older, unversioned database up to the Version 1 standard
+        /// using the legacy ALTER TABLE method, extracting required columns from SqlConstants.
+        /// </summary>
+        /// <param name="connection">The active database connection.</param>
+        private static void UpgradeLegacyDatabaseToVersion1(DbConnection connection)
+        {
+            // 1. Fix the legacy non-unique index issue
+            var indices = connection.Query("PRAGMA index_list('Services');");
             bool needsUpgrade = indices.Any(i =>
                 Convert.ToString(i.name) == "idx_services_name_lower" && Convert.ToInt64(i.unique) == 0);
 
             if (needsUpgrade)
             {
-                // Drop the old non-unique index so we can replace it
                 connection.Execute("DROP INDEX IF EXISTS idx_services_name_lower;");
             }
 
-            // 3. Create the UNIQUE functional index
-            // This is required for the ON CONFLICT(LOWER(Name)) clause to work.
-            var createIndexSql = "CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));";
-            connection.Execute(createIndexSql);
+            connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));");
 
-            EnsureColumns(connection);
+            // 2. Apply legacy column additions dynamically
+            var existingColumns = new HashSet<string>(
+                connection.Query("PRAGMA table_info(Services);")
+                          .Select(row => (string)row.name),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var expectedColumns = GetExpectedColumns();
+
+            foreach (var col in expectedColumns)
+            {
+                if (!existingColumns.Contains(col))
+                {
+                    connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};");
+                }
+            }
         }
 
         /// <summary>
-        /// Ensures that all expected columns exist in the Services table.
-        /// Adds missing columns for backward compatibility.
+        /// Infers the SQLite data type and constraints for a given column name.
         /// </summary>
-        private static void EnsureColumns(DbConnection connection)
+        /// <param name="columnName">The name of the column.</param>
+        /// <returns>The SQLite type definition string (e.g., "INTEGER" or "TEXT NOT NULL").</returns>
+        private static string GetSqlType(string columnName)
         {
-            // Use dynamic since PRAGMA returns multiple columns
-            var existingColumns = new HashSet<string>(
-                connection.Query("PRAGMA table_info(Services);")
-                          .Select(row => (string)row.name) // 'row' is dynamic
-            );
-
-            // Use KeyValuePair instead of tuples
-            var expectedColumns = new List<KeyValuePair<string, string>>
+            if (columnName.Equals("Name", StringComparison.OrdinalIgnoreCase) ||
+                columnName.Equals("ExecutablePath", StringComparison.OrdinalIgnoreCase))
             {
-                // Failure program columns
-                new KeyValuePair<string, string>("FailureProgramPath", "ALTER TABLE Services ADD COLUMN FailureProgramPath TEXT;"),
-                new KeyValuePair<string, string>("FailureProgramStartupDirectory", "ALTER TABLE Services ADD COLUMN FailureProgramStartupDirectory TEXT;"),
-                new KeyValuePair<string, string>("FailureProgramParameters", "ALTER TABLE Services ADD COLUMN FailureProgramParameters TEXT;"),
+                return "TEXT NOT NULL";
+            }
 
-                // Post-launch script columns
-                new KeyValuePair<string, string>("PostLaunchExecutablePath", "ALTER TABLE Services ADD COLUMN PostLaunchExecutablePath TEXT;"),
-                new KeyValuePair<string, string>("PostLaunchStartupDirectory", "ALTER TABLE Services ADD COLUMN PostLaunchStartupDirectory TEXT;"),
-                new KeyValuePair<string, string>("PostLaunchParameters", "ALTER TABLE Services ADD COLUMN PostLaunchParameters TEXT;"),
-
-                // PID
-                new KeyValuePair<string, string>("Pid", "ALTER TABLE Services ADD COLUMN Pid INTEGER;"),
-
-                // Debug Logs
-                new KeyValuePair<string, string>("EnableDebugLogs", "ALTER TABLE Services ADD COLUMN EnableDebugLogs INTEGER;"),
-
-                // DisplayName
-                new KeyValuePair<string, string>("DisplayName", "ALTER TABLE Services ADD COLUMN DisplayName TEXT;"),
-
-                // MaxRotations
-                new KeyValuePair<string, string>("MaxRotations", "ALTER TABLE Services ADD COLUMN MaxRotations INTEGER;"),
-
-                // Date Rotation
-                new KeyValuePair<string, string>("EnableDateRotation", "ALTER TABLE Services ADD COLUMN EnableDateRotation INTEGER;"),
-                new KeyValuePair<string, string>("DateRotationType", "ALTER TABLE Services ADD COLUMN DateRotationType INTEGER;"),
-
-                // Start and Stop timeouts
-                new KeyValuePair<string, string>("StartTimeout", "ALTER TABLE Services ADD COLUMN StartTimeout INTEGER;"),
-                new KeyValuePair<string, string>("StopTimeout", "ALTER TABLE Services ADD COLUMN StopTimeout INTEGER;"),
-                new KeyValuePair<string, string>("PreviousStopTimeout", "ALTER TABLE Services ADD COLUMN PreviousStopTimeout INTEGER;"),
-
-                // Active stdout/stderr
-                new KeyValuePair<string, string>("ActiveStdoutPath", "ALTER TABLE Services ADD COLUMN ActiveStdoutPath TEXT;"),
-                new KeyValuePair<string, string>("ActiveStderrPath", "ALTER TABLE Services ADD COLUMN ActiveStderrPath TEXT;"),
-
-                // Pre-stop script columns
-                new KeyValuePair<string, string>("PreStopExecutablePath", "ALTER TABLE Services ADD COLUMN PreStopExecutablePath TEXT;"),
-                new KeyValuePair<string, string>("PreStopStartupDirectory", "ALTER TABLE Services ADD COLUMN PreStopStartupDirectory TEXT;"),
-                new KeyValuePair<string, string>("PreStopParameters", "ALTER TABLE Services ADD COLUMN PreStopParameters TEXT;"),
-                new KeyValuePair<string, string>("PreStopTimeoutSeconds", "ALTER TABLE Services ADD COLUMN PreStopTimeoutSeconds INTEGER;"),
-                new KeyValuePair<string, string>("PreStopLogAsError", "ALTER TABLE Services ADD COLUMN PreStopLogAsError INTEGER;"),
-
-                // Post-stop script columns
-                new KeyValuePair<string, string>("PostStopExecutablePath", "ALTER TABLE Services ADD COLUMN PostStopExecutablePath TEXT;"),
-                new KeyValuePair<string, string>("PostStopStartupDirectory", "ALTER TABLE Services ADD COLUMN PostStopStartupDirectory TEXT;"),
-                new KeyValuePair<string, string>("PostStopParameters", "ALTER TABLE Services ADD COLUMN PostStopParameters TEXT;"),
-
-                // UseLocalTimeForRotation
-                new KeyValuePair<string, string>("UseLocalTimeForRotation", "ALTER TABLE Services ADD COLUMN UseLocalTimeForRotation INTEGER;"),
+            // Original columns that require NOT NULL constraints to match legacy schema
+            var originalNotNullInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "StartupType", "Priority", "EnableRotation", "RotationSize",
+                "EnableHealthMonitoring", "HeartbeatInterval", "MaxFailedChecks",
+                "RecoveryAction", "MaxRestartAttempts", "RunAsLocalSystem",
+                "PreLaunchTimeoutSeconds", "PreLaunchRetryAttempts", "PreLaunchIgnoreFailure"
             };
 
-            foreach (var column in expectedColumns.Where(c => !existingColumns.Contains(c.Key)))
+            // Columns added later that are nullable
+            var nullableInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                connection.Execute(column.Value);
+                "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
+                "DateRotationType", "StartTimeout", "StopTimeout", "PreviousStopTimeout",
+                "PreStopTimeoutSeconds", "PreStopLogAsError", "UseLocalTimeForRotation"
+            };
+
+            if (originalNotNullInts.Contains(columnName))
+            {
+                // Note: These will only ever hit during a fresh CREATE TABLE (ApplyVersion1). 
+                // They already exist in legacy DBs, so ALTER TABLE will never execute against them.
+                return "INTEGER NOT NULL";
             }
+
+            if (nullableInts.Contains(columnName))
+            {
+                return "INTEGER";
+            }
+
+            return "TEXT";
         }
     }
 }
