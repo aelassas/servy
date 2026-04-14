@@ -16,7 +16,7 @@ namespace Servy.Core.Helpers
     [ExcludeFromCodeCoverage]
     public static class ProcessHelper
     {
-        private static DateTime _lastPruneTime = DateTime.MinValue;
+        private static long _lastPruneTicks = DateTime.MinValue.Ticks;
         private static readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
 
         #region Native Methods for Process Tree
@@ -122,7 +122,15 @@ namespace Servy.Core.Helpers
         /// </summary>
         public static void MaintainCache()
         {
-            if (DateTime.UtcNow - _lastPruneTime < PruneInterval) return;
+            // 1. Thread-safe check of the last prune time
+            long now = DateTime.UtcNow.Ticks;
+            long last = Interlocked.Read(ref _lastPruneTicks);
+
+            if (now - last < PruneInterval.Ticks) return;
+
+            // 2. Atomic CompareExchange: Only the winning thread proceeds to prune.
+            // This prevents multiple parallel 'Refresh' tasks from iterating the dictionary simultaneously.
+            if (Interlocked.CompareExchange(ref _lastPruneTicks, now, last) != last) return;
 
             foreach (var pid in CpuTimesStore.PrevCpuTimes.Keys)
             {
@@ -141,8 +149,6 @@ namespace Servy.Core.Helpers
                     CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
                 }
             }
-
-            _lastPruneTime = DateTime.UtcNow;
         }
 
         /// <summary>
