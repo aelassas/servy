@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Config;
+using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -241,8 +242,16 @@ namespace Servy.Manager.ViewModels
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
 
-            var app = (App)Application.Current;
-            _maxLines = app.ConsoleMaxLines;
+            // Capture while on the UI thread during creation
+            if (Application.Current is App app)
+            {
+                _maxLines = app.ConsoleMaxLines;
+            }
+            else
+            {
+                // Sane defaults if created during a weird state (like unit tests)
+                _maxLines = AppConfig.DefaultConsoleMaxLines;
+            }
 
             InitTimer();
 
@@ -308,8 +317,13 @@ namespace Servy.Manager.ViewModels
         {
             if (_timer == null)
             {
-                var app = (App)Application.Current;
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
+                // Capture while on the UI thread during creation
+                var intervalMs = AppConfig.DefaultConsoleRefreshIntervalInMs;
+                if (Application.Current is App app)
+                {
+                    intervalMs = app.ConsoleRefreshIntervalInMs;
+                }
+                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
                 _timer.Tick += OnTick;
             }
         }

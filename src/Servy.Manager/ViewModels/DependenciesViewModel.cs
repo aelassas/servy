@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using Servy.Core.Config;
 
 namespace Servy.Manager.ViewModels
 {
@@ -209,8 +210,13 @@ namespace Servy.Manager.ViewModels
         {
             if (_timer == null)
             {
-                var app = (App)Application.Current;
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(app.PerformanceRefreshIntervalInMs) };
+                // Capture while on the UI thread during creation
+                var intervalMs = AppConfig.DefaultDependenciesRefreshIntervalInMs;
+                if (Application.Current is App app)
+                {
+                    intervalMs = app.DependenciesRefreshIntervalInMs;
+                }
+                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
                 _timer.Tick += OnTick;
             }
         }
