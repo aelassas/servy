@@ -55,18 +55,6 @@ namespace Servy.Views
         {
             var app = (App)Application.Current;
 
-            // Initialize database and helpers
-            var dbContext = new AppDbContext(app.ConnectionString);
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
-            var dapperExecutor = new DapperExecutor(dbContext);
-            var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
-            _secureData = new SecureData(protectedKeyProvider);
-            var xmlSerializer = new XmlServiceSerializer();
-            var jsonSerializer = new JsonServiceSerializer();
-
-            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
-
             // Initialize service manager
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
             var serviceManager = new ServiceManager(
@@ -74,7 +62,7 @@ namespace Servy.Views
                 new ServiceControllerProvider(controllerFactory),
                 new WindowsServiceApi(),
                 new Win32ErrorProvider(),
-                serviceRepository
+                app.ServiceRepository
             );
 
             // Initialize ViewModel
@@ -85,7 +73,7 @@ namespace Servy.Views
                 new FileDialogService(),
                 null,
                 messageBoxService,
-                serviceRepository,
+                app.ServiceRepository,
                 helperService
             );
 

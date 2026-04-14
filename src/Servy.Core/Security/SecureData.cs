@@ -9,7 +9,7 @@ namespace Servy.Core.Security
     /// Implements salted HKDF for key separation and follows strict memory-zeroing protocols for all sensitive buffers.
     /// Designed for a Singleton lifetime; internal keys are immutable after construction.
     /// </summary>
-    public class SecureData : ISecureData, IDisposable
+    public class SecureData : ISecureData
     {
         private readonly byte[] _v1MasterKey;
         private readonly byte[] _v1StaticIv;

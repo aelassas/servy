@@ -55,18 +55,6 @@ namespace Servy.Manager.Views
             logsView.DataContext = logsVm;
             LogsTab.Content = logsView;
 
-            // Initialize database and helpers
-            var dbContext = new AppDbContext(app.ConnectionString);
-            DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
-
-            var dapperExecutor = new DapperExecutor(dbContext);
-            var protectedKeyProvider = new ProtectedKeyProvider(app.AESKeyFilePath, app.AESIVFilePath);
-            _secureData = new SecureData(protectedKeyProvider);
-            var xmlSerializer = new XmlServiceSerializer();
-            var jsonSerializer = new JsonServiceSerializer();
-
-            var serviceRepository = new ServiceRepository(dapperExecutor, _secureData, xmlSerializer, jsonSerializer);
-
             // Initialize service manager
             Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
             var serviceManager = new ServiceManager(
@@ -74,7 +62,7 @@ namespace Servy.Manager.Views
                 new ServiceControllerProvider(controllerFactory),
                 new WindowsServiceApi(),
                 new Win32ErrorProvider(),
-                serviceRepository
+                app.ServiceRepository
             );
 
             // Initialize service commands and helpers
@@ -85,7 +73,7 @@ namespace Servy.Manager.Views
             // Create main ViewModel
             var viewModel = new MainViewModel(
                 serviceManager,
-                serviceRepository,
+                app.ServiceRepository,
                 null,                   // We'll set ServiceCommands next
                 helpService,
                 _messageBoxService
@@ -95,7 +83,7 @@ namespace Servy.Manager.Views
 
             var serviceCommands = new ServiceCommands(
                 serviceManager,
-                serviceRepository,
+                app.ServiceRepository,
                 _messageBoxService,
                 fileDialogService,
                 viewModel.RemoveService,

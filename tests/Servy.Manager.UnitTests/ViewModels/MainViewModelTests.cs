@@ -7,6 +7,7 @@ using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System.Collections.ObjectModel;
 using System.Windows.Data;
+using System.Windows.Threading;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
@@ -27,14 +28,15 @@ namespace Servy.Manager.UnitTests.ViewModels
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
         }
 
-        private MainViewModel CreateViewModel()
+        private MainViewModel CreateViewModel(Dispatcher? dispatcher = null)
         {
             return new MainViewModel(
                 _serviceManagerMock.Object,
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
                 _helpServiceMock.Object,
-                _messageBoxServiceMock.Object
+                _messageBoxServiceMock.Object,
+                dispatcher
             );
         }
 
@@ -110,7 +112,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var vm = CreateViewModel();
+                var currentDispatcher = Dispatcher.CurrentDispatcher;
+                var vm = CreateViewModel(currentDispatcher);
                 var service1 = new Service { Name = "S1" };
                 var service2 = new Service { Name = "S2" };
 
