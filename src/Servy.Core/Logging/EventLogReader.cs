@@ -51,6 +51,7 @@ namespace Servy.Core.Logging
                 EventId = evt.Id,
                 Time = evt.TimeCreated ?? DateTime.MinValue,
                 Level = ParseLevel(evt.Level ?? 0),
+                ProviderName = evt.ProviderName,
                 Message = message,
             };
         }

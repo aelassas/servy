@@ -91,13 +91,20 @@ namespace Servy.Core.Services
                     //
                     token.ThrowIfCancellationRequested();
 
-                    var message = evt.Message?? string.Empty;
+                    var message = evt.Message ?? string.Empty;
+                    var provider = evt.ProviderName ?? string.Empty;
 
-                    // Only include Servy service logs: messages with [..]
+                    // 1. Heuristic: Only include events where the provider contains "Servy"
+                    // This prevents capturing unrelated system/app logs even when _sourceName is empty.
+                    if (provider.IndexOf(AppConfig.ServiceNameEventSource, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+
+                    // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
                     if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
                         message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
 
+                    // 3. Optional keyword filter
                     if (!string.IsNullOrEmpty(keyword) &&
                         message.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
