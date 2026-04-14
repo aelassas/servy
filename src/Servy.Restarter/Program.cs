@@ -69,10 +69,10 @@ namespace Servy.Restarter
 
                 // 2. Load configuration
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                    .SetBasePath(AppFoldersHelper.GetApplicationDirectory())
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
-
+                
                 var connectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
                 var aesKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
                 var aesIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;

@@ -285,7 +285,7 @@ namespace Servy.Manager
 #if DEBUG
                 builder.AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true);
 #else
-                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                builder.SetBasePath(AppFoldersHelper.GetApplicationDirectory())
                        .AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true);
 #endif
                 var config = builder.Build();
@@ -342,7 +342,7 @@ namespace Servy.Manager
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
 #else
-                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName) ?? string.Empty;
+                var baseDirectory = AppFoldersHelper.GetApplicationDirectory();
                 ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigrationAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ConfigurationAppPublishPath))

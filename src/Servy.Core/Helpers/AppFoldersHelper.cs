@@ -9,6 +9,21 @@ namespace Servy.Core.Helpers
     public static class AppFoldersHelper
     {
         /// <summary>
+        /// Safely retrieves the directory containing the application executable.
+        /// Handles Single-File deployments and restricted security contexts.
+        /// </summary>
+        /// <returns>The absolute path to the application directory.</returns>
+        public static string GetApplicationDirectory()
+        {
+            // AppContext.BaseDirectory is the primary for .NET 5+ 
+            // AppDomain.CurrentDomain.BaseDirectory is the primary for .NET Framework 4.8
+            string basePath = AppContext.BaseDirectory ?? AppDomain.CurrentDomain.BaseDirectory;
+
+            // Ensure we have a normalized path without potential double-slashes or relative segments
+            return Path.GetFullPath(basePath);
+        }
+
+        /// <summary>
         /// Ensures that the database and security folders exist.
         /// Extracts folder paths from the SQLite connection string and AES file paths,
         /// and creates them if they do not exist.

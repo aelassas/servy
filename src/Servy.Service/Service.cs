@@ -260,7 +260,7 @@ namespace Servy.Service
 
                 // Load configuration from appsettings.json
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                    .SetBasePath(AppFoldersHelper.GetApplicationDirectory())
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .Build();
 

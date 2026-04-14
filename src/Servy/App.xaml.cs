@@ -267,10 +267,10 @@ namespace Servy
 
                 // Load configuration from appsettings.json
                 var builder = new ConfigurationBuilder();
-#if DEBUG
+#if :DEBUG
                 builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 #else
-                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                builder.SetBasePath(AppFoldersHelper.GetApplicationDirectory())
                        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 #endif
                 var config = builder.Build();
@@ -311,7 +311,7 @@ namespace Servy
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else
-                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                var baseDirectory = AppFoldersHelper.GetApplicationDirectory();
                 ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ManagerAppPublishPath))
