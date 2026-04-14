@@ -1,4 +1,6 @@
-﻿namespace Servy.UI.Services
+﻿using System.Threading.Tasks;
+
+namespace Servy.UI.Services
 {
     /// <summary>
     /// Provides methods to show help-related UI elements and perform update checks.
@@ -8,7 +10,8 @@
         /// <summary>
         /// Opens the documentation for the application.
         /// </summary>
-        void OpenDocumentation();
+        /// <param name="caption">The caption to use for any message box displayed during the update check.</param>
+        Task OpenDocumentation(string caption);
 
         /// <summary>
         /// Checks for application updates and optionally displays a message box with the result.

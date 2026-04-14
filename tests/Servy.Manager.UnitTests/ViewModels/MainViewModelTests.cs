@@ -186,7 +186,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _helpServiceMock.Setup(h => h.OpenDocumentation()).Verifiable();
+                _helpServiceMock.Setup(h => h.OpenDocumentation(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
 
                 vm.OpenDocumentationCommand.Execute(null);
 
