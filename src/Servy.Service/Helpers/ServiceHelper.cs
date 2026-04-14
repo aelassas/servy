@@ -284,6 +284,12 @@ namespace Servy.Service.Helpers
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
+                if (string.IsNullOrEmpty(dir))
+                {
+                    Logger.Error($"Invalid executable path provided for restart recovery: {exePath}");
+                    return; // critical failure
+                }
+
                 var restarter = Path.Combine(dir, "Servy.Restarter.Net48.exe");
 
                 if (!File.Exists(restarter))

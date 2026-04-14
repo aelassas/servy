@@ -368,6 +368,12 @@ namespace Servy.Core.Helpers
 #endif
 
             var targetPathDir = Path.GetDirectoryName(targetPath);
+            
+            if (string.IsNullOrEmpty(targetPathDir))
+            {
+                throw new IOException($"Could not resolve parent directory for extraction: {targetPath}");
+            }
+
             if (!Directory.Exists(targetPathDir))
             {
                 Directory.CreateDirectory(targetPathDir);

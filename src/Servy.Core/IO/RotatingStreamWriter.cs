@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
 using System.Globalization;
@@ -332,7 +333,15 @@ namespace Servy.Core.IO
             if (_maxRotations <= 0)
                 return;
 
-            string directory = _file.Directory.FullName;
+            // Safely resolve directory to prevent NRE if _file context is bare
+            var parentDir = _file.Directory;
+            if (parentDir == null)
+            {
+                Logger.Warn($"Log file '{_file.Name}' has no directory context. Skipping rotation enforcement.");
+                return;
+            }
+
+            string directory = parentDir.FullName;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             string extension = Path.GetExtension(_file.FullName);
 
@@ -386,7 +395,13 @@ namespace Servy.Core.IO
             var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
             var timestamp = now.ToString("yyyyMMdd_HHmmss");
 
+            // Use safe Path resolution with AppContext fallback for root paths
             var directory = Path.GetDirectoryName(_file.FullName);
+            if (string.IsNullOrEmpty(directory))
+            {
+                directory = AppFoldersHelper.GetApplicationDirectory();
+            }
+
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             var extension = Path.GetExtension(_file.FullName);
 
