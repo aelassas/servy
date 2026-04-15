@@ -1020,7 +1020,7 @@ namespace Servy.Core.Native
             // Matches:
             // - DOMAIN\User (domain and username separated by \)
             // - .\User (local machine)
-            const string pattern = @"^(?:[\w\s\.-]+|\.)\\[\w\s\.@!-]+\$?$";
+            const string pattern = @"^(?:[\w\s\.\-]+|\.)\\[\w\s\.@!\-]+\$?$";
             var isGMSA = username.EndsWith('$');
 
             const string invalidMsg = "Username format is invalid. Expected .\\Username, DOMAIN\\Username, or DOMAIN\\gMSA$.";
