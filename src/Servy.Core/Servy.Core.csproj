@@ -140,7 +140,7 @@
     <Compile Include="Logging\EventLogLogger.cs" />
     <Compile Include="Logging\EventLogReader.cs" />
     <Compile Include="Logging\IEventLogReader.cs" />
-    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="Logging\IServyLogger.cs" />
     <Compile Include="Mappers\ServiceMapper.cs" />
     <Compile Include="Domain\Service.cs" />
     <Compile Include="Native\LogonAsServiceGrant.cs" />

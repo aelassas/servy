@@ -5,7 +5,7 @@ namespace Servy.Core.Logging
     /// <summary>
     /// Defines methods for logging informational, warning, and error messages.
     /// </summary>
-    public interface ILogger : IDisposable
+    public interface IServyLogger : IDisposable
     {
         /// <summary>
         /// Gets the optional prefix to be prepended to every log message 
@@ -14,7 +14,7 @@ namespace Servy.Core.Logging
         string Prefix { get; }
 
         /// <summary>
-        /// Creates a new <see cref="ILogger"/> instance that inherits the settings 
+        /// Creates a new <see cref="IServyLogger"/> instance that inherits the settings 
         /// of the current logger but applies a specific prefix to all its messages.
         /// </summary>
         /// <remarks>
@@ -22,8 +22,8 @@ namespace Servy.Core.Logging
         /// sub-component or background task.
         /// </remarks>
         /// <param name="prefix">The string to prepend to messages in the new scoped logger.</param>
-        /// <returns>A new <see cref="ILogger"/> instance configured with the specified prefix.</returns>
-        ILogger CreateScoped(string prefix);
+        /// <returns>A new <see cref="IServyLogger"/> instance configured with the specified prefix.</returns>
+        IServyLogger CreateScoped(string prefix);
 
         /// <summary>
         /// Sets the minimum log level to be recorded. 

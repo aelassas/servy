@@ -8,7 +8,7 @@ namespace Servy.Core.Logging
     /// Logs messages to the Windows Event Log with Event IDs.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public class EventLogLogger : ILogger
+    public class EventLogLogger : IServyLogger
     {
         #region Private Fields
 
@@ -80,7 +80,7 @@ namespace Servy.Core.Logging
         }
 
         /// <inheritdoc/>
-        public ILogger CreateScoped(string prefix)
+        public IServyLogger CreateScoped(string prefix)
         {
             // Inherit the parent's settings but apply the new immutable prefix.
             // If you want nested prefixes (e.g., [Parent][Child]), use:

@@ -24,7 +24,7 @@ namespace Servy.Service.ProcessManagement
         public static IProcessWrapper Start(
             ProcessLaunchOptions options,
             IProcessFactory factory,
-            ILogger logger)
+            IServyLogger logger)
         {
             // 1. Resolve environment variables and arguments
             var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
@@ -119,7 +119,7 @@ namespace Servy.Service.ProcessManagement
         /// <summary>
         /// Performs a synchronous wait for process exit while periodically updating the Windows SCM to prevent service timeouts.
         /// </summary>
-        private static void WaitForExitWithHeartbeat(IProcessWrapper process, ProcessLaunchOptions options, ILogger logger)
+        private static void WaitForExitWithHeartbeat(IProcessWrapper process, ProcessLaunchOptions options, IServyLogger logger)
         {
             var sw = Stopwatch.StartNew();
 

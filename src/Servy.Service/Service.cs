@@ -124,7 +124,7 @@ namespace Servy.Service
 
         private readonly SecureData _secureData;
         private readonly IServiceHelper _serviceHelper;
-        private ILogger _logger;
+        private IServyLogger _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
@@ -217,7 +217,7 @@ namespace Servy.Service
         /// </remarks>
         public Service(
             IServiceHelper serviceHelper,
-            ILogger logger,
+            IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
@@ -252,7 +252,7 @@ namespace Servy.Service
         /// </remarks>
         public Service(
             IServiceHelper serviceHelper,
-            ILogger logger,
+            IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,

@@ -18,7 +18,7 @@ namespace Servy.Service.ProcessManagement
     public class ProcessWrapper : IProcessWrapper
     {
         private readonly Process _process;
-        private readonly ILogger _logger;
+        private readonly IServyLogger _logger;
         private bool _disposed;
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace Servy.Service.ProcessManagement
         /// </summary>
         /// <param name="psi">The process start information.</param>
         /// <param name="logger">The logger.</param>
-        public ProcessWrapper(ProcessStartInfo psi, ILogger logger)
+        public ProcessWrapper(ProcessStartInfo psi, IServyLogger logger)
         {
             _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
             _logger = logger;

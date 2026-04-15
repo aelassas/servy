@@ -24,7 +24,7 @@ namespace Servy.Service.UnitTests
     {
         private readonly ITestOutputHelper _output;
         private readonly Mock<IServiceHelper> _mockServiceHelper;
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<IServyLogger> _mockLogger;
         private readonly Mock<IStreamWriterFactory> _mockStreamWriterFactory;
         private readonly Mock<ITimerFactory> _mockTimerFactory;
         private readonly Mock<IProcessFactory> _mockProcessFactory;
@@ -41,7 +41,7 @@ namespace Servy.Service.UnitTests
         {
             _output = output;
             _mockServiceHelper = new Mock<IServiceHelper>();
-            _mockLogger = new Mock<ILogger>();
+            _mockLogger = new Mock<IServyLogger>();
             _mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             _mockTimerFactory = new Mock<ITimerFactory>();
             _mockProcessFactory = new Mock<IProcessFactory>();
@@ -65,7 +65,7 @@ namespace Servy.Service.UnitTests
             _mockTimerFactory.Setup(f => f.Create(It.IsAny<double>()))
                 .Returns(_mockTimer.Object);
 
-            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<ILogger>()))
+            _mockProcessFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>()))
                 .Returns(_mockProcess.Object);
 
             _mockServiceRepository = new Mock<IServiceRepository>();
@@ -166,7 +166,7 @@ namespace Servy.Service.UnitTests
                 StdErrPath = "C:\\Logs\\stderr.log"
             };
 
-            var mockScopedLogger = new Mock<ILogger>();
+            var mockScopedLogger = new Mock<IServyLogger>();
 
             // 1. ServiceHelper flow
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
@@ -212,7 +212,7 @@ namespace Servy.Service.UnitTests
                 RecoveryAction = RecoveryAction.None
             };
 
-            var mockScopedLogger = new Mock<ILogger>();
+            var mockScopedLogger = new Mock<IServyLogger>();
 
             // 1. Setup the ServiceHelper flow
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
@@ -269,7 +269,7 @@ namespace Servy.Service.UnitTests
             Assert.True(stopped);
 
             // Verify that ValidateAndLog was NEVER called because we exited early
-            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<ILogger>(), It.IsAny<string[]>()), Times.Never);
+            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -308,7 +308,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var mockProcess = new Mock<IProcessWrapper>();
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
@@ -341,7 +341,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var mockProcess = new Mock<IProcessWrapper>();
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
@@ -373,7 +373,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_ValidPaths_CreatesStreamWriters()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
@@ -430,7 +430,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_InvalidPaths_LogsErrors()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
@@ -473,7 +473,7 @@ namespace Servy.Service.UnitTests
         public void HandleLogWriters_EmptyPaths_DoesNotCreateWritersOrLog()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();

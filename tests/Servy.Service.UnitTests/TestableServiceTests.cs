@@ -25,8 +25,8 @@ namespace Servy.Service.UnitTests
             var expectedOptions = new StartOptions { ServiceName = "TestService" };
 
             var mockHelper = new Mock<IServiceHelper>();
-            var mockRootLogger = new Mock<ILogger>();
-            var mockScopedLogger = new Mock<ILogger>();
+            var mockRootLogger = new Mock<IServyLogger>();
+            var mockScopedLogger = new Mock<IServyLogger>();
 
             var streamWriterFactory = new Mock<IStreamWriterFactory>();
             var timerFactory = new Mock<ITimerFactory>();
@@ -80,7 +80,7 @@ namespace Servy.Service.UnitTests
             // Arrange
             var fullArgs = new[] { "servy.exe" };
             var mockHelper = new Mock<IServiceHelper>();
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var streamWriterFactory = new Mock<IStreamWriterFactory>();
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
@@ -113,8 +113,8 @@ namespace Servy.Service.UnitTests
 
             // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
             mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
-            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<ILogger>(), It.IsAny<string[]>()), Times.Never);
-            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<ILogger>()), Times.Never);
+            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
+            mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Servy.Service.UnitTests
         {
             // Arrange
             var mockHelper = new Mock<IServiceHelper>();
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var streamWriterFactory = new Mock<IStreamWriterFactory>();
             var timerFactory = new Mock<ITimerFactory>();
             var processFactory = new Mock<IProcessFactory>();
@@ -164,7 +164,7 @@ namespace Servy.Service.UnitTests
         public void SetupHealthMonitoring_ValidParameters_CreatesAndStartsTimer_AndLogs()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();
@@ -217,7 +217,7 @@ namespace Servy.Service.UnitTests
         public void SetupHealthMonitoring_InvalidParameters_DoesNotCreateTimer(int heartbeat, int maxFailedChecks, RecoveryAction recovery)
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
+            var mockLogger = new Mock<IServyLogger>();
             var mockHelper = new Mock<IServiceHelper>();
             var mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             var mockTimerFactory = new Mock<ITimerFactory>();

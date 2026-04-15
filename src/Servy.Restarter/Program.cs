@@ -58,8 +58,8 @@ namespace Servy.Restarter
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
-            ILogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
-            ILogger scopedLogger = null;
+            IServyLogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
+            IServyLogger scopedLogger = null;
             SecureData secureData = null;
 
             try
