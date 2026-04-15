@@ -56,10 +56,16 @@ namespace Servy.CLI
 
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
+                Logger.Error($"[FATAL] Vulnerable SQLite version detected: {detectedVersion}. " +
+                             $"Minimum required: {AppConfig.MinRequiredSqliteVersion} (CVE-2025-6965 mitigation).");
+
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"[CRITICAL] Vulnerable SQLite version detected: {detectedVersion}");
-                Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+ to mitigate CVE-2025-6965.");
+                Console.WriteLine($"This version of Servy requires SQLite {AppConfig.MinRequiredSqliteVersion}+.");
                 Console.ResetColor();
+
+                // Exit with a specific error code to inform the OS/Admin of a security incompatibility
+                Environment.Exit(1064);
             }
 
             try
