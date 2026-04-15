@@ -108,7 +108,7 @@ if ($BuildConfiguration -eq "Release" -and (Test-Path $signPath)) {
     }
     else {
         # Critical failure: If the file isn't there, the build is invalid.
-        Write-Error "Published executable not found at: $exePath. Ensure the project output name matches 'Servy.CLI.exe'."
+        Write-Error "Published executable not found at: $exePath. Ensure the project output name matches 'Servy.Service.exe'."
         exit 1
     }
 }
