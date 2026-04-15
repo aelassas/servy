@@ -102,15 +102,44 @@ jobs:
           # Write content back without extra newline
           [System.IO.File]::WriteAllText($file, $content)
 
-      - name: Commit updated files
+      - name: Commit and Push (with Retry)
         shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add setup/choco/servy/*
-          git commit -m "chore(choco): update package for version ${env:VERSION}" || Write-Host "No changes to commit"
-          git pull --rebase=merges --autostash origin main
-          git push origin HEAD:main
+          
+          # Check if there is actually anything to commit
+          if ($(git status --porcelain) -eq $null) {
+              Write-Host "No changes to commit. Skipping push."
+              exit 0
+          }
+
+          git commit -m "chore(choco): update package for version ${env:VERSION}"
+
+          $maxRetries = 5
+          $retryCount = 0
+          $pushSuccess = $false
+
+          while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
+              try {
+                  Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
+                  # Pull latest changes to avoid non-fast-forward errors
+                  git pull --rebase=merges --autostash origin main
+                  git push origin HEAD:main
+                  $pushSuccess = $true
+                  Write-Host "Push successful!"
+              }
+              catch {
+                  $retryCount++
+                  Write-Warning "Push failed. Waiting 5 seconds before retry..."
+                  Start-Sleep -s 5
+              }
+          }
+
+          if (-not $pushSuccess) {
+              throw "Failed to push Chocolatey updates to main after $maxRetries attempts."
+          }
 
       - name: Check Chocolatey version
         shell: pwsh
