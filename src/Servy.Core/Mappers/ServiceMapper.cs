@@ -153,7 +153,7 @@ namespace Servy.Core.Mappers
 
                 EnableDebugLogs = dto.EnableDebugLogs ?? AppConfig.DefaultEnableDebugLogs,
 
-                DisplayName = dto.DisplayName,
+                DisplayName = dto.DisplayName ?? string.Empty,
 
                 StartTimeout = dto.StartTimeout ?? AppConfig.DefaultStartTimeout,
                 StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout,
