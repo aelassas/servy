@@ -464,8 +464,8 @@ namespace Servy.Service
         {
             try
             {
-                _ = NativeMethods.FreeConsole();
-                _ = NativeMethods.SetConsoleCtrlHandler(null, true);
+                _ = FreeConsole();
+                _ = SetConsoleCtrlHandler(null, true);
 
                 // Check if we are running in a test context to bypass environment-specific hooks
                 bool isTestMode = args.Length > 0 &&
@@ -1138,19 +1138,14 @@ namespace Servy.Service
         /// <param name="environmentVariables">Environment variables to pass to the process.</param>
         private void StartProcess(string realExePath, string realArgs, string workingDir, List<EnvironmentVariable> environmentVariables)
         {
-            _ = NativeMethods.AllocConsole(); // inherited
-            _ = NativeMethods.SetConsoleCtrlHandler(null, false); // inherited
-            _ = NativeMethods.SetConsoleOutputCP(NativeMethods.CP_UTF8);
+            _ = AllocConsole(); // inherited
+            _ = SetConsoleCtrlHandler(null, false); // inherited
+            _ = SetConsoleOutputCP(CP_UTF8);
 
-            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(environmentVariables);
-
-            foreach (var kvp in expandedEnv)
-            {
-                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
-            }
+            var (expandedEnv, expandedArgs) = ExpandAndAudit(environmentVariables, realArgs);
 
             _realExePath = realExePath;
-            _realArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(realArgs, expandedEnv);
+            _realArgs = expandedArgs;
             _workingDir = workingDir;
             _environmentVariables = environmentVariables;
 
@@ -1210,8 +1205,8 @@ namespace Servy.Service
             }
             finally
             {
-                _ = NativeMethods.FreeConsole();
-                _ = NativeMethods.SetConsoleCtrlHandler(null, true);
+                _ = FreeConsole();
+                _ = SetConsoleCtrlHandler(null, true);
             }
 
             // --- The code below this point ONLY executes if Start() was successful ---
@@ -1247,6 +1242,36 @@ namespace Servy.Service
                     _logger?.Error($"Unexpected error in post-launch action: {ex.Message}", ex);
                 }
             }, cts.Token);
+        }
+
+        /// <summary>
+        /// Expands environment variables and command-line arguments, auditing both for unexpanded placeholders.
+        /// </summary>
+        /// <param name="vars">The list of environment variables to expand.</param>
+        /// <param name="rawArgs">The raw command-line arguments to expand.</param>
+        /// <param name="contextPrefix">An optional prefix for logging (e.g., "Pre-Launch", "Post-Stop").</param>
+        /// <returns>A tuple containing the expanded environment dictionary and the expanded arguments string.</returns>
+        private (Dictionary<string, string?> env, string expandedArgs) ExpandAndAudit(
+            List<EnvironmentVariable> vars, string rawArgs, string contextPrefix = "")
+        {
+            string prefix = string.IsNullOrWhiteSpace(contextPrefix) ? string.Empty : $"[{contextPrefix}] ";
+
+            // 1. Expand environment variables list
+            var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(vars);
+
+            // 2. Audit expanded variables for leftover placeholders
+            foreach (var kvp in expandedEnv)
+            {
+                LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"{prefix}Environment Variable '{kvp.Key}'");
+            }
+
+            // 3. Expand command-line arguments using the expanded environment
+            var expandedArgs = EnvironmentVariableHelper.ExpandEnvironmentVariables(rawArgs, expandedEnv);
+
+            // 4. Audit arguments for leftover placeholders
+            LogUnexpandedPlaceholders(expandedArgs, $"{prefix}Arguments");
+
+            return (expandedEnv, expandedArgs);
         }
 
         /// <summary>
@@ -1321,20 +1346,11 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
-
-                // Audit expanded variables for leftover placeholders
-                foreach (var kvp in expandedEnv)
-                {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Post-Launch] Environment Variable '{kvp.Key}'");
-                }
-
-                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
+                var (expandedEnv, args) = ExpandAndAudit(
+                    _options.EnvironmentVariables,
                     _options.PostLaunchExecutableArgs ?? string.Empty,
-                    expandedEnv
-                );
-
-                LogUnexpandedPlaceholders(args, "[Post-Launch] Arguments");
+                    "Post-Launch"
+                 );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostLaunchWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostLaunchExecutablePath) ?? string.Empty
@@ -1392,17 +1408,10 @@ namespace Servy.Service
 
             try
             {
-                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
-
-                foreach (var kvp in expandedEnv)
-                {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"Environment Variable '{kvp.Key}'");
-                }
-
-                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                    _options.FailureProgramArgs ?? string.Empty,
-                    expandedEnv
-                );
+                var (expandedEnv, args) = ExpandAndAudit(
+                    _options.EnvironmentVariables,
+                    _options.FailureProgramArgs ?? string.Empty
+                    );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.FailureProgramWorkingDirectory)
                     ? Path.GetDirectoryName(_options.FailureProgramPath) ?? string.Empty
@@ -2253,14 +2262,11 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.EnvironmentVariables);
-                foreach (var kvp in expandedEnv)
-                {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Pre-Stop] Environment Variable '{kvp.Key}'");
-                }
-
-                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(options.PreStopExecutableArgs ?? string.Empty, expandedEnv);
-                LogUnexpandedPlaceholders(args, "[Pre-Stop] Arguments");
+                var (expandedEnv, args) = ExpandAndAudit(
+                            options.EnvironmentVariables,
+                            options.PreStopExecutableArgs ?? string.Empty,
+                            "Pre-Stop"
+                        );
 
                 // 2. Configure Launch Options
                 var effectiveTimeoutMs = options.PreStopTimeout * 1000;
@@ -2455,19 +2461,11 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var expandedEnv = EnvironmentVariableHelper.ExpandEnvironmentVariables(_options.EnvironmentVariables);
-
-                foreach (var kvp in expandedEnv)
-                {
-                    LogUnexpandedPlaceholders(kvp.Value ?? string.Empty, $"[Post-Stop] Environment Variable '{kvp.Key}'");
-                }
-
-                var args = EnvironmentVariableHelper.ExpandEnvironmentVariables(
-                    _options.PostStopExecutableArgs ?? string.Empty,
-                    expandedEnv
-                );
-
-                LogUnexpandedPlaceholders(args, "[Post-Stop] Arguments");
+                var (expandedEnv, args) = ExpandAndAudit(
+                            _options.EnvironmentVariables,
+                            _options.PostStopExecutableArgs ?? string.Empty,
+                            "Post-Stop"
+                        );
 
                 var workingDir = string.IsNullOrWhiteSpace(_options.PostStopWorkingDirectory)
                     ? Path.GetDirectoryName(_options.PostStopExecutablePath) ?? string.Empty
