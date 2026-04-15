@@ -523,16 +523,28 @@ namespace Servy.Service.ProcessManagement
             // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
             // Passing 'null' as the handler and 'true' as the add flag tells the OS 
             // to ignore CTRL_C_EVENT for this specific process.
-            SetConsoleCtrlHandler(null, true);
-
-            // CRITICAL: Yield to the OS to allow the handler registration 
-            // and console attachment to propagate through conhost.exe before firing the event.
-            Thread.Sleep(50);
+            if (!SetConsoleCtrlHandler(null, true))
+            {
+                int error = Marshal.GetLastWin32Error();
+                _logger?.Error($"Failed to suppress console control handlers in the service (Win32 Error: {error}). Aborting signal to prevent service self-termination.");
+                _ = FreeConsole();
+                return false;
+            }
 
             try
             {
+                // CRITICAL: Yield to the OS to allow the handler registration 
+                // and console attachment to propagate through conhost.exe before firing the event.
+                Thread.Sleep(50);
+
                 // Don't call GenerateConsoleCtrlEvent immediately after SetConsoleCtrlHandler.
                 // A delay was observed as of Windows 10, version 2004 and Windows Server 2019.
+                // The Win32 API Trap:
+                // CTRL_C_EVENT: This signal cannot be limited to a specific process group.
+                // If dwProcessGroupId is nonzero, this function will succeed, but
+                // the CTRL + C signal will not be received by processes within
+                // the specified process group.
+                // So passing the specific process group ID instead of 0 will not work.
                 _ = GenerateConsoleCtrlEvent(CtrlEvents.CTRL_C_EVENT, 0);
                 _logger?.Info($"Sent Ctrl+C to process '{process.Format()}'.");
             }
@@ -542,7 +554,11 @@ namespace Servy.Service.ProcessManagement
                 _ = FreeConsole();
 
                 // Restore default Ctrl+C handling (remove the ignore flag) for the service process
-                SetConsoleCtrlHandler(null, false);
+                if (!SetConsoleCtrlHandler(null, false))
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    _logger?.Error($"Failed to restore console control handlers in the service (Win32 Error: {error}).");
+                }
             }
 
             return true;
