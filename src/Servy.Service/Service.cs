@@ -2119,7 +2119,7 @@ namespace Servy.Service
                 finally
                 {
                     // Only dispose of core resources and set _disposed = true 
-                    // if the teardown actually succeeded. (#576)
+                    // if the teardown actually succeeded.
                     if (performedCleanup)
                     {
                         _disposed = true;
