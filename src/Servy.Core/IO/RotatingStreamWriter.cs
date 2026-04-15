@@ -367,10 +367,9 @@ namespace Servy.Core.IO
                         return false;
 
                     // 2. Validate Suffix (if the original file had an extension)
-                    if (!string.IsNullOrEmpty(extension))
+                    if (!string.IsNullOrEmpty(extension) && !name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (!name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
-                            return false;
+                        return false;
                     }
                     // Note: If the original file had NO extension, we deliberately skip the EndsWith check.
                     // The expectedMiddleLength calculation below will absorb any unexpected trailing 
