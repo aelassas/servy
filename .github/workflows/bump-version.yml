@@ -112,32 +112,27 @@ jobs:
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "NEXT_VERSION=$next_version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      # 3. Bump version on main branch
+# 3. Bump version on main branch
       - name: Bump version on main branch
         shell: pwsh
         run: |
           git checkout main
-
           git fetch origin main
-          git reset --hard origin/main  # reset local main to match remote
-
-          # Ensure PowerShell scripts have execution permissions
+          git reset --hard origin/main
+          
           git update-index --chmod=+x ./bump-version.ps1
-
-          # Run your PowerShell script to update version numbers
           ./bump-version.ps1 -Version $env:NEXT_VERSION
 
-          # Configure Git for automated commit
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Only commit if there are changes to avoid empty commits
-          if (git diff --quiet) {
-              Write-Host "No changes detected, skipping commit."
-          } else {
+          # git status --porcelain detects untracked, modified, and deleted files.
+          if ((git status --porcelain) -ne '') {
               git add --all
               git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               git push origin main
+          } else {
+              Write-Host "No changes detected on main branch, skipping commit."
           }
 
       # 4. Bump version on net48 branch
@@ -146,23 +141,19 @@ jobs:
         run: |
           git fetch origin net48:net48
           git checkout net48
-          git reset --hard origin/net48  # reset local net48 to match remote
-
-          # Ensure PowerShell scripts have execution permissions
+          git reset --hard origin/net48
+          
           git update-index --chmod=+x ./bump-version.ps1
-
-          # Run version bump script
           ./bump-version.ps1 -Version $env:NEXT_VERSION
 
-          # Configure Git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Commit only if there are changes
-          if (git diff --quiet) {
-              Write-Host "No changes detected on net48 branch, skipping commit."
-          } else {
+          # Using porcelain check consistently to prevent silent skips on net48.
+          if ((git status --porcelain) -ne '') {
               git add --all
               git commit -m "chore: bump version from $env:VERSION to $env:NEXT_VERSION"
               git push origin net48
+          } else {
+              Write-Host "No changes detected on net48 branch, skipping commit."
           }
