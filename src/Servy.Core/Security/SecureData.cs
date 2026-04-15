@@ -196,18 +196,24 @@ namespace Servy.Core.Security
                 if (payload.StartsWith("v1:")) return DecryptV1(payload.Substring(3));
 
                 // Fallback for legacy payloads that were encrypted but not version-tagged
-                return IsStrictBase64(payload) ? DecryptV1(payload) : payload;
+                string rawPayload = payload.ToString();
+
+                // Version 1 Legacy Detection
+                if (IsStrictBase64(rawPayload))
+                {
+                    return DecryptV1(rawPayload);
+                }
+
+                // FIXED: Explicitly log when data is processed as plaintext.
+                // This allows admins to find unencrypted passwords or config values in the DB (#568).
+                Logger.Warn("Decryption bypassed: Input does not match any known encryption format. Returning as plaintext.");
+                return rawPayload;
             }
-            catch (FormatException ex)
+            catch (Exception ex) when (ex is FormatException || ex is CryptographicException)
             {
-                // Backwards compatibility: Graceful fallback for Base64 decoding errors
-                Logger.Debug($"Decryption fallback triggered (FormatException): {ex.Message}");
-                return payload.ToString();
-            }
-            catch (CryptographicException ex)
-            {
-                // Backwards compatibility: Graceful fallback for key mismatches or corrupted ciphertext
-                Logger.Debug($"Decryption fallback triggered (CryptographicException): {ex.Message}");
+                // Elevated from Debug to Warn. 
+                // If a string HAS an encryption marker but fails to decrypt, it's a security event or data corruption.
+                Logger.Warn($"Decryption failed for marked payload ({ex.GetType().Name}): {ex.Message}. Returning original input.");
                 return payload.ToString();
             }
         }
