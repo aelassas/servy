@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Builds Servy for release as a framework-dependent Windows x64 executable.

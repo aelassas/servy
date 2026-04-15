@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Publishes the Servy.Service project in Debug mode and copies its build artifacts

@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Publishes Servy.Service and copies its build artifacts into the Servy Resources folder.

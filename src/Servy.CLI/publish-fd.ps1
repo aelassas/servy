@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Publishes the Servy.CLI project (framework-dependent) for Windows.

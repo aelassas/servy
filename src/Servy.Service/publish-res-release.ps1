@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Publishes the Servy.Restarter project and copies its build artifacts into the Servy.Service Resources folder.

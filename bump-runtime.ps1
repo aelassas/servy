@@ -1,4 +1,4 @@
-﻿#requires -Version 3.0
+﻿#requires -Version 5.0
 <#
 .SYNOPSIS
 Updates .NET runtime target version across scripts, AppConfig, and project files.

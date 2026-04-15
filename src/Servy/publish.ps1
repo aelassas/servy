@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Publishes the Servy WPF application as a self-contained executable and signs it.

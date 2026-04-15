@@ -1,4 +1,4 @@
-#requires -Version 3.0
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Builds the framework-dependent Servy installer and ZIP package.

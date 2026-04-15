@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Builds and publishes Servy.Manager as a framework-dependent application.
