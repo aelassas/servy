@@ -740,7 +740,7 @@ namespace Servy.Service
             // Pass the CancellationToken to WaitAsync to prevent hangs during service shutdown
             await _fileSemaphore.WaitAsync(ct);
             try
-            {                
+            {
                 await WriteAttemptsInternalAsync(attempts, ct);
             }
             catch (OperationCanceledException)
@@ -822,7 +822,7 @@ namespace Servy.Service
 
                 // 3. Evaluate Thresholds
                 int detectionWindowSeconds = options.HeartbeatInterval * options.MaxFailedChecks;
-                
+
                 // Base threshold: detection window + buffer (min 30s or the detection window itself)
                 int bufferSeconds = Math.Max(detectionWindowSeconds, 30);
                 int resetThresholdSeconds = detectionWindowSeconds + bufferSeconds;
@@ -1982,24 +1982,19 @@ namespace Servy.Service
                 // This moves the service into the STOP_PENDING state in the eyes of the OS.
                 UpdateServiceStatus(SERVICE_STOP_PENDING, 30000);
 
-                Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
-
-                // 2. Wait in 2-second pulses. 
-                // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
-                int interval = 2000;
-                while (!stopTask.Wait(interval))
+                try
                 {
-                    _checkPoint++;
-                    UpdateServiceStatus(SERVICE_STOP_PENDING, 30000);
+                    // 2. Perform teardown synchronously on the SCM thread.
+                    // This avoids ThreadPool starvation. Inner methods (SafeKillProcess, StartPreStopProcess) 
+                    // already handle pulsing the SCM via _serviceHelper.RequestAdditionalTime during long waits.
+                    ExecuteTeardown(TeardownReason.PreShutdown);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Teardown execution failed: {ex.Message}");
                 }
 
-                // 3. Handle task completion results
-                if (stopTask.IsFaulted)
-                {
-                    _logger?.Error($"Teardown task failed: {stopTask.Exception?.InnerException?.Message}");
-                }
-
-                // 4. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
+                // 3. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
                 _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
                 UpdateServiceStatus(SERVICE_STOPPED, 0);
 
