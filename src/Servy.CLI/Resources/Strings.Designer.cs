@@ -439,6 +439,15 @@ namespace Servy.CLI.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery actions and restart attempts cannot be configured unless --enableHealth is set to true..
+        /// </summary>
+        public static string Msg_InvalidRecoveryConfig {
+            get {
+                return ResourceManager.GetString("Msg_InvalidRecoveryConfig", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Rotation size must be a number of Megabytes (MB) greater than or equal to 1 MB..
         /// </summary>
         public static string Msg_InvalidRotationSize {

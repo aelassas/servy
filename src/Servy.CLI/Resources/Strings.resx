@@ -26,7 +26,10 @@
   <data name="Msg_UnknownError" xml:space="preserve">
     <value>An unknown error occurred.</value>
   </data>
-  
+  <data name="Msg_InvalidRecoveryConfig" xml:space="preserve">
+    <value>Recovery actions and restart attempts cannot be configured unless --enableHealth is set to true.</value>
+  </data>
+
   <data name="Msg_Preparing" xml:space="preserve">
     <value>Preparing environment...</value>
   </data>
