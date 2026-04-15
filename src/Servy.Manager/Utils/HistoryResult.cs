@@ -1,4 +1,6 @@
-﻿using Servy.Manager.Models;
+﻿using System;
+using System.Collections.Generic;
+using Servy.Manager.Models;
 
 namespace Servy.Manager.Utils
 {
@@ -9,9 +11,13 @@ namespace Servy.Manager.Utils
     public class HistoryResult
     {
         /// <summary>
-        /// Gets the collection of <see cref="LogLine"/> objects read from the file.
+        /// Gets a read-only collection of <see cref="LogLine"/> objects read from the file.
         /// </summary>
-        public List<LogLine> Lines { get; }
+        /// <remarks>
+        /// Using IReadOnlyList prevents callers from accidentally modifying the historical 
+        /// snapshot (e.g., adding or clearing lines) which would desynchronize the tailing state.
+        /// </remarks>
+        public IReadOnlyList<LogLine> Lines { get; }
 
         /// <summary>
         /// Gets the byte position in the file where the history read ended. 
@@ -33,7 +39,9 @@ namespace Servy.Manager.Utils
         /// <param name="creationTime">The creation timestamp of the source file.</param>
         public HistoryResult(List<LogLine> lines, long position, DateTime creationTime)
         {
-            Lines = lines;
+            // We still accept List<T> in the constructor for convenience, 
+            // but it is stored and exposed as IReadOnlyList.
+            Lines = lines ?? new List<LogLine>();
             Position = position;
             CreationTime = creationTime;
         }
