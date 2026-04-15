@@ -1,4 +1,28 @@
-# taskschd/Get-ServyLastErrors.ps1
+<#
+.SYNOPSIS
+    Retrieves recent error events from the 'Servy' event source.
+
+.DESCRIPTION
+    Queries the Windows Application log for errors produced by Servy. It uses 
+    high-performance hashtable filtering to minimize CPU impact on the host system.
+
+.PARAMETER LastProcessed
+    The timestamp of the last processed event. Only events strictly newer 
+    than this timestamp will be returned.
+
+.NOTES
+    Author      : Akram El Assas
+    Project     : Servy
+    
+    Requirements:
+      - PowerShell 2.0 or later.
+      - Windows Vista / Windows Server 2008 or newer.
+      - Note: This script is NOT compatible with Windows XP or Server 2003 
+        due to the dependency on the Get-WinEvent cmdlet.
+
+.LINK
+    https://github.com/aelassas/servy
+#>
 
 function Get-ServyLastErrors {
   param(
@@ -6,7 +30,6 @@ function Get-ServyLastErrors {
   )
 
   # 1. Self-derive location for logging (PS 2.0+ compatible)
-  # This replaces the leaked $ModuleRoot variable
   $scriptHome = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Definition }
 
   if ($null -ne $LastProcessed -and -not ($LastProcessed -is [datetime])) {
@@ -31,7 +54,7 @@ function Get-ServyLastErrors {
   }
 
   try {
-      # Get-WinEvent returns events in descending order (newest first)
+      # Get-WinEvent requires Vista/2008+ (Event Log 6.0 API)
       $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
   }
   catch {
@@ -47,7 +70,6 @@ function Get-ServyLastErrors {
     }
     catch {
       # Fallback B: Try the local file log
-      # Using $scriptHome ensures the log always goes to the taskschd folder
       $logPath = Join-Path $scriptHome "ServyFailureEmail.log"
       $timestampedMsg = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $errorMsg"
       $timestampedMsg | Out-File -FilePath $logPath -Append
