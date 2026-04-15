@@ -23,7 +23,6 @@ jobs:
       RUNTIME: win-x64
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      SEVEN_ZIP: 'C:\Program Files\7-Zip\7z.exe'
 
     steps:
       # -----------------------------------------------------
