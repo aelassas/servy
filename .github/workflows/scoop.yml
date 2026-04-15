@@ -88,9 +88,13 @@ jobs:
         env:
           HASH: ${{ env.HASH }}
           VERSION: ${{ env.VERSION }}
+          GH_PAT: ${{ secrets.PAT }} # Pass secret as an ENV variable
         run: |
-          # Clone scoop-bucket into a folder
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/scoop-bucket.git scoop-bucket
+          # Configure Git to use the PAT for any GitHub URL automatically
+          git config --global url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
+          
+          # Now the clone command is clean and safe
+          git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           
           # Change to the folder where servy.json is
           Set-Location scoop-bucket
