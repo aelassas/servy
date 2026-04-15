@@ -90,7 +90,7 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           # Clone scoop-bucket into a folder
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/scoop-bucket.git scoop-bucket
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git scoop-bucket
           
           # Change to the folder where servy.json is
           Set-Location scoop-bucket
@@ -131,7 +131,7 @@ jobs:
           if ((git status --porcelain) -ne '') {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-            git push origin main
+            git push origin master
           } else {
             Write-Host "No changes to commit"
           }
@@ -143,10 +143,10 @@ jobs:
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
           Set-Location extras
 
-          # Make sure your fork's main is up-to-date
-          git fetch origin
-          git checkout main
-          git reset --hard origin/master
+          # Make sure master fork is up-to-date
+          git remote add upstream https://github.com/ScoopInstaller/Extras.git
+          git fetch upstream master
+          git checkout -B master upstream/master
           
           # Create or reset PR branch
           if (git show-ref --verify --quiet "refs/heads/update-servy-$env:VERSION") {
