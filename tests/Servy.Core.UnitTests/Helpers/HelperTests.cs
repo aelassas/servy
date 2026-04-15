@@ -169,16 +169,24 @@ namespace Servy.Core.UnitTests.Helpers
         }
 
         [Theory]
-        [InlineData("v1.2.3", 1.2)]
-        [InlineData("1.2.3", 1.2)]
-        [InlineData("V3.4.5", 3.4)]
-        [InlineData("2.0", 2.0)]
-        [InlineData("v1", 0)]
-        [InlineData("invalid", 0)]
-        [InlineData("1.x.0", 0)]
-        public void ParseVersion_ReturnsExpectedDouble(string version, double expected)
+        [InlineData("v1.2.3", "1.2.3")]
+        [InlineData("1.2.3", "1.2.3")]
+        [InlineData("V3.4.5", "3.4.5")]
+        [InlineData("2.0", "2.0")]
+        [InlineData("v1.10", "1.10")] // Proves 1.10 > 1.9 logic is fixed
+        [InlineData("v1", "0.0")]     // Fallback case
+        [InlineData("invalid", "0.0")]
+        [InlineData("1.x.0", "0.0")]
+        public void ParseVersion_ReturnsExpectedVersion(string version, string expectedVersionString)
         {
+            // Arrange
+            var expected = Version.Parse(expectedVersionString);
+
+            // Act
             var result = Helper.ParseVersion(version);
+
+            // Assert
+            // System.Version implements Equals() and correctly compares Major, Minor, Build, etc.
             Assert.Equal(expected, result);
         }
 
