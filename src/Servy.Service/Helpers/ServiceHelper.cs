@@ -35,11 +35,11 @@ namespace Servy.Service.Helpers
         /// within raw command-line argument strings.
         /// </summary>
         /// <remarks>
-        /// Includes a 200ms match timeout to mitigate potential ReDoS (Regular Expression Denial of Service) 
-        /// attacks when processing exceptionally long or malformed argument strings.
+        /// FIXED: Added support for quoted values and preserved separators (#571).
+        /// The value pattern handles both quoted strings and standard tokens.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
-            @"(?i)(password|pwd|secret|key|token|auth|api|private)(?:[:=\s]+)([^\s""]+)",
+            @"(?i)(password|pwd|secret|key|token|auth|api|private)([:=\s]+)(?:""[^""]*""|[^\s""]+)",
             RegexOptions.Compiled,
             TimeSpan.FromMilliseconds(200));
 
@@ -410,12 +410,12 @@ namespace Servy.Service.Helpers
 
             try
             {
-                return MaskingRegex.Replace(args, "$1=********");
+                // $1: Key (e.g., password)
+                // $2: Original separator (e.g., " ", ":", or "=")
+                return MaskingRegex.Replace(args, "$1$2********");
             }
             catch (RegexMatchTimeoutException)
             {
-                // Fallback: If the regex times out, we return a fully masked warning 
-                // to ensure no secrets are leaked due to a processing error.
                 Logger.Warn("Regex timeout occurred while masking arguments. Output has been fully masked for security.");
                 return "[MASKED DUE TO TIMEOUT]";
             }
