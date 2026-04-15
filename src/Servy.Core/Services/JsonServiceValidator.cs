@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
-using Servy.Core.Helpers;
+using System;
 
 namespace Servy.Core.Services
 {
@@ -12,14 +14,7 @@ namespace Servy.Core.Services
     /// </summary>
     public static class JsonServiceValidator
     {
-        /// <summary>
-        /// Validates that the input JSON is a valid <see cref="ServiceDto"/>, contains required fields,
-        /// and adheres to strict domain safety limits.
-        /// </summary>
-        /// <param name="json">The JSON string to validate.</param>
-        /// <param name="errorMessage">If validation fails, contains the specific domain or security error.</param>
-        /// <returns>True if valid and safe; otherwise false.</returns>
-        public static bool TryValidate(string? json, out string? errorMessage)
+        public static bool TryValidate(string json, out string? errorMessage)
         {
             errorMessage = null;
 
@@ -29,12 +24,18 @@ namespace Servy.Core.Services
                 return false;
             }
 
+            // Prevent Memory Exhaustion / DoS
+            if (json.Length > AppConfig.MaxImportPayloadSizeChars)
+            {
+                errorMessage = $"JSON payload exceeds the maximum allowed size of {AppConfig.MaxImportPayloadSizeChars} characters.";
+                Logger.Warn("JSON Import Blocked: Payload size limit exceeded.");
+                return false;
+            }
+
             // 1. Structural Validation & Deserialization
             ServiceDto? dto;
             try
             {
-                // Note: We continue using JsonSecurity.UntrustedDataSettings 
-                // to prevent TypeNameHandling and other injection vulnerabilities.
                 dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
             }
             catch (Exception ex)
@@ -51,7 +52,6 @@ namespace Servy.Core.Services
             }
 
             // 2. DEEP DOMAIN VALIDATION
-            // This applies the centralized rules for lengths, timeouts, and numeric ranges.
             var validation = ServiceValidator.ValidateDto(dto);
             if (!validation.IsValid)
             {
@@ -61,7 +61,6 @@ namespace Servy.Core.Services
             }
 
             // 3. Executable Path Integrity
-            // Ensuring the imported path is at least syntactically valid for the host OS.
             if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
             {
                 errorMessage = "The provided executable path is invalid or inaccessible.";
