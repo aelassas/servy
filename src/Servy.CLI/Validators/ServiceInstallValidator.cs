@@ -123,12 +123,16 @@ namespace Servy.CLI.Validators
                 // Prevent silent misconfiguration. 
                 // If Health Monitoring is OFF, specifying recovery behavior is an error.
 
+                bool hasHeartbeatInterval = !string.IsNullOrWhiteSpace(opts.HeartbeatInterval);
+
+                bool hasMaxFailedChecks = !string.IsNullOrWhiteSpace(opts.MaxFailedChecks);
+
                 bool hasRecoveryAction = !string.IsNullOrWhiteSpace(opts.RecoveryAction) &&
                                          !opts.RecoveryAction.Equals("None", StringComparison.OrdinalIgnoreCase);
 
                 bool hasRestartAttempts = !string.IsNullOrWhiteSpace(opts.MaxRestartAttempts);
 
-                if (hasRecoveryAction || hasRestartAttempts)
+                if (hasHeartbeatInterval || hasMaxFailedChecks || hasRecoveryAction || hasRestartAttempts)
                 {
                     return CommandResult.Fail(Strings.Msg_InvalidRecoveryConfig);
                 }
