@@ -138,7 +138,6 @@ namespace Servy.Manager
             // Run the security check from Infrastructure
             if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
             {
-                // 2. Format the message using your Resources
                 string message = string.Format(
                     Strings.SqliteVersionWarningMessage,
                     detectedVersion,
@@ -147,8 +146,12 @@ namespace Servy.Manager
 
                 string title = Strings.SqliteVersionWarningTitle;
 
-                // 3. Show the warning
-                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+                // Show a critical error icon and halt startup
+                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+
+                // CRITICAL: Shutdown the application to prevent exploitation
+                Application.Current.Shutdown();
+                return;
             }
 
             // Bit-shift to get the major tier (0, 1, or 2)
