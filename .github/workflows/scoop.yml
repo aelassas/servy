@@ -90,7 +90,7 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           # Clone scoop-bucket into a folder
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git scoop-bucket
+          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/scoop-bucket.git scoop-bucket
           
           # Change to the folder where servy.json is
           Set-Location scoop-bucket
