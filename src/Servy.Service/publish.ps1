@@ -60,6 +60,7 @@ $publishResScript = Join-Path $scriptDir $publishResScriptName
 
 if (-not (Test-Path $publishResScript)) {
     Write-Error "Required resource script not found: $publishResScript"
+    exit 1
 }
 
 Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
