@@ -183,11 +183,13 @@ if ($null -eq $errors -or $errors.Count -eq 0) {
 # 5. Process Events & Send Toast Notifications
 # -------------------------------
 if ($null -eq $lastProcessed) {
-  # FIRST RUN LOGIC: Only notify for the most recent to avoid flood
-  $eventsToProcess = @($errors[0])
+    # FIRST RUN LOGIC: Only notify for the most recent to avoid flood
+    # Wrapping in @() ensures $eventsToProcess is always an array
+    $eventsToProcess = @($errors[0])
 } else {
-  # NORMAL RUN LOGIC: Chronological order
-  $eventsToProcess = $errors | Sort-Object TimeCreated
+    # NORMAL RUN LOGIC: Chronological order
+    # Explicitly cast to array to handle single-event scenarios in PS 2.0
+    $eventsToProcess = @($errors | Sort-Object TimeCreated)
 }
 
 $lastSuccessfulTimestamp = $null
