@@ -155,7 +155,7 @@ namespace Servy.Service
         private readonly IServiceRepository _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
-        private uint _checkPoint = 0;
+        private readonly uint _checkPoint = 0;
         private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
@@ -1296,7 +1296,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (expandedEnv, args) = ExpandAndAudit(
+                var (_, args) = ExpandAndAudit(
                     _options.EnvironmentVariables,
                     _options.PostLaunchExecutableArgs ?? string.Empty,
                     "Post-Launch"
@@ -1358,7 +1358,7 @@ namespace Servy.Service
 
             try
             {
-                var (expandedEnv, args) = ExpandAndAudit(
+                var (_, args) = ExpandAndAudit(
                     _options.EnvironmentVariables,
                     _options.FailureProgramArgs ?? string.Empty
                     );
@@ -2402,7 +2402,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (expandedEnv, args) = ExpandAndAudit(
+                var (_, args) = ExpandAndAudit(
                             _options.EnvironmentVariables,
                             _options.PostStopExecutableArgs ?? string.Empty,
                             "Post-Stop"
