@@ -1161,7 +1161,7 @@ namespace Servy.Service
             // --- The code below this point ONLY executes if Start() was successful ---
 
             // Persist PID and PreviousStopTimeout
-            InsertPid(_childProcess.Id, true);
+            PersistProcessState(_childProcess.Id, true);
 
             // Begin async reading of output and error streams
             _childProcess.BeginOutputReadLine();
@@ -1457,7 +1457,7 @@ namespace Servy.Service
         /// </summary>
         /// <param name="pid">PID.</param>
         /// <param name="setPreviousStopTimeout">Indicates whether to set previous stop timeout.</param>
-        private void InsertPid(int? pid, bool setPreviousStopTimeout)
+        private void PersistProcessState(int? pid, bool setPreviousStopTimeout)
         {
             if (string.IsNullOrWhiteSpace(_serviceName))
                 return;
@@ -1495,9 +1495,9 @@ namespace Servy.Service
         /// <summary>
         /// Resets PID to null in database.
         /// </summary>
-        private void ResetPid()
+        private void ClearProcessState()
         {
-            InsertPid(null, false);
+            PersistProcessState(null, false);
         }
 
         /// <summary>
@@ -1512,7 +1512,7 @@ namespace Servy.Service
             if (_isTearingDown || _disposed) return;
 
             _logger?.Warn("Child process exit detected via event.");
-            ResetPid();
+            ClearProcessState();
 
             bool needsRecovery = false;
             bool shouldStop = false;
@@ -2066,7 +2066,7 @@ namespace Servy.Service
         private void Cleanup()
         {
             // reset PID
-            ResetPid();
+            ClearProcessState();
 
             try
             {
@@ -2203,7 +2203,7 @@ namespace Servy.Service
             try
             {
                 // 1. Prepare Environment and Arguments
-                var (expandedEnv, args) = ExpandAndAudit(
+                var (_, args) = ExpandAndAudit(
                             options.EnvironmentVariables,
                             options.PreStopExecutableArgs ?? string.Empty,
                             "Pre-Stop"
