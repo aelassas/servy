@@ -112,7 +112,7 @@ jobs:
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "NEXT_VERSION=$next_version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-# 3. Bump version on main branch
+      # 3. Bump version on main branch
       - name: Bump version on main branch
         shell: pwsh
         run: |
