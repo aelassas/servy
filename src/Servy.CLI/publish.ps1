@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Builds the Servy CLI application in Release or Debug mode and signs the output.

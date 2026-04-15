@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Builds the Servy.Service project in Release mode (.NET Framework 4.8) and copies the resulting binaries into the Servy.Manager\Resources folder.

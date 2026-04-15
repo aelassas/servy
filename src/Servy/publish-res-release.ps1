@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Builds the Servy.Service project in Release mode and copies the binaries to the Resources folder.

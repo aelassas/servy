@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Builds Servy.Restarter (.NET Framework 4.8, Release) and copies its output

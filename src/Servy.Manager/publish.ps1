@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
 Builds and publishes the Servy WPF application and optionally signs the output executable.

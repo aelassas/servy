@@ -1,3 +1,4 @@
+#requires -Version 5.0
 <#
 .SYNOPSIS
     Builds the Servy.Restarter project and optionally signs the output.

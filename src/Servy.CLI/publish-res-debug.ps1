@@ -1,4 +1,5 @@
-﻿<#
+﻿#requires -Version 5.0
+<#
 .SYNOPSIS
 Builds Servy.Service in Debug mode (.NET Framework 4.8) and copies the resulting binaries and resources into the Servy.CLI\Resources folder.
 

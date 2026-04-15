@@ -1,4 +1,4 @@
-#requires -Version 3.0
+#requires -Version 5.0
 # Main setup bundle script for .NET Framework build of Servy
 
 $ErrorActionPreference = "Stop"
