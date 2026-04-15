@@ -8,6 +8,7 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
+using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Services;
 using System;
@@ -53,7 +54,7 @@ namespace Servy.Manager.ViewModels
         private CancellationTokenSource _cts;
 
         private DispatcherTimer _refreshTimer;
-        private readonly ObservableCollection<ServiceRowViewModel> _services = new ObservableCollection<ServiceRowViewModel>();
+        private readonly BulkObservableCollection<ServiceRowViewModel> _services = new BulkObservableCollection<ServiceRowViewModel>();
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private bool _isConfiguratorEnabled = false;
@@ -536,11 +537,14 @@ namespace Servy.Manager.ViewModels
 
                         _services.Clear();
 
+                        // 1. Hook up property changed events first
                         foreach (var vm in vms)
                         {
                             vm.PropertyChanged += Service_PropertyChanged;
-                            _services.Add(vm);
                         }
+
+                        // 2. Add all items at once to trigger a single UI layout pass
+                        _services.AddRange(vms);
                     }
 
                     // Properties updated outside the lock to avoid potential nested UI notifications
