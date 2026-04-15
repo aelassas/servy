@@ -12,11 +12,11 @@ namespace Servy.Core.Logging
     public class EventLogReader : IEventLogReader
     {
         ///<inheritdoc/>
-        public IEnumerable<EventLogEntry> ReadEvents(EventLogQuery query)
+        public IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query)
         {
             using (var reader = new System.Diagnostics.Eventing.Reader.EventLogReader(query))
             {
-                var results = new List<EventLogEntry>();
+                var results = new List<ServyEventLogEntry>();
 
                 for (EventRecord evt = reader.ReadEvent(); evt != null; evt = reader.ReadEvent())
                 {
@@ -33,7 +33,7 @@ namespace Servy.Core.Logging
         }
 
         /// <summary>
-        /// Maps a native <see cref="EventRecord"/> to a managed <see cref="EventLogEntry"/> DTO.
+        /// Maps a native <see cref="EventRecord"/> to a managed <see cref="ServyEventLogEntry"/> DTO.
         /// </summary>
         /// <remarks>
         /// This method must be called while the <paramref name="evt"/> object is still active 
@@ -41,12 +41,12 @@ namespace Servy.Core.Logging
         /// as <see cref="EventRecord.FormatDescription()"/> requires an active handle to the event metadata provider.
         /// </remarks>
         /// <param name="evt">The raw event record retrieved from the Windows Event Log.</param>
-        /// <returns>A populated <see cref="EventLogEntry"/> containing the formatted messa
-        private static EventLogEntry MapToDto(EventRecord evt)
+        /// <returns>A populated <see cref="ServyEventLogEntry"/> containing the formatted messa
+        private static ServyEventLogEntry MapToDto(EventRecord evt)
         {
             var message = evt.FormatDescription() ?? string.Empty;
 
-            return new EventLogEntry
+            return new ServyEventLogEntry
             {
                 EventId = evt.Id,
                 Time = evt.TimeCreated ?? DateTime.MinValue,

@@ -17,8 +17,8 @@ namespace Servy.Core.Logging
         /// The query that defines which log to read and the conditions to filter events.
         /// </param>
         /// <returns>
-        /// A collection of <see cref="EventLogEntry"/> objects that match the query.
+        /// A collection of <see cref="ServyEventLogEntry"/> objects that match the query.
         /// </returns>
-        IEnumerable<EventLogEntry> ReadEvents(EventLogQuery query);
+        IEnumerable<ServyEventLogEntry> ReadEvents(EventLogQuery query);
     }
 }

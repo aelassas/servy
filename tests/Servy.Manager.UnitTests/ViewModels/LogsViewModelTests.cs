@@ -88,9 +88,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 // Arrange
-                var entries = new List<EventLogEntry>
+                var entries = new List<ServyEventLogEntry>
                 {
-                    new EventLogEntry { EventId = 1, Time = DateTime.Now, Level = EventLogLevel.Information, Message = "test message" }
+                    new ServyEventLogEntry { EventId = 1, Time = DateTime.Now, Level = EventLogLevel.Information, Message = "test message" }
                 };
 
                 _eventLogServiceMock

@@ -5,7 +5,7 @@ namespace Servy.Core.DTOs
     /// <summary>
     /// Represents a single event log entry retrieved from the Windows Event Viewer.
     /// </summary>
-    public class EventLogEntry
+    public class ServyEventLogEntry
     {
         /// <summary>
         /// Gets or sets the specific event identifier.
