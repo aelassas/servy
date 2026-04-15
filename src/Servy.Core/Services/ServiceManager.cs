@@ -450,8 +450,12 @@ namespace Servy.Core.Services
                     }
                     else
                     {
-                        string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation.";
+                        string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
                         Logger.Error(errorMsg);
+
+                        // Roll back the partial installation
+                        _windowsServiceApi.DeleteService(serviceHandle);
+
                         return OperationResult.Failure(errorMsg);
                     }
 
@@ -462,8 +466,12 @@ namespace Servy.Core.Services
 
                         if (!delayedAutoStartConfigSuccess)
                         {
-                            string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation.";
+                            string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
                             Logger.Error(errorMsg);
+
+                            // Roll back the partial installation
+                            _windowsServiceApi.DeleteService(serviceHandle);
+
                             return OperationResult.Failure(errorMsg);
                         }
                         else
