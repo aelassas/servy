@@ -30,6 +30,7 @@ namespace Servy.Manager.ViewModels
         // Separated to prevent the UI search from cancelling the live monitoring loop
         private CancellationTokenSource _monitoringCts;
         private CancellationTokenSource _serviceSearchCts;
+        private CancellationTokenSource _loadTreeCts;
 
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
@@ -59,7 +60,7 @@ namespace Servy.Manager.ViewModels
                 OnPropertyChanged(nameof(SelectedService));
                 OnPropertyChanged(nameof(IsServiceSelected));
 
-                LoadDependencyTree();
+                _ = LoadDependencyTreeAsync(null);
 
                 CopyPidCommand?.RaiseCanExecuteChanged();
 
@@ -150,7 +151,7 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Command to refresh depdency treer.
         /// </summary>
-        public ICommand RefreshCommand { get; }
+        public IAsyncCommand RefreshCommand { get; }
 
         /// <summary>
         /// Command to expand all depdency treer.
@@ -183,7 +184,7 @@ namespace Servy.Manager.ViewModels
 
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
-            RefreshCommand = new RelayCommand<object>(_ => LoadDependencyTree());
+            RefreshCommand = new AsyncCommand(LoadDependencyTreeAsync);
             ExpandAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, true));
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
 
@@ -434,25 +435,49 @@ namespace Servy.Manager.ViewModels
         #region Public Methods
 
         /// <summary>
-        /// Retrives and sets the depdency tree for the current selected service.
+        /// Asynchronously retrieves and sets the dependency tree for the current selected service.
         /// </summary>
-        public void LoadDependencyTree()
+        public async Task LoadDependencyTreeAsync(object parameter)
         {
-            DependencyTree.Clear(); // Reset the collection
-            if (_selectedService != null)
+            // 1. Cancel any existing load operation
+            _loadTreeCts?.Cancel();
+            _loadTreeCts?.Dispose();
+            _loadTreeCts = new CancellationTokenSource();
+            var token = _loadTreeCts.Token;
+
+            try
             {
-                // Get the root node
-                var root = _serviceManager.GetDependencies(_selectedService.Name);
+                IsBusy = true;
+                DependencyTree.Clear();
+
+                if (SelectedService == null) return;
+
+                var serviceName = SelectedService.Name;
+
+                // 2. Offload the synchronous SCM call to a background thread
+                var root = await Task.Run(() =>
+                    _serviceManager.GetDependencies(serviceName), token);
+
+                // 3. Check if we are still on the same service/task before updating UI
+                if (token.IsCancellationRequested) return;
 
                 if (root != null)
                 {
                     root.IsExpanded = true;
-                    DependencyTree.Add(root); // Wrap the single root in the collection
+                    DependencyTree.Add(root);
                 }
-            }
 
-            // Notify UI (The Set method usually handles this, but good to be explicit if using Clear/Add)
-            OnPropertyChanged(nameof(DependencyTree));
+                OnPropertyChanged(nameof(DependencyTree));
+            }
+            catch (OperationCanceledException) { /* Ignored */ }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to load dependency tree for {SelectedService?.Name}", ex);
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         /// <summary>
