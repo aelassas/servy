@@ -136,6 +136,11 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
+        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
         {
             throw new NotImplementedException();
@@ -147,6 +152,11 @@ namespace Servy.Infrastructure.UnitTests.Data
         }
 
         public Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null)
         {
             throw new NotImplementedException();
         }

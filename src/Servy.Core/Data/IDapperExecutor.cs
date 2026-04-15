@@ -47,6 +47,16 @@ namespace Servy.Core.Data
         Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command);
 
         /// <summary>
+        /// Executes a SQL query asynchronously that returns a collection of entities.
+        /// </summary>
+        Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null);
+
+        /// <summary>
+        /// Executes a SQL query asynchronously that returns a single entity or default.
+        /// </summary>
+        Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null);
+
+        /// <summary>
         /// Executes a SQL query that returns a single entity or default if none found.
         /// </summary>
         /// <typeparam name="T">The type of entity returned by the query.</typeparam>

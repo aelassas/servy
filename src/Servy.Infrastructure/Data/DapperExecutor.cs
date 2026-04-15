@@ -212,6 +212,20 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <inheritdoc/>
+        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+        {
+            // Redirect to your existing method to preserve retry logic and connection management
+            return await QueryAsync<T>(new CommandDefinition(sql, param)).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null)
+        {
+            // Redirect to your existing CommandDefinition overload
+            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param)).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
         public async Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
             return await ExecuteWithRetryAsync(async () =>
