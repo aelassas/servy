@@ -1,6 +1,6 @@
 ﻿using Servy.Core.DTOs;
 
-namespace Servy.Manager.Helpers
+namespace Servy.Manager.Validators
 {
     /// <summary>
     /// Provides functionality to validate service configurations.

@@ -9,7 +9,7 @@ using Servy.Manager.Resources;
 using Servy.UI.Services;
 using CoreHelper = Servy.Core.Helpers.Helper;
 
-namespace Servy.Manager.Helpers
+namespace Servy.Manager.Validators
 {
     /// <summary>
     /// Validates all required parameters for service configuration.
