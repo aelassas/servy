@@ -48,7 +48,7 @@ $scriptDir = $PSScriptRoot
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
-$restarterDir       = Join-Path $scriptDir "..\Servy.Restarter" | Resolve-Path
+$restarterDir       = Join-Path $scriptDir "..\Servy.Restarter"
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.Service\Resources"
 $buildConfiguration = "Debug"
 $runtime            = "win-x64"

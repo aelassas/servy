@@ -49,7 +49,7 @@ $scriptDir = $PSScriptRoot
 # ---------------------------------------------------------------------------------
 # Paths & build configuration
 # ---------------------------------------------------------------------------------
-$serviceDir         = Join-Path $scriptDir "..\Servy.Service" | Resolve-Path
+$serviceDir         = Join-Path $scriptDir "..\Servy.Service"
 $resourcesFolder    = Join-Path $scriptDir "..\Servy.CLI\Resources"
 $buildConfiguration = "Release"
 $runtime            = "win-x64"

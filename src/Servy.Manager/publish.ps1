@@ -59,7 +59,10 @@ $scriptDir = $PSScriptRoot
 # ---------------------------------------------------------------------------------
 # SignPath script path
 # ---------------------------------------------------------------------------------
-$signPath = Join-Path $scriptDir "..\..\setup\signpath.ps1" | Resolve-Path
+$signPath = Join-Path $scriptDir "..\..\setup\signpath.ps1"
+if (-not (Test-Path $signPath)) {
+    Write-Warning "SignPath script not found at: $signPath. Signing will be skipped."
+}
 
 # ---------------------------------------------------------------------------------
 # Step 0: Publish resources
@@ -80,7 +83,7 @@ Write-Host "=== Completed $publishResScriptName ===`n"
 # ---------------------------------------------------------------------------------
 # Step 1: Build and publish Servy.Manager.csproj (Self-contained, win-x64)
 # ---------------------------------------------------------------------------------
-$projectPath = Join-Path $scriptDir "Servy.Manager.csproj" | Resolve-Path
+$projectPath = Join-Path $scriptDir "Servy.Manager.csproj"
 
 if (-not (Test-Path $projectPath)) {
     Write-Error "Project file not found: $projectPath"
@@ -111,7 +114,7 @@ Check-LastExitCode "dotnet publish failed"
 # ---------------------------------------------------------------------------------
 if ($BuildConfiguration -eq "Release") {
     $publishFolder = Join-Path $scriptDir "bin\$BuildConfiguration\$Tfm\$Runtime\publish"
-    $exePath       = Join-Path $publishFolder "Servy.Manager.exe" | Resolve-Path
+    $exePath       = Join-Path $publishFolder "Servy.Manager.exe"
 
     if (Test-Path $exePath) {
         if ($null -ne $signPath) {
