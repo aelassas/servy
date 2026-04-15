@@ -1111,10 +1111,20 @@ namespace Servy.Core.Native
                     // Common error codes for clarity
                     switch (error)
                     {
-                        case 1326:
+                        case 1326: // ERROR_LOGON_FAILURE
                             throw new UnauthorizedAccessException("Invalid username or password.");
-                        case 1327:
+
+                        case 1327: // ERROR_ACCOUNT_RESTRICTION
                             throw new UnauthorizedAccessException("Account restrictions prevent logon.");
+
+                        case 1385: // ERROR_LOGON_TYPE_NOT_GRANTED
+                                   // This is reached ONLY if the credentials are valid but the 'Network Logon' 
+                                   // type is restricted (e.g., by GPO).
+                            throw new UnauthorizedAccessException(
+                                "Authentication succeeded, but 'Network Logon' is denied by security policy. " +
+                                "This is common for hardened service accounts and indicates the credentials " +
+                                "are likely correct, even though a validation session could not be fully opened.");
+
                         default:
                             throw new Win32Exception(error, $"Logon failed with error code {error}.");
                     }

@@ -310,7 +310,7 @@ namespace Servy.Core.Services
         public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
         {
             if (options == null)
-                throw new ArgumentNullException("Value is required.", nameof(options));
+                throw new ArgumentNullException(nameof(options));
             if (string.IsNullOrWhiteSpace(options.ServiceName))
                 throw new ArgumentException("Value is required.", nameof(options.ServiceName));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath))
