@@ -75,7 +75,8 @@ function Get-ServyLastErrors {
       $timestampedMsg | Out-File -FilePath $logPath -Append
     }
 
-    exit 1
+    # Throw instead of exit to preserve caller's process/cleanup
+    throw "Servy Event Query Failure: $errorMsg"
   }
 
   # -------------------------------
