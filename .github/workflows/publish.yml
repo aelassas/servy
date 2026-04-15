@@ -24,6 +24,7 @@ jobs:
       RUNTIME: win-x64
       TFM: net10.0-windows
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+      CYCLONEDX_CLI_VERSION: "v0.30.0"
 
     steps:
       # -----------------------------------------------------
@@ -80,7 +81,16 @@ jobs:
       - name: Install CycloneDX CLI from GitHub
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.30.0/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
+          $v = $env:CYCLONEDX_CLI_VERSION
+          if (-not $v) { 
+              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
+          }
+          
+          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
+                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
+                            -ErrorAction Stop
+          
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Install Inno Setup from GitHub

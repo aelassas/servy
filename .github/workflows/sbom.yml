@@ -43,6 +43,7 @@ jobs:
       # Mapping the input to an environment variable prevents Expression Injection.
       # The shell will now treat this as a literal string.
       INPUT_VERSION: ${{ github.event.inputs.version }}
+      CYCLONEDX_CLI_VERSION: "v0.30.0"
 
     steps:
       # -----------------------------------------------------
@@ -77,11 +78,20 @@ jobs:
       - name: Install CycloneDX Tools
         shell: pwsh
         run: |
+          $v = $env:CYCLONEDX_CLI_VERSION
+          if (-not $v) { 
+              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
+          }
+          
+          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
+                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
+                            -ErrorAction Stop
+
+          Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
+
           dotnet tool install --global CycloneDX
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
-          
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.29.2/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
-          Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Generate SBOM
         shell: pwsh
