@@ -99,7 +99,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// Default is false.
         /// </summary>
-        public bool EnableRotation { get; set; } = false;
+        public bool EnableRotation { get; set; } = AppConfig.DefaultEnableRotation;
 
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
@@ -110,7 +110,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether date-based log rotation is enabled.
         /// Default is false.
         /// </summary>
-        public bool EnableDateRotation { get; set; } = false;
+        public bool EnableDateRotation { get; set; } = AppConfig.DefaultEnableDateRotation;
 
         /// <summary>
         /// Gets or sets a value indicating date rotation type (stored as int, represents <see cref="Servy.Core.Enums.DateRotationType"/>).
@@ -139,19 +139,19 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether health monitoring is enabled.
         /// Default is false.
         /// </summary>
-        public bool EnableHealthMonitoring { get; set; } = false;
+        public bool EnableHealthMonitoring { get; set; } = AppConfig.DefaultEnableHealthMonitoring;
 
         /// <summary>
         /// Gets or sets the heartbeat interval in seconds for health monitoring.
         /// Default is 30 seconds.
         /// </summary>
-        public int HeartbeatInterval { get; set; } = 30;
+        public int HeartbeatInterval { get; set; } = AppConfig.DefaultHeartbeatInterval;
 
         /// <summary>
         /// Gets or sets the maximum number of failed health checks before taking recovery action.
         /// Default is 3.
         /// </summary>
-        public int MaxFailedChecks { get; set; } = 3;
+        public int MaxFailedChecks { get; set; } = AppConfig.DefaultMaxFailedChecks;
 
         /// <summary>
         /// Gets or sets the recovery action to take when the service fails.
@@ -162,7 +162,7 @@ namespace Servy.Core.Domain
         /// Gets or sets the maximum number of automatic restart attempts.
         /// Default is 3.
         /// </summary>
-        public int MaxRestartAttempts { get; set; } = 3;
+        public int MaxRestartAttempts { get; set; } = AppConfig.DefaultMaxRestartAttempts;
 
         /// <summary>
         /// Gets or sets the path to the process to run on failure.
@@ -193,7 +193,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether the service should run as LocalSystem.
         /// Default is true.
         /// </summary>
-        public bool RunAsLocalSystem { get; set; } = true;
+        public bool RunAsLocalSystem { get; set; } = AppConfig.DefaultRunAsLocalSystem;
 
         /// <summary>
         /// Gets or sets the username for the service account (used if not running as LocalSystem).
@@ -239,19 +239,19 @@ namespace Servy.Core.Domain
         /// Gets or sets the timeout in seconds for the pre-launch process.
         /// Default is 30 seconds.
         /// </summary>
-        public int PreLaunchTimeoutSeconds { get; set; } = 30;
+        public int PreLaunchTimeoutSeconds { get; set; } = AppConfig.DefaultPreLaunchTimeoutSeconds;
 
         /// <summary>
         /// Gets or sets the number of retry attempts for the pre-launch process.
         /// Default is 0.
         /// </summary>
-        public int PreLaunchRetryAttempts { get; set; } = 0;
+        public int PreLaunchRetryAttempts { get; set; } = AppConfig.DefaultPreLaunchRetryAttempts;
 
         /// <summary>
         /// Gets or sets a value indicating whether to ignore failures of the pre-launch process.
         /// Default is false.
         /// </summary>
-        public bool PreLaunchIgnoreFailure { get; set; } = false;
+        public bool PreLaunchIgnoreFailure { get; set; } = AppConfig.DefaultPreLaunchIgnoreFailure;
 
         /// <summary>
         /// Optional path to an executable that runs after the service starts.
