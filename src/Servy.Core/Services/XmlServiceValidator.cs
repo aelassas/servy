@@ -1,4 +1,5 @@
-﻿using Servy.Core.DTOs;
+﻿using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
@@ -14,12 +15,6 @@ namespace Servy.Core.Services
     /// </summary>
     public static class XmlServiceValidator
     {
-        /// <summary>
-        /// Validates that the given XML string represents a valid and safe <see cref="ServiceDto"/>.
-        /// </summary>
-        /// <param name="xml">The XML string to validate.</param>
-        /// <param name="errorMessage">If validation fails, contains the specific security or logic error.</param>
-        /// <returns><c>true</c> if the XML is well-formed and logically valid; otherwise, <c>false</c>.</returns>
         public static bool TryValidate(string xml, out string errorMessage)
         {
             errorMessage = null;
@@ -27,6 +22,14 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(xml))
             {
                 errorMessage = "XML cannot be empty.";
+                return false;
+            }
+
+            // Prevent Memory Exhaustion / DoS
+            if (xml.Length > AppConfig.MaxImportPayloadSizeChars)
+            {
+                errorMessage = $"XML payload exceeds the maximum allowed size of {AppConfig.MaxImportPayloadSizeChars} characters.";
+                Logger.Warn("XML Import Blocked: Payload size limit exceeded.");
                 return false;
             }
 
@@ -59,9 +62,7 @@ namespace Servy.Core.Services
                 return false;
             }
 
-            // 2. DEEP DOMAIN VALIDATION (The Security Fix)
-            // This applies the same rules as the CLI installer to ensure 
-            // parity between manual and automated setup.
+            // 2. DEEP DOMAIN VALIDATION
             var validation = ServiceValidator.ValidateDto(dto);
             if (!validation.IsValid)
             {

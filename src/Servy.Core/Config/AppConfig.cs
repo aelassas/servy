@@ -450,6 +450,16 @@ namespace Servy.Core.Config
         /// </remarks>
         public const string ForceSoftwareRenderingArg = "--force-sr";
 
+        /// <summary>
+        /// The maximum allowed character count for imported configuration payloads (JSON or XML).
+        /// </summary>
+        /// <remarks>
+        /// This limit is a security measure to prevent Denial of Service (DoS) attacks via 
+        /// memory exhaustion. 1,024,000 characters represent approximately 2MB of memory 
+        /// usage for the raw string in UTF-16.
+        /// </remarks>
+        public const int MaxImportPayloadSizeChars = 1_024_000;
+
         #endregion
 
         #region Public Methods
