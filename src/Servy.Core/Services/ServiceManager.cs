@@ -650,6 +650,7 @@ namespace Servy.Core.Services
         ///<inheritdoc/>
         public async Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
         {
+            int timeout = 0;
             try
             {
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
@@ -661,16 +662,16 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Running)
                         return OperationResult.Success();
 
-                    int totalWaitTime = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(totalWaitTime, ServiceStartTimeoutSeconds);
+                    timeout = (service.StartTimeout ?? ServiceStartTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    timeout = Math.Max(timeout, ServiceStartTimeoutSeconds);
                     if (!string.IsNullOrEmpty(service.PreLaunchExecutablePath))
                     {
-                        totalWaitTime += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
+                        timeout += service.PreLaunchTimeoutSeconds ?? AppConfig.DefaultPreLaunchTimeoutSeconds;
                     }
 
-                    Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {totalWaitTime} seconds.");
+                    Logger.Info($"Attempting to start service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Start();
-                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(totalWaitTime));
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(timeout));
 
                     if (logSuccessfulStart)
                     {
@@ -679,6 +680,13 @@ namespace Servy.Core.Services
 
                     return OperationResult.Success();
                 }
+            }
+            catch (System.ServiceProcess.TimeoutException)
+            {
+                // LOG AS WARN: The service might still be starting, just taking longer than the configured window.
+                string msg = $"Service '{serviceName}' did not reach 'Running' status within the {timeout}s timeout. It may still be initializing.";
+                Logger.Warn(msg);
+                return OperationResult.Failure(msg);
             }
             catch (Exception ex)
             {
@@ -690,6 +698,7 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> StopServiceAsync(string serviceName, bool logSuccessfulStop = true)
         {
+            int timeout = 0;
             try
             {
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
@@ -701,7 +710,7 @@ namespace Servy.Core.Services
                     if (sc.Status == ServiceControllerStatus.Stopped)
                         return OperationResult.Success();
 
-                    int timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds ?? 0);
+                     timeout = ServiceHelper.CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout, service.PreStopTimeoutSeconds ?? 0);
 
                     Logger.Info($"Attempting to stop service '{serviceName}' with a timeout of {timeout} seconds.");
                     sc.Stop();
@@ -714,6 +723,13 @@ namespace Servy.Core.Services
 
                     return OperationResult.Success();
                 }
+            }
+            catch (System.ServiceProcess.TimeoutException)
+            {
+                // LOG AS WARN: Common during graceful shutdowns that exceed the SCM window.
+                string msg = $"Service '{serviceName}' did not stop within {timeout} seconds. A forceful termination may be required.";
+                Logger.Warn(msg);
+                return OperationResult.Failure(msg);
             }
             catch (Exception ex)
             {
