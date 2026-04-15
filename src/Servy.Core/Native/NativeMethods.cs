@@ -979,6 +979,128 @@ namespace Servy.Core.Native
             uint cchFilePath,
             uint dwFlags);
 
+        #region LogonAsServiceGrant Interop
+
+        /// <summary>
+        /// The LSA_UNICODE_STRING structure is used by various Local Security Authority (LSA) 
+        /// functions to specify a Unicode string.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LsaUnicodeString
+        {
+            /// <summary>The length, in bytes, of the string pointed to by the Buffer member.</summary>
+            public ushort Length;
+            /// <summary>The total size, in bytes, of the memory allocated for Buffer.</summary>
+            public ushort MaximumLength;
+            /// <summary>Pointer to a wide-character string.</summary>
+            public IntPtr Buffer;
+        }
+
+        /// <summary>
+        /// The LSA_OBJECT_ATTRIBUTES structure is used with the LsaOpenPolicy function to 
+        /// specify the attributes of the connection to the Policy object.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LsaObjectAttributes
+        {
+            /// <summary>The size of the structure in bytes. Must be initialized using Marshal.SizeOf.</summary>
+            public int Length;
+            /// <summary>Reserved; must be IntPtr.Zero.</summary>
+            public IntPtr RootDir;
+            /// <summary>Reserved; must be IntPtr.Zero.</summary>
+            public IntPtr ObjectName;
+            /// <summary>Reserved; must be 0.</summary>
+            public uint Attributes;
+            /// <summary>Reserved; must be IntPtr.Zero.</summary>
+            public IntPtr SecurityDesc;
+            /// <summary>Reserved; must be IntPtr.Zero.</summary>
+            public IntPtr SecurityQos;
+        }
+
+        /// <summary>
+        /// Contains access right constants for opening the LSA Policy object.
+        /// </summary>
+        public static class PolicyAccess
+        {
+            /// <summary>Required to look up the names of SIDs.</summary>
+            public const uint POLICY_LOOKUP_NAMES = 0x00000800;
+            /// <summary>Required to create a new account in the LSA database.</summary>
+            public const uint POLICY_CREATE_ACCOUNT = 0x00000010;
+            /// <summary>Required to assign a privilege to an account.</summary>
+            public const uint POLICY_ASSIGN_PRIVILEGE = 0x00000400;
+        }
+
+        /// <summary>
+        /// Frees memory allocated for an LSA buffer by functions such as LsaEnumerateAccountRights.
+        /// </summary>
+        /// <param name="buffer">Pointer to the memory buffer to free.</param>
+        /// <returns>An NTSTATUS code.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaFreeMemory(IntPtr buffer);
+
+        /// <summary>
+        /// Converts an LSA NTSTATUS code to its corresponding Win32 error code.
+        /// </summary>
+        /// <param name="status">The NTSTATUS code returned by an LSA function.</param>
+        /// <returns>The mapping Win32 error code.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaNtStatusToWinError(int status);
+
+        /// <summary>
+        /// Opens a handle to the Policy object on a local or remote system.
+        /// </summary>
+        /// <param name="systemName">Target system name, or IntPtr.Zero for the local machine.</param>
+        /// <param name="objectAttributes">Connection attributes; Length must be initialized.</param>
+        /// <param name="desiredAccess">The requested access rights (see <see cref="PolicyAccess"/>).</param>
+        /// <param name="policyHandle">The resulting handle to the Policy object.</param>
+        /// <returns>An NTSTATUS code. 0 (STATUS_SUCCESS) indicates success.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaOpenPolicy(
+            IntPtr systemName,
+            ref LsaObjectAttributes objectAttributes,
+            uint desiredAccess,
+            out IntPtr policyHandle);
+
+        /// <summary>
+        /// Adds one or more privileges to an account. If the account does not exist, it is created.
+        /// </summary>
+        /// <param name="policyHandle">Handle to the Policy object.</param>
+        /// <param name="accountSid">Pointer to the SID of the account.</param>
+        /// <param name="userRights">Array of Unicode strings containing the names of the rights to add.</param>
+        /// <param name="count">Number of elements in the userRights array.</param>
+        /// <returns>An NTSTATUS code.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaAddAccountRights(
+            IntPtr policyHandle,
+            IntPtr accountSid,
+            LsaUnicodeString[] userRights,
+            int count);
+
+        /// <summary>
+        /// Returns the privileges assigned to a specific account.
+        /// </summary>
+        /// <param name="policyHandle">Handle to the Policy object.</param>
+        /// <param name="accountSid">Pointer to the SID of the account.</param>
+        /// <param name="userRights">Output pointer to an array of LSA_UNICODE_STRINGs. Must be freed via LsaFreeMemory.</param>
+        /// <param name="countOfRights">The number of rights returned in the array.</param>
+        /// <returns>An NTSTATUS code.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaEnumerateAccountRights(
+            IntPtr policyHandle,
+            IntPtr accountSid,
+            out IntPtr userRights,
+            out uint countOfRights);
+
+        /// <summary>
+        /// Closes a handle to the Policy object and releases associated resources.
+        /// </summary>
+        /// <param name="policyHandle">The handle to close.</param>
+        /// <returns>An NTSTATUS code.</returns>
+        [DllImport("advapi32.dll")]
+        public static extern int LsaClose(IntPtr policyHandle);
+
+        #endregion
+
         /// <summary>
         /// Validates Windows credentials by resolving the identity and attempting a network logon.
         /// </summary>

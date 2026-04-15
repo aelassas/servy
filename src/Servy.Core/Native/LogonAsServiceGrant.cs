@@ -1,10 +1,10 @@
-﻿
-using Servy.Core.Logging;
+﻿using Servy.Core.Logging;
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Native
 {
@@ -190,7 +190,17 @@ namespace Servy.Core.Native
                 {
                     Length = Marshal.SizeOf<LsaObjectAttributes>()
                 };
-                int status = LsaOpenPolicy(IntPtr.Zero, ref oa, PolicyAccess.POLICY_ALL_ACCESS, out policy);
+
+                // Request only the minimal rights required to add account privileges.
+                // POLICY_LOOKUP_NAMES:   To resolve SIDs/Names.
+                // POLICY_CREATE_ACCOUNT: To create the account entry in LSA if it doesn't exist.
+                // POLICY_ASSIGN_PRIVILEGE: Required specifically by LsaAddAccountRights.
+                uint accessMask = PolicyAccess.POLICY_LOOKUP_NAMES |
+                                  PolicyAccess.POLICY_CREATE_ACCOUNT |
+                                  PolicyAccess.POLICY_ASSIGN_PRIVILEGE;
+
+                int status = LsaOpenPolicy(IntPtr.Zero, ref oa, accessMask, out policy);
+
                 if (status != 0)
                 {
                     var msg = GetWin32ErrorMessage(status);
@@ -246,63 +256,5 @@ namespace Servy.Core.Native
             return bytes;
         }
 
-        #region Interop
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct LsaUnicodeString
-        {
-            public ushort Length;
-            public ushort MaximumLength;
-            public IntPtr Buffer;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct LsaObjectAttributes
-        {
-            public int Length;
-            public IntPtr RootDir;
-            public IntPtr ObjectName;
-            public uint Attributes;
-            public IntPtr SecurityDesc;
-            public IntPtr SecurityQos;
-        }
-
-        private static class PolicyAccess
-        {
-            public const uint POLICY_LOOKUP_NAMES = 0x00000800;
-            public const uint POLICY_ALL_ACCESS = 0x00F0FFF;
-        }
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaFreeMemory(IntPtr buffer);
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaNtStatusToWinError(int status);
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaOpenPolicy(
-            IntPtr systemName,
-            ref LsaObjectAttributes objectAttributes,
-            uint desiredAccess,
-            out IntPtr policyHandle);
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaAddAccountRights(
-            IntPtr policyHandle,
-            IntPtr accountSid,
-            LsaUnicodeString[] userRights,
-            int count);
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaEnumerateAccountRights(
-            IntPtr policyHandle,
-            IntPtr accountSid,
-            out IntPtr userRights,
-            out uint countOfRights);
-
-        [DllImport("advapi32.dll")]
-        private static extern int LsaClose(IntPtr policyHandle);
-
-        #endregion
     }
 }
