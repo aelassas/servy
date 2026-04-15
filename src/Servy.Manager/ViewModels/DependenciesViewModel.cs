@@ -443,11 +443,17 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public async Task LoadDependencyTreeAsync(object parameter)
         {
-            // 1. Cancel any existing load operation
-            _loadTreeCts?.Cancel();
-            _loadTreeCts?.Dispose();
-            _loadTreeCts = new CancellationTokenSource();
-            var token = _loadTreeCts.Token;
+            // 1. Thread-safe atomic swap to cancel any existing load operation
+            var newCts = new CancellationTokenSource();
+            var oldCts = Interlocked.Exchange(ref _loadTreeCts, newCts);
+
+            if (oldCts != null)
+            {
+                oldCts.Cancel();
+                oldCts.Dispose();
+            }
+
+            var token = newCts.Token;
 
             try
             {
@@ -533,7 +539,15 @@ namespace Servy.Manager.ViewModels
                 oldSearchCts.Dispose();
             }
 
-            // 3. Stop the timer, unsubscribe from the Tick event, and release the reference
+            // 3. Cancel and dispose the Tree Loading CancellationTokenSource
+            var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
+            if (oldLoadTreeCts != null)
+            {
+                oldLoadTreeCts.Cancel();
+                oldLoadTreeCts.Dispose();
+            }
+
+            // 4. Stop the timer, unsubscribe from the Tick event, and release the reference
             if (_timer != null)
             {
                 _timer.Stop();
