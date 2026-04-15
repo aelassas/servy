@@ -569,7 +569,7 @@ namespace Servy.Service
                 // Request timeout for startup to accommodate slow process
                 if (_options.StartTimeout > ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
                 {
-                    _serviceHelper.RequestAdditionalTime(this, (_options.StartTimeout + 10) * 1000, _logger!);
+                    _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeout + 10), _logger!);
                 }
 
                 // Set up attempts file
@@ -924,8 +924,28 @@ namespace Servy.Service
             }
 
             // 3. Handle Synchronous Mode with Retries
-            launchOptions.TimeoutMs = Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds) * 1000;
+            launchOptions.TimeoutMs = ClampTimeout(Math.Max(options.PreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds));
             return RunSynchronousPreLaunch(launchOptions, options);
+        }
+
+        /// <summary>
+        /// Converts a timeout value from seconds to milliseconds and clamps it to the maximum 
+        /// allowed value for a 32-bit signed integer.
+        /// </summary>
+        /// <param name="timeout">The timeout value in seconds.</param>
+        /// <returns>
+        /// The timeout in milliseconds, or <see cref="int.MaxValue"/> if the 
+        /// calculated value exceeds the capacity of a 32-bit signed integer.
+        /// </returns>
+        /// <remarks>
+        /// This method prevents <see cref="OverflowException"/> when converting long-running 
+        /// service timeouts. It ensures compatibility with underlying Win32 and .NET APIs 
+        /// that require an <see cref="int"/> millisecond value.
+        /// </remarks>
+        private int ClampTimeout(long timeout)
+        {
+            // Use 1000L to force the multiplication into a 64-bit context before clamping
+            return (int)Math.Min(int.MaxValue, timeout * 1000L);
         }
 
         /// <summary>
@@ -1612,7 +1632,7 @@ namespace Servy.Service
             else if (needsRecovery)
             {
                 // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-                var delayMs = Math.Max((_options!.HeartbeatInterval * 1000) - 5000, 5000);
+                var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - 5000, 5000);
                 _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
 
                 // Fire-and-forget the recovery task safely
@@ -1816,7 +1836,7 @@ namespace Servy.Service
                             _workingDir!,
                             _environmentVariables,
                             _logger!,
-                            (_options?.StopTimeout ?? AppConfig.DefaultStopTimeout) * 1000
+                            ClampTimeout(_options?.StopTimeout ?? AppConfig.DefaultStopTimeout)
                         );
                         break;
 
@@ -2168,7 +2188,7 @@ namespace Servy.Service
                 // 3. Main Kill Sequence (with SCM Heartbeats)
                 if (_childProcess != null)
                 {
-                    SafeKillProcess(_childProcess, _options!.StopTimeout * 1000);
+                    SafeKillProcess(_childProcess, ClampTimeout(_options!.StopTimeout));
 
                     // Stop async reads first
                     _childProcess.CancelOutputRead();
@@ -2291,7 +2311,7 @@ namespace Servy.Service
                         );
 
                 // 2. Configure Launch Options
-                var effectiveTimeoutMs = options.PreStopTimeout * 1000;
+                var effectiveTimeoutMs = ClampTimeout(options.PreStopTimeout);
                 var launchOptions = new ProcessLaunchOptions
                 {
                     ExecutablePath = options.PreStopExecutablePath,
