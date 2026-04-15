@@ -378,22 +378,16 @@ namespace Servy.Manager.ViewModels
                 if (outRes != null) combinedHistory.AddRange(outRes.Lines);
                 if (errRes != null) combinedHistory.AddRange(errRes.Lines);
 
-                // Stable sort: 
-                // 1. By Time (Primary)
-                // 2. Instead of using l.Id (which is raced), we use the list index as the tie-breaker.
-                // 3. Move the heavy lifting off the UI thread
-                var sortedHistory = await Task.Run(() =>
-                    combinedHistory
-                        .Select((line, index) => new { line, index })
-                        .OrderBy(x => x.line.Timestamp)
-                        .ThenBy(x => x.index)
-                        .Select(x => x.line)
-                        .ToList()
-                );
-
-                if (sortedHistory.Any())
+                // Perform an in-place sort on a background thread.
+                // This avoids the GC pressure of the previous anonymous object LINQ chain.
+                await Task.Run(() =>
                 {
-                    RawLines.AddRange(sortedHistory);
+                    combinedHistory.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
+                });
+
+                if (combinedHistory.Count > 0)
+                {
+                    RawLines.AddRange(combinedHistory);
                     RequestScroll?.Invoke(true);
                 }
 
