@@ -343,38 +343,44 @@ namespace Servy.Core.IO
             }
 
             string directory = parentDir.FullName;
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-            string extension = Path.GetExtension(_file.FullName) ?? string.Empty;
+            string currentFullName = _file.FullName;
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(currentFullName) ?? string.Empty;
+            string extension = Path.GetExtension(currentFullName) ?? string.Empty;
 
-            // Tighten the glob pattern to require the dot separator (e.g., "app.*.log" instead of "app*")
-            // This prevents matching "app_backup.log" when looking for "app.log"
+            // Pre-calculate values outside the lambda so the analyzer doesn't 
+            // have to track string nullability across scopes.
+            int extensionLength = extension.Length;
+            string prefix = fileNameWithoutExt + ".";
+
+            // Tighten the glob pattern to require the dot separator
             string searchPattern = $"{fileNameWithoutExt}.*{extension}";
             var allPotentialFiles = Directory.GetFiles(directory, searchPattern);
 
             var rotatedFiles = allPotentialFiles
                 .Where(f =>
                 {
-                    if (f.Equals(_file.FullName, StringComparison.OrdinalIgnoreCase))
-                        return false;
-
+                    // Explicit guard against Path.GetFileName returning null
                     string name = Path.GetFileName(f);
-
-                    // 1. Validate Prefix
-                    if (!name.StartsWith($"{fileNameWithoutExt}.", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrEmpty(name))
                         return false;
 
-                    // 2. Validate Suffix (if the original file had an extension)
-                    if (!string.IsNullOrEmpty(extension) && !name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+                    if (f.Equals(currentFullName, StringComparison.OrdinalIgnoreCase))
+                        return false;
+
+                    // 1. Validate Prefix (using the pre-calculated local variable)
+                    if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        return false;
+
+                    // 2. Validate Suffix
+                    // Using extensionLength > 0 proves to Sonar that we aren't accessing a null string's properties
+                    if (extensionLength > 0 && !name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                     {
                         return false;
                     }
-                    // Note: If the original file had NO extension, we deliberately skip the EndsWith check.
-                    // The expectedMiddleLength calculation below will absorb any unexpected trailing 
-                    // characters (like '.bak'), causing the strict Regex to reject it.
 
                     // 3. Extract the middle portion (the injected timestamp + potential collision suffix)
-                    int startIndex = fileNameWithoutExt.Length + 1; // +1 for the dot
-                    int expectedMiddleLength = name.Length - startIndex - extension.Length;
+                    int startIndex = prefix.Length;
+                    int expectedMiddleLength = name.Length - startIndex - extensionLength;
 
                     if (expectedMiddleLength <= 0)
                         return false;
