@@ -135,8 +135,15 @@ namespace Servy.Core.Helpers
         /// and waits until each service is fully stopped.
         /// </summary>
         /// <param name="services">A collection of service names to stop.</param>
+        /// <remarks>
+        /// This method attempts to stop all provided services even if one fails. 
+        /// All encountered exceptions are collected and thrown as an AggregateException at the end.
+        /// </remarks>
         public async Task StopServices(IEnumerable<string> services)
         {
+            // Create a bucket to collect any errors that occur during the batch operation
+            var exceptions = new List<Exception>();
+
             foreach (var serviceName in services)
             {
                 try
@@ -161,6 +168,7 @@ namespace Servy.Core.Helpers
                         {
                             throw new InvalidOperationException($"Service '{serviceName}' not found in database.");
                         }
+
                         int timeout = CalculateStopTimeout(service.StopTimeout, service.PreviousStopTimeout);
                         var waitTime = TimeSpan.FromSeconds(timeout);
 
@@ -170,16 +178,24 @@ namespace Servy.Core.Helpers
                 }
                 catch (System.ServiceProcess.TimeoutException)
                 {
-                    // Providing the actual timeout value in the error helps with debugging
-                    throw new InvalidOperationException(
-                        $"Timed out waiting for service '{serviceName}' to stop.");
+                    // Log the warning and add to the collection instead of throwing immediately
+                    var msg = $"Timed out waiting for service '{serviceName}' to stop.";
+                    Logger.Warn(msg);
+                    exceptions.Add(new InvalidOperationException(msg));
                 }
                 catch (Exception ex)
                 {
-                    // Catching general exceptions (like Service Not Found)
-                    throw new InvalidOperationException(
-                        $"An error occurred while stopping service '{serviceName}': {ex.Message}", ex);
+                    // Capture general exceptions (Access Denied, Service Not Found, etc.)
+                    Logger.Error($"An error occurred while stopping service '{serviceName}'.", ex);
+                    exceptions.Add(new InvalidOperationException(
+                        $"An error occurred while stopping service '{serviceName}': {ex.Message}", ex));
                 }
+            }
+
+            // If any services failed to stop, notify the caller of all failures at once
+            if (exceptions.Any())
+            {
+                throw new AggregateException("One or more services failed to stop.", exceptions);
             }
         }
 
