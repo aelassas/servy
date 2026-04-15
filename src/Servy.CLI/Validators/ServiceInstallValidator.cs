@@ -118,6 +118,21 @@ namespace Servy.CLI.Validators
                    && (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts))
                     return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
             }
+            else
+            {
+                // Prevent silent misconfiguration. 
+                // If Health Monitoring is OFF, specifying recovery behavior is an error.
+
+                bool hasRecoveryAction = !string.IsNullOrWhiteSpace(opts.RecoveryAction) &&
+                                         !opts.RecoveryAction.Equals("None", StringComparison.OrdinalIgnoreCase);
+
+                bool hasRestartAttempts = !string.IsNullOrWhiteSpace(opts.MaxRestartAttempts);
+
+                if (hasRecoveryAction || hasRestartAttempts)
+                {
+                    return CommandResult.Fail(Strings.Msg_InvalidRecoveryConfig);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!ProcessHelper.ValidatePath(opts.FailureProgramPath)))
                 return CommandResult.Fail(Strings.Msg_InvalidFailureProgramPath);
