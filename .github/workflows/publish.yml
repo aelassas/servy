@@ -23,7 +23,6 @@ jobs:
       PLATFORM: x64
       FRAMEWORK: net48
       ISCC: 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-      SEVEN_ZIP: 'C:\Program Files\7-Zip\7z.exe'
 
     steps:
       # -----------------------------------------------------
