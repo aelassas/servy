@@ -84,9 +84,13 @@ namespace Servy.Core.Services
         /// <inheritdoc/>
         public ServiceDependencyNode GetDependencies()
         {
-            // Use a list to track the specific path from root to leaf
+            // Tracks the current branch from root to leaf to detect deep cycles
             var currentPath = new List<string>();
-            return BuildDependencyTree(_serviceName, currentPath);
+
+            // Tracks services that have already been fully resolved across ANY branch
+            var fullyExpanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            return BuildDependencyTree(_serviceName, currentPath, fullyExpanded);
         }
 
         /// <summary>
@@ -96,19 +100,25 @@ namespace Servy.Core.Services
         /// <param name="serviceName">
         /// The internal name of the service whose dependencies are resolved.
         /// </param>
-        /// <param name="visited">
-        /// A set of service names already visited during traversal, used
-        /// to detect and prevent cyclic dependencies.
+        /// <param name="currentPath">
+        /// A list tracking the specific path from root to leaf to detect and prevent cyclic dependencies.
+        /// </param>
+        /// <param name="fullyExpanded">
+        /// A set of service names already fully expanded across all paths, used to prevent 
+        /// redundant SCM queries and O(n²) overhead in diamond dependency patterns.
         /// </param>
         /// <returns>
         /// A <see cref="ServiceDependencyNode"/> representing the service
         /// and its dependencies. If a cycle is detected, a placeholder
         /// node is returned.
         /// </returns>
-        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath)
+        private static ServiceDependencyNode BuildDependencyTree(string serviceName, List<string> currentPath, HashSet<string> fullyExpanded)
         {
             // 1. Detect Cycle in the CURRENT branch
             var isCycle = currentPath.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
+
+            // 2. Check if we've already built the subtree for this service elsewhere
+            var isAlreadyExpanded = fullyExpanded.Contains(serviceName);
 
             try
             {
@@ -123,10 +133,10 @@ namespace Servy.Core.Services
                         isCycle
                     );
 
-                    // If it's a cycle, we stop recursing here
-                    if (isCycle) return node;
+                    // Stop recursing if it's a cycle OR if we've already done the heavy lifting for this node
+                    if (isCycle || isAlreadyExpanded) return node;
 
-                    // 2. Add to path before diving deeper
+                    // 3. Add to path before diving deeper
                     currentPath.Add(serviceName);
 
                     // Collect children in a temporary list to sort them before adding to the TreeView
@@ -137,7 +147,7 @@ namespace Servy.Core.Services
                     {
                         try
                         {
-                            childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath));
+                            childNodes.Add(BuildDependencyTree(dep.ServiceName, currentPath, fullyExpanded));
                         }
                         finally
                         {
@@ -145,15 +155,16 @@ namespace Servy.Core.Services
                         }
                     }
 
-                    // 3. SORT and ADD: Order alphabetically by DisplayName
+                    // 4. SORT and ADD: Order alphabetically by DisplayName
                     var sortedChildren = childNodes.OrderBy(n => n.DisplayName, StringComparer.OrdinalIgnoreCase);
                     foreach (var child in sortedChildren)
                     {
                         node.Dependencies.Add(child);
                     }
 
-                    // 4. BACKTRACK: Remove from path
+                    // 5. BACKTRACK: Remove from current path, but mark globally as fully expanded
                     currentPath.RemoveAt(currentPath.Count - 1);
+                    fullyExpanded.Add(serviceName);
 
                     return node;
                 }
@@ -161,7 +172,7 @@ namespace Servy.Core.Services
             catch
             {
                 // Unavailable services are still returned so the user sees the broken link
-                return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false);
+                return new ServiceDependencyNode(serviceName, $"{serviceName} (Unavailable)", false, false);
             }
         }
 
