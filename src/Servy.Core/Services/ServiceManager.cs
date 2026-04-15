@@ -310,13 +310,13 @@ namespace Servy.Core.Services
         public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
         {
             if (options == null)
-                throw new ArgumentNullException(nameof(options));
+                throw new ArgumentNullException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.ServiceName))
-                throw new ArgumentException(nameof(options.ServiceName));
+                throw new ArgumentException("Value is required.", nameof(options.ServiceName));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath))
-                throw new ArgumentException(nameof(options.WrapperExePath));
+                throw new ArgumentException("Value is required.", nameof(options.WrapperExePath));
             if (string.IsNullOrWhiteSpace(options.RealExePath))
-                throw new ArgumentException(nameof(options.RealExePath));
+                throw new ArgumentException("Value is required.", nameof(options.RealExePath));
 
             // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
