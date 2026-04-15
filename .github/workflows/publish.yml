@@ -16,6 +16,7 @@ on:
 jobs:
   build-and-sign:
     runs-on: windows-latest
+    timeout-minutes: 60  # Prevents indefinite hangs if signing or VT APIs stall
 
     env:
       ROOT_DIR: ${{ github.workspace }}
