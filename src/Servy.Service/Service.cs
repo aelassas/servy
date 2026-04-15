@@ -2467,11 +2467,34 @@ namespace Servy.Service
 
                 sw.Stop();
 
-                // 3. Retrieve the result from the finished task
-                var res = stopTask.IsCompleted ? stopTask.Result : null;
+                // 3. SAFE RESULT RETRIEVAL
+                // We only access .Result if the task truly succeeded.
+                bool outcomeHandled = false;
+                bool? res = null;
 
-                // 4. Handle Logging
-                HandleStopResult(process, res);
+                if (stopTask.Status == TaskStatus.RanToCompletion)
+                {
+                    res = stopTask.Result;
+                }
+                else if (stopTask.IsFaulted)
+                {
+                    // Flatten the AggregateException and get the root cause
+                    // (e.g., the actual Win32Exception or InvalidOperationException)
+                    var innerEx = stopTask.Exception?.Flatten().InnerException;
+                    _logger?.Error($"SafeKillProcess background task failed: {innerEx?.Message}", innerEx);
+                    outcomeHandled = true;
+                }
+                else if (stopTask.IsCanceled)
+                {
+                    _logger?.Warn("SafeKillProcess was canceled before the stop sequence could finish.");
+                    outcomeHandled = true;
+                }
+
+                // 4. Handle Logging (only if we have a valid result)
+                if (!outcomeHandled)
+                {
+                    HandleStopResult(process, res);
+                }
             }
             catch (Exception ex)
             {
@@ -2494,7 +2517,7 @@ namespace Servy.Service
                 message = $"Child process '{process.Format()}' canceled with code {process.ExitCode}.";
             else if (result == false)
                 message = $"Child process '{process.Format()}' terminated.";
-            else
+            else // null
                 message = $"Child process '{process.Format()}' stop timed out or failed.";
 
             _logger?.Info(message);
