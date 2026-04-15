@@ -142,7 +142,7 @@ namespace Servy.Service.Helpers
             }
             while (changed && pass < MaxExpansionPasses);
 
-            if (pass >= MaxExpansionPasses)
+            if (pass >= MaxExpansionPasses && changed)
             {
                 Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
             }
