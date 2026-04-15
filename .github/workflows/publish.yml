@@ -480,20 +480,31 @@ jobs:
       # -----------------------------------------------------
       # SIGN installer
       # -----------------------------------------------------
-      - name: Rename unsigned installer
+      - name: Prepare unsigned installer for signing
         shell: pwsh
         run: |
-          $source = "setup/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
-          $target = "servy-x64-installer.exe"
-          if (-not (Test-Path $source)) { throw "Unsigned installer not found: $source" }
-          Rename-Item -Path $source -NewName $target -Force
+          # Note the inclusion of $env:FRAMEWORK in the original path
+          $originalPath = "setup/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
+          $signPathName = "servy-x64-installer.exe"
+          $unsignedDir = "unsigned_installer_staging"
+          $signPathTarget = "$unsignedDir/$signPathName"
+          
+          if (-not (Test-Path $originalPath)) { throw "Unsigned installer not found: $originalPath" }
+          
+          # Isolate into a clean directory to prevent path confusion
+          New-Item -ItemType Directory -Force -Path $unsignedDir | Out-Null
+          Move-Item -Path $originalPath -Destination $signPathTarget -Force
+          
+          # Export explicit paths for downstream steps
+          echo "UNSIGNED_INSTALLER_PATH=$signPathTarget" >> $env:GITHUB_ENV
+          echo "SIGNED_INSTALLER_DIR=signed/installer" >> $env:GITHUB_ENV
 
       - name: Upload installer (unsigned)
         id: unsigned-installer
         uses: actions/upload-artifact@v4
         with:
           name: unsigned-installer
-          path: setup/servy-x64-installer.exe
+          path: ${{ env.UNSIGNED_INSTALLER_PATH }}
           if-no-files-found: error
           retention-days: 1
 
@@ -507,21 +518,29 @@ jobs:
           github-artifact-id: '${{ steps.unsigned-installer.outputs.artifact-id }}'
           artifact-configuration-slug: 'servy-installer'
           wait-for-completion: true
-          output-artifact-directory: 'signed/installer'
+          output-artifact-directory: ${{ env.SIGNED_INSTALLER_DIR }}
 
-      - name: Rename signed installer
+      - name: Prepare signed installer for release
         shell: pwsh
         run: |
-          $source = "signed/installer/servy-x64-installer.exe"
-          $target = "servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
+          $source = "$env:SIGNED_INSTALLER_DIR/servy-x64-installer.exe"
+          $targetDir = "release_installer_staging"
+          # Re-inject the framework tag into the final release name
+          $targetPath = "$targetDir/servy-$env:VERSION-$env:FRAMEWORK-x64-installer.exe"
+          
           if (-not (Test-Path $source)) { throw "Signed installer not found: $source" }
-          Rename-Item -Path $source -NewName $target -Force
+          
+          New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+          Move-Item -Path $source -Destination $targetPath -Force
+          
+          # Export the final artifact path
+          echo "FINAL_INSTALLER_PATH=$targetPath" >> $env:GITHUB_ENV
 
       - name: Upload signed installer
         uses: actions/upload-artifact@v4
         with:
           name: signed-installer
-          path: signed/installer/servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-installer.exe
+          path: ${{ env.FINAL_INSTALLER_PATH }}
           if-no-files-found: error
           retention-days: 1
 
@@ -606,8 +625,9 @@ jobs:
         with:
           vt_api_key: ${{ secrets.VIRUSTOTAL_API_KEY }}
           sha256: true
+          # Dynamically grab the exact path generated during the release prep
           file_globs: |
-            signed/installer/servy-${{ env.VERSION }}-${{ env.FRAMEWORK }}-x64-installer.exe
+            ${{ env.FINAL_INSTALLER_PATH }}
 
       - name: Check VT Status
         if: steps.vt_installer.outcome == 'failure'

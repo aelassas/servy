@@ -19,7 +19,7 @@ namespace Servy.Core.IO
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {
-        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled);
+        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
 
         private bool _disposed;
         private readonly FileInfo _file;
