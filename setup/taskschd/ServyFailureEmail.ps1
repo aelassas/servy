@@ -242,7 +242,12 @@ foreach ($evt in $eventsToProcess) {
   }
 
   $subject = "Servy - $serviceName Failure"
-  $safeLogText = [System.Net.WebUtility]::HtmlEncode($logText)
+  # Manual HTML encode for .NET 3.5 / PS 2.0 compatibility
+  $safeLogText = $logText -replace '&', '&amp;' `
+                          -replace '<', '&lt;' `
+                          -replace '>', '&gt;' `
+                          -replace '"', '&quot;' `
+                          -replace "'", '&#39;'
   $body = "A failure has been detected in service '$serviceName'." +
   [Environment]::NewLine + "Details: $safeLogText"
   
