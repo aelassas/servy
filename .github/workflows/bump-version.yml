@@ -31,6 +31,10 @@ permissions:
 jobs:
   bump-version:
     runs-on: windows-latest
+    # Logic: Only run if manually triggered OR if the automated upstream 'choco' run succeeded.
+    if: >
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
     steps:
       # 1. Checkout the repository with full history to allow pushing commits
