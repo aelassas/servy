@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Security;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,6 +20,10 @@ namespace Servy.Core.Services
     {
         private static readonly string LogName = "Application";
         private const int MaxResults = 10_000;
+
+        // Strict allowlist: Alphanumeric, spaces, dots, underscores, and hyphens.
+        // This covers virtually all valid Windows Service and Event Source names.
+        private static readonly Regex SourceNameValidator = new Regex(@"^[a-zA-Z0-9\.\- _]+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
 
         private readonly string _sourceName;
         private readonly IEventLogReader _reader;
@@ -56,11 +62,18 @@ namespace Servy.Core.Services
                 // ESCAPE SOURCE NAME
                 if (!string.IsNullOrEmpty(_sourceName))
                 {
-                    var escapedSource = _sourceName
-                        .Replace("&", "&amp;")
-                        .Replace("<", "&lt;")
-                        .Replace(">", "&gt;")
-                        .Replace("'", "&apos;");
+                    // 1. SECURITY GUARD: Validate against allowlist
+                    // This prevents any character-based injection before escaping even starts.
+                    if (!SourceNameValidator.IsMatch(_sourceName))
+                    {
+                        throw new SecurityException($"Invalid Event Source name: '{_sourceName}'. " +
+                            "Only alphanumeric characters, dots, hyphens, and underscores are allowed.");
+                    }
+
+                    // 2. ROBUST ESCAPING: Use standard XML escaping
+                    // SecurityElement.Escape handles &, <, >, ", and ' correctly.
+                    var escapedSource = SecurityElement.Escape(_sourceName);
+
                     systemFilters.Add($"Provider[@Name='{escapedSource}']");
                 }
 
