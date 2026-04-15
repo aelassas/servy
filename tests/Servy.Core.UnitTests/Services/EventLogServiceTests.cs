@@ -21,9 +21,9 @@ namespace Servy.Core.UnitTests.Services
             return new EventLogService(mockReader.Object);
         }
 
-        private EventLogEntry CreateFakeEvent(int id, byte level, DateTime? time, string message)
+        private ServyEventLogEntry CreateFakeEvent(int id, byte level, DateTime? time, string message)
         {
-            return new EventLogEntry
+            return new ServyEventLogEntry
             {
                 EventId = id,
                 Level = Logging.EventLogReader.ParseLevel(level),
@@ -116,7 +116,7 @@ namespace Servy.Core.UnitTests.Services
                         }
                     }
                 })
-                .Returns(Array.Empty<EventLogEntry>());
+                .Returns(Array.Empty<ServyEventLogEntry>());
 
             var service = CreateService(mockReader);
 
@@ -152,7 +152,7 @@ namespace Servy.Core.UnitTests.Services
                         }
                     }
                 })
-                .Returns(Array.Empty<EventLogEntry>());
+                .Returns(Array.Empty<ServyEventLogEntry>());
 
             var service = CreateService(mockReader);
 
@@ -383,7 +383,7 @@ namespace Servy.Core.UnitTests.Services
 
             mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>()))
                       .Callback<EventLogQuery>(q => capturedQuery = GetInternalQuery(q))
-                      .Returns(Array.Empty<EventLogEntry>());
+                      .Returns(Array.Empty<ServyEventLogEntry>());
 
             // Inject string.Empty to force systemFilterString to be empty
             var service = new EventLogService(mockReader.Object, string.Empty);

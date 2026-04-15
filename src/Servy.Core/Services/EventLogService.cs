@@ -46,7 +46,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<EventLogEntry>> SearchAsync(
+        public async Task<IEnumerable<ServyEventLogEntry>> SearchAsync(
             EventLogLevel? level,
             DateTime? startDate,
             DateTime? endDate,
@@ -106,7 +106,7 @@ namespace Servy.Core.Services
                 string systemFilterString = string.Join(" and ", systemFilters);
                 string query = string.IsNullOrEmpty(systemFilterString) ? "*" : $"*[System[{systemFilterString}]]";
 
-                IEnumerable<EventLogEntry> records;
+                IEnumerable<ServyEventLogEntry> records;
                 try
                 {
                     var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
@@ -125,7 +125,7 @@ namespace Servy.Core.Services
                     throw new Exception("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
                 }
 
-                var results = new List<EventLogEntry>();
+                var results = new List<ServyEventLogEntry>();
 
                 foreach (var evt in records)
                 {
