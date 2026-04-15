@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,15 +23,21 @@ namespace Servy.CLI.Helpers
         /// This method runs the spinner on a background task and cancels it automatically
         /// when the action completes. The console line is cleared after the spinner stops.
         /// </remarks>
+        /// <summary>
+        /// Runs an asynchronous action while displaying a console loading spinner.
+        /// </summary>
         public static async Task RunWithLoadingAnimation(Func<Task> action, string message = "Preparing environment...")
         {
             var spinnerChars = new[] { '|', '/', '-', '\\' };
             var spinnerIndex = 0;
+
             using (var cts = new CancellationTokenSource())
             {
-                // Task that shows spinner
                 var spinnerTask = Task.Run(async () =>
                 {
+                    // Only attempt to show spinner if output is not redirected
+                    if (Console.IsOutputRedirected) return;
+
                     while (!cts.Token.IsCancellationRequested)
                     {
                         Console.Write($"\r{message} {spinnerChars[spinnerIndex++ % spinnerChars.Length]}");
@@ -38,25 +45,48 @@ namespace Servy.CLI.Helpers
                         {
                             await Task.Delay(100, cts.Token);
                         }
-                        catch (OperationCanceledException)
-                        {
-                            // Ignore, happens when cancellation is requested
-                        }
+                        catch (OperationCanceledException) { /* Expected */ }
                     }
                 });
 
                 try
                 {
-                    await action();  // synchronous work
+                    await action();
                 }
                 finally
                 {
-                    // Stop spinner
+                    // 1. Signal cancellation
                     cts.Cancel();
-                    await spinnerTask.ConfigureAwait(false); // ensure spinner exits
-                    Console.Write($"\r{new string(' ', Console.WindowWidth)}\r"); // clear line
+
+                    // 2. Wait for the spinner task to finish gracefully
+                    try
+                    {
+                        await spinnerTask;
+                    }
+                    catch (Exception) { /* Ignore background task faults on exit */ }
+
+                    // 3. SAFE CLEARING: Only clear the line if we have a valid window
+                    // This prevents IOException in CI/Piped environments
+                    try
+                    {
+                        if (!Console.IsOutputRedirected)
+                        {
+                            int width = Console.WindowWidth;
+                            if (width > 0)
+                            {
+                                // Clear the line and return the cursor to the start
+                                Console.Write("\r" + new string(' ', width - 1) + "\r");
+                            }
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        // Fallback: If we still hit an IO issue, just write a newline to move on
+                        Console.WriteLine();
+                    }
                 }
             }
         }
+
     }
 }
