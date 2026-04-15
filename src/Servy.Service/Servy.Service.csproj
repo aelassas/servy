@@ -36,9 +36,9 @@
     <AssemblyDescription>Servy Wrapper Windows Service</AssemblyDescription>
     <Company>Akram El Assas</Company>
     <Product>Servy</Product>
-    <Version>7.8.0</Version>
-    <FileVersion>7.8.0.0</FileVersion>
-    <AssemblyVersion>7.8.0.0</AssemblyVersion>
+    <Version>7.9.0</Version>
+    <FileVersion>7.9.0.0</FileVersion>
+    <AssemblyVersion>7.9.0.0</AssemblyVersion>
     <Copyright>Copyright © 2026 Akram El Assas. All rights reserved.</Copyright>
   </PropertyGroup>
   
