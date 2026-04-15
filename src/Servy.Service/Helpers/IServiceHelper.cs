@@ -49,7 +49,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
-        bool ValidateAndLog(StartOptions options, ILogger logger, string[] fullArgs);
+        bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.
@@ -57,7 +57,7 @@ namespace Servy.Service.Helpers
         /// </summary>
         /// <param name="options">The startup options containing the working directory to validate.</param>
         /// <param name="eventLog">The event log to write warnings to.</param>
-        void EnsureValidWorkingDirectory(StartOptions options, ILogger logger);
+        void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger);
 
         /// <summary>
         /// Attempts to restart the given process by:
@@ -80,7 +80,7 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
-            ILogger logger,
+            IServyLogger logger,
             int stopTimeoutMs);
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Servy.Service.Helpers
         /// <remarks>
         /// This should be used when the service is registered with the Service Control Manager.
         /// </remarks>
-        void RestartService(ILogger logger, string serviceName);
+        void RestartService(IServyLogger logger, string serviceName);
 
         /// <summary>
         /// Restarts the computer.
@@ -100,7 +100,7 @@ namespace Servy.Service.Helpers
         /// This operation requires appropriate privileges and will cause a system reboot.
         /// Use with extreme caution.
         /// </remarks>
-        void RestartComputer(ILogger logger);
+        void RestartComputer(IServyLogger logger);
 
         /// <summary>
         /// Informs the Service Control Manager (SCM) that the service needs additional time to start,
@@ -118,6 +118,6 @@ namespace Servy.Service.Helpers
         /// Calling this method has no effect if the service is not running under the SCM (for example, 
         /// during unit tests or console execution).
         /// </remarks>
-        void RequestAdditionalTime(ServiceBase service, int milliseconds, ILogger logger);
+        void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger logger);
     }
 }

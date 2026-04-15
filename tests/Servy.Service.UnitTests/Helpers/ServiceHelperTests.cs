@@ -32,7 +32,7 @@ namespace Servy.Service.UnitTests.Helpers
             };
 
             // We only need one mock here because this method just uses the provided logger
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Act
             // We pass the mock directly. In the real app, OnStart passes the Scoped logger here.
@@ -74,7 +74,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Arrange
             var fullArgs = new[] { "ignored.exe" };
             var options = new StartOptions { ServiceName = "TestService", ExecutablePath = " " };
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: We must handle CreateScoped because ValidateAndLog calls LogStartupArguments,
             // which creates a scope.
@@ -99,7 +99,7 @@ namespace Servy.Service.UnitTests.Helpers
             var fullArgs = new[] { "servy.exe", "--name", "" };
             var options = new StartOptions { ServiceName = "", ExecutablePath = tempExe };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
             // Setup: Handle CreateScoped because ValidateAndLog calls LogStartupArguments internally
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
@@ -133,7 +133,7 @@ namespace Servy.Service.UnitTests.Helpers
                 ExecutablePath = @"C:\Nonexistent\fake.exe"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: LogStartupArguments creates a scope. We return the same mock 
             // so we can verify the error call on it.
@@ -167,7 +167,7 @@ namespace Servy.Service.UnitTests.Helpers
                 FailureProgramPath = @"C:\Invalid\failure.exe"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: LogStartupArguments creates a scope. 
             // We return the same mock object to verify the error call on it.
@@ -211,7 +211,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PreLaunchExecutablePath = @"C:\Invalid\prelaunch.exe"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: ValidateAndLog calls LogStartupArguments, which creates a scope.
             // We return the same mock so the verification below catches the error call.
@@ -255,7 +255,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PostLaunchExecutablePath = @"C:\Invalid\postlaunch.exe"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: ValidateAndLog calls LogStartupArguments, which creates a scope.
             // We return the same mock so the verification below catches the error call.
@@ -305,7 +305,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PostLaunchExecutablePath = post
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping that happens inside LogStartupArguments
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
@@ -346,7 +346,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PostLaunchExecutablePath = "   "
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping logic inside LogStartupArguments.
             // Returning the same mock object allows Verify to track all calls.
@@ -387,7 +387,7 @@ namespace Servy.Service.UnitTests.Helpers
                 WorkingDirectory = @"C:\Invalid\workingdir"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping logic that happens inside ValidateAndLog -> LogStartupArguments
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
@@ -430,7 +430,7 @@ namespace Servy.Service.UnitTests.Helpers
                 FailureProgramWorkingDirectory = @"C:\Invalid\failureWorkDir"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
             // Returning the same mock object allows Verify to track all calls on the same instance.
@@ -474,7 +474,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PreLaunchWorkingDirectory = @"C:\Invalid\preLaunchWorkDir"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
             // We return the same mock object so we can verify the error call on it later.
@@ -518,7 +518,7 @@ namespace Servy.Service.UnitTests.Helpers
                 PostLaunchWorkingDirectory = @"C:\Invalid\postLaunchWorkDir"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Setup: Handle the scoping logic inside ValidateAndLog -> LogStartupArguments.
             // We return the same mock object so we can verify the error call on it later.
@@ -559,7 +559,7 @@ namespace Servy.Service.UnitTests.Helpers
                 ExecutablePath = "C:\\Windows\\System32\\notepad.exe"
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
 
             // Act
             _helper.EnsureValidWorkingDirectory(options, mockLog.Object);
@@ -591,7 +591,7 @@ namespace Servy.Service.UnitTests.Helpers
                 MaxRestartAttempts = 5
             };
 
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
             mockLog.Setup(l => l.Info(It.IsAny<string>()))
@@ -609,7 +609,7 @@ namespace Servy.Service.UnitTests.Helpers
         {
             // Arrange
             _mockCommandLineProvider.Setup(p => p.GetArgs()).Returns(new string[] { "ignored.exe" }); // no valid args
-            var mockLog = new Mock<ILogger>();
+            var mockLog = new Mock<IServyLogger>();
             var mockServiceRepo = new Mock<IServiceRepository>();
 
             // Assert

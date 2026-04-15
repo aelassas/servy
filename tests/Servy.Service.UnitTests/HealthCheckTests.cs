@@ -19,7 +19,7 @@ namespace Servy.Service.UnitTests
     {
         // Helper to create service with injected mocks
         private static TestableService CreateService(
-            out Mock<ILogger> mockLogger,
+            out Mock<IServyLogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
             out Mock<ITimerFactory> mockTimerFactory,
@@ -28,7 +28,7 @@ namespace Servy.Service.UnitTests
             out Mock<IServiceRepository> mockServiceRepository
             )
         {
-            mockLogger = new Mock<ILogger>();
+            mockLogger = new Mock<IServyLogger>();
             mockHelper = new Mock<IServiceHelper>();
             mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             mockTimerFactory = new Mock<ITimerFactory>();
@@ -126,7 +126,7 @@ namespace Servy.Service.UnitTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<List<EnvironmentVariable>>(),
-                It.IsAny<ILogger>(),
+                It.IsAny<IServyLogger>(),
                 It.IsAny<int>()),
                 Times.Once);
         }
@@ -157,13 +157,13 @@ namespace Servy.Service.UnitTests
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<List<EnvironmentVariable>>(),
-                    It.IsAny<ILogger>(),
+                    It.IsAny<IServyLogger>(),
                     It.IsAny<int>()))
                 .Verifiable();
 
-            helper.Setup(h => h.RestartService(It.IsAny<ILogger>(), It.IsAny<string>())).Verifiable();
+            helper.Setup(h => h.RestartService(It.IsAny<IServyLogger>(), It.IsAny<string>())).Verifiable();
 
-            helper.Setup(h => h.RestartComputer(It.IsAny<ILogger>())).Verifiable();
+            helper.Setup(h => h.RestartComputer(It.IsAny<IServyLogger>())).Verifiable();
 
             var mockProcess = new Mock<IProcessWrapper>();
             mockProcess.Setup(p => p.HasExited).Returns(true);
@@ -196,14 +196,14 @@ namespace Servy.Service.UnitTests
                             It.IsAny<string>(),
                             It.IsAny<string>(),
                             It.IsAny<List<EnvironmentVariable>>(),
-                            It.IsAny<ILogger>(),
+                            It.IsAny<IServyLogger>(),
                             It.IsAny<int>()), Times.Once);
                         break;
                     case RecoveryAction.RestartService:
-                        helper.Verify(h => h.RestartService(It.IsAny<ILogger>(), service.ServiceName), Times.Once);
+                        helper.Verify(h => h.RestartService(It.IsAny<IServyLogger>(), service.ServiceName), Times.Once);
                         break;
                     case RecoveryAction.RestartComputer:
-                        helper.Verify(h => h.RestartComputer(It.IsAny<ILogger>()), Times.Once);
+                        helper.Verify(h => h.RestartComputer(It.IsAny<IServyLogger>()), Times.Once);
                         break;
                 }
             }
@@ -254,7 +254,7 @@ namespace Servy.Service.UnitTests
 
             helper.Setup(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                          It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<ILogger>(), It.IsAny<int>()))
+                         It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()))
                   .Callback(() => {
                       recoveryStartedSignal.TrySetResult(true);
                       recoveryBlockSignal.Task.Wait(); // HANG the thread here to keep _isRecovering = true
@@ -290,7 +290,7 @@ namespace Servy.Service.UnitTests
 
             helper.Verify(h => h.RestartProcess(It.IsAny<IProcessWrapper>(), It.IsAny<Action<string, string, string, List<EnvironmentVariable>>>(),
                           It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<ILogger>(), It.IsAny<int>()),
+                          It.IsAny<List<EnvironmentVariable>>(), It.IsAny<IServyLogger>(), It.IsAny<int>()),
                           Times.Once);
         }
     }

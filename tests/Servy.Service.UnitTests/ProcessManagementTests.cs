@@ -14,7 +14,7 @@ namespace Servy.Service.UnitTests
     public class ProcessManagementTests
     {
         private static TestableService CreateService(
-            out Mock<ILogger> mockLogger,
+            out Mock<IServyLogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
             out Mock<ITimerFactory> mockTimerFactory,
@@ -22,7 +22,7 @@ namespace Servy.Service.UnitTests
             out Mock<IPathValidator> mockPathValidator,
             out Mock<IServiceRepository> mockServiceRepository)
         {
-            mockLogger = new Mock<ILogger>();
+            mockLogger = new Mock<IServyLogger>();
             mockHelper = new Mock<IServiceHelper>();
             mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             mockTimerFactory = new Mock<ITimerFactory>();
@@ -59,7 +59,7 @@ namespace Servy.Service.UnitTests
             mockProcess.Setup(p => p.Id).Returns(123);
             mockProcess.Setup(p => p.Start()).Returns(true);
 
-            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<ILogger>())).Returns(mockProcess.Object);
+            processFactory.Setup(f => f.Create(It.IsAny<ProcessStartInfo>(), It.IsAny<IServyLogger>())).Returns(mockProcess.Object);
 
             service.InvokeStartProcess("C:\\myapp.exe", "--arg", "C:\\workdir", new List<EnvironmentVariable>());
 

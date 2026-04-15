@@ -20,7 +20,7 @@ namespace Servy.Service.UnitTests
 
         public TestableService(
             IServiceHelper serviceHelper,
-            ILogger logger,
+            IServyLogger logger,
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,

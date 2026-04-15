@@ -75,7 +75,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void LogStartupArguments(ILogger logger, string[] args, StartOptions options)
+        public void LogStartupArguments(IServyLogger logger, string[] args, StartOptions options)
         {
             if (options == null)
             {
@@ -172,7 +172,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void EnsureValidWorkingDirectory(StartOptions options, ILogger logger)
+        public void EnsureValidWorkingDirectory(StartOptions options, IServyLogger logger)
         {
             if (string.IsNullOrWhiteSpace(options.WorkingDirectory) ||
                 !Helper.IsValidPath(options.WorkingDirectory) ||
@@ -185,7 +185,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public StartOptions? InitializeStartup(IServiceRepository serviceRepository, ILogger logger)
+        public StartOptions? InitializeStartup(IServiceRepository serviceRepository, IServyLogger logger)
         {
             var fullArgs = _commandLineProvider.GetArgs();
             var options = StartOptionsParser.Parse(serviceRepository, fullArgs);
@@ -209,7 +209,7 @@ namespace Servy.Service.Helpers
             => StartOptionsParser.Parse(serviceRepository, fullArgs);
 
         /// <inheritdoc />
-        public bool ValidateAndLog(StartOptions options, ILogger logger, string[] fullArgs)
+        public bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs)
         {
             LogStartupArguments(logger, fullArgs, options);
 
@@ -230,7 +230,7 @@ namespace Servy.Service.Helpers
             string realArgs,
             string workingDir,
             List<EnvironmentVariable> environmentVariables,
-            ILogger logger,
+            IServyLogger logger,
             int stopTimeoutMs)
         {
             try
@@ -268,7 +268,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RestartService(ILogger logger, string serviceName)
+        public void RestartService(IServyLogger logger, string serviceName)
         {
             try
             {
@@ -342,7 +342,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RestartComputer(ILogger logger)
+        public void RestartComputer(IServyLogger logger)
         {
             try
             {
@@ -366,7 +366,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RequestAdditionalTime(ServiceBase service, int milliseconds, ILogger logger)
+        public void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger logger)
         {
             if (service == null) return;
 
@@ -460,7 +460,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if all mandatory paths and directories are valid; otherwise, <c>false</c>.
         /// </returns>
-        private bool ValidateStartupOptions(ILogger logger, StartOptions options)
+        private bool ValidateStartupOptions(IServyLogger logger, StartOptions options)
         {
             if (string.IsNullOrWhiteSpace(options.ExecutablePath))
             {

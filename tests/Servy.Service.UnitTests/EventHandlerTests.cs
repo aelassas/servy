@@ -16,7 +16,7 @@ namespace Servy.Service.UnitTests
     public class EventHandlerTests
     {
         private static TestableService CreateService(
-            out Mock<ILogger> mockLogger,
+            out Mock<IServyLogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
             out Mock<ITimerFactory> mockTimerFactory,
@@ -25,7 +25,7 @@ namespace Servy.Service.UnitTests
             out Mock<IServiceRepository> mockServiceRepository
             )
         {
-            mockLogger = new Mock<ILogger>();
+            mockLogger = new Mock<IServyLogger>();
             mockHelper = new Mock<IServiceHelper>();
             mockStreamWriterFactory = new Mock<IStreamWriterFactory>();
             mockTimerFactory = new Mock<ITimerFactory>();
