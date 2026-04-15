@@ -307,6 +307,10 @@ namespace Servy.Service.ProcessManagement
             try
             {
                 process.Kill();
+
+                // Wait for the kernel to finish cleaning up the process.
+                // This ensures the process tree is stable before the caller enumerates children.
+                process.WaitForExit(3000);
             }
             catch (Exception ex)
             {
