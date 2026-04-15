@@ -236,8 +236,6 @@ namespace Servy.Manager.Views
                     else if (LogsTab.IsSelected)
                         await HandleLogsTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
 
-                    if (PerformanceTab.IsSelected)
-                        perfVm?.StartMonitoring();
                 }
             }
             catch (Exception ex)
