@@ -7,7 +7,7 @@ namespace Servy.UI.Commands
     {
         private readonly Func<object?, Task> _execute;
         private readonly Predicate<object?>? _canExecute;
-        private bool _isExecuting;
+        private volatile bool _isExecuting;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncCommand"/> class.
