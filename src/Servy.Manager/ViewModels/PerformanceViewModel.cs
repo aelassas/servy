@@ -404,7 +404,20 @@ namespace Servy.Manager.ViewModels
                 valueHistory.Dequeue();
             }
 
-            double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
+            // --- REPLACED LINQ .Max() WITH ALLOCATION-FREE FOREACH ---
+            double currentMax = 0;
+            if (!isCpu && valueHistory.Count > 0)
+            {
+                // A foreach over a Queue<T> uses a struct enumerator (0 bytes allocated).
+                // This is microscopically fast for 100 items and guarantees perfect accuracy.
+                foreach (var val in valueHistory)
+                {
+                    if (val > currentMax)
+                    {
+                        currentMax = val;
+                    }
+                }
+            }
             // CPU is always 0-100%, RAM scale is dynamic based on usage
             double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
