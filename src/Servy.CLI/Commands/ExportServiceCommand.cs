@@ -4,6 +4,7 @@ using Servy.CLI.Options;
 using Servy.CLI.Resources;
 using Servy.Core.Data;
 using Servy.Core.Logging;
+using Servy.Core.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -59,6 +60,8 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(ExportServiceOptions opts)
         {
+            SecurityHelper.EnsureAdministrator();
+
             var action = $"export configuration for service '{opts.ServiceName}'";
             var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
 
