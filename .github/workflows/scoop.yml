@@ -147,6 +147,18 @@ jobs:
           git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
           Set-Location extras
 
+          # Define the target branch name
+          $branchName = "update-servy-$env:VERSION"
+
+          # CHECK IF PR IS ALREADY MERGED
+          # We check the upstream repo for any merged PRs coming from our specific branch
+          $mergedPR = gh pr list --repo ScoopInstaller/Extras --head "aelassas:$branchName" --state merged --json number --limit 1 | ConvertFrom-Json
+          
+          if ($mergedPR.Count -gt 0) {
+              Write-Host "A PR for version $env:VERSION has already been merged. Skipping push and PR creation."
+              return 
+          }
+
           # Make sure master fork is up-to-date
           git remote add upstream https://github.com/ScoopInstaller/Extras.git
           git fetch upstream master
@@ -254,8 +266,8 @@ jobs:
               }
           }
           
-          # Force push to fork (overwrite old branch if exists)
-          git push origin "update-servy-$env:VERSION" --force
+          # Only push if we didn't return early due to a merged PR
+          git push origin $branchName --force
         
       - name: Check Chocolatey version
         if: env.RUN_EXTRAS_PR == 'true'  
