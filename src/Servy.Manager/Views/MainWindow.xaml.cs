@@ -171,7 +171,7 @@ namespace Servy.Manager.Views
                 }
                 else if (DependenciesTab.IsSelected && DependenciesTab.Content is DependenciesView dependenciesView && dependenciesView.DataContext is DependenciesViewModel dvm)
                 {
-                    dvm.LoadDependencyTree();
+                    await dvm.LoadDependencyTreeAsync(null);
                 }
             }
 
