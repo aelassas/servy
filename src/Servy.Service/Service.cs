@@ -1957,7 +1957,24 @@ namespace Servy.Service
 
                 if (_serviceHandle == IntPtr.Zero)
                 {
-                    _logger?.Error("Service handle is null!");
+                    _logger?.Error("Service handle is null! SCM notification impossible. Falling back to synchronous teardown.");
+
+                    try
+                    {
+                        // 1. Best-effort cleanup of child processes/resources
+                        // We call this synchronously because we have no handle to request async time.
+                        ExecuteTeardown(TeardownReason.PreShutdown);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Error($"Fallback teardown failed: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // 2. Terminate the process. 
+                        // This informs the SCM that the service is gone, allowing the OS to move on.
+                        Environment.Exit(1);
+                    }
                     return;
                 }
 
