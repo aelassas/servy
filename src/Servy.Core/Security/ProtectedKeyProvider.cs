@@ -102,15 +102,22 @@ namespace Servy.Core.Security
         /// </remarks>
         private static byte[] GetMachineEntropy()
         {
-            // Retrieve the unique MachineGuid from the Windows Registry.
-            // This makes the entropy unique to the machine without requiring a hardcoded string.
             using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography"))
             {
                 var guid = key?.GetValue("MachineGuid") as string;
 
-                // Fallback to a secondary unique seed if the registry is somehow unreachable.
-                // Environment.MachineName is a secondary machine-specific fallback to prevent decryption failure.
-                return Encoding.UTF8.GetBytes(guid ?? Environment.MachineName);
+                if (!string.IsNullOrWhiteSpace(guid))
+                {
+                    return Encoding.UTF8.GetBytes(guid);
+                }
+
+                // Log a loud error when the fallback is triggered.
+                // MachineName is highly predictable, making this a significant degradation of the entropy layer.
+                Logger.Error("CRITICAL SECURITY DEGRADATION: 'MachineGuid' registry key is missing or inaccessible. " +
+                             "Falling back to predictable Environment.MachineName for DPAPI entropy. " +
+                             "This reduces protection against offline attacks.");
+
+                return Encoding.UTF8.GetBytes(Environment.MachineName);
             }
         }
 
