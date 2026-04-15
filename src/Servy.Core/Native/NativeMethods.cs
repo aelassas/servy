@@ -1006,10 +1006,20 @@ namespace Servy.Core.Native
         /// Thrown for underlying system-related logon errors.
         /// </exception>
         /// <remarks>
+        /// <para>
         /// This method performs a two-stage validation: 
         /// 1. Identity resolution via <see cref="NTAccount.Translate(Type)"/> to ensure the account exists.
         /// 2. Authentication via the Win32 <c>LogonUser</c> API using <c>LOGON32_LOGON_NETWORK</c>.
         /// It does not verify the "Log on as a service" right (<c>SeServiceLogonRight</c>).
+        /// </para>
+        /// <para>
+        /// <b>CAUTION:</b> This method performs a live network logon. Excessive calls with 
+        /// incorrect passwords will trigger Active Directory account lockout policies.
+        /// </para>
+        /// <para>
+        /// Use this method sparingly and consider implementing a "Test Connection" UI pattern 
+        /// rather than automatic validation on every keystroke.
+        /// </para>
         /// </remarks>
         public static void ValidateCredentials(string username, string? password)
         {
