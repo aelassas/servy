@@ -402,7 +402,7 @@ function Invoke-ServyCli {
       $partialOutput += " Stderr: $scrubbedStderr" 
     }
     
-    throw "$($ErrorContext): $_.`n$partialOutput".TrimEnd()
+    throw "$($ErrorContext): $($_.Exception.Message)`n$partialOutput".TrimEnd()
   }
   finally {
     if ($null -ne $process) {
