@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Servy.Core.EnvironmentVariables
@@ -11,9 +12,9 @@ namespace Servy.Core.EnvironmentVariables
     {
         /// <summary>
         /// Parses a normalized environment variables string into a list of <see cref="EnvironmentVariable"/> objects.
-        /// Supports escaping of '=' and ';' characters with a backslash.
+        /// Supports escaping of '=' and ';' characters with a backslash, and supports both semicolon and newline delimiters.
         /// </summary>
-        /// <param name="input">Normalized environment variables string (semicolon-separated, with escapes).</param>
+        /// <param name="input">Normalized environment variables string (semicolon or newline-separated, with escapes).</param>
         /// <returns>List of parsed environment variables as <see cref="EnvironmentVariable"/> instances.</returns>
         /// <exception cref="FormatException">Thrown if any variable is missing an unescaped '=' or has an empty key.</exception>
         public static List<EnvironmentVariable> Parse(string input)
@@ -23,8 +24,9 @@ namespace Servy.Core.EnvironmentVariables
 
             var result = new List<EnvironmentVariable>();
 
-            // Split by unescaped semicolons
-            var parts = SplitByUnescapedDelimiter(input, ';');
+            // Sync delimiters with the Validator to support multi-line input
+            char[] delimiters = new char[] { ';', '\r', '\n' };
+            var parts = SplitByUnescapedDelimiters(input, delimiters);
 
             foreach (var part in parts)
             {
@@ -43,7 +45,6 @@ namespace Servy.Core.EnvironmentVariables
 
                 // Unescape both key and value
                 var key = Unescape(rawKey).Trim();
-
                 var unescaped = Unescape(rawValue).Trim();
 
                 // Remove surrounding quotes only if both start and end with a quote
@@ -64,13 +65,13 @@ namespace Servy.Core.EnvironmentVariables
         }
 
         /// <summary>
-        /// Splits a string by a delimiter character, but only when the delimiter is not escaped by a backslash.
-        /// The backslash is preserved so later Unescape can handle sequences like \=, \;, and \\ correctly.
+        /// Splits a string by any of the provided delimiter characters, but only when the delimiter 
+        /// is not escaped by a backslash. The backslash is preserved so later Unescape can handle sequences correctly.
         /// </summary>
         /// <param name="input">Input string to split.</param>
-        /// <param name="delimiter">Delimiter character to split on.</param>
+        /// <param name="delimiters">Array of delimiter characters to split on.</param>
         /// <returns>Array of split segments.</returns>
-        private static string[] SplitByUnescapedDelimiter(string input, char delimiter)
+        private static string[] SplitByUnescapedDelimiters(string input, char[] delimiters)
         {
             var segments = new List<string>();
             var sb = new StringBuilder();
@@ -78,7 +79,7 @@ namespace Servy.Core.EnvironmentVariables
             for (int i = 0; i < input.Length; i++)
             {
                 char c = input[i];
-                if (c == delimiter)
+                if (delimiters.Contains(c))
                 {
                     // Count backslashes before this delimiter
                     int backslashCount = 0;
@@ -181,7 +182,5 @@ namespace Servy.Core.EnvironmentVariables
 
             return sb.ToString();
         }
-
-
     }
 }
