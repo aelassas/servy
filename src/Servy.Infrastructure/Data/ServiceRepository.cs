@@ -114,6 +114,7 @@ namespace Servy.Infrastructure.Data
         {
             if (services == null || !services.Any()) return 0;
 
+            // 1. Create encrypted clones for database storage
             var encryptedServices = services.Select(CreateEncryptedClone).ToList();
 
             var sql = $@"
@@ -122,7 +123,37 @@ namespace Servy.Infrastructure.Data
                 ON CONFLICT(LOWER(Name)) DO UPDATE SET
                 {SqlConstants.UpsertSet};";
 
-            return await _dapper.ExecuteAsync(sql, encryptedServices);
+            // 2. Execute the batch upsert
+            var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices);
+
+            // 3. Sync IDs back to the original DTOs
+            // SQLite has a default limit of 999 parameters. For larger batches, 
+            // we process the ID sync in chunks to avoid 'Too many SQL variables' errors.
+            var serviceList = services.ToList();
+            const int chunkSize = 900;
+
+            for (int i = 0; i < serviceList.Count; i += chunkSize)
+            {
+                var currentChunk = serviceList.Skip(i).Take(chunkSize).ToList();
+                var names = currentChunk.Select(s => s.Name).ToList();
+
+                // Fetch the generated IDs for the names in this chunk
+                var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
+                    "SELECT Id, Name FROM Services WHERE Name IN @names",
+                    new { names }))
+                    .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
+
+                // Update the original DTO references
+                foreach (var service in currentChunk)
+                {
+                    if (idMap.TryGetValue(service.Name, out var id))
+                    {
+                        service.Id = id;
+                    }
+                }
+            }
+
+            return affectedRows;
         }
 
         /// <inheritdoc />
