@@ -131,7 +131,7 @@ jobs:
           if ((git status --porcelain) -ne '') {
             git add $manifestPath
             git commit -m "chore: update Servy Scoop manifest to version $env:VERSION"
-            git push origin master
+            git push origin HEAD
           } else {
             Write-Host "No changes to commit"
           }
