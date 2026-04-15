@@ -21,6 +21,7 @@ namespace Servy.Manager.Views
         {
             InitializeComponent();
             DataContextChanged += LogsView_DataContextChanged;
+            Unloaded += (s, e) => (DataContext as LogsViewModel)?.Cleanup();
         }
 
         /// <summary>
