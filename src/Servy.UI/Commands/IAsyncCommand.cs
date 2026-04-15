@@ -1,4 +1,6 @@
-﻿using System.Windows.Input;
+﻿#nullable enable
+
+using System.Windows.Input;
 
 namespace Servy.UI.Commands
 {
@@ -13,7 +15,7 @@ namespace Servy.UI.Commands
         /// </summary>
         /// <param name="parameter">An optional parameter for the command execution.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        Task ExecuteAsync(object parameter);
+        Task ExecuteAsync(object? parameter);
 
         /// <summary>
         /// Notifies subscribers that the ability of the command to execute has changed.
