@@ -54,13 +54,14 @@ namespace Servy.CLI.Commands
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(ExportServiceOptions opts)
         {
-            SecurityHelper.EnsureAdministrator();
-
             var action = $"export configuration for service '{opts.ServiceName}'";
             var suggestion = "Ensure the service exists in the database and you have write permissions to the destination path.";
 
             return await ExecuteWithHandlingAsync("export", action, suggestion, async () =>
             {
+                // Pre-flight elevation check
+                SecurityHelper.EnsureAdministrator();
+
                 if (string.IsNullOrWhiteSpace(opts.ServiceName))
                     return CommandResult.Fail(Strings.Msg_ServiceNameRequired);
 

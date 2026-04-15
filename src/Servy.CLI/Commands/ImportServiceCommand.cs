@@ -58,10 +58,7 @@ namespace Servy.CLI.Commands
             return await ExecuteWithHandlingAsync("import", action, suggestion, async () =>
             {
                 // Pre-flight elevation check
-                if (opts.InstallService)
-                {
-                    SecurityHelper.EnsureAdministrator();
-                }
+                SecurityHelper.EnsureAdministrator();
 
                 // Validate configuration file type
                 if (!TryParseFileType(opts.ConfigFileType, out var configFileType, out var parseError))
