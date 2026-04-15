@@ -88,8 +88,24 @@ namespace Servy.Core.Services
                 string systemFilterString = string.Join(" and ", systemFilters);
                 string query = string.IsNullOrEmpty(systemFilterString) ? "*" : $"*[System[{systemFilterString}]]";
 
-                var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
-                var records = _reader.ReadEvents(eventQuery);
+                IEnumerable<EventLogEntry> records;
+                try
+                {
+                    var eventQuery = new EventLogQuery(LogName, PathType.LogName, query);
+
+                    // This is where the service handle is requested and the query is validated
+                    records = _reader.ReadEvents(eventQuery);
+                }
+                catch (EventLogException ex)
+                {
+                    // Rethrow with specific context for the UI/Logger to catch
+                    throw new Exception("Cannot access Windows Event Log. Ensure the 'Windows Event Log' service is running and the query is valid.", ex);
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    // Specifically handle permission issues (e.g., running as non-admin)
+                    throw new Exception("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
+                }
 
                 var results = new List<EventLogEntry>();
 
