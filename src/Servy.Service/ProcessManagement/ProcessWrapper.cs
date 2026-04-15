@@ -305,7 +305,10 @@ namespace Servy.Service.ProcessManagement
 
                 // Wait for the kernel to finish cleaning up the process.
                 // This ensures the process tree is stable before the caller enumerates children.
-                process.WaitForExit(3000);
+                if (!process.WaitForExit(3000))
+                {
+                    _logger?.Warn($"Process '{process.Format()}' killed, but did not exit within 3s. Moving to children anyway.");
+                }
             }
             catch (Exception ex)
             {
