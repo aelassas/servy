@@ -8,7 +8,6 @@ using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
-using Servy.Manager.Resources;
 using Servy.Manager.Views;
 using System.Diagnostics;
 using System.IO;
@@ -16,6 +15,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace Servy.Manager
 {
@@ -121,61 +121,54 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Global AppDomain exceptions (often fatal)
-            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
-            {
-                var ex = args.ExceptionObject as Exception;
-                Logger.Error("Fatal AppDomain exception", ex);
-
-                // Standard Windows behavior for fatal exceptions is a simple message before termination
-                MessageBox.Show(
-                    "A fatal error occurred. The application will now close. Please check the logs for details.",
-                    "Servy Manager - Fatal Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            };
-
-            // UI Thread exceptions (recoverable)
-            DispatcherUnhandledException += (s, args) =>
-            {
-                Logger.Error("UI Thread exception", args.Exception);
-
-                MessageBox.Show(
-                    "An unexpected error occurred in the interface. Details have been logged.",
-                    "Servy Manager - Unexpected Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                args.Handled = true;
-            };
-
+            // 1. INITIALIZE LOGGER FIRST
+            // Moved to the top so it's ready to capture errors in the handlers below.
             Logger.Initialize("Servy.Manager.log");
 
-            if (!SecurityHelper.IsAdministrator())
+            // 2. Global AppDomain exceptions (Fatal)
+            AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args)
             {
-                MessageBox.Show(Strings.SecurityWarningMessage, Strings.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
-                Shutdown(1);
-                return;
-            }
+                Exception ex = args.ExceptionObject as Exception;
 
-            // Run the security check from Infrastructure
-            if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+                // Log the fatal error for post-mortem debugging
+                Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
+
+                MessageBox.Show(
+                    "A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.",
+                    "Servy - Fatal Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                // No Handled property here; the process will terminate.
+            };
+
+            // 3. UI Thread exceptions (Dispatcher)
+            DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args)
             {
-                string message = string.Format(
-                    Strings.SqliteVersionWarningMessage,
-                    detectedVersion,
-                    AppConfig.MinRequiredSqliteVersion
-                );
+                // Log the exception details
+                Logger.Error("UI Dispatcher Exception", args.Exception);
 
-                string title = Strings.SqliteVersionWarningTitle;
+                // .NET 4.8 / C# 7.3 syntax for type checking
+                bool isOutOfMemory = args.Exception is OutOfMemoryException;
 
-                // Show a critical error icon and halt startup
-                MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+                if (!isOutOfMemory)
+                {
+                    MessageBox.Show(
+                        "An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged.",
+                        "Servy - Unexpected Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
 
-                // CRITICAL: Shutdown the application to prevent exploitation
-                Application.Current.Shutdown();
-                return;
-            }
+                    // Only mark as handled if it's not a memory exhaustion event
+                    args.Handled = true;
+                }
+                else
+                {
+                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
+                    args.Handled = false;
+                    Shutdown(1);
+                }
+            };
 
             // Bit-shift to get the major tier (0, 1, or 2)
             // Tier 0 = No hardware acceleration
