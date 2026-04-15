@@ -39,6 +39,10 @@ on:
 jobs:
   sbom:
     runs-on: windows-latest
+    env:
+      # Mapping the input to an environment variable prevents Expression Injection.
+      # The shell will now treat this as a literal string.
+      INPUT_VERSION: ${{ github.event.inputs.version }}
 
     steps:
       # -----------------------------------------------------
@@ -47,7 +51,7 @@ jobs:
       - name: Validate version format
         shell: pwsh
         run: |
-          $version = '${{ github.event.inputs.version }}'
+          $version = $env:INPUT_VERSION
 
           if ($version -notmatch '^\d+\.\d+$') {
             Write-Error "Invalid version format '$version'. Expected Major.Minor (e.g. 4.2)."
@@ -62,7 +66,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for provenance
+          fetch-depth: 0
 
       # -----------------------------------------------------
       # Build and Publish SBOM
@@ -70,44 +74,42 @@ jobs:
       - name: Setup .NET
         uses: ./.github/actions/setup-dotnet
 
-      - name: Check .NET version
-        run: dotnet --version
-
-      - name: Install CycloneDX .NET Tool
+      - name: Install CycloneDX Tools
         shell: pwsh
         run: |
           dotnet tool install --global CycloneDX
           Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\.dotnet\tools"
-
-      - name: Install CycloneDX CLI
-        shell: pwsh
-        run: |
+          
           Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.29.2/cyclonedx-win-x64.exe" -OutFile "$env:USERPROFILE\cyclonedx.exe"
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
       - name: Generate SBOM
         shell: pwsh
         run: |
-          $version = "${{ github.event.inputs.version }}.0"
+          # Use subexpression operator $() to safely append the .0 suffix
+          $version = "$($env:INPUT_VERSION).0"
+          
           dotnet-CycloneDX "src\Servy\Servy.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.xml"
           dotnet-CycloneDX "src\Servy.CLI\Servy.CLI.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.CLI.xml"
           dotnet-CycloneDX "src\Servy.Manager\Servy.Manager.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Manager.xml"
           dotnet-CycloneDX "src\Servy.Restarter\Servy.Restarter.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Restarter.xml"
           dotnet-CycloneDX "src\Servy.Service\Servy.Service.csproj" --recursive --set-version "$version" --output . --filename "sbom-Servy.Service.xml"
           
-          # Merge into sbom-${{ github.event.inputs.version }}-sbom.xml
+          $outputFile = "servy-$($env:INPUT_VERSION)-sbom.xml"
+          
           cyclonedx merge --input-files `
             sbom-Servy.xml `
             sbom-Servy.CLI.xml `
             sbom-Servy.Manager.xml `
             sbom-Servy.Restarter.xml `
             sbom-Servy.Service.xml `
-            --output-file "servy-${{ github.event.inputs.version }}-sbom.xml"
+            --output-file "$outputFile"
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-${{ github.event.inputs.version }}-sbom
-          path: servy-${{ github.event.inputs.version }}-sbom.xml
+          # Note: Using ${{ env.INPUT_VERSION }} here is also safer/consistent
+          name: sbom-${{ env.INPUT_VERSION }}-sbom
+          path: servy-${{ env.INPUT_VERSION }}-sbom.xml
           if-no-files-found: error
           retention-days: 1
