@@ -44,11 +44,25 @@ $baseDir = $PSScriptRoot
 # ----------------------------------------------------------------------
 function Get-FileEncoding {
     param([string]$Path)
-    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    [byte[]]$bytes = [System.IO.File]::ReadAllBytes($Path)
+
+    # UTF-8 with BOM (EF BB BF)
     if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
-        return [System.Text.Encoding]::UTF8 # With BOM
+        return [System.Text.Encoding]::UTF8
     }
-    return New-Object System.Text.UTF8Encoding($false) # Without BOM
+
+    # UTF-16 LE / Unicode (FF FE)
+    if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
+        return [System.Text.Encoding]::Unicode
+    }
+
+    # UTF-16 BE / BigEndianUnicode (FE FF)
+    if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF) {
+        return [System.Text.Encoding]::BigEndianUnicode
+    }
+
+    # Default: UTF-8 without BOM (Standard for modern .NET and Git)
+    return New-Object System.Text.UTF8Encoding($false)
 }
 
 # ----------------------------------------------------------------------
@@ -93,13 +107,16 @@ Update-FileContent `
 # 3. Update all AssemblyInfo.cs files (Recursive)
 Get-ChildItem -Path $baseDir -Recurse -Filter AssemblyInfo.cs -ErrorAction SilentlyContinue | ForEach-Object {
     $path = $_.FullName
-    $content = [System.IO.File]::ReadAllText($path)
+    
+    # Detect encoding first to prevent corruption
+    $encoding = Get-FileEncoding $path
+    $content = [System.IO.File]::ReadAllText($path, $encoding)
 
     # Chain AssemblyVersion and AssemblyFileVersion updates
     $content = [regex]::Replace($content, '(\[assembly:\s*AssemblyVersion\(")[^"]*("\)\])', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }, "IgnoreCase")
     $content = [regex]::Replace($content, '(\[assembly:\s*AssemblyFileVersion\(")[^"]*("\)\])', { param($m) "$($m.Groups[1].Value)$fileVersion$($m.Groups[2].Value)" }, "IgnoreCase")
 
-    [System.IO.File]::WriteAllText($path, $content)
+    [System.IO.File]::WriteAllText($path, $content, $encoding)
     Write-Host "Updated AssemblyInfo: $path" -ForegroundColor Gray
 }
 
