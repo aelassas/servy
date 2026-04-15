@@ -237,10 +237,14 @@ namespace Servy.CLI.Options
         public string User { get; set; }
 
         /// <summary>
-        /// Gets or sets the Windows service account username.
-        /// Optional.
+        /// Gets or sets the Windows service account password.
         /// </summary>
-        [Option("password", HelpText = "The service account password.")]
+        /// <remarks>
+        /// Passing passwords via CLI flags is insecure as they are visible 
+        /// in process listings and shell history. Use the SERVY_PASSWORD environment 
+        /// variable instead.
+        /// </remarks>
+        [Option("password", HelpText = "The service account password. SECURITY WARNING: Use the SERVY_PASSWORD environment variable instead to avoid exposing credentials in OS process listings.")]
         public string Password { get; set; }
 
         /// <summary>
