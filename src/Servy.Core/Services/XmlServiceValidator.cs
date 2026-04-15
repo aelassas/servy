@@ -2,8 +2,6 @@
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using System;
-using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -15,7 +13,7 @@ namespace Servy.Core.Services
     /// </summary>
     public static class XmlServiceValidator
     {
-        public static bool TryValidate(string xml, out string? errorMessage)
+        public static bool TryValidate(string? xml, out string? errorMessage)
         {
             errorMessage = null;
 

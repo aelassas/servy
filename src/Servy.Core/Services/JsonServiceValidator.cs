@@ -4,7 +4,6 @@ using Servy.Core.DTOs;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
-using System;
 
 namespace Servy.Core.Services
 {
@@ -14,7 +13,7 @@ namespace Servy.Core.Services
     /// </summary>
     public static class JsonServiceValidator
     {
-        public static bool TryValidate(string json, out string? errorMessage)
+        public static bool TryValidate(string? json, out string? errorMessage)
         {
             errorMessage = null;
 
