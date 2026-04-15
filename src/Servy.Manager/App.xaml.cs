@@ -126,6 +126,34 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Global AppDomain exceptions (often fatal)
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                var ex = args.ExceptionObject as Exception;
+                Logger.Error("Fatal AppDomain exception", ex);
+
+                // Standard Windows behavior for fatal exceptions is a simple message before termination
+                MessageBox.Show(
+                    "A fatal error occurred. The application will now close. Please check the logs for details.",
+                    "Servy Manager - Fatal Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            };
+
+            // UI Thread exceptions (recoverable)
+            DispatcherUnhandledException += (s, args) =>
+            {
+                Logger.Error("UI Thread exception", args.Exception);
+
+                MessageBox.Show(
+                    "An unexpected error occurred in the interface. Details have been logged.",
+                    "Servy Manager - Unexpected Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                args.Handled = true;
+            };
+
             Logger.Initialize("Servy.Manager.log");
 
             if (!SecurityHelper.IsAdministrator())
@@ -247,34 +275,6 @@ namespace Servy.Manager
         /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
         private async Task InitializeApp(StartupEventArgs e)
         {
-            // Global AppDomain exceptions (often fatal)
-            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
-            {
-                var ex = args.ExceptionObject as Exception;
-                Logger.Error("Fatal AppDomain exception", ex);
-
-                // Standard Windows behavior for fatal exceptions is a simple message before termination
-                MessageBox.Show(
-                    "A fatal error occurred. The application will now close. Please check the logs for details.",
-                    "Servy Manager - Fatal Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            };
-
-            // UI Thread exceptions (recoverable)
-            DispatcherUnhandledException += (s, args) =>
-            {
-                Logger.Error("UI Thread exception", args.Exception);
-
-                MessageBox.Show(
-                    "An unexpected error occurred in the interface. Details have been logged.",
-                    "Servy Manager - Unexpected Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-
-                args.Handled = true;
-            };
-
             // Initialize and show splash screen if enabled
             var showSplash = true;
 
