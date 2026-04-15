@@ -35,7 +35,7 @@ namespace Servy.Service.Helpers
         /// within raw command-line argument strings.
         /// </summary>
         /// <remarks>
-        /// FIXED: Added support for quoted values and preserved separators (#571).
+        /// Added support for quoted values and preserved separators.
         /// The value pattern handles both quoted strings and standard tokens.
         /// </remarks>
         private static readonly Regex MaskingRegex = new Regex(
@@ -280,8 +280,8 @@ namespace Servy.Service.Helpers
 
                 if (string.IsNullOrWhiteSpace(dir))
                 {
-                    Logger.Error("Execution Aborted: The directory path for the restarter is invalid or could not be resolved.");
-                    return; // critical failure
+                    logger?.Error("Execution Aborted: The directory path for the restarter is invalid.");
+                    return;
                 }
 
                 var restarter = Path.Combine(dir, "Servy.Restarter.exe");
@@ -292,13 +292,15 @@ namespace Servy.Service.Helpers
                     return;
                 }
 
-                using (var process = Process.Start(new ProcessStartInfo
+                var psi = new ProcessStartInfo
                 {
                     FileName = restarter,
-                    Arguments = Helper.Quote(serviceName), // Quotes ensure the name is treated as a single token
+                    Arguments = Helper.Quote(serviceName),
                     CreateNoWindow = true,
                     UseShellExecute = false
-                }))
+                };
+
+                using (var process = Process.Start(psi))
                 {
                     if (process == null)
                     {
@@ -306,16 +308,36 @@ namespace Servy.Service.Helpers
                         return;
                     }
 
+                    // 1. Wait for the restarter to complete the Stop/Start cycle
                     if (!process.WaitForExit(240_000))
                     {
-                        logger?.Error("Servy.Restarter.exe did not exit within 4 minutes.");
+                        logger?.Error("Servy.Restarter.exe timed out after 4 minutes. Forcing termination to prevent orphan conflicts.");
+
+                        try
+                        {
+                            // 2. Kill the orphaned restarter
+                            process.Kill();
+
+                            // 3. Brief wait to ensure kernel cleanup is complete before we return control
+                            if (!process.WaitForExit(3000))
+                            {
+                                logger?.Warn("Restarter killed, but kernel cleanup is taking longer than 3s.");
+                            }
+                        }
+                        catch (Exception killEx)
+                        {
+                            logger?.Error($"Failed to kill orphaned restarter: {killEx.Message}");
+                        }
+
                         return;
                     }
+
+                    logger?.Info($"Servy.Restarter.exe exited with code {process.ExitCode}.");
                 }
             }
             catch (Exception ex)
             {
-                logger?.Error($"Failed to launch restarter.", ex);
+                logger?.Error("Failed to launch restarter.", ex);
             }
         }
 
