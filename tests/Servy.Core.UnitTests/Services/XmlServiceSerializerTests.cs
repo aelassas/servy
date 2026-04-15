@@ -137,14 +137,14 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void Deserialize_MalformedXml_ThrowsInvalidOperationException()
+        public void Deserialize_MalformedXml_ReturnsNull()
         {
             // Arrange: Invalid XML structure
             string malformedXml = "<ServiceDto><Name>UnclosedTag";
 
             // Act & Assert
             // XmlSerializer throws InvalidOperationException when the stream is corrupted
-            Assert.Throws<InvalidOperationException>(() => _serializer.Deserialize(malformedXml));
+            Assert.Null(_serializer.Deserialize(malformedXml));
         }
 
         [Fact]

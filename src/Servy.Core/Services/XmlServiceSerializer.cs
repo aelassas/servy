@@ -1,42 +1,56 @@
 ﻿using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using System.Xml;
 using System.Xml.Serialization;
 
 namespace Servy.Core.Services
 {
-    /// <summary>
-    /// Provides XML serialization and deserialization for <see cref="ServiceDto"/> objects.
-    /// </summary>
+    /// <inheritdoc />
     public class XmlServiceSerializer : IXmlServiceSerializer
     {
         /// <inheritdoc />
         public ServiceDto? Deserialize(string? xml)
         {
-            // Branch 1: Covered by Deserialize_NullOrEmpty_ReturnsNull
+            // 1. Initial Guard
             if (string.IsNullOrWhiteSpace(xml))
                 return null;
 
-            var settings = new XmlReaderSettings
+            try
             {
-                DtdProcessing = DtdProcessing.Prohibit,
-                XmlResolver = null,
-            };
+                // 2. Security-First Settings (XXE Protection)
+                var settings = new XmlReaderSettings
+                {
+                    DtdProcessing = DtdProcessing.Prohibit,
+                    XmlResolver = null,
+                };
 
-            var serializer = new XmlSerializer(typeof(ServiceDto));
-            using (var stringReader = new StringReader(xml))
-            using (var xmlReader = XmlReader.Create(stringReader, settings))
+                var serializer = new XmlSerializer(typeof(ServiceDto));
+
+                using (var stringReader = new StringReader(xml))
+                using (var xmlReader = XmlReader.Create(stringReader, settings))
+                {
+                    // 3. Attempt Deserialization
+                    var dto = serializer.Deserialize(xmlReader) as ServiceDto;
+
+                    // 4. Apply Defaults only on success
+                    if (dto != null)
+                    {
+                        ServiceDtoHelper.ApplyDefaults(dto);
+                    }
+
+                    return dto;
+                }
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is XmlException)
             {
-                // Directly cast the result. 
-                // If the XML is valid, this is a ServiceDto. 
-                // If the XML root is wrong, XmlSerializer throws (covered by tests).
-                var dto = serializer.Deserialize(xmlReader) as ServiceDto;
+                // 5. Contextual Logging
+                // Just like the JSON version, providing a snippet helps identify the failing file.
+                string? snippet = xml?.Length > 100 ? xml.Substring(0, 100) + "..." : xml;
+                Logger.Error($"XML Deserialization failed for input starting with: {snippet}", ex);
 
-                // Since we made ApplyDefaults null-safe, we call it directly.
-                // This line is now 100% covered.
-                ServiceDtoHelper.ApplyDefaults(dto);
-
-                return dto;
+                // Fulfills the contract by returning null instead of crashing the UI
+                return null;
             }
         }
     }

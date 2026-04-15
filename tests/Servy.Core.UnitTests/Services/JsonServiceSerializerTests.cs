@@ -135,13 +135,14 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void Deserialize_InvalidJson_ThrowsJsonException()
+        public void Deserialize_InvalidJson_ReturnsNull()
         {
             // Arrange
             string invalidJson = "{ \"Name\": \"BadJson\" "; // Missing closing brace
 
             // Act & Assert
-            Assert.ThrowsAny<JsonException>(() => _serializer.Deserialize(invalidJson));
+            Assert.Null(_serializer.Deserialize(invalidJson));
         }
+
     }
 }

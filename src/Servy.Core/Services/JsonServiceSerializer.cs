@@ -1,13 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Servy.Core.DTOs;
 using Servy.Core.Helpers;
+using Servy.Core.Logging;
 using Servy.Core.Security;
 
 namespace Servy.Core.Services
 {
-    /// <summary>
-    /// Provides JSON serialization and deserialization for <see cref="ServiceDto"/> objects.
-    /// </summary>
+    /// <inheritdoc />
     public class JsonServiceSerializer : IJsonServiceSerializer
     {
         /// <inheritdoc />
@@ -17,13 +16,29 @@ namespace Servy.Core.Services
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
-            var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
+            try
+            {
+                // Attempt to deserialize using the secure settings
+                var dto = JsonConvert.DeserializeObject<ServiceDto>(json, JsonSecurity.UntrustedDataSettings);
 
-            // Since we made ApplyDefaults null-safe, we call it directly.
-            // This line is now 100% covered.
-            ServiceDtoHelper.ApplyDefaults(dto);
+                // If deserialization succeeded, apply defaults (e.g., setting missing timeouts)
+                if (dto != null)
+                {
+                    ServiceDtoHelper.ApplyDefaults(dto);
+                }
 
-            return dto;
+                return dto;
+            }
+            catch (JsonException ex)
+            {
+                string? snippet = json?.Length > 100 ? json.Substring(0, 100) + "..." : json;
+
+                Logger.Error($"JSON Deserialization failed for input starting with: {snippet}", ex);
+
+                // Returning null fulfills the contract: "returns null if deserialization fails"
+                return null;
+            }
         }
+
     }
 }
