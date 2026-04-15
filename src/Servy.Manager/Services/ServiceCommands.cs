@@ -726,8 +726,17 @@ namespace Servy.Manager.Services
         private async Task<Core.Domain.Service> GetServiceDomain(string serviceName)
         {
             var serviceDto = await _serviceRepository.GetByNameAsync(serviceName, decrypt: true);
-            var service = Core.Mappers.ServiceMapper.ToDomain(_serviceManager, serviceDto);
-            return service;
+
+            // If the service is not in the repository, we must return null 
+            // to allow callers to show the "Service Not Found" message.
+            if (serviceDto == null)
+            {
+                Logger.Warn($"Lookup failed: Service '{serviceName}' was not found in the repository.");
+                return null;
+            }
+
+            // Map to the domain engine only if we have a valid data transfer object
+            return Core.Mappers.ServiceMapper.ToDomain(_serviceManager, serviceDto);
         }
 
         /// <summary>
