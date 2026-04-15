@@ -7,7 +7,7 @@ updates:
       interval: "daily"
     open-pull-requests-limit: 0 # Only security alerts, no automated version updates
 
-  # 2. Monitor GitHub Actions for updates and security
+  # 2. Monitor GitHub Actions for security only
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
