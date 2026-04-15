@@ -225,23 +225,27 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Helper method to convert a version string like "v1.2" or "1.2" into a comparable double (e.g. 1.2).
-        /// Only the major and minor parts are considered; any additional segments are ignored.
-        /// Major version can be any non-negative integer.
-        /// Minor version is a single digit between 1 and 9.
-        /// Returns 0 if the input is invalid or cannot be parsed.
+        /// Helper method to convert a version string like "v1.2" or "1.2.3" into a comparable System.Version object.
+        /// Returns a default Version (0.0) if the input is invalid or cannot be parsed.
         /// </summary>
-        /// <param name="version">Version string in the format "v1.2" or "1.2".</param>
-        /// <returns>The parsed version as a double, or 0 on failure.</returns>
-        public static double ParseVersion(string version)
+        /// <param name="version">Version string in the format "v1.2", "1.2", or "1.2.3".</param>
+        /// <returns>The parsed System.Version, or 0.0 on failure.</returns>
+        public static Version ParseVersion(string version)
         {
-            version = version.TrimStart('v', 'V');
-            var parts = version.Split('.');
-            if (parts.Length < 2) return 0;
+            if (string.IsNullOrWhiteSpace(version))
+                return new Version(0, 0);
 
-            var major = parts[0];
-            var minor = parts[1];
-            return double.TryParse($"{major}.{minor}", NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result) ? result : 0;
+            // Remove leading 'v' or 'V'
+            version = version.TrimStart('v', 'V');
+
+            // Version.TryParse requires at least a Major.Minor format to succeed.
+            if (Version.TryParse(version, out Version? parsedVersion))
+            {
+                return parsedVersion;
+            }
+
+            // Fallback for invalid inputs
+            return new Version(0, 0);
         }
 
         /// <summary>
