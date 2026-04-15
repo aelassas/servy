@@ -38,19 +38,27 @@ namespace Servy.Service.Helpers
         /// </summary>
         private static readonly HashSet<string> ProtectedVariables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "PATH",           // DLL/Binary hijacking
-            "COMSPEC",        // Shell hijacking
-            "SYSTEMROOT",     // System API redirection
-            "WINDIR",         // System directory redirection
-            "SYSTEMDRIVE",    // Core drive redirection
-            "TEMP",           // Sandbox escape/hijacking
-            "TMP",            // Sandbox escape/hijacking
-            "PATHEXT",        // Extension hijacking
-            "PSMODULEPATH",   // PowerShell module hijacking
-            "USERNAME",       // Identity spoofing
-            "USERPROFILE",    // Profile redirection
-            "ALLUSERSPROFILE",
-            "PROGRAMDATA"
+            // --- System Integrity ---
+            "PATH", "COMSPEC", "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "TEMP", "TMP", "PATHEXT",
+    
+            // --- User & Profile Integrity ---
+            "USERNAME", "USERPROFILE", "ALLUSERSPROFILE", "PROGRAMDATA", "PSMODULEPATH",
+
+            // --- Runtime Injection Vectors (Issue #573) ---
+            // .NET / CLR Injection
+            "COR_ENABLE_PROFILING", "COR_PROFILER", "COR_PROFILER_PATH", "DOTNET_STARTUP_HOOKS",
+    
+            // Java Injection
+            "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH",
+    
+            // Node.js Injection
+            "NODE_OPTIONS", "NODE_PATH",
+    
+            // Python Injection
+            "PYTHONSTARTUP", "PYTHONPATH", "PYTHONHOME",
+    
+            // Global/Unix-like fallback (for MinGW/WSL contexts)
+            "LD_PRELOAD", "LD_LIBRARY_PATH"
         };
 
         // Safety caps to prevent unbounded growth from complex recursive nesting
