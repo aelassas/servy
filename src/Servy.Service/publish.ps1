@@ -63,7 +63,7 @@ if (-not (Test-Path $publishResScript)) {
 }
 
 Write-Host "=== Running $publishResScriptName ===" -ForegroundColor Cyan
-& $publishResScript -Tfm $Tfm -Runtime
+& $publishResScript -Tfm $Tfm
 Check-LastExitCode "$publishResScriptName failed"
 # ---------------------------------------------------------------------------------
 # Step 2: Clean and Restore
