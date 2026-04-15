@@ -376,8 +376,8 @@ namespace Servy.Manager.ViewModels
                 RamUsage = ProcessHelper.FormatRamUsage(processMetrics.RamUsage);
 
                 // Update Graphs
-                AddPoint(_cpuValues, processMetrics.CpuUsage, nameof(CpuPointCollection));
-                AddPoint(_ramValues, rawRamMb, nameof(RamPointCollection));
+                AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
+                AddPoint(_ramValues, rawRamMb, MetricType.Ram);
             }
             catch (OperationCanceledException)
             {
@@ -398,19 +398,19 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="valueHistory">The historical list of data points for the specific metric.</param>
         /// <param name="newValue">The latest raw value captured from the process.</param>
-        /// <param name="propertyName">The name of the property being updated (used to distinguish CPU vs RAM logic).</param>
-        private void AddPoint(Queue<double> valueHistory, double newValue, string propertyName)
+        /// <param name="metricType">The type of metric (CPU or RAM) being updated.</param>
+        private void AddPoint(Queue<double> valueHistory, double newValue, MetricType metricType)
         {
-            var isCpu = propertyName == nameof(CpuPointCollection);
+            var isCpu = metricType == MetricType.Cpu;
             valueHistory.Enqueue(newValue);
 
             if (valueHistory.Count > PerformanceHistoryCapacity)
             {
-                // O(1) removal. The internal head pointer simply moves forward.
                 valueHistory.Dequeue();
             }
 
             double currentMax = valueHistory.Count > 0 ? valueHistory.Max() : 0;
+            // CPU is always 0-100%, RAM scale is dynamic based on usage
             double displayMax = isCpu ? 100.0 : Math.Max(currentMax * 1.2, _ramDisplayMax);
 
             var lineBuffer = isCpu ? _cpuBuffer : _ramBuffer;
@@ -422,7 +422,6 @@ namespace Servy.Manager.ViewModels
             double stepX = GraphWidth / 100.0;
             int i = 0;
 
-            // Queue doesn't support indexers (valueHistory[i]), so use foreach
             foreach (var val in valueHistory)
             {
                 double x = i * stepX;
@@ -444,6 +443,7 @@ namespace Servy.Manager.ViewModels
                 fillBuffer.Add(new Point(fillBuffer[0].X, GraphHeight));
             }
 
+            // Update the UI-bound collections
             if (isCpu)
             {
                 CpuPointCollection = lineBuffer.Clone();

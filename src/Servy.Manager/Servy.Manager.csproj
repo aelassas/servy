@@ -103,6 +103,7 @@
     <Compile Include="Models\ConsoleService.cs" />
     <Compile Include="Models\DependencyService.cs" />
     <Compile Include="Models\LogLine.cs" />
+    <Compile Include="Models\MetricType.cs" />
     <Compile Include="Models\PerformanceService.cs" />
     <Compile Include="Models\ServiceItemBase.cs" />
     <Compile Include="Utils\HistoryResult.cs" />
