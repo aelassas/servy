@@ -17,6 +17,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write  # Required for peaceiris/actions-gh-pages to push badges
+
 jobs:
   loc_job:
     runs-on: ubuntu-latest
