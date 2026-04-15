@@ -28,13 +28,18 @@ namespace Servy.UI.Commands
         /// <inheritdoc />
         public bool CanExecute(object parameter)
         {
-            return _canExecute == null || _canExecute((T)parameter);
+            if (_canExecute == null) return true;
+
+            // Safe unboxing: If parameter is null, provide default(T).
+            // This prevents InvalidCastException for value types like int or bool.
+            return _canExecute(parameter is T typed ? typed : default(T));
         }
 
         /// <inheritdoc />
         public void Execute(object parameter)
         {
-            _execute((T)parameter);
+            // Apply the same safe check for the execution logic.
+            _execute(parameter is T typed ? typed : default(T));
         }
 
         /// <inheritdoc />
@@ -42,6 +47,14 @@ namespace Servy.UI.Commands
         {
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
+        }
+
+        /// <summary>
+        /// Manually triggers a re-evaluation of the command's CanExecute logic.
+        /// </summary>
+        public void RaiseCanExecuteChanged()
+        {
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 }
