@@ -344,7 +344,7 @@ namespace Servy.Core.IO
 
             string directory = parentDir.FullName;
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
-            string extension = Path.GetExtension(_file.FullName);
+            string extension = Path.GetExtension(_file.FullName) ?? string.Empty;
 
             // Tighten the glob pattern to require the dot separator (e.g., "app.*.log" instead of "app*")
             // This prevents matching "app_backup.log" when looking for "app.log"
