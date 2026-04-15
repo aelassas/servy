@@ -5,4 +5,11 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 0 # Disables automated version update PRs
+    open-pull-requests-limit: 0 # Only security alerts, no automated version updates
+
+  # 2. Monitor GitHub Actions for updates and security
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0 # Only security alerts, no automated version updates
