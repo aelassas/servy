@@ -4,6 +4,7 @@ using Servy.Core.Logging;
 using System.Globalization;
 using System.Security.AccessControl;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Servy.Core.IO
 {
@@ -14,6 +15,8 @@ namespace Servy.Core.IO
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {
+        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled);
+
         private bool _disposed;
         private readonly FileInfo _file;
         private StreamWriter? _writer;
@@ -343,7 +346,10 @@ namespace Servy.Core.IO
             string fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             string extension = Path.GetExtension(_file.FullName);
 
-            var allPotentialFiles = Directory.GetFiles(directory, $"{fileNameWithoutExt}*");
+            // Tighten the glob pattern to require the dot separator (e.g., "app.*.log" instead of "app*")
+            // This prevents matching "app_backup.log" when looking for "app.log"
+            string searchPattern = $"{fileNameWithoutExt}.*{extension}";
+            var allPotentialFiles = Directory.GetFiles(directory, searchPattern);
 
             var rotatedFiles = allPotentialFiles
                 .Where(f =>
@@ -353,12 +359,31 @@ namespace Servy.Core.IO
 
                     string name = Path.GetFileName(f);
 
+                    // 1. Validate Prefix
                     if (!name.StartsWith($"{fileNameWithoutExt}.", StringComparison.OrdinalIgnoreCase))
-                    {
                         return false;
-                    }
 
-                    return string.IsNullOrEmpty(extension) || name.EndsWith(extension, StringComparison.OrdinalIgnoreCase);
+                    // 2. Validate Suffix (if the original file had an extension)
+                    if (!string.IsNullOrEmpty(extension))
+                    {
+                        if (!name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+                            return false;
+                    }
+                    // Note: If the original file had NO extension, we deliberately skip the EndsWith check.
+                    // The expectedMiddleLength calculation below will absorb any unexpected trailing 
+                    // characters (like '.bak'), causing the strict Regex to reject it.
+
+                    // 3. Extract the middle portion (the injected timestamp + potential collision suffix)
+                    int startIndex = fileNameWithoutExt.Length + 1; // +1 for the dot
+                    int expectedMiddleLength = name.Length - startIndex - extension.Length;
+
+                    if (expectedMiddleLength <= 0)
+                        return false;
+
+                    string middle = name.Substring(startIndex, expectedMiddleLength);
+
+                    // 4. Strictly validate the middle portion against the expected rotation format
+                    return _rotatedTimestampRegex.IsMatch(middle);
                 })
                 .OrderByDescending(File.GetLastWriteTime)
                 .ToList();
