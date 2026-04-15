@@ -61,7 +61,16 @@ namespace Servy.Core.Services
 
                 if (level.HasValue && level != EventLogLevel.All)
                 {
-                    systemFilters.Add($"Level={(int)level.Value}");
+                    if (level.Value == EventLogLevel.Error)
+                    {
+                        // Since ParseLevel maps both Windows Level 1 (Critical) and 2 (Error) 
+                        // to EventLogLevel.Error, the query must include both levels.
+                        systemFilters.Add("(Level=1 or Level=2)");
+                    }
+                    else
+                    {
+                        systemFilters.Add($"Level={(int)level.Value}");
+                    }
                 }
 
                 if (startDate.HasValue)
