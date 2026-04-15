@@ -2029,24 +2029,34 @@ namespace Servy.Service
                 catch (Exception ex)
                 {
                     _logger?.Error($"Teardown error during {reason}: {ex.Message}", ex);
+
+                    // Reset the tearing down flag so the service can attempt recovery 
+                    // if the child process exits or the SCM attempts another stop.
+                    _isTearingDown = false;
                 }
                 finally
                 {
-                    _disposed = true;
-                    _cancellationSource?.Dispose();
-                    _cancellationSource = null;
-
-                    _secureData?.Dispose();
-
-                    try
+                    // Only dispose of core resources and set _disposed = true 
+                    // if the teardown actually succeeded.
+                    if (performedCleanup)
                     {
-                        // Dispose loggers
-                        Logger.Shutdown();
-                        _logger?.Dispose();
-                    }
-                    catch
-                    {
-                        // Fail-silent
+                        _disposed = true;
+
+                        _cancellationSource?.Dispose();
+                        _cancellationSource = null;
+
+                        _secureData?.Dispose();
+
+                        try
+                        {
+                            // Dispose loggers
+                            Logger.Shutdown();
+                            _logger?.Dispose();
+                        }
+                        catch
+                        {
+                            // Fail-silent
+                        }
                     }
                 }
             }
