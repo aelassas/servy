@@ -381,7 +381,7 @@ namespace Servy.Manager
 #if DEBUG
                 ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
 #else
-                var baseDirectory = AppFoldersHelper.GetApplicationDirectory();
+                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ConfigurationAppPublishPath))
@@ -390,6 +390,11 @@ namespace Servy.Manager
                 }
 #endif
                 IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
+
+                if (!IsConfigurationAppAvailable)
+                {
+                    Logger.Warn($"Desktop app executable not found: {ConfigurationAppPublishPath}");
+                }
 
                 // Run heavy startup work off UI thread
                 await Task.Run(async () =>

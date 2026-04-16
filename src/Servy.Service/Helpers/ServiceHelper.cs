@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.ServiceProcess;
 using System.Text.RegularExpressions;
 
@@ -292,7 +293,8 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var dir = AppFoldersHelper.GetApplicationDirectory();
+                var exePath = Assembly.GetExecutingAssembly().Location;
+                var dir = Path.GetDirectoryName(exePath);
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif

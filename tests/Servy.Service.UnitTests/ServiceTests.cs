@@ -81,7 +81,7 @@ namespace Servy.Service.UnitTests
             );
         }
 
-        [Fact]
+        [Fact(Skip = "This test is skipped because reflection-based SCM registration has been replaced by native P/Invoke calls.")]
         [Trait("Category", "ReflectionValidation")]
         public void Verify_ServiceBase_Internal_Fields_Exist_On_Current_Runtime()
         {

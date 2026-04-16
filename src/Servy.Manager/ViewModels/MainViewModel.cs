@@ -947,6 +947,11 @@ namespace Servy.Manager.ViewModels
                     RamUsage = ram
                 };
 
+                if (service.StartupType == null && serviceDto != null)
+                {
+                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
+                }
+
                 if (allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;

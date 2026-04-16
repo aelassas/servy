@@ -101,6 +101,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "actions", "actions", "{BAA8B1D5-2F99-4468-9B13-4DE9A6D75194}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-dotnet", "setup-dotnet", "{4EAF7D1D-BC10-4147-8532-F006FCDF4465}"
+	ProjectSection(SolutionItems) = preProject
+		.github\actions\setup-dotnet\action.yml = .github\actions\setup-dotnet\action.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

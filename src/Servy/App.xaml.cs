@@ -346,7 +346,7 @@ namespace Servy
 #if DEBUG
                 ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else
-                var baseDirectory = AppFoldersHelper.GetApplicationDirectory();
+                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ManagerAppPublishPath))
@@ -356,6 +356,11 @@ namespace Servy
 #endif
 
                 IsManagerAppAvailable = !string.IsNullOrEmpty(ManagerAppPublishPath) && File.Exists(ManagerAppPublishPath);
+
+                if (!IsManagerAppAvailable)
+                {
+                    Logger.Warn($"Manager app executable not found: {ManagerAppPublishPath}");
+                }
 
                 // Run heavy startup work off UI thread
                 await Task.Run(async () =>

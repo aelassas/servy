@@ -260,18 +260,26 @@ foreach ($evt in $eventsToProcess) {
   if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
     Write-Host "Email Notification sent for '$serviceName'."
     $lastSuccessfulTimestamp = $evt.TimeCreated
+
+    # Update timestamp immediately for this specific event
+    if ($null -ne $lastSuccessfulTimestamp) {
+        $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+        $timestampString = $newestTimestamp.ToString("o")
+        
+        try {
+            # Using [System.IO.File] ensures the file is created/overwritten 
+            # exactly as a .NET application would, avoiding PS pipe overhead.
+            [System.IO.File]::WriteAllText($timestampFile, $timestampString)
+            
+            Write-Host "Timestamp updated to: $timestampString"
+        }
+        catch {
+            Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $scriptDir
+        }
+    }
+
   } else {
     Write-Host "Aborting further processing due to email failure." -ForegroundColor Yellow
     break
   }
-}
-
-# -------------------------------
-# 8. Update Timestamp File (Final Step)
-# -------------------------------
-if ($null -ne $lastSuccessfulTimestamp) {
-  # Add 1 tick to avoid duplicate processing on next run
-  $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
-  $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
-  Write-Host "Timestamp updated to: $($newestTimestamp.ToString('o'))"
 }
