@@ -36,7 +36,7 @@
 param(
     [string]$Tfm      = "net10.0-windows", 
     [ValidatePattern("^\d+\.\d+$")]
-    [string]$Version = "7.9"
+    [string]$Version = "8.0"
 )
 
 $ErrorActionPreference = "Stop"
