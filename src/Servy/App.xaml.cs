@@ -196,13 +196,13 @@ namespace Servy
             base.OnStartup(e);
 
             // 3. Fire-and-forget with safety net
-            _ = InitializeApp(e).ContinueWith(t =>
+            _ = InitializeApp(e).ContinueWith(async t =>
             {
                 if (t.IsFaulted)
                 {
                     var ex = t.Exception?.Flatten().InnerException;
                     Logger.Error("Critical Startup Fault in InitializeApp", ex);
-                    Current.Dispatcher.Invoke(() =>
+                    await Current.Dispatcher.InvokeAsync(() =>
                     {
                         MessageBox.Show($"Critical Startup Fault: {ex?.Message}");
                         Shutdown(1);
@@ -383,7 +383,7 @@ namespace Servy
                     // Copy Sysinternals from embedded resources
                     if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
-                        Current.Dispatcher.Invoke(() =>
+                        await Current.Dispatcher.InvokeAsync(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}")
                         );
                     }
@@ -397,7 +397,7 @@ namespace Servy
                     // Copy debug symbols from embedded resources (only in debug builds)
                     if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
-                        Current.Dispatcher.Invoke(() =>
+                        await Current.Dispatcher.InvokeAsync(() =>
                             MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb")
                         );
                     }
@@ -419,7 +419,7 @@ namespace Servy
                     // Copy embedded resources
                     if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
                     {
-                        Current.Dispatcher.Invoke(() =>
+                        await Current.Dispatcher.InvokeAsync(() =>
                             MessageBox.Show($"Failed copying embedded resources.")
                         );
                     }

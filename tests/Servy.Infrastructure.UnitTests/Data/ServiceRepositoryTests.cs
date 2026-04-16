@@ -93,7 +93,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
 
             // AddAsync typically uses ExecuteScalarAsync to return the new Row ID
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>()))
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(99);
 
             var repo = CreateRepository();
@@ -124,7 +124,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                     GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
                     GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
                     GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
-                )), Times.Once);
+                ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -158,7 +158,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
 
             // ExecuteAsync returns the number of rows affected (usually 1)
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()))
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(1);
 
             var repo = CreateRepository();
@@ -189,7 +189,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                     GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
                     GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
                     GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
-                )), Times.Once);
+                ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -268,7 +268,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // It returns the ID of the inserted or updated row.
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
                     It.IsAny<string>(),
-                    It.IsAny<object>()))
+                    It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedId);
 
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
@@ -293,7 +293,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         {
             var dto = new ServiceDto { Name = "NewService" };
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<ServiceDto>(It.IsAny<CommandDefinition>())).ReturnsAsync((ServiceDto)null);
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(7);
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(7);
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>())).Returns<string>(s => s);
 
             var repo = CreateRepository();
@@ -315,7 +315,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Mock ExecuteScalarAsync (The Atomic Upsert)
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
                 It.IsAny<string>(),
-                It.IsAny<object>()))
+                It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(generatedId);
 
             var repo = CreateRepository();
@@ -334,7 +334,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Verify that the object passed to Dapper actually contained the encrypted value
             _mockDapper.Verify(d => d.ExecuteScalarAsync<int>(
                 It.IsAny<string>(),
-                It.Is<object>(obj => GetPropertyValue(obj, "Password") == encryptedValue)
+                It.Is<object>(obj => GetPropertyValue(obj, "Password") == encryptedValue), It.IsAny<CancellationToken>()
                 ), Times.Once);
         }
 
@@ -349,7 +349,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Equal(0, result);
-            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -364,7 +364,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             // Assert
             Assert.Equal(0, result);
-            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+            _mockDapper.Verify(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -435,7 +435,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockSecureData.Setup(s => s.Encrypt(It.IsAny<string>()))
                            .Returns((string input) => encryptedPrefix + input);
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<IEnumerable<ServiceDto>>()))
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<IEnumerable<ServiceDto>>(), It.IsAny<CancellationToken>()))
                        .ReturnsAsync(1);
 
             // Act
@@ -449,7 +449,7 @@ namespace Servy.Infrastructure.UnitTests.Data
              sql.Contains("PreStopParameters = excluded.PreStopParameters") &&
              sql.Contains("UseLocalTimeForRotation = excluded.UseLocalTimeForRotation")),
          It.Is<IEnumerable<ServiceDto>>(list =>
-             list.Count() == 1 && VerifyAllProperties(list.First(), service, encryptedPrefix))
+             list.Count() == 1 && VerifyAllProperties(list.First(), service, encryptedPrefix)), It.IsAny<CancellationToken>()
      ), Times.Once);
         }
 
@@ -508,7 +508,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task DeleteAsync_ById_ReturnsAffectedRows()
         {
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
             var rows = await repo.DeleteAsync(10);
@@ -519,7 +519,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task DeleteAsync_ByName_ReturnsAffectedRows()
         {
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
             var rows = await repo.DeleteAsync("ServiceName");
@@ -530,7 +530,7 @@ namespace Servy.Infrastructure.UnitTests.Data
         [Fact]
         public async Task DeleteAsync_ByName_ReturnsZero()
         {
-            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var repo = CreateRepository();
             var rows = await repo.DeleteAsync(string.Empty);
@@ -695,7 +695,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper
                 .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
                     It.Is<string>(sql => sql.Contains("SELECT Pid FROM Services")),
-                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName)))
+                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedPid);
 
             // Act
@@ -717,7 +717,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper
                 .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
                     It.Is<string>(sql => sql.Contains("SELECT Pid FROM Services")),
-                    It.IsAny<object>()))
+                    It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((int?)null);
 
             // Act
@@ -737,7 +737,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper
                 .Setup(e => e.QueryFirstOrDefaultAsync<int?>(
                     It.IsAny<string>(),
-                    It.IsAny<object>()))
+                    It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((int?)null);
 
             // Act
@@ -762,7 +762,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // This ensures the repo method correctly propagates the token to the executor
             _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<int?>(
                 It.IsAny<string>(),
-                It.IsAny<object>()), Times.Once);
+                It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -780,7 +780,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper
                 .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
                     It.Is<string>(sql => sql.Contains("SELECT Pid, ActiveStdoutPath, ActiveStderrPath")),
-                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName)))
+                    It.Is<object>(p => p.GetType().GetProperty("Name").GetValue(p).ToString() == serviceName), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedState);
 
             // Act
@@ -804,7 +804,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockDapper
                 .Setup(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
                     It.IsAny<string>(),
-                    It.IsAny<object>()))
+                    It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ServiceConsoleStateDto)null);
 
             // Act
@@ -827,7 +827,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                         sql.Contains("FROM Services") &&
                         sql.Contains("WHERE Name = @Name") &&
                         sql.Contains("LIMIT 1")),
-                    It.IsAny<object>()))
+                    It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ServiceConsoleStateDto());
 
             // Act
@@ -837,7 +837,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             _mockDapper.Verify(e => e.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(
                 It.IsAny<string>(),
-                It.Is<object>(p => p.GetType().GetProperty("Name") != null)),
+                It.Is<object>(p => p.GetType().GetProperty("Name") != null), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -1027,7 +1027,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockXmlServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var result = await repo.ImportXmlAsync(xml);
             Assert.True(result);
@@ -1099,7 +1099,7 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockJsonServiceSerializer.Setup(d => d.Deserialize(It.IsAny<string>())).Returns(dto);
             _mockDapper.Setup(d => d.QuerySingleOrDefaultAsync<int>(It.IsAny<CommandDefinition>())).ReturnsAsync(0);
-            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>())).ReturnsAsync(1);
+            _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var result = await repo.ImportJsonAsync(json);
             Assert.True(result);

@@ -70,13 +70,16 @@ namespace Servy.Infrastructure.Data
         /// <summary>
         /// Wraps an asynchronous database action with a retry policy using exponential backoff and jitter.
         /// </summary>
-        private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
+        private async Task<T> ExecuteWithRetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
         {
             for (int i = 0; i < MaxRetries; i++)
             {
+                // Fail fast if the operation was cancelled before or during the retry loop
+                cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
-                    return await action().ConfigureAwait(false);
+                    return await action(cancellationToken).ConfigureAwait(false);
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
@@ -85,7 +88,8 @@ namespace Servy.Infrastructure.Data
                     int delay = CalculateBackoff(i);
                     Logger.Warn($"Database busy (async attempt {i + 1}/{MaxRetries}). Retrying in {delay}ms...");
 
-                    await Task.Delay(delay).ConfigureAwait(false);
+                    // Critical: Pass the token to Task.Delay so we don't hang if cancelled during backoff
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
                 }
             }
             return default;
@@ -98,9 +102,8 @@ namespace Servy.Infrastructure.Data
         /// <returns>The delay in milliseconds.</returns>
         private int CalculateBackoff(int attempt)
         {
-            // Exponential: 100, 200, 400... 
-            // Optimization: bit-shifting (1 << attempt) is faster than Math.Pow
-            int backoff = InitialDelayMs * (1 << attempt);
+            // Exponential: 100, 200, 400...
+            int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
 
             // Jitter: 0 to 50ms 
             // Accessing .Value is thread-safe and lock-free
@@ -178,33 +181,37 @@ namespace Servy.Infrastructure.Data
         #region Asynchronous Methods
 
         /// <inheritdoc/>
-        public async Task<T> ExecuteScalarAsync<T>(string sql, object param = null)
+        public async Task<T> ExecuteScalarAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            return await ExecuteWithRetryAsync(async () =>
+            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+
+            return await ExecuteWithRetryAsync(async (ct) =>
             {
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
-                    return await connection.ExecuteScalarAsync<T>(sql, param).ConfigureAwait(false);
+                    await connection.OpenAsync(ct).ConfigureAwait(false);
+                    return await connection.ExecuteScalarAsync<T>(command).ConfigureAwait(false);
                 }
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<int> ExecuteAsync(string sql, object param = null)
+        public async Task<int> ExecuteAsync(string sql, object param = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            var result = await ExecuteWithRetryAsync(async () =>
+            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+
+            var result = await ExecuteWithRetryAsync(async (ct) =>
             {
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
-                    return (int?)await connection.ExecuteAsync(sql, param).ConfigureAwait(false);
+                    await connection.OpenAsync(ct).ConfigureAwait(false);
+                    return (int?)await connection.ExecuteAsync(command).ConfigureAwait(false);
                 }
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
 
             return result ?? 0;
         }
@@ -212,56 +219,56 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc/>
         public async Task<IEnumerable<T>> QueryAsync<T>(CommandDefinition command)
         {
-            return await ExecuteWithRetryAsync(async () =>
+            return await ExecuteWithRetryAsync(async (ct) =>
             {
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
+                    await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.QueryAsync<T>(command).ConfigureAwait(false);
                 }
-            }).ConfigureAwait(false) ?? Enumerable.Empty<T>();
+            }, command.CancellationToken).ConfigureAwait(false) ?? Enumerable.Empty<T>();
         }
 
         /// <inheritdoc/>
-        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null)
+        public async Task<IEnumerable<T>> QueryAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
         {
-            // Redirect to your existing method to preserve retry logic and connection management
-            return await QueryAsync<T>(new CommandDefinition(sql, param)).ConfigureAwait(false);
+            return await QueryAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null)
+        public async Task<T> QuerySingleOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
         {
-            // Redirect to your existing CommandDefinition overload
-            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param)).ConfigureAwait(false);
+            return await QuerySingleOrDefaultAsync<T>(new CommandDefinition(sql, param, cancellationToken: cancellationToken)).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
         public async Task<T> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
-            return await ExecuteWithRetryAsync(async () =>
+            return await ExecuteWithRetryAsync(async (ct) =>
             {
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
+                    await connection.OpenAsync(ct).ConfigureAwait(false);
                     return await connection.QuerySingleOrDefaultAsync<T>(command).ConfigureAwait(false);
                 }
-            }).ConfigureAwait(false);
+            }, command.CancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
-        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null)
+        public async Task<T> QueryFirstOrDefaultAsync<T>(string sql, object param = null, CancellationToken cancellationToken = default)
         {
             if (sql == null) throw new ArgumentNullException(nameof(sql));
 
-            return await ExecuteWithRetryAsync(async () =>
+            var command = new CommandDefinition(sql, param, cancellationToken: cancellationToken);
+
+            return await ExecuteWithRetryAsync(async (ct) =>
             {
                 using (var connection = _dbContext.CreateConnection())
                 {
-                    await connection.OpenAsync().ConfigureAwait(false);
-                    return await connection.QueryFirstOrDefaultAsync<T>(sql, param).ConfigureAwait(false);
+                    await connection.OpenAsync(ct).ConfigureAwait(false);
+                    return await connection.QueryFirstOrDefaultAsync<T>(command).ConfigureAwait(false);
                 }
-            }).ConfigureAwait(false);
+            }, cancellationToken).ConfigureAwait(false);
         }
 
         #endregion
