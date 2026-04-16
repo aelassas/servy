@@ -132,10 +132,29 @@ namespace Servy.Manager.ViewModels
         public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private ConsoleService _selectedService;
+
         /// <summary>
-        /// Gets or sets the currently selected service. 
-        /// Changing this resets the console history and restarts file tailing for the new service paths.
+        /// Gets or sets the currently selected service for console monitoring.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>WARNING:</b> This setter has significant side effects and is NOT a lightweight operation.
+        /// Setting this property triggers the following:
+        /// </para>
+        /// <list type="number">
+        /// <item>
+        /// <description><b>State Capture:</b> Synchronizes internal <c>_stdoutPath</c> and <c>_stderrPath</c> fields.</description>
+        /// </item>
+        /// <item>
+        /// <description><b>File I/O:</b> Initiates <see cref="SwitchServiceAsync"/>, which clears the current log buffer, 
+        /// performs asynchronous disk reads to load history, and starts new background tailing tasks.</description>
+        /// </item>
+        /// <item>
+        /// <description><b>Timer Orchestration:</b> Restarts the performance monitoring loop by calling 
+        /// <see cref="StopMonitoring"/> and <see cref="StartMonitoring"/>, resetting the cancellation tokens.</description>
+        /// </item>
+        /// </list>
+        /// </remarks>
         public ConsoleService SelectedService
         {
             get => _selectedService;
