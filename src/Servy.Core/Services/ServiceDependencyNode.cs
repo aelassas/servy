@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -11,7 +12,6 @@ namespace Servy.Core.Services
     /// </summary>
     public sealed class ServiceDependencyNode : INotifyPropertyChanged
     {
-
         #region Fields
 
         private string _displayName;
@@ -89,7 +89,7 @@ namespace Servy.Core.Services
         /// </param>
         public ServiceDependencyNode(string serviceName, string displayName, bool isRunning = false, bool isCycle = false)
         {
-            ServiceName = serviceName;
+            ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
             DisplayName = displayName;
             IsRunning = isRunning;
             IsCycle = isCycle;
