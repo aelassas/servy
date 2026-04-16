@@ -307,11 +307,11 @@ namespace Servy.Core.Services
             if (options == null)
                 throw new ArgumentNullException(nameof(options));
             if (string.IsNullOrWhiteSpace(options.ServiceName))
-                throw new ArgumentException("Value is required.", nameof(options.ServiceName));
+                throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.WrapperExePath))
-                throw new ArgumentException("Value is required.", nameof(options.WrapperExePath));
+                throw new ArgumentException("Value is required.", nameof(options));
             if (string.IsNullOrWhiteSpace(options.RealExePath))
-                throw new ArgumentException("Value is required.", nameof(options.RealExePath));
+                throw new ArgumentException("Value is required.", nameof(options));
 
             // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",

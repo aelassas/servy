@@ -46,7 +46,7 @@ namespace Servy.Core.Services
             {
                 // 5. Contextual Logging
                 // Just like the JSON version, providing a snippet helps identify the failing file.
-                string? snippet = xml?.Length > 100 ? xml.Substring(0, 100) + "..." : xml;
+                string? snippet = xml.Length > 100 ? xml.Substring(0, 100) + "..." : xml;
                 Logger.Error($"XML Deserialization failed for input starting with: {snippet}", ex);
 
                 // Fulfills the contract by returning null instead of crashing the UI
