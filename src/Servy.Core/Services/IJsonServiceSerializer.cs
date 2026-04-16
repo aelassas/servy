@@ -14,6 +14,6 @@ namespace Servy.Core.Services
         /// <returns>
         /// The deserialized <see cref="ServiceDto"/> instance, or <c>null</c> if deserialization fails.
         /// </returns>
-        ServiceDto? Deserialize(string json);
+        ServiceDto? Deserialize(string? json);
     }
 }
