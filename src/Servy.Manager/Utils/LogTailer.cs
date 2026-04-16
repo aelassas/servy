@@ -24,7 +24,7 @@ namespace Servy.Manager.Utils
     /// However, if a rotation occurs and the new file immediately becomes larger 
     /// than the old offset, a rotation might be missed on these platforms.
     /// </remarks>
-    public class LogTailer
+    public class LogTailer : IDisposable
     {
         /// <summary>
         /// The maximum number of log lines allowed to be loaded into memory at once.
@@ -42,6 +42,17 @@ namespace Servy.Manager.Utils
         /// Delay in milliseconds before retrying after a file-access error (e.g. rotation).
         /// </summary>
         private const int FileRetryDelayMs = 500;
+
+        /// <summary>
+        /// Indicates whether the current instance has been disposed.
+        /// </summary>
+        private bool _isDisposed;
+
+        /// <summary>
+        /// The registration used to unhook the <see cref="Dispose()"/> logic 
+        /// from the cancellation token during cleanup.
+        /// </summary>
+        private CancellationTokenRegistration _tokenRegistration;
 
         /// <summary>
         /// Delegate for handling a batch of new log lines.
@@ -67,6 +78,10 @@ namespace Servy.Manager.Utils
         public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
         {
             if (string.IsNullOrEmpty(path)) return;
+
+            // Wire up the token to automatically dispose this instance when cancelled.
+            // This guarantees the ViewModel reference is dropped immediately upon cancellation.
+            _tokenRegistration = token.Register(Dispose);
 
             long lastPosition = startPos;
             DateTime lastCreationTime = startCreated;
@@ -253,6 +268,40 @@ namespace Servy.Manager.Utils
             }
 
             return lines;
+        }
+
+        /// <summary>
+        /// Releases resources and detaches event handlers to prevent memory leaks.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Protected implementation of the Dispose pattern.
+        /// </summary>
+        /// <param name="disposing">
+        /// <c>true</c> to release both managed and unmanaged resources; 
+        /// <c>false</c> to release only unmanaged resources.
+        /// </param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_isDisposed)
+                return;
+
+            if (disposing)
+            {
+                // 1. Break the strong reference to the subscriber (ViewModel)
+                OnNewLines = null;
+
+                // 2. Unregister from the cancellation token to prevent the token source
+                // from keeping this instance alive if the CTS is long-lived.
+                _tokenRegistration.Dispose();
+            }
+
+            _isDisposed = true;
         }
 
     }
