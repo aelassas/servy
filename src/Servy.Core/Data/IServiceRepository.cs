@@ -42,18 +42,22 @@ namespace Servy.Core.Data
         Task<int> UpsertAsync(ServiceDto service, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Asynchronously inserts or updates a collection of services in a single database transaction.
+        /// Asynchronously inserts or updates a collection of services in the database.
         /// </summary>
         /// <param name="services">The collection of <see cref="ServiceDto"/> objects to be persisted.</param>
         /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
         /// <returns>
-        /// A task representing the asynchronous operation, containing the number of rows affected.
+        /// A task representing the asynchronous operation, containing the total number of rows affected.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method is optimized for high-volume updates, such as those triggered by the background 
-        /// UI refresh timer. It significantly reduces SQLite I/O contention by wrapping the operations 
-        /// in an atomic transaction.
+        /// This method iterates through the collection and executes individual upsert commands. 
+        /// <b>Caution:</b> This operation is NOT executed within an atomic transaction. If the 
+        /// operation is interrupted or an error occurs mid-batch, partial data may remain in the database.
+        /// </para>
+        /// <para>
+        /// After the database write, the method attempts to synchronize the auto-incremented 
+        /// IDs back to the original <see cref="ServiceDto"/> objects in chunks.
         /// </para>
         /// <para>
         /// <b>Security:</b> Sensitive data within each <see cref="ServiceDto"/> (such as passwords) 
