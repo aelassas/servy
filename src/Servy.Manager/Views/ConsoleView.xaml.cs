@@ -1,4 +1,5 @@
-﻿using Servy.Manager.Models;
+﻿using Servy.Core.Logging;
+using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
 using Servy.UI.Helpers;
 using System;
@@ -196,9 +197,16 @@ namespace Servy.Manager.Views
         /// <param name="e">The event data.</param>
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is ConsoleViewModel vm && !vm.Services.Any())
+            try
             {
-                await vm.SearchCommand.ExecuteAsync(null);
+                if (DataContext is ConsoleViewModel vm && !vm.Services.Any())
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to perform initial service search in ConsoleView.", ex);
             }
         }
 
@@ -214,10 +222,16 @@ namespace Servy.Manager.Views
                 DataContext is ConsoleViewModel vm &&
                 vm.SearchCommand.CanExecute(null))
             {
-                await vm.SearchCommand.ExecuteAsync(null);
+                try
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Search failed in ConsoleView via Enter key.", ex);
+                }
             }
         }
-
 
     }
 }

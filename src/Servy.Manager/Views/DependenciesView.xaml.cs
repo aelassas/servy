@@ -1,4 +1,6 @@
-﻿using Servy.Manager.ViewModels;
+﻿using Servy.Core.Logging;
+using Servy.Manager.ViewModels;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,9 +34,16 @@ namespace Servy.Manager.Views
         /// <param name="e">The event data.</param>
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is DependenciesViewModel vm && !vm.Services.Any())
+            try
             {
-                await vm.SearchCommand.ExecuteAsync(null);
+                if (DataContext is DependenciesViewModel vm && !vm.Services.Any())
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Failed to perform initial service search in DependenciesView.", ex);
             }
         }
 
@@ -50,7 +59,14 @@ namespace Servy.Manager.Views
                 DataContext is DependenciesViewModel vm &&
                 vm.SearchCommand.CanExecute(null))
             {
-                await vm.SearchCommand.ExecuteAsync(null);
+                try
+                {
+                    await vm.SearchCommand.ExecuteAsync(null);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Search failed in DependenciesView via Enter key.", ex);
+                }
             }
         }
     }
