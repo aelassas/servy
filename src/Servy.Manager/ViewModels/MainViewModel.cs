@@ -13,7 +13,6 @@ using Servy.UI.Commands;
 using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -765,7 +764,7 @@ namespace Servy.Manager.ViewModels
                 if (!await _messageBoxService.ShowConfirmAsync(confirmMessage, AppConfig.Caption))
                     return;
 
-                SetIsBusy(true);
+                await SetBusyStateAsync(true);
 
                 // 3. Dispatch all operations concurrently: Scale based on hardware
                 int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism);
@@ -812,7 +811,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                SetIsBusy(false);
+                await SetBusyStateAsync(false);
             }
         }
 
@@ -874,15 +873,6 @@ namespace Servy.Manager.ViewModels
                     }).ToList();
 
                     await Task.WhenAll(tasks);
-
-                    // Refresh UI only if not cancelled
-                    if (_cts != null && !_cts.IsCancellationRequested)
-                    {
-                        await _dispatcher.InvokeAsync(() =>
-                        {
-                            ServicesView.Refresh();
-                        }, DispatcherPriority.Background);
-                    }
                 }
 
                 // 5. Batch-Apply all UI updates to the UI thread in one go
@@ -906,6 +896,15 @@ namespace Servy.Manager.ViewModels
                 if (changedDtos.Any())
                 {
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
+                }
+
+                // Refresh UI only if not cancelled
+                if (_cts != null && !_cts.IsCancellationRequested)
+                {
+                    await _dispatcher.InvokeAsync(() =>
+                    {
+                        ServicesView.Refresh();
+                    }, DispatcherPriority.Background);
                 }
             }
             catch (OperationCanceledException)
@@ -1057,22 +1056,14 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        ///  Sets the busy state and updates the mouse cursor accordingly.
+        /// Sets the busy state and updates the mouse cursor accordingly without blocking the calling thread.
         /// </summary>
-        private void SetIsBusy(bool busy)
+        private async Task SetBusyStateAsync(bool busy)
         {
-            _dispatcher.Invoke(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 IsBusy = busy;
-
-                if (busy)
-                {
-                    Mouse.OverrideCursor = Cursors.Wait;
-                }
-                else
-                {
-                    Mouse.OverrideCursor = null;
-                }
+                Mouse.OverrideCursor = busy ? Cursors.Wait : null;
             });
         }
 
@@ -1110,7 +1101,7 @@ namespace Servy.Manager.ViewModels
             }
             else
             {
-                _dispatcher.Invoke(action);
+                _dispatcher.InvokeAsync(action, DispatcherPriority.Background);
             }
         }
 
