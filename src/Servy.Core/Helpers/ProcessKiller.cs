@@ -129,7 +129,7 @@ namespace Servy.Core.Helpers
                     if (!child.HasExited)
                     {
                         child.Kill();
-                        child.WaitForExit(2000);
+                        child.WaitForExit(AppConfig.KillChildWaitMs);
                     }
                 }
                 catch (Exception ex)
@@ -383,7 +383,7 @@ namespace Servy.Core.Helpers
                 if (!process.HasExited)
                 {
                     process.Kill();
-                    process.WaitForExit(10_000);
+                    process.WaitForExit(AppConfig.KillTreeWaitMs);
                 }
             }
             catch (InvalidOperationException) { /* Process already exited */ }
@@ -423,7 +423,7 @@ namespace Servy.Core.Helpers
                 if (!parent.HasExited)
                 {
                     parent.Kill();
-                    parent.WaitForExit(5000);
+                    parent.WaitForExit(AppConfig.KillParentWaitMs);
                 }
             }
             catch

@@ -473,6 +473,34 @@ namespace Servy.Core.Config
         /// </remarks>
         public const int MaxImportPayloadSizeChars = 1_024_000;
 
+        /// <summary>
+        /// Timeout in milliseconds to wait for an individual child process to exit after a termination signal.
+        /// </summary>
+        /// <remarks>
+        /// A shorter timeout (2,000ms) is used here to prevent the "KillChildren" loop from hanging 
+        /// if one specific sub-process is non-responsive.
+        /// </remarks>
+        public const int KillChildWaitMs = 2_000;
+
+        /// <summary>
+        /// Timeout in milliseconds to wait for an entire process tree to terminate.
+        /// </summary>
+        /// <remarks>
+        /// A longer timeout (10_000ms) is allocated to allow Windows to clean up nested 
+        /// process hierarchies and release associated kernel handles.
+        /// </remarks>
+        public const int KillTreeWaitMs = 10_000;
+
+        /// <summary>
+        /// Timeout in milliseconds to wait for a parent process to exit.
+        /// </summary>
+        public const int KillParentWaitMs = 5_000;
+
+        /// <summary>
+        /// Timeout in milliseconds for external handle-utility execution (e.g., handle.exe).
+        /// </summary>
+        public const int HandleExeTimeoutMs = 5_000;
+
         #endregion
 
         #region Public Methods

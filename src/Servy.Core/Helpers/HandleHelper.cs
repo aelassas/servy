@@ -1,4 +1,5 @@
-﻿using Servy.Core.Logging;
+﻿using Servy.Core.Config;
+using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
@@ -92,7 +93,7 @@ namespace Servy.Core.Helpers
                 // Read stdout synchronously (this is now safe because stderr is being drained asynchronously)
                 string output = process.StandardOutput.ReadToEnd();
 
-                if (!process.WaitForExit(5000))
+                if (!process.WaitForExit(AppConfig.HandleExeTimeoutMs))
                 {
                     try { process.Kill(); } catch { /* Ignore cleanup errors */ }
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
