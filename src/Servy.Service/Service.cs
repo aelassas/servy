@@ -2186,6 +2186,13 @@ namespace Servy.Service
             // reset PID
             ClearProcessState();
 
+            // 0. Robustness Guard: If options are null, we haven't initialized hooks or process paths yet.
+            if (_options == null)
+            {
+                _logger?.Debug("Cleanup called before service options were initialized. Bypassing hook execution.");
+                return;
+            }
+
             try
             {
                 // 1. Unhook Exited event early so we don't trigger "unexpected exit" logic
@@ -2284,9 +2291,7 @@ namespace Servy.Service
                     _childProcess.Dispose();
                     _childProcess = null;
                 }
-
             }
-
         }
 
         /// <summary>
