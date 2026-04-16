@@ -844,7 +844,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max Restart Attempts must be a number greater than or equal to 1..
+        ///   Recherche une chaîne localisée semblable à Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts..
         /// </summary>
         public static string Msg_InvalidMaxRestartAttempts {
             get {

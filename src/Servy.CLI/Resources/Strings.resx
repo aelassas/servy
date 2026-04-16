@@ -38,7 +38,7 @@
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
-  
+
   <data name="Msg_WrapperNotFound" xml:space="preserve">
     <value>Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.</value>
   </data>
@@ -154,7 +154,7 @@
     <value>The specified recovery action is invalid. Options: None, RestartService, RestartProcess, RestartComputer.</value>
   </data>
   <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
+    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
   </data>
 
   <data name="Msg_ServiceInstalled" xml:space="preserve">
@@ -199,8 +199,8 @@
   <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
     <value>Pre-Launch retry attempts must be a number greater than or equal to 0.</value>
   </data>
- 
-  
+
+
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
@@ -224,7 +224,7 @@
   <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
     <value>The specified post-launch startup directory is invalid.</value>
   </data>
-  
+
   <!--Start/Stop timeouts-->
   <data name="Msg_InvalidStartTimeout" xml:space="preserve">
     <value>Start timeout must be a number greater than or equal to 1.</value>
@@ -265,5 +265,5 @@
   <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
     <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
   </data>
-  
+
 </root>

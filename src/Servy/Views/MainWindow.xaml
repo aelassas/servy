@@ -446,6 +446,7 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <Grid.ColumnDefinitions>
@@ -521,11 +522,17 @@
                                  AutomationProperties.AutomationId="TextBoxMaxRestartAttempts"
                                  AutomationProperties.HelpText="Enter the maximum number of restart attempts."/>
                         <TextBlock Grid.Row="5" Grid.Column="2" Text="{x:Static resx:Strings.Label_Attempts}" VerticalAlignment="Center" Margin="5,5,0,5"/>
+                        <TextBlock Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                                   Text="{x:Static resx:Strings.Info_MaxRestartAttempts}" 
+                                   FontStyle="Normal" 
+                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                   TextWrapping="Wrap" 
+                                   Margin="0,0,0,5"/>
 
-                        <TextBlock Grid.Row="6"  Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_FailureProgram}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="5,0,0,5"/>
+                        <TextBlock Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="3" Text="{x:Static resx:Strings.Info_FailureProgram}" FontStyle="Normal" Foreground="Black" TextWrapping="Wrap" Margin="0,0,0,5"/>
 
-                        <TextBlock Grid.Row="7" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="7" Grid.Column="1" 
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessPathNotRequired}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="8" Grid.Column="1" 
                                  Margin="0,5"
                                  Text="{Binding FailureProgramPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
@@ -535,18 +542,18 @@
                                  AutomationProperties.Name="Failure Program Path"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramPath"
                                  AutomationProperties.HelpText="Enter the path to the executable to run upon failure."/>
-                        <Button Grid.Row="7" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramPathCommand}" Margin="5,5,0,5"
+                        <Button Grid.Row="8" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramPathCommand}" Margin="5,5,0,5"
                                 AutomationProperties.Name="Browse Failure Program Path"
                                 AutomationProperties.AutomationId="ButtonBrowseFailureProgramPath"
                                 AutomationProperties.HelpText="Browse to select the failure program executable."/>
-                        <TextBlock Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="2"
                                    Text="{x:Static resx:Strings.Info_ProcessPath}" 
                                    FontStyle="Normal" 
                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                    TextWrapping="Wrap"/>
 
-                        <TextBlock Grid.Row="9" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="9" Grid.Column="1" 
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="{x:Static resx:Strings.Label_StartupDirectory}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="10" Grid.Column="1" 
                                  Margin="0,5"
                                  Text="{Binding FailureProgramStartupDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
@@ -556,19 +563,19 @@
                                  AutomationProperties.Name="Failure Program Startup Directory"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramStartupDir"
                                  AutomationProperties.HelpText="Enter the startup directory for the failure program."/>
-                        <Button Grid.Row="9" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramStartupDirectoryCommand}" Margin="5,5,0,5"
+                        <Button Grid.Row="10" Grid.Column="2" Content="{x:Static resx:Strings.Button_Browse}" Command="{Binding BrowseFailureProgramStartupDirectoryCommand}" Margin="5,5,0,5"
                                 AutomationProperties.Name="Browse Failure Program Startup Directory"
                                 AutomationProperties.AutomationId="ButtonBrowseFailureProgramDir"
                                 AutomationProperties.HelpText="Browse to select the failure program startup directory."/>
-                        <TextBlock Grid.Row="10"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
-                        <TextBlock Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="11"  Grid.Column="1" Grid.ColumnSpan="2" Text="{x:Static resx:Strings.Info_FailureProgramStartupDirectory}" FontStyle="Normal" Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" TextWrapping="Wrap"/>
+                        <TextBlock Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
                                    Text="{x:Static resx:Strings.Info_StartupDirectory}" 
                                    FontStyle="Normal" 
                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                    TextWrapping="Wrap"/>
 
-                        <TextBlock Grid.Row="12" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="13" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
+                        <TextBox Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
                                  Margin="0,5"
                                  Text="{Binding FailureProgramParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                  Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
@@ -578,7 +585,7 @@
                                  AutomationProperties.Name="Failure Program Parameters"
                                  AutomationProperties.AutomationId="TextBoxFailureProgramParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the failure program."/>
-                        <TextBlock Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="2"
+                        <TextBlock Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="2"
                                    Text="{x:Static resx:Strings.Info_ProcessParameters}" 
                                    FontStyle="Normal" 
                                    Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
@@ -1204,3 +1211,4 @@
 
     </DockPanel>
 </Window>
+    

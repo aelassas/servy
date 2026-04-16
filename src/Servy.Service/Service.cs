@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
@@ -154,7 +153,7 @@ namespace Servy.Service
         private readonly object _teardownLock = new object();
         private readonly object _fileLock = new object();
         private volatile bool _isRecovering = false;
-        private int _maxRestartAttempts = 3; // Maximum number of restart attempts
+        private int _maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _recoveryActionEnabled = false;
         private string _restartAttemptsFile;
@@ -468,7 +467,7 @@ namespace Servy.Service
                 // Request timeout for startup to accommodate slow process
                 if (_options.StartTimeout > ScmStartupRequestThresholdSeconds) // Use a lower threshold to be safe
                 {
-                    _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeout + 10) , _logger);
+                    _serviceHelper.RequestAdditionalTime(this, ClampTimeout(_options.StartTimeout + 10), _logger);
                 }
 
                 // Set up attempts file
@@ -585,7 +584,7 @@ namespace Servy.Service
         /// If the file content is invalid or unreadable, it automatically resets the file to "0" 
         /// to maintain a clean recovery state for the managed process.
         /// </remarks>
-        private int EnsureRestartAttemptsFileAsync()
+        private int EnsureRestartAttemptsFile()
         {
             if (string.IsNullOrEmpty(_restartAttemptsFile)) return 0;
 
@@ -668,7 +667,7 @@ namespace Servy.Service
         {
             // If the counter is already 0, there is no need to check timestamps or files.
             // This keeps the health check efficient.
-            if (EnsureRestartAttemptsFileAsync() == 0) return;
+            if (EnsureRestartAttemptsFile() == 0) return;
 
             if (!File.Exists(_restartAttemptsFile)) return;
 
@@ -1617,18 +1616,28 @@ namespace Servy.Service
                 if (_isTearingDown || _disposed)
                     return;
 
-                currentAttempts = EnsureRestartAttemptsFileAsync();
+                // _maxRestartAttempts == 0 means unlimited restart attempts
+                if (_maxRestartAttempts > 0)
+                {
+                    currentAttempts = EnsureRestartAttemptsFile();
 
-                if (currentAttempts >= _maxRestartAttempts)
-                {
-                    _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
-                    SaveRestartAttempts(0); // Reset for next manual start
-                    shouldStop = true;
+                    if (currentAttempts >= _maxRestartAttempts)
+                    {
+                        _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
+                        SaveRestartAttempts(0); // Reset for next manual start
+                        shouldStop = true;
+                    }
+                    else
+                    {
+                        currentAttempts++;
+                        SaveRestartAttempts(currentAttempts);
+                    }
                 }
-                else
+
+
+                // Set the recovery state (MANDATORY for both limited and unlimited)
+                if (!shouldStop)
                 {
-                    currentAttempts++;
-                    SaveRestartAttempts(currentAttempts);
                     _failedChecks = 0;
                     _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
                 }

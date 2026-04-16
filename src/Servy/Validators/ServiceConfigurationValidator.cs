@@ -148,7 +148,7 @@ namespace Servy.Validators
 
                 if (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > Core.Config.AppConfig.MaxMaxRestartAttempts)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRestartAttempts, Core.Config.AppConfig.MinMaxRestartAttempts, Core.Config.AppConfig.MaxMaxRestartAttempts), AppConfig.Caption);
                     return false;
                 }
             }

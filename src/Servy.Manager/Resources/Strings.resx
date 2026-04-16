@@ -382,7 +382,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Max Failed Checks must be a number greater than or equal to 1.</value>
   </data>
   <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
+    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
   </data>
 
   <data name="Msg_ServiceInstalled" xml:space="preserve">
@@ -562,3 +562,4 @@ If the service is disabled and marked for deletion, the installation will fail u
 
 
 </root>
+  
