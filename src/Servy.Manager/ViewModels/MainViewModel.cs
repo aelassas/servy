@@ -759,7 +759,7 @@ namespace Servy.Manager.ViewModels
                 if (!await _messageBoxService.ShowConfirmAsync(confirmMessage, AppConfig.Caption))
                     return;
 
-                SetIsBusy(true);
+                await SetBusyStateAsync(true);
 
                 // 3. Dispatch all operations concurrently: Scale based on hardware
                 int maxDegreeOfParallelism = Math.Min(Environment.ProcessorCount * 2, MaxBulkOperationParallelism);
@@ -806,7 +806,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                SetIsBusy(false);
+                await SetBusyStateAsync(false);
             }
         }
 
@@ -1042,22 +1042,14 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        ///  Sets the busy state and updates the mouse cursor accordingly.
+        /// Sets the busy state and updates the mouse cursor accordingly without blocking the calling thread.
         /// </summary>
-        private void SetIsBusy(bool busy)
+        private async Task SetBusyStateAsync(bool busy)
         {
-            _dispatcher.Invoke(() =>
+            await _dispatcher.InvokeAsync(() =>
             {
                 IsBusy = busy;
-
-                if (busy)
-                {
-                    Mouse.OverrideCursor = Cursors.Wait;
-                }
-                else
-                {
-                    Mouse.OverrideCursor = null;
-                }
+                Mouse.OverrideCursor = busy ? Cursors.Wait : null;
             });
         }
 
@@ -1095,7 +1087,7 @@ namespace Servy.Manager.ViewModels
             }
             else
             {
-                _dispatcher.Invoke(action);
+                _dispatcher.InvokeAsync(action, DispatcherPriority.Background);
             }
         }
 
