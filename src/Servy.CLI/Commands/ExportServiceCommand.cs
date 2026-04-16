@@ -149,7 +149,7 @@ namespace Servy.CLI.Commands
                 var dirInfo = new DirectoryInfo(directoryPath);
 
                 // Iteratively resolve link targets to handle chained junctions
-                while (dirInfo != null && !string.IsNullOrEmpty(dirInfo.LinkTarget))
+                while (!string.IsNullOrEmpty(dirInfo.LinkTarget))
                 {
                     var target = dirInfo.ResolveLinkTarget(true);
                     if (target is DirectoryInfo resolvedDir)
@@ -162,10 +162,7 @@ namespace Servy.CLI.Commands
                     }
                 }
 
-                if (dirInfo != null)
-                {
-                    finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
-                }
+                finalResolvedPath = Path.Combine(dirInfo.FullName, Path.GetFileName(fullPath));
             }
 
             // 5. Reserved Device Name Block (DOS/Data Loss Guard)
