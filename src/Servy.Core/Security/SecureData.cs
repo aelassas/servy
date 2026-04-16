@@ -37,7 +37,7 @@ namespace Servy.Core.Security
         /// <item><description>Retrieves the raw master keying material from the <paramref name="protectedKeyProvider"/>.</description></item>
         /// <item><description>Uses HKDF (RFC 5869) to derive independent sub-keys for AES encryption and HMAC authentication.</description></item>
         /// <item><description>Clones the master key for legacy v1 support.</description></item>
-        /// <item><description>Security Critical: Immediately clears the temporary <c>masterKey</c> buffer using <see cref="Array.Clear(Array, int, int)"/> to ensure the raw secret does not linger in memory.</description></item>
+        /// <item><description>Security Critical: Immediately clears the temporary <c>masterKey</c> buffer using <see cref="CryptographicOperations.ZeroMemory(Array)"/> to ensure the raw secret does not linger in memory.</description></item>
         /// </list>
         /// </remarks>
         /// <param name="protectedKeyProvider">The provider used to retrieve the master keying material and legacy IV.</param>
@@ -62,8 +62,8 @@ namespace Servy.Core.Security
             }
             finally
             {
-                if (masterKey != null) Array.Clear(masterKey);
-                if (v1StaticIv != null) Array.Clear(v1StaticIv);
+                if (masterKey != null) CryptographicOperations.ZeroMemory(masterKey);
+                if (v1StaticIv != null) CryptographicOperations.ZeroMemory(v1StaticIv);
             }
         }
 
@@ -140,8 +140,8 @@ namespace Servy.Core.Security
             {
                 // 4. SECURITY HYGIENE: Wipe sensitive buffers from the heap immediately after use
                 // plainBytes contains sensitive text; binaryPayload contains the IV and Ciphertext
-                Array.Clear(plainBytes);
-                Array.Clear(binaryPayload);
+                CryptographicOperations.ZeroMemory(plainBytes);
+                CryptographicOperations.ZeroMemory(binaryPayload);
             }
         }
 
@@ -250,7 +250,7 @@ namespace Servy.Core.Security
                     }
                 }
             }
-            finally { Array.Clear(cipherBytes); }
+            finally { CryptographicOperations.ZeroMemory(cipherBytes); }
         }
 
         /// <summary>
@@ -319,14 +319,14 @@ namespace Servy.Core.Security
                     finally
                     {
                         // Wipe the plaintext buffer from memory immediately.
-                        Array.Clear(outputBuffer);
+                        CryptographicOperations.ZeroMemory(outputBuffer);
                     }
                 }
             }
             finally
             {
                 // Security hygiene: Wipe the combined buffer (containing IV and Ciphertext) from the heap.
-                Array.Clear(combined);
+                CryptographicOperations.ZeroMemory(combined);
             }
         }
 

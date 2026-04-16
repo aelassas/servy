@@ -53,7 +53,7 @@ namespace Servy.Infrastructure.Data
                 VALUES ({SqlConstants.InsertValues});
                 SELECT last_insert_rowid();";
 
-            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService);
+            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken);
             service.Id = id;
 
             return id;
@@ -69,7 +69,7 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpdateSet}
                 WHERE Id = @Id;";
 
-            return await _dapper.ExecuteAsync(sql, encryptedService);
+            return await _dapper.ExecuteAsync(sql, encryptedService, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -97,7 +97,7 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpsertSet};
                 SELECT id FROM Services WHERE LOWER(Name) = LOWER(@Name);";
 
-            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService);
+            var id = await _dapper.ExecuteScalarAsync<int>(sql, encryptedService, cancellationToken);
             service.Id = id;
 
             return id;
@@ -118,7 +118,7 @@ namespace Servy.Infrastructure.Data
                 {SqlConstants.UpsertSet};";
 
             // 2. Execute the batch upsert
-            var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices);
+            var affectedRows = await _dapper.ExecuteAsync(sql, encryptedServices, cancellationToken);
 
             // 3. Sync IDs back to the original DTOs
             // SQLite has a default limit of 999 parameters. For larger batches, 
@@ -134,7 +134,7 @@ namespace Servy.Infrastructure.Data
                 // Fetch the generated IDs for the names in this chunk
                 var idMap = (await _dapper.QueryAsync<(int Id, string Name)>(
                     "SELECT Id, Name FROM Services WHERE Name IN @names",
-                    new { names }))
+                    new { names }, cancellationToken))
                     .ToDictionary(x => x.Name, x => x.Id, StringComparer.OrdinalIgnoreCase);
 
                 // Update the original DTO references
@@ -154,7 +154,7 @@ namespace Servy.Infrastructure.Data
         public virtual async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
             var sql = "DELETE FROM Services WHERE Id = @Id;";
-            return await _dapper.ExecuteAsync(sql, new { Id = id });
+            return await _dapper.ExecuteAsync(sql, new { Id = id }, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -163,7 +163,7 @@ namespace Servy.Infrastructure.Data
             if (string.IsNullOrWhiteSpace(name)) return 0;
 
             var sql = "DELETE FROM Services WHERE LOWER(Name) = LOWER(@Name);";
-            return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() });
+            return await _dapper.ExecuteAsync(sql, new { Name = name.Trim() }, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -202,7 +202,7 @@ namespace Servy.Infrastructure.Data
         public async Task<int?> GetServicePidAsync(string serviceName, CancellationToken cancellationToken = default)
         {
             const string sql = "SELECT Pid FROM Services WHERE LOWER(Name) = LOWER(@Name) LIMIT 1;";
-            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName });
+            return await _dapper.QueryFirstOrDefaultAsync<int?>(sql, new { Name = serviceName }, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -214,7 +214,7 @@ namespace Servy.Infrastructure.Data
                 WHERE LOWER(Name) = LOWER(@Name)
                 LIMIT 1;";
 
-            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName });
+            return await _dapper.QueryFirstOrDefaultAsync<ServiceConsoleStateDto>(sql, new { Name = serviceName }, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -275,7 +275,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<string> ExportXmlAsync(string name, CancellationToken cancellationToken = default)
         {
-            var service = await GetByNameAsync(name);
+            var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
             var serializer = new XmlSerializer(typeof(ServiceDto));
@@ -296,7 +296,7 @@ namespace Servy.Infrastructure.Data
                 var service = _xmlServiceSerializer.Deserialize(xml);
                 if (service == null) return false;
 
-                await UpsertAsync(service);
+                await UpsertAsync(service, cancellationToken);
                 return true;
             }
             catch (Exception ex)
@@ -309,7 +309,7 @@ namespace Servy.Infrastructure.Data
         /// <inheritdoc />
         public virtual async Task<string> ExportJsonAsync(string name, CancellationToken cancellationToken = default)
         {
-            var service = await GetByNameAsync(name);
+            var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
             return JsonConvert.SerializeObject(service, Formatting.Indented);
@@ -325,7 +325,7 @@ namespace Servy.Infrastructure.Data
                 var service = _jsonServiceSerializer.Deserialize(json);
                 if (service == null) return false;
 
-                await UpsertAsync(service);
+                await UpsertAsync(service, cancellationToken);
                 return true;
             }
             catch (Exception ex)

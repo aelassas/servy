@@ -36,7 +36,7 @@ namespace Servy.Core.Security
         /// retrieved from the registry once. Caching this value avoids redundant registry I/O operations 
         /// and string-to-byte conversions during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
         /// </remarks>
-        private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy);
+        private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy, LazyThreadSafetyMode.PublicationOnly);
 
         #endregion
 
@@ -173,7 +173,7 @@ namespace Servy.Core.Security
                         // If this was the last attempt, rethrow to be caught by BaseCommand
                         if (attempt == maxRetries - 1)
                         {
-                            Logger.Error(string.Format("Failed to read file after {0} attempts: {1}", maxRetries, path), ex);
+                            Logger.Error($"Failed to read file after {maxRetries} attempts: {path}", ex);
                             throw;
                         }
 
@@ -184,9 +184,9 @@ namespace Servy.Core.Security
 
                 // Defensive check: Even though the throw above prevents this, 
                 // static analysis tools (and good practice) appreciate the explicit guard.
-                if (encrypted == null)
+                if (encrypted is null)
                 {
-                    throw new FileNotFoundException(string.Format("Configuration file could not be loaded: {0}", path));
+                    throw new FileNotFoundException($"Failed to read {path} after {maxRetries} attempts");
                 }
 
                 byte[] dynamicEntropy = MachineEntropy.Value;
@@ -224,7 +224,7 @@ namespace Servy.Core.Security
             }
             finally
             {
-                if (encrypted != null) Array.Clear(encrypted, 0, encrypted.Length);
+                if (encrypted != null) CryptographicOperations.ZeroMemory(encrypted);
             }
         }
 
@@ -251,7 +251,7 @@ namespace Servy.Core.Security
             }
             finally
             {
-                if (encrypted != null) Array.Clear(encrypted, 0, encrypted.Length);
+                if (encrypted != null) CryptographicOperations.ZeroMemory(encrypted);
             }
         }
 

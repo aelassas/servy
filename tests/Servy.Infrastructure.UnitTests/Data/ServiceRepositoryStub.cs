@@ -111,7 +111,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
-        public Task<int> ExecuteAsync(string sql, object? param = null)
+        public Task<int> ExecuteAsync(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -121,7 +121,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
-        public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null)
+        public Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -136,12 +136,12 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
-        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null)
+        public Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null)
+        public Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -151,12 +151,12 @@ namespace Servy.Infrastructure.UnitTests.Data
             throw new NotImplementedException();
         }
 
-        public Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
+        public Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null)
+        public Task<T?> QuerySingleOrDefaultAsync<T>(CommandDefinition command)
         {
             throw new NotImplementedException();
         }

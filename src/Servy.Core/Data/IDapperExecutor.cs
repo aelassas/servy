@@ -28,7 +28,7 @@ namespace Servy.Core.Data
         /// <param name="sql">The SQL query or command.</param>
         /// <param name="param">Optional parameters for the SQL command.</param>
         /// <returns>A task representing the asynchronous operation, with the scalar result of type <typeparamref name="T"/>.</returns>
-        Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null);
+        Task<T?> ExecuteScalarAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a SQL command that does not return a result set (INSERT, UPDATE, DELETE).
@@ -36,7 +36,7 @@ namespace Servy.Core.Data
         /// <param name="sql">The SQL query.</param>
         /// <param name="param">Optional parameters for the SQL command.</param>
         /// <returns>A task representing the asynchronous operation, with the number of affected rows.</returns>
-        Task<int> ExecuteAsync(string sql, object? param = null);
+        Task<int> ExecuteAsync(string sql, object? param = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a SQL query that returns a collection of entities.
@@ -49,12 +49,12 @@ namespace Servy.Core.Data
         /// <summary>
         /// Executes a SQL query asynchronously that returns a collection of entities.
         /// </summary>
-        Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null);
+        Task<IEnumerable<T>> QueryAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a SQL query asynchronously that returns a single entity or default.
         /// </summary>
-        Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null);
+        Task<T?> QuerySingleOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a SQL query that returns a single entity or default if none found.
@@ -67,6 +67,6 @@ namespace Servy.Core.Data
         /// <summary>
         /// Executes a query asynchronously and returns the first row, or a default value if the sequence contains no elements.
         /// </summary>
-        Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null);
+        Task<T?> QueryFirstOrDefaultAsync<T>(string sql, object? param = null, CancellationToken cancellationToken = default);
     }
 }
