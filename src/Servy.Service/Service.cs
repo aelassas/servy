@@ -410,6 +410,41 @@ namespace Servy.Service
 
         #endregion
 
+        #region Reflection Helpers
+
+        // Field Lineage for ServiceBase accepted commands:
+        // - "acceptedCommands"  : .NET Framework 4.0 - 4.8.x
+        // - "_acceptedCommands" : .NET Core 1.0 - .NET 10.0+
+        private static readonly string[] AcceptedCommandsFieldNames = { "_acceptedCommands", "acceptedCommands" };
+
+        // Field Lineage for ServiceBase status handle:
+        // - "serviceStatusHandle"  : Standard .NET Framework 4.x
+        // - "_statusHandle"        : Standard .NET 5.0 - .NET 10.0+
+        // - "statusHandle"         : Mono / Early .NET Core variants
+        // - "m_statusHandle"       : Legacy Windows SDK / Alpha runtimes
+        // - "m_serviceStatusHandle": Legacy Windows SDK / Alpha runtimes
+        private static readonly string[] StatusHandleFieldNames = {
+            "serviceStatusHandle", "statusHandle", "_statusHandle",
+            "_serviceStatusHandle", "m_statusHandle", "m_serviceStatusHandle"
+        };
+
+        /// <summary>
+        /// Helper to scan for private fields across different .NET runtime implementations of ServiceBase.
+        /// </summary>
+        private bool TryGetPrivateFieldInfo(string[] possibleNames, out FieldInfo? field)
+        {
+            foreach (var name in possibleNames)
+            {
+                field = typeof(ServiceBase).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
+                if (field != null) return true;
+            }
+
+            field = null;
+            return false;
+        }
+
+        #endregion
+
         /// <summary>
         /// Configures the service to intercept the Windows Pre-Shutdown notification.
         /// </summary>
@@ -423,22 +458,9 @@ namespace Servy.Service
         {
             try
             {
-                // Field Lineage for ServiceBase accepted commands:
-                // - "acceptedCommands"  : .NET Framework 4.0 - 4.8.x
-                // - "_acceptedCommands" : .NET Core 1.0 - .NET 10.0+
-                string[] fieldNames = { "_acceptedCommands", "acceptedCommands" };
-                FieldInfo? acceptedField = null;
-
-                foreach (var name in fieldNames)
+                if (TryGetPrivateFieldInfo(AcceptedCommandsFieldNames, out var acceptedField))
                 {
-                    acceptedField = typeof(ServiceBase).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!;
-
-                    if (acceptedField != null) break;
-                }
-
-                if (acceptedField != null)
-                {
-                    int val = (int)(acceptedField.GetValue(this) ?? 0);
+                    int val = (int)(acceptedField!.GetValue(this) ?? 0);
                     acceptedField.SetValue(this, val | SERVICE_ACCEPT_PRESHUTDOWN);
                 }
                 else
@@ -446,7 +468,7 @@ namespace Servy.Service
                     string fw = RuntimeInformation.FrameworkDescription;
                     throw new PlatformNotSupportedException(
                         $"[Pre-Shutdown] Hook Failed: Unsupported .NET runtime ({fw}). " +
-                        "Neither '_acceptedCommands' nor 'acceptedCommands' was found in ServiceBase.");
+                        $"None of the following fields were found in ServiceBase: {string.Join(", ", AcceptedCommandsFieldNames)}");
                 }
             }
             catch (Exception ex)
@@ -510,33 +532,9 @@ namespace Servy.Service
                 {
                     try
                     {
-                        // Field Lineage for ServiceBase status handle:
-                        // - "serviceStatusHandle"  : Standard .NET Framework 4.x
-                        // - "_statusHandle"         : Standard .NET 5.0 - .NET 10.0+
-                        // - "statusHandle"          : Mono / Early .NET Core variants
-                        // - "m_serviceStatusHandle" : Legacy Windows SDK / Alpha runtimes
-                        string[] possibleFieldNames = new[]
+                        if (TryGetPrivateFieldInfo(StatusHandleFieldNames, out var serviceHandleField))
                         {
-                            "serviceStatusHandle",  // .NET Framework
-                            "statusHandle",         // Alternative .NET Framework
-                            "_statusHandle",        // Modern .NET (private with underscore)
-                            "_serviceStatusHandle", // Modern .NET variant
-                            "m_statusHandle",       // Older naming convention
-                            "m_serviceStatusHandle" // Older naming convention
-                        };
-
-                        FieldInfo? serviceHandleField = null;
-
-                        foreach (var fieldName in possibleFieldNames)
-                        {
-                            serviceHandleField = typeof(ServiceBase).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)!;
-
-                            if (serviceHandleField != null) break;
-                        }
-
-                        if (serviceHandleField != null)
-                        {
-                            var handleValue = serviceHandleField.GetValue(this);
+                            var handleValue = serviceHandleField!.GetValue(this);
                             _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
 
                             if (_serviceHandle != IntPtr.Zero)
