@@ -3,7 +3,7 @@
     RootModule        = 'Servy.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '7.9.0'
+    ModuleVersion     = '8.0.0'
 
     # Supported PSEditions
     # CompatiblePSEditions = @('Desktop', 'Core')
