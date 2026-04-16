@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SmtpConfig>
-    <Server>smtp-relay.brevo.com</Server>
+    <Server>smtp.example.com</Server>
     <Port>587</Port>
-    <From>akram.elassas@gmail.com</From>
-    <To>akram.elassas@gmail.com</To>
+    <From>servy.notifications@example.com</From>
+    <To>admin@example.com</To>
 </SmtpConfig>
