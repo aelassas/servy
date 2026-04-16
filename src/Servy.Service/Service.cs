@@ -1681,7 +1681,7 @@ namespace Servy.Service
         {
             try
             {
-                _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{_maxRestartAttempts}).");
+                _logger?.Warn($"Performing recovery action '{_recoveryAction}' ({attemptCount}/{(_maxRestartAttempts > 0 ? _maxRestartAttempts.ToString() : "unlimited")}).");
 
                 switch (_recoveryAction)
                 {
