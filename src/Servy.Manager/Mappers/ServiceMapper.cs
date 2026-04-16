@@ -4,7 +4,6 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using System;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace Servy.Manager
 {
@@ -28,14 +27,12 @@ namespace Servy.Manager
         /// </para>
         /// </remarks>
         /// <param name="service">The domain service instance.</param>
+        /// <param name="isConfigurationAppAvailable">Indicates whether the configuration application is available.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool calculatePerf)
+        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isConfigurationAppAvailable, bool calculatePerf)
         {
             if (service == null) return null;
-
-            // Guard against null Application.Current during shutdown
-            if (!(Application.Current is App app)) return null;
 
             double? cpuUsage = null;
             long? ramUsage = null;
@@ -54,7 +51,7 @@ namespace Servy.Manager
                 Status = ServiceStatus.None,
                 LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty,
                 IsInstalled = false,
-                IsConfigurationAppAvailable = app.IsConfigurationAppAvailable,
+                IsConfigurationAppAvailable = isConfigurationAppAvailable,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
                 CpuUsage = cpuUsage,
