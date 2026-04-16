@@ -37,6 +37,36 @@ namespace Servy.Service.Helpers
         StartOptions? ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
 
         /// <summary>
+        /// Records the full initialization context, including raw command-line arguments and resolved 
+        /// <see cref="StartOptions"/>, to the diagnostic log and Windows Event Log.
+        /// </summary>
+        /// <param name="logger">
+        /// The scoped logger instance used for output. If <see langword="null"/>, diagnostic 
+        /// information will not be recorded.
+        /// </param>
+        /// <param name="args">
+        /// The raw string array of arguments received by the service entry point or 
+        /// <see cref="System.ServiceProcess.ServiceBase.OnStart(string[])"/>.
+        /// </param>
+        /// <param name="options">
+        /// The hydrated configuration object containing the executable paths, timeouts, 
+        /// and environment variables.
+        /// </param>
+        /// <remarks>
+        /// <para>
+        /// This method acts as the "black box" recorder for the service startup. It logs the 
+        /// transition from raw CLI input to the internal state used by the process launcher.
+        /// </para>
+        /// <para>
+        /// <b>Security Note:</b> Sensitive properties within <paramref name="options"/> (such as 
+        /// passwords or encrypted environment variables) are expected to be obfuscated or 
+        /// handled securely by the <paramref name="logger"/> implementation to prevent 
+        /// plaintext exposure in log files.
+        /// </para>
+        /// </remarks>
+        void LogStartupArguments(IServyLogger? logger, string[] args, StartOptions options);
+
+        /// <summary>
         /// Performs a comprehensive validation of the startup options and logs the results.
         /// </summary>
         /// <remarks>
@@ -49,7 +79,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
-        bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs);
+        bool ValidateAndLog(StartOptions options, IServyLogger? logger, string[] fullArgs);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.
@@ -118,6 +148,6 @@ namespace Servy.Service.Helpers
         /// Calling this method has no effect if the service is not running under the SCM (for example, 
         /// during unit tests or console execution).
         /// </remarks>
-        void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger logger);
+        void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger? logger);
     }
 }

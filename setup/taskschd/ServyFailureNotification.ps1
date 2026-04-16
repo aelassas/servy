@@ -210,14 +210,22 @@ foreach ($evt in $eventsToProcess) {
   # Track this timestamp as successfully processed
   $lastSuccessfulTimestamp = $evt.TimeCreated
     
-  Start-Sleep -Milliseconds 500
-}
+  # Update timestamp immediately for this specific event
+  if ($null -ne $lastSuccessfulTimestamp) {
+      $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+      $timestampString = $newestTimestamp.ToString("o")
+      
+      try {
+          # Using [System.IO.File] ensures the file is created/overwritten 
+          # exactly as a .NET application would, avoiding PS pipe overhead.
+          [System.IO.File]::WriteAllText($timestampFile, $timestampString)
+          
+          Write-Host "Timestamp updated to: $timestampString"
+      }
+      catch {
+          Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $scriptDir
+      }
+  }
 
-# -------------------------------
-# 6. Update Timestamp File (Now safe and at the end)
-# -------------------------------
-if ($null -ne $lastSuccessfulTimestamp) {
-  $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
-  $newestTimestamp.ToString("o") | Out-File $timestampFile -Force
-  Write-Host "Timestamp updated to: $($newestTimestamp.ToString('o'))"
+  Start-Sleep -Milliseconds 500
 }

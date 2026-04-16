@@ -145,7 +145,7 @@ namespace Servy.Service
 
         private readonly SecureData? _secureData;
         private readonly IServiceHelper _serviceHelper;
-        private IServyLogger _logger;
+        private IServyLogger? _logger;
         private readonly IStreamWriterFactory _streamWriterFactory;
         private readonly ITimerFactory _timerFactory;
         private readonly IProcessFactory _processFactory;
@@ -174,7 +174,7 @@ namespace Servy.Service
         private readonly IServiceRepository _serviceRepository;
         private readonly List<Hook> _trackedHooks = new List<Hook>();
         private IntPtr _serviceHandle;
-        private readonly uint _checkPoint = 0;
+        private uint _checkPoint = 0;
         private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
@@ -296,7 +296,7 @@ namespace Servy.Service
 
                 // Load configuration from appsettings.json
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(AppFoldersHelper.GetApplicationDirectory())
+                    .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
                     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                     .Build();
 
@@ -327,7 +327,7 @@ namespace Servy.Service
                     logLevel = LogLevel.Info;
                 }
                 Logger.SetLogLevel(logLevel);
-                _logger.SetLogLevel(logLevel);
+                _logger?.SetLogLevel(logLevel);
 
                 if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
                 {
@@ -336,7 +336,7 @@ namespace Servy.Service
                 Logger.SetDateRotationType(dateRotationType);
 
                 var isEventLogEnabled = bool.TryParse(config["EnableEventLog"] ?? "true", out var elEnabled) && elEnabled;
-                _logger.SetIsEventLogEnabled(isEventLogEnabled);
+                _logger?.SetIsEventLogEnabled(isEventLogEnabled);
 
                 if (int.TryParse(config["LogRotationSizeMB"], out var logRotationSizeMB) && logRotationSizeMB > 0)
                 {
@@ -383,22 +383,19 @@ namespace Servy.Service
 
                 if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {
-                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
+                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
                 if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
                 {
-                    _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
+                    _logger?.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
                 }
 #endif
 
                 // Enable Shutdown Notifications
                 CanShutdown = true;
-
-                // Tell Windows we accept PreShutdown
-                InitializePreShutdownHook();
             }
             catch (Exception ex)
             {
@@ -409,75 +406,6 @@ namespace Servy.Service
         }
 
         #endregion
-
-        #region Reflection Helpers
-
-        // Field Lineage for ServiceBase accepted commands:
-        // - "acceptedCommands"  : .NET Framework 4.0 - 4.8.x
-        // - "_acceptedCommands" : .NET Core 1.0 - .NET 10.0+
-        private static readonly string[] AcceptedCommandsFieldNames = { "_acceptedCommands", "acceptedCommands" };
-
-        // Field Lineage for ServiceBase status handle:
-        // - "serviceStatusHandle"  : Standard .NET Framework 4.x
-        // - "_statusHandle"        : Standard .NET 5.0 - .NET 10.0+
-        // - "statusHandle"         : Mono / Early .NET Core variants
-        // - "m_statusHandle"       : Legacy Windows SDK / Alpha runtimes
-        // - "m_serviceStatusHandle": Legacy Windows SDK / Alpha runtimes
-        private static readonly string[] StatusHandleFieldNames = {
-            "serviceStatusHandle", "statusHandle", "_statusHandle",
-            "_serviceStatusHandle", "m_statusHandle", "m_serviceStatusHandle"
-        };
-
-        /// <summary>
-        /// Helper to scan for private fields across different .NET runtime implementations of ServiceBase.
-        /// </summary>
-        private bool TryGetPrivateFieldInfo(string[] possibleNames, out FieldInfo? field)
-        {
-            foreach (var name in possibleNames)
-            {
-                field = typeof(ServiceBase).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic);
-                if (field != null) return true;
-            }
-
-            field = null;
-            return false;
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Configures the service to intercept the Windows Pre-Shutdown notification.
-        /// </summary>
-        /// <remarks>
-        /// This method uses reflection to access the private field of the <see cref="ServiceBase"/> class.
-        /// It includes strict runtime validation to ensure compatibility across legacy (e.g., .NET 4.8) 
-        /// and modern runtimes (e.g., .NET 10). If the internal structure of ServiceBase changes, 
-        /// this will fail fast rather than silently degrading shutdown behavior.
-        /// </remarks>
-        private void InitializePreShutdownHook()
-        {
-            try
-            {
-                if (TryGetPrivateFieldInfo(AcceptedCommandsFieldNames, out var acceptedField))
-                {
-                    int val = (int)(acceptedField!.GetValue(this) ?? 0);
-                    acceptedField.SetValue(this, val | SERVICE_ACCEPT_PRESHUTDOWN);
-                }
-                else
-                {
-                    string fw = RuntimeInformation.FrameworkDescription;
-                    throw new PlatformNotSupportedException(
-                        $"[Pre-Shutdown] Hook Failed: Unsupported .NET runtime ({fw}). " +
-                        $"None of the following fields were found in ServiceBase: {string.Join(", ", AcceptedCommandsFieldNames)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.Error($"[Pre-Shutdown] Reflection Hook Error: {ex.Message}");
-                // Fail-fast: Do not allow the service to start with degraded shutdown capabilities.
-                throw;
-            }
-        }
 
         /// <summary>
         /// Called when the Windows service is started.
@@ -516,8 +444,8 @@ namespace Servy.Service
                 // PROMOTE LOGGER IMMEDIATELY
                 // Now every log from this point forward (including validation errors) is prefixed.
                 var rootLogger = _logger;
-                _logger = rootLogger.CreateScoped(options.ServiceName!);
-                rootLogger.Dispose();
+                _logger = rootLogger?.CreateScoped(options.ServiceName!);
+                rootLogger?.Dispose();
 
                 // Log and Validate using the new scoped _logger
                 if (!_serviceHelper.ValidateAndLog(options, _logger, fullArgs))
@@ -530,39 +458,16 @@ namespace Servy.Service
 
                 if (!isTestMode)
                 {
-                    try
+                    // NO REFLECTION NEEDED: Access the underlying Service Status Handle directly
+                    _serviceHandle = ServiceHandle;
+
+                    if (_serviceHandle != IntPtr.Zero)
                     {
-                        if (TryGetPrivateFieldInfo(StatusHandleFieldNames, out var serviceHandleField))
-                        {
-                            var handleValue = serviceHandleField!.GetValue(this);
-                            _serviceHandle = handleValue is IntPtr ptr ? ptr : IntPtr.Zero;
-
-                            if (_serviceHandle != IntPtr.Zero)
-                            {
-                                _logger?.Info($"Service handle obtained: 0x{_serviceHandle.ToInt64():X}");
-                            }
-                            else
-                            {
-                                throw new InvalidOperationException("Service status handle field was found, but the pointer is zero/invalid.");
-                            }
-                        }
-                        else
-                        {
-                            string fw = RuntimeInformation.FrameworkDescription;
-                            var availableFields = typeof(ServiceBase).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-                                                                     .Select(f => f.Name);
-
-                            throw new PlatformNotSupportedException(
-                                $"Could not find service status handle field via reflection in {fw}. " +
-                                $"Available private fields: {string.Join(", ", availableFields)}");
-                        }
+                        _logger?.Info($"Service handle obtained natively: 0x{_serviceHandle.ToInt64():X}");
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        _logger?.Error($"Failed to get service handle: {ex.Message}", ex);
-                        // Crucial: Set specific exit code and abort start to prevent silent degraded state
-                        ExitCode = 1064; // ERROR_SERVICE_SPECIFIC_ERROR
-                        throw;
+                        throw new InvalidOperationException("Native ServiceHandle is zero/invalid.");
                     }
                 }
 
@@ -621,26 +526,34 @@ namespace Servy.Service
                 // Final step: Inform SCM we are running and specifically that we accept PRESHUTDOWN
                 if (_serviceHandle != IntPtr.Zero)
                 {
-                    SERVICE_STATUS status = new SERVICE_STATUS
+                    // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart() 
+                    // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite 
+                    // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
+                    _ = Task.Run(async () =>
                     {
-                        dwServiceType = SERVICE_WIN32_OWN_PROCESS,
-                        dwCurrentState = SERVICE_RUNNING,
-                        dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN,
-                        dwWin32ExitCode = 0,
-                        dwServiceSpecificExitCode = 0, // Add this for completeness
-                        dwCheckPoint = 0,
-                        dwWaitHint = 0
-                    };
+                        await Task.Delay(500);
 
-                    if (!SetServiceStatus(_serviceHandle, ref status))
-                    {
-                        int error = Marshal.GetLastWin32Error();
-                        _logger?.Error($"Failed to register PRESHUTDOWN support. Win32 Error: {error}");
-                    }
-                    else
-                    {
-                        _logger?.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support enabled.");
-                    }
+                        SERVICE_STATUS status = new SERVICE_STATUS
+                        {
+                            dwServiceType = SERVICE_WIN32_OWN_PROCESS,
+                            dwCurrentState = SERVICE_RUNNING,
+                            dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN,
+                            dwWin32ExitCode = 0,
+                            dwServiceSpecificExitCode = 0,
+                            dwCheckPoint = 0,
+                            dwWaitHint = 0
+                        };
+
+                        if (!SetServiceStatus(_serviceHandle, ref status))
+                        {
+                            int error = Marshal.GetLastWin32Error();
+                            _logger?.Error($"Failed to register PRESHUTDOWN support via native Win32. Error: {error}");
+                        }
+                        else
+                        {
+                            _logger?.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.");
+                        }
+                    });
                 }
             }
             catch (Exception ex)
@@ -692,7 +605,7 @@ namespace Servy.Service
         {
             if (!File.Exists(_restartAttemptsFile))
             {
-                _logger.Warn("Restart attempts file not found. Initializing counter to 0.");
+                _logger?.Warn("Restart attempts file not found. Initializing counter to 0.");
                 await WriteAttemptsInternalAsync(0, ct);
                 return 0;
             }
@@ -702,7 +615,7 @@ namespace Servy.Service
             if (int.TryParse(content, out var attempts) && attempts >= 0)
                 return attempts;
 
-            _logger.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
+            _logger?.Warn("Corrupt or invalid content found in restart attempts file. Resetting counter to 0.");
             await WriteAttemptsInternalAsync(0, ct);
             return 0;
         }
@@ -734,7 +647,7 @@ namespace Servy.Service
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
+                _logger?.Warn($"Error reading restart attempts file: {ex.Message}. Resetting counter to 0.");
                 return 0;
             }
             finally
@@ -766,7 +679,7 @@ namespace Servy.Service
             catch (Exception ex)
             {
                 // Include the path in the error message to assist with field troubleshooting
-                _logger.Error($"Failed to save restart attempts to '{_restartAttemptsFile}': {ex.Message}");
+                _logger?.Error($"Failed to save restart attempts to '{_restartAttemptsFile}': {ex.Message}");
             }
             finally
             {
@@ -821,7 +734,7 @@ namespace Servy.Service
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warn($"Failed to calculate system boot time: {ex.Message}");
+                    _logger?.Warn($"Failed to calculate system boot time: {ex.Message}");
                     systemBootTimeUtc = DateTime.UtcNow;
                 }
 
@@ -832,7 +745,7 @@ namespace Servy.Service
                 // This also handles cases where the service has been stable for long periods.
                 if (lastWriteUtc < systemBootTimeUtc)
                 {
-                    _logger.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
+                    _logger?.Info($"Maintaining restart counter from previous session. (Last Write: {lastWriteUtc:G}, System Boot: {systemBootTimeUtc:G}).");
                     return;
                 }
 
@@ -855,13 +768,13 @@ namespace Servy.Service
                 double secondsSinceLastAttempt = (DateTime.UtcNow - lastWriteUtc).TotalSeconds;
                 if (secondsSinceLastAttempt > resetThresholdSeconds)
                 {
-                    _logger.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
+                    _logger?.Info($"Resetting restart attempts counter. Stable for {secondsSinceLastAttempt:F1} seconds.");
                     await WriteAttemptsInternalAsync(0, default);
                 }
             }
             catch (Exception ex)
             {
-                _logger.Warn($"Error during conditional reset evaluation: {ex.Message}");
+                _logger?.Warn($"Error during conditional reset evaluation: {ex.Message}");
             }
             finally
             {
@@ -1995,10 +1908,10 @@ namespace Servy.Service
                 {
                     _logger?.Error("Service handle is null! SCM notification impossible. Falling back to synchronous teardown.");
 
+                    // Log the completion intention right before the logger is destroyed
+                    _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED via Environment.Exit.");
                     try
                     {
-                        // 1. Best-effort cleanup of child processes/resources
-                        // We call this synchronously because we have no handle to request async time.
                         ExecuteTeardown(TeardownReason.PreShutdown);
                     }
                     catch (Exception ex)
@@ -2007,31 +1920,42 @@ namespace Servy.Service
                     }
                     finally
                     {
-                        // 2. Terminate the process. 
-                        // This informs the SCM that the service is gone, allowing the OS to move on.
                         Environment.Exit(1);
                     }
                     return;
                 }
 
-                // 1. Immediately tell SCM we are transitioning to a stop state and need a 30s window.
-                // This moves the service into the STOP_PENDING state in the eyes of the OS.
+                // 1. Immediately tell SCM we are transitioning to a stop state.
+                // Use the generous PreShutdownWaitHintMs (30s) so Windows doesn't get impatient.
                 UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
 
-                try
+                // 2. Log completion intention NOW, because ExecuteTeardown will permanently dispose _logger.
+                _logger?.Info("Pre-Shutdown teardown task initiated. SERVICE_STOPPED will be signaled upon completion.");
+
+                // Spin up the background teardown task
+                Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
+
+                // 3. Wait in 2-second pulses. 
+                // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
+                // This loop is guaranteed to terminate because the underlying teardown logic 
+                // (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
+                int interval = 2000;
+                while (!stopTask.Wait(interval))
                 {
-                    // 2. Perform teardown synchronously on the SCM thread.
-                    // This avoids ThreadPool starvation. Inner methods (SafeKillProcess, StartPreStopProcess) 
-                    // already handle pulsing the SCM via _serviceHelper.RequestAdditionalTime during long waits.
-                    ExecuteTeardown(TeardownReason.PreShutdown);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.Error($"Teardown execution failed: {ex.Message}");
+                    _checkPoint++;
+                    UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
                 }
 
-                // 3. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
-                _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
+                // 4. Handle task completion results safely
+                if (stopTask.IsFaulted)
+                {
+                    // Note: _logger might be null here if ExecuteTeardown succeeded in disposing it but failed late.
+                    // The ?. operator safely short-circuits. Flatten() ensures we get the real crash reason.
+                    _logger?.Error($"Teardown task failed: {stopTask.Exception?.Flatten().InnerException?.Message}");
+                }
+
+                // 5. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
+                // (Do not attempt to log here; the logger is gone).
                 UpdateServiceStatus(SERVICE_STOPPED, 0);
 
                 return;
@@ -2165,6 +2089,7 @@ namespace Servy.Service
                             // Dispose loggers
                             Logger.Shutdown();
                             _logger?.Dispose();
+                            _logger = null;
                         }
                         catch
                         {

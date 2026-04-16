@@ -90,7 +90,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void LogStartupArguments(IServyLogger logger, string[] args, StartOptions options)
+        public void LogStartupArguments(IServyLogger? logger, string[] args, StartOptions options)
         {
             if (options == null)
             {
@@ -224,7 +224,7 @@ namespace Servy.Service.Helpers
             => StartOptionsParser.Parse(serviceRepository, fullArgs);
 
         /// <inheritdoc />
-        public bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs)
+        public bool ValidateAndLog(StartOptions options, IServyLogger? logger, string[] fullArgs)
         {
             LogStartupArguments(logger, fullArgs, options);
 
@@ -235,7 +235,6 @@ namespace Servy.Service.Helpers
 
             return true;
         }
-
 
         /// <inheritdoc />
         public void RestartProcess(
@@ -288,7 +287,7 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var dir = AppFoldersHelper.GetApplicationDirectory();
+                var dir = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif
@@ -381,7 +380,7 @@ namespace Servy.Service.Helpers
         }
 
         /// <inheritdoc />
-        public void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger logger)
+        public void RequestAdditionalTime(ServiceBase service, int milliseconds, IServyLogger? logger)
         {
             if (service == null) return;
 
@@ -475,7 +474,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if all mandatory paths and directories are valid; otherwise, <c>false</c>.
         /// </returns>
-        private bool ValidateStartupOptions(IServyLogger logger, StartOptions options)
+        private bool ValidateStartupOptions(IServyLogger? logger, StartOptions options)
         {
             if (string.IsNullOrWhiteSpace(options.ExecutablePath))
             {

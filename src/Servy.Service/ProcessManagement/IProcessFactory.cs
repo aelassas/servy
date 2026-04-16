@@ -14,6 +14,6 @@ namespace Servy.Service.ProcessManagement
         /// <param name="startInfo">The process start information.</param>
         /// <param name="logger">The logger.</param>
         /// <returns>A new <see cref="IProcessWrapper"/> wrapping the created process.</returns>
-        IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger logger);
+        IProcessWrapper Create(ProcessStartInfo startInfo, IServyLogger? logger);
     }
 }

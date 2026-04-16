@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.AccessControl;
 using System.Text;
@@ -439,7 +440,7 @@ namespace Servy.Core.IO
             var directory = Path.GetDirectoryName(_file.FullName);
             if (string.IsNullOrEmpty(directory))
             {
-                directory = AppFoldersHelper.GetApplicationDirectory();
+                directory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
             }
 
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
