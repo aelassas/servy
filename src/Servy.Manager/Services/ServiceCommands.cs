@@ -75,6 +75,51 @@ namespace Servy.Manager.Services
 
         #endregion
 
+        #region Locking Orchestrator
+
+        /// <summary>
+        /// Executes an asynchronous operation within a per-service lock.
+        /// Automatically prunes the lock from the dictionary when the operation is complete
+        /// and no other threads are waiting.
+        /// </summary>
+        private async Task<T> ExecuteLockedAsync<T>(string serviceName, Func<Task<T>> action)
+        {
+            if (string.IsNullOrWhiteSpace(serviceName))
+                throw new ArgumentNullException(nameof(serviceName));
+
+            // Get or create the lock
+            var sem = _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
+
+            await sem.WaitAsync();
+            try
+            {
+                return await action();
+            }
+            finally
+            {
+                sem.Release();
+
+                // EAGER EVICTION:
+                // If the semaphore is now idle (CurrentCount == 1), try to remove it.
+                // We use the KeyValuePair overload to ensure we don't remove a NEW 
+                // semaphore that might have been added by a concurrent GetOrAdd.
+                if (sem.CurrentCount == 1)
+                {
+                    var collection = (ICollection<KeyValuePair<string, SemaphoreSlim>>)_serviceLocks;
+                    var kvp = new KeyValuePair<string, SemaphoreSlim>(serviceName, sem);
+
+                    collection.Remove(kvp);
+
+                    // NOTE: Do NOT dispose 'sem' here. If another thread managed to get 
+                    // a reference to it via GetOrAdd just before we removed it, 
+                    // disposing it would cause an ObjectDisposedException for them.
+                    // Let the GC handle the cleanup of the evicted object.
+                }
+            }
+        }
+
+        #endregion
+
         #region IServiceCommands Implementation
 
         /// <inheritdoc />
@@ -87,8 +132,8 @@ namespace Servy.Manager.Services
 
             // Map all domain services to Service models in parallel
             var tasks = results.Select(r => ServiceMapper.ToModelAsync(
-                Core.Mappers.ServiceMapper.ToDomain(_serviceManager,  r), 
-                app.IsConfigurationAppAvailable, 
+                Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
+                app.IsConfigurationAppAvailable,
                 calculatePerf));
             var services = await Task.WhenAll(tasks);
 
@@ -100,34 +145,87 @@ namespace Servy.Manager.Services
         {
             if (service == null) return false;
 
-            bool success = false;
-            string errorMessage = null;
-            string infoMessage = null;
-
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
+            return await ExecuteLockedAsync(service.Name, async () =>
             {
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
+                bool success = false;
+                string errorMessage = null;
+                string infoMessage = null;
+
+                try
                 {
-                    errorMessage = Strings.Msg_ServiceNotFound;
-                }
-                else
-                {
-                    var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                    if (startupType == ServiceStartType.Disabled)
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
                     {
-                        errorMessage = Strings.Msg_ServiceDisabledError;
+                        errorMessage = Strings.Msg_ServiceNotFound;
                     }
                     else
                     {
-                        var res = await Task.Run(() => serviceDomain.Start());
+                        var startupType = _serviceManager.GetServiceStartupType(service.Name);
+                        if (startupType == ServiceStartType.Disabled)
+                        {
+                            errorMessage = Strings.Msg_ServiceDisabledError;
+                        }
+                        else
+                        {
+                            var res = await Task.Run(() => serviceDomain.Start());
+                            if (res.IsSuccess)
+                            {
+                                service.Status = ServiceStatus.Running;
+                                infoMessage = Strings.Msg_ServiceStarted;
+                                success = true;
+                            }
+                            else
+                            {
+                                errorMessage = Strings.Msg_UnexpectedError;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to start {service.Name}.", ex);
+                    errorMessage = Strings.Msg_UnexpectedError;
+                }
+
+                if (showMessageBox)
+                {
+                    if (!string.IsNullOrEmpty(errorMessage))
+                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    else if (!string.IsNullOrEmpty(infoMessage))
+                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+                }
+
+                return success;
+            });
+        }
+
+        public async Task<bool> StopServiceAsync(Service service, bool showMessageBox = true)
+        {
+            // 1. Guard clause outside the lock
+            if (service == null) return false;
+
+            return await ExecuteLockedAsync(service.Name, async () =>
+            {
+                bool success = false;
+                string errorMessage = null;
+                string infoMessage = null;
+
+                try
+                {
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        errorMessage = Strings.Msg_ServiceNotFound;
+                    }
+                    else
+                    {
+                        // Execute the stop logic on a background thread
+                        var res = await Task.Run(() => serviceDomain.Stop());
+
                         if (res.IsSuccess)
                         {
-                            service.Status = ServiceStatus.Running;
-                            infoMessage = Strings.Msg_ServiceStarted;
+                            service.Status = ServiceStatus.Stopped;
+                            infoMessage = Strings.Msg_ServiceStopped;
                             success = true;
                         }
                         else
@@ -136,84 +234,22 @@ namespace Servy.Manager.Services
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to start {service.Name}.", ex);
-                errorMessage = Strings.Msg_UnexpectedError;
-            }
-            finally
-            {
-                serviceLock.Release();
-            }
-
-            if (showMessageBox)
-            {
-                if (!string.IsNullOrEmpty(errorMessage))
-                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                else if (!string.IsNullOrEmpty(infoMessage))
-                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-            }
-
-            return success;
-        }
-
-        public async Task<bool> StopServiceAsync(Service service, bool showMessageBox = true)
-        {
-            // 1. Guard clause outside the lock
-            if (service == null) return false;
-
-            bool success = false;
-            string errorMessage = null;
-            string infoMessage = null;
-
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
-            {
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
+                catch (Exception ex)
                 {
-                    errorMessage = Strings.Msg_ServiceNotFound;
+                    Logger.Error($"Failed to stop {service.Name}.", ex);
+                    errorMessage = Strings.Msg_UnexpectedError;
                 }
-                else
+
+                if (showMessageBox)
                 {
-                    // Execute the stop logic on a background thread
-                    var res = await Task.Run(() => serviceDomain.Stop());
-
-                    if (res.IsSuccess)
-                    {
-                        service.Status = ServiceStatus.Stopped;
-                        infoMessage = Strings.Msg_ServiceStopped;
-                        success = true;
-                    }
-                    else
-                    {
-                        errorMessage = Strings.Msg_UnexpectedError;
-                    }
+                    if (!string.IsNullOrEmpty(errorMessage))
+                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    else if (!string.IsNullOrEmpty(infoMessage))
+                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to stop {service.Name}.", ex);
-                errorMessage = Strings.Msg_UnexpectedError;
-            }
-            finally
-            {
-                // 2. Release the lock immediately after the engine operation completes
-                serviceLock.Release();
-            }
 
-            if (showMessageBox)
-            {
-                if (!string.IsNullOrEmpty(errorMessage))
-                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                else if (!string.IsNullOrEmpty(infoMessage))
-                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-            }
-
-            return success;
+                return success;
+            });
         }
 
         /// <inheritdoc />
@@ -222,65 +258,60 @@ namespace Servy.Manager.Services
             // 1. Guard clause outside the lock
             if (service == null) return false;
 
-            bool success = false;
-            string errorMessage = null;
-            string infoMessage = null;
-
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
+            return await ExecuteLockedAsync(service.Name, async () =>
             {
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
+                bool success = false;
+                string errorMessage = null;
+                string infoMessage = null;
+
+                try
                 {
-                    errorMessage = Strings.Msg_ServiceNotFound;
-                }
-                else
-                {
-                    var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                    if (startupType == ServiceStartType.Disabled)
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
                     {
-                        errorMessage = Strings.Msg_ServiceDisabledError;
+                        errorMessage = Strings.Msg_ServiceNotFound;
                     }
                     else
                     {
-                        // Execute the restart logic on a background thread
-                        var res = await Task.Run(() => serviceDomain.Restart());
-
-                        if (res.IsSuccess)
+                        var startupType = _serviceManager.GetServiceStartupType(service.Name);
+                        if (startupType == ServiceStartType.Disabled)
                         {
-                            service.Status = ServiceStatus.Running;
-                            infoMessage = Strings.Msg_ServiceRestarted;
-                            success = true;
+                            errorMessage = Strings.Msg_ServiceDisabledError;
                         }
                         else
                         {
-                            errorMessage = Strings.Msg_UnexpectedError;
+                            // Execute the restart logic on a background thread
+                            var res = await Task.Run(() => serviceDomain.Restart());
+
+                            if (res.IsSuccess)
+                            {
+                                service.Status = ServiceStatus.Running;
+                                infoMessage = Strings.Msg_ServiceRestarted;
+                                success = true;
+                            }
+                            else
+                            {
+                                errorMessage = Strings.Msg_UnexpectedError;
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to restart {service.Name}.", ex);
-                errorMessage = Strings.Msg_UnexpectedError;
-            }
-            finally
-            {
-                // 2. Release the lock immediately after the operation finishes
-                serviceLock.Release();
-            }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to restart {service.Name}.", ex);
+                    errorMessage = Strings.Msg_UnexpectedError;
+                }
 
-            if (showMessageBox)
-            {
-                if (!string.IsNullOrEmpty(errorMessage))
-                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                else if (!string.IsNullOrEmpty(infoMessage))
-                    await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-            }
+                if (showMessageBox)
+                {
+                    if (!string.IsNullOrEmpty(errorMessage))
+                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    else if (!string.IsNullOrEmpty(infoMessage))
+                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+                }
 
-            return success;
+                return success;
+            });
         }
 
         /// <inheritdoc />
@@ -339,66 +370,62 @@ namespace Servy.Manager.Services
         {
             if (service == null) return false;
 
-            // Apply per-service lock to prevent concurrent installs/uninstalls
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
+            return await ExecuteLockedAsync(service.Name, async () =>
             {
-                var exists = _serviceManager.IsServiceInstalled(service.Name);
 
-                if (exists)
+                try
                 {
-                    var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, AppConfig.Caption);
-                    if (!result)
+                    var exists = _serviceManager.IsServiceInstalled(service.Name);
+
+                    if (exists)
                     {
+                        var result = await _messageBoxService.ShowConfirmAsync(Strings.Msg_ServiceAlreadyExists, AppConfig.Caption);
+                        if (!result)
+                        {
+                            return false;
+                        }
+
+                    }
+
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
                         return false;
                     }
 
-                }
-
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
-                    return false;
-                }
-
-                string wrapperExeDir = null;
+                    string wrapperExeDir = null;
 #if DEBUG
-                if (wrapperExeDir == null)
-                {
-                    wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+                    if (wrapperExeDir == null)
+                    {
+                        wrapperExeDir = Path.GetFullPath(Core.Config.AppConfig.ServyServiceManagerDebugFolder);
+                    }
+                    if (!Directory.Exists(wrapperExeDir))
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, AppConfig.Caption);
+                        return false;
+                    }
+#endif
+                    var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir));
+                    if (res.IsSuccess)
+                    {
+                        service.IsInstalled = true;
+                        await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
+                    }
+                    else
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                    }
+
+                    return res.IsSuccess;
                 }
-                if (!Directory.Exists(wrapperExeDir))
+                catch (Exception ex)
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidWrapperExePath, AppConfig.Caption);
+                    Logger.Error($"Failed to install {service.Name}.", ex);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-#endif
-                var res = await Task.Run(() => serviceDomain.Install(wrapperExeDir));
-                if (res.IsSuccess)
-                {
-                    service.IsInstalled = true;
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceInstalled, AppConfig.Caption);
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                }
-
-                return res.IsSuccess;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to install {service.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
-            }
-            finally
-            {
-                serviceLock.Release();
-            }
+            });
         }
 
         /// <inheritdoc />
@@ -406,36 +433,32 @@ namespace Servy.Manager.Services
         {
             if (service == null) return false;
 
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
+            return await ExecuteLockedAsync(service.Name, async () =>
             {
-                var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, AppConfig.Caption);
-                if (!confirm) return false;
-
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
+                try
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_UninstallServiceConfirm, AppConfig.Caption);
+                    if (!confirm) return false;
+
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        return false;
+                    }
+
+                    var res = await Task.Run(() => serviceDomain.Uninstall());
+                    if (res.IsSuccess) await Task.Run(() => RemoveService(service));
+
+                    return res.IsSuccess;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to uninstall {service.Name}.", ex);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-
-                var res = await Task.Run(() => serviceDomain.Uninstall());
-                if (res.IsSuccess) await Task.Run(() => RemoveService(service));
-
-                return res.IsSuccess;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to uninstall {service.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
-            }
-            finally
-            {
-                serviceLock.Release();
-            }
+            });
         }
 
         /// <inheritdoc />
@@ -443,48 +466,44 @@ namespace Servy.Manager.Services
         {
             if (service == null) return false;
 
-            var serviceLock = GetLockForService(service.Name);
-            await serviceLock.WaitAsync();
-
-            try
+            return await ExecuteLockedAsync(service.Name, async () =>
             {
-                var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption);
-                if (!confirm) return false;
-
-                var serviceDomain = await GetServiceDomain(service.Name);
-                if (serviceDomain == null)
+                try
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    var confirm = await _messageBoxService.ShowConfirmAsync(Strings.Msg_RemoveServiceConfirm, AppConfig.Caption);
+                    if (!confirm) return false;
+
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                        return false;
+                    }
+
+                    var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
+                    if (res > 0) await Task.Run(() => RemoveService(service));
+
+                    var success = res > 0;
+
+                    if (success)
+                    {
+                        Logger.Info($"Service {service.Name} removed successfully.");
+                    }
+                    else
+                    {
+                        await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+                        Logger.Error($"Failed to remove service {service.Name} from repository.");
+                    }
+
+                    return success;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to remove {service.Name}.", ex);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
                     return false;
                 }
-
-                var res = await Task.Run(() => _serviceRepository.DeleteAsync(service.Name));
-                if (res > 0) await Task.Run(() => RemoveService(service));
-
-                var success = res > 0;
-
-                if (success)
-                {
-                    Logger.Info($"Service {service.Name} removed successfully.");
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                    Logger.Error($"Failed to remove service {service.Name} from repository.");
-                }
-
-                return success;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to remove {service.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-                return false;
-            }
-            finally
-            {
-                serviceLock.Release();
-            }
+            });
         }
 
         /// <inheritdoc />
@@ -706,17 +725,6 @@ namespace Servy.Manager.Services
         #endregion
 
         #region Helpers
-
-        /// <summary>
-        /// Retrieves or creates a dedicated lock for a specific service.
-        /// </summary>
-        private SemaphoreSlim GetLockForService(string serviceName)
-        {
-            if (string.IsNullOrWhiteSpace(serviceName))
-                throw new ArgumentNullException(nameof(serviceName));
-
-            return _serviceLocks.GetOrAdd(serviceName, _ => new SemaphoreSlim(1, 1));
-        }
 
         /// <summary>
         /// Retrieves the domain representation of a service by its name.
