@@ -6,6 +6,9 @@ using System;
 using System.IO;
 using System.ServiceProcess;
 using System.Threading.Tasks;
+#if !DEBUG
+using Servy.Core.Logging;
+#endif
 
 namespace Servy.Core.Domain
 {
@@ -448,6 +451,14 @@ namespace Servy.Core.Domain
 #if DEBUG
             var wrapperExePath = Path.Combine(wrapperExeDir ?? AppConfig.ProgramDataPath, servyServiceFilename);
 #else
+            // SECURITY/STABILITY GUARD:
+            // In RELEASE builds, we enforce the standard ProgramData path.
+            // We warn the caller so they aren't wondering why their custom directory was ignored.
+            if (!string.IsNullOrWhiteSpace(wrapperExeDir))
+            {
+                Logger.Warn($"Install: The 'wrapperExeDir' parameter ('{wrapperExeDir}') is ignored in RELEASE builds. " +
+                            $"The service wrapper will be installed to the standard path: {AppConfig.ProgramDataPath}");
+            }
             var wrapperExePath = Path.Combine(AppConfig.ProgramDataPath, servyServiceFilename);
 #endif
 
