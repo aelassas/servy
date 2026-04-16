@@ -14,9 +14,13 @@ namespace Servy.Core.DTOs
         public int EventId { get; set; }
 
         /// <summary>
-        /// Gets or sets the date and time when the event was logged.
+        /// Gets or sets the absolute date and time when the event was logged.
         /// </summary>
-        public DateTime Time { get; set; }
+        /// <remarks>
+        /// Uses DateTimeOffset to ensure UTC timestamps from the Windows Event Log 
+        /// are preserved and correctly localized in the UI.
+        /// </remarks>
+        public DateTimeOffset Time { get; set; }
 
         /// <summary>
         /// Gets or sets the severity level (e.g., Information, Warning, Error) of the entry.
