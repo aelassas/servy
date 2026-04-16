@@ -4,7 +4,6 @@ using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Native;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Infrastructure.Data;
@@ -29,8 +28,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
-using ITimer = Servy.Service.Timers.ITimer;
 using static Servy.Core.Native.NativeMethods;
+using ITimer = Servy.Service.Timers.ITimer;
 
 namespace Servy.Service
 {
@@ -112,6 +111,16 @@ namespace Servy.Service
         /// Below this threshold the default SCM timeout is sufficient.
         /// </summary>
         private const int ScmStartupRequestThresholdSeconds = 20;
+
+        /// <summary>
+        /// The wait hint in milliseconds sent to the Service Control Manager (SCM) during a Pre-Shutdown event.
+        /// </summary>
+        /// <remarks>
+        /// This value informs Windows how long the service expects to take to finish its cleanup. 
+        /// Servy defaults to 30,000ms (30 seconds) to allow for graceful shutdown of child processes 
+        /// and flushing of pending log buffers.
+        /// </remarks>
+        private const int PreShutdownWaitHintMs = 30_000;
 
         #endregion
 
@@ -1918,7 +1927,7 @@ namespace Servy.Service
 
                 // 1. Immediately tell SCM we are transitioning to a stop state and need a 30s window.
                 // This moves the service into the STOP_PENDING state in the eyes of the OS.
-                UpdateServiceStatus(SERVICE_STOP_PENDING, 30000);
+                UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
 
                 try
                 {
