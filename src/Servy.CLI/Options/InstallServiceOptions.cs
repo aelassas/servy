@@ -182,9 +182,9 @@ namespace Servy.CLI.Options
 
         /// <summary>
         /// Gets or sets the maximum number of restart attempts after failure.
-        /// Must be >= 1 if health monitoring is enabled.
+        /// Must be >= 0 if health monitoring is enabled.
         /// </summary>
-        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure.")]
+        [Option("maxRestartAttempts", HelpText = "Maximum restart attempts on failure. Set to 0 for unlimited restart attempts.")]
         public string? MaxRestartAttempts { get; set; }
 
         /// <summary>

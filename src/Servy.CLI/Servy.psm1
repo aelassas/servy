@@ -680,7 +680,7 @@ function Install-ServyService {
         Recovery action on failure. Options: None, RestartService, RestartProcess, RestartComputer. Optional.
 
     .PARAMETER MaxRestartAttempts
-        Maximum number of restart attempts after failure. Optional.
+        Maximum number of restart attempts after failure. Optional. Set to 0 for unlimited restart attempts.
 
     .PARAMETER FailureProgramPath
         Path to a failure program or script. Optional.
@@ -861,10 +861,10 @@ function Install-ServyService {
     [string] $Stderr,
 
     # Timeouts
-    [ValidateRange(1, 2147483647)]
+    [ValidateRange(1, 86400)]
     [int] $StartTimeout,
 
-    [ValidateRange(1, 2147483647)]
+    [ValidateRange(1, 86400)]
     [int] $StopTimeout,
 
     # Log Rotation
@@ -872,7 +872,7 @@ function Install-ServyService {
 
     [switch] $EnableSizeRotation,
 
-    [ValidateRange(1, 2147483647)]
+    [ValidateRange(1, 10240)]
     [int] $RotationSize,
 
     [switch] $EnableDateRotation,
@@ -880,7 +880,7 @@ function Install-ServyService {
     [ValidateSet("Daily", "Weekly", "Monthly")]
     [string] $DateRotationType,
 
-    [ValidateRange(0, 2147483647)]
+    [ValidateRange(0, 10000)]
     [int] $MaxRotations,
 
     [switch] $UseLocalTimeForRotation,
@@ -888,7 +888,7 @@ function Install-ServyService {
     # Health Monitoring
     [switch] $EnableHealth,
 
-    [ValidateRange(5, 2147483647)]
+    [ValidateRange(5, 86400)]
     [int] $HeartbeatInterval,
 
     [ValidateRange(1, 2147483647)]
@@ -898,7 +898,7 @@ function Install-ServyService {
     [ValidateSet("None", "RestartService", "RestartProcess", "RestartComputer")]
     [string] $RecoveryAction,
 
-    [ValidateRange(1, 2147483647)]
+    [ValidateRange(0, 2147483647)]
     [int] $MaxRestartAttempts,
 
     [ValidateScript({ 
@@ -961,7 +961,7 @@ function Install-ServyService {
       })]
     [string] $PreLaunchStderr,
 
-    [ValidateRange(0, 2147483647)]
+    [ValidateRange(0, 86400)]
     [int] $PreLaunchTimeout,
 
     [ValidateRange(0, 2147483647)]
@@ -1002,7 +1002,7 @@ function Install-ServyService {
 
     [string] $PreStopParams,
 
-    [ValidateRange(0, 2147483647)]
+    [ValidateRange(0, 86400)]
     [int] $PreStopTimeout,
 
     [switch] $PreStopLogAsError,

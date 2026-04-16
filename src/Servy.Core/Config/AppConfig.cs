@@ -1,5 +1,3 @@
-
-
 using Servy.Core.Enums;
 
 namespace Servy.Core.Config
@@ -377,13 +375,13 @@ namespace Servy.Core.Config
         public const int MinMaxFailedChecks = 1;
 
         /// <summary>
-        /// Minimum max restart attempts.
+        /// Minimum max restart attempts. Set to 0 for unlimited.
         /// </summary>
-        public const int MinMaxRestartAttempts = 1;
+        public const int MinMaxRestartAttempts = 0;
 
         /// <summary>
         /// Minimum pre-launch timeout in seconds.
-        /// Set to 0 to run the pre-launch  hook in fire-and-forget mode.
+        /// Set to 0 to run the pre-launch hook in fire-and-forget mode.
         /// </summary>
         public const int MinPreLaunchTimeoutSeconds = 0;
 
@@ -425,12 +423,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum allowed failed health checks.
         /// </summary>
-        public const int MaxMaxFailedChecks = 100;
+        public const int MaxMaxFailedChecks = int.MaxValue;
 
         /// <summary>
         /// Maximum allowed restart attempts.
         /// </summary>
-        public const int MaxMaxRestartAttempts = 100;
+        public const int MaxMaxRestartAttempts = int.MaxValue;
 
         /// <summary>
         /// Maximum pre-launch timeout in seconds (24 hours).
@@ -440,7 +438,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum pre-launch retry attempts.
         /// </summary>
-        public const int MaxPreLaunchRetryAttempts = 100;
+        public const int MaxPreLaunchRetryAttempts = int.MaxValue;
 
         /// <summary>
         /// The maximum allowed size for imported configuration files (XML or JSON) in Megabytes.

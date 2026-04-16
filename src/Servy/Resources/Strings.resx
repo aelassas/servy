@@ -258,8 +258,12 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_MaxFailedChecks" xml:space="preserve">
     <value>Max Failed Checks</value>
   </data>
+
   <data name="Label_Attempts" xml:space="preserve">
     <value>attempts</value>
+  </data>
+  <data name="Info_MaxRestartAttempts" xml:space="preserve">
+    <value>Set to 0 for unlimited restart attempts.</value>
   </data>
   <data name="Label_RecoveryAction" xml:space="preserve">
     <value>Recovery Action</value>
@@ -467,7 +471,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Max Failed Checks must be a number greater than or equal to 1.</value>
   </data>
   <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number greater than or equal to 1.</value>
+    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
   </data>
 
   <data name="Msg_ServiceInstalled" xml:space="preserve">

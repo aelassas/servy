@@ -164,7 +164,7 @@ namespace Servy.Service
         private RecoveryAction _recoveryAction;
         private readonly object _teardownLock = new object();
         private volatile bool _isRecovering = false;
-        private int _maxRestartAttempts = 3; // Maximum number of restart attempts
+        private int _maxRestartAttempts = AppConfig.DefaultMaxRestartAttempts; // Maximum number of restart attempts
         private List<EnvironmentVariable> _environmentVariables = new List<EnvironmentVariable>();
         private bool _recoveryActionEnabled = false;
         private string? _restartAttemptsFile;
@@ -1687,18 +1687,27 @@ namespace Servy.Service
                     if (_isTearingDown || _disposed)
                         return;
 
-                    currentAttempts = await EnsureRestartAttemptsFileAsync();
+                    // _maxRestartAttempts == 0 means unlimited restart attempts
+                    if (_maxRestartAttempts > 0)
+                    {
+                        currentAttempts = await EnsureRestartAttemptsFileAsync();
 
-                    if (currentAttempts >= _maxRestartAttempts)
-                    {
-                        _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
-                        await SaveRestartAttemptsAsync(0); // Reset for next manual start
-                        shouldStop = true;
+                        if (currentAttempts >= _maxRestartAttempts)
+                        {
+                            _logger?.Error($"Maximum restart attempts reached ({_maxRestartAttempts}). Stopping service.");
+                            await SaveRestartAttemptsAsync(0); // Reset for next manual start
+                            shouldStop = true;
+                        }
+                        else
+                        {
+                            currentAttempts++;
+                            await SaveRestartAttemptsAsync(currentAttempts);
+                        }
                     }
-                    else
+
+                    // Set the recovery state (MANDATORY for both limited and unlimited)
+                    if (!shouldStop)
                     {
-                        currentAttempts++;
-                        await SaveRestartAttemptsAsync(currentAttempts);
                         _failedChecks = 0;
                         _isRecovering = true; // Set flag to block other health checks: GATE CLOSED
                     }

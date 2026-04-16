@@ -114,7 +114,7 @@ namespace Servy.CLI.Validators
 
                 if (!string.IsNullOrWhiteSpace(opts.MaxRestartAttempts)
                    && (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts))
-                    return CommandResult.Fail(Strings.Msg_InvalidMaxRestartAttempts);
+                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts));
             }
             else
             {
