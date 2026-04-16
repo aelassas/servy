@@ -352,10 +352,10 @@ namespace Servy.Manager
                 Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
 
 #if DEBUG
-                ConfigurationAppPublishPath = AppConfig.ConfigrationAppPublishDebugPath;
+                ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
 #else
                 var baseDirectory = AppFoldersHelper.GetApplicationDirectory();
-                ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigrationAppPublishPath;
+                ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
                 // If the path is relative, combine it with the base directory
                 if (!Path.IsPathRooted(ConfigurationAppPublishPath))
                 {
