@@ -10,6 +10,7 @@ namespace Servy.Manager.Models
     /// </summary>
     public class Service : INotifyPropertyChanged
     {
+        private string _name;
         private string _description;
         private ServiceStatus? _status;
         private bool _isInstalled;
@@ -28,7 +29,11 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
-        public string Name { get; set; }
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value);
+        }
 
         /// <summary>
         /// Gets or sets the service description.
