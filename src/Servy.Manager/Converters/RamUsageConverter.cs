@@ -26,16 +26,14 @@ namespace Servy.Manager.Converters
         /// <returns>The RAM usage as string.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            long? ramUsage = null;
-            long val;
-            if (value != null && long.TryParse(value.ToString(), out val))
+            // Pattern matching handles the null check and unboxing in one go.
+            // If the bound property is double? and is null, this will safely return false.
+            if (value is long ramUsage)
             {
-                ramUsage = val;
+                return ProcessHelper.FormatRamUsage(ramUsage);
             }
-            if (!ramUsage.HasValue)
-                return UnknownRamUsage;
 
-            return ProcessHelper.FormatRamUsage(ramUsage.Value);
+            return UnknownRamUsage;
         }
 
         /// <summary>

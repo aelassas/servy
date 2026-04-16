@@ -26,16 +26,14 @@ namespace Servy.Manager.Converters
         /// <returns>The CPU usage as string.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            double? cpuUsage = null;
-            double val;
-            if (value != null && double.TryParse(value.ToString(), out val))
+            // Pattern matching handles the null check and unboxing in one go.
+            // If the bound property is double? and is null, this will safely return false.
+            if (value is double cpuUsage)
             {
-                cpuUsage = val;
+                return ProcessHelper.FormatCpuUsage(cpuUsage);
             }
-            if (!cpuUsage.HasValue)
-                return UnknownCpuUsage;
 
-            return ProcessHelper.FormatCpuUsage(cpuUsage.Value);
+            return UnknownCpuUsage;
         }
 
         /// <summary>
