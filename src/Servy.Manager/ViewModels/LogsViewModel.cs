@@ -346,7 +346,7 @@ namespace Servy.Manager.ViewModels
                 {
                     var entry = new LogEntryModel
                     {
-                        Time = result.Time,
+                        Time = result.Time.LocalDateTime,
                         Level = result.Level.ToString(),
                         EventId = result.EventId,
                         Message = result.Message,
