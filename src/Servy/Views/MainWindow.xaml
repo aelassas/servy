@@ -11,7 +11,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="Servy"
         MinWidth="640"
-        MinHeight="720"
+        MinHeight="750"
         SizeToContent="WidthAndHeight"
         ResizeMode="CanMinimize"
         AutomationProperties.Name="Servy Configuration Window"
@@ -210,13 +210,9 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="8" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
-                                 Margin="0,5"
-                                 Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
-                                 TextWrapping="NoWrap" AcceptsReturn="False"
-                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                                 VerticalContentAlignment="Center"
+                        <TextBox Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
+                                 Text="{Binding ProcessParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
                                  AutomationProperties.Name="{x:Static resx:Strings.Label_ProcessParameters}"
                                  AutomationProperties.AutomationId="TextBoxProcessParameters"
                                  AutomationProperties.HelpText="Enter the command line parameters for the process."/>
