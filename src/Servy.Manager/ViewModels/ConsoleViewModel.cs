@@ -375,52 +375,56 @@ namespace Servy.Manager.ViewModels
                 bool hasUniqueStderr = !string.IsNullOrEmpty(stderrPath) &&
                                        !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
 
-                var stdoutTask = !string.IsNullOrEmpty(stdoutPath)
-                    ? new LogTailer().GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
-                    : Task.FromResult<HistoryResult>(null);
-
-                var stderrTask = hasUniqueStderr
-                    ? new LogTailer().GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit)
-                    : Task.FromResult<HistoryResult>(null);
-
-                // Wait for the necessary reads to complete
-                var results = await Task.WhenAll(stdoutTask, stderrTask);
-
-                // 3. SECURITY CHECK: If sessionId doesn't match, user switched again while loading
-                if (sessionId != _currentSessionId) return;
-
-                var outRes = results[0];
-                var errRes = results[1];
-
-                // 4. Merge and Sort history
-                var combinedHistory = new List<LogLine>();
-                if (outRes != null) combinedHistory.AddRange(outRes.Lines);
-                if (errRes != null) combinedHistory.AddRange(errRes.Lines);
-
-                // Perform an in-place sort on a background thread.
-                // This avoids the GC pressure of the previous anonymous object LINQ chain.
-                await Task.Run(() =>
+                using (var stdoutHistoryTailer = new LogTailer())
+                using (var stderrHistoryTailer = new LogTailer())
                 {
-                    combinedHistory.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
-                });
+                    var stdoutTask = !string.IsNullOrEmpty(stdoutPath)
+                        ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
+                        : Task.FromResult<HistoryResult>(null);
 
-                if (combinedHistory.Count > 0)
-                {
-                    RawLines.AddRange(combinedHistory);
-                    RequestScroll?.Invoke(true);
-                }
+                    var stderrTask = hasUniqueStderr
+                        ? stderrHistoryTailer.GetHistoryAsync(stderrPath, LogType.StdErr, historyLimit)
+                        : Task.FromResult<HistoryResult>(null);
 
-                // 5. Start Live Tailing, passing the Session ID
-                // Start StdOut tailer if the result and path are valid
-                if (outRes != null && !string.IsNullOrEmpty(stdoutPath))
-                {
-                    StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, token, sessionId);
-                }
+                    // Wait for the necessary reads to complete
+                    var results = await Task.WhenAll(stdoutTask, stderrTask);
 
-                // Start StdErr tailer ONLY if it's a different file to prevent duplicate UI entries
-                if (errRes != null && hasUniqueStderr)
-                {
-                    StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTime, token, sessionId);
+                    // 3. SECURITY CHECK: If sessionId doesn't match, user switched again while loading
+                    if (sessionId != _currentSessionId) return;
+
+                    var outRes = results[0];
+                    var errRes = results[1];
+
+                    // 4. Merge and Sort history
+                    var combinedHistory = new List<LogLine>();
+                    if (outRes != null) combinedHistory.AddRange(outRes.Lines);
+                    if (errRes != null) combinedHistory.AddRange(errRes.Lines);
+
+                    // Perform an in-place sort on a background thread.
+                    // This avoids the GC pressure of the previous anonymous object LINQ chain.
+                    await Task.Run(() =>
+                    {
+                        combinedHistory.Sort((a, b) => DateTime.Compare(a.Timestamp, b.Timestamp));
+                    });
+
+                    if (combinedHistory.Count > 0)
+                    {
+                        RawLines.AddRange(combinedHistory);
+                        RequestScroll?.Invoke(true);
+                    }
+
+                    // 5. Start Live Tailing, passing the Session ID
+                    // Start StdOut tailer if the result and path are valid
+                    if (outRes != null && !string.IsNullOrEmpty(stdoutPath))
+                    {
+                        StartLiveTail(stdoutPath, LogType.StdOut, outRes.Position, outRes.CreationTime, token, sessionId);
+                    }
+
+                    // Start StdErr tailer ONLY if it's a different file to prevent duplicate UI entries
+                    if (errRes != null && hasUniqueStderr)
+                    {
+                        StartLiveTail(stderrPath, LogType.StdErr, errRes.Position, errRes.CreationTime, token, sessionId);
+                    }
                 }
             }
             catch (Exception ex)
