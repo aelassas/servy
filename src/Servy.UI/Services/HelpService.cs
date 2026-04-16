@@ -21,12 +21,24 @@ namespace Servy.UI.Services
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
+        /// Shared instance to prevent socket exhaustion and allow connection pooling.
+        /// </summary>
+        private static readonly HttpClient _httpClient = new HttpClient();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="HelpService"/> class.
         /// </summary>
         /// <param name="messageBoxService">The message box service used for UI dialogs.</param>
         public HelpService(IMessageBoxService messageBoxService)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+
+            // GitHub API requires a User-Agent header. 
+            // Setting it once on the static instance is thread-safe and efficient.
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Servy");
+
+            // Optimization: Set a default timeout if the specific call doesn't provide one
+            _httpClient.Timeout = TimeSpan.FromSeconds(20);
         }
 
         /// <inheritdoc />
@@ -72,13 +84,10 @@ namespace Servy.UI.Services
             {
                 // 10 seconds is the ideal 'patience window' for a manual UI trigger
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
-                using (var http = new HttpClient())
                 {
-                    http.DefaultRequestHeaders.UserAgent.ParseAdd("ServyApp");
-
                     var url = "https://api.github.com/repos/aelassas/servy/releases/latest";
 
-                    var response = await http.GetAsync(url, cts.Token);
+                    var response = await _httpClient.GetAsync(url, cts.Token);
                     response.EnsureSuccessStatusCode();
 
                     var content = await response.Content.ReadAsStringAsync();
