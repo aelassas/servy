@@ -62,7 +62,7 @@ namespace Servy.Core.Helpers
                 }
             }
             catch (InvalidOperationException) { /* Parent already exited */ }
-            catch (System.ComponentModel.Win32Exception) { /* Access denied */ }
+            catch (Win32Exception) { /* Access denied */ }
             catch (Exception ex) { Logger.Warn($"Unexpected error getting parent start time: {ex.Message}"); }
 
             KillChildrenInternal(parentPid, parentStartTime, selfPid);
@@ -133,7 +133,7 @@ namespace Servy.Core.Helpers
                     if (!child.HasExited)
                     {
                         child.Kill();
-                        child.WaitForExit(2000);
+                        child.WaitForExit(AppConfig.KillChildWaitMs);
                     }
                 }
                 catch (Exception ex)
@@ -387,11 +387,11 @@ namespace Servy.Core.Helpers
                 if (!process.HasExited)
                 {
                     process.Kill();
-                    process.WaitForExit(10_000);
+                    process.WaitForExit(AppConfig.KillTreeWaitMs);
                 }
             }
             catch (InvalidOperationException) { /* Process already exited */ }
-            catch (System.ComponentModel.Win32Exception) { /* Access denied */ }
+            catch (Win32Exception) { /* Access denied */ }
             catch (Exception ex)
             {
                 Logger.Warn($"Unexpected error killing process tree: {ex.Message}");
@@ -419,7 +419,7 @@ namespace Servy.Core.Helpers
                 {
                     if (parent.StartTime > process.StartTime.AddSeconds(2)) return;
                 }
-                catch (System.ComponentModel.Win32Exception) { return; }
+                catch (Win32Exception) { return; }
 
                 // Move up first
                 KillParentProcesses(parent, allProcesses, protectedPids);
@@ -427,7 +427,7 @@ namespace Servy.Core.Helpers
                 if (!parent.HasExited)
                 {
                     parent.Kill();
-                    parent.WaitForExit(5000);
+                    parent.WaitForExit(AppConfig.KillParentWaitMs);
                 }
             }
             catch
