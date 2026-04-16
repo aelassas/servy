@@ -56,8 +56,13 @@ namespace Servy.Core.Services
             if (!validation.IsValid)
             {
                 errorMessage = validation.ErrorMessage;
-                Logger.Warn($"JSON Import Blocked: Logical violation for service '{dto.Name}'. Reason: {errorMessage}");
-                return false;
+
+                // Sanitize the untrusted name to prevent log injection
+                // We strip newlines and carriage returns to keep the log entry on a single line.
+                var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", "");
+
+                Logger.Warn($"JSON Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
+                return false;   
             }
 
             // 3. Executable Path Integrity

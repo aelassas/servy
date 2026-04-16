@@ -67,7 +67,11 @@ namespace Servy.Core.Services
             if (!validation.IsValid)
             {
                 errorMessage = validation.ErrorMessage;
-                Logger.Warn($"Import Blocked: Crafted or invalid XML for service '{dto.Name}'. Reason: {errorMessage}");
+
+                // FIX: Sanitize the untrusted name before logging
+                var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", "");
+
+                Logger.Warn($"Import Blocked: Crafted or invalid XML for service '{sanitizedName}'. Reason: {errorMessage}");
                 return false;
             }
 
