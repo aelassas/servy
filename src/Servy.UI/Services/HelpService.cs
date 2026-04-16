@@ -23,19 +23,24 @@ namespace Servy.UI.Services
         private static readonly HttpClient _httpClient = new HttpClient();
 
         /// <summary>
+        /// Configures the shared HttpClient exactly once.
+        /// </summary>
+        static HelpService()
+        {
+            // Setting headers here ensures they are only set once for the entire app life.
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Servy");
+
+            // Centralized timeout for the static client
+            _httpClient.Timeout = TimeSpan.FromSeconds(20);
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="HelpService"/> class.
         /// </summary>
         /// <param name="messageBoxService">The message box service used for UI dialogs.</param>
         public HelpService(IMessageBoxService messageBoxService)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
-
-            // GitHub API requires a User-Agent header. 
-            // Setting it once on the static instance is thread-safe and efficient.
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Servy");
-
-            // Optimization: Set a default timeout if the specific call doesn't provide one
-            _httpClient.Timeout = TimeSpan.FromSeconds(20);
         }
 
         /// <inheritdoc />
