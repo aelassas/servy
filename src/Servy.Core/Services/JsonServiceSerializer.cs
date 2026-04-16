@@ -31,7 +31,7 @@ namespace Servy.Core.Services
             }
             catch (JsonException ex)
             {
-                string snippet = json?.Length > 100 ? json.Substring(0, 100) + "..." : json;
+                string snippet = json.Length > 100 ? json.Substring(0, 100) + "..." : json;
 
                 Logger.Error($"JSON Deserialization failed for input starting with: {snippet}", ex);
 

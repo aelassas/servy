@@ -116,13 +116,15 @@ namespace Servy.Core.Services
                 }
                 catch (EventLogException ex)
                 {
-                    // Rethrow with specific context for the UI/Logger to catch
-                    throw new Exception("Cannot access Windows Event Log. Ensure the 'Windows Event Log' service is running and the query is valid.", ex);
+                    // InvalidOperationException is appropriate when a required system service (Event Log) 
+                    // is not in the correct state to perform the operation.
+                    throw new InvalidOperationException("Cannot access Windows Event Log. Ensure the 'Windows Event Log' service is running and the query is valid.", ex);
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    // Specifically handle permission issues (e.g., running as non-admin)
-                    throw new Exception("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
+                    // SecurityException is the standard .NET way to signal that a call failed 
+                    // due to insufficient permissions/privileges.
+                    throw new SecurityException("Access denied to Windows Event Log. Please ensure the application is running with sufficient privileges (Administrator).", ex);
                 }
 
                 var results = new List<ServyEventLogEntry>();

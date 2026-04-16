@@ -163,15 +163,15 @@ namespace Servy.Infrastructure.Data
 
                     var expectedColumns = GetExpectedColumns();
 
-                    foreach (var col in expectedColumns)
-                    {
-                        if (!existingColumns.Contains(col))
-                        {
-                            // Log each individual column addition
-                            Logger.Info($"Migrating database: Adding column '{col}' to 'Services' table.");
+                    var missingColumns = expectedColumns.Where(col => !existingColumns.Contains(col)).ToList();
 
-                            connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
-                        }
+                    foreach (var col in missingColumns)
+                    {
+                        // Log each individual column addition
+                        Logger.Info($"Migrating database: Adding column '{col}' to 'Services' table.");
+
+                        // Execute the DDL
+                        connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
                     }
 
                     // Commit the entire migration as a single atomic unit
