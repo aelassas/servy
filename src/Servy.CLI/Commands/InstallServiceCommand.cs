@@ -37,11 +37,6 @@ namespace Servy.CLI.Commands
         /// </summary>
         /// <param name="opts">Installation options.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
-        /// <summary>
-        /// Executes the installation of a Windows service using the specified options.
-        /// </summary>
-        /// <param name="opts">Options for service installation.</param>
-        /// <returns>A <see cref="CommandResult"/> indicating success or failure.</returns>
         public async Task<CommandResult> Execute(Options.InstallServiceOptions opts)
         {
             var action = $"install service '{opts.ServiceName}'";
