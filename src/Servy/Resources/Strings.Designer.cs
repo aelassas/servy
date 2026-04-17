@@ -1061,7 +1061,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number of seconds greater than or equal to 5 seconds..
+        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number of seconds between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidHeartbeatInterval {
             get {
@@ -1070,7 +1070,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max Failed Checks must be a number greater than or equal to 1..
+        ///   Recherche une chaîne localisée semblable à Max Failed Checks must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidMaxFailedChecks {
             get {
@@ -1088,7 +1088,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max rotations must be a number greater than or equal to 0..
+        ///   Recherche une chaîne localisée semblable à Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations..
         /// </summary>
         public static string Msg_InvalidMaxRotations {
             get {
@@ -1151,7 +1151,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch retry attempts must be a number greater than or equal to 0..
+        ///   Recherche une chaîne localisée semblable à Pre-Launch retry attempts must be a number between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidPreLaunchRetryAttempts {
             get {
@@ -1187,7 +1187,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
+        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreLaunchTimeout {
             get {
@@ -1214,7 +1214,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Stop timeout must be a number of seconds greater than or equal to 0. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
+        ///   Recherche une chaîne localisée semblable à Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
         /// </summary>
         public static string Msg_InvalidPreStopTimeout {
             get {
@@ -1223,7 +1223,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Rotation size must be specified in megabytes (MB) and be greater than or equal to 1 MB..
+        ///   Recherche une chaîne localisée semblable à Rotation size must be specified in megabytes (MB) between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidRotationSize {
             get {
@@ -1232,7 +1232,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Start timeout must be a number greater than or equal to 1..
+        ///   Recherche une chaîne localisée semblable à Start timeout must be a number between {0} and {1} seconds..
         /// </summary>
         public static string Msg_InvalidStartTimeout {
             get {
@@ -1268,7 +1268,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Stop timeout must be a number greater than or equal to 1..
+        ///   Recherche une chaîne localisée semblable à Stop timeout must be a number between {0} and {1} seconds..
         /// </summary>
         public static string Msg_InvalidStopTimeout {
             get {

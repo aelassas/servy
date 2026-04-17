@@ -399,7 +399,12 @@ namespace Servy.Core.Config
         /// <summary>
         /// Maximum number of rotated log files to keep.
         /// </summary>
-        public const int MaxMaxRotations = 1000;
+        public const int MaxMaxRotations = 10_000;
+
+        /// <summary>
+        /// Minimum number of rotated log files to keep. 0 means unlimited.
+        /// </summary>
+        public const int MinMaxRotations = 0;
 
         /// <summary>
         /// Maximum heartbeat interval in seconds (24 hours).
