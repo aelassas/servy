@@ -49,8 +49,11 @@ jobs:
               $tag = $Release.tag_name
               $body = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
 
+              # Use char code for backtick to prevent YAML/PowerShell escaping bugs
+              $bt = [char]96 
+
               $md = "## [$title]($url)`n`n"
-              $md += "**Date:** $date | **Tag:** \`$tag\``n`n"
+              $md += "**Date:** $date | **Tag:** $bt$tag$bt`n`n"
               $md += "$body`n`n"
               $md += "### Downloads`n"
 
