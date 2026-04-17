@@ -184,14 +184,6 @@ namespace Servy.Service.Helpers
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
         /// <returns>The expanded string.</returns>
-        /// <summary>
-        /// Expands environment variables in a string using the provided dictionary of variables.
-        /// Custom variables override system variables. Windows built-in expansion is also applied
-        /// to handle system-defined placeholders such as %SystemRoot%.
-        /// </summary>
-        /// <param name="value">The string to expand.</param>
-        /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
-        /// <returns>The expanded string.</returns>
         private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables)
         {
             if (string.IsNullOrEmpty(value))
