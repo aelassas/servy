@@ -139,7 +139,7 @@ namespace Servy.Service.ProcessManagement
                     {
                         logger.Error(errorMsg);
                     }
-                    
+
                     process.Kill(true);
 
                     throw new TimeoutException($"{options.ExecutablePath} exceeded the maximum allowed timeout of {options.TimeoutMs}ms.");
