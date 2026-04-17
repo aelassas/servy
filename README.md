@@ -137,11 +137,11 @@ When it comes to features, Servy brings together the best parts of tools like NS
 
 ## Changelog
 
-Detailed release notes and version history can be found in [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-See the [project roadmap](ROADMAP.md).
+See the [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
