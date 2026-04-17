@@ -256,7 +256,7 @@ namespace Servy.Manager.Views
         /// is a <see cref="PerformanceViewModel"/>; otherwise, <c>null</c>.
         /// </returns>
         private PerformanceViewModel? GetPerformanceVm()
-            => PerformanceTab.Content is PerformanceView PerformanceView ? PerformanceView.DataContext as PerformanceViewModel : null;
+            => PerformanceTab.Content is PerformanceView perfView ? perfView.DataContext as PerformanceViewModel : null;
 
         /// <summary>
         /// Retrieves the current console view model associated with the console tab, if available.
@@ -265,7 +265,7 @@ namespace Servy.Manager.Views
         /// langword="null"/> if the console view is not present or its data context is not a <see
         /// cref="ConsoleViewModel"/>.</returns>
         private ConsoleViewModel? GetConsoleVm()
-            => ConsoleTab.Content is ConsoleView ConsoleView ? ConsoleView.DataContext as ConsoleViewModel : null;
+            => ConsoleTab.Content is ConsoleView consoleView ? consoleView.DataContext as ConsoleViewModel : null;
 
         /// <summary>
         /// Retrieves the <see cref="DependenciesViewModel"/> instance bound to the <see cref="DependenciesTab"/> content, if available.
