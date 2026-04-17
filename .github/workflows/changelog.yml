@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main # Force checkout of the main branch, not the release tag
 
       - name: Update CHANGELOG.md
         shell: pwsh
@@ -130,5 +131,9 @@ jobs:
               Write-Host "No changes to commit. The CHANGELOG.md is already up to date."
           } else {
               git commit -m "docs: auto-update CHANGELOG.md"
+              
+              # Pull any recent changes to avoid push rejections
+              git pull origin main --rebase 
+              
               git push
           }
