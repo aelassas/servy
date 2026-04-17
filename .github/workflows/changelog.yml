@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: main # Force checkout of the main branch, not the release tag
-
+          
       - name: Update CHANGELOG.md
         shell: pwsh
         env:
@@ -53,7 +53,7 @@ jobs:
               $bt = [char]96 
 
               $md = "## [$title]($url)`n`n"
-              $md += "**Date:** $date | **Tag:** $bt$tag$bt`n`n"
+              $md += "**Date:** $date | **Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)`n`n"
               $md += "$body`n`n"
               $md += "### Downloads`n"
 
@@ -69,7 +69,7 @@ jobs:
 
               if ($null -ne $PrevRelease) {
                   $prevTag = $PrevRelease.tag_name
-                  $md += "[Compare changes](https://github.com/$repo/compare/$prevTag...$tag)`n"
+                  $md += "Compare changes: https://github.com/$repo/compare/$prevTag...$tag`n`n"
               }
 
               return $md
@@ -84,7 +84,6 @@ jobs:
               for ($i = 0; $i -lt $releases.Count; $i++) {
                   $prev = if ($i + 1 -lt $releases.Count) { $releases[$i+1] } else { $null }
                   $fullLog += Get-ReleaseEntry -Release $releases[$i] -PrevRelease $prev
-                  if ($i -lt $releases.Count - 1) { $fullLog += "`n---`n`n" }
               }
               [System.IO.File]::WriteAllText($changelogPath, $fullLog, $utf8NoBom)
           } else {
@@ -97,7 +96,7 @@ jobs:
               }
 
               # Safety check to prevent duplicating the release entry
-              $tagLine = "**Tag:** $bt$tag$bt"
+              $tagLine = "**Tag:** [$bt$tag$bt](https://github.com/$repo/tree/$tag)"
               if ($existing.Contains($tagLine)) {
                   Write-Host "Release $tag is already in the CHANGELOG. No updates needed."
               } else {
@@ -106,9 +105,9 @@ jobs:
                   $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
 
                   if ($existing -match '(?s)^# Changelog\r?\n(.*)$') {
-                      $newLog = "# Changelog`n`n$entry`n---`n`n" + $matches[1].TrimStart()
+                      $newLog = "# Changelog`n`n$entry" + $matches[1].TrimStart()
                   } else {
-                      $newLog = "# Changelog`n`n$entry`n---`n`n$existing"
+                      $newLog = "# Changelog`n`n$entry$existing"
                   }
                   [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
               }
