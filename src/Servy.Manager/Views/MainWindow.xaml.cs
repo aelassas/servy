@@ -275,7 +275,7 @@ namespace Servy.Manager.Views
         /// is a <see cref="DependenciesViewModel"/>; otherwise, <c>null</c>.
         /// </returns>
         private DependenciesViewModel? GetDependenciesVm()
-            => DependenciesTab.Content is DependenciesView logsView ? logsView.DataContext as DependenciesViewModel : null;
+            => DependenciesTab.Content is DependenciesView depsView ? depsView.DataContext as DependenciesViewModel : null;
 
         /// <summary>
         /// Retrieves the <see cref="LogsViewModel"/> instance bound to the <see cref="LogsTab"/> content, if available.
@@ -286,7 +286,6 @@ namespace Servy.Manager.Views
         /// </returns>
         private LogsViewModel? GetLogsVm()
             => LogsTab.Content is LogsView logsView ? logsView.DataContext as LogsViewModel : null;
-
 
         /// <summary>
         /// Handles tasks when the Main tab is selected:
