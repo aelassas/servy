@@ -135,6 +135,10 @@ When it comes to features, Servy brings together the best parts of tools like NS
 * Service Event Notification alerts on service failures via Windows notifications and email
 * Compatible with Windows 7-11 x64 and Windows Server editions
 
+## Changelog
+
+Detailed release notes and version history can be found in [CHANGELOG.md](CHANGELOG.md).
+
 ## Roadmap
 
 See the [project roadmap](ROADMAP.md).
