@@ -23,9 +23,6 @@ namespace Servy.CLI.Helpers
         /// This method runs the spinner on a background task and cancels it automatically
         /// when the action completes. The console line is cleared after the spinner stops.
         /// </remarks>
-        /// <summary>
-        /// Runs an asynchronous action while displaying a console loading spinner.
-        /// </summary>
         public static async Task RunWithLoadingAnimation(Func<Task> action, string message = "Preparing environment...")
         {
             var spinnerChars = new[] { '|', '/', '-', '\\' };
