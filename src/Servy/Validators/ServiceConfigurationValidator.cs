@@ -107,47 +107,44 @@ namespace Servy.Validators
 
             if (dto.StartTimeout.HasValue && (dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout || dto.StartTimeout > Core.Config.AppConfig.MaxStartTimeout))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartTimeout, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidStartTimeout, Core.Config.AppConfig.MinStartTimeout, Core.Config.AppConfig.MaxStartTimeout), AppConfig.Caption);
                 return false;
             }
 
             if (dto.StopTimeout.HasValue && (dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout || dto.StopTimeout > Core.Config.AppConfig.MaxStopTimeout))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStopTimeout, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidStopTimeout, Core.Config.AppConfig.MinStopTimeout, Core.Config.AppConfig.MaxStopTimeout), AppConfig.Caption);
                 return false;
             }
 
-            if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && (dto.RotationSize < Core.Config.AppConfig.MinRotationSize || dto.RotationSize > Core.Config.AppConfig.MaxRotationSize))
+            if (dto.RotationSize.HasValue && (dto.RotationSize < Core.Config.AppConfig.MinRotationSize || dto.RotationSize > Core.Config.AppConfig.MaxRotationSize))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidRotationSize, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidRotationSize, Core.Config.AppConfig.MinRotationSize, Core.Config.AppConfig.MaxRotationSize), AppConfig.Caption);
                 return false;
             }
 
-            if (dto.MaxRotations.HasValue && (dto.MaxRotations < 0 || dto.MaxRotations > Core.Config.AppConfig.MaxMaxRotations))
+            if (dto.MaxRotations.HasValue && (dto.MaxRotations < Core.Config.AppConfig.MinMaxRotations || dto.MaxRotations > Core.Config.AppConfig.MaxMaxRotations))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxRotations, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRotations, Core.Config.AppConfig.MinMaxRotations, Core.Config.AppConfig.MaxMaxRotations), AppConfig.Caption);
                 return false;
             }
 
-            if (dto.EnableHealthMonitoring.HasValue && dto.EnableHealthMonitoring.Value)
+            if (dto.HeartbeatInterval.HasValue && (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval || dto.HeartbeatInterval > Core.Config.AppConfig.MaxHeartbeatInterval))
             {
-                if (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval || dto.HeartbeatInterval > Core.Config.AppConfig.MaxHeartbeatInterval)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidHeartbeatInterval, AppConfig.Caption);
-                    return false;
-                }
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidHeartbeatInterval, Core.Config.AppConfig.MinHeartbeatInterval, Core.Config.AppConfig.MaxHeartbeatInterval), AppConfig.Caption);
+                return false;
+            }
 
-                if (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks || dto.MaxFailedChecks > Core.Config.AppConfig.MaxMaxFailedChecks)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidMaxFailedChecks, AppConfig.Caption);
-                    return false;
-                }
+            if (dto.MaxFailedChecks.HasValue && (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks || dto.MaxFailedChecks > Core.Config.AppConfig.MaxMaxFailedChecks))
+            {
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxFailedChecks, Core.Config.AppConfig.MinMaxFailedChecks, Core.Config.AppConfig.MaxMaxFailedChecks), AppConfig.Caption);
+                return false;
+            }
 
-                if (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > Core.Config.AppConfig.MaxMaxRestartAttempts)
-                {
-                    await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRestartAttempts, Core.Config.AppConfig.MinMaxRestartAttempts, Core.Config.AppConfig.MaxMaxRestartAttempts), AppConfig.Caption);
-                    return false;
-                }
+            if (dto.MaxRestartAttempts.HasValue && (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > Core.Config.AppConfig.MaxMaxRestartAttempts))
+            {
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRestartAttempts, Core.Config.AppConfig.MinMaxRestartAttempts, Core.Config.AppConfig.MaxMaxRestartAttempts), AppConfig.Caption);
+                return false;
             }
 
             // Failure Program
@@ -233,15 +230,15 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.PreLaunchTimeoutSeconds < Core.Config.AppConfig.MinPreLaunchTimeoutSeconds || dto.PreLaunchTimeoutSeconds > Core.Config.AppConfig.MaxPreLaunchTimeoutSeconds)
+            if (dto.PreLaunchTimeoutSeconds.HasValue && (dto.PreLaunchTimeoutSeconds < Core.Config.AppConfig.MinPreLaunchTimeoutSeconds || dto.PreLaunchTimeoutSeconds > Core.Config.AppConfig.MaxPreLaunchTimeoutSeconds))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreLaunchTimeout, Core.Config.AppConfig.MinPreLaunchTimeoutSeconds, Core.Config.AppConfig.MaxPreLaunchTimeoutSeconds), AppConfig.Caption);
                 return false;
             }
 
-            if (dto.PreLaunchRetryAttempts < Core.Config.AppConfig.MinPreLaunchRetryAttempts || dto.PreLaunchRetryAttempts > Core.Config.AppConfig.MaxPreLaunchRetryAttempts)
+            if (dto.PreLaunchRetryAttempts.HasValue && (dto.PreLaunchRetryAttempts < Core.Config.AppConfig.MinPreLaunchRetryAttempts || dto.PreLaunchRetryAttempts > Core.Config.AppConfig.MaxPreLaunchRetryAttempts))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, Core.Config.AppConfig.MinPreLaunchRetryAttempts, Core.Config.AppConfig.MaxPreLaunchRetryAttempts), AppConfig.Caption);
                 return false;
             }
 
@@ -273,9 +270,9 @@ namespace Servy.Validators
                 return false;
             }
 
-            if (dto.PreStopTimeoutSeconds < Core.Config.AppConfig.MinPreStopTimeoutSeconds || dto.PreStopTimeoutSeconds > Core.Config.AppConfig.MaxPreStopTimeoutSeconds)
+            if (dto.PreStopTimeoutSeconds.HasValue && (dto.PreStopTimeoutSeconds < Core.Config.AppConfig.MinPreStopTimeoutSeconds || dto.PreStopTimeoutSeconds > Core.Config.AppConfig.MaxPreStopTimeoutSeconds))
             {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopTimeout, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreStopTimeout, Core.Config.AppConfig.MinPreStopTimeoutSeconds, Core.Config.AppConfig.MaxPreStopTimeoutSeconds), AppConfig.Caption);
                 return false;
             }
 
