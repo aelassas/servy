@@ -54,7 +54,7 @@ Servy offers a desktop app, a CLI, and a PowerShell module that let you create, 
 Servy continuously monitors your app, restarting it automatically if it crashes, hangs, or stops. It is perfect for keeping non-service apps running in the background and ensuring they start automatically at system boot, even before logon, without rewriting them as services. Use it to run Node.js, Python, .NET, Java, Go, Rust, PHP, or Ruby applications; keep web servers, background workers, sync tools, or daemons alive after reboots; and automate task runners, schedulers, or scripts in production with built-in health checks, logging, and restart policies.
 
 ## Why?
-Servy makes managing Windows services effortless. It provides a robust wrapper for any executable, offering features like automatic restarts, advanced logging, and a real-time management console. See the [project notes](NOTES.md) for details.
+See [NOTES.md](NOTES.md) for details.
 
 ## Getting Started
 Download the latest release from [GitHub](https://github.com/aelassas/servy/releases/latest) or install via a package manager:

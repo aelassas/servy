@@ -2,7 +2,8 @@
 
 ## [Servy 7.9](https://github.com/aelassas/servy/releases/tag/v7.9)
 
-**Date:** 2026-04-16 | **Tag:** \$tag\`n
+**Date:** 2026-04-16 | **Tag:** `v7.9`
+
 Servy 7.9 introduces a [hardened security infrastructure](https://github.com/aelassas/servy/wiki/Security), significant performance optimizations, and a wealth of new features. It's packed with an extensive list of improvements, and the full release notes are available in the expandable section below.
 
 ## Full Changelog
@@ -525,7 +526,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.8](https://github.com/aelassas/servy/releases/tag/v7.8)
 
-**Date:** 2026-04-04 | **Tag:** \$tag\`n
+**Date:** 2026-04-04 | **Tag:** `v7.8`
+
 * feat(logger): add [`LogRollingInterval`](https://github.com/aelassas/servy/wiki/Advanced-Configuration#log-rolling-interval-logrollinginterval) config for daily, weekly, or monthly log rotation
 * fix(logger): defer file creation until first write (lazy init)
 * fix(core): replace WMI with SCM/Registry for resource refresh service queries (#48)
@@ -560,7 +562,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.7](https://github.com/aelassas/servy/releases/tag/v7.7)
 
-**Date:** 2026-04-03 | **Tag:** \$tag\`n
+**Date:** 2026-04-03 | **Tag:** `v7.7`
+
 * feat(logger): add [`EnableEventLog`](https://github.com/aelassas/servy/wiki/Advanced-Configuration#general-logging-settings) option to allow disabling Windows Event Log via configuration
 * refactor(core): general code cleanup and refactoring
 * docs(wiki): improve [Advanced Configuration](https://github.com/aelassas/servy/wiki/Advanced-Configuration) documentation
@@ -582,7 +585,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.6](https://github.com/aelassas/servy/releases/tag/v7.6)
 
-**Date:** 2026-04-02 | **Tag:** \$tag\`n
+**Date:** 2026-04-02 | **Tag:** `v7.6`
+
 * feat(service): read entire service configuration from database instead of service parameters
 * feat(logger): implement dual-channel LogLevel support for the Windows Event Log and local files
 * feat(logger): add [`LogRotationSizeMB`](https://github.com/aelassas/servy/wiki/Advanced-Configuration#settings-detail) configuration option (default: 10MB)
@@ -620,7 +624,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.5](https://github.com/aelassas/servy/releases/tag/v7.5)
 
-**Date:** 2026-03-31 | **Tag:** \$tag\`n
+**Date:** 2026-03-31 | **Tag:** `v7.5`
+
 * feat(logger): expand observability across Desktop, CLI, Manager, Service, and Restarter [logs](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation#internal-servy-logs)
 * feat(logger): add `DEBUG` level for more verbose output during troubleshooting
 * feat(logger): add [LogLevel](https://github.com/aelassas/servy/wiki/Advanced-Configuration) setting to dynamically adjust log verbosity at runtime
@@ -646,7 +651,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.4](https://github.com/aelassas/servy/releases/tag/v7.4)
 
-**Date:** 2026-03-30 | **Tag:** \$tag\`n
+**Date:** 2026-03-30 | **Tag:** `v7.4`
+
 * feat(logger): expand observability across Desktop, CLI, and Manager apps
 * fix(logger): ensure recovery logic coverage and prevent zombie handles
 * fix(logger): restore correct encoding after log rotation to prevent garbled text
@@ -682,7 +688,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.3](https://github.com/aelassas/servy/releases/tag/v7.3)
 
-**Date:** 2026-03-26 | **Tag:** \$tag\`n
+**Date:** 2026-03-26 | **Tag:** `v7.3`
+
 * fix(core): use local time instead of UTC for log rotation (#47)
 * fix(core): correct log cleanup logic (#47)
 
@@ -702,7 +709,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.2](https://github.com/aelassas/servy/releases/tag/v7.2)
 
-**Date:** 2026-03-26 | **Tag:** \$tag\`n
+**Date:** 2026-03-26 | **Tag:** `v7.2`
+
 * feat(core): change log rotation naming to insert timestamp before extension (#47)
 * feat(core): use local time instead of UTC for log rotation (#47)
 * feat(core): update log cleanup logic (#47)
@@ -724,7 +732,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.1](https://github.com/aelassas/servy/releases/tag/v7.1)
 
-**Date:** 2026-03-25 | **Tag:** \$tag\`n
+**Date:** 2026-03-25 | **Tag:** `v7.1`
+
 * fix(cli): typo in import validation message (#45)
 * fix(cli): install after import not registered with `Servy.Service.CLI.exe` (#46)
 * ci(publish): wrong Inno Setup download URL
@@ -749,7 +758,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 7.0](https://github.com/aelassas/servy/releases/tag/v7.0)
 
-**Date:** 2026-03-14 | **Tag:** \$tag\`n
+**Date:** 2026-03-14 | **Tag:** `v7.0`
+
 * fix(desktop,manager): add `--force-sr` flag to resolve blank UI issues on MeshCentral (#44)
 * fix(desktop): fix manager app detection when launched from CLI
 * fix(manager): fix desktop app detection when launched from CLI
@@ -770,7 +780,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.9](https://github.com/aelassas/servy/releases/tag/v6.9)
 
-**Date:** 2026-03-13 | **Tag:** \$tag\`n
+**Date:** 2026-03-13 | **Tag:** `v6.9`
+
 * fix(desktop,manager): blank UI on some machines (#44)
 * fix(desktop,manager): add logger with software-rendering diagnostics (#44)
 * fix(desktop): pre-stop and post-stop file dialogs not working
@@ -793,7 +804,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.8](https://github.com/aelassas/servy/releases/tag/v6.8)
 
-**Date:** 2026-02-26 | **Tag:** \$tag\`n
+**Date:** 2026-02-26 | **Tag:** `v6.8`
+
 * perf(core): optimize encryption with modern high-performance crypto APIs
 * perf(manager): optimize Services tab performance
 * perf(manager): move console log sorting off the UI thread
@@ -820,7 +832,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.7](https://github.com/aelassas/servy/releases/tag/v6.7)
 
-**Date:** 2026-02-15 | **Tag:** \$tag\`n
+**Date:** 2026-02-15 | **Tag:** `v6.7`
+
 * fix(manager): restore decryption on refresh to fix field values
 * fix(ci): resolve coverlet runtime issue on `net48` branch
 
@@ -840,7 +853,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.6](https://github.com/aelassas/servy/releases/tag/v6.6)
 
-**Date:** 2026-02-14 | **Tag:** \$tag\`n
+**Date:** 2026-02-14 | **Tag:** `v6.6`
+
 > [!IMPORTANT]
 > This version contains a critical bug in Servy Manager. 
 > It is not recommended for production use. Please use a different version instead. 
@@ -868,7 +882,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.5](https://github.com/aelassas/servy/releases/tag/v6.5)
 
-**Date:** 2026-02-13 | **Tag:** \$tag\`n
+**Date:** 2026-02-13 | **Tag:** `v6.5`
+
 * feat(security): implement authenticated encryption using AES-CBC with HMAC-SHA256
 * perf(core): improve performance and overall stability
 * fix(service): remove duplicate recovery flag reset
@@ -892,7 +907,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.4](https://github.com/aelassas/servy/releases/tag/v6.4)
 
-**Date:** 2026-02-09 | **Tag:** \$tag\`n
+**Date:** 2026-02-09 | **Tag:** `v6.4`
+
 * fix(cli): auto-disable spinner when no console is attached (#39)
 * chore(setup): normalize the publish scripts and CI workflow
 * docs(wiki): update and enhance the [documentation](https://github.com/aelassas/servy/wiki)
@@ -913,7 +929,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.3](https://github.com/aelassas/servy/releases/tag/v6.3)
 
-**Date:** 2026-02-06 | **Tag:** \$tag\`n
+**Date:** 2026-02-06 | **Tag:** `v6.3`
+
 * fix(service): register `PRESHUTDOWN` support in `OnStart` (#37)
 * fix(service): ignore `PRESHUTDOWN` signal during computer restart recovery action
 * fix(service): prevent infinite crash loops with stability-based counter reset
@@ -943,7 +960,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.2](https://github.com/aelassas/servy/releases/tag/v6.2)
 
-**Date:** 2026-02-04 | **Tag:** \$tag\`n
+**Date:** 2026-02-04 | **Tag:** `v6.2`
+
 * fix(service): explicitly handle OS shutdown with SCM wait pulses (#37)
 * fix(core): ensure service start respects configured pre-launch timeout
 * fix(core): ensure service stop and restart respect configured pre-stop timeout
@@ -967,7 +985,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.1](https://github.com/aelassas/servy/releases/tag/v6.1)
 
-**Date:** 2026-02-03 | **Tag:** \$tag\`n
+**Date:** 2026-02-03 | **Tag:** `v6.1`
+
 * feat(manager): add [Dependencies tab](https://github.com/aelassas/servy/wiki/Servy-Manager#dependencies) to show service dependency tree with status indicators
 * refactor(manager): extract service list into a reusable control
 * refactor(manager): move UI constants to Servy.UI for reuse
@@ -989,7 +1008,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 6.0](https://github.com/aelassas/servy/releases/tag/v6.0)
 
-**Date:** 2026-02-01 | **Tag:** \$tag\`n
+**Date:** 2026-02-01 | **Tag:** `v6.0`
+
 * feat(core): support fire-and-forget pre-launch hooks when timeout is set to 0
 * fix(service): clean up orphaned pre-launch and post-launch hook processes on service stop
 * fix(service): remove post-launch, pre-stop, and post-stop arguments from logs for security
@@ -1014,7 +1034,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 5.9](https://github.com/aelassas/servy/releases/tag/v5.9)
 
-**Date:** 2026-01-30 | **Tag:** \$tag\`n
+**Date:** 2026-01-30 | **Tag:** `v5.9`
+
 * feat(manager): add [Console tab](https://github.com/aelassas/servy/wiki/Overview#console) to display real-time service stdout and stderr output
 * feat(core): add pre-stop and post-stop hooks (#36)
 * fix(service): request SCM additional time in pulses while pre-launch hook is running
@@ -1038,7 +1059,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 5.8](https://github.com/aelassas/servy/releases/tag/v5.8)
 
-**Date:** 2026-01-25 | **Tag:** \$tag\`n
+**Date:** 2026-01-25 | **Tag:** `v5.8`
+
 * fix(service): implement resilient recursive process tree termination
 * fix(service): prevent orphaned child processes when parent is force-killed
 
@@ -1058,7 +1080,8 @@ Servy 7.9 introduces a [hardened security infrastructure](https://github.com/ael
 
 ## [Servy 5.7](https://github.com/aelassas/servy/releases/tag/v5.7)
 
-**Date:** 2026-01-24 | **Tag:** \$tag\`n
+**Date:** 2026-01-24 | **Tag:** `v5.7`
+
 fix(service): ensure cleanup of descendant processes on shutdown
 fix(service): propagate `Ctrl+C` signal to descendant processes during stop
 fix(service): use pulsed shutdown to allow full process tree cleanup
@@ -1082,7 +1105,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.6](https://github.com/aelassas/servy/releases/tag/v5.6)
 
-**Date:** 2026-01-22 | **Tag:** \$tag\`n
+**Date:** 2026-01-22 | **Tag:** `v5.6`
+
 * feat(core): allow environment variable expansion in process paths (#35)
 * feat(core): allow environment variable expansion in startup directories
 * fix(service): keep SCM responsive by requesting additional time in short pulses during stop
@@ -1104,7 +1128,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.5](https://github.com/aelassas/servy/releases/tag/v5.5)
 
-**Date:** 2026-01-21 | **Tag:** \$tag\`n
+**Date:** 2026-01-21 | **Tag:** `v5.5`
+
 * fix(core): request additional SCM start and stop time when configured timeout approaches limit
 * fix(core): ensure service is in database before performing start, stop and restart actions
 * fix(core): align start and stop timeouts with service timeouts from SCM and database while restarting services
@@ -1128,7 +1153,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.4](https://github.com/aelassas/servy/releases/tag/v5.4)
 
-**Date:** 2026-01-20 | **Tag:** \$tag\`n
+**Date:** 2026-01-20 | **Tag:** `v5.4`
+
 * feat(psm1): improve CLI discovery for installed and portable setups
 * fix(manager): handle long user session values with proper width and trimming
 * fix(tests): eliminate race condition from fire-and-forget async work in ServiceCommands
@@ -1153,7 +1179,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.3](https://github.com/aelassas/servy/releases/tag/v5.3)
 
-**Date:** 2026-01-14 | **Tag:** \$tag\`n
+**Date:** 2026-01-14 | **Tag:** `v5.3`
+
 * feat(psm1): make Servy PowerShell module fully compatible with PowerShell 2.0+
 * feat(psm1): ensure Servy PowerShell module compatibility with Windows 7+ and Windows Server 2008+
 * fix(psm1): resolve `servy-cli.exe` path relative to module for portable and SCCM (#31)
@@ -1185,7 +1212,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.2](https://github.com/aelassas/servy/releases/tag/v5.2)
 
-**Date:** 2026-01-13 | **Tag:** \$tag\`n
+**Date:** 2026-01-13 | **Tag:** `v5.2`
+
 * feat(manager): optimize CPU and RAM graph rendering performance
 * fix(manager): disable hit testing on CPU and RAM graphs
 * fix(manager): ensure character ellipsis triggers in service Name and Description columns
@@ -1208,7 +1236,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.1](https://github.com/aelassas/servy/releases/tag/v5.1)
 
-**Date:** 2026-01-12 | **Tag:** \$tag\`n
+**Date:** 2026-01-12 | **Tag:** `v5.1`
+
 * feat(manager): add copy PID button to Performance tab
 * feat(manager): theme PID label as a badge using performance color palette
 * fix(manager): prevent content clipping of PID badge in Performance tab
@@ -1234,7 +1263,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 5.0](https://github.com/aelassas/servy/releases/tag/v5.0)
 
-**Date:** 2026-01-11 | **Tag:** \$tag\`n
+**Date:** 2026-01-11 | **Tag:** `v5.0`
+
 * feat(manager): refine CPU and RAM graph point collection and rendering
 * feat(manager): optimize background refresh with batch fetching, throttling, and atomic flags
 * feat(manager): optimize overall performance and responsiveness of Services and Performance tabs
@@ -1259,7 +1289,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.9](https://github.com/aelassas/servy/releases/tag/v4.9)
 
-**Date:** 2026-01-10 | **Tag:** \$tag\`n
+**Date:** 2026-01-10 | **Tag:** `v4.9`
+
 * feat(cli): add `--install` option to import command to install service after import
 * feat(powershell): add `-Install` switch to `Import-ServyServiceConfig` cmdlet to install service after import
 * feat(manager): optimize real-time CPU and RAM metric collection in Services tab
@@ -1286,7 +1317,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.8](https://github.com/aelassas/servy/releases/tag/v4.8)
 
-**Date:** 2026-01-08 | **Tag:** \$tag\`n
+**Date:** 2026-01-08 | **Tag:** `v4.8`
+
 * feat(core): add start and stop timeout options to desktop app, CLI and PowerShell module
 * feat(manager): optimize real-time CPU and RAM metric collection in Services tab
 * docs(wiki): update FAQ, CLI, PowerShell and Export/Import docs
@@ -1307,7 +1339,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.7](https://github.com/aelassas/servy/releases/tag/v4.7)
 
-**Date:** 2026-01-07 | **Tag:** \$tag\`n
+**Date:** 2026-01-07 | **Tag:** `v4.7`
+
 * feat(manager): optimize CPU and RAM graphs rendering and responsiveness
 * fix(manager): handle service restarts by resetting CPU and RAM graphs on PID change
 * fix(manager): correct visual synchronization of CPU and RAM graphs data
@@ -1334,7 +1367,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.6](https://github.com/aelassas/servy/releases/tag/v4.6)
 
-**Date:** 2026-01-06 | **Tag:** \$tag\`n
+**Date:** 2026-01-06 | **Tag:** `v4.6`
+
 * feat(manager): apply modern look to CPU and RAM performance graphs
 * feat(manager): use raw CPU and RAM values in performance graphs without averaging
 * feat(manager): add padding to services list for better readability in performance tab
@@ -1356,7 +1390,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.5](https://github.com/aelassas/servy/releases/tag/v4.5)
 
-**Date:** 2026-01-05 | **Tag:** \$tag\`n
+**Date:** 2026-01-05 | **Tag:** `v4.5`
+
 * feat(manager): add performance tab with real-time CPU and RAM monitoring graphs
 * chore(setup): add dark mode support to installers
 * chore(setup): add Uninstall shortcut to Start Menu
@@ -1382,7 +1417,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.4](https://github.com/aelassas/servy/releases/tag/v4.4)
 
-**Date:** 2026-01-01 | **Tag:** \$tag\`n
+**Date:** 2026-01-01 | **Tag:** `v4.4`
+
 * chore(desktopapp): improve service logon information text
 * chore(desktopapp): remove unused `System.ServiceProcess.ServiceController` reference
 * chore(cli): improve service user install command help text
@@ -1407,7 +1443,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.3](https://github.com/aelassas/servy/releases/tag/v4.3)
 
-**Date:** 2025-12-19 | **Tag:** \$tag\`n
+**Date:** 2025-12-19 | **Tag:** `v4.3`
+
 * fix(core): upgrade to `System.Data.SQLite` 2.0.2 to ensure database stability and security
 * fix(sbom): exclude test projects from SBOMs
 * fix(sbom): add Servy version to SBOMs
@@ -1428,7 +1465,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.2](https://github.com/aelassas/servy/releases/tag/v4.2)
 
-**Date:** 2025-12-17 | **Tag:** \$tag\`n
+**Date:** 2025-12-17 | **Tag:** `v4.2`
+
 * fix(core): encrypt process parameters for maximum security
 * fix(core): move process parameters retrieval from binary path to database
 * chore: include SBOMs in release artifacts for provenance
@@ -1449,7 +1487,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.1](https://github.com/aelassas/servy/releases/tag/v4.1)
 
-**Date:** 2025-12-16 | **Tag:** \$tag\`n
+**Date:** 2025-12-16 | **Tag:** `v4.1`
+
 * fix(core): resolve SCM limit for extremely large environment variables (#29)
 * fix(core): encrypt environment variables for maximum security
 
@@ -1467,7 +1506,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 4.0](https://github.com/aelassas/servy/releases/tag/v4.0)
 
-**Date:** 2025-12-15 | **Tag:** \$tag\`n
+**Date:** 2025-12-15 | **Tag:** `v4.0`
+
 * chore: officially signed all executables and installers with a trusted SignPath certificate for maximum trust and security
 * chore: fix multiple false-positive detections from AV engines (SecureAge, DeepInstinct, and others)
 * chore(deps): update dependencies
@@ -1497,7 +1537,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.9](https://github.com/aelassas/servy/releases/tag/v3.9)
 
-**Date:** 2025-11-27 | **Tag:** \$tag\`n
+**Date:** 2025-11-27 | **Tag:** `v3.9`
+
 * fix: significantly reduce executable and installer sizes (#24)
 * ci(choco): update Chocolatey workflow to use the new API
 * chore(setup): update build script to keep console window open after failure
@@ -1516,7 +1557,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.8](https://github.com/aelassas/servy/releases/tag/v3.8)
 
-**Date:** 2025-11-26 | **Tag:** \$tag\`n
+**Date:** 2025-11-26 | **Tag:** `v3.8`
+
 * fix: reduce executable sizes by optimizing build configurations (#24)
 * fix(service): stdout/stderr redirection issues for pre-launch process
 * fix(notifications): missing details in email notifications
@@ -1538,7 +1580,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.7](https://github.com/aelassas/servy/releases/tag/v3.7)
 
-**Date:** 2025-11-19 | **Tag:** \$tag\`n
+**Date:** 2025-11-19 | **Tag:** `v3.7`
+
 * fix(core): properly grant "Log on as a service" right for local and Active Directory accounts
 * chore(desktop): update service display name info text
 * refactor(core): general code improvements and optimizations
@@ -1557,7 +1600,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.6](https://github.com/aelassas/servy/releases/tag/v3.6)
 
-**Date:** 2025-11-18 | **Tag:** \$tag\`n
+**Date:** 2025-11-18 | **Tag:** `v3.6`
+
 * feat(core): add service display name
 * fix(core): ensure user account has the "Log on as a service" right
 * fix(core): ensure event source exists in the desktop app, the cli and the manager app
@@ -1579,7 +1623,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.5](https://github.com/aelassas/servy/releases/tag/v3.5)
 
-**Date:** 2025-11-16 | **Tag:** \$tag\`n
+**Date:** 2025-11-16 | **Tag:** `v3.5`
+
 * chore(setup): significantly reduce portable archive sizes for better distribution
 * chore(deps): update dependencies
 * docs(wiki): add more samples to [examples & recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
@@ -1598,7 +1643,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.4](https://github.com/aelassas/servy/releases/tag/v3.4)
 
-**Date:** 2025-11-13 | **Tag:** \$tag\`n
+**Date:** 2025-11-13 | **Tag:** `v3.4`
+
 * fix(psm): improve argument parsing and handling of optional parameters
 * docs(wiki): add more samples to [examples & recipes](https://github.com/aelassas/servy/wiki/Examples-&-Recipes)
 
@@ -1616,7 +1662,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.3](https://github.com/aelassas/servy/releases/tag/v3.3)
 
-**Date:** 2025-11-12 | **Tag:** \$tag\`n
+**Date:** 2025-11-12 | **Tag:** `v3.3`
+
 * chore: upgrade to .NET 10 LTS
 * chore(deps): update dependencies
 * fix(restarter): increase service stop and start timeouts to 120 seconds
@@ -1637,7 +1684,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.2](https://github.com/aelassas/servy/releases/tag/v3.2)
 
-**Date:** 2025-11-10 | **Tag:** \$tag\`n
+**Date:** 2025-11-10 | **Tag:** `v3.2`
+
 * fix(restarter): add detailed error logs for service restart failures (#23)
 * chore: update info message about service account permissions (#23)
 * chore: add info message about recovery permissions (#23)
@@ -1656,7 +1704,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.1](https://github.com/aelassas/servy/releases/tag/v3.1)
 
-**Date:** 2025-11-09 | **Tag:** \$tag\`n
+**Date:** 2025-11-09 | **Tag:** `v3.1`
+
 * fix(core): support NetworkService, LocalService, and passwordless accounts (#23)
 
 ### Downloads
@@ -1673,7 +1722,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 3.0](https://github.com/aelassas/servy/releases/tag/v3.0)
 
-**Date:** 2025-11-08 | **Tag:** \$tag\`n
+**Date:** 2025-11-08 | **Tag:** `v3.0`
+
 * feat(core): add support for automatic (delayed) service startup type
 * fix(core): properly escape special characters in process parameters (#22)
 * fix(core): switch to network logon since some domain accounts don't allow interactive logon
@@ -1696,7 +1746,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.9](https://github.com/aelassas/servy/releases/tag/v2.9)
 
-**Date:** 2025-10-30 | **Tag:** \$tag\`n
+**Date:** 2025-10-30 | **Tag:** `v2.9`
+
 * fix(service): stdout/stderr pipes lost after sending Ctrl+C signal to child process (#20)
 
 ### Downloads
@@ -1713,7 +1764,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.8](https://github.com/aelassas/servy/releases/tag/v2.8)
 
-**Date:** 2025-10-27 | **Tag:** \$tag\`n
+**Date:** 2025-10-27 | **Tag:** `v2.8`
+
 * fix(core): escape environment variables correctly when formatting after import
 * fix(restarter): publish script command fix
 
@@ -1731,7 +1783,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.7](https://github.com/aelassas/servy/releases/tag/v2.7)
 
-**Date:** 2025-10-26 | **Tag:** \$tag\`n
+**Date:** 2025-10-26 | **Tag:** `v2.7`
+
 * chore(winget,chocolatey): update manifests
 
 ### Downloads
@@ -1748,7 +1801,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.6](https://github.com/aelassas/servy/releases/tag/v2.6)
 
-**Date:** 2025-10-25 | **Tag:** \$tag\`n
+**Date:** 2025-10-25 | **Tag:** `v2.6`
+
 * fix(service): resolve stdout/stderr UTF-8 encoding issues (#20)
 * fix(manager): ensure service list is sorted correctly
 * fix(service): remove unnecessary logs
@@ -1767,7 +1821,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.5](https://github.com/aelassas/servy/releases/tag/v2.5)
 
-**Date:** 2025-10-23 | **Tag:** \$tag\`n
+**Date:** 2025-10-23 | **Tag:** `v2.5`
+
 * fix(service): correctly display non-ASCII characters in `stdout/stderr` (#20)
 * fix(recovery): allow graceful restart
 
@@ -1785,7 +1840,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.4](https://github.com/aelassas/servy/releases/tag/v2.4)
 
-**Date:** 2025-10-21 | **Tag:** \$tag\`n
+**Date:** 2025-10-21 | **Tag:** `v2.4`
+
 * fix(service): incorrect process termination (#20)
 * fix(logging): add [Event ID](https://github.com/aelassas/servy/wiki/Logging-&-Log-Rotation#event-ids) to Info, Warning, and Error service logs
 * fix(core): ensure PID is preserved after importing a running service
@@ -1808,7 +1864,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.3](https://github.com/aelassas/servy/releases/tag/v2.3)
 
-**Date:** 2025-10-13 | **Tag:** \$tag\`n
+**Date:** 2025-10-13 | **Tag:** `v2.3`
+
 * fix(security): add debug logging option and prevent sensitive data exposure (#19)
 * fix(psm1): handle parameters correctly in PowerShell module to avoid argument misparsing (#18)
 * fix(cli): correct help text for environment variables
@@ -1830,7 +1887,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.2](https://github.com/aelassas/servy/releases/tag/v2.2)
 
-**Date:** 2025-10-09 | **Tag:** \$tag\`n
+**Date:** 2025-10-09 | **Tag:** `v2.2`
+
 * feat(manager): enhance DataGrid virtualization and performance
 * fix(manager): prevent resizing DataGrid rows
 * fix(service): service install not working when Windows is installed on a drive letter other than `C:` #16
@@ -1850,7 +1908,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.1](https://github.com/aelassas/servy/releases/tag/v2.1)
 
-**Date:** 2025-10-09 | **Tag:** \$tag\`n
+**Date:** 2025-10-09 | **Tag:** `v2.1`
+
 * fix(clients): `Servy.Service.exe` not copied when Windows is installed on a drive letter other than `C:` #16
 * fix(clients): load `appsettings.json` from project root in debug and exe directory in release #16
 * fix(configurator): export XML and JSON not working when password is supplied
@@ -1869,7 +1928,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 2.0](https://github.com/aelassas/servy/releases/tag/v2.0)
 
-**Date:** 2025-10-07 | **Tag:** \$tag\`n
+**Date:** 2025-10-07 | **Tag:** `v2.0`
+
 * fix(clients): prevent loading stray `appsettings.json` at runtime #16
 * fix(core): robust and accurate CPU usage calculation
 * fix(service): avoid stopping services when copying `Servy.Restarter.exe` from resources
@@ -1889,7 +1949,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.9](https://github.com/aelassas/servy/releases/tag/v1.9)
 
-**Date:** 2025-10-04 | **Tag:** \$tag\`n
+**Date:** 2025-10-04 | **Tag:** `v1.9`
+
 * fix(manager): adjust service list column widths when maximizing window
 * chore(release): add generic installer
 * chore: update dependencies
@@ -1908,7 +1969,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.8](https://github.com/aelassas/servy/releases/tag/v1.8)
 
-**Date:** 2025-10-01 | **Tag:** \$tag\`n
+**Date:** 2025-10-01 | **Tag:** `v1.8`
+
 * fix(core): using the same file for `stdout` and `stderr` prevents log rotation #14
 * fix(installer): manager and cli apps not killed on uninstall
 * fix(core): use `ConcurrentDictionary` for thread-safe CPU usage tracking of services
@@ -1932,7 +1994,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.7](https://github.com/aelassas/servy/releases/tag/v1.7)
 
-**Date:** 2025-09-29 | **Tag:** \$tag\`n
+**Date:** 2025-09-29 | **Tag:** `v1.7`
+
 * feat(manager): add real-time CPU & RAM monitoring for services
 * feat(manager): add PID column and Copy PID action to services
 * fix(core): optimize resource copying for better performance
@@ -1957,7 +2020,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.6](https://github.com/aelassas/servy/releases/tag/v1.6)
 
-**Date:** 2025-09-23 | **Tag:** \$tag\`n
+**Date:** 2025-09-23 | **Tag:** `v1.6`
+
 * feat(core): add support for [post-launch actions](https://github.com/aelassas/servy/wiki/Pre‐Launch-&-Post‐Launch-Actions#post-launch)
 * feat(installer): add Servy to [Scoop package manager](https://github.com/aelassas/servy/wiki/Installation-Guide#quick-install)
 * fix(configurator): increase tab height for better visibility
@@ -1975,7 +2039,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.5](https://github.com/aelassas/servy/releases/tag/v1.5)
 
-**Date:** 2025-09-20 | **Tag:** \$tag\`n
+**Date:** 2025-09-20 | **Tag:** `v1.5`
+
 * fix(installer): resolve false positives from VirusTotal and Microsoft Defender
 * fix(installer): increase LZMA dictionary size to 128MB
 
@@ -1991,7 +2056,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.4](https://github.com/aelassas/servy/releases/tag/v1.4)
 
-**Date:** 2025-09-18 | **Tag:** \$tag\`n
+**Date:** 2025-09-18 | **Tag:** `v1.4`
+
 * fix(cli,powershell): add `--quiet` and `-q` options to CLI and `-Quiet` switch to PowerShell module #11
 * fix(cli): rotation size calculation
 * fix(configurator): make failure program path optional instead of required
@@ -2008,7 +2074,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.3](https://github.com/aelassas/servy/releases/tag/v1.3)
 
-**Date:** 2025-09-18 | **Tag:** \$tag\`n
+**Date:** 2025-09-18 | **Tag:** `v1.3`
+
 * feat(core): add failure program recovery action
 * feat(core): add support for gMSA accounts
 * feat(cli): add [Servy PowerShell module](https://github.com/aelassas/servy/wiki/Servy-PowerShell-Module)
@@ -2029,7 +2096,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.2](https://github.com/aelassas/servy/releases/tag/v1.2)
 
-**Date:** 2025-09-15 | **Tag:** \$tag\`n
+**Date:** 2025-09-15 | **Tag:** `v1.2`
+
 * fix(cli): support both `version` and `--version` arguments
 * fix(cli): update `--rotationSize` help text for install command
 * fix(pre-launch): add missing info text and row in configurator
@@ -2052,7 +2120,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.1](https://github.com/aelassas/servy/releases/tag/v1.1)
 
-**Date:** 2025-09-11 | **Tag:** \$tag\`n
+**Date:** 2025-09-11 | **Tag:** `v1.1`
+
 * fix(cli): bump `Microsoft.Extensions.Configuration.Json` from 9.0.8 to 8.0.1
 * fix(core): remove unused `EntityFramework` package
 * fix(installer): missing icons on silent install
@@ -2070,7 +2139,8 @@ fix(service): align restart recovery with configured stop timeout
 
 ## [Servy 1.0](https://github.com/aelassas/servy/releases/tag/v1.0)
 
-**Date:** 2025-09-06 | **Tag:** \$tag\`n
+**Date:** 2025-09-06 | **Tag:** `v1.0`
+
 The first official release of **Servy**!
 
 Servy is a free, open-source Windows tool (GUI + CLI) that lets you run any executable as a Windows service with powerful configuration and management options.
