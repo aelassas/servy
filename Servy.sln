@@ -52,6 +52,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\build.yml = .github\workflows\build.yml
 		.github\workflows\bump-version.yml = .github\workflows\bump-version.yml
+		.github\workflows\changelog.yml = .github\workflows\changelog.yml
 		.github\workflows\choco.yml = .github\workflows\choco.yml
 		.github\workflows\dotnet-reflection.yml = .github\workflows\dotnet-reflection.yml
 		.github\workflows\loc.yml = .github\workflows\loc.yml

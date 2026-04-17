@@ -1,0 +1,121 @@
+name: changelog
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      reset:
+        description: 'Rebuild all servy CHANGELOG.md'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  changelog:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update CHANGELOG.md
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_RESET: ${{ inputs.reset == true }}
+        run: |
+          $repo = $env:GITHUB_REPOSITORY
+          $changelogPath = "CHANGELOG.md"
+          $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+
+          Write-Host "Fetching releases for $repo..."
+          $releases = gh api repos/$repo/releases --paginate | ConvertFrom-Json
+
+          if ($null -eq $releases -or $releases.Count -eq 0) {
+              Write-Host "No releases found. Exiting."
+              exit 0
+          }
+
+          Function Get-ReleaseEntry {
+              param($Release, $PrevRelease)
+
+              $title = if ([string]::IsNullOrWhiteSpace($Release.name)) { $Release.tag_name } else { $Release.name }
+              $url = $Release.html_url
+              $date = [datetime]::Parse($Release.published_at).ToString("yyyy-MM-dd")
+              $tag = $Release.tag_name
+              $body = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
+
+              $md = "## [$title]($url)`n`n"
+              $md += "**Date:** $date | **Tag:** \`$tag\``n`n"
+              $md += "$body`n`n"
+              $md += "### Downloads`n"
+
+              # Append asset links
+              foreach ($asset in $Release.assets) {
+                  $aName = $asset.name
+                  $aUrl = $asset.browser_download_url
+                  $size = [math]::Round($asset.size / 1MB, 2)
+                  $md += "* [$aName]($aUrl) - ${size} MB`n"
+              }
+
+              # Append source download links
+              $md += "* [Source code (zip)]($($url.Replace('/releases/tag/', '/archive/refs/tags/')).zip)`n"
+              $md += "* [Source code (tar.gz)]($($url.Replace('/releases/tag/', '/archive/refs/tags/')).tar.gz)`n`n"
+
+              # Append compare link
+              if ($null -ne $PrevRelease) {
+                  $prevTag = $PrevRelease.tag_name
+                  $md += "[Compare changes](https://github.com/$repo/compare/$prevTag...$tag)`n"
+              }
+
+              return $md
+          }
+
+          $isReset = ($env:IS_RESET -eq 'true')
+
+          if ($isReset) {
+              Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
+              $fullLog = "# Changelog`n`n"
+              for ($i = 0; $i -lt $releases.Count; $i++) {
+                  $prev = if ($i + 1 -lt $releases.Count) { $releases[$i+1] } else { $null }
+                  $fullLog += Get-ReleaseEntry -Release $releases[$i] -PrevRelease $prev
+                  if ($i -lt $releases.Count - 1) { $fullLog += "`n---`n`n" }
+              }
+              [System.IO.File]::WriteAllText($changelogPath, $fullLog, $utf8NoBom)
+          } else {
+              Write-Host "Appending latest release to top of CHANGELOG.md..."
+              $latest = $releases[0]
+              $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
+              $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
+
+              $existing = ""
+              if ([System.IO.File]::Exists($changelogPath)) {
+                  $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
+              }
+
+              # Safely inject directly below the # Changelog header if it exists
+              if ($existing -match '(?s)^# Changelog\r?\n(.*)$') {
+                  $newLog = "# Changelog`n`n$entry`n---`n`n" + $matches[1].TrimStart()
+              } else {
+                  $newLog = "# Changelog`n`n$entry`n---`n`n$existing"
+              }
+              [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
+          }
+
+      - name: Commit and Push
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          
+          if ($null -eq (git status --porcelain) -or (git status --porcelain) -eq "") {
+              Write-Host "No changes to commit."
+          } else {
+              git commit -m "docs: auto-update CHANGELOG.md"
+              git push
+          }
