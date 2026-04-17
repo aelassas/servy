@@ -956,13 +956,9 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
-                                 Margin="0,5"
-                                 Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
-                                 TextWrapping="NoWrap" AcceptsReturn="False"
-                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                                 VerticalContentAlignment="Center"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
+                                 Text="{Binding PostLaunchParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
                                  AutomationProperties.Name="Post-Launch Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostLaunchParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-launch process."/>
@@ -1046,13 +1042,9 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
-                                 Margin="0,5"
-                                 Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
-                                 TextWrapping="NoWrap" AcceptsReturn="False"
-                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                                 VerticalContentAlignment="Center"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
+                                 Text="{Binding PreStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
                                  AutomationProperties.Name="Pre-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPreStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the pre-stop process."/>
@@ -1158,13 +1150,9 @@
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Grid.Row="6" Grid.Column="0" Text="{x:Static resx:Strings.Label_ProcessParameters}" Margin="0,5,10,5"/>
-                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
-                                 Margin="0,5"
-                                 Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                 Height="22" MinHeight="22" MaxHeight="22" MaxLines="1" 
-                                 TextWrapping="NoWrap" AcceptsReturn="False"
-                                 HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
-                                 VerticalContentAlignment="Center"
+                        <TextBox Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,5" 
+                                 Text="{Binding PostStopParameters, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="False" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="120"
                                  AutomationProperties.Name="Post-Stop Process Parameters"
                                  AutomationProperties.AutomationId="TextBoxPostStopParams"
                                  AutomationProperties.HelpText="Enter command line parameters for the post-stop process."/>
