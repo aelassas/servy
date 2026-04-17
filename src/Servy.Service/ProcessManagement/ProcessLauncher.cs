@@ -87,12 +87,6 @@ namespace Servy.Service.ProcessManagement
                 };
             }
 
-            // 6. Handle execution mode
-            if (options.FireAndForget)
-            {
-                return process;
-            }
-
             if (psi.RedirectStandardOutput) process.BeginOutputReadLine();
             if (psi.RedirectStandardError) process.BeginErrorReadLine();
 
