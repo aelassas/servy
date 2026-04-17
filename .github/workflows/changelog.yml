@@ -49,7 +49,6 @@ jobs:
               $tag = $Release.tag_name
               $body = if ([string]::IsNullOrWhiteSpace($Release.body)) { "*No release notes provided.*" } else { $Release.body.Trim() }
 
-              # Use char code for backtick to prevent YAML/PowerShell escaping bugs
               $bt = [char]96 
 
               $md = "## [$title]($url)`n`n"
@@ -57,7 +56,6 @@ jobs:
               $md += "$body`n`n"
               $md += "### Downloads`n"
 
-              # Append asset links
               foreach ($asset in $Release.assets) {
                   $aName = $asset.name
                   $aUrl = $asset.browser_download_url
@@ -65,11 +63,9 @@ jobs:
                   $md += "* [$aName]($aUrl) - ${size} MB`n"
               }
 
-              # Append source download links
               $md += "* [Source code (zip)]($($url.Replace('/releases/tag/', '/archive/refs/tags/')).zip)`n"
               $md += "* [Source code (tar.gz)]($($url.Replace('/releases/tag/', '/archive/refs/tags/')).tar.gz)`n`n"
 
-              # Append compare link
               if ($null -ne $PrevRelease) {
                   $prevTag = $PrevRelease.tag_name
                   $md += "[Compare changes](https://github.com/$repo/compare/$prevTag...$tag)`n"
@@ -79,6 +75,7 @@ jobs:
           }
 
           $isReset = ($env:IS_RESET -eq 'true')
+          $bt = [char]96
 
           if ($isReset) {
               Write-Host "Reset flag is true. Rebuilding full CHANGELOG.md..."
@@ -90,34 +87,47 @@ jobs:
               }
               [System.IO.File]::WriteAllText($changelogPath, $fullLog, $utf8NoBom)
           } else {
-              Write-Host "Appending latest release to top of CHANGELOG.md..."
               $latest = $releases[0]
-              $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
-              $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
-
+              $tag = $latest.tag_name
+              
               $existing = ""
               if ([System.IO.File]::Exists($changelogPath)) {
                   $existing = [System.IO.File]::ReadAllText($changelogPath, $utf8NoBom)
               }
 
-              # Safely inject directly below the # Changelog header if it exists
-              if ($existing -match '(?s)^# Changelog\r?\n(.*)$') {
-                  $newLog = "# Changelog`n`n$entry`n---`n`n" + $matches[1].TrimStart()
+              # Safety check to prevent duplicating the release entry
+              $tagLine = "**Tag:** $bt$tag$bt"
+              if ($existing.Contains($tagLine)) {
+                  Write-Host "Release $tag is already in the CHANGELOG. No updates needed."
               } else {
-                  $newLog = "# Changelog`n`n$entry`n---`n`n$existing"
+                  Write-Host "Appending latest release ($tag) to top of CHANGELOG.md..."
+                  $prev = if ($releases.Count -gt 1) { $releases[1] } else { $null }
+                  $entry = Get-ReleaseEntry -Release $latest -PrevRelease $prev
+
+                  if ($existing -match '(?s)^# Changelog\r?\n(.*)$') {
+                      $newLog = "# Changelog`n`n$entry`n---`n`n" + $matches[1].TrimStart()
+                  } else {
+                      $newLog = "# Changelog`n`n$entry`n---`n`n$existing"
+                  }
+                  [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
               }
-              [System.IO.File]::WriteAllText($changelogPath, $newLog, $utf8NoBom)
           }
 
       - name: Commit and Push
         shell: pwsh
         run: |
+          # Disable CRLF warnings
+          git config core.autocrlf false
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           git add CHANGELOG.md
           
-          if ($null -eq (git status --porcelain) -or (git status --porcelain) -eq "") {
-              Write-Host "No changes to commit."
+          # Quietly check if there are any staged changes
+          git diff --staged --quiet
+          
+          if ($LASTEXITCODE -eq 0) {
+              Write-Host "No changes to commit. The CHANGELOG.md is already up to date."
           } else {
               git commit -m "docs: auto-update CHANGELOG.md"
               git push
