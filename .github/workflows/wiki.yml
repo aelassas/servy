@@ -6,12 +6,7 @@
 name: wiki
 
 on:
-  push:
-    paths:
-      - 'wiki/**'
-  pull_request:
-    paths:
-      - 'wiki/**'
+  gollum:
   workflow_dispatch:
 
 jobs:
