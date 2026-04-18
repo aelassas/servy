@@ -1,19 +1,15 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
-using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
-using Servy.UI.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +24,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the Console view, responsible for real-time log tailing, 
     /// service monitoring, and log filtering.
     /// </summary>
-    public class ConsoleViewModel : ViewModelBase
+    public class ConsoleViewModel : ServiceSearchViewModelBase
     {
         #region Constants
 
@@ -43,9 +39,6 @@ namespace Servy.Manager.ViewModels
 
         private readonly IServiceRepository _serviceRepository;
         private DispatcherTimer _timer;
-
-        // Controls left-panel service search
-        private CancellationTokenSource _serviceSearchCts;
 
         // Controls console log filter debouncing
         private CancellationTokenSource _logFilterCts;
@@ -125,11 +118,6 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - Service Data
 
-        /// <summary>
-        /// Gets the collection of services available for console viewing and monitoring.
-        /// </summary>
-        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
-
         private ConsoleService _selectedService;
 
         /// <summary>
@@ -179,36 +167,6 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - UI State & Search
 
-        private string _searchText;
-        /// <summary>
-        /// Gets or sets the text used for searching the service list (left panel).
-        /// </summary>
-        public string SearchText
-        {
-            get => _searchText;
-            set => Set(ref _searchText, value);
-        }
-
-        private string _searchButtonText;
-        /// <summary>
-        /// Gets or sets the text displayed on the search button.
-        /// </summary>
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set => Set(ref _searchButtonText, value);
-        }
-
-        private bool _isBusy;
-        /// <summary>
-        /// Gets or sets a value indicating whether an asynchronous operation is in progress.
-        /// </summary>
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set => Set(ref _isBusy, value);
-        }
-
         private string _pid = UiConstants.NotAvailable;
         /// <summary>
         /// Gets or sets the Process ID string for display in the UI.
@@ -222,16 +180,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Commands
-
-        /// <summary>
-        /// Gets or sets the commands for managing service state (Start/Stop/Restart).
-        /// </summary>
-        public IServiceCommands ServiceCommands { get; set; }
-
-        /// <summary>
-        /// Command to execute the service search.
-        /// </summary>
-        public IAsyncCommand SearchCommand { get; }
 
         /// <summary>
         /// Command to copy the current Process ID to the clipboard.
@@ -257,7 +205,6 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
-            SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
 
@@ -281,6 +228,16 @@ namespace Servy.Manager.ViewModels
                 var line = obj as LogLine;
                 return line?.Text.IndexOf(ConsoleSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
             };
+        }
+
+        #endregion
+
+        #region ServiceSearchViewModelBase Implementation
+
+        ///<inheritdoc/>
+        protected override ServiceItemBase CreateServiceItem(Service s)
+        {
+            return new ConsoleService { Name = s.Name, Pid = null, StdoutPath = null, StderrPath = null };
         }
 
         #endregion
@@ -621,59 +578,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Searches for services based on the <see cref="SearchText"/>.
-        /// Updates the <see cref="Services"/> collection on the UI thread.
-        /// </summary>
-        private async Task SearchServicesAsync(object parameter)
-        {
-            // Thread-safe atomic swap for left-panel search
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-
-            var token = newCts.Token;
-
-            try
-            {
-                Mouse.OverrideCursor = Cursors.Wait;
-                IsBusy = true;
-                SearchButtonText = Strings.Button_Searching;
-
-                if (Application.Current?.Dispatcher is Dispatcher dispatcher && !Helper.IsRunningInUnitTest())
-                {
-                    await dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                }
-
-                var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
-
-                Services.Clear();
-                foreach (var s in results)
-                {
-                    // Start with null Pid and paths; they will be updated later by the monitoring tick
-                    Services.Add(new ConsoleService { Name = s.Name, Pid = null, StdoutPath = null, StderrPath = null });
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Search was cancelled; no action needed.
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search services.", ex);
-            }
-            finally
-            {
-                Mouse.OverrideCursor = null;
-                IsBusy = false;
-                SearchButtonText = Strings.Button_Search;
-            }
-        }
-
-        /// <summary>
         /// Copies the Process ID of the currently selected service to the system clipboard.
         /// </summary>
         /// <param name="parameter">Unused command parameter.</param>
@@ -783,12 +687,7 @@ namespace Servy.Manager.ViewModels
             }
 
             // 3. Dispose Log Filter Debounce CTS
-            var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
-            if (oldFilterCts != null)
-            {
-                oldFilterCts.Cancel();
-                oldFilterCts.Dispose();
-            }
+            CleanupSearchCts();
 
             // 4. Stop and Unhook the Timer
             if (_timer != null)
