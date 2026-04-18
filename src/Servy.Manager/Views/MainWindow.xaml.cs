@@ -91,7 +91,10 @@ namespace Servy.Manager.Views
                 app.ServiceRepository,
                 serviceCommands, // No longer null!
                 helpService,
-                _messageBoxService
+                _messageBoxService,
+                new PerformanceViewModel(app.ServiceRepository, serviceCommands),
+                new ConsoleViewModel(app.ServiceRepository, serviceCommands),
+                new DependenciesViewModel(app.ServiceRepository, serviceManager, serviceCommands)
             );
 
             return viewModel;
