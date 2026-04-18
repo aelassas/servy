@@ -140,9 +140,9 @@ namespace Servy.Core.Services
                         continue;
 
                     // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
-                    //if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
-                    //    message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
-                    //    continue;
+                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
+                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
 
                     // 3. Optional keyword filter
                     if (!string.IsNullOrEmpty(keyword) &&

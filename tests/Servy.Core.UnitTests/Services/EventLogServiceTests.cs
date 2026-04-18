@@ -274,7 +274,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "boo!", TestContext.Current.CancellationToken);
+            var result = await service.SearchAsync(null, null, null, "servy", TestContext.Current.CancellationToken);
 
             Assert.Empty(result);
         }
@@ -325,7 +325,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(DateTime.MinValue, results.First().Time);
         }
 
-        [Fact(Skip = "Message formatting check is no longer done.")]
+        [Fact]
         public async Task SearchAsync_ShouldReturnEmptyCollectionWhenFormatDescriptionIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
@@ -337,20 +337,6 @@ namespace Servy.Core.UnitTests.Services
             var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
 
             Assert.Empty(results);
-        }
-
-        [Fact]
-        public async Task SearchAsync_ShouldReturnCollectionWhenFormatDescriptionIsNull()
-        {
-            var mockReader = new Mock<IEventLogReader>();
-            var evt = CreateFakeEvent(1, 1, DateTime.Now, null!);
-            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
-
-            var service = CreateService(mockReader);
-
-            var results = await service.SearchAsync(null, null, null, null!, TestContext.Current.CancellationToken);
-
-            Assert.Single(results);
         }
 
         [Fact]
