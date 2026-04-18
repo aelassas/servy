@@ -54,6 +54,7 @@
       <HintPath>..\..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
@@ -70,6 +71,8 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bootstrapping\AppBootstrapper.cs" />
+    <Compile Include="Bootstrapping\BootstrapperOptions.cs" />
     <Compile Include="BulkObservableCollection.cs" />
     <Compile Include="Commands\AsyncCommand.cs" />
     <Compile Include="Commands\IAsyncCommand.cs" />
@@ -123,6 +126,10 @@
     <ProjectReference Include="..\Servy.Core\Servy.Core.csproj">
       <Project>{4d92fa0d-47bb-4658-91cd-774a25adeb87}</Project>
       <Name>Servy.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Servy.Infrastructure\Servy.Infrastructure.csproj">
+      <Project>{2ed3b3e9-1132-4aa4-a487-85848abccc1a}</Project>
+      <Name>Servy.Infrastructure</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />
