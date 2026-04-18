@@ -1,0 +1,38 @@
+# --------------------------------------------------------------------------------
+# GitHub Actions workflow to validate wiki filenames for ASCII compliance.
+# Prevents encoding issues by rejecting filenames containing non-ASCII characters.
+# --------------------------------------------------------------------------------
+name: wiki
+
+on:
+  push:
+    paths:
+      - 'wiki/**'
+  pull_request:
+    paths:
+      - 'wiki/**'
+  workflow_dispatch:
+
+jobs:
+  validate-filenames:
+    name: Validate ASCII Filenames
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check for non-ASCII bytes in filenames
+        run: |
+          # Find all .md files in the wiki directory
+          # If grep finds a non-ASCII character, it returns 0 (success)
+          # We check for that success and force an exit 1 to fail the build.
+          NON_ASCII_FILES=$(find wiki -name '*.md' | grep -P '[^\x00-\x7F]' || true)
+          
+          if [ -n "$NON_ASCII_FILES" ]; then
+            echo "Error: The following wiki filenames contain non-ASCII characters:"
+            echo "$NON_ASCII_FILES"
+            echo "Please rename these files using only standard ASCII characters to ensure compatibility."
+            exit 1
+          else
+            echo "All wiki filenames are ASCII compliant."
+          fi
