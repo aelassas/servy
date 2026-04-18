@@ -58,7 +58,7 @@ namespace Servy.Core.UnitTests.Mappers
                 Priority = ProcessPriority.High,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 2048,
                 EnableDateRotation = true,
                 DateRotationType = DateRotationType.Daily,
@@ -116,7 +116,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal((int)service.Priority, dto.Priority);
             Assert.Equal(service.StdoutPath, dto.StdoutPath);
             Assert.Equal(service.StderrPath, dto.StderrPath);
-            Assert.Equal(service.EnableRotation, dto.EnableRotation);
+            Assert.Equal(service.EnableSizeRotation, dto.EnableSizeRotation);
             Assert.Equal(service.RotationSize, dto.RotationSize);
             Assert.Equal(service.EnableDateRotation, dto.EnableDateRotation);
             Assert.Equal((int)service.DateRotationType, dto.DateRotationType);
@@ -190,7 +190,7 @@ namespace Servy.Core.UnitTests.Mappers
                 Priority = (int)ProcessPriority.BelowNormal,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 4096,
                 EnableDateRotation = true,
                 DateRotationType = (int)DateRotationType.Weekly,
@@ -247,7 +247,7 @@ namespace Servy.Core.UnitTests.Mappers
             Assert.Equal((ProcessPriority)dto.Priority, service.Priority);
             Assert.Equal(dto.StdoutPath, service.StdoutPath);
             Assert.Equal(dto.StderrPath, service.StderrPath);
-            Assert.Equal(dto.EnableRotation, service.EnableRotation);
+            Assert.Equal(dto.EnableSizeRotation, service.EnableSizeRotation);
             Assert.Equal(dto.RotationSize, service.RotationSize);
             Assert.Equal(dto.EnableDateRotation, service.EnableDateRotation);
             Assert.Equal(dto.DateRotationType, (int)service.DateRotationType);
@@ -307,7 +307,7 @@ namespace Servy.Core.UnitTests.Mappers
                 Priority = null,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
-                EnableRotation = null,
+                EnableSizeRotation = null,
                 RotationSize = null,
                 EnableDateRotation = null,
                 DateRotationType = null,
@@ -363,7 +363,7 @@ namespace Servy.Core.UnitTests.Mappers
                 Priority = (int)ProcessPriority.High,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 1234,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 99,
@@ -390,7 +390,7 @@ namespace Servy.Core.UnitTests.Mappers
 
             Assert.Equal(ServiceStartType.Manual, service.StartupType);
             Assert.Equal(ProcessPriority.High, service.Priority);
-            Assert.True(service.EnableRotation);
+            Assert.True(service.EnableSizeRotation);
             Assert.Equal(1234, service.RotationSize);
             Assert.True(service.EnableHealthMonitoring);
             Assert.Equal(99, service.HeartbeatInterval);
@@ -550,7 +550,7 @@ namespace Servy.Core.UnitTests.Mappers
                 // Every nullable field below is left as null to test fallbacks
                 StartupType = null,
                 Priority = null,
-                EnableRotation = null,
+                EnableSizeRotation = null,
                 RotationSize = null,
                 EnableDateRotation = null,
                 DateRotationType = null,
@@ -578,7 +578,7 @@ namespace Servy.Core.UnitTests.Mappers
             // Assert: Verify every fallback branch was hit correctly
             Assert.Equal(ServiceStartType.Automatic, service.StartupType); // StartupType == null branch
             Assert.Equal(ProcessPriority.Normal, service.Priority);        // Priority == null branch
-            Assert.False(service.EnableRotation);                         // ?? false
+            Assert.False(service.EnableSizeRotation);                         // ?? false
             Assert.Equal(AppConfig.DefaultRotationSize, service.RotationSize); // ?? Default
             Assert.False(service.EnableDateRotation);                     // ?? false
             Assert.Equal(DateRotationType.Daily, service.DateRotationType); // .HasValue == false branch

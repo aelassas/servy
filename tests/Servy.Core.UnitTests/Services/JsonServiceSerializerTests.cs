@@ -67,7 +67,7 @@ namespace Servy.Core.UnitTests.Services
                 Priority = 128,
                 StdoutPath = "out.log",
                 StderrPath = "err.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 50,
                 EnableDateRotation = true,
                 DateRotationType = 1,

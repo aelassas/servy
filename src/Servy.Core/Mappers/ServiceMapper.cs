@@ -35,7 +35,7 @@ namespace Servy.Core.Mappers
                 Priority = (int)domain.Priority,
                 StdoutPath = domain.StdoutPath,
                 StderrPath = domain.StderrPath,
-                EnableRotation = domain.EnableRotation,
+                EnableSizeRotation = domain.EnableSizeRotation,
                 RotationSize = domain.RotationSize,
                 EnableDateRotation = domain.EnableDateRotation,
                 DateRotationType = (int)domain.DateRotationType,
@@ -113,7 +113,7 @@ namespace Servy.Core.Mappers
 
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
-                EnableRotation = dto.EnableRotation ?? AppConfig.DefaultEnableRotation,
+                EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation,
                 RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize,
                 EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
 

@@ -1302,7 +1302,7 @@ namespace Servy.ViewModels
             SelectedProcessPriority = dto.Priority == null ? ProcessPriority.Normal : (ProcessPriority)dto.Priority;
             StdoutPath = dto.StdoutPath;
             StderrPath = dto.StderrPath;
-            EnableSizeRotation = dto.EnableRotation ?? false;
+            EnableSizeRotation = dto.EnableSizeRotation ?? false;
             RotationSize = dto.RotationSize == null ? DefaultRotationSize.ToString() : dto.RotationSize.ToString();
             EnableDateRotation = dto.EnableDateRotation ?? false;
             SelectedDateRotationType = dto.DateRotationType == null ? DateRotationType.Daily : (DateRotationType)dto.DateRotationType;
@@ -1380,7 +1380,7 @@ namespace Servy.ViewModels
                 Priority = (int)SelectedProcessPriority,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
-                EnableRotation = EnableSizeRotation,
+                EnableSizeRotation = EnableSizeRotation,
                 RotationSize = int.TryParse(RotationSize, out var rs) ? rs : DefaultRotationSize,
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = (int)SelectedDateRotationType,

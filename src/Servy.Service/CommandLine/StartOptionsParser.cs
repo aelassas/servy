@@ -89,7 +89,7 @@ namespace Servy.Service.CommandLine
                 MaxRotations = serviceDto.MaxRotations ?? AppConfig.DefaultMaxRotations,
 
                 // Date & Size Rotation
-                EnableSizeRotation = serviceDto.EnableRotation ?? false,
+                EnableSizeRotation = serviceDto.EnableSizeRotation ?? false,
                 EnableDateRotation = serviceDto.EnableDateRotation ?? false,
                 DateRotationType = (DateRotationType)(serviceDto.DateRotationType ?? (int)DateRotationType.Daily),
 

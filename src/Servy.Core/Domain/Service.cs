@@ -102,7 +102,7 @@ namespace Servy.Core.Domain
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
         /// Default is false.
         /// </summary>
-        public bool EnableRotation { get; set; } = AppConfig.DefaultEnableRotation;
+        public bool EnableSizeRotation { get; set; } = AppConfig.DefaultEnableRotation;
 
         /// <summary>
         /// Gets or sets the rotation size in Megabytes (MB) for log files.
@@ -474,7 +474,7 @@ namespace Servy.Core.Domain
                 ProcessPriority = Priority,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
-                EnableSizeRotation = EnableRotation,
+                EnableSizeRotation = EnableSizeRotation,
                 RotationSizeInBytes = (ulong)Math.Max(1, RotationSize) * 1024UL * 1024UL,
                 EnableHealthMonitoring = EnableHealthMonitoring,
                 UseLocalTimeForRotation = UseLocalTimeForRotation,

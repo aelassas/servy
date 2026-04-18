@@ -391,7 +391,7 @@ namespace Servy.Infrastructure.UnitTests.Data
                 Password = "plain_password", // This will be encrypted
                 StdoutPath = "C:\\out.log",
                 StderrPath = "C:\\err.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 10,
                 MaxRotations = 5,
                 EnableDateRotation = true,
@@ -487,7 +487,7 @@ namespace Servy.Infrastructure.UnitTests.Data
             // 4. Logging & Rotation
             bool loggingOk = actual.StdoutPath == expected.StdoutPath &&
                              actual.StderrPath == expected.StderrPath &&
-                             actual.EnableRotation == expected.EnableRotation &&
+                             actual.EnableSizeRotation == expected.EnableSizeRotation &&
                              actual.RotationSize == expected.RotationSize &&
                              actual.MaxRotations == expected.MaxRotations &&
                              actual.EnableDateRotation == expected.EnableDateRotation &&
