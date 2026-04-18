@@ -262,29 +262,43 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Protects the given byte array using LocalMachine scope and additional entropy.
+        /// Protects the given byte array using DPAPI and stores it securely on disk.
         /// </summary>
-        /// <param name="path">The file path to store the protected data.</param>
-        /// <param name="data">The data to protect.</param>
+        /// <param name="path">The full file path to store the protected data.</param>
+        /// <param name="data">The plaintext data to protect.</param>
         private void SaveProtected(string path, byte[] data)
         {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+
             byte[]? encrypted = null;
             try
             {
                 var directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                 {
-                    SecurityHelper.CreateSecureDirectory(directory);
+                    // CHECK: Is this a child of the root vault?
+                    // This prevents the "reset ACL" bug for subfolders like /db or /security
+                    string root = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    bool isChildOfRoot = directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+
+                    SecurityHelper.CreateSecureDirectory(directory, breakInheritance: !isChildOfRoot);
                 }
 
                 // Encrypt data with DPAPI using the machine-specific key and additional entropy.
                 byte[] dynamicEntropy = MachineEntropy.Value;
+
+                // DataProtectionScope is usually LocalMachine for services
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
+
                 File.WriteAllBytes(path, encrypted);
             }
             finally
             {
-                if (encrypted != null) CryptographicOperations.ZeroMemory(encrypted);
+                // Deterministically wipe the sensitive encrypted buffer from RAM
+                if (encrypted != null)
+                {
+                    CryptographicOperations.ZeroMemory(encrypted);
+                }
             }
         }
 
