@@ -141,7 +141,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## Roadmap
 
-See the [ROADMAP.md](ROADMAP.md).
+See [ROADMAP.md](ROADMAP.md).
 
 ## Support & Contributing
 
