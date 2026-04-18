@@ -282,12 +282,36 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Cleans up resources during the application exit sequence.
+        /// Orchestrates the deterministic cleanup of application resources during the exit sequence.
         /// </summary>
-        /// <param name="e">Exit event data.</param>
+        /// <param name="e">The <see cref="ExitEventArgs"/> containing the event data.</param>
+        /// <remarks>
+        /// This method ensures that critical resources like the database context and secure data 
+        /// providers are released properly, even if individual disposal attempts encounter issues.
+        /// </remarks>
         public void OnExit(ExitEventArgs e)
         {
-            SecureData?.Dispose();
+            TryDispose(() => DbContext?.Dispose(), nameof(DbContext));
+            TryDispose(() => SecureData?.Dispose(), nameof(SecureData));
+        }
+
+        /// <summary>
+        /// Attempts to execute a disposal action within a safety block to prevent exit-time crashes.
+        /// </summary>
+        /// <param name="dispose">The disposal action to execute.</param>
+        /// <param name="name">The name of the resource being disposed, used for logging.</param>
+        private static void TryDispose(Action dispose, string name)
+        {
+            try
+            {
+                dispose();
+            }
+            catch (Exception ex)
+            {
+                // We use Warn here because failure to dispose at exit is rarely 
+                // fatal but should be noted for debugging resource leaks.
+                Logger.Warn($"{name} disposal failed", ex);
+            }
         }
     }
 }
