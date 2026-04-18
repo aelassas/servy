@@ -1,6 +1,7 @@
 ﻿using Microsoft.Win32;
 using Servy.Core.Config;
 using Servy.Core.Logging;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.AccessControl;
@@ -41,6 +42,16 @@ namespace Servy.Core.Security
         /// and string-to-byte conversions during subsequent calls to <see cref="GetKey"/> or <see cref="GetIV"/>.
         /// </remarks>
         private static readonly Lazy<byte[]> MachineEntropy = new Lazy<byte[]>(GetMachineEntropy, LazyThreadSafetyMode.PublicationOnly);
+
+        /// <summary>
+        /// Tracks consecutive migration failures per file path to escalate visibility on persistent issues.
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, int> MigrationFailureCounts = new ConcurrentDictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The number of consecutive migration failures before escalating to a system-level Error/EventLog entry.
+        /// </summary>
+        private const int MigrationFailureEscalationThreshold = 3;
 
         #endregion
 
@@ -198,7 +209,12 @@ namespace Servy.Core.Security
                 try
                 {
                     // 1. Primary Attempt (v7.9+ logic): Use machine-unique entropy
-                    return ProtectedData.Unprotect(encrypted, dynamicEntropy, DataProtectionScope);
+                    var unprotectResult = ProtectedData.Unprotect(encrypted, dynamicEntropy, DataProtectionScope);
+
+                    // Reset failure counter on successful read with modern entropy
+                    MigrationFailureCounts.TryRemove(path, out _);
+
+                    return unprotectResult;
                 }
                 catch (CryptographicException)
                 {
@@ -209,13 +225,41 @@ namespace Servy.Core.Security
                     {
                         // 3. Automatic Migration: Re-save with the new machine-unique entropy
                         SaveProtected(path, decryptedData);
+
+                        // Success: Clear any previous failure noise
+                        MigrationFailureCounts.TryRemove(path, out _);
+
                         return decryptedData;
                     }
                     catch (Exception ex)
                     {
-                        // Trip the warning so admins can diagnose I/O or permission issues.
+                        // 4. Escalation: Track repeated failures to prevent invisible degraded states
+                        int failCount = MigrationFailureCounts.AddOrUpdate(path, 1, (_, count) => count + 1);
+                        string baseMsg = $"Key migration to entropy-protected format failed for '{path}'";
+
+                        if (failCount >= MigrationFailureEscalationThreshold)
+                        {
+                            string escalatedMsg = $"[EventID: 3003] PERSISTENT SECURITY DEGRADATION: {baseMsg}. Failed {failCount} consecutive times. The file cannot be upgraded to modern encryption. System remains in v7.8 compatibility mode.";
+
+                            try
+                            {
+                                using (var eventLog = new EventLog("Application"))
+                                {
+                                    eventLog.Source = AppConfig.EventSource;
+                                    eventLog.WriteEntry($"[{AppConfig.EventSource}] {escalatedMsg}\n\nError: {ex.Message}", EventLogEntryType.Error, 3003);
+                                }
+                            }
+                            catch { /* Silently ignore if direct event log creation fails */ }
+
+                            Logger.Error(escalatedMsg, ex);
+                        }
+                        else
+                        {
+                            // Trip the warning so admins can diagnose I/O or permission issues.
+                            Logger.Warn($"[EventID: 3002] {baseMsg} (Attempt {failCount}/{MigrationFailureEscalationThreshold}): {ex.Message}");
+                        }
+
                         // We still return the data so the service remains operational.
-                        Logger.Warn($"Key migration to entropy-protected format failed for '{path}': {ex.Message}");
                         return decryptedData;
                     }
                 }
