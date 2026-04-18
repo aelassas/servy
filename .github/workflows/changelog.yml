@@ -1,8 +1,14 @@
 name: changelog
 
 on:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
+
+  workflow_run:             # auto-trigger after bump-version.yml
+    workflows: ["bump-version"]    # must match the `name:` in bump-version.yml
+    types:
+      - completed
+
   workflow_dispatch:
     inputs:
       reset:
@@ -14,6 +20,11 @@ on:
 jobs:
   changelog:
     runs-on: windows-latest
+    # Logic: Only run if manually triggered OR if the automated upstream 'bump-version' run succeeded.
+    if: >
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+
     permissions:
       contents: write
     steps:
