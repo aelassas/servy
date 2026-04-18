@@ -19,7 +19,7 @@ namespace Servy.Core.UnitTests.Services
                 Priority = 1,
                 StdoutPath = "stdout.log",
                 StderrPath = "stderr.log",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 1024,
                 EnableHealthMonitoring = true,
                 HeartbeatInterval = 10,

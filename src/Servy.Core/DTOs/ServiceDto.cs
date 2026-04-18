@@ -81,7 +81,7 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Whether size-based log rotation is enabled.
         /// </summary>
-        public bool? EnableRotation { get; set; }
+        public bool? EnableSizeRotation { get; set; }
 
         /// <summary>
         /// Maximum size of the log file in Megabytes (MB) before rotation.
@@ -356,7 +356,7 @@ namespace Servy.Core.DTOs
                 Priority = Priority,
                 StdoutPath = StdoutPath,
                 StderrPath = StderrPath,
-                EnableRotation = EnableRotation,
+                EnableSizeRotation = EnableSizeRotation,
                 RotationSize = RotationSize,
                 EnableDateRotation = EnableDateRotation,
                 DateRotationType = DateRotationType,
@@ -419,7 +419,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePriority() => Priority.HasValue;
         public bool ShouldSerializeStdoutPath() => !string.IsNullOrWhiteSpace(StdoutPath);
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
-        public bool ShouldSerializeEnableRotation() => EnableRotation.HasValue;
+        public bool ShouldSerializEnableSizeRotation() => EnableSizeRotation.HasValue;
         public bool ShouldSerializeRotationSize() => RotationSize.HasValue;
         public bool ShouldSerializeEnableDateRotation() => EnableDateRotation.HasValue;
         public bool ShouldSerializeDateRotationType() => DateRotationType.HasValue;

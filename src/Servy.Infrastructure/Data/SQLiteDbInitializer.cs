@@ -46,8 +46,16 @@ namespace Servy.Infrastructure.Data
                 currentVersion = 1; // Kept for future migration logic chaining
             }
 
+            // Version 2 Migration to rename the ambiguous EnableRotation column
+            if (currentVersion < 2)
+            {
+                ApplyVersion2(connection);
+                UpdateSchemaVersion(connection, 2);
+                currentVersion = 2;
+            }
+
             // --- FUTURE MIGRATIONS GO HERE ---
-            // if (currentVersion < 2) { ... }
+            // if (currentVersion < 3) { ... }
         }
 
         /// <summary>
@@ -151,36 +159,75 @@ namespace Servy.Infrastructure.Data
 
                     connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_services_name_lower ON Services(LOWER(Name));", transaction: transaction);
 
-                    // 2. Apply legacy column additions dynamically
                     var existingColumns = new HashSet<string>(
                         connection.Query("PRAGMA table_info(Services);", transaction: transaction)
                                   .Select(row => (string)row.name),
                         StringComparer.OrdinalIgnoreCase
                     );
 
-                    var expectedColumns = GetExpectedColumns();
+                    // --- Intercept ambiguous legacy column and rename before dynamic column mapping ---
+                    if (existingColumns.Contains("EnableRotation") && !existingColumns.Contains("EnableSizeRotation"))
+                    {
+                        Logger.Info("Migrating legacy database: Renaming 'EnableRotation' to 'EnableSizeRotation'.");
+                        connection.Execute("ALTER TABLE Services RENAME COLUMN EnableRotation TO EnableSizeRotation;", transaction: transaction);
+                        existingColumns.Remove("EnableRotation");
+                        existingColumns.Add("EnableSizeRotation");
+                    }
+                    // ----------------------------------------------------------------
 
+                    // 2. Apply legacy column additions dynamically
+                    var expectedColumns = GetExpectedColumns();
                     var missingColumns = expectedColumns.Where(col => !existingColumns.Contains(col)).ToList();
 
                     foreach (var col in missingColumns)
                     {
-                        // Log each individual column addition
                         Logger.Info($"Migrating database: Adding column '{col}' to 'Services' table.");
-
-                        // Execute the DDL
                         connection.Execute($"ALTER TABLE Services ADD COLUMN {col} {GetSqlType(col)};", transaction: transaction);
                     }
 
-                    // Commit the entire migration as a single atomic unit
                     transaction.Commit();
                     Logger.Info("Legacy database successfully migrated to Version 1.");
                 }
                 catch (Exception ex)
                 {
-                    // Roll back the entire operation to leave the DB in its original state
                     transaction.Rollback();
                     Logger.Error("CRITICAL: Database migration failed. The transaction has been rolled back to prevent schema corruption.", ex);
-                    throw; // Re-throw to prevent the service from starting with an invalid schema
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applies the Version 2 schema migration, which primarily deals with renaming 
+        /// the ambiguous 'EnableRotation' column to 'EnableSizeRotation' for databases
+        /// that were already cleanly tracking schema Version 1.
+        /// </summary>
+        private static void ApplyVersion2(DbConnection connection)
+        {
+            using (var transaction = connection.BeginTransaction())
+            {
+                try
+                {
+                    var existingColumns = new HashSet<string>(
+                        connection.Query("PRAGMA table_info(Services);", transaction: transaction)
+                                  .Select(row => (string)row.name),
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                    if (existingColumns.Contains("EnableRotation") && !existingColumns.Contains("EnableSizeRotation"))
+                    {
+                        Logger.Info("Migrating database to Version 2: Renaming 'EnableRotation' to 'EnableSizeRotation'.");
+                        connection.Execute("ALTER TABLE Services RENAME COLUMN EnableRotation TO EnableSizeRotation;", transaction: transaction);
+                    }
+
+                    transaction.Commit();
+                    Logger.Info("Database successfully migrated to Version 2.");
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Logger.Error("CRITICAL: Version 2 database migration failed. Transaction rolled back.", ex);
+                    throw;
                 }
             }
         }
@@ -198,16 +245,14 @@ namespace Servy.Infrastructure.Data
                 return "TEXT NOT NULL";
             }
 
-            // Original columns that require NOT NULL constraints to match legacy schema
             var originalNotNullInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "StartupType", "Priority", "EnableRotation", "RotationSize",
+                "StartupType", "Priority", "EnableSizeRotation", "RotationSize", // RENAMED IN LIST
                 "EnableHealthMonitoring", "HeartbeatInterval", "MaxFailedChecks",
                 "RecoveryAction", "MaxRestartAttempts", "RunAsLocalSystem",
                 "PreLaunchTimeoutSeconds", "PreLaunchRetryAttempts", "PreLaunchIgnoreFailure"
             };
 
-            // Columns added later that are nullable
             var nullableInts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "Pid", "EnableDebugLogs", "MaxRotations", "EnableDateRotation",
@@ -217,8 +262,6 @@ namespace Servy.Infrastructure.Data
 
             if (originalNotNullInts.Contains(columnName))
             {
-                // Note: These will only ever hit during a fresh CREATE TABLE (ApplyVersion1). 
-                // They already exist in legacy DBs, so ALTER TABLE will never execute against them.
                 return "INTEGER NOT NULL";
             }
 

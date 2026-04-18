@@ -43,7 +43,7 @@ namespace Servy.Core.Helpers
             if (dto.StopTimeout.HasValue && dto.StopTimeout > AppConfig.MaxStopTimeout) 
                 return (false, $"Stop Timeout exceeds maximum ({AppConfig.MaxStopTimeout}).");
 
-            if (dto.EnableRotation.HasValue && dto.EnableRotation.Value && (dto.RotationSize < AppConfig.MinRotationSize))
+            if (dto.EnableSizeRotation.HasValue && dto.EnableSizeRotation.Value && (dto.RotationSize < AppConfig.MinRotationSize))
                 return (false, "Rotation size is too small.");
 
             if (dto.EnableHealthMonitoring.HasValue && dto.EnableHealthMonitoring.Value)

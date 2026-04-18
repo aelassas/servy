@@ -377,7 +377,7 @@ namespace Servy.Core.Services
                     Priority = (int)options.ProcessPriority,
                     StdoutPath = options.StdoutPath,
                     StderrPath = options.StderrPath,
-                    EnableRotation = options.EnableSizeRotation,
+                    EnableSizeRotation = options.EnableSizeRotation,
                     RotationSize = (int)(options.RotationSizeInBytes / (1024 * 1024)),
                     EnableDateRotation = options.EnableDateRotation,
                     DateRotationType = (int)options.DateRotationType,

@@ -20,7 +20,7 @@ namespace Servy.UnitTests.Core.Helpers
                 EnableDebugLogs = null,
                 StartTimeout = null,
                 StopTimeout = null,
-                EnableRotation = null,
+                EnableSizeRotation = null,
                 RotationSize = null,
                 EnableDateRotation = null,
                 DateRotationType = null,
@@ -47,7 +47,7 @@ namespace Servy.UnitTests.Core.Helpers
             Assert.Equal(AppConfig.DefaultEnableDebugLogs, dto.EnableDebugLogs);
             Assert.Equal(AppConfig.DefaultStartTimeout, dto.StartTimeout);
             Assert.Equal(AppConfig.DefaultStopTimeout, dto.StopTimeout);
-            Assert.Equal(AppConfig.DefaultEnableRotation, dto.EnableRotation);
+            Assert.Equal(AppConfig.DefaultEnableRotation, dto.EnableSizeRotation);
             Assert.Equal(AppConfig.DefaultRotationSize, dto.RotationSize);
             Assert.Equal(AppConfig.DefaultEnableDateRotation, dto.EnableDateRotation);
             Assert.Equal((int)AppConfig.DefaultDateRotationType, dto.DateRotationType);
@@ -74,7 +74,7 @@ namespace Servy.UnitTests.Core.Helpers
             var dto = new ServiceDto
             {
                 StartTimeout = customTimeout,
-                EnableRotation = customToggle,
+                EnableSizeRotation = customToggle,
                 RunAsLocalSystem = false, // Assuming default is true
                 UserAccount = @".\test_svc",
                 Password = "secret",
@@ -85,7 +85,7 @@ namespace Servy.UnitTests.Core.Helpers
 
             // Assert
             Assert.Equal(customTimeout, dto.StartTimeout);
-            Assert.Equal(customToggle, dto.EnableRotation);
+            Assert.Equal(customToggle, dto.EnableSizeRotation);
             Assert.True(dto.RunAsLocalSystem);
             Assert.Null(dto.UserAccount);
             Assert.Null(dto.Password);

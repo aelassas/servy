@@ -15,7 +15,7 @@ namespace Servy.Tests.Helpers
             Parameters = "--worker",
             StartTimeout = AppConfig.MinStartTimeout,
             StopTimeout = 30000, // 30s
-            EnableRotation = false,
+            EnableSizeRotation = false,
             EnableHealthMonitoring = false
         };
 
@@ -29,7 +29,7 @@ namespace Servy.Tests.Helpers
                 ExecutablePath = @"C:\Apps\app.exe",
                 StartTimeout = null,
                 StopTimeout = null,
-                EnableRotation = null,
+                EnableSizeRotation = null,
                 EnableHealthMonitoring = null
             };
 
@@ -84,7 +84,7 @@ namespace Servy.Tests.Helpers
         {
             // Hits the branch where .HasValue is true but .Value is false
             var dto = GetValidDto();
-            dto.EnableRotation = false;
+            dto.EnableSizeRotation = false;
             dto.RotationSize = -1; // Should be ignored
 
             var (isValid, error) = ServiceValidator.ValidateDto(dto);
@@ -235,7 +235,7 @@ namespace Servy.Tests.Helpers
         public void ValidateDto_Fails_WhenRotationEnabledAndSizeTooSmall()
         {
             var dto = GetValidDto();
-            dto.EnableRotation = true;
+            dto.EnableSizeRotation = true;
             dto.RotationSize = AppConfig.MinRotationSize - 1;
 
             var (isValid, error) = ServiceValidator.ValidateDto(dto);

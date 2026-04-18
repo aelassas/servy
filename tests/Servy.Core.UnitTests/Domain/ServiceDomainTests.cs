@@ -122,7 +122,7 @@ namespace Servy.Core.UnitTests.Domain
                 Parameters = "--arg1",
                 StartupType = ServiceStartType.Automatic,
                 Priority = ProcessPriority.Normal,
-                EnableRotation = false,
+                EnableSizeRotation = false,
                 EnableHealthMonitoring = false,
                 RecoveryAction = RecoveryAction.None,
                 MaxRestartAttempts = 3,
@@ -182,7 +182,7 @@ namespace Servy.Core.UnitTests.Domain
             {
                 Name = "TestService",
                 ExecutablePath = @"C:\real.exe",
-                EnableRotation = true,
+                EnableSizeRotation = true,
                 RotationSize = 10,
                 EnableHealthMonitoring = true,
                 RecoveryAction = RecoveryAction.RestartService

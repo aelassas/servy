@@ -26,7 +26,7 @@ namespace Servy.Infrastructure.Data
             // Logging Tab
             "StdoutPath",
             "StderrPath",
-            "EnableRotation",
+            "EnableSizeRotation",
             "RotationSize",
             "EnableDateRotation",
             "DateRotationType",

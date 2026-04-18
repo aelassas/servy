@@ -34,7 +34,7 @@ namespace Servy.Core.Helpers
             dto.StopTimeout = dto.StopTimeout ?? AppConfig.DefaultStopTimeout;
 
             // Log Rotation
-            dto.EnableRotation = dto.EnableRotation ?? AppConfig.DefaultEnableRotation;
+            dto.EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation;
             dto.RotationSize = dto.RotationSize ?? AppConfig.DefaultRotationSize;
             dto.EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation;
             dto.DateRotationType = dto.DateRotationType ?? (int)AppConfig.DefaultDateRotationType;

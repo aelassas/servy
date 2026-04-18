@@ -101,7 +101,7 @@ namespace Servy.Services
                 Priority = (int)config.Priority,
                 StdoutPath = config.StdoutPath,
                 StderrPath = config.StderrPath,
-                EnableRotation = config.EnableSizeRotation,
+                EnableSizeRotation = config.EnableSizeRotation,
                 RotationSize = int.TryParse(config.RotationSize, out var rs) ? rs : -1,
                 EnableDateRotation = config.EnableDateRotation,
                 DateRotationType = (int)config.DateRotationType,
@@ -194,7 +194,7 @@ namespace Servy.Services
 
                     StdoutPath = dto.StdoutPath,
                     StderrPath = dto.StderrPath,
-                    EnableSizeRotation = dto.EnableRotation ?? AppConfig.DefaultEnableRotation,
+                    EnableSizeRotation = dto.EnableSizeRotation ?? AppConfig.DefaultEnableRotation,
                     RotationSizeInBytes = rotationSizeValue,
                     MaxRotations = dto.MaxRotations,
                     EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
