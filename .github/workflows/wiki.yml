@@ -2,6 +2,7 @@
 # GitHub Actions workflow to validate wiki filenames for ASCII compliance.
 # Prevents encoding issues by rejecting filenames containing non-ASCII characters.
 # --------------------------------------------------------------------------------
+
 name: wiki
 
 on:
@@ -21,9 +22,22 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # GitHub Wikis are stored in a separate repository named {repo-name}.wiki
+      - name: Checkout Wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
       - name: Check for non-ASCII bytes in filenames
         run: |
-          # Find all .md files in the wiki directory
+          # 1. Safety check: Ensure the wiki directory was actually checked out
+          if [ ! -d "wiki" ]; then
+            echo "Error: 'wiki' directory not found. The Wiki repository may be empty or inaccessible."
+            exit 1
+          fi
+
+          # 2. Find all .md files in the wiki directory
           # If grep finds a non-ASCII character, it returns 0 (success)
           # We check for that success and force an exit 1 to fail the build.
           NON_ASCII_FILES=$(find wiki -name '*.md' | grep -P '[^\x00-\x7F]' || true)
