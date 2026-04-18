@@ -239,7 +239,7 @@ namespace Servy.Core.Security
                     using (var eventLog = new EventLog("Application"))
                     {
                         eventLog.Source = AppConfig.EventSource;
-                        eventLog.WriteEntry($"{errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, 3001);
+                        eventLog.WriteEntry($"[{AppConfig.EventSource}] {errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, 3001);
                     }
                 }
                 catch
