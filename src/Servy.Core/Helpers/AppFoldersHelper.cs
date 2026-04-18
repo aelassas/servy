@@ -6,28 +6,46 @@ using System.IO;
 namespace Servy.Core.Helpers
 {
     /// <summary>
-    /// Provides helper methods for initializing required application folders.
+    /// Provides helper methods for initializing and securing required application folders.
     /// </summary>
     public static class AppFoldersHelper
     {
         /// <summary>
-        /// Ensures that the database and security folders exist.
-        /// Extracts folder paths from the SQLite connection string and AES file paths,
-        /// and creates them if they do not exist.
+        /// Ensures that the database, security, and operational folders exist and are configured with correct security descriptors.
         /// </summary>
         /// <param name="connectionString">
-        /// SQLite connection string, e.g., "Data Source=C:\ProgramData\Servy\db\Servy.db;".
-        /// The folder containing the database file will be created if missing.
+        /// The SQLite connection string (e.g., <c>Data Source=C:\Path\To\Servy.db;</c>). 
+        /// Used to determine the database directory.
         /// </param>
-        /// <param name="aesKeyFilePath">
-        /// Full path to the AES key file. The folder containing the file will be created if missing.
-        /// </param>
-        /// <param name="aesIVFilePath">
-        /// Full path to the AES IV file. The folder containing the file will be created if missing.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown if any argument is null or whitespace.
-        /// </exception>
+        /// <param name="aesKeyFilePath">Full filesystem path to the AES master key file.</param>
+        /// <param name="aesIVFilePath">Full filesystem path to the legacy AES Initialization Vector (IV) file.</param>
+        /// <remarks>
+        /// <para>
+        /// This method follows a hierarchical security approach:
+        /// <list type="number">
+        /// <item>
+        /// <description>
+        /// **Root Vault:** The primary data path defined in <see cref="AppConfig.ProgramDataPath"/> is secured first 
+        /// by breaking inheritance to block standard users.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// **Operational Folders:** Subfolders (db, security, logs) are processed. If they reside within the Root Vault, 
+        /// inheritance is preserved to allow manually granted service account permissions to cascade down.
+        /// </description>
+        /// </item>
+        /// <item>
+        /// <description>
+        /// **External Paths:** If a folder is located outside the primary data path, it is treated as a new Root Vault 
+        /// and inheritance is broken for safety.
+        /// </description>
+        /// </item>
+        /// </list>
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown if any of the provided paths or connection strings are null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown if the connection string format is invalid or directory names cannot be parsed.</exception>
         public static void EnsureFolders(string connectionString, string aesKeyFilePath, string aesIVFilePath)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
@@ -37,7 +55,7 @@ namespace Servy.Core.Helpers
             if (string.IsNullOrWhiteSpace(aesIVFilePath))
                 throw new ArgumentNullException(nameof(aesIVFilePath));
 
-            // Extract database folder from connection string
+            // Extract paths
             var dataSourcePrefix = "Data Source=";
             var startIndex = connectionString.IndexOf(dataSourcePrefix, StringComparison.OrdinalIgnoreCase);
             if (startIndex < 0)
@@ -49,28 +67,32 @@ namespace Servy.Core.Helpers
                 ? connectionString.Substring(startIndex).Trim()
                 : connectionString.Substring(startIndex, endIndex - startIndex).Trim();
 
-            var dbFolder = Path.GetDirectoryName(dbFilePath);
+            var dbFolder = Path.GetDirectoryName(dbFilePath)
+                ?? throw new InvalidOperationException("Cannot determine database folder path.");
+            var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath)
+                ?? throw new InvalidOperationException("Cannot determine AES key folder path.");
+            var aesIVFolder = Path.GetDirectoryName(aesIVFilePath)
+                ?? throw new InvalidOperationException("Cannot determine AES IV folder path.");
 
-            if (string.IsNullOrWhiteSpace(dbFolder))
-                throw new InvalidOperationException("Cannot determine database folder path.");
+            // 1. Establish the Root Vault FIRST so its ACLs exist for children to inherit
+            SecurityHelper.CreateSecureDirectory(AppConfig.ProgramDataPath, breakInheritance: true);
 
-            var aesKeyFolder = Path.GetDirectoryName(aesKeyFilePath);
+            // 2. Process operational folders
+            string[] subFolders = { dbFolder, aesKeyFolder, aesIVFolder };
+            var normalizedRoot = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
 
-            if (string.IsNullOrWhiteSpace(aesKeyFolder))
-                throw new InvalidOperationException("Cannot determine AES key folder path.");
-
-            var aesIVFolder = Path.GetDirectoryName(aesIVFilePath);
-
-            if (string.IsNullOrWhiteSpace(aesIVFolder))
-                throw new InvalidOperationException("Cannot determine AES IV folder path.");
-
-            // Ensure folders exist
-            string[] folders = { AppConfig.ProgramDataPath, dbFolder, aesKeyFolder, aesIVFolder };
-            foreach (var folder in folders)
+            foreach (var folder in subFolders)
             {
-                SecurityHelper.CreateSecureDirectory(folder);
+                // Skip if it exactly matches the root we just secured
+                if (folder.Equals(AppConfig.ProgramDataPath, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // If a folder is nested inside the master vault, we KEEP inheritance so custom service accounts cascade down.
+                // If a folder is stored externally (e.g., D:\CustomDb), it acts as its own root vault and MUST break inheritance.
+                bool isChildOfRoot = folder.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+
+                SecurityHelper.CreateSecureDirectory(folder, breakInheritance: !isChildOfRoot);
             }
         }
-
     }
 }

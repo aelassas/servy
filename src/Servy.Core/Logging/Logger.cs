@@ -88,7 +88,7 @@ namespace Servy.Core.Logging
             try
             {
                 var logDir = Path.Combine(AppConfig.ProgramDataPath, "logs");
-                SecurityHelper.CreateSecureDirectory(logDir);
+                SecurityHelper.CreateSecureDirectory(logDir, breakInheritance: false);
 
                 string logPath = Path.Combine(logDir, _fileName);
 
