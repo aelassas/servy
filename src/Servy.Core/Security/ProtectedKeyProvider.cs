@@ -1,5 +1,7 @@
 ﻿using Microsoft.Win32;
+using Servy.Core.Config;
 using Servy.Core.Logging;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
@@ -219,8 +221,36 @@ namespace Servy.Core.Security
             catch (CryptographicException ex)
             {
                 // DPAPI is machine-specific; moving the file to another server will trigger this exception.
-                Logger.Error("Failed to unprotect encryption key. The key file may have been moved from another machine.", ex);
-                throw new InvalidOperationException($"Failed to unprotect encryption key. The file may have been moved from another machine.", ex);
+                string errorMsg = $"Failed to unprotect encryption key at '{path}'. The file may have been moved from another machine or restored from an image.";
+
+                string workaround = "Workaround:\n" +
+                                    "1. (If possible) Export service configurations to XML or JSON on the original machine.\n" +
+                                    "2. On the new machine, backup and delete the following folders:\n" +
+                                    "   - %ProgramData%\\Servy\\security\n" +
+                                    "   - %ProgramData%\\Servy\\db\n" +
+                                    "3. Import the services via the CLI, PowerShell, or Manager.";
+
+                // FIX 1 (#712): Direct Event Log Surface
+                try
+                {
+                    using (var eventLog = new EventLog("Application"))
+                    {
+                        eventLog.Source = AppConfig.EventSource;
+                        eventLog.WriteEntry($"{errorMsg}\n\n{workaround}\n\nException: {ex.Message}", EventLogEntryType.Error, 3001);
+                    }
+                }
+                catch
+                {
+                    // Silently ignore if direct event log creation fails (e.g., missing registry permissions), 
+                    // the static Logger below will still catch it.
+                }
+
+                Logger.Error($"{errorMsg}\n{workaround}", ex);
+
+                // FIX 4 (#712): Set distinct Service Exit Code (13 = ERROR_INVALID_DATA)
+                Environment.ExitCode = 13;
+
+                throw new InvalidOperationException($"{errorMsg} To recover, delete the %ProgramData%\\Servy\\security and %ProgramData%\\Servy\\db folders so Servy can regenerate the keys and initialize a fresh database.", ex);
             }
             finally
             {

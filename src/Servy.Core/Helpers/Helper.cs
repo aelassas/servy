@@ -297,7 +297,7 @@ namespace Servy.Core.Helpers
         [ExcludeFromCodeCoverage]
         public static void EnsureEventSourceExists()
         {
-            string sourceName = AppConfig.ServiceNameEventSource;
+            string sourceName = AppConfig.EventSource;
             string logName = "Application";
 
             try

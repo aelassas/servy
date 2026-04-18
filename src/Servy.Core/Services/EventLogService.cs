@@ -31,13 +31,13 @@ namespace Servy.Core.Services
         /// </param>
         /// <param name="sourceName">
         /// The optional event source name to filter by. If <see langword="null"/>, 
-        /// the service defaults to the value defined in <see cref="AppConfig.ServiceNameEventSource"/>.
+        /// the service defaults to the value defined in <see cref="AppConfig.EventSource"/>.
         /// Pass an empty string to disable the provider filter and enable wildcard querying.
         /// </param>
         public EventLogService(IEventLogReader reader, string? sourceName = null)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-            _sourceName = sourceName ?? AppConfig.ServiceNameEventSource;
+            _sourceName = sourceName ?? AppConfig.EventSource;
         }
 
         /// <inheritdoc />
@@ -136,13 +136,13 @@ namespace Servy.Core.Services
 
                     // 1. Heuristic: Only include events where the provider contains "Servy"
                     // This prevents capturing unrelated system/app logs even when _sourceName is empty.
-                    if (provider.IndexOf(AppConfig.ServiceNameEventSource, StringComparison.OrdinalIgnoreCase) < 0)
+                    if (provider.IndexOf(AppConfig.EventSource, StringComparison.OrdinalIgnoreCase) < 0)
                         continue;
 
                     // 2. Formatting Check: Ensure it follows the Servy log pattern [Service] Message
-                    if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
-                        message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
-                        continue;
+                    //if (message.IndexOf("[", StringComparison.OrdinalIgnoreCase) < 0 ||
+                    //    message.IndexOf("]", StringComparison.OrdinalIgnoreCase) < 0)
+                    //    continue;
 
                     // 3. Optional keyword filter
                     if (!string.IsNullOrEmpty(keyword) &&

@@ -58,7 +58,7 @@ namespace Servy.Restarter
             }
 
             IServiceRestarter restarter = new ServiceRestarter();
-            IServyLogger rootLogger = new EventLogLogger(AppConfig.ServiceNameEventSource);
+            IServyLogger rootLogger = new EventLogLogger(AppConfig.EventSource);
             IServyLogger? scopedLogger = null;
             SecureData? secureData = null;
 

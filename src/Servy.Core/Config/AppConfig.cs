@@ -58,7 +58,7 @@ namespace Servy.Core.Config
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>
-        public static readonly string ServiceNameEventSource = "Servy";
+        public static readonly string EventSource = "Servy";
 
         /// <summary>
         /// The default file name of the Sysinternals Handle executable used to detect

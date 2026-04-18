@@ -203,7 +203,7 @@ namespace Servy.Service
         /// </remarks>
         public Service() : this(
             new Helpers.ServiceHelper(new CommandLineProvider()),
-            new EventLogLogger(AppConfig.ServiceNameEventSource),
+            new EventLogLogger(AppConfig.EventSource),
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
@@ -243,7 +243,7 @@ namespace Servy.Service
             IPathValidator pathValidator,
             IServiceRepository serviceRepository) // allow injection
         {
-            ServiceName = AppConfig.ServiceNameEventSource;
+            ServiceName = AppConfig.EventSource;
 
             _serviceHelper = serviceHelper ?? throw new ArgumentNullException(nameof(serviceHelper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -281,7 +281,7 @@ namespace Servy.Service
 
             try
             {
-                ServiceName = AppConfig.ServiceNameEventSource;
+                ServiceName = AppConfig.EventSource;
 
                 // Ensure event source exists
                 Helper.EnsureEventSourceExists();
@@ -401,7 +401,17 @@ namespace Servy.Service
             {
                 // Without Logger.Initialize in the constructor, this would be lost.
                 Logger.Error("Fatal error during service construction.", ex);
-                throw; // Re-throw to let SCM know the service cannot start
+
+                // If the environment exit code was successfully set to a custom error 
+                // (like 13 from ProtectedKeyProvider), preserve it. Otherwise, set a generic service failure code.
+                if (Environment.ExitCode == 0)
+                {
+                    Environment.ExitCode = 1064; // ERROR_EXCEPTION_IN_SERVICE
+                }
+
+                // By explicitly calling Environment.Exit here, we guarantee the SCM registers 
+                // the custom exit code immediately, completely preventing the 1053 timeout hang.
+                Environment.Exit(Environment.ExitCode);
             }
         }
 
