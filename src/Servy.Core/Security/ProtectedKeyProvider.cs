@@ -231,7 +231,8 @@ namespace Servy.Core.Security
                                     "2. On the new machine, backup and delete the following folders:\n" +
                                     "   - %ProgramData%\\Servy\\security\n" +
                                     "   - %ProgramData%\\Servy\\db\n" +
-                                    "3. Import the services via the CLI, PowerShell, or Manager.";
+                                    "3. Import the services via the CLI, PowerShell, or Manager.\n" +
+                                    "4. You will need to re-enter usernames and passwords if your services run under specific accounts, as those secrets are not exported for security reasons.";
 
                 // FIX 1 (#712): Direct Event Log Surface
                 try
