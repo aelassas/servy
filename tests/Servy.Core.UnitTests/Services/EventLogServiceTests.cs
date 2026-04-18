@@ -28,7 +28,7 @@ namespace Servy.Core.UnitTests.Services
                 EventId = id,
                 Level = Logging.EventLogReader.ParseLevel(level),
                 Time = time ?? DateTime.MinValue,
-                ProviderName = AppConfig.ServiceNameEventSource,
+                ProviderName = AppConfig.EventSource,
                 Message = message
             };
         }
@@ -54,7 +54,7 @@ namespace Servy.Core.UnitTests.Services
             var field = typeof(EventLogService).GetField("_sourceName", BindingFlags.NonPublic | BindingFlags.Instance);
             var actualValue = field?.GetValue(service) as string;
 
-            Assert.Equal(AppConfig.ServiceNameEventSource, actualValue);
+            Assert.Equal(AppConfig.EventSource, actualValue);
         }
 
         [Fact]
@@ -279,7 +279,7 @@ namespace Servy.Core.UnitTests.Services
 
             var service = CreateService(mockReader);
 
-            var result = await service.SearchAsync(null, null, null, "servy");
+            var result = await service.SearchAsync(null, null, null, "boo!");
 
             Assert.Empty(result);
         }
@@ -330,7 +330,7 @@ namespace Servy.Core.UnitTests.Services
             Assert.Equal(DateTime.MinValue, results.First().Time);
         }
 
-        [Fact]
+        [Fact(Skip = "Message formatting check is no longer done.")]
         public async Task SearchAsync_ShouldReturnEmptyCollectionWhenFormatDescriptionIsNull()
         {
             var mockReader = new Mock<IEventLogReader>();
@@ -342,6 +342,20 @@ namespace Servy.Core.UnitTests.Services
             var results = await service.SearchAsync(null, null, null, null);
 
             Assert.Empty(results);
+        }
+
+        [Fact]
+        public async Task SearchAsync_ShouldReturnCollectionWhenFormatDescriptionIsNull()
+        {
+            var mockReader = new Mock<IEventLogReader>();
+            var evt = CreateFakeEvent(1, 1, DateTime.Now, null);
+            mockReader.Setup(r => r.ReadEvents(It.IsAny<EventLogQuery>())).Returns(new[] { evt });
+
+            var service = CreateService(mockReader);
+
+            var results = await service.SearchAsync(null, null, null, null);
+
+            Assert.Single(results);
         }
 
         [Fact]
