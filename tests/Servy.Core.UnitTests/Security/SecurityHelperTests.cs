@@ -196,12 +196,12 @@ namespace Servy.Core.UnitTests.Security
         }
 
         // Helper to invoke the internal method via reflection
-        private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference? sid)
+        private void InvokeApplySecurityRules(DirectorySecurity security, IdentityReference? sid, bool breakInheritance = true)
         {
             var method = typeof(SecurityHelper).GetMethod("ApplySecurityRules",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
-            method!.Invoke(null, new object?[] { security, sid });
+            method!.Invoke(null, new object?[] { security, sid, breakInheritance });
         }
 
         public void Dispose()
