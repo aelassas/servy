@@ -1,0 +1,293 @@
+﻿using Microsoft.Extensions.Configuration;
+using Servy.Core.Config;
+using Servy.Core.Data;
+using Servy.Core.Enums;
+using Servy.Core.Helpers;
+using Servy.Core.Logging;
+using Servy.Core.Security;
+using Servy.Core.Services;
+using Servy.Infrastructure.Data;
+using Servy.Infrastructure.Helpers;
+using System.Diagnostics;
+#if !DEBUG
+using System.IO;
+#endif
+using System.Reflection;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+
+namespace Servy.UI.Bootstrapping
+{
+    /// <summary>
+    /// Orchestrates the application lifecycle and initialization for Servy desktop applications.
+    /// </summary>
+    /// <remarks>
+    /// This class centralizes shared logic for Rendering Tier detection, unhandled exception 
+    /// orchestration, configuration loading via JSON, and embedded resource extraction.
+    /// </remarks>
+    public class AppBootstrapper
+    {
+        #region Properties
+
+        /// <summary>
+        /// Gets the initialized database context.
+        /// </summary>
+        public AppDbContext DbContext { get; private set; }
+
+        /// <summary>
+        /// Gets the repository for service data access.
+        /// </summary>
+        public IServiceRepository ServiceRepository { get; private set; }
+
+        /// <summary>
+        /// Gets the secure data provider for encryption operations.
+        /// </summary>
+        public ISecureData SecureData { get; private set; }
+
+        /// <summary>
+        /// Gets the active database connection string.
+        /// </summary>
+        public string ConnectionString { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES encryption key.
+        /// </summary>
+        public string AESKeyFilePath { get; private set; }
+
+        /// <summary>
+        /// Gets the file path for the AES initialization vector.
+        /// </summary>
+        public string AESIVFilePath { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether software rendering has been forced.
+        /// </summary>
+        public bool ForceSoftwareRendering { get; private set; }
+
+        #endregion
+
+        private readonly BootstrapperOptions _options;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
+        /// </summary>
+        /// <param name="options">Configuration options for the bootstrap process.</param>
+        public AppBootstrapper(BootstrapperOptions options)
+        {
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        /// <summary>
+        /// Handles the synchronous portion of the application startup.
+        /// Configures logging, rendering modes, and global exception handlers.
+        /// </summary>
+        /// <param name="app">The active WPF application instance.</param>
+        /// <param name="e">Startup arguments.</param>
+        public void OnStartup(Application app, StartupEventArgs e)
+        {
+            // 1. Initialize Logger
+            Logger.Initialize(_options.LogFileName);
+
+            // 2. Global AppDomain exceptions (Fatal)
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                Exception ex = args.ExceptionObject as Exception;
+                Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
+                MessageBox.Show(
+                    "A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.",
+                    "Servy - Fatal Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            };
+
+            // 3. UI Thread exceptions (Dispatcher)
+            app.DispatcherUnhandledException += (sender, args) =>
+            {
+                Logger.Error("UI Dispatcher Exception", args.Exception);
+                bool isOutOfMemory = args.Exception is OutOfMemoryException;
+
+                if (!isOutOfMemory)
+                {
+                    MessageBox.Show(
+                        "An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged.",
+                        "Servy - Unexpected Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    args.Handled = true;
+                }
+                else
+                {
+                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
+                    args.Handled = false;
+                    app.Shutdown(1);
+                }
+            };
+
+            // 4. Security Check: Admin Rights
+            if (!SecurityHelper.IsAdministrator())
+            {
+                MessageBox.Show(_options.SecurityWarningMessage, _options.SecurityWarningTitle, MessageBoxButton.OK, MessageBoxImage.Warning);
+                app.Shutdown(1);
+                return;
+            }
+
+            // 5. Security Check: SQLite Environment
+            if (!DatabaseValidator.IsSqliteVersionSafe(out var detectedVersion))
+            {
+                string message = string.Format(_options.SqliteVersionWarningMessageFormat, detectedVersion, AppConfig.MinRequiredSqliteVersion);
+                MessageBox.Show(message, _options.SqliteVersionWarningTitle, MessageBoxButton.OK, MessageBoxImage.Error);
+                app.Shutdown();
+                return;
+            }
+
+            // 6. Rendering Detection
+            var renderingTier = RenderCapability.Tier >> 16;
+            var isRemote = SystemParameters.IsRemoteSession;
+            ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
+
+            Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}, ForceSoftwareRendering={ForceSoftwareRendering}");
+
+            if (renderingTier == 0 || isRemote || ForceSoftwareRendering)
+            {
+                Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
+                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously handles the application initialization lifecycle, including configuration loading, 
+        /// resource extraction, and UI orchestration.
+        /// </summary>
+        /// <param name="app">The active WPF application instance.</param>
+        /// <param name="e">Startup arguments.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous startup operation.</returns>
+        public async Task InitializeAppAsync(Application app, StartupEventArgs e)
+        {
+            string serviceName = null;
+            var showSplash = true;
+
+            if (e.Args != null)
+            {
+                var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (positionalArgs.Count > 0) bool.TryParse(positionalArgs[0], out showSplash);
+                if (positionalArgs.Count > 1) serviceName = positionalArgs[1];
+            }
+
+            Window splash = null;
+            try
+            {
+                // 1. Splash Screen
+                if (_options.SplashWindowFactory != null)
+                {
+                    splash = _options.SplashWindowFactory();
+                    if (showSplash && splash != null)
+                    {
+                        splash.Show();
+                        await Task.Yield();
+                    }
+                }
+
+                Helper.EnsureEventSourceExists();
+
+                // 2. Configuration Loading
+                var builder = new ConfigurationBuilder();
+#if DEBUG
+                builder.AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
+#else
+                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                       .AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
+#endif
+                var config = builder.Build();
+
+                ConnectionString = config["DefaultConnection"] ?? AppConfig.DefaultConnectionString;
+                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
+                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
+
+                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) logLevel = LogLevel.Info;
+                Logger.SetLogLevel(logLevel);
+
+                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType)) dateRotationType = DateRotationType.None;
+                Logger.SetDateRotationType(dateRotationType);
+
+                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0) Logger.SetLogRotationSize(size);
+                else Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
+
+                string rawUseLocalTime = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
+                if (!bool.TryParse(rawUseLocalTime, out bool useLocalTime)) useLocalTime = AppConfig.DefaultUseLocalTimeForRotation;
+                Logger.SetUseLocalTimeForRotation(useLocalTime);
+
+                _options.CustomConfigAction?.Invoke(config);
+
+                // 3. Background Initialization (I/O & DB)
+                await Task.Run(async () =>
+                {
+                    var stopwatch = Stopwatch.StartNew();
+
+                    AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
+
+                    var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+
+                    DbContext = new AppDbContext(ConnectionString);
+                    DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
+
+                    var dapperExecutor = new DapperExecutor(DbContext);
+                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
+                    SecureData = new SecureData(protectedKeyProvider);
+
+                    var xmlSerializer = new XmlServiceSerializer();
+                    var jsonSerializer = new JsonServiceSerializer();
+
+                    ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
+                    var resourceHelper = new ResourceHelper(ServiceRepository);
+
+                    // Copy embedded files
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe");
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false);
+
+#if DEBUG
+                    await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false);
+#endif
+                    stopwatch.Stop();
+
+                    if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
+                    {
+                        await Task.Delay(500);
+                    }
+                });
+
+                // 4. Main Window Factory
+                if (_options.MainWindowFactoryAsync != null)
+                {
+                    var mainWindow = await _options.MainWindowFactoryAsync(serviceName);
+                    if (app.MainWindow != mainWindow && mainWindow != null)
+                    {
+                        app.MainWindow = mainWindow;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Startup error", ex);
+                MessageBox.Show("Startup error: " + ex.Message);
+                app.Shutdown();
+            }
+            finally
+            {
+                if (showSplash && splash?.IsVisible == true)
+                {
+                    splash.Close();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Cleans up resources during the application exit sequence.
+        /// </summary>
+        /// <param name="e">Exit event data.</param>
+        public void OnExit(ExitEventArgs e)
+        {
+            SecureData?.Dispose();
+        }
+    }
+}

@@ -1,21 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Data;
-using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
-using Servy.Core.Services;
 using Servy.Infrastructure.Data;
-using Servy.Infrastructure.Helpers;
+using Servy.Manager.Resources;
 using Servy.Manager.Views;
+using Servy.UI.Bootstrapping;
+#if !DEBUG
 using System.Diagnostics;
+#endif
 using System.IO;
-using System.Reflection;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace Servy.Manager
 {
@@ -34,11 +29,17 @@ namespace Servy.Manager
 
         #endregion
 
+        #region Fields
+
+        private readonly AppBootstrapper _bootstrapper;
+
+        #endregion
+
         #region Internal Properties
 
-        internal AppDbContext DbContext { get; private set; }
-        internal IServiceRepository ServiceRepository { get; private set; }
-        internal ISecureData SecureData { get; private set; }
+        internal AppDbContext DbContext => _bootstrapper.DbContext;
+        internal IServiceRepository ServiceRepository => _bootstrapper.ServiceRepository;
+        internal ISecureData SecureData => _bootstrapper.SecureData;
 
         #endregion
 
@@ -47,17 +48,17 @@ namespace Servy.Manager
         /// <summary>
         /// Connection string.
         /// </summary>
-        public string ConnectionString { get; private set; }
+        public string ConnectionString => _bootstrapper.ConnectionString;
 
         /// <summary>
         /// Gets the file path for the AES encryption key.
         /// </summary>
-        public string AESKeyFilePath { get; private set; }
+        public string AESKeyFilePath => _bootstrapper.AESKeyFilePath;
 
         /// <summary>
         /// Gets the file path for the AES initialization vector (IV).
         /// </summary>
-        public string AESIVFilePath { get; private set; }
+        public string AESIVFilePath => _bootstrapper.AESIVFilePath;
 
         /// <summary>
         /// Service status refresh interval in seconds.
@@ -102,12 +103,76 @@ namespace Servy.Manager
         /// a remote session, low-tier graphics hardware, or if the <see cref="AppConfig.ForceSoftwareRenderingArg"/> 
         /// command-line argument is present.
         /// </remarks>
-        public bool ForceSoftwareRendering { get; private set; }
+        public bool ForceSoftwareRendering => _bootstrapper.ForceSoftwareRendering;
 
         /// <summary>
         /// Log level for the application, loaded from configuration. This determines the verbosity of logs.
         /// </summary>
         public LogLevel LogLevel { get; private set; }
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="App"/> class for the Servy Manager.
+        /// </summary>
+        /// <remarks>
+        /// This constructor sets up the <see cref="BootstrapperOptions"/> specifically for the monitoring 
+        /// and management interface. It configures the manager-specific log file, JSON settings, 
+        /// and extracts specialized UI parameters such as performance polling intervals and 
+        /// console line limits from the configuration provider.
+        /// </remarks>
+        public App()
+        {
+            var options = new BootstrapperOptions
+            {
+                LogFileName = "Servy.Manager.log",
+                AppSettingsFileName = "appsettings.manager.json",
+                ResourcesNamespace = ResourcesNamespace,
+                SecurityWarningTitle = Strings.SecurityWarningTitle,
+                SecurityWarningMessage = Strings.SecurityWarningMessage,
+                SqliteVersionWarningTitle = Strings.SqliteVersionWarningTitle,
+                SqliteVersionWarningMessageFormat = Strings.SqliteVersionWarningMessage,
+                SplashWindowFactory = () => new SplashWindow(),
+                MainWindowFactoryAsync = (serviceName) =>
+                {
+                    var main = new MainWindow();
+                    main.Show();
+                    return Task.FromResult<Window>(main);
+                },
+                CustomConfigAction = (config) =>
+                {
+                    // Extract Manager-specific polling and refresh intervals
+                    RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var r) ? r : AppConfig.DefaultRefreshIntervalInSeconds;
+                    PerformanceRefreshIntervalInMs = int.TryParse(config["PerformanceRefreshIntervalInMs"], out var pr) ? pr : AppConfig.DefaultPerformanceRefreshIntervalInMs;
+                    ConsoleRefreshIntervalInMs = int.TryParse(config["ConsoleRefreshIntervalInMs"], out var cr) ? cr : AppConfig.DefaultConsoleRefreshIntervalInMs;
+                    ConsoleMaxLines = int.TryParse(config["ConsoleMaxLines"], out var cml) ? cml : AppConfig.DefaultConsoleMaxLines;
+                    DependenciesRefreshIntervalInMs = int.TryParse(config["DependenciesRefreshIntervalInMs"], out var dr) ? dr : AppConfig.DefaultDependenciesRefreshIntervalInMs;
+
+                    if (Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel)) LogLevel = logLevel;
+                    else LogLevel = LogLevel.Info;
+
+#if DEBUG
+                    ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
+#else
+                    var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                    ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
+                    if (!Path.IsPathRooted(ConfigurationAppPublishPath))
+                    {
+                        ConfigurationAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ConfigurationAppPublishPath));
+                    }
+#endif
+                    IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
+                    if (!IsConfigurationAppAvailable)
+                    {
+                        Logger.Warn($"Desktop app executable not found: {ConfigurationAppPublishPath}");
+                    }
+                }
+            };
+
+            _bootstrapper = new AppBootstrapper(options);
+        }
 
         #endregion
 
@@ -121,80 +186,10 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 1. INITIALIZE LOGGER FIRST
-            // Moved to the top so it's ready to capture errors in the handlers below.
-            Logger.Initialize("Servy.Manager.log");
-
-            // 2. Global AppDomain exceptions (Fatal)
-            AppDomain.CurrentDomain.UnhandledException += delegate (object sender, UnhandledExceptionEventArgs args)
-            {
-                Exception ex = args.ExceptionObject as Exception;
-
-                // Log the fatal error for post-mortem debugging
-                Logger.Error("FATAL: AppDomain Unhandled Exception. Process is terminating.", ex);
-
-                MessageBox.Show(
-                    "A fatal error occurred and the application must close. Detailed diagnostics have been saved to the log file.",
-                    "Servy - Fatal Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                // No Handled property here; the process will terminate.
-            };
-
-            // 3. UI Thread exceptions (Dispatcher)
-            DispatcherUnhandledException += delegate (object sender, DispatcherUnhandledExceptionEventArgs args)
-            {
-                // Log the exception details
-                Logger.Error("UI Dispatcher Exception", args.Exception);
-
-                // .NET 4.8 / C# 7.3 syntax for type checking
-                bool isOutOfMemory = args.Exception is OutOfMemoryException;
-
-                if (!isOutOfMemory)
-                {
-                    MessageBox.Show(
-                        "An unexpected error occurred in the interface, but the application will attempt to continue. Details have been logged.",
-                        "Servy - Unexpected Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    // Only mark as handled if it's not a memory exhaustion event
-                    args.Handled = true;
-                }
-                else
-                {
-                    Logger.Error("Non-recoverable OutOfMemoryException detected. Shutting down.");
-                    args.Handled = false;
-                    Shutdown(1);
-                }
-            };
-
-            // Bit-shift to get the major tier (0, 1, or 2)
-            // Tier 0 = No hardware acceleration
-            // Tier 1 = Partial (DirectX 7/8)
-            // Tier 2 = Full (DirectX 9+)
-            var renderingTier = RenderCapability.Tier >> 16;
-            var isRemote = SystemParameters.IsRemoteSession;
-
-            // Check for manual override flag
-            ForceSoftwareRendering = e.Args.Any(arg => arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase));
-
-            // 1. Log RenderingTier and RemoteSession
-            Logger.Info($"Startup initialized. RenderingTier={renderingTier}, RemoteSession={isRemote}, ForceSoftwareRendering={ForceSoftwareRendering}");
-
-            // 2. Rendering Fallback
-            // This avoids issues caused by broken GPU drivers, RDP sessions, VMs, or old hardware.
-            if (renderingTier == 0 || isRemote || ForceSoftwareRendering)
-            {
-                Logger.Warn("Low rendering capabilities detected. Forcing Software Rendering Mode.");
-                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
-            }
-
+            _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 
-            // 3. Fire-and-forget with safety net
-            _ = InitializeApp(e).ContinueWith(async t =>
+            _ = _bootstrapper.InitializeAppAsync(this, e).ContinueWith(async t =>
             {
                 if (t.IsFaulted)
                 {
@@ -223,230 +218,16 @@ namespace Servy.Manager
         {
             try
             {
-                // Explicitly dispose of the secure data provider to clear 
-                // sensitive buffers and release key file handles.
-                SecureData?.Dispose();
+                _bootstrapper.OnExit(e);
             }
             finally
             {
-                // Ensure the base implementation is called so the 
-                // application exit sequence completes correctly.
                 base.OnExit(e);
             }
         }
 
         #endregion
 
-        #region Helpers
-
-        /// <summary>
-        /// Orchestrates the asynchronous application initialization sequence.
-        /// </summary>
-        /// <remarks>
-        /// This method performs the following operations:
-        /// <list type="bullet">
-        /// <item>Configures global exception handlers for the <see cref="AppDomain"/> and <see cref="Application.DispatcherUnhandledException"/>.</item>
-        /// <item>Displays the <see cref="SplashWindow"/> (unless suppressed via command-line arguments).</item>
-        /// <item>Initializes system event sources and loads configuration from <c>appsettings.manager.json</c>.</item>
-        /// <item>Spawns a background task to handle high-latency operations:
-        ///     <list type="number">
-        ///         <item>Ensures required directory structures exist.</item>
-        ///         <item>Initializes the SQLite database and underlying schema.</item>
-        ///         <item>Extracts embedded executables (Servy UI and Handle utility) to the local file system.</item>
-        ///     </list>
-        /// </item>
-        /// <item>Instantiates and displays the <see cref="MainWindow"/> before dismissing the splash screen.</item>
-        /// </list>
-        /// </remarks>
-        /// <param name="e">The <see cref="StartupEventArgs"/> containing command-line arguments. 
-        /// If the first argument is "false", the splash screen will be disabled.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
-        private async Task InitializeApp(StartupEventArgs e)
-        {
-            // Initialize and show splash screen if enabled
-            var showSplash = true;
-
-            if (e.Args != null)
-            {
-                var positionalArgs = e.Args.Where(arg => !arg.Equals(AppConfig.ForceSoftwareRenderingArg, StringComparison.OrdinalIgnoreCase)).ToList();
-
-                // First positional argument: Splash Screen (true/false)
-                if (positionalArgs.Count > 0)
-                {
-                    bool.TryParse(positionalArgs[0], out showSplash);
-                }
-            }
-
-            SplashWindow splash = null;
-            try
-            {
-                splash = new SplashWindow();
-
-                if (showSplash)
-                {
-                    splash.Show();
-
-                    await Task.Yield(); // let UI render
-                }
-
-                // Ensure event source exists
-                Helper.EnsureEventSourceExists();
-
-                // Load configuration from appsettings.json
-                var builder = new ConfigurationBuilder();
-#if DEBUG
-                builder.AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true);
-#else
-                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
-                       .AddJsonFile("appsettings.manager.json", optional: true, reloadOnChange: true);
-#endif
-                var config = builder.Build();
-
-                ConnectionString = config.GetConnectionString("DefaultConnection") ?? AppConfig.DefaultConnectionString;
-                AESKeyFilePath = config["Security:AESKeyFilePath"] ?? AppConfig.DefaultAESKeyPath;
-                AESIVFilePath = config["Security:AESIVFilePath"] ?? AppConfig.DefaultAESIVPath;
-                RefreshIntervalInSeconds = int.TryParse(config["RefreshIntervalInSeconds"], out var result)
-                    ? result
-                    : AppConfig.DefaultRefreshIntervalInSeconds;
-                PerformanceRefreshIntervalInMs = int.TryParse(config["PerformanceRefreshIntervalInMs"], out var presult)
-                    ? presult
-                    : AppConfig.DefaultPerformanceRefreshIntervalInMs;
-                ConsoleRefreshIntervalInMs = int.TryParse(config["ConsoleRefreshIntervalInMs"], out var cresult)
-                    ? cresult
-                    : AppConfig.DefaultConsoleRefreshIntervalInMs;
-                ConsoleMaxLines = int.TryParse(config["ConsoleMaxLines"], out var consoleMaxLines)
-                    ? consoleMaxLines
-                    : AppConfig.DefaultConsoleMaxLines;
-                DependenciesRefreshIntervalInMs = int.TryParse(config["DependenciesRefreshIntervalInMs"], out var drresult)
-                                    ? drresult
-                                    : AppConfig.DefaultDependenciesRefreshIntervalInMs;
-
-                if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))
-                {
-                    logLevel = LogLevel.Info;
-                }
-                Logger.SetLogLevel(logLevel);
-                LogLevel = logLevel;
-
-                if (!Enum.TryParse<DateRotationType>(config["LogRollingInterval"], true, out var dateRotationType))
-                {
-                    dateRotationType = DateRotationType.None;
-                }
-                Logger.SetDateRotationType(dateRotationType);
-
-                if (int.TryParse(config["LogRotationSizeMB"], out var size) && size > 0)
-                {
-                    Logger.SetLogRotationSize(size);
-                }
-                else
-                {
-                    Logger.SetLogRotationSize(Logger.DefaultLogRotationSizeMB);
-                }
-
-                string rawUseLocalTimeForRotationConfig = config["UseLocalTimeForRotation"] ?? AppConfig.DefaultUseLocalTimeForRotation.ToString();
-
-                if (!bool.TryParse(rawUseLocalTimeForRotationConfig, out bool useLocalTimeForRotation))
-                {
-                    useLocalTimeForRotation = AppConfig.DefaultUseLocalTimeForRotation;
-                }
-                Logger.SetUseLocalTimeForRotation(useLocalTimeForRotation);
-
-#if DEBUG
-                ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
-#else
-                var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
-                ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
-                // If the path is relative, combine it with the base directory
-                if (!Path.IsPathRooted(ConfigurationAppPublishPath))
-                {
-                    ConfigurationAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ConfigurationAppPublishPath));
-                }
-#endif
-
-                IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
-
-                if (!IsConfigurationAppAvailable)
-                {
-                    Logger.Warn($"Desktop app executable not found: {ConfigurationAppPublishPath}");
-                }
-
-                // Run heavy startup work off UI thread
-                await Task.Run(async () =>
-                {
-                    var stopwatch = Stopwatch.StartNew();
-
-                    // Ensure db and security folders exist
-                    AppFoldersHelper.EnsureFolders(ConnectionString, AESKeyFilePath, AESIVFilePath);
-
-                    var asm = Assembly.GetExecutingAssembly();
-
-                    DbContext = new AppDbContext(ConnectionString);
-                    DatabaseInitializer.InitializeDatabase(DbContext, SQLiteDbInitializer.Initialize);
-
-                    var dapperExecutor = new DapperExecutor(DbContext);
-                    var protectedKeyProvider = new ProtectedKeyProvider(AESKeyFilePath, AESIVFilePath);
-                    SecureData = new SecureData(protectedKeyProvider);
-                    var xmlSerializer = new XmlServiceSerializer();
-                    var jsonSerializer = new JsonServiceSerializer();
-
-                    ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-
-                    var resourceHelper = new ResourceHelper(ServiceRepository);
-
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "exe"))
-                    {
-                        await Current.Dispatcher.InvokeAsync(() =>
-                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIExe}")
-                        );
-                    }
-
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
-                    {
-                        await Current.Dispatcher.InvokeAsync(() =>
-                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}")
-                        );
-                    }
-
-#if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
-                    {
-                        await Current.Dispatcher.InvokeAsync(() =>
-                            MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb")
-                        );
-                    }
-#endif
-
-                    stopwatch.Stop();
-
-                    // Delay on UI thread if elapsed time is too short
-                    if (showSplash && stopwatch.ElapsedMilliseconds < 1000)
-                    {
-                        await Task.Delay(500);
-                    }
-
-                });
-
-                var main = new MainWindow();
-
-                MainWindow = main;
-                main.Show();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Startup error", ex);
-                MessageBox.Show("Startup error: " + ex.Message);
-                Shutdown();
-            }
-            finally
-            {
-                if (showSplash && splash?.IsVisible == true)
-                {
-                    splash.Close();
-                }
-            }
-        }
-
-        #endregion
     }
 
 }
