@@ -1,14 +1,9 @@
 ﻿#nullable enable
 
-using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Services;
-using Servy.Infrastructure.Data;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
-using Servy.Manager.Services;
-using Servy.Manager.Validators;
 using Servy.Manager.ViewModels;
 using Servy.UI.Services;
 using System.ComponentModel;
@@ -30,76 +25,21 @@ namespace Servy.Manager.Views
         private IMessageBoxService? _messageBoxService;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MainWindow"/> class,
-        /// sets up the UI components and initializes the DataContext with the main ViewModel.
+        /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
         /// </summary>
-        public MainWindow()
+        /// <param name="mainViewModel">The primary DataContext for the application.</param>
+        /// <param name="logsViewModel">The ViewModel mapped to the Logs view.</param>
+        /// <param name="messageBoxService">Service for displaying UI dialogs.</param>
+        public MainWindow(MainViewModel mainViewModel, LogsViewModel logsViewModel, IMessageBoxService messageBoxService)
         {
             InitializeComponent();
-            DataContext = CreateMainViewModel();
-        }
 
-        /// <summary>
-        /// Creates and configures the <see cref="MainViewModel"/> with all required dependencies.
-        /// </summary>
-        /// <returns>A fully initialized <see cref="MainViewModel"/> instance.</returns>
-        private MainViewModel CreateMainViewModel()
-        {
-            var app = (App)Application.Current;
+            _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            DataContext = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
 
-            // Initialize Logs view
-            var logsView = new LogsView();
-            var logsVm = new LogsViewModel(new EventLogService(new EventLogReader()));
-            logsView.DataContext = logsVm;
+            // Map standalone ViewModels to their respective Views
+            var logsView = new LogsView { DataContext = logsViewModel };
             LogsTab.Content = logsView;
-
-            // Initialize service manager
-            Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
-            var serviceManager = new ServiceManager(
-                controllerFactory,
-                new ServiceControllerProvider(controllerFactory),
-                new WindowsServiceApi(),
-                new Win32ErrorProvider(),
-                app.ServiceRepository
-            );
-
-            // Initialize helpers
-            var fileDialogService = new FileDialogService();
-            _messageBoxService = new MessageBoxService();
-            var helpService = new HelpService(_messageBoxService);
-            var serviceConfigurationValidator = new ServiceConfigurationValidator(_messageBoxService);
-
-            // Break the circular dependency using local proxy functions.
-            // This allows us to pass the required delegates to ServiceCommands before 
-            // the MainViewModel is fully instantiated.
-            MainViewModel? viewModel = null;
-            Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
-            Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
-
-            // 1. Create ServiceCommands first, passing the proxies
-            var serviceCommands = new ServiceCommands(
-                serviceManager,
-                app.ServiceRepository,
-                _messageBoxService,
-                fileDialogService,
-                removeServiceProxy,
-                refreshProxy,
-                serviceConfigurationValidator
-            );
-
-            // 2. Create the MainViewModel, passing the fully initialized ServiceCommands
-            viewModel = new MainViewModel(
-                serviceManager,
-                app.ServiceRepository,
-                serviceCommands, // No longer null!
-                helpService,
-                _messageBoxService,
-                new PerformanceViewModel(app.ServiceRepository, serviceCommands),
-                new ConsoleViewModel(app.ServiceRepository, serviceCommands),
-                new DependenciesViewModel(app.ServiceRepository, serviceManager, serviceCommands)
-            );
-
-            return viewModel;
         }
 
         /// <summary>
