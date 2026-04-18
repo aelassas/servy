@@ -14,6 +14,11 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Windows;
+using Servy.Manager.Validators;
+using Servy.Core.Services;
+using Servy.UI.Services;
+using Servy.Manager.ViewModels;
+using Servy.Manager.Services;
 
 namespace Servy.Manager
 {
@@ -137,10 +142,59 @@ namespace Servy.Manager
                 SqliteVersionWarningTitle = Strings.SqliteVersionWarningTitle,
                 SqliteVersionWarningMessageFormat = Strings.SqliteVersionWarningMessage,
                 SplashWindowFactory = () => new SplashWindow(),
+                // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = (serviceName) =>
                 {
-                    var main = new MainWindow();
+                    // 1. Initialize Infrastructure & Services
+                    Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
+                    var serviceManager = new ServiceManager(
+                        controllerFactory,
+                        new ServiceControllerProvider(controllerFactory),
+                        new WindowsServiceApi(),
+                        new Win32ErrorProvider(),
+                        ServiceRepository
+                    );
+
+                    var fileDialogService = new FileDialogService();
+                    var messageBoxService = new MessageBoxService();
+                    var helpService = new HelpService(messageBoxService);
+                    var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService);
+                    var eventLogService = new EventLogService(new EventLogReader());
+
+                    // 2. Initialize Standalone ViewModels
+                    var logsVm = new LogsViewModel(eventLogService);
+
+                    // Break the circular dependency using local proxy functions
+                    MainViewModel viewModel = null;
+                    Action<string> removeServiceProxy = (name) => viewModel?.RemoveService(name);
+                    Func<Task> refreshProxy = () => viewModel != null ? viewModel.Refresh() : Task.CompletedTask;
+
+                    var serviceCommands = new ServiceCommands(
+                        serviceManager,
+                        ServiceRepository,
+                        messageBoxService,
+                        fileDialogService,
+                        removeServiceProxy,
+                        refreshProxy,
+                        serviceConfigurationValidator
+                    );
+
+                    // 3. Initialize Main ViewModel
+                    viewModel = new MainViewModel(
+                        serviceManager,
+                        ServiceRepository,
+                        serviceCommands,
+                        helpService,
+                        messageBoxService,
+                        new PerformanceViewModel(ServiceRepository, serviceCommands),
+                        new ConsoleViewModel(ServiceRepository, serviceCommands),
+                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands)
+                    );
+
+                    // 4. Inject Dependencies into the View
+                    var main = new MainWindow(viewModel, logsVm, messageBoxService);
                     main.Show();
+
                     return Task.FromResult<Window>(main);
                 },
                 CustomConfigAction = (config) =>

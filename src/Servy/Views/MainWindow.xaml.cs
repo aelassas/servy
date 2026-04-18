@@ -26,13 +26,14 @@ namespace Servy.Views
         private readonly MainViewModel _mainViewModel;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MainWindow"/> class,
-        /// sets up the UI components and initializes the DataContext with the main ViewModel.
+        /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
         /// </summary>
-        public MainWindow()
+        /// <param name="mainViewModel">The primary DataContext for the application.</param>
+        public MainWindow(MainViewModel mainViewModel)
         {
             InitializeComponent();
-            _mainViewModel = CreateMainViewModel();
+
+            _mainViewModel = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
             DataContext = _mainViewModel;
         }
 
@@ -47,59 +48,6 @@ namespace Servy.Views
             {
                 await _mainViewModel.LoadServiceConfiguration(serviceName);
             }
-        }
-
-        /// <summary>
-        /// Creates and configures the <see cref="MainViewModel"/> with all required dependencies.
-        /// </summary>
-        /// <returns>A fully initialized <see cref="MainViewModel"/> instance.</returns>
-        private MainViewModel CreateMainViewModel()
-        {
-            var app = (App)Application.Current;
-
-            // 1. Initialize core infrastructure
-            Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
-            var serviceManager = new ServiceManager(
-                controllerFactory,
-                new ServiceControllerProvider(controllerFactory),
-                new WindowsServiceApi(),
-                new Win32ErrorProvider(),
-                app.ServiceRepository
-            );
-
-            // 2. Initialize UI Services
-            var fileDialogService = new FileDialogService();
-            var messageBoxService = new MessageBoxService();
-            var helperService = new HelpService(messageBoxService);
-            var configValidator = new ServiceConfigurationValidator(messageBoxService);
-
-            // 3. Break the circular dependency using local proxy functions
-            // These capture the 'viewModel' variable in a closure before it is instantiated.
-            MainViewModel viewModel = null;
-
-            Func<ServiceDto> modelToDtoProxy = () => viewModel?.ModelToServiceDto();
-            Action<ServiceDto> bindDtoProxy = (dto) => viewModel?.BindServiceDtoToModel(dto);
-
-            // 4. Create ServiceCommands first, passing the proxies
-            var serviceCommands = new ServiceCommands(
-                modelToDtoProxy,
-                bindDtoProxy,
-                serviceManager,
-                messageBoxService,
-                fileDialogService,
-                configValidator
-            );
-
-            // 5. Create MainViewModel with the fully initialized ServiceCommands
-            viewModel = new MainViewModel(
-                fileDialogService,
-                serviceCommands, // We are no longer passing null here!
-                messageBoxService,
-                app.ServiceRepository,
-                helperService
-            );
-
-            return viewModel;
         }
 
         /// <summary>

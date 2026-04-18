@@ -1,11 +1,19 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Core.Security;
+using Servy.Core.Services;
 using Servy.Infrastructure.Data;
 using Servy.Resources;
+using Servy.Services;
 using Servy.UI.Bootstrapping;
+using Servy.UI.Services;
+using Servy.Validators;
+using Servy.ViewModels;
 using Servy.Views;
+using System;
+
 #if !DEBUG
 using System.Diagnostics;
 #endif
@@ -105,14 +113,58 @@ namespace Servy
                 SqliteVersionWarningTitle = Strings.SqliteVersionWarningTitle,
                 SqliteVersionWarningMessageFormat = Strings.SqliteVersionWarningMessage,
                 SplashWindowFactory = () => new SplashWindow(),
+                // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = async (serviceName) =>
                 {
-                    var mainWindow = new MainWindow();
+                    // 1. Initialize Infrastructure & Domain Services
+                    Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
+                    var serviceManager = new ServiceManager(
+                        controllerFactory,
+                        new ServiceControllerProvider(controllerFactory),
+                        new WindowsServiceApi(),
+                        new Win32ErrorProvider(),
+                        this.ServiceRepository
+                    );
+
+                    // 2. Initialize UI Services
+                    var fileDialogService = new FileDialogService();
+                    var messageBoxService = new MessageBoxService();
+                    var helperService = new HelpService(messageBoxService);
+                    var configValidator = new ServiceConfigurationValidator(messageBoxService);
+
+                    // 3. Resolve Circular Dependency using Proxies
+                    MainViewModel viewModel = null;
+
+                    Func<ServiceDto> modelToDtoProxy = () => viewModel?.ModelToServiceDto();
+                    Action<ServiceDto> bindDtoProxy = (dto) => viewModel?.BindServiceDtoToModel(dto);
+
+                    var serviceCommands = new ServiceCommands(
+                        modelToDtoProxy,
+                        bindDtoProxy,
+                        serviceManager,
+                        messageBoxService,
+                        fileDialogService,
+                        configValidator
+                    );
+
+                    // 4. Initialize Main ViewModel
+                    viewModel = new MainViewModel(
+                        fileDialogService,
+                        serviceCommands,
+                        messageBoxService,
+                        this.ServiceRepository,
+                        helperService
+                    );
+
+                    // 5. Inject dependencies into the View and initialize
+                    var mainWindow = new MainWindow(viewModel);
                     mainWindow.Show();
+
                     if (!string.IsNullOrWhiteSpace(serviceName))
                     {
                         await mainWindow.LoadServiceConfiguration(serviceName);
                     }
+
                     return mainWindow;
                 },
                 CustomConfigAction = (config) =>
