@@ -8,7 +8,6 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
-using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -19,7 +18,7 @@ namespace Servy.Manager.ViewModels
     /// <summary>
     /// ViewModel for the Dependency view for viewing service dependencies.
     /// </summary>
-    public class DependenciesViewModel : ViewModelBase
+    public class DependenciesViewModel : ServiceSearchViewModelBase
     {
         #region Fields
 
@@ -29,7 +28,6 @@ namespace Servy.Manager.ViewModels
 
         // Separated to prevent the UI search from cancelling the live monitoring loop
         private CancellationTokenSource _monitoringCts;
-        private CancellationTokenSource _serviceSearchCts;
         private CancellationTokenSource _loadTreeCts;
 
         private bool _hadSelectedService;
@@ -39,11 +37,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties - Service Data
-
-        /// <summary>
-        /// Gets the collection of services available for console viewing and monitoring.
-        /// </summary>
-        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private DependencyService _selectedService;
         /// <summary>
@@ -89,36 +82,6 @@ namespace Servy.Manager.ViewModels
 
         #region Properties - UI State & Search
 
-        private string _searchText;
-        /// <summary>
-        /// Gets or sets the text used for searching the service list (left panel).
-        /// </summary>
-        public string SearchText
-        {
-            get => _searchText;
-            set => Set(ref _searchText, value);
-        }
-
-        private string _searchButtonText;
-        /// <summary>
-        /// Gets or sets the text displayed on the search button.
-        /// </summary>
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set => Set(ref _searchButtonText, value);
-        }
-
-        private bool _isBusy;
-        /// <summary>
-        /// Gets or sets a value indicating whether an asynchronous operation is in progress.
-        /// </summary>
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set => Set(ref _isBusy, value);
-        }
-
         private string _pid = UiConstants.NotAvailable;
         /// <summary>
         /// Gets or sets the Process ID string for display in the UI.
@@ -132,16 +95,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Commands
-
-        /// <summary>
-        /// Gets or sets the commands for managing service state (Start/Stop/Restart).
-        /// </summary>
-        public IServiceCommands ServiceCommands { get; set; }
-
-        /// <summary>
-        /// Command to execute the service search.
-        /// </summary>
-        public IAsyncCommand SearchCommand { get; }
 
         /// <summary>
         /// Command to copy the current Process ID to the clipboard.
@@ -189,6 +142,16 @@ namespace Servy.Manager.ViewModels
             CollapseAllCommand = new RelayCommand<object>(_ => SetExpansion(DependencyTree, false));
 
             InitTimer();
+        }
+
+        #endregion
+
+        #region ServiceSearchViewModelBase Implementation
+
+        ///<inheritdoc/>
+        protected override ServiceItemBase CreateServiceItem(Service s)
+        {
+            return new DependencyService { Name = s.Name, Pid = null };
         }
 
         #endregion
@@ -528,12 +491,7 @@ namespace Servy.Manager.ViewModels
             }
 
             // 2. Cancel and dispose the Search CancellationTokenSource
-            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-            if (oldSearchCts != null)
-            {
-                oldSearchCts.Cancel();
-                oldSearchCts.Dispose();
-            }
+            CleanupSearchCts();
 
             // 3. Cancel and dispose the Tree Loading CancellationTokenSource
             var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);

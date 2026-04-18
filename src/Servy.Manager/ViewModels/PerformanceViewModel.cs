@@ -3,14 +3,10 @@ using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Manager.Models;
-using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
-using Servy.UI.ViewModels;
-using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -20,7 +16,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel responsible for monitoring and visualizing real-time performance data (CPU and RAM) 
     /// for selected Windows services.
     /// </summary>
-    public class PerformanceViewModel : ViewModelBase
+    public class PerformanceViewModel : ServiceSearchViewModelBase
     {
         #region Constants
 
@@ -41,7 +37,6 @@ namespace Servy.Manager.ViewModels
 
         // Separated to prevent the UI search from cancelling the live monitoring graph
         private CancellationTokenSource _monitoringCts;
-        private CancellationTokenSource _serviceSearchCts;
 
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
@@ -63,11 +58,6 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Properties - Service Data
-
-        /// <summary>
-        /// Collection of services available for performance monitoring.
-        /// </summary>
-        public ObservableCollection<ServiceItemBase> Services { get; } = new ObservableCollection<ServiceItemBase>();
 
         private PerformanceService _selectedService;
         /// <summary>
@@ -135,27 +125,6 @@ namespace Servy.Manager.ViewModels
         public double GraphWidth { get; } = 400;
         public double GraphHeight { get; } = 200;
 
-        private string _searchText;
-        public string SearchText
-        {
-            get => _searchText;
-            set => Set(ref _searchText, value);
-        }
-
-        private string _searchButtonText;
-        public string SearchButtonText
-        {
-            get => _searchButtonText;
-            set => Set(ref _searchButtonText, value);
-        }
-
-        private bool _isBusy;
-        public bool IsBusy
-        {
-            get => _isBusy;
-            set => Set(ref _isBusy, value);
-        }
-
         private string _pid = UiConstants.NotAvailable;
         public string Pid
         {
@@ -181,8 +150,6 @@ namespace Servy.Manager.ViewModels
 
         #region Commands
 
-        public IServiceCommands ServiceCommands { get; set; }
-        public IAsyncCommand SearchCommand { get; }
         public IAsyncCommand CopyPidCommand { get; set; }
 
         #endregion
@@ -198,10 +165,19 @@ namespace Servy.Manager.ViewModels
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
-            SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
 
             InitTimer();
+        }
+
+        #endregion
+
+        #region ServiceSearchViewModelBase Implementation
+
+        ///<inheritdoc/>
+        protected override ServiceItemBase CreateServiceItem(Service s)
+        {
+            return new PerformanceService { Name = s.Name, Pid = s.Pid };
         }
 
         #endregion
@@ -465,65 +441,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Asynchronously searches for services. Consolidates background work and 
-        /// handles cancellation to keep the UI responsive.
-        /// </summary>
-        private async Task SearchServicesAsync(object parameter)
-        {
-            // Thread-safe atomic swap for left-panel search
-            // This prevents searching from destroying the active monitoring token
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-
-            var token = newCts.Token;
-
-            try
-            {
-                // Show "Searching..." immediately
-                Mouse.OverrideCursor = Cursors.Wait;
-                IsBusy = true;
-                SearchButtonText = Strings.Button_Searching;
-
-                // Allow WPF to repaint the button and show progress bar
-                // Only execute if we are in a real UI context with a running dispatcher frame
-                if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                }
-
-                // Async I/O
-                var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
-
-                // Mapping is cheap; do it on UI thread
-                Services.Clear();
-                foreach (var s in results)
-                {
-                    Services.Add(new PerformanceService { Name = s.Name, Pid = s.Pid });
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected: user triggered a new search
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to search services from performance tab.", ex);
-            }
-            finally
-            {
-                // Restore button text and IsBusy
-                Mouse.OverrideCursor = null;
-                IsBusy = false;
-                SearchButtonText = Strings.Button_Search;
-            }
-        }
-
-        /// <summary>
         /// Asynchronously copies the process identifier (PID) of the selected service to the clipboard or a designated
         /// destination.
         /// </summary>
@@ -623,12 +540,7 @@ namespace Servy.Manager.ViewModels
             }
 
             // 2. Cancel and dispose the Search CancellationTokenSource
-            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-            if (oldSearchCts != null)
-            {
-                oldSearchCts.Cancel();
-                oldSearchCts.Dispose();
-            }
+            CleanupSearchCts();
 
             // 3. Stop the timer, unsubscribe from the Tick event, and release the reference
             if (_timer != null)
