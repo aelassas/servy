@@ -245,12 +245,14 @@ namespace Servy.Core.Security
                     // the static Logger below will still catch it.
                 }
 
-                Logger.Error($"{errorMsg}\n{workaround}", ex);
+                var msg = $"{errorMsg}\n{workaround}";
+
+                Logger.Error(msg, ex);
 
                 // FIX 4 (#712): Set distinct Service Exit Code (13 = ERROR_INVALID_DATA)
                 Environment.ExitCode = 13;
 
-                throw new InvalidOperationException($"{errorMsg} To recover, delete the %ProgramData%\\Servy\\security and %ProgramData%\\Servy\\db folders so Servy can regenerate the keys and initialize a fresh database.", ex);
+                throw new InvalidOperationException(msg, ex);
             }
             finally
             {
