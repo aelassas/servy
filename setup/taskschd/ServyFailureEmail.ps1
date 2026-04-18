@@ -261,21 +261,40 @@ foreach ($evt in $eventsToProcess) {
     Write-Host "Email Notification sent for '$serviceName'."
     $lastSuccessfulTimestamp = $evt.TimeCreated
 
-    # Update timestamp immediately for this specific event
-    if ($null -ne $lastSuccessfulTimestamp) {
-        $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
-        $timestampString = $newestTimestamp.ToString("o")
-        
-        try {
-            # Using [System.IO.File] ensures the file is created/overwritten 
-            # exactly as a .NET application would, avoiding PS pipe overhead.
-            [System.IO.File]::WriteAllText($timestampFile, $timestampString)
-            
-            Write-Host "Timestamp updated to: $timestampString"
-        }
-        catch {
-            Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $scriptDir
-        }
+  # Update timestamp immediately for this specific event
+  if ($null -ne $lastSuccessfulTimestamp) {
+      $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+      $shouldWrite = $true
+      
+      # 1. Ensure the new timestamp is strictly greater than the one currently in the file
+      if (Test-Path $timestampFile) {
+          try {
+              # Read current file text to catch concurrent updates from other script instances
+              $currentFileContent = [System.IO.File]::ReadAllText($timestampFile).Trim()
+              if (-not [string]::IsNullOrWhiteSpace($currentFileContent)) {
+                  $fileTimestamp = [DateTime]::Parse($currentFileContent)
+                  if ($newestTimestamp -le $fileTimestamp) {
+                      $shouldWrite = $false
+                  }
+              }
+          } catch {
+              # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
+              Write-Host "Could not parse current timestamp file during update check. Overwriting to heal file."
+          }
+      }
+      
+      # 2. Write to file only if necessary, explicitly forcing UTF8
+      if ($shouldWrite) {
+          $timestampString = $newestTimestamp.ToString("o")
+          try {
+              # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
+              [System.IO.File]::WriteAllText($timestampFile, $timestampString, [System.Text.Encoding]::UTF8)
+              Write-Host "Timestamp updated to: $timestampString"
+          }
+          catch {
+              Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $scriptDir
+          }
+      }
     }
 
   } else {

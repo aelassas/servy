@@ -58,7 +58,8 @@ function Get-ServyLastErrors {
       $errors = @(Get-WinEvent -FilterHashtable $filter -ErrorAction Stop)
   }
   catch {
-    if ($_.Exception.Message -like "*No events were found*") {
+    # Language-agnostic check: relies on the internal Error ID rather than translated text
+    if ($_.FullyQualifiedErrorId -match "NoMatchingEventsFound") {
       # This is a standard state, not an error
       return @() 
     }
