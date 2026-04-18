@@ -18,6 +18,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IHelpService> _helpServiceMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
+        private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
+        private readonly Mock<ConsoleViewModel> _consoleViewModelMock;
+        private readonly Mock<DependenciesViewModel> _dependenciesViewModelMock;
 
         public MainViewModelTests()
         {
@@ -26,6 +29,9 @@ namespace Servy.Manager.UnitTests.ViewModels
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
+            _performanceViewModelMock = new Mock<PerformanceViewModel>();
+            _consoleViewModelMock = new Mock<ConsoleViewModel>();
+            _dependenciesViewModelMock = new Mock<DependenciesViewModel>();
         }
 
         private MainViewModel CreateViewModel(Dispatcher? dispatcher = null)
@@ -36,6 +42,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceCommandsMock.Object,
                 _helpServiceMock.Object,
                 _messageBoxServiceMock.Object,
+                _performanceViewModelMock.Object,
+                _consoleViewModelMock.Object,
+                _dependenciesViewModelMock.Object,
                 dispatcher
             );
         }

@@ -1,8 +1,10 @@
 ﻿#nullable enable
 
+using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Infrastructure.Data;
 using Servy.Manager.Config;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -91,7 +93,10 @@ namespace Servy.Manager.Views
                 app.ServiceRepository,
                 serviceCommands, // No longer null!
                 helpService,
-                _messageBoxService
+                _messageBoxService,
+                new PerformanceViewModel(app.ServiceRepository, serviceCommands),
+                new ConsoleViewModel(app.ServiceRepository, serviceCommands),
+                new DependenciesViewModel(app.ServiceRepository, serviceManager, serviceCommands)
             );
 
             return viewModel;

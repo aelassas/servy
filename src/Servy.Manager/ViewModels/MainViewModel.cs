@@ -315,6 +315,9 @@ namespace Servy.Manager.ViewModels
             IServiceCommands serviceCommands,
             IHelpService helpService,
             IMessageBoxService messageBoxService,
+            PerformanceViewModel performanceVM,
+            ConsoleViewModel consoleVM,
+            DependenciesViewModel dependenciesVM,
             Dispatcher dispatcher = null
             )
         {
@@ -326,14 +329,10 @@ namespace Servy.Manager.ViewModels
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
             _selectAll = false;
 
-            // Create PerformanceVM only once
-            PerformanceVM = new PerformanceViewModel(serviceRepository, serviceCommands);
-
-            // Create ConsoleVM only once
-            ConsoleVM = new ConsoleViewModel(serviceRepository, serviceCommands);
-
-            // Create DependenciesVM only once
-            DependenciesVM = new DependenciesViewModel(serviceRepository, serviceManager, serviceCommands);
+            // Assign child ViewModels injected via DI
+            PerformanceVM = performanceVM ?? throw new ArgumentNullException(nameof(performanceVM));
+            ConsoleVM = consoleVM ?? throw new ArgumentNullException(nameof(consoleVM));
+            DependenciesVM = dependenciesVM ?? throw new ArgumentNullException(nameof(dependenciesVM));
 
             ServicesView = new ListCollectionView(_services);
 
@@ -362,13 +361,17 @@ namespace Servy.Manager.ViewModels
         /// Parameterless constructor for XAML designer support.
         /// </summary>
         public MainViewModel() :
-            this(
-                null,
-                null,
-                null,
-                null,
-                null
-                )
+                    this(
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                        )
         { }
 
         #endregion
