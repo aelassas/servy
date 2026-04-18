@@ -5,9 +5,12 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Security
 {
@@ -265,7 +268,7 @@ namespace Servy.Core.Security
         }
 
         /// <summary>
-        /// Protects the given byte array using DPAPI and stores it securely on disk.
+        /// Protects the given byte array using DPAPI and stores it securely on disk using an atomic write with explicit ACLs.
         /// </summary>
         /// <param name="path">The full file path to store the protected data.</param>
         /// <param name="data">The plaintext data to protect.</param>
@@ -277,13 +280,14 @@ namespace Servy.Core.Security
             try
             {
                 var directory = Path.GetDirectoryName(path);
+
+                // CHECK: Is this a child of the root vault?
+                // This prevents the "reset ACL" bug for subfolders like /db or /security
+                string root = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                bool isChildOfRoot = directory != null && directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+
                 if (!string.IsNullOrEmpty(directory))
                 {
-                    // CHECK: Is this a child of the root vault?
-                    // This prevents the "reset ACL" bug for subfolders like /db or /security
-                    string root = AppConfig.ProgramDataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                    bool isChildOfRoot = directory.StartsWith(root, StringComparison.OrdinalIgnoreCase);
-
                     SecurityHelper.CreateSecureDirectory(directory, breakInheritance: !isChildOfRoot);
                 }
 
@@ -293,7 +297,46 @@ namespace Servy.Core.Security
                 // DataProtectionScope is usually LocalMachine for services
                 encrypted = ProtectedData.Protect(data, dynamicEntropy, DataProtectionScope);
 
-                File.WriteAllBytes(path, encrypted);
+                var tempPath = path + ".tmp";
+
+                try
+                {
+                    // Write to a temporary file first
+                    File.WriteAllBytes(tempPath, encrypted);
+
+                    // Apply explicit file-level ACLs to the temp file
+                    var fs = new FileSecurity();
+                    var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+                    var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+                    var currentUserSid = WindowsIdentity.GetCurrent().User;
+
+                    // Match the folder's inheritance logic
+                    fs.SetAccessRuleProtection(isProtected: !isChildOfRoot, preserveInheritance: isChildOfRoot);
+
+                    // Explicitly grant Full Control to SYSTEM and Administrators
+                    fs.AddAccessRule(new FileSystemAccessRule(systemSid, FileSystemRights.FullControl, AccessControlType.Allow));
+                    fs.AddAccessRule(new FileSystemAccessRule(adminSid, FileSystemRights.FullControl, AccessControlType.Allow));
+
+                    // Grant operational continuity to the current user (prevents self-lockout on external paths)
+                    if (currentUserSid != null && !currentUserSid.Equals(systemSid) && !currentUserSid.Equals(adminSid))
+                    {
+                        fs.AddAccessRule(new FileSystemAccessRule(currentUserSid, FileSystemRights.FullControl, AccessControlType.Allow));
+                    }
+
+                    new FileInfo(tempPath).SetAccessControl(fs);
+
+                    // Atomically replace the existing file
+                    AtomicSecureMove(tempPath, path);
+                }
+                finally
+                {
+                    // If the move succeeded, tempPath no longer exists here.
+                    // If an exception was thrown before the move, this cleans up the orphaned file.
+                    if (File.Exists(tempPath))
+                    {
+                        try { File.Delete(tempPath); } catch { /* Ignore cleanup errors */ }
+                    }
+                }
             }
             finally
             {

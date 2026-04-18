@@ -1099,6 +1099,26 @@ namespace Servy.Core.Native
         [DllImport("advapi32.dll")]
         public static extern int LsaClose(IntPtr policyHandle);
 
+        /// <summary>
+        /// Native P/Invoke signature for the Windows MoveFileEx function.
+        /// </summary>
+        /// <param name="lpExistingFileName">The current name of the file or directory on the local computer.</param>
+        /// <param name="lpNewFileName">The new name of the file or directory on the local computer.</param>
+        /// <param name="dwFlags">Flags that control the move operation (e.g., replacement, write-through).</param>
+        /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool MoveFileEx(string lpExistingFileName, string lpNewFileName, uint dwFlags);
+
+        /// <summary>
+        /// Flag indicating that if a file with the destination name already exists, it should be replaced.
+        /// </summary>
+        private const uint MOVEFILE_REPLACE_EXISTING = 0x01;
+
+        /// <summary>
+        /// Flag indicating that the function should not return until the file has actually been moved on the disk.
+        /// </summary>
+        private const uint MOVEFILE_WRITE_THROUGH = 0x08;
+
         #endregion
 
         /// <summary>
@@ -1259,6 +1279,29 @@ namespace Servy.Core.Native
                 {
                     CloseHandle(token);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Replaces a destination file with a source file atomically, ensuring that the source's 
+        /// security descriptor (ACLs) and metadata are preserved at the destination.
+        /// </summary>
+        /// <param name="source">The full path of the new file (typically a temporary file) to be moved.</param>
+        /// <param name="destination">The full path of the file to be replaced.</param>
+        /// <remarks>
+        /// This method utilizes the native Win32 <c>MoveFileEx</c> function. Unlike <see cref="System.IO.File.Replace(string, string, string)"/>, 
+        /// which preserves the destination's ACLs, this approach ensures that the hardened security descriptor 
+        /// applied to the source file travels with it, effectively overwriting any permissive ACLs on the destination.
+        /// </remarks>
+        /// <exception cref="Win32Exception">Thrown if the native move operation fails.</exception>
+        public static void AtomicSecureMove(string source, string destination)
+        {
+            // MOVEFILE_REPLACE_EXISTING: Overwrites the target atomically.
+            // MOVEFILE_WRITE_THROUGH: Ensures the command doesn't return until the drive actually commits the change.
+            if (!MoveFileEx(source, destination, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+            {
+                var error = Marshal.GetLastWin32Error();
+                throw new Win32Exception(error, $"Failed to atomically replace secure file. Win32 Error: {error}");
             }
         }
 
