@@ -63,7 +63,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\scoop.yml = .github\workflows\scoop.yml
 		.github\workflows\security.yml = .github\workflows\security.yml
 		.github\workflows\test.yml = .github\workflows\test.yml
-		.github\workflows\tmp.yml = .github\workflows\tmp.yml
 		.github\workflows\wiki.yml = .github\workflows\wiki.yml
 		.github\workflows\winget.yml = .github\workflows\winget.yml
 	EndProjectSection
