@@ -428,7 +428,8 @@
                                             AutomationProperties.AutomationId="RestartServiceButton"
                                             AutomationProperties.HelpText="Restarts the current service."/>
 
-                                            <Button Content="⋮" Width="24" Height="24" Margin="5,0,0,0"
+                                            <Button Content="⋮" ToolTip="{x:Static resx:Strings.Button_More}" 
+                                            Width="24" Height="24" Margin="5,0,0,0"
                                             PreviewMouseLeftButtonDown="MenuButton_PreviewMouseLeftButtonDown"
                                             AutomationProperties.Name="More Actions"
                                             AutomationProperties.AutomationId="MoreActionsButton"
