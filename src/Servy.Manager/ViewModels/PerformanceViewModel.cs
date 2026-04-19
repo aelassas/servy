@@ -13,7 +13,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
 {
@@ -21,7 +20,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel responsible for monitoring and visualizing real-time performance data (CPU and RAM) 
     /// for selected Windows services.
     /// </summary>
-    public class PerformanceViewModel : ServiceSearchViewModelBase
+    public class PerformanceViewModel : MonitoringViewModelBase
     {
         #region Constants
 
@@ -37,15 +36,9 @@ namespace Servy.Manager.ViewModels
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
-        private DispatcherTimer _timer;
         private readonly double _ramDisplayMax = 10; // Minimum RAM scale (MB) to avoid flat graphs for small processes
 
-        // Separated to prevent the UI search from cancelling the live monitoring graph
-        private CancellationTokenSource _monitoringCts;
-
         private bool _hadSelectedService;
-        private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
-        private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
         private bool _disposedValue;
 
         private Queue<double> _cpuValues = new Queue<double>();
@@ -160,7 +153,7 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Constructor
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PerformanceViewModel"/> class.
@@ -178,40 +171,97 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region ServiceSearchViewModelBase Implementation
+        #region MonitoringViewModelBase Implementation
 
-        ///<inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service service)
+        /// <inheritdoc/>
+        protected override int RefreshIntervalMs
         {
-            return new PerformanceService { Name = service.Name, Pid = service.Pid };
-        }
-
-        #endregion
-
-        #region Private Methods - Logic & Calculation
-
-        /// <summary>
-        /// Configures the <see cref="DispatcherTimer"/> used to poll process performance metrics.
-        /// </summary>
-        /// <remarks>
-        /// The timer interval is retrieved from the global <see cref="App.PerformanceRefreshIntervalInMs"/> configuration.
-        /// This method hooks the <see cref="OnTick"/> event handler, which is responsible for triggering 
-        /// the asynchronous update of CPU and RAM counters.
-        /// </remarks>
-        private void InitTimer()
-        {
-            if (_timer == null)
+            get
             {
-                // Capture while on the UI thread during creation
                 var intervalMs = AppConfig.DefaultPerformanceRefreshIntervalInMs;
                 if (Application.Current is App app)
                 {
                     intervalMs = app.PerformanceRefreshIntervalInMs;
                 }
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
-                _timer.Tick += OnTick;
+                return intervalMs;
             }
         }
+
+        /// <inheritdoc/>
+        protected override ServiceItemBase CreateServiceItem(Service service)
+        {
+            return new PerformanceService { Name = service.Name, Pid = service.Pid };
+        }
+
+        /// <inheritdoc/>
+        protected override async Task OnTickAsync()
+        {
+            var token = _monitoringCts?.Token ?? CancellationToken.None;
+
+            try
+            {
+                var currentSelection = SelectedService;
+                if (currentSelection == null)
+                {
+                    if (_hadSelectedService)
+                    {
+                        ResetGraphs(true);
+                        _hadSelectedService = false;
+                        CopyPidCommand?.RaiseCanExecuteChanged();
+                    }
+                    return;
+                }
+                _hadSelectedService = true;
+
+                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+                if (!currentPid.HasValue)
+                {
+                    ResetGraphs(true);
+                    SelectedService.Pid = null;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    return;
+                }
+
+                if (currentSelection.Pid != currentPid)
+                {
+                    currentSelection.Pid = currentPid;
+                    ResetGraphs(true);
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
+
+                int pid = currentSelection.Pid.Value;
+                SetPidText(currentSelection);
+
+                var processMetrics = await Task.Run(() =>
+                {
+                    ProcessHelper.MaintainCache();
+                    return ProcessHelper.GetProcessTreeMetrics(pid);
+                });
+
+                double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
+
+                CpuUsage = ProcessHelper.FormatCpuUsage(processMetrics.CpuUsage);
+                RamUsage = ProcessHelper.FormatRamUsage(processMetrics.RamUsage);
+
+                AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
+                AddPoint(_ramValues, rawRamMb, MetricType.Ram);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during app shutdown or when the ViewModel is deactivated.
+                // No logging required as this is a normal lifecycle event.
+            }
+            catch (Exception ex)
+            {
+                // Log the error so it's visible in 'Servy.Manager.log'
+                // This ensures developers can diagnose why the UI stopped updating.
+                Logger.Error($"Background tick failed in {GetType().Name}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Private Methods - Logic & Calculation
 
         /// <summary>
         /// Resets all graph-related display values and data collections to their initial state.
@@ -248,125 +298,6 @@ namespace Servy.Manager.ViewModels
         {
             var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
-        }
-
-        /// <summary>
-        /// Event handler for the monitoring timer. Refreshes performance metrics.
-        /// </summary>
-        private async void OnTick(object sender, EventArgs e)
-        {
-            // 1. Atomic Guard: Must be monitoring AND not already running a tick
-            // Interlocked.CompareExchange ensure we see the latest state
-            if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
-                Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
-            {
-                return;
-            }
-
-            _timer?.Stop();
-
-            try
-            {
-                await OnTickAsync();
-            }
-            finally
-            {
-                // Release the flag
-                Interlocked.Exchange(ref _isTickRunningFlag, 0);
-
-                // 2. The safety check: Only restart if we are STILL supposed to be monitoring
-                // This prevents the timer from "resurrecting" after StopMonitoring was called.
-                if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
-                {
-                    _timer?.Start();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Core logic for performance polling.
-        /// </summary>
-        private async Task OnTickAsync()
-        {
-            // Capture the token at the start of the tick. 
-            // If _monitoringCts is null, we shouldn't be here, but we guard it anyway.
-            var token = _monitoringCts?.Token ?? CancellationToken.None;
-
-            try
-            {
-                // Capture selection locally to prevent race conditions during the async flow
-                var currentSelection = SelectedService;
-
-                // Only reset graphs if selection changed
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetGraphs(true);
-                        _hadSelectedService = false;
-
-                        // Notify that the command can no longer execute because selection is gone
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
-
-                if (!currentPid.HasValue)
-                {
-                    ResetGraphs(true);
-
-                    SelectedService.Pid = null;
-
-                    // IMPORTANT: Tell the command the PID is now available (or gone)
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                if (currentSelection.Pid != currentPid)
-                {
-                    currentSelection.Pid = currentPid;   // write to captured local, not SelectedService
-                    ResetGraphs(true);
-
-                    // IMPORTANT: Tell the command the PID is now available (or gone)
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                }
-
-                int pid = currentSelection.Pid.Value;
-                SetPidText(currentSelection);
-
-                // Fetch raw metrics
-                var processMetrics = await Task.Run(() =>
-                {
-                    // 1. Perform background maintenance on the PID cache
-                    ProcessHelper.MaintainCache();
-
-                    // 2. Retrieve tree-wide metrics
-                    return ProcessHelper.GetProcessTreeMetrics(pid);
-                });
-                double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
-
-                // Update UI Texts
-                CpuUsage = ProcessHelper.FormatCpuUsage(processMetrics.CpuUsage);
-                RamUsage = ProcessHelper.FormatRamUsage(processMetrics.RamUsage);
-
-                // Update Graphs
-                AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
-                AddPoint(_ramValues, rawRamMb, MetricType.Ram);
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
-            }
-            catch (Exception ex)
-            {
-                // Log the error so it's visible in 'Servy.Manager.log'
-                // This ensures developers can diagnose why the UI stopped updating.
-                Logger.Error($"Background tick failed in {GetType().Name}", ex);
-            }
         }
 
         /// <summary>
@@ -464,44 +395,10 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Resets the <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
-        /// and disposing of the existing instance before creating a fresh one.
-        /// </summary>
-        /// <remarks>
-        /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
-        /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
-        /// </remarks>
-        private void ResetMonitoringCts()
-        {
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-        }
 
         #endregion
 
         #region Public Methods - Control
-
-        /// <summary>
-        /// Starts the performance monitoring timer.
-        /// </summary>
-        public void StartMonitoring()
-        {
-            // Ensure we have a fresh, active cancellation token
-            ResetMonitoringCts();
-
-            // Atomically signal start
-            Interlocked.Exchange(ref _isMonitoringFlag, 1);
-
-            // Start timer
-            InitTimer();
-            _timer?.Start();
-        }
 
         /// <summary>
         /// Stops the performance monitoring timer and optionally clears existing graph data.
@@ -509,14 +406,8 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearPoints">True to reset the graph visualizations.</param>
         public void StopMonitoring(bool clearPoints)
         {
-            // cancel any in-progress async monitoring work (do NOT cancel search)
-            _monitoringCts?.Cancel();
+            base.StopMonitoring();
 
-            // Atomically signal stop
-            Interlocked.Exchange(ref _isMonitoringFlag, 0);
-
-            // Stop timer
-            _timer?.Stop();
 
             // Clear points
             if (clearPoints)
@@ -541,20 +432,12 @@ namespace Servy.Manager.ViewModels
             {
                 if (disposing)
                 {
-                    // 1. Cancel and dispose the Monitoring CTS
+                    // Cancel and dispose the Monitoring CTS
                     var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
                     if (oldMonitoringCts != null)
                     {
                         oldMonitoringCts.Cancel();
                         oldMonitoringCts.Dispose();
-                    }
-
-                    // 2. Stop the timer, unsubscribe from Tick, and release reference
-                    if (_timer != null)
-                    {
-                        _timer.Stop();
-                        _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher leak
-                        _timer = null;
                     }
                 }
 

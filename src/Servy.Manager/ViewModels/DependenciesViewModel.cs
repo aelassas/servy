@@ -22,21 +22,16 @@ namespace Servy.Manager.ViewModels
     /// <summary>
     /// ViewModel for the Dependency view for viewing service dependencies.
     /// </summary>
-    public class DependenciesViewModel : ServiceSearchViewModelBase
+    public class DependenciesViewModel : MonitoringViewModelBase
     {
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceManager _serviceManager;
-        private DispatcherTimer _timer;
 
-        // Separated to prevent the UI search from cancelling the live monitoring loop
-        private CancellationTokenSource _monitoringCts;
         private CancellationTokenSource _loadTreeCts;
 
         private bool _hadSelectedService;
-        private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
-        private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
         private bool _disposedValue;
 
         #endregion
@@ -123,7 +118,7 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Constructor
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DependenciesViewModel"/> class.
@@ -151,40 +146,82 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region ServiceSearchViewModelBase Implementation
+        #region MonitoringViewModelBase Implementation
 
-        ///<inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service service)
+        /// <inheritdoc/>
+        protected override int RefreshIntervalMs
         {
-            return new DependencyService { Name = service.Name, Pid = null };
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        /// <summary>
-        /// Configures the <see cref="DispatcherTimer"/> used to poll process performance metrics.
-        /// </summary>
-        /// <remarks>
-        /// The timer interval is retrieved from the global <see cref="App.PerformanceRefreshIntervalInMs"/> configuration.
-        /// This method hooks the <see cref="OnTick"/> event handler, which is responsible for triggering 
-        /// the asynchronous update of CPU and RAM counters.
-        /// </remarks>
-        private void InitTimer()
-        {
-            if (_timer == null)
+            get
             {
-                // Capture while on the UI thread during creation
                 var intervalMs = AppConfig.DefaultDependenciesRefreshIntervalInMs;
                 if (Application.Current is App app)
                 {
                     intervalMs = app.DependenciesRefreshIntervalInMs;
                 }
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
-                _timer.Tick += OnTick;
+                return intervalMs;
             }
         }
+
+        /// <inheritdoc/>
+        protected override ServiceItemBase CreateServiceItem(Service service)
+        {
+            return new DependencyService { Name = service.Name, Pid = null };
+        }
+
+        /// <inheritdoc/>
+        protected override async Task OnTickAsync()
+        {
+            var token = _monitoringCts?.Token ?? CancellationToken.None;
+
+            try
+            {
+                var currentSelection = SelectedService;
+                if (currentSelection == null)
+                {
+                    if (_hadSelectedService)
+                    {
+                        ResetPid();
+                        _hadSelectedService = false;
+                        CopyPidCommand?.RaiseCanExecuteChanged();
+                    }
+                    return;
+                }
+                _hadSelectedService = true;
+
+                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
+
+                if (!currentPid.HasValue)
+                {
+                    ResetPid();
+                    SelectedService.Pid = null;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    return;
+                }
+
+                if (currentSelection.Pid != currentPid)
+                {
+                    currentSelection.Pid = currentPid;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
+
+                SetPidText(currentSelection);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during app shutdown or when the ViewModel is deactivated.
+                // No logging required as this is a normal lifecycle event.
+            }
+            catch (Exception ex)
+            {
+                // Log the error so it's visible in 'Servy.Manager.log'
+                // This ensures developers can diagnose why the UI stopped updating.
+                Logger.Error($"Background tick failed in {GetType().Name}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Private Methods
 
         /// <summary>
         /// Recursively sets the expansion state of the specified collection of dependency nodes and all their children.
@@ -216,92 +253,6 @@ namespace Servy.Manager.ViewModels
         {
             var pidTxt = service.Pid?.ToString() ?? UiConstants.NotAvailable;
             if (Pid != pidTxt) Pid = pidTxt;
-        }
-
-        /// <summary>
-        /// Handles the timer tick for performance monitoring. 
-        /// Uses interlocked flags to prevent re-entrancy and "resurrection" of the timer after stopping.
-        /// </summary>
-        private async void OnTick(object sender, EventArgs e)
-        {
-            // 1. Atomic Guard: Must be monitoring AND not already running a tick
-            if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
-                Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
-            {
-                return;
-            }
-
-            _timer?.Stop();
-            try
-            {
-                await OnTickAsync();
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _isTickRunningFlag, 0);
-
-                // 2. Only restart if we are STILL supposed to be monitoring
-                if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
-                {
-                    _timer?.Start();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Asynchronously fetches the latest service status and updates the UI accordingly.
-        /// Handles log path changes if the service restarts with a new PID.
-        /// </summary>
-        private async Task OnTickAsync()
-        {
-            // Capture the token at the start of the tick. 
-            var token = _monitoringCts?.Token ?? CancellationToken.None;
-
-            try
-            {
-                var currentSelection = SelectedService;
-
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetPid();
-                        _hadSelectedService = false;
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                var currentPid = await _serviceRepository.GetServicePidAsync(currentSelection.Name, token);
-
-                if (!currentPid.HasValue)
-                {
-                    ResetPid();
-                    SelectedService.Pid = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                if (currentSelection.Pid != currentPid)
-                {
-                    currentSelection.Pid = currentPid;   // write to captured local, not SelectedService
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                }
-
-                SetPidText(currentSelection);
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
-            }
-            catch (Exception ex)
-            {
-                // Log the error so it's visible in 'Servy.Manager.log'
-                // This ensures developers can diagnose why the UI stopped updating.
-                Logger.Error($"Background tick failed in {GetType().Name}", ex);
-            }
         }
 
         /// <summary>
@@ -379,25 +330,6 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Resets the Monitoring <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
-        /// and disposing of the existing instance before creating a fresh one.
-        /// </summary>
-        /// <remarks>
-        /// This is used to ensure that when monitoring restarts (e.g., after a service restart or 
-        /// tab navigation), the new polling cycle is controlled by an active, non-cancelled token.
-        /// </remarks>
-        private void ResetMonitoringCts()
-        {
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-        }
-
         #endregion
 
         #region Public Methods
@@ -455,33 +387,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Enables the monitoring timer to begin polling for service status updates.
-        /// </summary>
-        public void StartMonitoring()
-        {
-            // Ensure we have a fresh, active cancellation token
-            ResetMonitoringCts();
-
-            // Atomically signal start
-            Interlocked.Exchange(ref _isMonitoringFlag, 1);
-
-            // Start timer
-            InitTimer();
-            _timer?.Start();
-        }
-
-        /// <summary>
-        /// Disables the monitoring timer and optionally resets the console view.
-        /// </summary>
-        public void StopMonitoring()
-        {
-            // Cancel any in-progress async monitoring work (do NOT cancel search)
-            _monitoringCts?.Cancel();
-            Interlocked.Exchange(ref _isMonitoringFlag, 0);
-            _timer?.Stop();
-        }
-
-        /// <summary>
         /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
         /// from timer events to prevent memory leaks.
         /// </summary>
@@ -505,14 +410,6 @@ namespace Servy.Manager.ViewModels
                     {
                         oldLoadTreeCts.Cancel();
                         oldLoadTreeCts.Dispose();
-                    }
-
-                    // 3. Stop and Unhook the Timer
-                    if (_timer != null)
-                    {
-                        _timer.Stop();
-                        _timer.Tick -= OnTick; // CRITICAL
-                        _timer = null;
                     }
                 }
 

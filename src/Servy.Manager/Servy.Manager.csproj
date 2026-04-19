@@ -124,6 +124,7 @@
     <Compile Include="ViewModels\DependenciesViewModel.cs" />
     <Compile Include="ViewModels\LogsViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\MonitoringViewModelBase.cs" />
     <Compile Include="ViewModels\PerformanceViewModel.cs" />
     <Compile Include="ViewModels\ServiceRowViewModel.cs" />
     <Compile Include="ViewModels\ServiceSearchViewModelBase.cs" />
