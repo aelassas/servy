@@ -13,7 +13,7 @@ namespace Servy.Core.Services
     public class WindowsServiceApi : IWindowsServiceApi
     {
         /// <inheritdoc />
-        public IntPtr OpenSCManager(string machineName, string databaseName, uint dwAccess)
+        public SafeScmHandle OpenSCManager(string machineName, string databaseName, uint dwAccess)
             => NativeMethods.OpenSCManager(machineName, databaseName, dwAccess);
 
         /// <inheritdoc />
@@ -21,8 +21,8 @@ namespace Servy.Core.Services
             => LogonAsServiceGrant.Ensure(accountName);
 
         /// <inheritdoc />
-        public IntPtr CreateService(
-            IntPtr hSCManager,
+        public SafeServiceHandle CreateService(
+            SafeScmHandle hSCManager,
             string lpServiceName,
             string lpDisplayName,
             uint dwDesiredAccess,
@@ -51,11 +51,11 @@ namespace Servy.Core.Services
                 lpPassword);
 
         /// <inheritdoc />
-        public IntPtr OpenService(IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess)
+        public SafeServiceHandle OpenService(SafeScmHandle hSCManager, string lpServiceName, uint dwDesiredAccess)
             => NativeMethods.OpenService(hSCManager, lpServiceName, dwDesiredAccess);
 
         /// <inheritdoc />
-        public bool DeleteService(IntPtr hService)
+        public bool DeleteService(SafeServiceHandle hService)
             => NativeMethods.DeleteService(hService);
 
         /// <inheritdoc />
@@ -63,12 +63,12 @@ namespace Servy.Core.Services
             => NativeMethods.CloseServiceHandle(hSCObject);
 
         /// <inheritdoc />
-        public bool ControlService(IntPtr hService, int dwControl, ref ServiceStatus lpServiceStatus)
+        public bool ControlService(SafeServiceHandle hService, int dwControl, ref ServiceStatus lpServiceStatus)
             => NativeMethods.ControlService(hService, dwControl, ref lpServiceStatus);
 
         /// <inheritdoc />
         public bool ChangeServiceConfig(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwServiceType,
             uint dwStartType,
             uint dwErrorControl,
@@ -95,22 +95,22 @@ namespace Servy.Core.Services
         // --- ChangeServiceConfig2 Overloads ---
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDescription lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref ServiceDescription lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, ref ServiceDelayedAutoStartInfo lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, ref lpInfo);
 
         /// <inheritdoc />
-        public bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, IntPtr lpInfo)
+        public bool ChangeServiceConfig2(SafeServiceHandle hService, int dwInfoLevel, IntPtr lpInfo)
             => NativeMethods.ChangeServiceConfig2(hService, dwInfoLevel, lpInfo);
 
         // --- QueryServiceConfig Overloads ---
 
         /// <inheritdoc />
         public bool QueryServiceConfig(
-            IntPtr hService,
+            SafeServiceHandle hService,
             IntPtr lpServiceConfig,
             int cbBufSize,
             out int pcbBytesNeeded)
@@ -124,7 +124,7 @@ namespace Servy.Core.Services
 
         /// <inheritdoc/>
         public bool QueryServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwInfoLevel,
             ref ServiceDelayedAutoStartInfo lpBuffer,
             int cbBufSize,
@@ -133,7 +133,7 @@ namespace Servy.Core.Services
 
         /// <inheritdoc />
         public bool QueryServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwInfoLevel,
             IntPtr lpBuffer,
             int cbBufSize,

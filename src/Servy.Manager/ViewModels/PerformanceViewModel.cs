@@ -181,9 +181,9 @@ namespace Servy.Manager.ViewModels
         #region ServiceSearchViewModelBase Implementation
 
         ///<inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service s)
+        protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new PerformanceService { Name = s.Name, Pid = s.Pid };
+            return new PerformanceService { Name = service.Name, Pid = service.Pid };
         }
 
         #endregion

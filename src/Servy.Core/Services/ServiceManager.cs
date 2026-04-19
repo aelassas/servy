@@ -34,31 +34,52 @@ namespace Servy.Core.Services
         private const int ServiceStartTimeoutSeconds = 30;
         private const int ScmPollIntervalMs = 500;
         private const int MaxParallelScmQueries = 8;
+
+        /// <summary>
+        /// The standard localized string identifier for the LocalSystem account.
+        /// </summary>
         public const string LocalSystemAccount = "LocalSystem";
 
         #endregion
 
         #region SCM Access Rights
 
+        /// <summary>Access right to connect to the service control manager.</summary>
         public const uint SC_MANAGER_CONNECT = 0x0001;
+
+        /// <summary>Access right to create a service object and add it to the database.</summary>
         public const uint SC_MANAGER_CREATE_SERVICE = 0x0002;
 
         #endregion
 
         #region Service Access Rights
 
+        /// <summary>Access right to change the configuration of a service.</summary>
         public const uint SERVICE_CHANGE_CONFIG = 0x0002;
+
+        /// <summary>Access right to query the status of a service.</summary>
         public const uint SERVICE_QUERY_STATUS = 0x0004;
+
+        /// <summary>Access right to start the service.</summary>
         public const uint SERVICE_START = 0x0010;
+
+        /// <summary>Access right to stop the service.</summary>
         public const uint SERVICE_STOP = 0x0020;
-        public const uint SERVICE_DELETE = 0x00010000; // Standardized to 8-digit hex for clarity
+
+        /// <summary>Access right to delete the service.</summary>
+        public const uint SERVICE_DELETE = 0x00010000;
 
         #endregion
 
         #region Service Configuration & Type Flags
 
+        /// <summary>Specifies a service that runs in its own process.</summary>
         public const uint SERVICE_WIN32_OWN_PROCESS = 0x00000010;
+
+        /// <summary>Logs the error and continues the startup operation if the service fails to start.</summary>
         public const uint SERVICE_ERROR_NORMAL = 0x00000001;
+
+        /// <summary>Information level to retrieve or set pre-shutdown information.</summary>
         public const int SERVICE_CONFIG_PRESHUTDOWN_INFO = 7;
 
         #endregion
@@ -78,18 +99,11 @@ namespace Servy.Core.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceManager"/> class.
         /// </summary>
-        /// <param name="controllerFactory">
-        /// Factory function that creates a wrapper for controlling a Windows service.
-        /// </param>
-        /// <param name="windowsServiceApi">
-        /// Abstraction for low-level Win32 service API calls.
-        /// </param>
-        /// <param name="win32ErrorProvider">
-        /// Provider for retrieving the last Win32 error codes.
-        /// </param>
-        /// <param name="serviceRepository">
-        /// Service repository.
-        /// </param>
+        /// <param name="controllerFactory">A factory function for creating service controller wrappers.</param>
+        /// <param name="serviceControllerProvider">A provider to retrieve system service controllers.</param>
+        /// <param name="windowsServiceApi">An abstraction over the native Windows Service APIs.</param>
+        /// <param name="win32ErrorProvider">A provider to retrieve the last Win32 error code.</param>
+        /// <param name="serviceRepository">The repository to store and read service configuration entities.</param>
         public ServiceManager(
             Func<string, IServiceControllerWrapper> controllerFactory,
             IServiceControllerProvider serviceControllerProvider,
@@ -110,23 +124,21 @@ namespace Servy.Core.Services
         #region Helpers
 
         /// <summary>
-        /// Updates the configuration of an existing Windows service.
+        /// Updates the core configuration of an existing Windows service.
         /// </summary>
-        /// <param name="scmHandle">Handle to the Service Control Manager.</param>
-        /// <param name="serviceName">The service name.</param>
-        /// <param name="description">The service description.</param>
-        /// <param name="binPath">The path to the service executable.</param>
-        /// <param name="startType">The service startup type.</param>
-        /// <param name="username">Service account username: .\username  for local accounts, DOMAIN\username for domain accounts.</param>
-        /// <param name="password">Service account password.</param>
-        /// <param name="lpDependencies">Service dependencies.</param>
-        /// <param name="displayName">Service display name.</param>
-        /// <returns>
-        /// <see langword="true"/> if the configuration was updated successfully; otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="Win32Exception">Thrown if updating the service configuration fails.</exception>
+        /// <param name="scmHandle">A handle to the Service Control Manager database.</param>
+        /// <param name="serviceName">The name of the service to configure.</param>
+        /// <param name="description">The text description for the service.</param>
+        /// <param name="binPath">The fully qualified path to the service binary executable.</param>
+        /// <param name="startType">The startup type for the service.</param>
+        /// <param name="username">The account under which the service will run.</param>
+        /// <param name="password">The password for the account.</param>
+        /// <param name="lpDependencies">A double null-terminated string of dependencies.</param>
+        /// <param name="displayName">The display name to show in the Services console.</param>
+        /// <returns><c>true</c> if the configuration was successfully applied; otherwise, <c>false</c>.</returns>
+        /// <exception cref="Win32Exception">Thrown when a native API call fails to open or change the service.</exception>
         public bool UpdateServiceConfig(
-            IntPtr scmHandle,
+            SafeScmHandle scmHandle,
             string serviceName,
             string description,
             string binPath,
@@ -137,55 +149,53 @@ namespace Servy.Core.Services
             string displayName
             )
         {
-            IntPtr serviceHandle = _windowsServiceApi.OpenService(
+            using (var serviceHandle = _windowsServiceApi.OpenService(
                 scmHandle,
                 serviceName,
-                SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG);
-
-            if (serviceHandle == IntPtr.Zero)
-                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
-
-            if (string.IsNullOrWhiteSpace(displayName))
+                SERVICE_CHANGE_CONFIG | SERVICE_QUERY_CONFIG))
             {
-                displayName = serviceName;
-            }
+                if (serviceHandle.IsInvalid)
+                {
+                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open existing service.");
+                }
 
-            try
-            {
-                var result = _windowsServiceApi.ChangeServiceConfig(
-                        hService: serviceHandle,
-                        dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                        dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
-                        dwErrorControl: SERVICE_ERROR_NORMAL,
-                        lpBinaryPathName: binPath,
-                        lpLoadOrderGroup: null,
-                        lpdwTagId: IntPtr.Zero,
-                        lpDependencies: lpDependencies,
-                        lpServiceStartName: username,
-                        lpPassword: password,
-                        lpDisplayName: displayName
-                        );
+                if (string.IsNullOrWhiteSpace(displayName))
+                {
+                    displayName = serviceName;
+                }
+
+                bool result = _windowsServiceApi.ChangeServiceConfig(
+                    hService: serviceHandle,
+                    dwServiceType: SERVICE_WIN32_OWN_PROCESS,
+                    dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
+                    dwErrorControl: SERVICE_ERROR_NORMAL,
+                    lpBinaryPathName: binPath,
+                    lpLoadOrderGroup: null,
+                    lpdwTagId: IntPtr.Zero,
+                    lpDependencies: lpDependencies,
+                    lpServiceStartName: username,
+                    lpPassword: password,
+                    lpDisplayName: displayName
+                );
 
                 if (!result)
+                {
                     throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to update service config.");
+                }
 
                 SetServiceDescription(serviceHandle, description);
 
                 return true;
             }
-            finally
-            {
-                _windowsServiceApi.CloseServiceHandle(serviceHandle);
-            }
         }
 
         /// <summary>
-        /// Sets the description for a Windows service.
+        /// Sets the description text for a Windows service.
         /// </summary>
-        /// <param name="serviceHandle">Handle to the service.</param>
-        /// <param name="description">The description text.</param>
-        /// <exception cref="Win32Exception">Thrown if setting the description fails.</exception>
-        internal void SetServiceDescription(IntPtr serviceHandle, string description)
+        /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
+        /// <param name="description">The description string to assign.</param>
+        /// <exception cref="Win32Exception">Thrown if the native configuration change fails.</exception>
+        internal void SetServiceDescription(SafeServiceHandle serviceHandle, string description)
         {
             if (string.IsNullOrEmpty(description))
                 return;
@@ -193,7 +203,6 @@ namespace Servy.Core.Services
             IntPtr pDescription = IntPtr.Zero;
             try
             {
-                // Allocate unmanaged memory
                 pDescription = Marshal.StringToHGlobalUni(description);
 
                 var desc = new ServiceDescription
@@ -201,7 +210,6 @@ namespace Servy.Core.Services
                     lpDescription = pDescription
                 };
 
-                // Attempt to update the service configuration
                 if (!_windowsServiceApi.ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref desc))
                 {
                     int err = _win32ErrorProvider.GetLastWin32Error();
@@ -210,7 +218,6 @@ namespace Servy.Core.Services
             }
             finally
             {
-                // GUARANTEE: Free the unmanaged memory even if an exception was thrown above.
                 if (pDescription != IntPtr.Zero)
                 {
                     Marshal.FreeHGlobal(pDescription);
@@ -221,60 +228,31 @@ namespace Servy.Core.Services
         /// <summary>
         /// Enables or disables the delayed auto-start setting for a Windows service.
         /// </summary>
-        /// <param name="serviceHandle">
-        /// A handle to the service whose configuration is to be changed.  
-        /// The handle must have the <c>SERVICE_CHANGE_CONFIG</c> access right.
-        /// </param>
-        /// <param name="delayedAutostart">
-        /// <see langword="true"/> to enable delayed auto-start;  
-        /// <see langword="false"/> to disable it.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> if the configuration change succeeds; otherwise, <see langword="false"/>.  
-        /// Call <see cref="Marshal.GetLastWin32Error"/> to retrieve extended error information.
-        /// </returns>
-        /// <remarks>
-        /// This method wraps the native <c>ChangeServiceConfig2</c> function with the 
-        /// <c>SERVICE_CONFIG_DELAYED_AUTO_START_INFO</c> information level.  
-        /// It can be used only for services whose start type is set to <c>Automatic</c>.
-        /// </remarks>
-        private bool ChangeServiceConfig2(
-            IntPtr serviceHandle,
-            bool delayedAutostart
-            )
+        /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
+        /// <param name="delayedAutostart"><c>true</c> to delay the automatic startup; otherwise <c>false</c>.</param>
+        /// <returns><c>true</c> if the change was successful; otherwise, <c>false</c>.</returns>
+        private bool ChangeServiceConfig2(SafeServiceHandle serviceHandle, bool delayedAutostart)
         {
             var delayedInfo = new ServiceDelayedAutoStartInfo
             {
                 fDelayedAutostart = delayedAutostart,
             };
 
-            var success = _windowsServiceApi.ChangeServiceConfig2(
+            return _windowsServiceApi.ChangeServiceConfig2(
                 serviceHandle,
                 SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
                 ref delayedInfo
             );
-            return success;
         }
 
         /// <summary>
         /// Configures the service to accept pre-shutdown notifications and sets the maximum timeout 
         /// the Service Control Manager (SCM) will wait for this service to stop during a system shutdown.
         /// </summary>
-        /// <param name="serviceHandle">
-        /// A handle to the service. This handle must have the <c>SERVICE_CHANGE_CONFIG</c> (0x0002) access right.
-        /// </param>
-        /// <param name="timeoutMs">
-        /// The duration, in milliseconds, that the SCM should wait for the service to finish its cleanup.
-        /// </param>
-        /// <returns>
-        /// <c>true</c> if the configuration was successfully updated; otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// This method uses <c>Marshal.AllocHGlobal</c> to provide a raw pointer to the native 
-        /// <c>ChangeServiceConfig2</c> function. This configuration change is persistent in the 
-        /// Windows Service database.
-        /// </remarks>
-        private bool EnablePreShutdown(IntPtr serviceHandle, uint timeoutMs)
+        /// <param name="serviceHandle">A valid handle to the target Windows service.</param>
+        /// <param name="timeoutMs">The duration in milliseconds the SCM should wait.</param>
+        /// <returns><c>true</c> if the pre-shutdown setting was successfully applied; otherwise, <c>false</c>.</returns>
+        private bool EnablePreShutdown(SafeServiceHandle serviceHandle, uint timeoutMs)
         {
             var info = new ServicePreShutdownInfo
             {
@@ -284,7 +262,6 @@ namespace Servy.Core.Services
             IntPtr ptr = IntPtr.Zero;
             try
             {
-                // Allocate unmanaged memory for the structure to satisfy the void* requirement of the API
                 ptr = Marshal.AllocHGlobal(Marshal.SizeOf(info));
                 Marshal.StructureToPtr(info, ptr, false);
 
@@ -296,7 +273,6 @@ namespace Servy.Core.Services
             }
             finally
             {
-                // Always free the unmanaged memory to prevent memory leaks
                 if (ptr != IntPtr.Zero)
                     Marshal.FreeHGlobal(ptr);
             }
@@ -309,263 +285,241 @@ namespace Servy.Core.Services
         /// <inheritdoc />
         public async Task<OperationResult> InstallServiceAsync(InstallServiceOptions options)
         {
-            if (options == null)
-                throw new ArgumentNullException(nameof(options));
-            if (string.IsNullOrWhiteSpace(options.ServiceName))
-                throw new ArgumentException("Value is required.", nameof(options));
-            if (string.IsNullOrWhiteSpace(options.WrapperExePath))
-                throw new ArgumentException("Value is required.", nameof(options));
-            if (string.IsNullOrWhiteSpace(options.RealExePath))
-                throw new ArgumentException("Value is required.", nameof(options));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+            if (string.IsNullOrWhiteSpace(options.ServiceName)) throw new ArgumentException("Value is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.WrapperExePath)) throw new ArgumentException("Value is required.", nameof(options));
+            if (string.IsNullOrWhiteSpace(options.RealExePath)) throw new ArgumentException("Value is required.", nameof(options));
 
-            // Compose binary path with wrapper and parameters
             string binPath = string.Join(" ",
                 Helper.Quote(options.WrapperExePath),
                 Helper.Quote(options.ServiceName)
             );
 
-            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
-            if (scmHandle == IntPtr.Zero)
-                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
-
-            string displayName = string.IsNullOrWhiteSpace(options.DisplayName) ? options.ServiceName : options.DisplayName;
-
-            IntPtr serviceHandle = IntPtr.Zero;
+            SafeScmHandle scmHandle = null;
             try
             {
-                string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
-                string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? LocalSystemAccount : options.Username;
-                string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
-
-                // Grant "Log on as a service" only for regular user accounts (local or Active Directory).
-                // Skip LocalSystem (already has rights) and gMSA accounts (managed by Active Directory policies).
-                bool isLocalSystem = lpServiceStartName.Equals(LocalSystemAccount, StringComparison.OrdinalIgnoreCase);
-                bool isGmsa = lpServiceStartName.EndsWith("$");
-
-                // For normal user accounts (local or AD) that are not gMSA or LocalSystem,
-                // explicitly ensure they have the "Log on as a service" right locally.
-                if (!isLocalSystem && !isGmsa)
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
+                if (scmHandle == null || scmHandle.IsInvalid)
                 {
-                    _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
-                    Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{options.ServiceName}'.");
+                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                 }
 
-                // Create the service if it does not exist
-                serviceHandle = _windowsServiceApi.CreateService(
-                    hSCManager: scmHandle,
-                    lpServiceName: options.ServiceName,
-                    lpDisplayName: displayName,
-                    dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
-                    dwServiceType: SERVICE_WIN32_OWN_PROCESS,
-                    dwStartType: (uint)(options.StartType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : options.StartType),
-                    dwErrorControl: SERVICE_ERROR_NORMAL,
-                    lpBinaryPathName: binPath,
-                    lpLoadOrderGroup: null,
-                    lpdwTagId: IntPtr.Zero,
-                    lpDependencies: lpDependencies,
-                    lpServiceStartName: lpServiceStartName,
-                    lpPassword: lpPassword
-                );
+                string displayName = string.IsNullOrWhiteSpace(options.DisplayName) ? options.ServiceName : options.DisplayName;
 
-                int createServiceError = _win32ErrorProvider.GetLastWin32Error();
-
-                // Persist service in database
-                var dto = new ServiceDto
+                SafeServiceHandle serviceHandle = null;
+                try
                 {
-                    Name = options.ServiceName,
-                    DisplayName = displayName,
-                    Description = options.Description,
-                    ExecutablePath = options.RealExePath,
-                    StartupDirectory = options.WorkingDirectory,
-                    Parameters = options.RealArgs,
-                    StartupType = (int)options.StartType,
-                    Priority = (int)options.ProcessPriority,
-                    StdoutPath = options.StdoutPath,
-                    StderrPath = options.StderrPath,
-                    EnableSizeRotation = options.EnableSizeRotation,
-                    RotationSize = (int)(options.RotationSizeInBytes / (1024 * 1024)),
-                    EnableDateRotation = options.EnableDateRotation,
-                    DateRotationType = (int)options.DateRotationType,
-                    MaxRotations = options.MaxRotations,
-                    UseLocalTimeForRotation = options.UseLocalTimeForRotation,
-                    EnableHealthMonitoring = options.EnableHealthMonitoring,
-                    HeartbeatInterval = options.HeartbeatInterval,
-                    MaxFailedChecks = options.MaxFailedChecks,
-                    RecoveryAction = (int)options.RecoveryAction,
-                    MaxRestartAttempts = options.MaxRestartAttempts,
-                    FailureProgramPath = options.FailureProgramPath,
-                    FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,
-                    FailureProgramParameters = options.FailureProgramArgs,
-                    EnvironmentVariables = options.EnvironmentVariables,
-                    ServiceDependencies = options.ServiceDependencies,
-                    RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
-                    UserAccount = options.Username,
-                    Password = options.Password,
-                    PreLaunchExecutablePath = options.PreLaunchExePath,
-                    PreLaunchStartupDirectory = options.PreLaunchWorkingDirectory,
-                    PreLaunchParameters = options.PreLaunchArgs,
-                    PreLaunchEnvironmentVariables = options.PreLaunchEnvironmentVariables,
-                    PreLaunchStdoutPath = options.PreLaunchStdoutPath,
-                    PreLaunchStderrPath = options.PreLaunchStderrPath,
-                    PreLaunchTimeoutSeconds = options.PreLaunchTimeout,
-                    PreLaunchRetryAttempts = options.PreLaunchRetryAttempts,
-                    PreLaunchIgnoreFailure = options.PreLaunchIgnoreFailure,
+                    string lpDependencies = ServiceDependenciesParser.Parse(options.ServiceDependencies);
+                    string lpServiceStartName = string.IsNullOrWhiteSpace(options.Username) ? LocalSystemAccount : options.Username;
+                    string lpPassword = string.IsNullOrEmpty(options.Password) ? null : options.Password;
 
-                    PostLaunchExecutablePath = options.PostLaunchExePath,
-                    PostLaunchStartupDirectory = options.PostLaunchWorkingDirectory,
-                    PostLaunchParameters = options.PostLaunchArgs,
+                    bool isLocalSystem = lpServiceStartName.Equals(LocalSystemAccount, StringComparison.OrdinalIgnoreCase);
+                    bool isGmsa = lpServiceStartName.EndsWith("$");
 
-                    EnableDebugLogs = options.EnableDebugLogs,
-
-                    StartTimeout = options.StartTimeout,
-                    StopTimeout = options.StopTimeout,
-
-                    PreStopExecutablePath = options.PreStopExePath,
-                    PreStopStartupDirectory = options.PreStopWorkingDirectory,
-                    PreStopParameters = options.PreStopArgs,
-                    PreStopTimeoutSeconds = options.PreStopTimeout,
-                    PreStopLogAsError = options.PreStopLogAsError,
-
-                    PostStopExecutablePath = options.PostStopExePath,
-                    PostStopStartupDirectory = options.PostStopWorkingDirectory,
-                    PostStopParameters = options.PostStopArgs,
-                };
-
-                // Set PID
-                var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
-                dto.Pid = serviceDto?.Pid;
-
-                // Request PreShutdown timeout
-                var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
-                if (!string.IsNullOrEmpty(options.PreStopExePath))
-                {
-                    totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
-                }
-                uint finalTimeoutMs = (uint)totalWaitTime * 1000;
-
-                if (serviceHandle != IntPtr.Zero)
-                {
-                    var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle, finalTimeoutMs);
-
-                    if (enablePreShutdownConfigSuccess)
+                    if (!isLocalSystem && !isGmsa)
                     {
-                        Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{options.ServiceName}' during installation.");
-                    }
-                    else
-                    {
-                        string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
-                        Logger.Error(errorMsg);
-
-                        // Roll back the partial installation
-                        _windowsServiceApi.DeleteService(serviceHandle);
-
-                        return OperationResult.Failure(errorMsg);
+                        _windowsServiceApi.EnsureLogOnAsServiceRight(lpServiceStartName);
+                        Logger.Info($"Ensured 'Log on as a service' right for account '{lpServiceStartName}' for service '{options.ServiceName}'.");
                     }
 
-                    // Set delayed auto-start if necessary
-                    if (options.StartType == ServiceStartType.AutomaticDelayedStart)
-                    {
-                        var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle, true);
+                    // Create the service if it does not exist
+                    serviceHandle = _windowsServiceApi.CreateService(
+                        hSCManager: scmHandle,
+                        lpServiceName: options.ServiceName,
+                        lpDisplayName: displayName,
+                        dwDesiredAccess: SERVICE_START | SERVICE_STOP | SERVICE_QUERY_CONFIG | SERVICE_CHANGE_CONFIG | SERVICE_DELETE,
+                        dwServiceType: SERVICE_WIN32_OWN_PROCESS,
+                        dwStartType: (uint)(options.StartType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : options.StartType),
+                        dwErrorControl: SERVICE_ERROR_NORMAL,
+                        lpBinaryPathName: binPath,
+                        lpLoadOrderGroup: null,
+                        lpdwTagId: IntPtr.Zero,
+                        lpDependencies: lpDependencies,
+                        lpServiceStartName: lpServiceStartName,
+                        lpPassword: lpPassword
+                    );
 
-                        if (!delayedAutoStartConfigSuccess)
+                    int createServiceError = _win32ErrorProvider.GetLastWin32Error();
+
+                    // Persist service in database
+                    var dto = new ServiceDto
+                    {
+                        Name = options.ServiceName,
+                        DisplayName = displayName,
+                        Description = options.Description,
+                        ExecutablePath = options.RealExePath,
+                        StartupDirectory = options.WorkingDirectory,
+                        Parameters = options.RealArgs,
+                        StartupType = (int)options.StartType,
+                        Priority = (int)options.ProcessPriority,
+                        StdoutPath = options.StdoutPath,
+                        StderrPath = options.StderrPath,
+                        EnableSizeRotation = options.EnableSizeRotation,
+                        RotationSize = (int)(options.RotationSizeInBytes / (1024 * 1024)),
+                        EnableDateRotation = options.EnableDateRotation,
+                        DateRotationType = (int)options.DateRotationType,
+                        MaxRotations = options.MaxRotations,
+                        UseLocalTimeForRotation = options.UseLocalTimeForRotation,
+                        EnableHealthMonitoring = options.EnableHealthMonitoring,
+                        HeartbeatInterval = options.HeartbeatInterval,
+                        MaxFailedChecks = options.MaxFailedChecks,
+                        RecoveryAction = (int)options.RecoveryAction,
+                        MaxRestartAttempts = options.MaxRestartAttempts,
+                        FailureProgramPath = options.FailureProgramPath,
+                        FailureProgramStartupDirectory = options.FailureProgramWorkingDirectory,
+                        FailureProgramParameters = options.FailureProgramArgs,
+                        EnvironmentVariables = options.EnvironmentVariables,
+                        ServiceDependencies = options.ServiceDependencies,
+                        RunAsLocalSystem = string.IsNullOrWhiteSpace(options.Username),
+                        UserAccount = options.Username,
+                        Password = options.Password,
+                        PreLaunchExecutablePath = options.PreLaunchExePath,
+                        PreLaunchStartupDirectory = options.PreLaunchWorkingDirectory,
+                        PreLaunchParameters = options.PreLaunchArgs,
+                        PreLaunchEnvironmentVariables = options.PreLaunchEnvironmentVariables,
+                        PreLaunchStdoutPath = options.PreLaunchStdoutPath,
+                        PreLaunchStderrPath = options.PreLaunchStderrPath,
+                        PreLaunchTimeoutSeconds = options.PreLaunchTimeout,
+                        PreLaunchRetryAttempts = options.PreLaunchRetryAttempts,
+                        PreLaunchIgnoreFailure = options.PreLaunchIgnoreFailure,
+                        PostLaunchExecutablePath = options.PostLaunchExePath,
+                        PostLaunchStartupDirectory = options.PostLaunchWorkingDirectory,
+                        PostLaunchParameters = options.PostLaunchArgs,
+                        EnableDebugLogs = options.EnableDebugLogs,
+                        StartTimeout = options.StartTimeout,
+                        StopTimeout = options.StopTimeout,
+                        PreStopExecutablePath = options.PreStopExePath,
+                        PreStopStartupDirectory = options.PreStopWorkingDirectory,
+                        PreStopParameters = options.PreStopArgs,
+                        PreStopTimeoutSeconds = options.PreStopTimeout,
+                        PreStopLogAsError = options.PreStopLogAsError,
+                        PostStopExecutablePath = options.PostStopExePath,
+                        PostStopStartupDirectory = options.PostStopWorkingDirectory,
+                        PostStopParameters = options.PostStopArgs,
+                    };
+
+                    var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
+                    dto.Pid = serviceDto?.Pid;
+
+                    var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
+
+                    if (!string.IsNullOrEmpty(options.PreStopExePath))
+                    {
+                        totalWaitTime += options.PreStopTimeout ?? AppConfig.DefaultPreStopTimeoutSeconds;
+                    }
+                    uint finalTimeoutMs = (uint)totalWaitTime * 1000;
+
+                    if (serviceHandle != null && !serviceHandle.IsInvalid)
+                    {
+                        var enablePreShutdownConfigSuccess = EnablePreShutdown(serviceHandle, finalTimeoutMs);
+
+                        if (enablePreShutdownConfigSuccess)
                         {
-                            string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
-                            Logger.Error(errorMsg);
-
-                            // Roll back the partial installation
-                            _windowsServiceApi.DeleteService(serviceHandle);
-
-                            return OperationResult.Failure(errorMsg);
+                            Logger.Info($"Pre-shutdown enabled with timeout of {totalWaitTime} seconds for service '{options.ServiceName}' during installation.");
                         }
                         else
                         {
-                            Logger.Info($"Delayed auto-start enabled for service '{options.ServiceName}' during installation.");
+                            string errorMsg = $"Failed to enable pre-shutdown for service '{options.ServiceName}' during installation. Rolling back creation.";
+                            Logger.Error(errorMsg);
+                            _windowsServiceApi.DeleteService(serviceHandle);
+                            return OperationResult.Failure(errorMsg);
+                        }
+
+                        if (options.StartType == ServiceStartType.AutomaticDelayedStart)
+                        {
+                            var delayedAutoStartConfigSuccess = ChangeServiceConfig2(serviceHandle, true);
+
+                            if (!delayedAutoStartConfigSuccess)
+                            {
+                                string errorMsg = $"Failed to set delayed auto-start for service '{options.ServiceName}' during installation. Rolling back creation.";
+                                Logger.Error(errorMsg);
+                                _windowsServiceApi.DeleteService(serviceHandle);
+                                return OperationResult.Failure(errorMsg);
+                            }
+                            else
+                            {
+                                Logger.Info($"Delayed auto-start enabled for service '{options.ServiceName}' during installation.");
+                            }
                         }
                     }
-                }
 
-                if (serviceHandle == IntPtr.Zero)
-                {
-                    var isInstalled = IsServiceInstalled(options.ServiceName);
-                    if (isInstalled)
+                    if (serviceHandle == null || serviceHandle.IsInvalid)
                     {
-                        // Service exists - update its configuration
-                        var updated = UpdateServiceConfig(
-                           scmHandle: scmHandle,
-                           serviceName: options.ServiceName,
-                           description: options.Description,
-                           binPath: binPath,
-                           startType: options.StartType,
-                           username: lpServiceStartName,
-                           password: lpPassword,
-                           lpDependencies: lpDependencies,
-                           displayName: displayName
-                       );
-
-                        if (!updated)
+                        var isInstalled = IsServiceInstalled(options.ServiceName);
+                        if (isInstalled)
                         {
-                            Logger.Warn($"Failed to update existing service configuration for service '{options.ServiceName}'.");
-                        }
-
-                        // Set delayed auto-start if necessary
-                        if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
-                        {
-                            IntPtr existingServiceHandle = _windowsServiceApi.OpenService(
-                                scmHandle,
-                                options.ServiceName,
-                                SERVICE_CHANGE_CONFIG
+                            var updated = UpdateServiceConfig(
+                                scmHandle: scmHandle,
+                                serviceName: options.ServiceName,
+                                description: options.Description,
+                                binPath: binPath,
+                                startType: options.StartType,
+                                username: lpServiceStartName,
+                                password: lpPassword,
+                                lpDependencies: lpDependencies,
+                                displayName: displayName
                             );
 
-                            if (existingServiceHandle == IntPtr.Zero)
+                            if (!updated)
                             {
-                                var err = _win32ErrorProvider.GetLastWin32Error();
-                                Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
-                                return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                                Logger.Warn($"Failed to update existing service configuration for service '{options.ServiceName}'.");
                             }
 
-                            try
+                            if (options.StartType == ServiceStartType.AutomaticDelayedStart || options.StartType == ServiceStartType.Automatic)
                             {
-                                var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
-                                var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+                                using (var existingServiceHandle = _windowsServiceApi.OpenService(
+                                    scmHandle,
+                                    options.ServiceName,
+                                    SERVICE_CHANGE_CONFIG))
+                                {
+                                    if (existingServiceHandle.IsInvalid)
+                                    {
+                                        var err = _win32ErrorProvider.GetLastWin32Error();
+                                        Logger.Error($"Failed to open service '{options.ServiceName}' for config update. Win32 error: {err}");
+                                        return OperationResult.Failure($"Failed to open service '{options.ServiceName}' for configuration update. Error code: {err}");
+                                    }
 
-                                if (success)
-                                {
-                                    Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
-                                }
-                                else
-                                {
-                                    string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
-                                    Logger.Error(errorMsg);
-                                    return OperationResult.Failure(errorMsg);
+                                    var delayedAutostart = options.StartType == ServiceStartType.AutomaticDelayedStart;
+                                    var success = ChangeServiceConfig2(existingServiceHandle, delayedAutostart);
+
+                                    if (success)
+                                    {
+                                        Logger.Info($"Delayed auto-start {(delayedAutostart ? "enabled" : "disabled")} for existing service '{options.ServiceName}'.");
+                                    }
+                                    else
+                                    {
+                                        string errorMsg = $"Failed to set delayed auto-start for existing service '{options.ServiceName}'.";
+                                        Logger.Error(errorMsg);
+                                        return OperationResult.Failure(errorMsg);
+                                    }
                                 }
                             }
-                            finally
-                            {
-                                _windowsServiceApi.CloseServiceHandle(existingServiceHandle);
-                            }
+
+                            await _serviceRepository.UpsertAsync(dto);
+                            Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
+                            return OperationResult.Success();
                         }
 
-                        await _serviceRepository.UpsertAsync(dto);
-                        Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
-
-                        return OperationResult.Success();
+                        string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
+                        Logger.Error(creationErrorMsg);
+                        return OperationResult.Failure(creationErrorMsg);
                     }
 
+                    SetServiceDescription(serviceHandle, options.Description);
+                    await _serviceRepository.UpsertAsync(dto);
+                    Logger.Info($"Service '{options.ServiceName}' installed successfully.");
 
-                    string creationErrorMsg = $"Failed to create service '{options.ServiceName}'. Win32 error: {createServiceError}";
-                    Logger.Error(creationErrorMsg);
-                    return OperationResult.Failure(creationErrorMsg);
+                    return OperationResult.Success();
                 }
-
-                // Set description
-                SetServiceDescription(serviceHandle, options.Description);
-
-                await _serviceRepository.UpsertAsync(dto);
-                Logger.Info($"Service '{options.ServiceName}' installed successfully.");
-
-                return OperationResult.Success();
+                finally
+                {
+                    if (serviceHandle != null)
+                    {
+                        serviceHandle.Dispose();
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -574,29 +528,33 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (serviceHandle != IntPtr.Zero)
-                    _windowsServiceApi.CloseServiceHandle(serviceHandle);
-                if (scmHandle != IntPtr.Zero)
-                    _windowsServiceApi.CloseServiceHandle(scmHandle);
+                if (scmHandle != null)
+                {
+                    scmHandle.Dispose();
+                }
             }
         }
 
         /// <inheritdoc />
         public async Task<OperationResult> UninstallServiceAsync(string serviceName)
         {
-            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
-            if (scmHandle == IntPtr.Zero)
-                return OperationResult.Failure("Failed to open Service Control Manager.");
-
+            SafeScmHandle scmHandle = null;
             try
             {
-                uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE;
-                IntPtr serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights);
-                if (serviceHandle == IntPtr.Zero)
-                    return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
-
-                try
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
+                if (scmHandle == null || scmHandle.IsInvalid)
                 {
+                    return OperationResult.Failure("Failed to open Service Control Manager.");
+                }
+
+                uint uninstallRights = SERVICE_STOP | SERVICE_QUERY_STATUS | SERVICE_DELETE;
+                using (var serviceHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, uninstallRights))
+                {
+                    if (serviceHandle.IsInvalid)
+                    {
+                        return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
+                    }
+
                     // Change start type to demand start (if it's disabled)
                     _windowsServiceApi.ChangeServiceConfig(
                         serviceHandle,
@@ -644,10 +602,6 @@ namespace Servy.Core.Services
                         return OperationResult.Failure(errorMsg);
                     }
                 }
-                finally
-                {
-                    _windowsServiceApi.CloseServiceHandle(serviceHandle);
-                }
             }
             catch (Exception ex)
             {
@@ -656,18 +610,20 @@ namespace Servy.Core.Services
             }
             finally
             {
-                _windowsServiceApi.CloseServiceHandle(scmHandle);
+                if (scmHandle != null)
+                {
+                    scmHandle.Dispose();
+                }
             }
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public async Task<OperationResult> StartServiceAsync(string serviceName, bool logSuccessfulStart = true)
         {
             int timeout = 0;
             try
             {
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
-
                 if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
                 using (var sc = _controllerFactory(serviceName))
@@ -772,7 +728,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default)
+        public ServiceControllerStatus GetServiceStatus(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentException("Service name cannot be null or whitespace.", nameof(serviceName));
@@ -785,7 +741,7 @@ namespace Servy.Core.Services
             }
         }
 
-        ///<inheritdoc />
+        /// <inheritdoc />
         public bool IsServiceInstalled(string serviceName)
         {
             if (string.IsNullOrWhiteSpace(serviceName))
@@ -796,7 +752,7 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default)
+        public ServiceStartType? GetServiceStartupType(string serviceName, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (string.IsNullOrWhiteSpace(serviceName))
                 throw new ArgumentNullException(nameof(serviceName));
@@ -818,42 +774,43 @@ namespace Servy.Core.Services
                         default: return null;
                     }
 
-
                     // If automatic, drill down with P/Invoke to check for Delayed Auto-Start
                     if (startupType == ServiceStartType.Automatic)
                     {
-                        IntPtr scmHandle = IntPtr.Zero;
-                        IntPtr svcHandle = IntPtr.Zero;
-
+                        SafeScmHandle scmHandle = null;
                         try
                         {
                             scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
-                            if (scmHandle != IntPtr.Zero)
+                            if (scmHandle != null && !scmHandle.IsInvalid)
                             {
-                                svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG);
-                                if (svcHandle != IntPtr.Zero)
+                                using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
                                 {
-                                    var info = new ServiceDelayedAutoStartInfo();
-                                    int bytesNeeded = 0;
-
-                                    bool ok = _windowsServiceApi.QueryServiceConfig2(
-                                        svcHandle,
-                                        SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
-                                        ref info,
-                                        Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo)),
-                                        ref bytesNeeded);
-
-                                    if (ok && info.fDelayedAutostart)
+                                    if (!svcHandle.IsInvalid)
                                     {
-                                        startupType = ServiceStartType.AutomaticDelayedStart;
+                                        var info = new ServiceDelayedAutoStartInfo();
+                                        int bytesNeeded = 0;
+
+                                        bool ok = _windowsServiceApi.QueryServiceConfig2(
+                                            svcHandle,
+                                            SERVICE_CONFIG_DELAYED_AUTO_START_INFO,
+                                            ref info,
+                                            Marshal.SizeOf(typeof(ServiceDelayedAutoStartInfo)),
+                                            ref bytesNeeded);
+
+                                        if (ok && info.fDelayedAutostart)
+                                        {
+                                            startupType = ServiceStartType.AutomaticDelayedStart;
+                                        }
                                     }
                                 }
                             }
                         }
                         finally
                         {
-                            if (svcHandle != IntPtr.Zero) _windowsServiceApi.CloseServiceHandle(svcHandle);
-                            if (scmHandle != IntPtr.Zero) _windowsServiceApi.CloseServiceHandle(scmHandle);
+                            if (scmHandle != null)
+                            {
+                                scmHandle.Dispose();
+                            }
                         }
                     }
 
@@ -873,12 +830,15 @@ namespace Servy.Core.Services
             var results = new ConcurrentBag<ServiceInfo>();
             var services = _serviceControllerProvider.GetServices();
 
-            IntPtr scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
-            if (scmHandle == IntPtr.Zero)
-                throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
-
+            SafeScmHandle scmHandle = null;
             try
             {
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
+                if (scmHandle == null || scmHandle.IsInvalid)
+                {
+                    throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
+                }
+
                 Parallel.ForEach(services, new ParallelOptions
                 {
                     CancellationToken = cancellationToken,
@@ -910,14 +870,16 @@ namespace Servy.Core.Services
                         service.Dispose();
                     }
                 });
+
+                return results.OrderBy(s => s.Name).ToList();
             }
             finally
             {
-                if (scmHandle != IntPtr.Zero)
-                    _windowsServiceApi.CloseServiceHandle(scmHandle);
+                if (scmHandle != null)
+                {
+                    scmHandle.Dispose();
+                }
             }
-
-            return results.OrderBy(s => s.Name).ToList();
         }
 
         /// <inheritdoc/>
@@ -956,17 +918,16 @@ namespace Servy.Core.Services
         /// <summary>
         /// Populates additional service details using native Windows APIs.
         /// </summary>
-        /// <param name="scmHandle">A handle to the Service Control Manager database.</param>
-        /// <param name="info">The <see cref="ServiceInfo"/> object to be enriched with native data.</param>
-        /// <exception cref="ArgumentException">Thrown when the service name is null or whitespace.</exception>
-        private void PopulateNativeDetails(IntPtr scmHandle, ServiceInfo info)
+        /// <param name="scmHandle">An active handle to the Service Control Manager.</param>
+        /// <param name="info">The service information object to populate.</param>
+        private void PopulateNativeDetails(SafeScmHandle scmHandle, ServiceInfo info)
         {
             if (string.IsNullOrWhiteSpace(info.Name)) throw new ArgumentException("Service name is empty!");
-            IntPtr svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG);
-            if (svcHandle == IntPtr.Zero) return;
 
-            try
+            using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, info.Name, SERVICE_QUERY_CONFIG))
             {
+                if (svcHandle.IsInvalid) return;
+
                 info.LogOnAs = GetServiceUser(svcHandle) ?? info.LogOnAs;
                 info.Description = GetServiceDescription(svcHandle) ?? string.Empty;
 
@@ -975,18 +936,14 @@ namespace Servy.Core.Services
                     info.StartupType = ServiceStartType.AutomaticDelayedStart;
                 }
             }
-            finally
-            {
-                _windowsServiceApi.CloseServiceHandle(svcHandle);
-            }
         }
 
         /// <summary>
         /// Retrieves the account name under which the service runs.
         /// </summary>
-        /// <param name="svcHandle">A handle to the service.</param>
-        /// <returns>The account name string (e.g., "LocalSystem" or "DOMAIN\User"), or null if retrieval fails.</returns>
-        private string GetServiceUser(IntPtr svcHandle)
+        /// <param name="svcHandle">A valid handle to the target Windows service.</param>
+        /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
+        private string GetServiceUser(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;
             _windowsServiceApi.QueryServiceConfig(svcHandle, IntPtr.Zero, 0, out bytesNeeded);
@@ -1009,10 +966,10 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Maps a native <see cref="ServiceControllerStatus"/> to the internal <see cref="Enums.ServiceStatus"/>.
+        /// Maps the standard .NET Framework <see cref="ServiceControllerStatus"/> to internal enum format.
         /// </summary>
-        /// <param name="nativeStatus">The status returned by the ServiceController.</param>
-        /// <returns>The corresponding internal status enum value.</returns>
+        /// <param name="nativeStatus">The system status to map.</param>
+        /// <returns>An internal <see cref="Enums.ServiceStatus"/> representation.</returns>
         private Enums.ServiceStatus MapStatus(ServiceControllerStatus nativeStatus)
         {
             switch (nativeStatus)
@@ -1029,14 +986,10 @@ namespace Servy.Core.Services
         }
 
         /// <summary>
-        /// Maps the native start mode to the internal <see cref="ServiceStartType"/>.
+        /// Gets the startup type mapping while accounting for protected service API limitations.
         /// </summary>
-        /// <param name="service">The service controller wrapper providing the start mode.</param>
-        /// <returns>The mapped start type. Defaults to <see cref="ServiceStartType.Manual"/> on failure.</returns>
-        /// <remarks>
-        /// Accessing the StartType property can throw a <see cref="System.ComponentModel.Win32Exception"/> 
-        /// (Access Denied) for certain protected system services.
-        /// </remarks>
+        /// <param name="service">The service controller wrapper to query.</param>
+        /// <returns>The identified <see cref="ServiceStartType"/>.</returns>
         private static ServiceStartType MapStartupType(IServiceControllerWrapper service)
         {
             try
@@ -1069,9 +1022,9 @@ namespace Servy.Core.Services
         /// <summary>
         /// Retrieves the optional description associated with the service.
         /// </summary>
-        /// <param name="svcHandle">A handle to the service.</param>
-        /// <returns>The description string, or null if retrieval fails or no description is set.</returns>
-        private string GetServiceDescription(IntPtr svcHandle)
+        /// <param name="svcHandle">A valid handle to the target Windows service.</param>
+        /// <returns>The service description string or <c>null</c> if none exists.</returns>
+        private string GetServiceDescription(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;
             _windowsServiceApi.QueryServiceConfig2(svcHandle, SERVICE_CONFIG_DESCRIPTION, IntPtr.Zero, 0, ref bytesNeeded);
@@ -1096,9 +1049,9 @@ namespace Servy.Core.Services
         /// <summary>
         /// Checks if the service is configured for a delayed automatic start.
         /// </summary>
-        /// <param name="svcHandle">A handle to the service.</param>
-        /// <returns>True if the service is set to start with a delay; otherwise, false.</returns>
-        private bool IsDelayedStart(IntPtr svcHandle)
+        /// <param name="svcHandle">A valid handle to the target Windows service.</param>
+        /// <returns><c>true</c> if it has delayed start configured; otherwise, <c>false</c>.</returns>
+        private bool IsDelayedStart(SafeServiceHandle svcHandle)
         {
             var info = new ServiceDelayedAutoStartInfo();
             int bytesNeeded = 0;
