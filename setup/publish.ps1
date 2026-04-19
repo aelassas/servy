@@ -95,11 +95,15 @@ try {
 
     # === BUILD & SIGN INSTALLER ===
     Write-Host "--- Installer Generation ---" -ForegroundColor Cyan
-    
+
+    $installerPath = Join-Path $scriptDir "servy-$version-net48-x64-installer.exe"
+
+    # CRITICAL: Clean up the old installer first to break any existing file locks
+    Remove-ItemSafely -Path $installerPath
+
     & "$innoCompiler" (Join-Path $scriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$framework
     Check-LastExitCode "Inno Setup failed"
 
-    $installerPath = Join-Path $scriptDir "servy-$version-net48-x64-installer.exe"
     if (Test-Path $installerPath) {
         if (Test-Path $signPath) {
             Write-Host ">>> Signing Installer..." -ForegroundColor Yellow
