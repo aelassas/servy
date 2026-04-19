@@ -80,6 +80,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F
 		setup\servy-fd.iss = setup\servy-fd.iss
 		setup\servy.iss = setup\servy.iss
 		setup\signpath.ps1 = setup\signpath.ps1
+		setup\tools-config.ps1 = setup\tools-config.ps1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.Infrastructure", "src\Servy.Infrastructure\Servy.Infrastructure.csproj", "{17B715D3-353A-4370-9FBE-8A0F079F5D56}"

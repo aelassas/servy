@@ -40,9 +40,6 @@ $Runtime = "win-x64"
 # ========================
 # Configuration
 # ========================
-$innoCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-$sevenZipExe  = "C:\Program Files\7-Zip\7z.exe"
-
 # Directories
 $scriptDir = $PSScriptRoot
 # Resolve the root once at the start (this is safe as the script is running inside it)
@@ -58,6 +55,31 @@ $issFile       = Join-Path $scriptDir "servy.iss"
 $packageFolder = Join-Path $scriptDir "servy-$Version-x64-portable"
 $outputZip     = "$packageFolder.7z"
 $installerPath = Join-Path $rootDir "setup\servy-$Version-x64-installer.exe"
+
+# ---------------------------------------------------------
+# Tool Discovery
+# ---------------------------------------------------------
+try {
+    # Import the resolution helper
+    . (Join-Path $scriptDir "tools-config.ps1")
+
+    Write-Host "Resolving build tools..." -ForegroundColor Cyan
+
+    $innoCompiler = Resolve-Tool -Name "ISCC" -Fallbacks @(
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+    )
+
+    $sevenZipExe  = Resolve-Tool -Name "7z" -Fallbacks @(
+        "C:\Program Files\7-Zip\7z.exe",
+        "C:\Program Files (x86)\7-Zip\7z.exe"
+    )
+    
+    Write-Host "✓ Tools resolved successfully." -ForegroundColor Green
+}
+catch {
+    Write-Error "Configuration Failed: $($_.Exception.Message)"
+    exit 1
+}
 
 # ========================
 # Functions
@@ -108,11 +130,6 @@ foreach ($project in $projects) {
 # Step 2: Build & Sign Installer
 # ========================
 Write-Host "--- Building Installer ---" -ForegroundColor Cyan
-
-if (-not (Test-Path $innoCompiler)) {
-    Write-Error "Inno Setup Compiler (ISCC.exe) not found at: $innoCompiler"
-    exit 1
-}
 
 # Run Inno Setup
 & $innoCompiler $issFile /DMyAppVersion=$Version
@@ -180,10 +197,6 @@ try {
         } else {
             throw "Required CLI artifact missing: $sourcePath"
         }
-    }
-
-    if (-not (Test-Path $sevenZipExe)) {
-        throw "7-Zip executable not found at: $sevenZipExe"
     }
 
     $zipArgs = @("a", "-t7z", "-m0=lzma2", "-mx=9", "-ms=on", $outputZip, $packageFolder)
