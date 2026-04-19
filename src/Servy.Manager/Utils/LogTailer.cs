@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Logging;
 using Servy.Manager.Models;
 using System.IO;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Manager.Utils
 {
@@ -75,12 +76,11 @@ namespace Servy.Manager.Utils
         {
             if (string.IsNullOrEmpty(path)) return;
 
-            // Wire up the token to automatically dispose this instance when cancelled.
-            // This guarantees the ViewModel reference is dropped immediately upon cancellation.
             _tokenRegistration = token.Register(Dispose);
 
             long lastPosition = startPos;
             DateTime lastCreationTime = startCreated;
+            FileIdentity? knownIdentity = null;
 
             while (!token.IsCancellationRequested)
             {
@@ -93,61 +93,130 @@ namespace Servy.Manager.Utils
                     }
 
                     FileInfo info = new FileInfo(path);
-
-                    // 1. Defensively attempt to open the stream
                     FileStream fs = null;
+
                     try
                     {
-                        // FileShare.ReadWrite is critical, but we also catch the race here
-                        fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        // FileShare.Delete is critical here so we don't block an external process trying to rotate the log.
+                        fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
                     }
                     catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
                     {
-                        // The file was likely rotated or deleted between File.Exists and here
                         await Task.Delay(FileRetryDelayMs, token);
                         continue;
                     }
                     catch (IOException)
                     {
-                        // File might be locked exclusively by the service during a write/roll
                         await Task.Delay(200, token);
                         continue;
                     }
 
                     using (fs)
                     {
-                        // 2. Identity Check: Did the file change while we were opening it?
+                        var currentIdentity = GetFileIdentity(fs);
                         info.Refresh();
-                        if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+
+                        // 1. Initial attach or Post-Rotation setup
+                        if (knownIdentity == null)
                         {
-                            lastPosition = 0;
-                            lastCreationTime = info.CreationTimeUtc;
+                            if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                            {
+                                lastPosition = 0;
+                                lastCreationTime = info.CreationTimeUtc;
+                                Logger.Debug("[LogTailer] Rotation detected before first open (Metadata fallback).");
+                            }
+                        }
+                        else
+                        {
+                            // 2. Identity Check: Did the file change while we were re-opening it?
+                            if (currentIdentity.IsDifferentFrom(knownIdentity.Value))
+                            {
+                                lastPosition = 0;
+                                lastCreationTime = info.CreationTimeUtc;
+                                Logger.Debug("[LogTailer] Rotation detected on reopen via stable file identity.");
+                            }
+                            else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixHash == null)
+                            {
+                                // Both robust signals failed (unlikely), fallback to old heuristics
+                                if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                                {
+                                    lastPosition = 0;
+                                    lastCreationTime = info.CreationTimeUtc;
+                                    Logger.Debug("[LogTailer] Rotation detected on reopen (Metadata fallback).");
+                                }
+                            }
                         }
 
+                        knownIdentity = currentIdentity;
                         fs.Seek(lastPosition, SeekOrigin.Begin);
+
                         using (StreamReader reader = new StreamReader(fs))
                         {
                             while (!token.IsCancellationRequested)
                             {
-                                info.Refresh();
-                                // Break if rotation occurs to reopen the NEW file identity
-                                if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
-                                    break;
-
                                 List<LogLine> batch = new List<LogLine>();
                                 string line;
+
                                 while ((line = await reader.ReadLineAsync()) != null)
                                 {
                                     batch.Add(new LogLine(line, type));
                                     if (batch.Count >= LogBatchFlushThreshold)
                                     {
                                         OnNewLines?.Invoke(batch);
-                                        batch = new List<LogLine>();
+                                        batch.Clear(); // Optimized memory reuse
                                     }
+
+                                    // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
                                     lastPosition = fs.Position;
                                 }
 
                                 if (batch.Count > 0) OnNewLines?.Invoke(batch);
+
+                                // --- EOF Reached. Verify File Integrity / Rotation ---
+                                info.Refresh();
+                                bool rotated = false;
+
+                                if (!info.Exists)
+                                {
+                                    rotated = true;
+                                    Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
+                                }
+                                else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
+                                {
+                                    rotated = true;
+                                    Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
+                                }
+                                else
+                                {
+                                    // We are at EOF, check if the file object on disk swapped identities out from under us
+                                    try
+                                    {
+                                        using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                        {
+                                            var pathIdentity = GetFileIdentity(checkFs);
+                                            if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
+                                            {
+                                                rotated = true;
+                                                Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                                    {
+                                        rotated = true;
+                                    }
+                                    catch (IOException)
+                                    {
+                                        // File might be exclusively locked during a rename/rotation event. 
+                                        // Ignore here, we will catch the rotation on the next pass.
+                                    }
+                                }
+
+                                if (rotated)
+                                {
+                                    break; // Break the inner loop to drop the stale handle and reopen
+                                }
+
                                 await Task.Delay(150, token);
                             }
                         }
@@ -202,7 +271,7 @@ namespace Servy.Manager.Utils
                 creationTime = info.CreationTimeUtc;
                 DateTime lastWrite = info.LastWriteTimeUtc;
 
-                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                 {
                     finalPos = fs.Length;
                     if (fs.Length == 0) return lines;
@@ -247,7 +316,7 @@ namespace Servy.Manager.Utils
                             // Every line before it is 1 tick older.
                             long offset = (tempLines.Count - 1 - i) * TimeSpan.TicksPerMillisecond;
                             DateTime syntheticTime = lastWrite.AddTicks(-offset);
-
+                            
                             lines.Add(new LogLine(tempLines[i], type, syntheticTime));
                         }
                     }
