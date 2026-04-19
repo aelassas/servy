@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Domain;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Models;
 
@@ -31,13 +32,13 @@ namespace Servy.Mappers
                 StderrPath = config.StderrPath,
                 EnableSizeRotation = config.EnableSizeRotation,
                 EnableDateRotation = config.EnableDateRotation,
-                RotationSize = ParseInt(config.RotationSize, Core.Config.AppConfig.DefaultRotationSize),
+                RotationSize = ConfigParser.ParseInt(config.RotationSize, Core.Config.AppConfig.DefaultRotationSize),
                 UseLocalTimeForRotation = config.UseLocalTimeForRotation,
                 EnableHealthMonitoring = config.EnableHealthMonitoring,
-                HeartbeatInterval = ParseInt(config.HeartbeatInterval, Core.Config.AppConfig.DefaultHeartbeatInterval),
-                MaxFailedChecks = ParseInt(config.MaxFailedChecks, Core.Config.AppConfig.DefaultMaxFailedChecks),
+                HeartbeatInterval = ConfigParser.ParseInt(config.HeartbeatInterval, Core.Config.AppConfig.DefaultHeartbeatInterval),
+                MaxFailedChecks = ConfigParser.ParseInt(config.MaxFailedChecks, Core.Config.AppConfig.DefaultMaxFailedChecks),
                 RecoveryAction = config.RecoveryAction,
-                MaxRestartAttempts = ParseInt(config.MaxRestartAttempts, Core.Config.AppConfig.DefaultMaxRestartAttempts),
+                MaxRestartAttempts = ConfigParser.ParseInt(config.MaxRestartAttempts, Core.Config.AppConfig.DefaultMaxRestartAttempts),
                 FailureProgramPath = config.FailureProgramPath,
                 FailureProgramStartupDirectory = config.FailureProgramStartupDirectory,
                 FailureProgramParameters = config.FailureProgramParameters,
@@ -52,22 +53,20 @@ namespace Servy.Mappers
                 PreLaunchEnvironmentVariables = config.PreLaunchEnvironmentVariables,
                 PreLaunchStdoutPath = config.PreLaunchStdoutPath,
                 PreLaunchStderrPath = config.PreLaunchStderrPath,
-                PreLaunchTimeoutSeconds = ParseInt(config.PreLaunchTimeoutSeconds, Core.Config.AppConfig.DefaultPreLaunchTimeoutSeconds),
-                PreLaunchRetryAttempts = ParseInt(config.PreLaunchRetryAttempts, Core.Config.AppConfig.DefaultPreLaunchRetryAttempts),
+                PreLaunchTimeoutSeconds = ConfigParser.ParseInt(config.PreLaunchTimeoutSeconds, Core.Config.AppConfig.DefaultPreLaunchTimeoutSeconds),
+                PreLaunchRetryAttempts = ConfigParser.ParseInt(config.PreLaunchRetryAttempts, Core.Config.AppConfig.DefaultPreLaunchRetryAttempts),
                 PreLaunchIgnoreFailure = config.PreLaunchIgnoreFailure,
                 PostLaunchExecutablePath = config.PostLaunchExecutablePath,
                 PostLaunchStartupDirectory = config.PostLaunchStartupDirectory,
                 PostLaunchParameters = config.PostLaunchParameters,
-                MaxRotations = ParseInt(config.MaxRotations, Core.Config.AppConfig.DefaultMaxRotations),
-                StartTimeout = ParseInt(config.StartTimeout, Core.Config.AppConfig.DefaultStartTimeout),
-                StopTimeout = ParseInt(config.StopTimeout, Core.Config.AppConfig.DefaultStopTimeout),
-
+                MaxRotations = ConfigParser.ParseInt(config.MaxRotations, Core.Config.AppConfig.DefaultMaxRotations),
+                StartTimeout = ConfigParser.ParseInt(config.StartTimeout, Core.Config.AppConfig.DefaultStartTimeout),
+                StopTimeout = ConfigParser.ParseInt(config.StopTimeout, Core.Config.AppConfig.DefaultStopTimeout),
                 PreStopExecutablePath = config.PreStopExecutablePath,
                 PreStopStartupDirectory = config.PreStopStartupDirectory,
                 PreStopParameters = config.PreStopParameters,
-                PreStopTimeoutSeconds = ParseInt(config.PreStopTimeoutSeconds, Core.Config.AppConfig.DefaultPreStopTimeoutSeconds),
+                PreStopTimeoutSeconds = ConfigParser.ParseInt(config.PreStopTimeoutSeconds, Core.Config.AppConfig.DefaultPreStopTimeoutSeconds),
                 PreStopLogAsError = config.PreStopLogAsError,
-
                 PostStopExecutablePath = config.PostStopExecutablePath,
                 PostStopStartupDirectory = config.PostStopStartupDirectory,
                 PostStopParameters = config.PostStopParameters
@@ -139,15 +138,5 @@ namespace Servy.Mappers
             };
         }
 
-        /// <summary>
-        /// Attempts to parse a string into an integer, returning a default value if parsing fails.
-        /// </summary>
-        /// <param name="value">The string value to parse.</param>
-        /// <param name="defaultValue">The default value to return if parsing fails.</param>
-        /// <returns>The parsed integer, or <paramref name="defaultValue"/> if parsing fails.</returns>
-        private static int ParseInt(string value, int defaultValue)
-        {
-            return int.TryParse(value, out var result) ? result : defaultValue;
-        }
     }
 }
