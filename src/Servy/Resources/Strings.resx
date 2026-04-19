@@ -154,6 +154,14 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>* Required fields</value>
   </data>
 
+
+  <data name="Dialog_SelectStdoutFile" xml:space="preserve">
+    <value>Select standard output file</value>
+  </data>
+  <data name="Dialog_SelectStderrFile" xml:space="preserve">
+    <value>Select standard error file</value>
+  </data>
+
   <!-- Startup Type ComboBox Items -->
   <data name="Label_StartupType" xml:space="preserve">
     <value>Startup Type</value>
