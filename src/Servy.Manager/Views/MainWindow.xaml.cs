@@ -44,20 +44,51 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles the <see cref="Window.Loaded"/> event.
-        /// Executes the initial search when the window is loaded.
+        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous window initialization.
         /// </summary>
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+            => _ = Window_LoadedAsync(sender, e);
+
+        /// <summary>
+        /// Performs asynchronous initialization when the window is loaded.
+        /// Executes the initial service search via the <see cref="MainViewModel.SearchCommand"/>.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task Window_LoadedAsync(object sender, RoutedEventArgs e)
         {
+            // Trigger the global search command to populate the dashboard 
+            // the moment the shell is ready for interaction.
             if (DataContext is MainViewModel vm)
+            {
                 await vm.SearchCommand.ExecuteAsync(null);
+            }
         }
 
         /// <summary>
         /// Handles the KeyDown event of the search text box.
-        /// Executes the search when the Enter key is pressed.
+        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous key processing.
         /// </summary>
-        private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data containing the key that was pressed.</param>
+        private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+            => _ = SearchTextBox_KeyDownAsync(sender, e);
+
+        /// <summary>
+        /// Asynchronously processes key down events for the search text box.
+        /// Executes the <see cref="MainViewModel.SearchCommand"/> specifically when the Enter key is pressed 
+        /// and the command is in a valid state to execute.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data containing the key that was pressed.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
         {
+            // Verify Enter key was pressed and the ViewModel is in a state where 
+            // a search can be safely initiated.
             if (e.Key == Key.Enter && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
             {
                 await vm.SearchCommand.ExecuteAsync(null);
@@ -99,11 +130,24 @@ namespace Servy.Manager.Views
         }
 
         /// <summary>
-        /// Handles KeyDown on the window for global shortcuts.
-        /// Executes search when F5 is pressed.
+        /// Handles the PreviewKeyDown event on the window to provide global keyboard shortcuts.
+        /// Acts as a synchronous entry point that fire-and-forgets the asynchronous shortcut logic.
         /// </summary>
-        private async void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data containing the key and modifiers.</param>
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+            => _ = Window_PreviewKeyDownAsync(sender, e);
+
+        /// <summary>
+        /// Asynchronously processes global keyboard shortcuts.
+        /// Supports F5 for contextual refreshing across different tabs and Ctrl+A for service selection.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data containing the key and modifiers.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task Window_PreviewKeyDownAsync(object sender, KeyEventArgs e)
         {
+            // F5: Context-aware refresh logic based on the active tab
             if (e.Key == Key.F5)
             {
                 if (MainTab.IsSelected && DataContext is MainViewModel vm && vm.SearchCommand.CanExecute(null))
@@ -120,56 +164,83 @@ namespace Servy.Manager.Views
                 }
             }
 
+            // Ctrl + A: Select all services in the DataGrid (Dashboard only)
             if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && MainTab.IsSelected)
             {
                 ServicesDataGrid.Focus();
                 ServicesDataGrid.SelectAll();
 
+                // Mark event as handled to prevent standard text-box 'Select All' if a search field has focus
                 e.Handled = true;
             }
         }
 
         /// <summary>
-        /// Handles the Config menu click.
-        /// Executes the configure command for the main ViewModel.
+        /// Handles the click event for the Configuration menu item.
+        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous configuration sequence.
         /// </summary>
-        private async void Menu_ConfigClik(object sender, RoutedEventArgs e)
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        private void Menu_ConfigClick(object sender, RoutedEventArgs e)
+            => _ = Menu_ConfigClickAsync(sender, e);
+
+        /// <summary>
+        /// Asynchronously initiates the application configuration sequence.
+        /// Executes the <see cref="MainViewModel.ConfigureCommand"/> to open the settings interface.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task Menu_ConfigClickAsync(object sender, RoutedEventArgs e)
         {
+            // Verify the ViewModel is correctly bound before attempting to 
+            // launch the configuration modal or view.
             if (DataContext is MainViewModel vm)
+            {
                 await vm.ConfigureCommand.ExecuteAsync(null);
+            }
         }
 
         /// <summary>
         /// Handles the <see cref="SelectionChanged"/> event of the main <see cref="TabControl"/>.
-        /// Cancels background tasks or timers when switching tabs and triggers searches
-        /// for logs or services depending on the selected tab.
+        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous tab transition logic.
         /// </summary>
         /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
         /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => _ = MainTabControl_SelectionChangedAsync(sender, e);
+
+        /// <summary>
+        /// Asynchronously manages the lifecycle and state transitions when switching between application tabs.
+        /// Cancels background tasks or timers for inactive tabs and triggers context-specific searches or 
+        /// data loading for the newly selected tab.
+        /// </summary>
+        /// <param name="sender">The <see cref="TabControl"/> that raised the event.</param>
+        /// <param name="e">The <see cref="SelectionChangedEventArgs"/> instance containing event data.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         /// <remarks>
-        /// The tab-specific logic is split into separate methods (<see cref="HandleLogsTabSelected"/> and
-        /// <see cref="HandleMainTabSelected"/>) to improve readability, maintainability, and to clearly
-        /// separate concerns. This allows the main event handler to remain concise and ensures that
-        /// each tab’s behavior (cleanup, searches, timers) is encapsulated in a dedicated method.
+        /// This method ensures that high-resource operations (like real-time performance monitoring or 
+        /// log tailing) are throttled or stopped when the user navigates away from the respective tab. 
+        /// It uses the <see cref="SelectionChangedEventArgs.OriginalSource"/> check to ensure it only 
+        /// reacts to the main TabControl and not nested elements.
         /// </remarks>
-        private async void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async Task MainTabControl_SelectionChangedAsync(object sender, SelectionChangedEventArgs e)
         {
             try
             {
-                // Only react if the TabControl itself fired the event
+                // Only react if the TabControl itself fired the event (prevents bubbling issues)
                 if (!ReferenceEquals(sender, e.OriginalSource))
                     return;
 
                 if (DataContext is MainViewModel vm)
                 {
+                    // Resolve nested ViewModels for coordinated state management
                     var perfVm = GetPerformanceVm();
-
                     var consoleVm = GetConsoleVm();
-
                     var dependenciesVM = GetDependenciesVm();
-
                     var logsVm = GetLogsVm();
 
+                    // Route to the appropriate handler based on the selected tab
                     if (MainTab.IsSelected)
                         await HandleMainTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
                     else if (PerformanceTab.IsSelected)
@@ -180,16 +251,20 @@ namespace Servy.Manager.Views
                         await HandleDependenciesTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
                     else if (LogsTab.IsSelected)
                         await HandleLogsTabSelected(vm, perfVm, consoleVm, dependenciesVM, logsVm);
-
                 }
             }
             catch (Exception ex)
             {
+                // Prioritize the UI notification service, falling back to static logging if initialization failed
                 if (_messageBoxService != null)
+                {
                     await _messageBoxService.ShowErrorAsync(
                         Strings.Msg_MainTabControl_SelectionChangedError, AppConfig.Caption);
+                }
                 else
+                {
                     Logger.Error("Tab selection failed and message box service unavailable", ex);
+                }
             }
         }
 
