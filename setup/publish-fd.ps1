@@ -72,7 +72,7 @@ try {
         "C:\Program Files (x86)\7-Zip\7z.exe"
     )
     
-    Write-Host "✓ Tools resolved successfully." -ForegroundColor Green
+    Write-Host "Tools resolved successfully." -ForegroundColor Green
 }
 catch {
     Write-Error "Configuration Failed: $($_.Exception.Message)"
@@ -133,9 +133,42 @@ foreach ($project in $projects) {
 # Step 2: Build Installer
 # ========================
 Write-Host "--- Building Installer ---" -ForegroundColor Cyan
+Remove-ItemSafely -Path $installerPath
 
-& $innoCompiler $issFile /DMyAppVersion=$Version
-Check-LastExitCode "Inno Setup compilation failed"
+$maxRetry = 3
+$currentAttempt = 0
+$success = $false
+
+while (-not $success -and $currentAttempt -lt $maxRetry) {
+    try {
+        $currentAttempt++
+        if ($currentAttempt -gt 1) { 
+            Write-Host "Inno Setup retry attempt $currentAttempt..." -ForegroundColor Yellow 
+        }
+
+        & $innoCompiler $issFile /DMyAppVersion=$Version
+
+        # MUST check exit code manually to trigger the 'catch' block
+        if ($LASTEXITCODE -eq 0) { 
+            $success = $true 
+            Write-Host "Installer built successfully." -ForegroundColor Green
+        } else {
+            throw "ISCC.exe failed with exit code $LASTEXITCODE"
+        }
+    }
+    catch {
+        if ($currentAttempt -lt $maxRetry) {
+            # Now this will actually execute and wait for the AV lock to release
+            Write-Warning "Inno Setup failed (likely AV lock). Waiting 2s before retry..."
+            Start-Sleep -Seconds 2
+        } else {
+            # This bubbles up to your global catch block at the bottom of publish.ps1
+            throw "Inno Setup failed after $maxRetry attempts. $_"
+        }
+    }
+}
+# Execution only reaches here if $success is $true.
+# No need for Check-LastExitCode here anymore.
 
 # Optional: Add signing check here if we use it for FD builds as well
 # if (Test-Path $installerPath) { ... }
