@@ -107,18 +107,6 @@ namespace Servy.Service
         private const string ServyRestarterExeFileName = "Servy.Restarter";
 
         /// <summary>
-        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
-        /// </summary>
-        private const int DefaultWaitChunkMs = 5000;
-
-        /// <summary>
-        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
-        /// </summary>
-        /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
-        /// Windows Service Control Manager to account for potential processing overhead.</remarks>
-        private const int DefaultScmAdditionalTimeMs = 15_000;
-
-        /// <summary>
         /// Minimum StartTimeout (in seconds) before requesting additional SCM time.
         /// Below this threshold the default SCM timeout is sufficient.
         /// </summary>
@@ -310,7 +298,7 @@ namespace Servy.Service
                 }
                 else
                 {
-                    _waitChunkMs = DefaultWaitChunkMs;
+                    _waitChunkMs = AppConfig.DefaultWaitChunkMs;
                 }
 
                 if (int.TryParse(config["Timing:ScmAdditionalTimeMs"], out var scmAdditionalTimeMs) && scmAdditionalTimeMs > 0)
@@ -319,7 +307,7 @@ namespace Servy.Service
                 }
                 else
                 {
-                    _scmAdditionalTimeMs = DefaultScmAdditionalTimeMs;
+                    _scmAdditionalTimeMs = AppConfig.DefaultScmAdditionalTimeMs;
                 }
 
                 if (!Enum.TryParse<LogLevel>(config["LogLevel"], true, out var logLevel))

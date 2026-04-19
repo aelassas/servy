@@ -1,4 +1,5 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -57,13 +58,13 @@ namespace Servy.Service.ProcessManagement
         /// Gets or sets the interval, in milliseconds, at which the launcher checks the process status 
         /// and invokes the <see cref="OnScmHeartbeat"/> delegate.
         /// </summary>
-        public int WaitChunkMs { get; set; } = 5000;
+        public int WaitChunkMs { get; set; } = AppConfig.DefaultWaitChunkMs;
 
         /// <summary>
         /// Gets or sets the amount of additional time, in milliseconds, to request from the 
         /// Service Control Manager (SCM) during each heartbeat pulse.
         /// </summary>
-        public int ScmAdditionalTimeMs { get; set; } = 15000;
+        public int ScmAdditionalTimeMs { get; set; } = AppConfig.DefaultScmAdditionalTimeMs;
 
         #endregion
 
