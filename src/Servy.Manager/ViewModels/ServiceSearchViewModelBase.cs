@@ -20,12 +20,14 @@ namespace Servy.Manager.ViewModels
     /// and ensures that asynchronous search operations are properly cancelled when a new 
     /// search is triggered, preventing race conditions in the UI.
     /// </remarks>
-    public abstract class ServiceSearchViewModelBase : ViewModelBase
+    public abstract class ServiceSearchViewModelBase : ViewModelBase, IDisposable
     {
         /// <summary>
         /// Manages the cancellation lifecycle for the current service search operation.
         /// </summary>
         protected CancellationTokenSource _serviceSearchCts;
+
+        private bool _disposedValue;
 
         /// <summary>
         /// Gets the collection of services retrieved during the last search.
@@ -106,7 +108,6 @@ namespace Servy.Manager.ViewModels
         /// </remarks>
         private async Task SearchServicesAsync(object parameter)
         {
-            // Thread-safe atomic swap for cancellation
             var newCts = new CancellationTokenSource();
             var oldCts = Interlocked.Exchange(ref _serviceSearchCts, newCts);
             if (oldCts != null)
@@ -119,22 +120,17 @@ namespace Servy.Manager.ViewModels
 
             try
             {
-                // Show "Searching..." immediately
                 Mouse.OverrideCursor = Cursors.Wait;
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                // Allow WPF to repaint the button and show progress bar
-                // Only execute if we are in a real UI context with a running dispatcher frame
                 if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
                 {
                     await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
 
-                // Execute Search
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);
 
-                // Mapping is cheap; update the collection on the UI thread
                 Services.Clear();
                 foreach (var s in results)
                 {
@@ -151,7 +147,6 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                // Restore UI state
                 Mouse.OverrideCursor = null;
                 IsBusy = false;
                 SearchButtonText = Strings.Button_Search;
@@ -159,20 +154,30 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Safely cancels and disposes of the internal search cancellation token source.
+        /// Disposes the ViewModel, safely cancelling and releasing the search token.
         /// </summary>
-        /// <remarks>
-        /// Derived classes should call this method within their <c>Cleanup()</c> or <c>Dispose()</c> 
-        /// implementation to prevent memory leaks and ensure background tasks are terminated.
-        /// </remarks>
-        protected void CleanupSearchCts()
+        protected virtual void Dispose(bool disposing)
         {
-            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-            if (oldSearchCts != null)
+            if (!_disposedValue)
             {
-                oldSearchCts.Cancel();
-                oldSearchCts.Dispose();
+                if (disposing)
+                {
+                    var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
+                    if (oldSearchCts != null)
+                    {
+                        oldSearchCts.Cancel();
+                        oldSearchCts.Dispose();
+                    }
+                }
+                _disposedValue = true;
             }
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 }

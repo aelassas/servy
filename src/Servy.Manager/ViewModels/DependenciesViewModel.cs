@@ -33,6 +33,7 @@ namespace Servy.Manager.ViewModels
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
+        private bool _disposedValue;
 
         #endregion
 
@@ -478,35 +479,41 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
-        /// from timer events to prevent memory leaks during tab navigation.
+        /// from timer events to prevent memory leaks.
         /// </summary>
-        public void Cleanup()
+        protected override void Dispose(bool disposing)
         {
-            // 1. Cancel and dispose the Monitoring CancellationTokenSource
-            var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-            if (oldMonitoringCts != null)
+            if (!_disposedValue)
             {
-                oldMonitoringCts.Cancel();
-                oldMonitoringCts.Dispose();
-            }
+                if (disposing)
+                {
+                    // 1. Dispose Monitoring CTS
+                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+                    if (oldMonitoringCts != null)
+                    {
+                        oldMonitoringCts.Cancel();
+                        oldMonitoringCts.Dispose();
+                    }
 
-            // 2. Cancel and dispose the Search CancellationTokenSource
-            CleanupSearchCts();
+                    // 2. Dispose Tree Loading CTS
+                    var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
+                    if (oldLoadTreeCts != null)
+                    {
+                        oldLoadTreeCts.Cancel();
+                        oldLoadTreeCts.Dispose();
+                    }
 
-            // 3. Cancel and dispose the Tree Loading CancellationTokenSource
-            var oldLoadTreeCts = Interlocked.Exchange(ref _loadTreeCts, null);
-            if (oldLoadTreeCts != null)
-            {
-                oldLoadTreeCts.Cancel();
-                oldLoadTreeCts.Dispose();
-            }
+                    // 3. Stop and Unhook the Timer
+                    if (_timer != null)
+                    {
+                        _timer.Stop();
+                        _timer.Tick -= OnTick; // CRITICAL
+                        _timer = null;
+                    }
+                }
 
-            // 4. Stop the timer, unsubscribe from the Tick event, and release the reference
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher from keeping the VM alive
-                _timer = null;
+                base.Dispose(disposing);
+                _disposedValue = true;
             }
         }
 

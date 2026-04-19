@@ -8,7 +8,11 @@ using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -52,6 +56,7 @@ namespace Servy.Manager.ViewModels
         private int _currentSessionId = 0; // Track the "active" switch request
         private volatile bool _isSelectionActive;
         private int _tickErrorCount = 0;
+        private bool _disposedValue;
 
         #endregion
 
@@ -662,35 +667,41 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
-        /// from timer events to prevent memory leaks during tab navigation.
+        /// from timer events to prevent memory leaks.
         /// </summary>
-        public void Cleanup()
+        protected override void Dispose(bool disposing)
         {
-            // 1. Dispose Monitoring CTS
-            var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-            if (oldMonitoringCts != null)
+            if (!_disposedValue)
             {
-                oldMonitoringCts.Cancel();
-                oldMonitoringCts.Dispose();
-            }
+                if (disposing)
+                {
+                    // 1. Dispose Monitoring CTS
+                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+                    if (oldMonitoringCts != null)
+                    {
+                        oldMonitoringCts.Cancel();
+                        oldMonitoringCts.Dispose();
+                    }
 
-            // 2. Dispose Service Search CTS
-            var oldSearchCts = Interlocked.Exchange(ref _serviceSearchCts, null);
-            if (oldSearchCts != null)
-            {
-                oldSearchCts.Cancel();
-                oldSearchCts.Dispose();
-            }
+                    // 2. Dispose Log Filter Debounce CTS
+                    var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
+                    if (oldFilterCts != null)
+                    {
+                        oldFilterCts.Cancel();
+                        oldFilterCts.Dispose();
+                    }
 
-            // 3. Dispose Log Filter Debounce CTS
-            CleanupSearchCts();
+                    // 3. Stop and Unhook the Timer
+                    if (_timer != null)
+                    {
+                        _timer.Stop();
+                        _timer.Tick -= OnTick; // CRITICAL
+                        _timer = null;
+                    }
+                }
 
-            // 4. Stop and Unhook the Timer
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher from keeping the VM alive
-                _timer = null;
+                base.Dispose(disposing);
+                _disposedValue = true;
             }
         }
 
