@@ -14,37 +14,48 @@
         - Download the signed artifact
         - Replace the original file with the signed version
 
-.PARAMETER FilePath
+.PARAMETER Path
     Path to the file that should be signed.
 
 .EXAMPLE
     PS> .\signpath.ps1 "C:\build\Servy.Manager.exe"
 #>
-
 param(
     [Parameter(Mandatory = $true)]
     [string]$Path
 )
 
 # ----------------------------------------------------------
+# CONFIGURATION & VERSION PINNING
+# ----------------------------------------------------------
+$RequiredSignPathVersion = '4.4.1' # Pinned known-good version
+
+# ----------------------------------------------------------
 # ENSURE SIGNPATH MODULE EXISTS
 # ----------------------------------------------------------
-if (-not (Get-Module -ListAvailable -Name SignPath)) {
+$availableModule = Get-Module -ListAvailable -Name SignPath | 
+                   Where-Object { $_.Version -eq $RequiredSignPathVersion }
 
-    Write-Host "SignPath module not found. Installing..."
+if (-not $availableModule) {
+    Write-Host "SignPath module (v$RequiredSignPathVersion) not found. Installing..."
     
-    # Install in CurrentUser scope to avoid requiring admin
-    Install-Module -Name SignPath -Force
+    # Install specific version in CurrentUser scope to avoid requiring admin privileges 
+    # and to ensure reproducibility in CI environments.
+    Install-Module -Name SignPath -RequiredVersion $RequiredSignPathVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
 
-    # Import the module to make it available in this session
-    Import-Module SignPath -Force
-
-    Write-Host "SignPath module installed and imported."
-} else {
-    # Module exists; import it anyway to ensure availability
-    Import-Module SignPath -Force
-    Write-Host "SignPath module already installed."
+    Write-Host "SignPath module v$RequiredSignPathVersion installed."
 }
+
+# Explicitly import the pinned version
+Import-Module SignPath -RequiredVersion $RequiredSignPathVersion -Force
+
+$loadedModule = Get-Module -Name SignPath
+if ($null -eq $loadedModule -or $loadedModule.Version -ne $RequiredSignPathVersion) {
+    Write-Error "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Got: $($loadedModule.Version)"
+    exit 1
+}
+
+Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance."
 
 # ----------------------------------------------------------
 # LOCATE CONFIG FILE
@@ -70,7 +81,7 @@ Write-Host "Loading config from $configPath"
 # LOAD CONFIG
 # ----------------------------------------------------------
 $config = @{}
-Get-Content $configPath| ForEach-Object {
+Get-Content $configPath | ForEach-Object {
     if ($_ -match "^\s*#") { return }
     if ($_ -match "^\s*$") { return }
     if ($_ -match "^\s*([^=]+)=(.*)$") {
@@ -82,7 +93,6 @@ Get-Content $configPath| ForEach-Object {
 # CHECK SIGN FLAG
 # ----------------------------------------------------------
 $signFlag = $config["SIGN"]
-
 if ($signFlag -ine "true") {
     Write-Host "SIGN is not true in $configPath. Skipping signing."
     exit 0
@@ -116,7 +126,6 @@ Write-Host "Submitting signing job for $fileName..."
 # SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
 $signedPath = "$Path.signed"
-
 try {
     $commonParams = @{
         OrganizationId     = $organizationId
@@ -136,7 +145,6 @@ try {
     $buildUrl = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
 
     if ($commitId -and $branchName) {
-
         $commonParams.Origin = @{
             RepositoryData = @{
                 SourceControlManagementType = "git"
@@ -163,7 +171,7 @@ try {
         $commonParams.ArtifactConfigurationSlug = $artifactConfigurationSlug
     }
 
-    $signingRequestId = Submit-SigningRequest @CommonParams
+    $signingRequestId = Submit-SigningRequest @commonParams
     Write-Host "Signing request completed: $signingRequestId"
 }
 catch {
