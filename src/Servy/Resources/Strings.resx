@@ -17,7 +17,7 @@
     <value>Elevation Required</value>
   </data>
   <data name="SecurityWarningMessage" xml:space="preserve">
-    <value>Servy Manager requires administrative privileges to manage system services.</value>
+    <value>Servy requires administrative privileges to manage system services.</value>
   </data>
 
   <data name="SqliteVersionWarningTitle" xml:space="preserve">
@@ -29,7 +29,7 @@
 
   <!--Splash screen-->
   <data name="Splash_Text" xml:space="preserve">
-    <value>Loading Servy Manager...</value>
+    <value>Loading Servy...</value>
   </data>
 
   <!-- Menus -->
@@ -42,9 +42,18 @@
   <data name="Menu_ImportJson" xml:space="preserve">
     <value>Import JSON configuration</value>
   </data>
+  <data name="Menu_Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Menu_ExportXml" xml:space="preserve">
+    <value>Export XML configuration</value>
+  </data>
+  <data name="Menu_ExportJson" xml:space="preserve">
+    <value>Export JSON configuration</value>
+  </data>
 
-  <data name="Menu_Config" xml:space="preserve">
-    <value>Configurator</value>
+  <data name="Menu_Manager" xml:space="preserve">
+    <value>Manager</value>
   </data>
 
   <data name="Menu_Help" xml:space="preserve">
@@ -57,14 +66,16 @@
     <value>Check for updates...</value>
   </data>
   <data name="Menu_About" xml:space="preserve">
-    <value>About Servy Manager</value>
+    <value>About Servy</value>
   </data>
 
   <data name="Text_About" xml:space="preserve">
     <value>
-Servy Manager {0}
+Servy {0}
 
-Servy Manager provides a clean and simple interface for managing Windows services created with Servy. Start, stop, configure, and monitor services with ease.
+Servy lets you run any application as a native Windows service, with full control over its working directory, startup behavior, logging, health checks, and recovery options.
+
+It includes a desktop app, a CLI, and a PowerShell module, letting you manage services manually or automate everything in scripts and CI/CD pipelines.
 
 Built with {1}
 
@@ -74,212 +85,85 @@ Copyright © {2} Akram El Assas. All rights reserved.
     </value>
   </data>
 
-  <!--Tabs-->
-  <data name="Label_ServicesTab" xml:space="preserve">
-    <value>Services</value>
+  <!-- Tabs -->
+  <data name="Label_MainTab" xml:space="preserve">
+    <value>Main</value>
   </data>
-  <data name="Label_LogsTab" xml:space="preserve">
-    <value>Logs</value>
+  <data name="Label_LoggingTab" xml:space="preserve">
+    <value>Logging</value>
   </data>
-  <data name="Label_PerformanceTab" xml:space="preserve">
-    <value>Performance</value>
+  <data name="Label_RecoveryTab" xml:space="preserve">
+    <value>Recovery</value>
   </data>
-  <data name="Label_ConsoleTab" xml:space="preserve">
-    <value>Console</value>
+  <data name="Label_AdvancedTab" xml:space="preserve">
+    <value>Advanced</value>
   </data>
-  <data name="Label_DependenciesTab" xml:space="preserve">
-    <value>Dependencies</value>
+  <data name="Label_LogOnTab" xml:space="preserve">
+    <value>Log On</value>
   </data>
-
-  <data name="Console_Info" xml:space="preserve">
-    <value>Enable service stdout/stderr redirection to live-monitor console output</value>
+  <data name="Label_PreLaunchTab" xml:space="preserve">
+    <value>Pre-Launch</value>
   </data>
-  <data name="Label_Copy" xml:space="preserve">
-    <value>Copy</value>
+  <data name="Label_PreStopTab" xml:space="preserve">
+    <value>Pre-Stop</value>
   </data>
-  <data name="Button_Resume" xml:space="preserve">
-    <value>▶ Resume</value>
-  </data>
-  <data name="Tooltip_Resume" xml:space="preserve">
-    <value>Resume live updates</value>
+  <data name="Label_PostStopTab" xml:space="preserve">
+    <value>Post-Stop</value>
   </data>
 
-  <data name="Dependencies_Info" xml:space="preserve">
-    <value>Service dependency tree (via SCM)</value>
+  <!-- Labels / Info -->
+  <data name="Label_ServiceName" xml:space="preserve">
+    <value>Service Name *</value>
   </data>
-  <data name="Button_Refresh" xml:space="preserve">
-    <value>Refresh</value>
+  <data name="Label_ServiceDisplayName" xml:space="preserve">
+    <value>Display Name</value>
   </data>
-  <data name="Tooltip_Refresh" xml:space="preserve">
-    <value>Refresh the service dependency tree</value>
+  <data name="Info_ServiceDisplayName" xml:space="preserve">
+    <value>The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead.</value>
   </data>
-  <data name="Button_ExpandAll" xml:space="preserve">
-    <value>Expand All</value>
+  <data name="Label_ServiceDescription" xml:space="preserve">
+    <value>Service Description</value>
   </data>
-  <data name="Tooltip_ExpandAll" xml:space="preserve">
-    <value>Expand all nodes in the dependency tree</value>
+  <data name="Label_ProcessPath" xml:space="preserve">
+    <value>Process Path *</value>
   </data>
-  <data name="Button_CollapseAll" xml:space="preserve">
-    <value>Collapse All</value>
+  <data name="Info_ProcessPath" xml:space="preserve">
+    <value>Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe</value>
   </data>
-  <data name="Tooltip_CollapseAll" xml:space="preserve">
-    <value>Collapse all nodes in the dependency tree</value>
+  <data name="Label_StartupDirectory" xml:space="preserve">
+    <value>Startup Directory</value>
   </data>
-  <data name="Label_Dependencies_Gear_Info" xml:space="preserve">
-    <value>Status: Running (green), Stopped (red), Cycle (orange)</value>
+  <data name="Info_StartupDirectory" xml:space="preserve">
+    <value>Supports environment variable expansion, example: %PROGRAMDATA%\MyApp</value>
   </data>
-  <data name="Label_F5_Shortcut_Dependencies" xml:space="preserve">
-    <value>Press F5 to refresh the dependency tree</value>
+  <data name="Label_ProcessParameters" xml:space="preserve">
+    <value>Process Parameters</value>
   </data>
-  <data name="Tooltip_Cycle" xml:space="preserve">
-    <value>Circular dependency detected</value>
+  <data name="Info_ProcessParameters" xml:space="preserve">
+    <value>Process parameters support environment variable expansion. Example:
+--param="%ProgramData%\MyApp" --param="%MY_VAR%\bin"</value>
   </data>
-  <data name="Tooltip_ServiceRunning" xml:space="preserve">
-    <value>This service is running</value>
-  </data>
-  <data name="Tooltip_ServiceStopped" xml:space="preserve">
-    <value>This service is stopped</value>
+  <data name="Label_RequiredFields" xml:space="preserve">
+    <value>* Required fields</value>
   </data>
 
 
-  <!-- Search -->
-  <data name="Button_Search" xml:space="preserve">
-    <value>Search</value>
+  <data name="Dialog_SelectStdoutFile" xml:space="preserve">
+    <value>Select standard output file</value>
   </data>
-  <data name="Button_Searching" xml:space="preserve">
-    <value>Searching...</value>
-  </data>
-  <data name="Label_F5_Shortcut" xml:space="preserve">
-    <value>Service statuses auto-refresh - Press F5 to refresh the full list</value>
-  </data>
-  <data name="Label_F5_Shortcut_Logs" xml:space="preserve">
-    <value>Press F5 to refresh logs</value>
-  </data>
-  <data name="Footer_ServiceRowText" xml:space="preserve">
-    <value>service</value>
-  </data>
-  <data name="Footer_LogRowText" xml:space="preserve">
-    <value>log</value>
+  <data name="Dialog_SelectStderrFile" xml:space="preserve">
+    <value>Select standard error file</value>
   </data>
 
-  <!-- Services DataGrid -->
-  <data name="Column_Name" xml:space="preserve">
-    <value>Name</value>
-  </data>
-  <data name="Column_Description" xml:space="preserve">
-    <value>Description</value>
-  </data>
-  <data name="Column_Status" xml:space="preserve">
-    <value>Status</value>
-  </data>
-  <data name="Column_StartupType" xml:space="preserve">
+  <!-- Startup Type ComboBox Items -->
+  <data name="Label_StartupType" xml:space="preserve">
     <value>Startup Type</value>
   </data>
-  <data name="Column_LogOnAs" xml:space="preserve">
-    <value>User Session</value>
-  </data>
-
-  <!--Status-->
-  <data name="Status_Stopped" xml:space="preserve">
-    <value>Stopped</value>
-  </data>
-  <data name="Status_StartPending" xml:space="preserve">
-    <value>Start Pending</value>
-  </data>
-  <data name="Status_StopPending" xml:space="preserve">
-    <value>StopPending</value>
-  </data>
-  <data name="Status_Running" xml:space="preserve">
-    <value>Running</value>
-  </data>
-  <data name="Status_ContinuePending" xml:space="preserve">
-    <value>Continue Pending</value>
-  </data>
-  <data name="Status_PausePending" xml:space="preserve">
-    <value>PausePending</value>
-  </data>
-  <data name="Status_Paused" xml:space="preserve">
-    <value>Paused</value>
-  </data>
-  <data name="Status_NotInstalled" xml:space="preserve">
-    <value>Not Installed</value>
-  </data>
-
-  <data name="Label_Fetching" xml:space="preserve">
-    <value>Fetching...</value>
-  </data>
-
-  <!--Actions-->
-  <data name="Button_Start" xml:space="preserve">
-    <value>Start</value>
-  </data>
-  <data name="Button_Stop" xml:space="preserve">
-    <value>Stop</value>
-  </data>
-  <data name="Button_Restart" xml:space="preserve">
-    <value>Restart</value>
-  </data>
-  <data name="Button_More" xml:space="preserve">
-    <value>More Actions</value>
-  </data>
-
-  <data name="Button_StartSelected" xml:space="preserve">
-    <value>Start Selected</value>
-  </data>
-  <data name="Button_StopSelected" xml:space="preserve">
-    <value>Stop Selected</value>
-  </data>
-  <data name="Button_RestartSelected" xml:space="preserve">
-    <value>Restart Selected</value>
-  </data>
-
-  <data name="Msg_NoServicesSelected" xml:space="preserve">
-    <value>No services selected.</value>
-  </data>
-  <data name="Confirm_StartSelectedServices" xml:space="preserve">
-    <value>Start selected services?</value>
-  </data>
-  <data name="Confirm_StopSelectedServices" xml:space="preserve">
-    <value>Stop selected services?</value>
-  </data>
-  <data name="Confirm_RestartSelectedServices" xml:space="preserve">
-    <value>Restart selected services?</value>
-  </data>
-  <data name="Msg_OperationCompletedSuccessfully" xml:space="preserve">
-    <value>Operation completed successfully.</value>
-  </data>
-  <data name="Msg_OperationCompletedWithErrorsDetails" xml:space="preserve">
-    <value>An error occurred while performing the operation on: {0}</value>
-  </data>
-  <data name="Msg_AllOperationsFailed" xml:space="preserve">
-    <value>All operations failed.</value>
-  </data>
-
-  <data name="Button_Install" xml:space="preserve">
-    <value>Install</value>
-  </data>
-  <data name="Button_Uninstall" xml:space="preserve">
-    <value>Uninstall</value>
-  </data>
-  <data name="Button_Remove" xml:space="preserve">
-    <value>Remove</value>
-  </data>
-  <data name="Button_Config" xml:space="preserve">
-    <value>Open Configuration</value>
-  </data>
-  <data name="Button_ExportXML" xml:space="preserve">
-    <value>Export XML</value>
-  </data>
-  <data name="Button_ExportJSON" xml:space="preserve">
-    <value>Export JSON</value>
-  </data>
-
-  <!-- Startup Type Items -->
   <data name="StartupType_Automatic" xml:space="preserve">
-    <value>Automatic</value>
+    <value>Automatic (default)</value>
   </data>
   <data name="StartupType_AutomaticDelayedStart" xml:space="preserve">
-    <value>Automatic (delayed)</value>
+    <value>Automatic (delayed start)</value>
   </data>
   <data name="StartupType_Manual" xml:space="preserve">
     <value>Manual</value>
@@ -287,11 +171,194 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="StartupType_Disabled" xml:space="preserve">
     <value>Disabled</value>
   </data>
-  <data name="StartupType_Unknown" xml:space="preserve">
-    <value>Unknown</value>
+
+  <!-- Process Priority ComboBox Items -->
+  <data name="Label_ProcessPriority" xml:space="preserve">
+    <value>Process Priority</value>
+  </data>
+  <data name="ProcessPriority_Idle" xml:space="preserve">
+    <value>Idle</value>
+  </data>
+  <data name="ProcessPriority_BelowNormal" xml:space="preserve">
+    <value>Below Normal</value>
+  </data>
+  <data name="ProcessPriority_Normal" xml:space="preserve">
+    <value>Normal (default)</value>
+  </data>
+  <data name="ProcessPriority_AboveNormal" xml:space="preserve">
+    <value>Above Normal</value>
+  </data>
+  <data name="ProcessPriority_High" xml:space="preserve">
+    <value>High</value>
+  </data>
+  <data name="ProcessPriority_RealTime" xml:space="preserve">
+    <value>Real Time (use with caution)</value>
+  </data>
+
+  <!-- I/O redirection -->
+  <data name="Label_StdoutPath" xml:space="preserve">
+    <value>Stdout File Path</value>
+  </data>
+  <data name="Label_StderrPath" xml:space="preserve">
+    <value>Stderr File Path</value>
+  </data>
+  <data name="Label_EnableSizeRotation" xml:space="preserve">
+    <value>Enable size-based Rotation</value>
+  </data>
+  <data name="Label_RotationSize" xml:space="preserve">
+    <value>Rotation Size</value>
+  </data>
+  <data name="Label_RotationSizeUnity" xml:space="preserve">
+    <value>Megabytes (MB)</value>
+  </data>
+  <data name="Label_EnableDateRotation" xml:space="preserve">
+    <value>Enable date-based Rotation</value>
+  </data>
+  <data name="Label_DateRotationType" xml:space="preserve">
+    <value>Date Rotation Interval</value>
+  </data>
+  <data name="DateRotationType_Daily" xml:space="preserve">
+    <value>Daily (default)</value>
+  </data>
+  <data name="DateRotationType_Weekly" xml:space="preserve">
+    <value>Weekly</value>
+  </data>
+  <data name="DateRotationType_Monthly" xml:space="preserve">
+    <value>Monthly</value>
+  </data>
+  <data name="Info_DateRotation" xml:space="preserve">
+    <value>When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
+  </data>
+  <data name="Label_UseLocalTimeForRotation" xml:space="preserve">
+    <value>Use local time for log rotation (Default: UTC)</value>
+  </data>
+
+  <data name="Label_MaxRotations" xml:space="preserve">
+    <value>Max Rotations</value>
+  </data>
+  <data name="Info_MaxRotations" xml:space="preserve">
+    <value>Maximum rotated log files to keep. Set to 0 for unlimited.</value>
+  </data>
+  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
+    <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
+  </data>
+
+  <!-- Health monitoring -->
+  <data name="Label_EnableHealthMonitoring" xml:space="preserve">
+    <value>Enable Health Monitoring</value>
+  </data>
+  <data name="Label_HeartbeatInterval" xml:space="preserve">
+    <value>Heartbeat Interval</value>
+  </data>
+  <data name="Label_Seconds" xml:space="preserve">
+    <value>seconds</value>
+  </data>
+  <data name="Label_MaxFailedChecks" xml:space="preserve">
+    <value>Max Failed Checks</value>
+  </data>
+
+  <data name="Label_Attempts" xml:space="preserve">
+    <value>attempts</value>
+  </data>
+  <data name="Info_MaxRestartAttempts" xml:space="preserve">
+    <value>Set to 0 for unlimited restart attempts.</value>
+  </data>
+  <data name="Label_RecoveryAction" xml:space="preserve">
+    <value>Recovery Action</value>
+  </data>
+  <data name="RecoveryAction_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="RecoveryAction_RestartService" xml:space="preserve">
+    <value>Restart Service (default)</value>
+  </data>
+  <data name="RecoveryAction_RestartProcess" xml:space="preserve">
+    <value>Restart Process</value>
+  </data>
+  <data name="RecoveryAction_RestartComputer" xml:space="preserve">
+    <value>Restart Computer</value>
+  </data>
+  <data name="Info_RecoveryAction" xml:space="preserve">
+    <value>Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts.</value>
+  </data>
+  <data name="Label_MaxRestartAttempts" xml:space="preserve">
+    <value>Max Restart Attempts</value>
+  </data>
+
+  <data name="Info_FailureProgram" xml:space="preserve">
+    <value>Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed.</value>
+  </data>
+  <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
+    <value>Optional. Defaults to the failure program directory.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
+    <value>The failure program path is invalid.</value>
+  </data>
+  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
+    <value>The specified failure program startup directory is invalid.</value>
+  </data>
+
+  <!-- Environment Variables -->
+  <data name="Label_EnvironmentVariables" xml:space="preserve">
+    <value>Environment Variables</value>
+  </data>
+  <data name="Info_EnvironmentVariables" xml:space="preserve">
+    <value>Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape '=', \" to escape '"', \; to escape ';' and \\ to escape '\'. Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin</value>
+  </data>
+
+  <!-- Service Dependencies -->
+  <data name="Label_ServiceDependencies" xml:space="preserve">
+    <value>Service Dependencies</value>
+  </data>
+  <data name="Info_ServiceDependencies" xml:space="preserve">
+    <value>Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency's start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start.</value>
+  </data>
+
+  <!-- User Account -->
+  <data name="Label_RunAsLocalSystem" xml:space="preserve">
+    <value>Run As Local System</value>
+  </data>
+  <data name="Label_UserAccount" xml:space="preserve">
+    <value>User Account</value>
+  </data>
+  <data name="Info_UserAccount" xml:space="preserve">
+    <value>The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$).</value>
+  </data>
+  <data name="Info_UserAccountRights" xml:space="preserve">
+    <value>If the service runs under an account other than Local System, you must grant write access to %ProgramData%\Servy for the account that runs the service.</value>
+  </data>
+  <data name="Label_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Label_ConfirmPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="Msg_PasswordsDontMatch" xml:space="preserve">
+    <value>Passwords don&apos;t match.</value>
   </data>
 
   <!-- Pre-Launch -->
+  <data name="Info_PreLaunch" xml:space="preserve">
+    <value>Optional script to run before service start. If it fails, the service won't start unless Ignore Failure is enabled.</value>
+  </data>
+  <data name="Label_ProcessPathNotRequired" xml:space="preserve">
+    <value>Process Path</value>
+  </data>
+  <data name="Info_PreLaunchStartupDirectory" xml:space="preserve">
+    <value>Optional. Defaults to the service working directory.</value>
+  </data>
+  <data name="Label_PreLaunchTimeoutSeconds" xml:space="preserve">
+    <value>Timeout</value>
+  </data>
+  <data name="Label_PreLaunchRetryAttempts" xml:space="preserve">
+    <value>Retry Attempts</value>
+  </data>
+  <data name="Label_PreLaunchIgnoreFailure" xml:space="preserve">
+    <value>Ignore Failure</value>
+  </data>
+  <data name="Info_PreLaunchTimeout" xml:space="preserve">
+    <value>Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging).</value>
+  </data>
   <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
     <value>The pre-launch process path is invalid.</value>
   </data>
@@ -318,18 +385,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_FailedToLoadJson" xml:space="preserve">
     <value>Failed to load JSON service configuration.</value>
   </data>
-  <data name="ImportXml_Success" xml:space="preserve">
-    <value>XML Configuration imported successfully.</value>
-  </data>
-  <data name="ImportJson_Success" xml:space="preserve">
-    <value>JSON Configuration imported successfully.</value>
-  </data>
-  <data name="ImportXml_Error" xml:space="preserve">
-    <value>Failed to import XML Configuration.</value>
-  </data>
-  <data name="ImportJson_Error" xml:space="preserve">
-    <value>Failed to import JSON Configuration.</value>
-  </data>
 
   <!-- XML/JSON export -->
   <data name="SaveFileDialog_XmlTitle" xml:space="preserve">
@@ -345,9 +400,40 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>JSON Configuration exported successfully.</value>
   </data>
 
+  <!-- Clear Action -->
+  <data name="Menu_ClearAll" xml:space="preserve">
+    <value>Clear All</value>
+  </data>
+  <data name="Confirm_ClearAll" xml:space="preserve">
+    <value>Are you sure you want to clear all configuration values?</value>
+  </data>
+
+  <!-- Buttons -->
+  <data name="Button_Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Button_Uninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Button_Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Button_Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Button_Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="Button_Browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+
   <!-- Messages -->
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
+  </data>
+  <data name="Msg_ServiceNameError" xml:space="preserve">
+    <value>A service name is required to perform this action.</value>
   </data>
   <data name="Msg_InvalidPath" xml:space="preserve">
     <value>The specified process path is invalid.</value>
@@ -366,13 +452,10 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>The specified stderr file path is invalid.</value>
   </data>
   <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of Megabytes (MB) between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
-    <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
+    <value>Rotation size must be specified in megabytes (MB) between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
-    <value>Heartbeat interval must be a number between {0} and {1}.</value>
+    <value>Heartbeat interval must be a number of seconds between {0} and {1}.</value>
   </data>
   <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
     <value>Max Failed Checks must be a number between {0} and {1}.</value>
@@ -384,9 +467,16 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_ServiceInstalled" xml:space="preserve">
     <value>Service was installed successfully.</value>
   </data>
+  <data name="Msg_ServiceRemoved" xml:space="preserve">
+    <value>Service was removed successfully.</value>
+  </data>
   <data name="Msg_UnexpectedError" xml:space="preserve">
     <value>An unexpected error occurred.</value>
   </data>
+  <data name="Msg_AdminRightsRequired" xml:space="preserve">
+    <value>Administrator privileges are required.</value>
+  </data>
+
   <data name="Msg_ServiceStarted" xml:space="preserve">
     <value>Service was started successfully.</value>
   </data>
@@ -397,65 +487,35 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Service was restarted successfully.</value>
   </data>
 
-  <data name="Msg_ServiceNotFound" xml:space="preserve">
-    <value>Service not found.</value>
-  </data>
-
-  <data name="Msg_UninstallServiceConfirm" xml:space="preserve">
-    <value>Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered.</value>
-  </data>
-  <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
-    <value>Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered.</value>
-  </data>
-  <data name="Msg_ConfigurationAppNotFound" xml:space="preserve">
-    <value>Servy Configuration App not found.</value>
-  </data>
-
-  <!--Logs View-->
-  <data name="Label_Level" xml:space="preserve">
-    <value>Level:</value>
-  </data>
-  <data name="Label_From" xml:space="preserve">
-    <value>From:</value>
-  </data>
-  <data name="Label_To" xml:space="preserve">
-    <value>To:</value>
-  </data>
-  <data name="Label_Keyword" xml:space="preserve">
-    <value>Keyword:</value>
-  </data>
-
-  <data name="Column_Time" xml:space="preserve">
-    <value>Time</value>
-  </data>
-  <data name="Column_Level" xml:space="preserve">
-    <value>Level</value>
-  </data>
-  <data name="Column_Message" xml:space="preserve">
-    <value>Message</value>
-  </data>
-
-  <data name="Msg_MainTabControl_SelectionChangedError" xml:space="preserve">
-    <value>An error occurred while switching tabs. Please try again.</value>
+  <data name="Msg_ManagerAppNotFound" xml:space="preserve">
+    <value>Servy Manager App not found.</value>
   </data>
 
   <data name="Msg_ServiceAlreadyExists" xml:space="preserve">
   <value>A service with this name already exists. Would you like to replace it?
 
 If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
-</data>
+  </data>
+  <data name="Msg_ServiceNotFound" xml:space="preserve">
+    <value>The specified service was not found.</value>
+  </data>
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
     <value>The specified service is disabled.</value>
   </data>
 
-  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
-    <value>The failure program path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
-    <value>The specified failure program startup directory is invalid.</value>
+  <!--Post-Launch-->
+  <data name="Label_PostLaunchTab" xml:space="preserve">
+    <value>Post-Launch</value>
   </data>
 
-  <!--Post-Launch-->
+  <data name="Info_PostLaunch" xml:space="preserve">
+    <value>Configure an optional script or executable to run after the process starts successfully.</value>
+  </data>
+
+  <data name="Info_PostLaunchStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the post-launch program.</value>
+  </data>
+
   <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
     <value>The post-launch process path is invalid.</value>
   </data>
@@ -463,48 +523,51 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>The specified post-launch startup directory is invalid.</value>
   </data>
 
-  <!--PID-->
-  <data name="Column_Pid" xml:space="preserve">
-    <value>PID</value>
+  <!--Debug-Logs-->
+  <data name="Label_EnableDebugLogs" xml:space="preserve">
+    <value>Enable Debug Logs</value>
   </data>
-  <data name="Button_CopyPid" xml:space="preserve">
-    <value>Copy PID</value>
-  </data>
-  <data name="Msg_PidCopied" xml:space="preserve">
-    <value>PID copied to clipboard.</value>
-  </data>
-
-  <!--CPU/RAM-->
-  <data name="Column_CPU" xml:space="preserve">
-    <value>CPU</value>
-  </data>
-  <data name="Column_RAM" xml:space="preserve">
-    <value>RAM</value>
-  </data>
-
-  <!--Performand tab-->
-  <data name="Column_Service" xml:space="preserve">
-    <value>Service</value>
-  </data>
-  <data name="Label_Pid" xml:space="preserve">
-    <value>PID</value>
-  </data>
-  <data name="Label_CPU" xml:space="preserve">
-    <value>CPU</value>
-  </data>
-  <data name="Label_RAM" xml:space="preserve">
-    <value>RAM</value>
+  <data name="Info_EnableDebugLogs" xml:space="preserve">
+    <value>When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information.</value>
   </data>
 
   <!--Start/Stop timeouts-->
+  <data name="Label_StartTimeout" xml:space="preserve">
+    <value>Start Timeout</value>
+  </data>
+  <data name="Info_StartTimeout" xml:space="preserve">
+    <value>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</value>
+  </data>
   <data name="Msg_InvalidStartTimeout" xml:space="preserve">
     <value>Start timeout must be a number between {0} and {1} seconds.</value>
+  </data>
+
+  <data name="Label_StopTimeout" xml:space="preserve">
+    <value>Stop Timeout</value>
+  </data>
+  <data name="Info_StopTimeout" xml:space="preserve">
+    <value>The timeout in seconds to wait for the process to exit.</value>
   </data>
   <data name="Msg_InvalidStopTimeout" xml:space="preserve">
     <value>Stop timeout must be a number between {0} and {1} seconds.</value>
   </data>
 
-  <!--Pre-Stop-->
+  <!-- Pre-Stop -->
+  <data name="Info_PreStop" xml:space="preserve">
+    <value>Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0.</value>
+  </data>
+  <data name="Info_PreStopStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the pre-stop program.</value>
+  </data>
+  <data name="Label_PreStopTimeoutSeconds" xml:space="preserve">
+    <value>Timeout</value>
+  </data>
+  <data name="Label_PreStopLogAsError" xml:space="preserve">
+    <value>Log pre-stop failure as error</value>
+  </data>
+  <data name="Info_PreStopTimeout" xml:space="preserve">
+    <value>Set the timeout to 0 to run in fire-and-forget mode.</value>
+  </data>
   <data name="Msg_InvalidPreStopPath" xml:space="preserve">
     <value>The pre-stop process path is invalid.</value>
   </data>
@@ -515,7 +578,13 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
   </data>
 
-  <!--Post-Stop-->
+  <!-- Post-Stop -->
+  <data name="Info_PostStop" xml:space="preserve">
+    <value>Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown.</value>
+  </data>
+  <data name="Info_PostStopStartupDirectory" xml:space="preserve">
+    <value>Optional. If not set, defaults to the directory of the post-stop program.</value>
+  </data>
   <data name="Msg_InvalidPostStopPath" xml:space="preserve">
     <value>The post-stop process path is invalid.</value>
   </data>
@@ -539,6 +608,5 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
     <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
   </data>
-
 
 </root>

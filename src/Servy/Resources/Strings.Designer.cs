@@ -61,56 +61,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Collapse All.
+        ///   Recherche une chaîne localisée semblable à Browse.
         /// </summary>
-        public static string Button_CollapseAll {
+        public static string Button_Browse {
             get {
-                return ResourceManager.GetString("Button_CollapseAll", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Open Configuration.
-        /// </summary>
-        public static string Button_Config {
-            get {
-                return ResourceManager.GetString("Button_Config", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Copy PID.
-        /// </summary>
-        public static string Button_CopyPid {
-            get {
-                return ResourceManager.GetString("Button_CopyPid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Expand All.
-        /// </summary>
-        public static string Button_ExpandAll {
-            get {
-                return ResourceManager.GetString("Button_ExpandAll", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Export JSON.
-        /// </summary>
-        public static string Button_ExportJSON {
-            get {
-                return ResourceManager.GetString("Button_ExportJSON", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Export XML.
-        /// </summary>
-        public static string Button_ExportXML {
-            get {
-                return ResourceManager.GetString("Button_ExportXML", resourceCulture);
+                return ResourceManager.GetString("Button_Browse", resourceCulture);
             }
         }
         
@@ -124,74 +79,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à More Actions.
-        /// </summary>
-        public static string Button_More {
-            get {
-                return ResourceManager.GetString("Button_More", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Refresh.
-        /// </summary>
-        public static string Button_Refresh {
-            get {
-                return ResourceManager.GetString("Button_Refresh", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Remove.
-        /// </summary>
-        public static string Button_Remove {
-            get {
-                return ResourceManager.GetString("Button_Remove", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Restart.
         /// </summary>
         public static string Button_Restart {
             get {
                 return ResourceManager.GetString("Button_Restart", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Restart Selected.
-        /// </summary>
-        public static string Button_RestartSelected {
-            get {
-                return ResourceManager.GetString("Button_RestartSelected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à ▶ Resume.
-        /// </summary>
-        public static string Button_Resume {
-            get {
-                return ResourceManager.GetString("Button_Resume", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Search.
-        /// </summary>
-        public static string Button_Search {
-            get {
-                return ResourceManager.GetString("Button_Search", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Searching....
-        /// </summary>
-        public static string Button_Searching {
-            get {
-                return ResourceManager.GetString("Button_Searching", resourceCulture);
             }
         }
         
@@ -205,29 +97,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Start Selected.
-        /// </summary>
-        public static string Button_StartSelected {
-            get {
-                return ResourceManager.GetString("Button_StartSelected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Stop.
         /// </summary>
         public static string Button_Stop {
             get {
                 return ResourceManager.GetString("Button_Stop", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Stop Selected.
-        /// </summary>
-        public static string Button_StopSelected {
-            get {
-                return ResourceManager.GetString("Button_StopSelected", resourceCulture);
             }
         }
         
@@ -241,155 +115,56 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à CPU.
+        ///   Recherche une chaîne localisée semblable à Are you sure you want to clear all configuration values?.
         /// </summary>
-        public static string Column_CPU {
+        public static string Confirm_ClearAll {
             get {
-                return ResourceManager.GetString("Column_CPU", resourceCulture);
+                return ResourceManager.GetString("Confirm_ClearAll", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Description.
+        ///   Recherche une chaîne localisée semblable à Daily (default).
         /// </summary>
-        public static string Column_Description {
+        public static string DateRotationType_Daily {
             get {
-                return ResourceManager.GetString("Column_Description", resourceCulture);
+                return ResourceManager.GetString("DateRotationType_Daily", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Level.
+        ///   Recherche une chaîne localisée semblable à Monthly.
         /// </summary>
-        public static string Column_Level {
+        public static string DateRotationType_Monthly {
             get {
-                return ResourceManager.GetString("Column_Level", resourceCulture);
+                return ResourceManager.GetString("DateRotationType_Monthly", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à User Session.
+        ///   Recherche une chaîne localisée semblable à Weekly.
         /// </summary>
-        public static string Column_LogOnAs {
+        public static string DateRotationType_Weekly {
             get {
-                return ResourceManager.GetString("Column_LogOnAs", resourceCulture);
+                return ResourceManager.GetString("DateRotationType_Weekly", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Message.
+        ///   Recherche une chaîne localisée semblable à Select standard error file.
         /// </summary>
-        public static string Column_Message {
+        public static string Dialog_SelectStderrFile {
             get {
-                return ResourceManager.GetString("Column_Message", resourceCulture);
+                return ResourceManager.GetString("Dialog_SelectStderrFile", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Name.
+        ///   Recherche une chaîne localisée semblable à Select standard output file.
         /// </summary>
-        public static string Column_Name {
+        public static string Dialog_SelectStdoutFile {
             get {
-                return ResourceManager.GetString("Column_Name", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à PID.
-        /// </summary>
-        public static string Column_Pid {
-            get {
-                return ResourceManager.GetString("Column_Pid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à RAM.
-        /// </summary>
-        public static string Column_RAM {
-            get {
-                return ResourceManager.GetString("Column_RAM", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service.
-        /// </summary>
-        public static string Column_Service {
-            get {
-                return ResourceManager.GetString("Column_Service", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Startup Type.
-        /// </summary>
-        public static string Column_StartupType {
-            get {
-                return ResourceManager.GetString("Column_StartupType", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Status.
-        /// </summary>
-        public static string Column_Status {
-            get {
-                return ResourceManager.GetString("Column_Status", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Time.
-        /// </summary>
-        public static string Column_Time {
-            get {
-                return ResourceManager.GetString("Column_Time", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Restart selected services?.
-        /// </summary>
-        public static string Confirm_RestartSelectedServices {
-            get {
-                return ResourceManager.GetString("Confirm_RestartSelectedServices", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Start selected services?.
-        /// </summary>
-        public static string Confirm_StartSelectedServices {
-            get {
-                return ResourceManager.GetString("Confirm_StartSelectedServices", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Stop selected services?.
-        /// </summary>
-        public static string Confirm_StopSelectedServices {
-            get {
-                return ResourceManager.GetString("Confirm_StopSelectedServices", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enable service stdout/stderr redirection to live-monitor console output.
-        /// </summary>
-        public static string Console_Info {
-            get {
-                return ResourceManager.GetString("Console_Info", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service dependency tree (via SCM).
-        /// </summary>
-        public static string Dependencies_Info {
-            get {
-                return ResourceManager.GetString("Dependencies_Info", resourceCulture);
+                return ResourceManager.GetString("Dialog_SelectStdoutFile", resourceCulture);
             }
         }
         
@@ -412,223 +187,692 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à log.
+        ///   Recherche une chaîne localisée semblable à When both size-based and date-based rotation are enabled, size rotation takes precedence..
         /// </summary>
-        public static string Footer_LogRowText {
+        public static string Info_DateRotation {
             get {
-                return ResourceManager.GetString("Footer_LogRowText", resourceCulture);
+                return ResourceManager.GetString("Info_DateRotation", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à service.
+        ///   Recherche une chaîne localisée semblable à When enabled, environment variables and process parameters are recorded in the Servy.Service.log file. Not recommended for production environments, as these logs may contain sensitive information..
         /// </summary>
-        public static string Footer_ServiceRowText {
+        public static string Info_EnableDebugLogs {
             get {
-                return ResourceManager.GetString("Footer_ServiceRowText", resourceCulture);
+                return ResourceManager.GetString("Info_EnableDebugLogs", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Failed to import JSON Configuration..
+        ///   Recherche une chaîne localisée semblable à Enter variables in the format varName=varValue, one per line or separated by semicolons (;). Use \= to escape &apos;=&apos;, \&quot; to escape &apos;&quot;&apos;, \; to escape &apos;;&apos; and \\ to escape &apos;\&apos;. Supports environment variable expansion, example: VAR1=%ProgramData%\MyApp; VAR2=%VAR1%\bin.
         /// </summary>
-        public static string ImportJson_Error {
+        public static string Info_EnvironmentVariables {
             get {
-                return ResourceManager.GetString("ImportJson_Error", resourceCulture);
+                return ResourceManager.GetString("Info_EnvironmentVariables", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à JSON Configuration imported successfully..
+        ///   Recherche une chaîne localisée semblable à Configure a script or executable to run when the process fails to start. If health monitoring is disabled, the program will run when the process fails to start. If health monitoring is enabled, the program will only run after all configured recovery action retries have failed..
         /// </summary>
-        public static string ImportJson_Success {
+        public static string Info_FailureProgram {
             get {
-                return ResourceManager.GetString("ImportJson_Success", resourceCulture);
+                return ResourceManager.GetString("Info_FailureProgram", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Failed to import XML Configuration..
+        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the failure program directory..
         /// </summary>
-        public static string ImportXml_Error {
+        public static string Info_FailureProgramStartupDirectory {
             get {
-                return ResourceManager.GetString("ImportXml_Error", resourceCulture);
+                return ResourceManager.GetString("Info_FailureProgramStartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à XML Configuration imported successfully..
+        ///   Recherche une chaîne localisée semblable à Set to 0 for unlimited restart attempts..
         /// </summary>
-        public static string ImportXml_Success {
+        public static string Info_MaxRestartAttempts {
             get {
-                return ResourceManager.GetString("ImportXml_Success", resourceCulture);
+                return ResourceManager.GetString("Info_MaxRestartAttempts", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Console.
+        ///   Recherche une chaîne localisée semblable à Maximum rotated log files to keep. Set to 0 for unlimited..
         /// </summary>
-        public static string Label_ConsoleTab {
+        public static string Info_MaxRotations {
             get {
-                return ResourceManager.GetString("Label_ConsoleTab", resourceCulture);
+                return ResourceManager.GetString("Info_MaxRotations", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Copy.
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run after the process starts successfully..
         /// </summary>
-        public static string Label_Copy {
+        public static string Info_PostLaunch {
             get {
-                return ResourceManager.GetString("Label_Copy", resourceCulture);
+                return ResourceManager.GetString("Info_PostLaunch", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à CPU.
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-launch program..
         /// </summary>
-        public static string Label_CPU {
+        public static string Info_PostLaunchStartupDirectory {
             get {
-                return ResourceManager.GetString("Label_CPU", resourceCulture);
+                return ResourceManager.GetString("Info_PostLaunchStartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Status: Running (green), Stopped (red), Cycle (orange).
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run after the wrapped process and all of its child processes have exited. The post-stop process is started in fire-and-forget mode and does not block service shutdown..
         /// </summary>
-        public static string Label_Dependencies_Gear_Info {
+        public static string Info_PostStop {
             get {
-                return ResourceManager.GetString("Label_Dependencies_Gear_Info", resourceCulture);
+                return ResourceManager.GetString("Info_PostStop", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Dependencies.
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the post-stop program..
         /// </summary>
-        public static string Label_DependenciesTab {
+        public static string Info_PostStopStartupDirectory {
             get {
-                return ResourceManager.GetString("Label_DependenciesTab", resourceCulture);
+                return ResourceManager.GetString("Info_PostStopStartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service statuses auto-refresh - Press F5 to refresh the full list.
+        ///   Recherche une chaîne localisée semblable à Optional script to run before service start. If it fails, the service won&apos;t start unless Ignore Failure is enabled..
         /// </summary>
-        public static string Label_F5_Shortcut {
+        public static string Info_PreLaunch {
             get {
-                return ResourceManager.GetString("Label_F5_Shortcut", resourceCulture);
+                return ResourceManager.GetString("Info_PreLaunch", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Press F5 to refresh the dependency tree.
+        ///   Recherche une chaîne localisée semblable à Optional. Defaults to the service working directory..
         /// </summary>
-        public static string Label_F5_Shortcut_Dependencies {
+        public static string Info_PreLaunchStartupDirectory {
             get {
-                return ResourceManager.GetString("Label_F5_Shortcut_Dependencies", resourceCulture);
+                return ResourceManager.GetString("Info_PreLaunchStartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Press F5 to refresh logs.
+        ///   Recherche une chaîne localisée semblable à Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging)..
         /// </summary>
-        public static string Label_F5_Shortcut_Logs {
+        public static string Info_PreLaunchTimeout {
             get {
-                return ResourceManager.GetString("Label_F5_Shortcut_Logs", resourceCulture);
+                return ResourceManager.GetString("Info_PreLaunchTimeout", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Fetching....
+        ///   Recherche une chaîne localisée semblable à Configure an optional script or executable to run before the main service stops. Use it for graceful shutdown tasks such as notifying external systems or draining resources. The pre-stop process runs synchronously and extends the service stop timeout while running, unless the timeout is set to 0..
         /// </summary>
-        public static string Label_Fetching {
+        public static string Info_PreStop {
             get {
-                return ResourceManager.GetString("Label_Fetching", resourceCulture);
+                return ResourceManager.GetString("Info_PreStop", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à From:.
+        ///   Recherche une chaîne localisée semblable à Optional. If not set, defaults to the directory of the pre-stop program..
         /// </summary>
-        public static string Label_From {
+        public static string Info_PreStopStartupDirectory {
             get {
-                return ResourceManager.GetString("Label_From", resourceCulture);
+                return ResourceManager.GetString("Info_PreStopStartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Keyword:.
+        ///   Recherche une chaîne localisée semblable à Set the timeout to 0 to run in fire-and-forget mode..
         /// </summary>
-        public static string Label_Keyword {
+        public static string Info_PreStopTimeout {
             get {
-                return ResourceManager.GetString("Label_Keyword", resourceCulture);
+                return ResourceManager.GetString("Info_PreStopTimeout", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Level:.
+        ///   Recherche une chaîne localisée semblable à Process parameters support environment variable expansion. Example:
+        ///--param=&quot;%ProgramData%\MyApp&quot; --param=&quot;%MY_VAR%\bin&quot;.
         /// </summary>
-        public static string Label_Level {
+        public static string Info_ProcessParameters {
             get {
-                return ResourceManager.GetString("Label_Level", resourceCulture);
+                return ResourceManager.GetString("Info_ProcessParameters", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Logs.
+        ///   Recherche une chaîne localisée semblable à Supports environment variable expansion, example: %JAVA_HOME%\bin\java.exe.
         /// </summary>
-        public static string Label_LogsTab {
+        public static string Info_ProcessPath {
             get {
-                return ResourceManager.GetString("Label_LogsTab", resourceCulture);
+                return ResourceManager.GetString("Info_ProcessPath", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Performance.
+        ///   Recherche une chaîne localisée semblable à Restart service and restart computer actions are not available if the service runs under NT AUTHORITY\NetworkService, NT AUTHORITY\LocalService, or a user account without the required privileges. Only the restart process action will be available for these accounts..
         /// </summary>
-        public static string Label_PerformanceTab {
+        public static string Info_RecoveryAction {
             get {
-                return ResourceManager.GetString("Label_PerformanceTab", resourceCulture);
+                return ResourceManager.GetString("Info_RecoveryAction", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à PID.
+        ///   Recherche une chaîne localisée semblable à Specify one or more Windows service names (not display names) that this service depends on. Enter each service name on a new line or separate them with semicolons (;). Use service key names without spaces or special characters. Each dependency service must be installed and running before this service can start. If a dependency&apos;s start type is Automatic, Windows will try to start it automatically before this service. If a dependency fails to start or is disabled, this service will not start..
         /// </summary>
-        public static string Label_Pid {
+        public static string Info_ServiceDependencies {
             get {
-                return ResourceManager.GetString("Label_Pid", resourceCulture);
+                return ResourceManager.GetString("Info_ServiceDependencies", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à RAM.
+        ///   Recherche une chaîne localisée semblable à The human-readable name shown in the Windows Services console (services.msc). If left empty, the service name will be used instead..
         /// </summary>
-        public static string Label_RAM {
+        public static string Info_ServiceDisplayName {
             get {
-                return ResourceManager.GetString("Label_RAM", resourceCulture);
+                return ResourceManager.GetString("Info_ServiceDisplayName", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Services.
+        ///   Recherche une chaîne localisée semblable à The timeout in seconds to wait for the process to start successfully before considering the startup as failed..
         /// </summary>
-        public static string Label_ServicesTab {
+        public static string Info_StartTimeout {
             get {
-                return ResourceManager.GetString("Label_ServicesTab", resourceCulture);
+                return ResourceManager.GetString("Info_StartTimeout", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à To:.
+        ///   Recherche une chaîne localisée semblable à Supports environment variable expansion, example: %PROGRAMDATA%\MyApp.
         /// </summary>
-        public static string Label_To {
+        public static string Info_StartupDirectory {
             get {
-                return ResourceManager.GetString("Label_To", resourceCulture);
+                return ResourceManager.GetString("Info_StartupDirectory", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à About Servy Manager.
+        ///   Recherche une chaîne localisée semblable à The timeout in seconds to wait for the process to exit..
+        /// </summary>
+        public static string Info_StopTimeout {
+            get {
+                return ResourceManager.GetString("Info_StopTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The service account username (e.g., .\username, DOMAIN\username, or DOMAIN\gMSA$)..
+        /// </summary>
+        public static string Info_UserAccount {
+            get {
+                return ResourceManager.GetString("Info_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à If the service runs under an account other than Local System, you must grant write access to %ProgramData%\Servy for the account that runs the service..
+        /// </summary>
+        public static string Info_UserAccountRights {
+            get {
+                return ResourceManager.GetString("Info_UserAccountRights", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Advanced.
+        /// </summary>
+        public static string Label_AdvancedTab {
+            get {
+                return ResourceManager.GetString("Label_AdvancedTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à attempts.
+        /// </summary>
+        public static string Label_Attempts {
+            get {
+                return ResourceManager.GetString("Label_Attempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Confirm Password.
+        /// </summary>
+        public static string Label_ConfirmPassword {
+            get {
+                return ResourceManager.GetString("Label_ConfirmPassword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Date Rotation Interval.
+        /// </summary>
+        public static string Label_DateRotationType {
+            get {
+                return ResourceManager.GetString("Label_DateRotationType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable date-based Rotation.
+        /// </summary>
+        public static string Label_EnableDateRotation {
+            get {
+                return ResourceManager.GetString("Label_EnableDateRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Debug Logs.
+        /// </summary>
+        public static string Label_EnableDebugLogs {
+            get {
+                return ResourceManager.GetString("Label_EnableDebugLogs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable Health Monitoring.
+        /// </summary>
+        public static string Label_EnableHealthMonitoring {
+            get {
+                return ResourceManager.GetString("Label_EnableHealthMonitoring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Enable size-based Rotation.
+        /// </summary>
+        public static string Label_EnableSizeRotation {
+            get {
+                return ResourceManager.GetString("Label_EnableSizeRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Environment Variables.
+        /// </summary>
+        public static string Label_EnvironmentVariables {
+            get {
+                return ResourceManager.GetString("Label_EnvironmentVariables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Heartbeat Interval.
+        /// </summary>
+        public static string Label_HeartbeatInterval {
+            get {
+                return ResourceManager.GetString("Label_HeartbeatInterval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Logging.
+        /// </summary>
+        public static string Label_LoggingTab {
+            get {
+                return ResourceManager.GetString("Label_LoggingTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Log On.
+        /// </summary>
+        public static string Label_LogOnTab {
+            get {
+                return ResourceManager.GetString("Label_LogOnTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Main.
+        /// </summary>
+        public static string Label_MainTab {
+            get {
+                return ResourceManager.GetString("Label_MainTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Failed Checks.
+        /// </summary>
+        public static string Label_MaxFailedChecks {
+            get {
+                return ResourceManager.GetString("Label_MaxFailedChecks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Restart Attempts.
+        /// </summary>
+        public static string Label_MaxRestartAttempts {
+            get {
+                return ResourceManager.GetString("Label_MaxRestartAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Max Rotations.
+        /// </summary>
+        public static string Label_MaxRotations {
+            get {
+                return ResourceManager.GetString("Label_MaxRotations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Password.
+        /// </summary>
+        public static string Label_Password {
+            get {
+                return ResourceManager.GetString("Label_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Post-Launch.
+        /// </summary>
+        public static string Label_PostLaunchTab {
+            get {
+                return ResourceManager.GetString("Label_PostLaunchTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Post-Stop.
+        /// </summary>
+        public static string Label_PostStopTab {
+            get {
+                return ResourceManager.GetString("Label_PostStopTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Ignore Failure.
+        /// </summary>
+        public static string Label_PreLaunchIgnoreFailure {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchIgnoreFailure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Retry Attempts.
+        /// </summary>
+        public static string Label_PreLaunchRetryAttempts {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchRetryAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Launch.
+        /// </summary>
+        public static string Label_PreLaunchTab {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Timeout.
+        /// </summary>
+        public static string Label_PreLaunchTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Label_PreLaunchTimeoutSeconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Log pre-stop failure as error.
+        /// </summary>
+        public static string Label_PreStopLogAsError {
+            get {
+                return ResourceManager.GetString("Label_PreStopLogAsError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Pre-Stop.
+        /// </summary>
+        public static string Label_PreStopTab {
+            get {
+                return ResourceManager.GetString("Label_PreStopTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Timeout.
+        /// </summary>
+        public static string Label_PreStopTimeoutSeconds {
+            get {
+                return ResourceManager.GetString("Label_PreStopTimeoutSeconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Parameters.
+        /// </summary>
+        public static string Label_ProcessParameters {
+            get {
+                return ResourceManager.GetString("Label_ProcessParameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Path *.
+        /// </summary>
+        public static string Label_ProcessPath {
+            get {
+                return ResourceManager.GetString("Label_ProcessPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Path.
+        /// </summary>
+        public static string Label_ProcessPathNotRequired {
+            get {
+                return ResourceManager.GetString("Label_ProcessPathNotRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Process Priority.
+        /// </summary>
+        public static string Label_ProcessPriority {
+            get {
+                return ResourceManager.GetString("Label_ProcessPriority", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery Action.
+        /// </summary>
+        public static string Label_RecoveryAction {
+            get {
+                return ResourceManager.GetString("Label_RecoveryAction", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Recovery.
+        /// </summary>
+        public static string Label_RecoveryTab {
+            get {
+                return ResourceManager.GetString("Label_RecoveryTab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à * Required fields.
+        /// </summary>
+        public static string Label_RequiredFields {
+            get {
+                return ResourceManager.GetString("Label_RequiredFields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Rotation Size.
+        /// </summary>
+        public static string Label_RotationSize {
+            get {
+                return ResourceManager.GetString("Label_RotationSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Megabytes (MB).
+        /// </summary>
+        public static string Label_RotationSizeUnity {
+            get {
+                return ResourceManager.GetString("Label_RotationSizeUnity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Run As Local System.
+        /// </summary>
+        public static string Label_RunAsLocalSystem {
+            get {
+                return ResourceManager.GetString("Label_RunAsLocalSystem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à seconds.
+        /// </summary>
+        public static string Label_Seconds {
+            get {
+                return ResourceManager.GetString("Label_Seconds", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service Dependencies.
+        /// </summary>
+        public static string Label_ServiceDependencies {
+            get {
+                return ResourceManager.GetString("Label_ServiceDependencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service Description.
+        /// </summary>
+        public static string Label_ServiceDescription {
+            get {
+                return ResourceManager.GetString("Label_ServiceDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Display Name.
+        /// </summary>
+        public static string Label_ServiceDisplayName {
+            get {
+                return ResourceManager.GetString("Label_ServiceDisplayName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service Name *.
+        /// </summary>
+        public static string Label_ServiceName {
+            get {
+                return ResourceManager.GetString("Label_ServiceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Start Timeout.
+        /// </summary>
+        public static string Label_StartTimeout {
+            get {
+                return ResourceManager.GetString("Label_StartTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Startup Directory.
+        /// </summary>
+        public static string Label_StartupDirectory {
+            get {
+                return ResourceManager.GetString("Label_StartupDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Startup Type.
+        /// </summary>
+        public static string Label_StartupType {
+            get {
+                return ResourceManager.GetString("Label_StartupType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stderr File Path.
+        /// </summary>
+        public static string Label_StderrPath {
+            get {
+                return ResourceManager.GetString("Label_StderrPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stdout File Path.
+        /// </summary>
+        public static string Label_StdoutPath {
+            get {
+                return ResourceManager.GetString("Label_StdoutPath", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Stop Timeout.
+        /// </summary>
+        public static string Label_StopTimeout {
+            get {
+                return ResourceManager.GetString("Label_StopTimeout", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Use local time for log rotation (Default: UTC).
+        /// </summary>
+        public static string Label_UseLocalTimeForRotation {
+            get {
+                return ResourceManager.GetString("Label_UseLocalTimeForRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à User Account.
+        /// </summary>
+        public static string Label_UserAccount {
+            get {
+                return ResourceManager.GetString("Label_UserAccount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à About Servy.
         /// </summary>
         public static string Menu_About {
             get {
@@ -646,11 +890,11 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Configurator.
+        ///   Recherche une chaîne localisée semblable à Clear All.
         /// </summary>
-        public static string Menu_Config {
+        public static string Menu_ClearAll {
             get {
-                return ResourceManager.GetString("Menu_Config", resourceCulture);
+                return ResourceManager.GetString("Menu_ClearAll", resourceCulture);
             }
         }
         
@@ -660,6 +904,33 @@ namespace Servy.Resources {
         public static string Menu_Doc {
             get {
                 return ResourceManager.GetString("Menu_Doc", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export.
+        /// </summary>
+        public static string Menu_Export {
+            get {
+                return ResourceManager.GetString("Menu_Export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export JSON configuration.
+        /// </summary>
+        public static string Menu_ExportJson {
+            get {
+                return ResourceManager.GetString("Menu_ExportJson", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Export XML configuration.
+        /// </summary>
+        public static string Menu_ExportXml {
+            get {
+                return ResourceManager.GetString("Menu_ExportXml", resourceCulture);
             }
         }
         
@@ -700,11 +971,20 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à All operations failed..
+        ///   Recherche une chaîne localisée semblable à Manager.
         /// </summary>
-        public static string Msg_AllOperationsFailed {
+        public static string Menu_Manager {
             get {
-                return ResourceManager.GetString("Msg_AllOperationsFailed", resourceCulture);
+                return ResourceManager.GetString("Menu_Manager", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
+        /// </summary>
+        public static string Msg_AdminRightsRequired {
+            get {
+                return ResourceManager.GetString("Msg_AdminRightsRequired", resourceCulture);
             }
         }
         
@@ -723,15 +1003,6 @@ namespace Servy.Resources {
         public static string Msg_ConfigSizeLimitReached {
             get {
                 return ResourceManager.GetString("Msg_ConfigSizeLimitReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Servy Configuration App not found..
-        /// </summary>
-        public static string Msg_ConfigurationAppNotFound {
-            get {
-                return ResourceManager.GetString("Msg_ConfigurationAppNotFound", resourceCulture);
             }
         }
         
@@ -790,7 +1061,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number between {0} and {1}..
+        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number of seconds between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidHeartbeatInterval {
             get {
@@ -952,7 +1223,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of Megabytes (MB) between {0} and {1}..
+        ///   Recherche une chaîne localisée semblable à Rotation size must be specified in megabytes (MB) between {0} and {1}..
         /// </summary>
         public static string Msg_InvalidRotationSize {
             get {
@@ -1015,56 +1286,20 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à An error occurred while switching tabs. Please try again..
+        ///   Recherche une chaîne localisée semblable à Servy Manager App not found..
         /// </summary>
-        public static string Msg_MainTabControl_SelectionChangedError {
+        public static string Msg_ManagerAppNotFound {
             get {
-                return ResourceManager.GetString("Msg_MainTabControl_SelectionChangedError", resourceCulture);
+                return ResourceManager.GetString("Msg_ManagerAppNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à No services selected..
+        ///   Recherche une chaîne localisée semblable à Passwords don&apos;t match..
         /// </summary>
-        public static string Msg_NoServicesSelected {
+        public static string Msg_PasswordsDontMatch {
             get {
-                return ResourceManager.GetString("Msg_NoServicesSelected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Operation completed successfully..
-        /// </summary>
-        public static string Msg_OperationCompletedSuccessfully {
-            get {
-                return ResourceManager.GetString("Msg_OperationCompletedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à An error occurred while performing the operation on: {0}.
-        /// </summary>
-        public static string Msg_OperationCompletedWithErrorsDetails {
-            get {
-                return ResourceManager.GetString("Msg_OperationCompletedWithErrorsDetails", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à PID copied to clipboard..
-        /// </summary>
-        public static string Msg_PidCopied {
-            get {
-                return ResourceManager.GetString("Msg_PidCopied", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered..
-        /// </summary>
-        public static string Msg_RemoveServiceConfirm {
-            get {
-                return ResourceManager.GetString("Msg_RemoveServiceConfirm", resourceCulture);
+                return ResourceManager.GetString("Msg_PasswordsDontMatch", resourceCulture);
             }
         }
         
@@ -1098,6 +1333,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à A service name is required to perform this action..
+        /// </summary>
+        public static string Msg_ServiceNameError {
+            get {
+                return ResourceManager.GetString("Msg_ServiceNameError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service name exceeds {0} characters..
         /// </summary>
         public static string Msg_ServiceNameLengthReached {
@@ -1107,11 +1351,20 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service not found..
+        ///   Recherche une chaîne localisée semblable à The specified service was not found..
         /// </summary>
         public static string Msg_ServiceNotFound {
             get {
                 return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service was removed successfully..
+        /// </summary>
+        public static string Msg_ServiceRemoved {
+            get {
+                return ResourceManager.GetString("Msg_ServiceRemoved", resourceCulture);
             }
         }
         
@@ -1152,20 +1405,101 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Are you sure you want to uninstall this service? All service configuration will be permanently lost and cannot be recovered..
-        /// </summary>
-        public static string Msg_UninstallServiceConfirm {
-            get {
-                return ResourceManager.GetString("Msg_UninstallServiceConfirm", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Please fill in all required fields..
         /// </summary>
         public static string Msg_ValidationError {
             get {
                 return ResourceManager.GetString("Msg_ValidationError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Above Normal.
+        /// </summary>
+        public static string ProcessPriority_AboveNormal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_AboveNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Below Normal.
+        /// </summary>
+        public static string ProcessPriority_BelowNormal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_BelowNormal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à High.
+        /// </summary>
+        public static string ProcessPriority_High {
+            get {
+                return ResourceManager.GetString("ProcessPriority_High", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Idle.
+        /// </summary>
+        public static string ProcessPriority_Idle {
+            get {
+                return ResourceManager.GetString("ProcessPriority_Idle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Normal (default).
+        /// </summary>
+        public static string ProcessPriority_Normal {
+            get {
+                return ResourceManager.GetString("ProcessPriority_Normal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Real Time (use with caution).
+        /// </summary>
+        public static string ProcessPriority_RealTime {
+            get {
+                return ResourceManager.GetString("ProcessPriority_RealTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à None.
+        /// </summary>
+        public static string RecoveryAction_None {
+            get {
+                return ResourceManager.GetString("RecoveryAction_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Computer.
+        /// </summary>
+        public static string RecoveryAction_RestartComputer {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartComputer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Process.
+        /// </summary>
+        public static string RecoveryAction_RestartProcess {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartProcess", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Restart Service (default).
+        /// </summary>
+        public static string RecoveryAction_RestartService {
+            get {
+                return ResourceManager.GetString("RecoveryAction_RestartService", resourceCulture);
             }
         }
         
@@ -1188,7 +1522,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Servy Manager requires administrative privileges to manage system services..
+        ///   Recherche une chaîne localisée semblable à Servy requires administrative privileges to manage system services..
         /// </summary>
         public static string SecurityWarningMessage {
             get {
@@ -1206,7 +1540,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Loading Servy Manager....
+        ///   Recherche une chaîne localisée semblable à Loading Servy....
         /// </summary>
         public static string Splash_Text {
             get {
@@ -1233,7 +1567,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Automatic.
+        ///   Recherche une chaîne localisée semblable à Automatic (default).
         /// </summary>
         public static string StartupType_Automatic {
             get {
@@ -1242,7 +1576,7 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Automatic (delayed).
+        ///   Recherche une chaîne localisée semblable à Automatic (delayed start).
         /// </summary>
         public static string StartupType_AutomaticDelayedStart {
             get {
@@ -1269,91 +1603,12 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Unknown.
-        /// </summary>
-        public static string StartupType_Unknown {
-            get {
-                return ResourceManager.GetString("StartupType_Unknown", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Continue Pending.
-        /// </summary>
-        public static string Status_ContinuePending {
-            get {
-                return ResourceManager.GetString("Status_ContinuePending", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Not Installed.
-        /// </summary>
-        public static string Status_NotInstalled {
-            get {
-                return ResourceManager.GetString("Status_NotInstalled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Paused.
-        /// </summary>
-        public static string Status_Paused {
-            get {
-                return ResourceManager.GetString("Status_Paused", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à PausePending.
-        /// </summary>
-        public static string Status_PausePending {
-            get {
-                return ResourceManager.GetString("Status_PausePending", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Running.
-        /// </summary>
-        public static string Status_Running {
-            get {
-                return ResourceManager.GetString("Status_Running", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Start Pending.
-        /// </summary>
-        public static string Status_StartPending {
-            get {
-                return ResourceManager.GetString("Status_StartPending", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Stopped.
-        /// </summary>
-        public static string Status_Stopped {
-            get {
-                return ResourceManager.GetString("Status_Stopped", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à StopPending.
-        /// </summary>
-        public static string Status_StopPending {
-            get {
-                return ResourceManager.GetString("Status_StopPending", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à 
-        ///Servy Manager {0}
+        ///Servy {0}
         ///
-        ///Servy Manager provides a clean and simple interface for managing Windows services created with Servy. Start, stop, configure, and monitor services with ease.
+        ///Servy lets you run any application as a native Windows service, with full control over its working directory, startup behavior, logging, health checks, and recovery options.
+        ///
+        ///It includes a desktop app, a CLI, and a PowerShell module, letting you manage services manually or automate everything in scripts and CI/CD pipelines.
         ///
         ///Built with {1}
         ///
@@ -1365,69 +1620,6 @@ namespace Servy.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Collapse all nodes in the dependency tree.
-        /// </summary>
-        public static string Tooltip_CollapseAll {
-            get {
-                return ResourceManager.GetString("Tooltip_CollapseAll", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Circular dependency detected.
-        /// </summary>
-        public static string Tooltip_Cycle {
-            get {
-                return ResourceManager.GetString("Tooltip_Cycle", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Expand all nodes in the dependency tree.
-        /// </summary>
-        public static string Tooltip_ExpandAll {
-            get {
-                return ResourceManager.GetString("Tooltip_ExpandAll", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Refresh the service dependency tree.
-        /// </summary>
-        public static string Tooltip_Refresh {
-            get {
-                return ResourceManager.GetString("Tooltip_Refresh", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Resume live updates.
-        /// </summary>
-        public static string Tooltip_Resume {
-            get {
-                return ResourceManager.GetString("Tooltip_Resume", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à This service is running.
-        /// </summary>
-        public static string Tooltip_ServiceRunning {
-            get {
-                return ResourceManager.GetString("Tooltip_ServiceRunning", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à This service is stopped.
-        /// </summary>
-        public static string Tooltip_ServiceStopped {
-            get {
-                return ResourceManager.GetString("Tooltip_ServiceStopped", resourceCulture);
             }
         }
     }

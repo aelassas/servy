@@ -1207,13 +1207,15 @@ namespace Servy.Core.Native
             /// <returns>True if the identities differ, indicating a file rotation; otherwise, false.</returns>
             public bool IsDifferentFrom(FileIdentity other)
             {
-                // Primary check: unique OS file identifier
+                // 1. If the OS identifiers (Inodes) differ, it's 100% a rotation.
                 if (IsValidHandleInfo && other.IsValidHandleInfo)
                 {
-                    return FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber;
+                    if (FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber)
+                        return true;
                 }
 
-                // Fallback: Check if the content prefix changed (useful for FAT32 or certain network shares)
+                // 2. If the Inodes are the same (e.g., FileMode.Truncate) OR handle info is unavailable,
+                // we must check the content prefix. If the start of the file changed, it's a rotation.
                 if (PrefixHash != null && other.PrefixHash != null)
                 {
                     return PrefixHash != other.PrefixHash;
