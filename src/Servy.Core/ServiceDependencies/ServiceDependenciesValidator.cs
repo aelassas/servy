@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.Core.Config;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -7,7 +8,7 @@ namespace Servy.Core.ServiceDependencies
     public static class ServiceDependenciesValidator
     {
         // Allowed characters: letters, digits, hyphen, underscore
-        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
+        private static readonly Regex ValidServiceNameRegex = new Regex(@"^[a-zA-Z0-9_.\-]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         /// <summary>
         /// Validates the input string containing service dependencies.

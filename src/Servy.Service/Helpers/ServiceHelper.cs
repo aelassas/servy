@@ -1,6 +1,7 @@
 ﻿#if !DEBUG
 using Servy.Core.Config;
 #endif
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
@@ -46,7 +47,7 @@ namespace Servy.Service.Helpers
         private static readonly Regex MaskingRegex = new Regex(
             @"(?i)(password|pwd|secret|key|token|auth|api|private)([:=\s]+)(?:""[^""]*""|[^\s""]+)",
             RegexOptions.Compiled,
-            TimeSpan.FromMilliseconds(200));
+            AppConfig.InputRegexTimeout);
 
         #endregion
 

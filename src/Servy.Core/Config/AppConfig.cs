@@ -23,6 +23,24 @@ namespace Servy.Core.Config
         public static readonly Version MinRequiredSqliteVersion = new Version(3, 50, 2);
 
         /// <summary>
+        /// The default timeout in milliseconds for regular expression matching operations.
+        /// </summary>
+        /// <remarks>
+        /// A 200ms timeout is used as a security measure to prevent Regular Expression Denial of Service (ReDoS) 
+        /// attacks while providing enough headroom for complex service name or log filtering patterns.
+        /// </remarks>
+        public const int InputRegexTimeoutMs = 200;
+
+        /// <summary>
+        /// Gets a <see cref="TimeSpan"/> representation of the <see cref="InputRegexTimeoutMs"/>.
+        /// </summary>
+        /// <remarks>
+        /// This static readonly field is used to provide a pre-allocated <see cref="TimeSpan"/> object 
+        /// for high-performance reuse in regex engine calls across the application.
+        /// </remarks>
+        public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
+
+        /// <summary>
         /// The maximum character length for a Windows Service name.
         /// </summary>
         /// <remarks>

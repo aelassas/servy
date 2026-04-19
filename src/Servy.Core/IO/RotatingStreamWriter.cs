@@ -1,4 +1,5 @@
-﻿using Servy.Core.Enums;
+﻿using Servy.Core.Config;
+using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System;
@@ -21,7 +22,7 @@ namespace Servy.Core.IO
     /// </summary>
     public class RotatingStreamWriter : IDisposable
     {
-        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
+        private static readonly Regex _rotatedTimestampRegex = new Regex(@"^\d{8}_\d{6}(?:\.\(\d+\))?$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         private bool _disposed;
         private readonly FileInfo _file;
