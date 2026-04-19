@@ -8,11 +8,7 @@ using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -24,7 +20,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the Console view, responsible for real-time log tailing, 
     /// service monitoring, and log filtering.
     /// </summary>
-    public class ConsoleViewModel : ServiceSearchViewModelBase
+    public class ConsoleViewModel : MonitoringViewModelBase
     {
         #region Constants
 
@@ -38,17 +34,11 @@ namespace Servy.Manager.ViewModels
         #region Fields
 
         private readonly IServiceRepository _serviceRepository;
-        private DispatcherTimer _timer;
 
         // Controls console log filter debouncing
         private CancellationTokenSource _logFilterCts;
 
-        // Controls performance polling and log tailing
-        private CancellationTokenSource _monitoringCts;
-
         private bool _hadSelectedService;
-        private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
-        private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
         private string _consoleSearchText;
         private readonly int _maxLines;
         private string _stdoutPath;
@@ -194,7 +184,7 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Constructor
+        #region Constructors
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConsoleViewModel"/> class.
@@ -233,12 +223,91 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region ServiceSearchViewModelBase Implementation
+        #region MonitoringViewModelBase Implementation
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
+        protected override int RefreshIntervalMs
+        {
+            get
+            {
+                var intervalMs = AppConfig.DefaultConsoleRefreshIntervalInMs;
+                if (Application.Current is App app)
+                {
+                    intervalMs = app.ConsoleRefreshIntervalInMs;
+                }
+                return intervalMs;
+            }
+        }
+
+        /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)
         {
             return new ConsoleService { Name = service.Name, Pid = null, StdoutPath = null, StderrPath = null };
+        }
+
+        /// <inheritdoc/>
+        protected override async Task OnTickAsync()
+        {
+            var token = _monitoringCts?.Token ?? CancellationToken.None;
+
+            try
+            {
+                var currentSelection = SelectedService;
+                if (currentSelection == null)
+                {
+                    if (_hadSelectedService)
+                    {
+                        ResetConsole(true);
+                        _hadSelectedService = false;
+                        CopyPidCommand?.RaiseCanExecuteChanged();
+                    }
+                    return;
+                }
+                _hadSelectedService = true;
+
+                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
+                var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
+
+                if (stateSnapshot?.Pid == null)
+                {
+                    ResetConsole(true);
+                    SelectedService.Pid = null;
+                    SelectedService.StdoutPath = null;
+                    SelectedService.StderrPath = null;
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                    return;
+                }
+
+                if (currentSelection.Pid != stateSnapshot.Pid
+                    || _stdoutPath != stateSnapshot.ActiveStdoutPath
+                    || _stderrPath != stateSnapshot.ActiveStderrPath)
+                {
+                    currentSelection.Pid = stateSnapshot.Pid;
+                    _stdoutPath = stateSnapshot.ActiveStdoutPath;
+                    _stderrPath = stateSnapshot.ActiveStderrPath;
+                    SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
+                    SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
+
+                    _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
+                    CopyPidCommand?.RaiseCanExecuteChanged();
+                }
+
+                SetPidText(currentSelection);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during app shutdown or when the ViewModel is deactivated.
+                // No logging required as this is a normal lifecycle event.
+            }
+            catch (Exception ex)
+            {
+                _tickErrorCount++;
+                // Log every 10th error to prevent bloating while maintaining observability
+                if (_tickErrorCount % 10 == 1)
+                {
+                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
+                }
+            }
         }
 
         #endregion
@@ -282,29 +351,6 @@ namespace Servy.Manager.ViewModels
             catch (OperationCanceledException)
             {
                 // Task was cancelled by a newer keystroke; exit gracefully.
-            }
-        }
-
-        /// <summary>
-        /// Configures the <see cref="DispatcherTimer"/> used to poll process performance metrics.
-        /// </summary>
-        /// <remarks>
-        /// The timer interval is retrieved from the global <see cref="App.PerformanceRefreshIntervalInMs"/> configuration.
-        /// This method hooks the <see cref="OnTick"/> event handler, which is responsible for triggering 
-        /// the asynchronous update of CPU and RAM counters.
-        /// </remarks>
-        private void InitTimer()
-        {
-            if (_timer == null)
-            {
-                // Capture while on the UI thread during creation
-                var intervalMs = AppConfig.DefaultConsoleRefreshIntervalInMs;
-                if (Application.Current is App app)
-                {
-                    intervalMs = app.ConsoleRefreshIntervalInMs;
-                }
-                _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
-                _timer.Tick += OnTick;
             }
         }
 
@@ -477,108 +523,6 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
-        /// Handles the timer tick for performance monitoring. 
-        /// </summary>
-        private async void OnTick(object sender, EventArgs e)
-        {
-            if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 0 ||
-                Interlocked.CompareExchange(ref _isTickRunningFlag, 1, 0) == 1)
-            {
-                return;
-            }
-
-            _timer?.Stop();
-            try
-            {
-                await OnTickAsync();
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _isTickRunningFlag, 0);
-
-                // 2. Only restart if we are STILL supposed to be monitoring
-                if (Interlocked.CompareExchange(ref _isMonitoringFlag, 1, 1) == 1)
-                {
-                    _timer?.Start();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Asynchronously fetches the latest service status and updates the UI accordingly.
-        /// </summary>
-        private async Task OnTickAsync()
-        {
-            var token = _monitoringCts?.Token ?? CancellationToken.None;
-
-            try
-            {
-                var currentSelection = SelectedService;
-
-                if (currentSelection == null)
-                {
-                    if (_hadSelectedService)
-                    {
-                        ResetConsole(true);
-                        _hadSelectedService = false;
-                        CopyPidCommand?.RaiseCanExecuteChanged();
-                    }
-                    return;
-                }
-                _hadSelectedService = true;
-
-                // 1. Fetch the data from the repository
-                var serviceDto = await _serviceRepository.GetServiceConsoleStateAsync(currentSelection.Name, token);
-
-                // 2. Use Clone to create a local, immutable snapshot for this UI tick
-                // This protects the UI from "dirty reads" if the repository modifies objects in memory
-                var stateSnapshot = serviceDto?.Clone() as ServiceConsoleStateDto;
-
-                if (stateSnapshot?.Pid == null)
-                {
-                    ResetConsole(true);
-                    SelectedService.Pid = null;
-                    SelectedService.StdoutPath = null;
-                    SelectedService.StderrPath = null;
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                    return;
-                }
-
-                // 3. Compare and update using the snapshot
-                if (currentSelection.Pid != stateSnapshot.Pid
-                    || _stdoutPath != stateSnapshot.ActiveStdoutPath
-                    || _stderrPath != stateSnapshot.ActiveStderrPath
-                    )
-                {
-                    currentSelection.Pid = stateSnapshot.Pid;   // write to captured local, not SelectedService
-                    _stdoutPath = stateSnapshot.ActiveStdoutPath;
-                    _stderrPath = stateSnapshot.ActiveStderrPath;
-                    SelectedService.StdoutPath = stateSnapshot.ActiveStdoutPath;
-                    SelectedService.StderrPath = stateSnapshot.ActiveStderrPath;
-
-                    _ = SwitchServiceAsync(stateSnapshot.ActiveStdoutPath, stateSnapshot.ActiveStderrPath);
-                    CopyPidCommand?.RaiseCanExecuteChanged();
-                }
-
-                SetPidText(currentSelection);
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected during app shutdown or when the ViewModel is deactivated.
-                // No logging required as this is a normal lifecycle event.
-            }
-            catch (Exception ex)
-            {
-                _tickErrorCount++;
-                // Log every 10th error to prevent bloating while maintaining observability
-                if (_tickErrorCount % 10 == 1)
-                {
-                    Logger.Warn($"OnTickAsync error (count: {_tickErrorCount}): {ex.Message}");
-                }
-            }
-        }
-
-        /// <summary>
         /// Copies the Process ID of the currently selected service to the system clipboard.
         /// </summary>
         /// <param name="parameter">Unused command parameter.</param>
@@ -591,40 +535,9 @@ namespace Servy.Manager.ViewModels
             }
         }
 
-        /// <summary>
-        /// Resets the <see cref="CancellationTokenSource"/> by cancelling any in-flight operations 
-        /// and disposing of the existing instance before creating a fresh one.
-        /// </summary>
-        private void ResetMonitoringCts()
-        {
-            var newCts = new CancellationTokenSource();
-            var oldCts = Interlocked.Exchange(ref _monitoringCts, newCts);
-            if (oldCts != null)
-            {
-                oldCts.Cancel();
-                oldCts.Dispose();
-            }
-        }
-
         #endregion
 
         #region Public Methods
-
-        /// <summary>
-        /// Enables the monitoring timer to begin polling for service status updates.
-        /// </summary>
-        public void StartMonitoring()
-        {
-            // Ensure we have a fresh, active cancellation token
-            ResetMonitoringCts();
-
-            // Atomically signal start
-            Interlocked.Exchange(ref _isMonitoringFlag, 1);
-
-            // Start timer
-            InitTimer();
-            _timer?.Start();
-        }
 
         /// <summary>
         /// Disables the monitoring timer and optionally resets the console view.
@@ -632,10 +545,7 @@ namespace Servy.Manager.ViewModels
         /// <param name="clearConsole">If true, clears the console history and resets UI labels.</param>
         public void StopMonitoring(bool clearConsole)
         {
-            // Cancel the monitoring operations, NOT the left-panel search.
-            _monitoringCts?.Cancel();
-            Interlocked.Exchange(ref _isMonitoringFlag, 0);
-            _timer?.Stop();
+            base.StopMonitoring();
 
             if (clearConsole)
             {
@@ -689,14 +599,6 @@ namespace Servy.Manager.ViewModels
                     {
                         oldFilterCts.Cancel();
                         oldFilterCts.Dispose();
-                    }
-
-                    // 3. Stop and Unhook the Timer
-                    if (_timer != null)
-                    {
-                        _timer.Stop();
-                        _timer.Tick -= OnTick; // CRITICAL
-                        _timer = null;
                     }
                 }
 
