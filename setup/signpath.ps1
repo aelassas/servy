@@ -31,31 +31,37 @@ param(
 $RequiredSignPathVersion = '4.4.1' # Pinned known-good version
 
 # ----------------------------------------------------------
-# ENSURE SIGNPATH MODULE EXISTS
+# ENSURE SIGNPATH MODULE EXISTS & LOAD CORRECT VERSION
 # ----------------------------------------------------------
 $availableModule = Get-Module -ListAvailable -Name SignPath | 
                    Where-Object { $_.Version -eq $RequiredSignPathVersion }
 
 if (-not $availableModule) {
     Write-Host "SignPath module (v$RequiredSignPathVersion) not found. Installing..."
-    
-    # Install specific version in CurrentUser scope to avoid requiring admin privileges 
-    # and to ensure reproducibility in CI environments.
     Install-Module -Name SignPath -RequiredVersion $RequiredSignPathVersion -Force -Scope CurrentUser -AllowClobber -SkipPublisherCheck
-
-    Write-Host "SignPath module v$RequiredSignPathVersion installed."
 }
 
-# Explicitly import the pinned version
+# 1. Clean up the current session to prevent version "pollution"
+# We remove ALL loaded SignPath modules so we start with a clean slate.
+while (Get-Module -Name SignPath) {
+    Remove-Module -Name SignPath -ErrorAction SilentlyContinue
+}
+
+# 2. Explicitly import the pinned version
 Import-Module SignPath -RequiredVersion $RequiredSignPathVersion -Force
 
-$loadedModule = Get-Module -Name SignPath
-if ($null -eq $loadedModule -or $loadedModule.Version -ne $RequiredSignPathVersion) {
-    Write-Error "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Got: $($loadedModule.Version)"
+# 3. Verify exactly ONE module is loaded and it matches the version
+# We filter Get-Module to ensure we are looking at the version we just asked for.
+$loadedModule = Get-Module -Name SignPath | Where-Object { $_.Version -eq $RequiredSignPathVersion }
+
+if ($null -eq $loadedModule) {
+    # If we get here, the import failed or another version is blocking it
+    $currentVersions = (Get-Module -Name SignPath).Version -join ', '
+    Write-Error "Failed to load the correct SignPath module version. Expected: $RequiredSignPathVersion, Found Loaded: [$currentVersions]"
     exit 1
 }
 
-Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance."
+Write-Host "SignPath module v$($loadedModule.Version) loaded and verified for build provenance." -ForegroundColor Green
 
 # ----------------------------------------------------------
 # LOCATE CONFIG FILE
