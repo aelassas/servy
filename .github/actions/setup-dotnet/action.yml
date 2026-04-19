@@ -10,9 +10,9 @@ description: 'Installs a specific .NET SDK version using the dotnet-install scri
 
 inputs:
   version:
-    description: '.NET version to install'
+    description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
-    default: '10.0'
+    default: '10.0.202' # Pinned version to prevent silent drift
 
 runs:
   using: "composite"
@@ -43,12 +43,14 @@ runs:
           Start-Sleep -Seconds 3
         }
         
-        # Install dotnet
+        # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
+        # Using -Version instead of -Channel to ensure reproducibility.
+        # Instructs the script to parse global.json and install whatever is in there
         powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
-        -Channel "$env:DOTNET_VERSION" `
-        -InstallDir $installDir
+          -JsonFile "$env:GITHUB_WORKSPACE\global.json" `
+          -InstallDir $installDir
 
         if ($LASTEXITCODE -ne 0) {
           throw "dotnet-install.ps1 failed with exit code $LASTEXITCODE"
