@@ -17,6 +17,10 @@ on:
         type: boolean
         default: false
 
+# Default to read-only for the entire workflow
+permissions:
+  contents: read
+
 jobs:
   changelog:
     runs-on: windows-latest
@@ -25,8 +29,10 @@ jobs:
       github.event_name == 'workflow_dispatch' || 
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
 
+    # Explicitly elevate for this job only to allow the push
     permissions:
       contents: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
