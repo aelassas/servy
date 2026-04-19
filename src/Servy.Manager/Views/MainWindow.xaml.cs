@@ -608,9 +608,9 @@ namespace Servy.Manager.Views
                     vm.Cleanup();
                 }
 
-                GetPerformanceVm()?.Cleanup();
-                GetConsoleVm()?.Cleanup();
-                GetDependenciesVm()?.Cleanup();
+                GetPerformanceVm()?.Dispose();
+                GetConsoleVm()?.Dispose();
+                GetDependenciesVm()?.Dispose();
                 GetLogsVm()?.Cleanup();
             }
             catch (Exception ex)

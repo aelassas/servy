@@ -46,6 +46,7 @@ namespace Servy.Manager.ViewModels
         private bool _hadSelectedService;
         private int _isMonitoringFlag = 0; // 0 = Stopped, 1 = Monitoring
         private int _isTickRunningFlag = 0; // 0 = Idle, 1 = Processing
+        private bool _disposedValue;
 
         private Queue<double> _cpuValues = new Queue<double>();
         private Queue<double> _ramValues = new Queue<double>();
@@ -532,27 +533,33 @@ namespace Servy.Manager.ViewModels
 
         /// <summary>
         /// Cleans up resources, cancels background tasks, and explicitly unsubscribes 
-        /// from timer events to prevent memory leaks during tab navigation.
+        /// from timer events to prevent memory leaks.
         /// </summary>
-        public void Cleanup()
+        protected override void Dispose(bool disposing)
         {
-            // 1. Cancel and dispose the Monitoring CancellationTokenSource
-            var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
-            if (oldMonitoringCts != null)
+            if (!_disposedValue)
             {
-                oldMonitoringCts.Cancel();
-                oldMonitoringCts.Dispose();
-            }
+                if (disposing)
+                {
+                    // 1. Cancel and dispose the Monitoring CTS
+                    var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
+                    if (oldMonitoringCts != null)
+                    {
+                        oldMonitoringCts.Cancel();
+                        oldMonitoringCts.Dispose();
+                    }
 
-            // 2. Cancel and dispose the Search CancellationTokenSource
-            CleanupSearchCts();
+                    // 2. Stop the timer, unsubscribe from Tick, and release reference
+                    if (_timer != null)
+                    {
+                        _timer.Stop();
+                        _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher leak
+                        _timer = null;
+                    }
+                }
 
-            // 3. Stop the timer, unsubscribe from the Tick event, and release the reference
-            if (_timer != null)
-            {
-                _timer.Stop();
-                _timer.Tick -= OnTick; // CRITICAL: Prevents the Dispatcher from keeping the VM alive
-                _timer = null;
+                base.Dispose(disposing);
+                _disposedValue = true;
             }
         }
 

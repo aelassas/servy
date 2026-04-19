@@ -24,7 +24,7 @@ namespace Servy.Manager.Views
         {
             InitializeComponent();
 
-            Unloaded += (s, e) => (DataContext as DependenciesViewModel)?.Cleanup();
+            Unloaded += (s, e) => (DataContext as DependenciesViewModel)?.Dispose();
         }
 
         /// <summary>

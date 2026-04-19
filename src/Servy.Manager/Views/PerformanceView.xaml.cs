@@ -22,7 +22,7 @@ namespace Servy.Manager.Views
         {
             InitializeComponent();
 
-            Unloaded += (s, e) => (DataContext as PerformanceViewModel)?.Cleanup();
+            Unloaded += (s, e) => (DataContext as PerformanceViewModel)?.Dispose();
         }
 
         /// <summary>

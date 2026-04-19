@@ -66,7 +66,7 @@ namespace Servy.Manager.Views
                 }
             };
 
-            Unloaded += (s, e) => (DataContext as ConsoleViewModel)?.Cleanup();
+            Unloaded += (s, e) => (DataContext as ConsoleViewModel)?.Dispose();
         }
 
         /// <summary>
