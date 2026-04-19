@@ -41,6 +41,18 @@ namespace Servy.Core.Config
         public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
 
         /// <summary>
+        /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
+        /// </summary>
+        public const int DefaultWaitChunkMs = 5000;
+
+        /// <summary>
+        /// Specifies the default additional time, in milliseconds, used for Service Control Manager (SCM) operations.
+        /// </summary>
+        /// <remarks>This constant can be used to extend timeouts or delays when interacting with the
+        /// Windows Service Control Manager to account for potential processing overhead.</remarks>
+        public const int DefaultScmAdditionalTimeMs = 15_000;
+
+        /// <summary>
         /// The maximum character length for a Windows Service name.
         /// </summary>
         /// <remarks>
