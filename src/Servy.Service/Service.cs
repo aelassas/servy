@@ -38,7 +38,7 @@ namespace Servy.Service
         private static readonly Regex EnvVarPlaceholderRegex = new Regex(
             @"(%[a-zA-Z_][a-zA-Z0-9_]*%)",
             RegexOptions.Compiled,
-            TimeSpan.FromMilliseconds(200)); // 200ms is generous for this pattern
+            AppConfig.InputRegexTimeout); // 200ms is generous for this pattern
 
         #endregion
 

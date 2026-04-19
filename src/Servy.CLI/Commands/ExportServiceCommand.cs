@@ -2,6 +2,7 @@
 using Servy.CLI.Models;
 using Servy.CLI.Options;
 using Servy.CLI.Resources;
+using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Core.Security;
@@ -32,7 +33,7 @@ namespace Servy.CLI.Commands
         private static readonly Regex ReservedPortRegex = new Regex(
             @"^(COM|LPT)[1-9]$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase,
-            TimeSpan.FromMilliseconds(200));
+            AppConfig.InputRegexTimeout);
 
         #endregion
 

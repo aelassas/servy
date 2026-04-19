@@ -18,7 +18,7 @@ namespace Servy.Core.Services
 
         // Strict allowlist: Alphanumeric, spaces, dots, underscores, and hyphens.
         // This covers virtually all valid Windows Service and Event Source names.
-        private static readonly Regex SourceNameValidator = new Regex(@"^[a-zA-Z0-9\.\- _]+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(200));
+        private static readonly Regex SourceNameValidator = new Regex(@"^[a-zA-Z0-9\.\- _]+$", RegexOptions.Compiled, AppConfig.InputRegexTimeout);
 
         private readonly string _sourceName;
         private readonly IEventLogReader _reader;
