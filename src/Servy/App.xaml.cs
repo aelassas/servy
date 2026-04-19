@@ -193,8 +193,8 @@ namespace Servy
 
         /// <summary>
         /// Called when the WPF application starts.
-        /// Loads configuration settings, initializes the database if necessary,
-        /// subscribes to unhandled exception handlers, and extracts required embedded resources.
+        /// Loads configuration settings, initializes the database, and fire-and-forgets 
+        /// the asynchronous application initialization.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
@@ -202,19 +202,47 @@ namespace Servy
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 
-            _ = _bootstrapper.InitializeAppAsync(this, e).ContinueWith(async t =>
+            // Use a dedicated async method instead of a chained ContinueWith 
+            // to ensure the startup lifecycle and any faults are correctly observed.
+            _ = InitializeAppWithFaultHandlingAsync(e);
+        }
+
+        /// <summary>
+        /// Asynchronously initializes the application and handles any critical faults 
+        /// that occur before the UI is ready.
+        /// </summary>
+        /// <param name="e">The startup event arguments.</param>
+        /// <returns>A <see cref="Task"/> representing the initialization process.</returns>
+        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e)
+        {
+            try
             {
-                if (t.IsFaulted)
+                await _bootstrapper.InitializeAppAsync(this, e);
+            }
+            catch (Exception ex)
+            {
+                // Ensure we catch the actual exception, not just a faulted task
+                Logger.Error("Critical Startup Fault in InitializeApp", ex);
+
+                // Ensure UI interaction happens on the UI thread to prevent 
+                // cross-thread exceptions during the crash report.
+                await Current.Dispatcher.InvokeAsync(() =>
                 {
-                    var ex = t.Exception?.Flatten().InnerException;
-                    Logger.Error("Critical Startup Fault in InitializeApp", ex);
-                    await Current.Dispatcher.InvokeAsync(() =>
+                    try
                     {
-                        MessageBox.Show($"Critical Startup Fault: {ex?.Message}");
+                        MessageBox.Show(
+                            $"Critical Startup Fault: {ex.Message}",
+                            Config.AppConfig.Caption,
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        // Hard exit to prevent the app from lingering as a background process.
                         Shutdown(1);
-                    });
-                }
-            }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.FromCurrentSynchronizationContext());
+                    }
+                });
+            }
         }
 
         /// <summary>
