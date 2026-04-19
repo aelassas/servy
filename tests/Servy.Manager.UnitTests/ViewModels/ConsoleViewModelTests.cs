@@ -56,7 +56,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             }, createApp: true);
         }
 
-        [Fact(Skip = "TODO needs to be fixed")]
+        [Fact]
         public async Task ConsoleSearchText_Filter_FiltersVisibleLines()
         {
             await Helper.RunOnSTA(async () =>
@@ -72,8 +72,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Act
                 vm.ConsoleSearchText = "Crash";
 
-                // WAIT for the debounce timer (300ms) to expire and the filter to apply
-                await Task.Delay(400);
+                // Bypass the async debounce timer and WPF dispatcher queue entirely.
+                // We are unit testing the filter's logic, not the UI timing mechanics.
+                vm.VisibleLines.Refresh();
 
                 // Assert
                 var filtered = vm.VisibleLines.Cast<LogLine>().ToList();
