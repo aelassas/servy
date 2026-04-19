@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Principal;
@@ -1119,6 +1120,109 @@ namespace Servy.Core.Native
         /// </summary>
         private const uint MOVEFILE_WRITE_THROUGH = 0x08;
 
+        /// <summary>
+        /// Retrieves information for the specified file.
+        /// </summary>
+        /// <param name="hFile">A handle to the file that contains the information to be retrieved.</param>
+        /// <param name="lpFileInformation">A pointer to a <see cref="BY_HANDLE_FILE_INFORMATION"/> structure that receives the file information.</param>
+        /// <returns>If the function succeeds, the return value is nonzero; otherwise, it is zero.</returns>
+        /// <remarks>
+        /// This Win32 API is used to obtain the <see cref="BY_HANDLE_FILE_INFORMATION.VolumeSerialNumber"/> and 
+        /// <see cref="BY_HANDLE_FILE_INFORMATION.FileIndexHigh"/> / <see cref="BY_HANDLE_FILE_INFORMATION.FileIndexLow"/>, 
+        /// which together form a unique identifier for a file on a specific volume.
+        /// </remarks>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileInformationByHandle(IntPtr hFile, out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+        /// <summary>
+        /// Represents a 64-bit value stating the number of 100-nanosecond intervals since January 1, 1601 (UTC).
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct FILETIME
+        {
+            /// <summary>The low-order part of the file time.</summary>
+            public uint dwLowDateTime;
+            /// <summary>The high-order part of the file time.</summary>
+            public uint dwHighDateTime;
+        }
+
+        /// <summary>
+        /// Contains information that the <see cref="GetFileInformationByHandle"/> function retrieves.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BY_HANDLE_FILE_INFORMATION
+        {
+            /// <summary>The file attributes.</summary>
+            public uint FileAttributes;
+            /// <summary>A <see cref="FILETIME"/> structure that specifies when a file or directory is created.</summary>
+            public FILETIME CreationTime;
+            /// <summary>A <see cref="FILETIME"/> structure that specifies when a file or directory is last accessed.</summary>
+            public FILETIME LastAccessTime;
+            /// <summary>A <see cref="FILETIME"/> structure that specifies when a file or directory is last written to.</summary>
+            public FILETIME LastWriteTime;
+            /// <summary>The serial number of the volume that contains a file.</summary>
+            public uint VolumeSerialNumber;
+            /// <summary>The high-order part of the file size.</summary>
+            public uint FileSizeHigh;
+            /// <summary>The low-order part of the file size.</summary>
+            public uint FileSizeLow;
+            /// <summary>The number of links to this file.</summary>
+            public uint NumberOfLinks;
+            /// <summary>The high-order part of a unique identifier that is associated with a file.</summary>
+            public uint FileIndexHigh;
+            /// <summary>The low-order part of a unique identifier that is associated with a file.</summary>
+            public uint FileIndexLow;
+        }
+
+        /// <summary>
+        /// Encapsulates the unique identity of a file on disk to detect rotation or replacement.
+        /// </summary>
+        public struct FileIdentity
+        {
+            /// <summary>
+            /// Gets the unique 64-bit file index (inode-equivalent on Windows).
+            /// </summary>
+            public ulong FileIndex;
+
+            /// <summary>
+            /// Gets the serial number of the volume where the file resides.
+            /// </summary>
+            public uint VolumeSerialNumber;
+
+            /// <summary>
+            /// Gets a Base64-encoded hash of the file's leading bytes, used as a fallback identity signal.
+            /// </summary>
+            public string PrefixHash;
+
+            /// <summary>
+            /// Gets a value indicating whether the <see cref="FileIndex"/> and <see cref="VolumeSerialNumber"/> 
+            /// were successfully retrieved via P/Invoke.
+            /// </summary>
+            public bool IsValidHandleInfo;
+
+            /// <summary>
+            /// Compares this identity with another to determine if the underlying file has been rotated or replaced.
+            /// </summary>
+            /// <param name="other">The other identity to compare against.</param>
+            /// <returns>True if the identities differ, indicating a file rotation; otherwise, false.</returns>
+            public bool IsDifferentFrom(FileIdentity other)
+            {
+                // Primary check: unique OS file identifier
+                if (IsValidHandleInfo && other.IsValidHandleInfo)
+                {
+                    return FileIndex != other.FileIndex || VolumeSerialNumber != other.VolumeSerialNumber;
+                }
+
+                // Fallback: Check if the content prefix changed (useful for FAT32 or certain network shares)
+                if (PrefixHash != null && other.PrefixHash != null)
+                {
+                    return PrefixHash != other.PrefixHash;
+                }
+
+                return false;
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -1303,6 +1407,54 @@ namespace Servy.Core.Native
                 var error = Marshal.GetLastWin32Error();
                 throw new Win32Exception(error, $"Failed to atomically replace secure file. Win32 Error: {error}");
             }
+        }
+
+        /// <summary>
+        /// Extracts the <see cref="FileIdentity"/> from an open <see cref="FileStream"/>.
+        /// </summary>
+        /// <param name="fs">The stream of the file to identify.</param>
+        /// <returns>A <see cref="FileIdentity"/> representing the current file state.</returns>
+        /// <remarks>
+        /// This method attempts to use the high-reliability <see cref="GetFileInformationByHandle"/> API first.
+        /// If the API fails or is unsupported by the filesystem, it captures a hash of the first 64 bytes 
+        /// of the file as a secondary identity signal.
+        /// </remarks>
+        public static FileIdentity GetFileIdentity(FileStream fs)
+        {
+            var identity = new FileIdentity();
+            try
+            {
+                // Use SafeFileHandle to safely retrieve the Win32 handle
+                if (GetFileInformationByHandle(fs.SafeFileHandle.DangerousGetHandle(), out var info))
+                {
+                    identity.VolumeSerialNumber = info.VolumeSerialNumber;
+                    identity.FileIndex = ((ulong)info.FileIndexHigh << 32) | info.FileIndexLow;
+                    identity.IsValidHandleInfo = true;
+                }
+            }
+            catch
+            {
+                // Fail-silent on P/Invoke to allow the hash fallback to take over
+            }
+
+            // Secondary Fallback: Capture a "fingerprint" of the first 64 bytes
+            try
+            {
+                long origPos = fs.Position;
+                fs.Seek(0, SeekOrigin.Begin);
+                byte[] buffer = new byte[64];
+                int read = fs.Read(buffer, 0, buffer.Length);
+                identity.PrefixHash = Convert.ToBase64String(buffer, 0, read);
+
+                // Restore original stream position to avoid disrupting callers
+                fs.Seek(origPos, SeekOrigin.Begin);
+            }
+            catch
+            {
+                // Keep PrefixHash null if the stream is unreadable or closed
+            }
+
+            return identity;
         }
 
     }
