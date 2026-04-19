@@ -115,15 +115,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Enable Heartbeat Check.
-        /// </summary>
-        public static string Chk_EnableHeartbeat {
-            get {
-                return ResourceManager.GetString("Chk_EnableHeartbeat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Are you sure you want to clear all configuration values?.
         /// </summary>
         public static string Confirm_ClearAll {
@@ -1052,15 +1043,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à This field is required..
-        /// </summary>
-        public static string Msg_FieldRequired {
-            get {
-                return ResourceManager.GetString("Msg_FieldRequired", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à The failure program path is invalid..
         /// </summary>
         public static string Msg_InvalidFailureProgramPath {
@@ -1295,15 +1277,6 @@ namespace Servy.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Invalid value..
-        /// </summary>
-        public static string Msg_InvalidValue {
-            get {
-                return ResourceManager.GetString("Msg_InvalidValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service wrapper executable not found..
         /// </summary>
         public static string Msg_InvalidWrapperExePath {
@@ -1338,15 +1311,6 @@ namespace Servy.Resources {
         public static string Msg_ServiceAlreadyExists {
             get {
                 return ResourceManager.GetString("Msg_ServiceAlreadyExists", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à A disabled service with this name already exists. Choose a different name..
-        /// </summary>
-        public static string Msg_ServiceDisabled {
-            get {
-                return ResourceManager.GetString("Msg_ServiceDisabled", resourceCulture);
             }
         }
         
@@ -1656,24 +1620,6 @@ namespace Servy.Resources {
         public static string Text_About {
             get {
                 return ResourceManager.GetString("Text_About", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à No updates currently available..
-        /// </summary>
-        public static string Text_NoUpdate {
-            get {
-                return ResourceManager.GetString("Text_NoUpdate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à A new version of Servy is available. Do you want to download it?.
-        /// </summary>
-        public static string Text_UpdateAvailable {
-            get {
-                return ResourceManager.GetString("Text_UpdateAvailable", resourceCulture);
             }
         }
     }

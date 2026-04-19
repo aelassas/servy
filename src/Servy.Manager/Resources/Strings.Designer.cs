@@ -259,15 +259,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Event Id.
-        /// </summary>
-        public static string Column_EventId {
-            get {
-                return ResourceManager.GetString("Column_EventId", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Level.
         /// </summary>
         public static string Column_Level {
@@ -475,15 +466,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à All Levels.
-        /// </summary>
-        public static string Label_AllLevel {
-            get {
-                return ResourceManager.GetString("Label_AllLevel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Console.
         /// </summary>
         public static string Label_ConsoleTab {
@@ -588,15 +570,6 @@ namespace Servy.Manager.Resources {
         public static string Label_Level {
             get {
                 return ResourceManager.GetString("Label_Level", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Local System.
-        /// </summary>
-        public static string Label_LocalSytem {
-            get {
-                return ResourceManager.GetString("Label_LocalSytem", resourceCulture);
             }
         }
         
@@ -723,15 +696,6 @@ namespace Servy.Manager.Resources {
         public static string Menu_ImportXml {
             get {
                 return ResourceManager.GetString("Menu_ImportXml", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
-        /// </summary>
-        public static string Msg_AdminRightsRequired {
-            get {
-                return ResourceManager.GetString("Msg_AdminRightsRequired", resourceCulture);
             }
         }
         
@@ -1152,15 +1116,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service was removed successfully..
-        /// </summary>
-        public static string Msg_ServiceRemoved {
-            get {
-                return ResourceManager.GetString("Msg_ServiceRemoved", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service was restarted successfully..
         /// </summary>
         public static string Msg_ServiceRestarted {
@@ -1184,15 +1139,6 @@ namespace Servy.Manager.Resources {
         public static string Msg_ServiceStopped {
             get {
                 return ResourceManager.GetString("Msg_ServiceStopped", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service was uninstalled successfully..
-        /// </summary>
-        public static string Msg_ServiceUninstalled {
-            get {
-                return ResourceManager.GetString("Msg_ServiceUninstalled", resourceCulture);
             }
         }
         

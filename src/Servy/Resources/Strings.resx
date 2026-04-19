@@ -69,13 +69,6 @@
     <value>About Servy</value>
   </data>
 
-  <data name="Text_NoUpdate" xml:space="preserve">
-    <value>No updates currently available.</value>
-  </data>
-  <data name="Text_UpdateAvailable" xml:space="preserve">
-    <value>A new version of Servy is available. Do you want to download it?</value>
-  </data>
-
   <data name="Text_About" xml:space="preserve">
     <value>
 Servy {0}
@@ -254,9 +247,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_EnableHealthMonitoring" xml:space="preserve">
     <value>Enable Health Monitoring</value>
   </data>
-  <data name="Chk_EnableHeartbeat" xml:space="preserve">
-    <value>Enable Heartbeat Check</value>
-  </data>
   <data name="Label_HeartbeatInterval" xml:space="preserve">
     <value>Heartbeat Interval</value>
   </data>
@@ -418,14 +408,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Are you sure you want to clear all configuration values?</value>
   </data>
 
-  <!-- General -->
-  <data name="Msg_InvalidValue" xml:space="preserve">
-    <value>Invalid value.</value>
-  </data>
-  <data name="Msg_FieldRequired" xml:space="preserve">
-    <value>This field is required.</value>
-  </data>
-
   <!-- Buttons -->
   <data name="Button_Install" xml:space="preserve">
     <value>Install</value>
@@ -513,9 +495,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <value>A service with this name already exists. Would you like to replace it?
 
 If the service is disabled and marked for deletion, the installation will fail until you restart your PC.</value>
-</data>
-  <data name="Msg_ServiceDisabled" xml:space="preserve">
-    <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
   <data name="Msg_ServiceNotFound" xml:space="preserve">
     <value>The specified service was not found.</value>

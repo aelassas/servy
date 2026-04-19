@@ -290,10 +290,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="StartupType_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
-  
-  <data name="Label_LocalSytem" xml:space="preserve">
-    <value>Local System</value>
-  </data>
 
   <!-- Pre-Launch -->
   <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
@@ -388,19 +384,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_ServiceInstalled" xml:space="preserve">
     <value>Service was installed successfully.</value>
   </data>
-  <data name="Msg_ServiceUninstalled" xml:space="preserve">
-    <value>Service was uninstalled successfully.</value>
-  </data>
-  <data name="Msg_ServiceRemoved" xml:space="preserve">
-    <value>Service was removed successfully.</value>
-  </data>
   <data name="Msg_UnexpectedError" xml:space="preserve">
     <value>An unexpected error occurred.</value>
   </data>
-  <data name="Msg_AdminRightsRequired" xml:space="preserve">
-    <value>Administrator privileges are required.</value>
-  </data>
-
   <data name="Msg_ServiceStarted" xml:space="preserve">
     <value>Service was started successfully.</value>
   </data>
@@ -429,9 +415,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Label_Level" xml:space="preserve">
     <value>Level:</value>
   </data>
-  <data name="Label_AllLevel" xml:space="preserve">
-    <value>All Levels</value>
-  </data>
   <data name="Label_From" xml:space="preserve">
     <value>From:</value>
   </data>
@@ -447,9 +430,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Column_Level" xml:space="preserve">
     <value>Level</value>
-  </data>
-  <data name="Column_EventId" xml:space="preserve">
-    <value>Event Id</value>
   </data>
   <data name="Column_Message" xml:space="preserve">
     <value>Message</value>
