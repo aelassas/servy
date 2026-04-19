@@ -23,7 +23,7 @@ namespace Servy.Manager.ViewModels
     /// ViewModel for the Logs tab in Servy Manager.
     /// Provides filtering, searching, and displaying log entries from the event log.
     /// </summary>
-    public class LogsViewModel : INotifyPropertyChanged
+    public class LogsViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Private Fields
 
@@ -40,6 +40,7 @@ namespace Servy.Manager.ViewModels
         private readonly ObservableCollection<LogEntryModel> _logs = new ObservableCollection<LogEntryModel>();
         private string _selectedLogMessage;
         private string _footerText;
+        private bool _disposedValue;
 
         #endregion
 
@@ -406,31 +407,56 @@ namespace Servy.Manager.ViewModels
 
         #endregion
 
-        #region Public Methods
+        #region Public Methods & IDisposable Implementation
 
         /// <summary>
         /// Cancels any ongoing search and cleans up the cancellation token.
-        /// Thread-safe execution prevents NullReferenceExceptions and ObjectDisposedExceptions 
-        /// during rapid tab navigation or window closure.
+        /// Maintained as an alias for <see cref="Dispose()"/> to ensure backward compatibility.
         /// </summary>
         public void Cleanup()
         {
-            // Use Interlocked to ensure we only dispose the token once
-            var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
-            if (oldCts != null)
+            Dispose();
+        }
+
+        /// <summary>
+        /// Safely disposes of resources, specifically cancelling and disposing the internal 
+        /// <see cref="CancellationTokenSource"/> to prevent memory leaks.
+        /// </summary>
+        /// <param name="disposing">True if called from Dispose(), false if from a finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
             {
-                try
+                if (disposing)
                 {
-                    oldCts.Cancel();
+                    // Use Interlocked to ensure we only dispose the token once
+                    var oldCts = Interlocked.Exchange(ref _cancellationTokenSource, null);
+                    if (oldCts != null)
+                    {
+                        try
+                        {
+                            oldCts.Cancel();
+                        }
+                        catch (ObjectDisposedException) { /* Already gone */ }
+                        finally
+                        {
+                            oldCts.Dispose();
+                        }
+                    }
                 }
-                catch (ObjectDisposedException) { /* Already gone */ }
-                finally
-                {
-                    oldCts.Dispose();
-                }
+
+                _disposedValue = true;
             }
         }
 
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
         #endregion
+
     }
 }
