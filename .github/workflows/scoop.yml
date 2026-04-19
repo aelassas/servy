@@ -26,6 +26,10 @@ on:
         required: false
         default: 'false'
 
+concurrency:
+  group: release-package-updates
+  cancel-in-progress: false
+
 permissions:
   contents: write   # allows pushing commits back
 

@@ -27,7 +27,7 @@ name: release
 
 on:
   workflow_run:
-    workflows: ["winget", "choco", "scoop", "bump-version"]
+    workflows: ["winget", "choco", "scoop", "bump-version", "changelog"]
     types: [completed]
   workflow_dispatch:  # Manual trigger
 

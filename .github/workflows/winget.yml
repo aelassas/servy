@@ -11,6 +11,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: release-package-updates
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: windows-latest
