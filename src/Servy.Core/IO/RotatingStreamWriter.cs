@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Security.AccessControl;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -37,6 +36,7 @@ namespace Servy.Core.IO
         private readonly int _maxRotations; // 0 = unlimited
         private int _consecutiveDeletionFailures;
         private readonly object _lock = new object();
+        private readonly Func<DateTime> _timeProvider;
 
         /// <summary>
         /// A circuit-breaker flag that disables all rotation logic if a permanent failure occurs.
@@ -62,6 +62,7 @@ namespace Servy.Core.IO
         /// </param>
         /// <param name="maxRotations">The maximum number of rotated log files to keep. Set to 0 for unlimited.</param>
         /// <param name="useLocalTimeForRotation">Indicates whether to use local system time for log rotation (Default: false (UTC)).</param>
+        /// <param name="timeProvider">The function to provide the current time. Defaults to system clock based on <paramref name="useLocalTimeForRotation"/>.</param>
         /// <remarks>
         /// When both size-based and date-based rotation are enabled,
         /// size rotation takes precedence. If a size-based rotation occurs,
@@ -74,7 +75,8 @@ namespace Servy.Core.IO
             bool enableDateRotation,
             DateRotationType dateRotationType,
             int maxRotations,
-            bool useLocalTimeForRotation)
+            bool useLocalTimeForRotation,
+            Func<DateTime> timeProvider = null)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -90,7 +92,10 @@ namespace Servy.Core.IO
             _rotationSizeInBytes = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
-            var now = useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+            // Initialize the time provider. Defaults to the system clock based on configuration.
+            _timeProvider = timeProvider ?? (() => _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow);
+
+            var now = _timeProvider();
             var lastWriteTime = useLocalTimeForRotation ? File.GetLastWriteTime(path) : File.GetLastWriteTimeUtc(path);
             _lastRotationDate = File.Exists(path) ? lastWriteTime : now; // baseline for date rotation
             _maxRotations = maxRotations;
@@ -261,21 +266,20 @@ namespace Servy.Core.IO
             if (rotateBySize)
             {
                 Rotate();
-                var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
-                _lastRotationDate = now;
+                _lastRotationDate = _timeProvider(); // Uses the seam
                 return;
             }
 
             // --- DATE ROTATION ---
             if (_enableDateRotation)
             {
-                rotateByDate = ShouldRotateByDate(_useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow);
+                rotateByDate = ShouldRotateByDate(_timeProvider()); // Uses the seam
             }
 
             if (rotateByDate)
             {
                 Rotate();
-                _lastRotationDate = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+                _lastRotationDate = _timeProvider(); // Uses the seam
             }
         }
 
@@ -438,7 +442,7 @@ namespace Servy.Core.IO
 
             CloseWriter();
 
-            var now = _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow;
+            var now = _timeProvider(); // Uses the seam
             var timestamp = now.ToString("yyyyMMdd_HHmmss");
 
             // Use safe Path resolution with AppContext fallback for root paths
