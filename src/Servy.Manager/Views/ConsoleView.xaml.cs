@@ -5,6 +5,7 @@ using Servy.UI.Helpers;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -191,14 +192,26 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles the Loaded event of the UserControl.
+        /// This method acts as a synchronous entry point that fire-and-forgets the asynchronous initialization.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data.</param>
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+            => _ = UserControl_LoadedAsync(sender, e);
+
+        /// <summary>
+        /// Performs asynchronous initialization for the UserControl.
         /// Automatically triggers an initial service search if the service list is currently empty.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data.</param>
-        private async void UserControl_Loaded(object sender, RoutedEventArgs e)
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task UserControl_LoadedAsync(object sender, RoutedEventArgs e)
         {
             try
             {
+                // Only trigger the search if the ViewModel is initialized and the list is empty
+                // to avoid redundant API/DB calls on view switching.
                 if (DataContext is ConsoleViewModel vm && !vm.Services.Any())
                 {
                     await vm.SearchCommand.ExecuteAsync(null);
@@ -212,11 +225,22 @@ namespace Servy.Manager.Views
 
         /// <summary>
         /// Handles the KeyDown event of the SearchTextBox.
-        /// Executes the <see cref="ConsoleViewModel.SearchCommand"/> when the Enter key is pressed.
+        /// Acts as a synchronous wrapper that fire-and-forgets the asynchronous key processing logic.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The event data containing the key that was pressed.</param>
-        private async void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+        private void SearchTextBox_KeyDown(object sender, KeyEventArgs e)
+            => _ = SearchTextBox_KeyDownAsync(sender, e);
+
+        /// <summary>
+        /// Asynchronously processes key down events for the SearchTextBox.
+        /// Executes the <see cref="ConsoleViewModel.SearchCommand"/> specifically when the Enter key is pressed
+        /// and the command is in a valid state to execute.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The event data containing the key that was pressed.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        private async Task SearchTextBox_KeyDownAsync(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter &&
                 DataContext is ConsoleViewModel vm &&
@@ -224,6 +248,8 @@ namespace Servy.Manager.Views
             {
                 try
                 {
+                    // Trigger the search command asynchronously to keep the UI responsive
+                    // while querying the service database.
                     await vm.SearchCommand.ExecuteAsync(null);
                 }
                 catch (Exception ex)

@@ -46,7 +46,7 @@
                 <MenuItem Header="{x:Static resx:Strings.Menu_ImportJson}" Command="{Binding ImportJsonCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_ImportJson}" AutomationProperties.AutomationId="ImportJsonMenuItem" AutomationProperties.HelpText="Imports a service configuration from a JSON file."/>
             </MenuItem>
 
-            <MenuItem Header="{x:Static resx:Strings.Menu_Config}" Click="Menu_ConfigClik" IsEnabled="{Binding IsConfiguratorEnabled}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Config}" AutomationProperties.AutomationId="ConfigMenu" AutomationProperties.HelpText="Opens the configuration app for the selected service."/>
+            <MenuItem Header="{x:Static resx:Strings.Menu_Config}" Click="Menu_ConfigClick" IsEnabled="{Binding IsConfiguratorEnabled}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Config}" AutomationProperties.AutomationId="ConfigMenu" AutomationProperties.HelpText="Opens the configuration app for the selected service."/>
 
             <MenuItem Header="{x:Static resx:Strings.Menu_Help}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Help}" AutomationProperties.AutomationId="HelpMenu" AutomationProperties.HelpText="Opens a menu containing documentation and update options.">
                 <MenuItem Header="{x:Static resx:Strings.Menu_Doc}" Command="{Binding OpenDocumentationCommand}" AutomationProperties.Name="{x:Static resx:Strings.Menu_Doc}" AutomationProperties.AutomationId="DocMenuItem" AutomationProperties.HelpText="Opens the official Servy documentation."/>
