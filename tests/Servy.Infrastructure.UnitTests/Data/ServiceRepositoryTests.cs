@@ -34,11 +34,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             return new ServiceRepository(_mockDapper.Object, _mockSecureData.Object, _mockXmlServiceSerializer.Object, _mockJsonServiceSerializer.Object);
         }
 
-        private string GetPropertyValue(object obj, string propName)
-        {
-            return obj.GetType().GetProperty(propName)?.GetValue(obj, null)?.ToString();
-        }
-
         [Fact]
         public void Constructor_NullDapper_Throws()
         {
@@ -92,8 +87,10 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
             _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
 
-            // AddAsync typically uses ExecuteScalarAsync to return the new Row ID
+            // Setup callback to capture the anonymous parameters passed to Dapper
+            object capturedParam = null;
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                       .Callback<string, object, CancellationToken>((sql, param, token) => capturedParam = param)
                        .ReturnsAsync(99);
 
             var repo = CreateRepository();
@@ -112,19 +109,21 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("pre_stop_plain", dto.PreStopParameters);
 
             // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
-            _mockDapper.Verify(d => d.ExecuteScalarAsync<int>(
-                It.IsAny<string>(),
-                It.Is<object>(obj =>
-                    GetPropertyValue(obj, "Password") == "p_enc" &&
-                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
-                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
-                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
-                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
-                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
-                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
-                ), It.IsAny<CancellationToken>()), Times.Once);
+            Assert.NotNull(capturedParam);
+            var paramDict = capturedParam.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(capturedParam));
+
+            // If Password is missing or renamed, this line immediately throws a KeyNotFoundException:
+            // The given key 'Password' was not present in the dictionary. We instantly know exactly what broke the test.
+            Assert.Equal("p_enc", paramDict["Password"]);
+
+            Assert.Equal("args_enc", paramDict["Parameters"]);
+            Assert.Equal("env_enc", paramDict["EnvironmentVariables"]);
+            Assert.Equal("fail_args_enc", paramDict["FailureProgramParameters"]);
+            Assert.Equal("pre_args_enc", paramDict["PreLaunchParameters"]);
+            Assert.Equal("pre_env_enc", paramDict["PreLaunchEnvironmentVariables"]);
+            Assert.Equal("post_args_enc", paramDict["PostLaunchParameters"]);
+            Assert.Equal("pre_stop_enc", paramDict["PreStopParameters"]);
+            Assert.Equal("post_stop_enc", paramDict["PostStopParameters"]);
         }
 
         [Fact]
@@ -157,8 +156,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
             _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
 
-            // ExecuteAsync returns the number of rows affected (usually 1)
+            object capturedParam = null;
             _mockDapper.Setup(d => d.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                       .Callback<string, object, CancellationToken>((sql, param, token) => capturedParam = param)
                        .ReturnsAsync(1);
 
             var repo = CreateRepository();
@@ -176,20 +176,19 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("pre_stop_plain", dto.PreStopParameters);
 
             // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
-            _mockDapper.Verify(d => d.ExecuteAsync(
-                It.IsAny<string>(),
-                It.Is<object>(obj =>
-                    GetPropertyValue(obj, "Id").Equals("123") &&
-                    GetPropertyValue(obj, "Password") == "p_enc" &&
-                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
-                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
-                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
-                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
-                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
-                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
-                ), It.IsAny<CancellationToken>()), Times.Once);
+            Assert.NotNull(capturedParam);
+            var paramDict = capturedParam.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(capturedParam));
+
+            Assert.Equal(123, paramDict["Id"]);
+            Assert.Equal("p_enc", paramDict["Password"]);
+            Assert.Equal("args_enc", paramDict["Parameters"]);
+            Assert.Equal("env_enc", paramDict["EnvironmentVariables"]);
+            Assert.Equal("fail_args_enc", paramDict["FailureProgramParameters"]);
+            Assert.Equal("pre_args_enc", paramDict["PreLaunchParameters"]);
+            Assert.Equal("pre_env_enc", paramDict["PreLaunchEnvironmentVariables"]);
+            Assert.Equal("post_args_enc", paramDict["PostLaunchParameters"]);
+            Assert.Equal("pre_stop_enc", paramDict["PreStopParameters"]);
+            Assert.Equal("post_stop_enc", paramDict["PostStopParameters"]);
         }
 
         [Fact]
@@ -222,8 +221,9 @@ namespace Servy.Infrastructure.UnitTests.Data
             _mockSecureData.Setup(s => s.Encrypt("pre_stop_plain")).Returns("pre_stop_enc");
             _mockSecureData.Setup(s => s.Encrypt("post_stop_plain")).Returns("post_stop_enc");
 
-            // ExecuteAsync returns the number of rows affected (usually 1)
+            object capturedParam = null;
             _mockDapper.Setup(d => d.Execute(It.IsAny<string>(), It.IsAny<object>()))
+                       .Callback<string, object>((sql, param) => capturedParam = param)
                        .Returns(1);
 
             var repo = CreateRepository();
@@ -241,20 +241,19 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("pre_stop_plain", dto.PreStopParameters);
 
             // 6. Verify - Ensure the object sent to Dapper was the encrypted clone
-            _mockDapper.Verify(d => d.Execute(
-                It.IsAny<string>(),
-                It.Is<object>(obj =>
-                    GetPropertyValue(obj, "Id").Equals("123") &&
-                    GetPropertyValue(obj, "Password") == "p_enc" &&
-                    GetPropertyValue(obj, "Parameters") == "args_enc" &&
-                    GetPropertyValue(obj, "EnvironmentVariables") == "env_enc" &&
-                    GetPropertyValue(obj, "FailureProgramParameters") == "fail_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchParameters") == "pre_args_enc" &&
-                    GetPropertyValue(obj, "PreLaunchEnvironmentVariables") == "pre_env_enc" &&
-                    GetPropertyValue(obj, "PostLaunchParameters") == "post_args_enc" &&
-                    GetPropertyValue(obj, "PreStopParameters") == "pre_stop_enc" &&
-                    GetPropertyValue(obj, "PostStopParameters") == "post_stop_enc"
-                )), Times.Once);
+            Assert.NotNull(capturedParam);
+            var paramDict = capturedParam.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(capturedParam));
+
+            Assert.Equal(123, paramDict["Id"]);
+            Assert.Equal("p_enc", paramDict["Password"]);
+            Assert.Equal("args_enc", paramDict["Parameters"]);
+            Assert.Equal("env_enc", paramDict["EnvironmentVariables"]);
+            Assert.Equal("fail_args_enc", paramDict["FailureProgramParameters"]);
+            Assert.Equal("pre_args_enc", paramDict["PreLaunchParameters"]);
+            Assert.Equal("pre_env_enc", paramDict["PreLaunchEnvironmentVariables"]);
+            Assert.Equal("post_args_enc", paramDict["PostLaunchParameters"]);
+            Assert.Equal("pre_stop_enc", paramDict["PreStopParameters"]);
+            Assert.Equal("post_stop_enc", paramDict["PostStopParameters"]);
         }
 
         [Fact]
@@ -281,11 +280,6 @@ namespace Servy.Infrastructure.UnitTests.Data
             // Assert
             Assert.Equal(expectedId, resultId);
             Assert.Equal(expectedId, dto.Id);
-
-            // Note: dto.Pid will NOT be 123 here unless your Upsert SQL 
-            // explicitly selects it and you assign it to the DTO.
-            // In Servy, Pid is volatile/runtime data, so usually, we don't 
-            // sync it during a configuration 'Upsert'.
         }
 
         [Fact]
@@ -312,10 +306,11 @@ namespace Servy.Infrastructure.UnitTests.Data
 
             _mockSecureData.Setup(s => s.Encrypt("plain")).Returns(encryptedValue);
 
-            // Mock ExecuteScalarAsync (The Atomic Upsert)
+            object capturedParam = null;
             _mockDapper.Setup(d => d.ExecuteScalarAsync<int>(
                 It.IsAny<string>(),
                 It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                .Callback<string, object, CancellationToken>((sql, param, token) => capturedParam = param)
                 .ReturnsAsync(generatedId);
 
             var repo = CreateRepository();
@@ -332,10 +327,10 @@ namespace Servy.Infrastructure.UnitTests.Data
             Assert.Equal("plain", dto.Password);
 
             // Verify that the object passed to Dapper actually contained the encrypted value
-            _mockDapper.Verify(d => d.ExecuteScalarAsync<int>(
-                It.IsAny<string>(),
-                It.Is<object>(obj => GetPropertyValue(obj, "Password") == encryptedValue), It.IsAny<CancellationToken>()
-                ), Times.Once);
+            Assert.NotNull(capturedParam);
+            var paramDict = capturedParam.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(capturedParam));
+
+            Assert.Equal(encryptedValue, paramDict["Password"]);
         }
 
         [Fact]
