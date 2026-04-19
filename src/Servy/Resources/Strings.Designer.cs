@@ -160,6 +160,24 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select standard error file.
+        /// </summary>
+        public static string Dialog_SelectStderrFile {
+            get {
+                return ResourceManager.GetString("Dialog_SelectStderrFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Select standard output file.
+        /// </summary>
+        public static string Dialog_SelectStdoutFile {
+            get {
+                return ResourceManager.GetString("Dialog_SelectStdoutFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à JSON Configuration exported successfully..
         /// </summary>
         public static string ExportJson_Success {

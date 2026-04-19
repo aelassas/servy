@@ -994,12 +994,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for standard output redirection.
         /// </summary>
-        private void BrowseStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile("Select standard output file"), v => StdoutPath = v);
+        private void BrowseStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => StdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for standard error redirection.
         /// </summary>
-        private void BrowseStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile("Select standard error file"), v => StderrPath = v);
+        private void BrowseStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => StderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a failure program file and sets <see cref="FailureProgramExecutablePath"/>.
@@ -1024,12 +1024,12 @@ namespace Servy.ViewModels
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard output redirection.
         /// </summary>
-        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile("Select standard output file"), v => PreLaunchStdoutPath = v);
+        private void BrowsePreLaunchStdoutPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStdoutFile), v => PreLaunchStdoutPath = v);
 
         /// <summary>
         /// Opens a dialog to select a file path for pre-launch standard error redirection.
         /// </summary>
-        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile("Select standard error file"), v => PreLaunchStderrPath = v);
+        private void BrowsePreLaunchStderrPath() => BrowseAndAssign(() => _dialogService.SaveFile(Strings.Dialog_SelectStderrFile), v => PreLaunchStderrPath = v);
 
         /// <summary>
         /// Opens a dialog to browse for a post-launch executable file and sets <see cref="PostLaunchExecutablePath"/>.
