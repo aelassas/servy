@@ -41,7 +41,10 @@ namespace Servy.Core.Logging
         /// as <see cref="EventRecord.FormatDescription()"/> requires an active handle to the event metadata provider.
         /// </remarks>
         /// <param name="evt">The raw event record retrieved from the Windows Event Log.</param>
-        /// <returns>A populated <see cref="ServyEventLogEntry"/> containing the formatted messa
+        /// <returns>
+        /// A populated <see cref="ServyEventLogEntry"/> containing the formatted message,
+        /// event id, level, provider name and timestamp pulled from <paramref name="evt"/>.
+        /// </returns>
         private static ServyEventLogEntry MapToDto(EventRecord evt)
         {
             var message = evt.FormatDescription() ?? string.Empty;
