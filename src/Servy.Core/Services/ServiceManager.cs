@@ -441,62 +441,6 @@ namespace Servy.Core.Services
                         }
                     }
 
-                    // Manages the 'eventlog' dependency to ensure teardown logging availability.
-                    // Automatically injects the dependency if enabled; removes it if disabled, 
-                    // provided it was not explicitly requested in the service configuration.
-                    void EnsureServiceDependsOnEventLog()
-                    {
-                        try
-                        {
-                            bool isEventLogEnabled = true;
-
-                            try
-                            {
-                                using (var sc = new ServiceController("eventlog"))
-                                {
-                                    if (sc.StartType == ServiceStartMode.Disabled)
-                                    {
-                                        isEventLogEnabled = false;
-                                        Logger.Warn("The 'eventlog' service is disabled. Ensuring eventlog dependency is removed to prevent startup failures.");
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Debug("Could not verify eventlog service state. Proceeding with dependency addition.", ex);
-                            }
-
-                            using (var key = Registry.LocalMachine.OpenSubKey($@"System\CurrentControlSet\Services\{options.ServiceName}", true))
-                            {
-                                if (key != null)
-                                {
-                                    const string eventLogServiceName = "eventlog";
-                                    string[] existingDeps = key.GetValue("DependOnService") as string[] ?? Array.Empty<string>();
-                                    bool hasEventLogDep = existingDeps.Contains(eventLogServiceName, StringComparer.OrdinalIgnoreCase);
-
-                                    if (isEventLogEnabled && !hasEventLogDep)
-                                    {
-                                        // Add the dependency
-                                        var newDeps = existingDeps.Append(eventLogServiceName).ToArray();
-                                        key.SetValue("DependOnService", newDeps, RegistryValueKind.MultiString);
-                                        Logger.Info($"Added 'eventlog' dependency to service '{options.ServiceName}'.");
-                                    }
-                                    else if (!isEventLogEnabled && hasEventLogDep && options.ServiceDependencies?.IndexOf(eventLogServiceName, StringComparison.OrdinalIgnoreCase) < 0)
-                                    {
-                                        // Remove the dependency
-                                        var newDeps = existingDeps.Where(d => !string.Equals(d, eventLogServiceName, StringComparison.OrdinalIgnoreCase)).ToArray();
-                                        key.SetValue("DependOnService", newDeps, RegistryValueKind.MultiString);
-                                        Logger.Info($"Removed 'eventlog' dependency from service '{options.ServiceName}' because the eventlog service is disabled.");
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warn($"Failed to safely apply or remove eventlog dependency in the registry: {ex.Message}");
-                        }
-                    }
-
                     if (serviceHandle == null || serviceHandle.IsInvalid)
                     {
                         var isInstalled = IsServiceInstalled(options.ServiceName);
@@ -549,7 +493,6 @@ namespace Servy.Core.Services
                                 }
                             }
 
-                            EnsureServiceDependsOnEventLog();
                             await _serviceRepository.UpsertAsync(dto);
                             Logger.Info($"Service '{options.ServiceName}' already exists. Updated its configuration.");
                             return OperationResult.Success();
@@ -560,7 +503,6 @@ namespace Servy.Core.Services
                         return OperationResult.Failure(creationErrorMsg);
                     }
 
-                    EnsureServiceDependsOnEventLog();
                     SetServiceDescription(serviceHandle, options.Description);
                     await _serviceRepository.UpsertAsync(dto);
                     Logger.Info($"Service '{options.ServiceName}' installed successfully.");
