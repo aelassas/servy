@@ -143,8 +143,14 @@ jobs:
       - name: Update servy.json in ScoopInstaller/Extras and prepare PR branch
         if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
+        env:
+          GH_PAT: ${{ secrets.PAT }} # Keep the secret in the environment, not the command line
         run: |
-          git clone https://x-access-token:${{ secrets.PAT }}@github.com/aelassas/Extras.git extras
+          # Re-apply the secure URL mapping to ensure this step uses the PAT contextually
+          git config --global url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
+          
+          # Now the clone command is clean and doesn't leak secrets in process lists
+          git clone https://github.com/aelassas/Extras.git extras
           Set-Location extras
 
           # Define the target branch name
