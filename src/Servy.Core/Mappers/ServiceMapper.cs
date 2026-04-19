@@ -2,6 +2,7 @@
 using Servy.Core.Domain;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using System;
 
@@ -107,9 +108,9 @@ namespace Servy.Core.Mappers
                 StartupDirectory = dto.StartupDirectory,
                 Parameters = dto.Parameters,
 
-                // Validate Enum ranges before mapping from DTO
-                StartupType = MapEnum(dto.StartupType, AppConfig.DefaultStartupType),
-                Priority = MapEnum(dto.Priority, AppConfig.DefaultPriority),
+                // Validate Enum ranges before mapping from DTO using shared parser
+                StartupType = ConfigParser.ParseEnum(dto.StartupType, AppConfig.DefaultStartupType),
+                Priority = ConfigParser.ParseEnum(dto.Priority, AppConfig.DefaultPriority),
 
                 StdoutPath = dto.StdoutPath,
                 StderrPath = dto.StderrPath,
@@ -118,7 +119,7 @@ namespace Servy.Core.Mappers
                 EnableDateRotation = dto.EnableDateRotation ?? AppConfig.DefaultEnableDateRotation,
 
                 // Validate Enum ranges
-                DateRotationType = MapEnum(dto.DateRotationType, AppConfig.DefaultDateRotationType),
+                DateRotationType = ConfigParser.ParseEnum(dto.DateRotationType, AppConfig.DefaultDateRotationType),
 
                 MaxRotations = dto.MaxRotations ?? AppConfig.DefaultMaxRotations,
                 UseLocalTimeForRotation = dto.UseLocalTimeForRotation ?? AppConfig.DefaultUseLocalTimeForRotation,
@@ -127,7 +128,7 @@ namespace Servy.Core.Mappers
                 MaxFailedChecks = dto.MaxFailedChecks ?? AppConfig.DefaultMaxFailedChecks,
 
                 // Validate Enum ranges
-                RecoveryAction = MapEnum(dto.RecoveryAction, RecoveryAction.RestartService),
+                RecoveryAction = ConfigParser.ParseEnum(dto.RecoveryAction, RecoveryAction.RestartService),
 
                 MaxRestartAttempts = dto.MaxRestartAttempts ?? AppConfig.DefaultMaxRestartAttempts,
                 FailureProgramPath = dto.FailureProgramPath,
@@ -175,33 +176,5 @@ namespace Servy.Core.Mappers
             };
         }
 
-        /// <summary>
-        /// Validates that an integer value exists within the specified enum range before mapping.
-        /// Prevents invalid values from flowing into Win32 API calls.
-        /// </summary>
-        /// <typeparam name="TEnum">The target enum type.</typeparam>
-        /// <param name="value">The raw integer value from the DTO.</param>
-        /// <param name="defaultValue">The fallback value if the input is null or invalid.</param>
-        /// <returns>A validated enum member.</returns>
-        private static TEnum MapEnum<TEnum>(int? value, TEnum defaultValue) where TEnum : struct, Enum
-        {
-            if (!value.HasValue)
-            {
-                return defaultValue;
-            }
-
-            // Fix for #309 / Test Failure: 
-            // Enum.IsDefined requires the value type to match the underlying enum type (e.g., int vs uint).
-            // We convert the int to the underlying type of TEnum to ensure compatibility.
-            var underlyingType = Enum.GetUnderlyingType(typeof(TEnum));
-            var convertedValue = Convert.ChangeType(value.Value, underlyingType);
-
-            if (Enum.IsDefined(typeof(TEnum), convertedValue))
-            {
-                return (TEnum)convertedValue;
-            }
-
-            return defaultValue;
-        }
     }
 }

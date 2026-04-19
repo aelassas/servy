@@ -111,6 +111,8 @@
     <Compile Include="EnvironmentVariables\EnvironmentVariableParser.cs" />
     <Compile Include="EnvironmentVariables\EnvironmentVariablesValidator.cs" />
     <Compile Include="Helpers\AppFoldersHelper.cs" />
+    <Compile Include="Helpers\CallerArgumentExpressionAttribute.cs" />
+    <Compile Include="Helpers\ConfigParser.cs" />
     <Compile Include="Helpers\ProcessMetrics.cs" />
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
@@ -190,8 +192,5 @@
     <Error Condition="!Exists('..\..\packages\ConfigureAwait.Fody.3.3.2\build\ConfigureAwait.Fody.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\ConfigureAwait.Fody.3.3.2\build\ConfigureAwait.Fody.props'))" />
     <Error Condition="!Exists('..\..\packages\Fody.6.9.3\build\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Fody.6.9.3\build\Fody.targets'))" />
   </Target>
-  <ItemGroup>
-    <InternalsVisibleTo Include="Servy.Core.UnitTests" />
-  </ItemGroup>
   <Import Project="..\..\packages\Fody.6.9.3\build\Fody.targets" Condition="Exists('..\..\packages\Fody.6.9.3\build\Fody.targets')" />
 </Project>
