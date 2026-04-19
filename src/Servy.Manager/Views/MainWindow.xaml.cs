@@ -22,7 +22,7 @@ namespace Servy.Manager.Views
     /// </summary>
     public partial class MainWindow : Window
     {
-        private IMessageBoxService? _messageBoxService;
+        private readonly IMessageBoxService? _messageBoxService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
