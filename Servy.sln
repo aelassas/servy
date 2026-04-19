@@ -64,6 +64,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{70D87C51
 		setup\publish.ps1 = setup\publish.ps1
 		setup\servy.iss = setup\servy.iss
 		setup\signpath.ps1 = setup\signpath.ps1
+		setup\tools-config.ps1 = setup\tools-config.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "data", "data", "{931305A8-96F1-430E-AA25-A514356B34F9}"

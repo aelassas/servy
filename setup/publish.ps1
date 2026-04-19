@@ -17,8 +17,6 @@ try {
     $platform     = "x64"
     $framework    = "net48"
 
-    $innoCompiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-    $sevenZipExe  = "C:\Program Files\7-Zip\7z.exe"
     $issFile      = "servy.iss"
 
     # === PATH RESOLUTION ===
@@ -32,15 +30,36 @@ try {
     $cliBuildOutputDir      = Join-Path $cliDir "bin\$platform\$buildConfig"
     $managerBuildOutputDir  = Join-Path $managerDir "bin\$platform\$buildConfig"
     
-    # FIX: Do NOT use Resolve-Path here. It returns null/errors if the file is missing.
+    # Do NOT use Resolve-Path here. It returns null/errors if the file is missing.
     $signPath               = Join-Path $currentScriptDir "signpath.ps1"
 
     $packageFolder          = "$appName-$version-$framework-$platform-portable"
     $outputZip              = "$packageFolder.7z"
 
-    # ========================
-    # Functions
-    # ========================
+    # === Tool Discovery ===
+    try {
+        # Import the resolution helper
+        . (Join-Path $scriptDir "tools-config.ps1")
+
+        Write-Host "Resolving build tools..." -ForegroundColor Cyan
+
+        $innoCompiler = Resolve-Tool -Name "ISCC" -Fallbacks @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+        )
+
+        $sevenZipExe  = Resolve-Tool -Name "7z" -Fallbacks @(
+            "C:\Program Files\7-Zip\7z.exe",
+            "C:\Program Files (x86)\7-Zip\7z.exe"
+        )
+    
+        Write-Host "✓ Tools resolved successfully." -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Configuration Failed: $($_.Exception.Message)"
+        exit 1
+    }
+
+    # === Functions ===
     function Check-LastExitCode {
         param([string]$ErrorMessage)
         if ($LASTEXITCODE -ne 0) { throw "ERROR: $ErrorMessage (Exit Code: $LASTEXITCODE)" }
@@ -76,7 +95,6 @@ try {
 
     # === BUILD & SIGN INSTALLER ===
     Write-Host "--- Installer Generation ---" -ForegroundColor Cyan
-    if (-not (Test-Path $innoCompiler)) { throw "Inno Setup not found at $innoCompiler" }
     
     & "$innoCompiler" (Join-Path $currentScriptDir $issFile) /DMyAppVersion=$version /DMyAppPlatform=$framework
     Check-LastExitCode "Inno Setup failed"
@@ -148,7 +166,6 @@ try {
         Get-ChildItem $packageFolder -Filter "*.pdb" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
 
         # === CREATE ZIP ===
-        if (-not (Test-Path $sevenZipExe)) { throw "7-Zip not found at $sevenZipExe" }
         
         $zipArgs = @(
             "a",
