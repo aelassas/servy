@@ -236,9 +236,9 @@ namespace Servy.Manager.ViewModels
         #region ServiceSearchViewModelBase Implementation
 
         ///<inheritdoc/>
-        protected override ServiceItemBase CreateServiceItem(Service s)
+        protected override ServiceItemBase CreateServiceItem(Service service)
         {
-            return new ConsoleService { Name = s.Name, Pid = null, StdoutPath = null, StderrPath = null };
+            return new ConsoleService { Name = service.Name, Pid = null, StdoutPath = null, StderrPath = null };
         }
 
         #endregion

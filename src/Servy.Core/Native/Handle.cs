@@ -11,17 +11,47 @@ namespace Servy.Core.Native
     /// </remarks>
     public sealed class Handle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Handle"/> class.
-        /// </summary>
-        public Handle() : base(true)
-        {
-        }
+        public Handle() : base(true) { }
 
-        /// <summary>
-        /// Executes the code required to free the handle.
-        /// </summary>
-        /// <returns>True if the handle is released successfully.</returns>
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.CloseHandle(handle);
+        }
+    }
+
+    /// <summary>
+    /// Represents a safe wrapper around a Service Control Manager (SCM) database handle.
+    /// </summary>
+    public sealed class SafeScmHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public SafeScmHandle() : base(true) { }
+
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.CloseServiceHandle(handle);
+        }
+    }
+
+    /// <summary>
+    /// Represents a safe wrapper around a Windows Service handle.
+    /// </summary>
+    public sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public SafeServiceHandle() : base(true) { }
+
+        protected override bool ReleaseHandle()
+        {
+            return NativeMethods.CloseServiceHandle(handle);
+        }
+    }
+
+    /// <summary>
+    /// Represents a safe wrapper around a Job Object handle.
+    /// </summary>
+    public sealed class SafeJobObjectHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public SafeJobObjectHandle() : base(true) { }
+
         protected override bool ReleaseHandle()
         {
             return NativeMethods.CloseHandle(handle);

@@ -1,4 +1,5 @@
-﻿using static Servy.Core.Native.NativeMethods;
+﻿using Servy.Core.Native;
+using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Core.Services
 {
@@ -14,7 +15,7 @@ namespace Servy.Core.Services
         /// <param name="databaseName">The name of the service control manager database. Use null for default.</param>
         /// <param name="dwAccess">The desired access rights.</param>
         /// <returns>A handle to the service control manager.</returns>
-        IntPtr OpenSCManager(string machineName, string databaseName, uint dwAccess);
+        SafeScmHandle OpenSCManager(string machineName, string databaseName, uint dwAccess);
 
         /// <summary>
         /// Ensures the specified account has the "Log on as a service" right.
@@ -45,8 +46,8 @@ namespace Servy.Core.Services
         /// <param name="lpServiceStartName">The name of the account under which the service runs.</param>
         /// <param name="lpPassword">The password for the account specified by <paramref name="lpServiceStartName" />.</param>
         /// <returns>A handle to the newly created service.</returns>
-        IntPtr CreateService(
-            IntPtr hSCManager,
+        SafeServiceHandle CreateService(
+            SafeScmHandle hSCManager,
             string lpServiceName,
             string lpDisplayName,
             uint dwDesiredAccess,
@@ -68,14 +69,14 @@ namespace Servy.Core.Services
         /// <param name="lpServiceName">The name of the service to open.</param>
         /// <param name="dwDesiredAccess">The access to the service.</param>
         /// <returns>A handle to the service.</returns>
-        IntPtr OpenService(IntPtr hSCManager, string lpServiceName, uint dwDesiredAccess);
+        SafeServiceHandle OpenService(SafeScmHandle hSCManager, string lpServiceName, uint dwDesiredAccess);
 
         /// <summary>
         /// Marks the specified service for deletion from the service control manager database.
         /// </summary>
         /// <param name="hService">Handle to the service.</param>
         /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
-        bool DeleteService(IntPtr hService);
+        bool DeleteService(SafeServiceHandle hService);
 
         /// <summary>
         /// Closes a handle to a service control manager or service object.
@@ -91,7 +92,7 @@ namespace Servy.Core.Services
         /// <param name="dwControl">The control code to send.</param>
         /// <param name="lpServiceStatus">Receives the latest status information about the service.</param>
         /// <returns><c>true</c> if the operation succeeds; otherwise, <c>false</c>.</returns>
-        bool ControlService(IntPtr hService, int dwControl, ref ServiceStatus lpServiceStatus);
+        bool ControlService(SafeServiceHandle hService, int dwControl, ref ServiceStatus lpServiceStatus);
 
         /// <summary>
         /// Changes the configuration parameters of a service.
@@ -109,7 +110,7 @@ namespace Servy.Core.Services
         /// <param name="lpDisplayName">The new display name of the service.</param>
         /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
         bool ChangeServiceConfig(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwServiceType,
             uint dwStartType,
             uint dwErrorControl,
@@ -130,7 +131,7 @@ namespace Servy.Core.Services
         /// <param name="lpInfo">A reference to the new configuration information.</param>
         /// <returns><c>true</c> if the configuration is successfully changed; otherwise, <c>false</c>.</returns>
         bool ChangeServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             int dwInfoLevel,
             ref ServiceDescription lpInfo
         );
@@ -143,7 +144,7 @@ namespace Servy.Core.Services
         /// <param name="lpInfo">A pointer to the buffer that contains the new configuration data.</param>
         /// <returns>Returns true if the function succeeds; otherwise, false.</returns>
         bool ChangeServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             int dwInfoLevel,
             IntPtr lpInfo
         );
@@ -156,7 +157,7 @@ namespace Servy.Core.Services
         /// <param name="lpInfo">A reference to the structure containing the configuration data.</param>
         /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool ChangeServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             int dwInfoLevel,
             ref ServiceDelayedAutoStartInfo lpInfo
         );
@@ -170,7 +171,7 @@ namespace Servy.Core.Services
         /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the function fails with ERROR_INSUFFICIENT_BUFFER.</param>
         /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
         bool QueryServiceConfig(
-            IntPtr hService,
+            SafeServiceHandle hService,
             IntPtr lpServiceConfig,
             int cbBufSize,
             out int pcbBytesNeeded);
@@ -185,7 +186,7 @@ namespace Servy.Core.Services
         /// <param name="pcbBytesNeeded">On output, receives the number of bytes required if the buffer is too small.</param>
         /// <returns><see langword="true"/> if the function succeeds; otherwise, <see langword="false"/>.</returns>
         bool QueryServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwInfoLevel,
             ref ServiceDelayedAutoStartInfo lpBuffer,
             int cbBufSize,
@@ -201,7 +202,7 @@ namespace Servy.Core.Services
         /// <param name="pcbBytesNeeded">Receives the number of bytes needed if the buffer is too small.</param>
         /// <returns>If the function succeeds, the return value is true. If it fails, the return value is false.</returns>
         bool QueryServiceConfig2(
-            IntPtr hService,
+            SafeServiceHandle hService,
             uint dwInfoLevel,
             IntPtr lpBuffer,
             int cbBufSize,
