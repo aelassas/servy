@@ -1882,14 +1882,24 @@ namespace Servy.Service
         }
 
         /// <summary>
-        /// Safely flushes and shuts down the file loggers with a strict timeout 
+        /// Safely flushes and shuts down the loggers with a strict timeout 
         /// to prevent OS-level RPC hangs during system shutdown.
         /// </summary>
         private void FlushAndShutdownLogger()
         {
             try
             {
-                _ = Task.Run(Logger.Shutdown).Wait(1500); // 1.5 seconds max for local disk I/O
+                _ = Task.Run(() =>
+                {
+                    Logger.Shutdown();
+
+                    if (_logger != null)
+                    {
+                        _logger.Dispose();
+                        _logger = null;
+                    }
+
+                }).Wait(1500); // 1.5 seconds max for local disk I/O
             }
             catch
             {
