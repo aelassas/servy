@@ -1,5 +1,85 @@
 # Changelog
 
+## [Servy 8.0](https://github.com/aelassas/servy/releases/tag/v8.0)
+
+**Date:** 2026-04-20 | **Tag:** [`v8.0`](https://github.com/aelassas/servy/tree/v8.0)
+
+Servy 8.0 introduces many fixes across all components. The full release notes are available in the expandable section below.
+
+## Full Changelog
+<details>
+  <summary>Click to expand release notes!</summary>
+
+* feat(core): allow MaxRestartAttempts to be set to 0 for unlimited restart attempts (#701)
+* feat(desktop): replace process parameters inputs by a resizable textarea (#700)
+* fix(core): EnableRotation is ambiguous now that date rotation exists - should be EnableSizeRotation (#381)
+* fix(core): MaxRestartAttempts upper bound of 100 is too restrictive for long-running system services (#701)
+* fix(core): ProtectedKeyProvider.cs - DPAPI entropy migration failure logs Warn once, stuck state invisible (#723)
+* fix(core): Child folder ACLs in %ProgramData%\Servy break multi-account setups (#725)
+* fix(core): Central config - Regex ReDoS timeout 200ms duplicated across 6 regexes (#726)
+* fix(core): NativeMethods.cs - Inconsistent SafeHandle vs bare IntPtr across SCM/Job P/Invokes (#730)
+* fix(core): ProtectedKeyProvider.SaveProtected - No explicit file ACL, non-atomic write (#731)
+* fix(core): EventLogReader.cs:44 - Truncated <returns> docstring ending mid-word (#748)
+* fix(service): ensure event log availability during pre-shutdown via explicit dependency
+* fix(service): ProcessLauncher.cs - Duplicate FireAndForget check is dead code (#707)
+* fix(service): EnvironmentVariableHelper.cs - Duplicate <summary> XML doc on ExpandWithDictionary (#708)
+* fix(service): ProtectedKeyProvider: stale aes_key.dat from cloned/imaged hosts causes silent 1053, no recovery path (#712)
+* fix(service): ProcessLaunchOptions.cs - DefaultWaitChunkMs and DefaultScmAdditionalTimeMs duplicated (#728)
+* fix(desktop): MainViewModel.cs - Hardcoded English dialog titles in 4 SaveFile calls (#735)
+* fix(desktop): ServiceConfigurationMapper - Mixed AppConfig vs hardcoded defaults within same file (#745)
+* fix(desktop,manager): App.xaml.cs initialization duplicated between Servy and Manager (#405)
+* fix(desktop,manager): MainWindow.xaml.cs - CreateMainViewModel is 60-line composition root in View code-behind (#649)
+* fix(desktop,manager): App.xaml.cs - ContinueWith(async t) drops inner Task, startup faults lost (#714)
+* fix(desktop,manager): AppBootstrapper.cs - OnExit disposes SecureData but not DbContext (#715)
+* fix(desktop,manager):  14 unused resource keys across Servy and Servy.Manager (#729)
+* fix(desktop,manager): ServiceCommands.ValidateFileSize duplicated across Servy and Servy.Manager (#743)
+* fix(desktop,manager,cli): misleading error "Max Restart Attempts must be a number greater than or equal to 1" fires for upper-bound violations too (#702)
+* fix(desktop,manager,cli): improve validation messages for numeric options (#703)
+* fix(manager): MonitoringViewModels - OnTick guard + timer pattern triplicated across 3 ViewModels (#517)
+* fix(manager): ViewModels - SearchServicesAsync duplicated across ConsoleViewModel, PerformanceViewModel, DependenciesViewModel (#632)
+* fix(manager): MainViewModel.cs - Child ViewModels newed up directly, not injectable (#648)
+* fix(manager): MainWindow.xaml.cs - GetDependenciesVm uses 'logsView' as pattern variable (copy-paste bug) (#705)
+* fix(manager): MainWindow.xaml.cs - Type pattern variable shadows type name in GetPerformanceVm/GetConsoleVm (#706)
+* fix(manager): XAML code-behind - async void event handlers swallow exceptions (#713)
+* fix(manager): Monitoring ViewModels - no IDisposable, DispatcherTimer/CTS leak on GC race (#716)
+* fix(manager): LogsViewModel - CTS + Cleanup() without IDisposable (#732)
+* fix(manager): ServiceConfigurationMapper vs ServiceMapper - Divergent default-handling and enum validation (#733)
+* fix(manager): LogTailer.cs - CreationTime rotation detection misses FAT32 tunneling and same-size rotation (#734)
+* fix(cli): InstallServiceCommand.cs - Duplicate <summary> XML doc blocks on Execute method (#704)
+* fix(cli): ConsoleHelper.cs - Duplicate <summary> XML doc on RunWithLoadingAnimation (#709)
+* fix(tests): ServiceRepositoryTests - Brittle reflection-based property verification couples tests to DTO shape (#736)
+* fix(tests): RotatingStreamWriterTests - DateTime.UtcNow used twice per test, midnight-boundary flake (#737)
+* fix(tests): ServiceRepositoryStub - decrypt parameter ignored; DTOs asymmetric between Get methods (#739)
+* fix(tests): ConsoleViewModelTests - [Fact(Skip="TODO needs to be fixed")] with no tracked follow-up (#741)
+* fix(tests): tests/ConsoleApp/Program.cs - Developer-specific hardcoded Python path + dead commented code (#746)
+* fix(tests): DatabaseValidatorTests - Environment-dependent Assert.Fail masquerading as unit test (#747)
+* fix(psm1): [ValidateRange(1, 2147483647)] for -MaxRestartAttempts mismatches CLI limit of 100 (#703)
+* fix(psm1): PS 2.0 compat claimed in comments but no #Requires -Version directive (#721)
+* fix(notifications): force UTF8 encoding to fix NULL character bug 
+* fix(notifications): ensure timestamps are strictly increasing
+* fix(notifications): handle non-English OS when querying event log
+* fix(publish): publish-sc.ps1 / publish-fd.ps1 - Duplicate hardcoded Inno Setup and 7-Zip paths (#727)
+* fix(publish): setup/signpath.ps1 - Install-Module -Force without -RequiredVersion (floating signing-module version) (#750)
+* chore(deps): update dependencies
+* ci(changelog,sbom): No permissions block (#717)
+* ci(scoop): PAT inlined in git clone URL, inconsistent with earlier url.insteadOf pattern (#718)
+* ci(tmp): Workflow named "tmp" with no documented purpose (#720)
+* ci(setup-dotnet): uses dotnet-install -Channel (floating patch) instead of -Version (pinned) (#751)
+* ci(azure-pipelines): orphaned legacy CI alongside GitHub Actions, no tests/coverage/sign (#752)
+</details>
+
+### Downloads
+* [servy-8.0-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-sbom.xml) - 0.02 MB
+* [servy-8.0-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-x64-installer.exe) - 4.02 MB
+* [servy-8.0-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-net48-x64-portable.7z) - 1.76 MB
+* [servy-8.0-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-sbom.xml) - 0.03 MB
+* [servy-8.0-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-x64-installer.exe) - 81.11 MB
+* [servy-8.0-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.0/servy-8.0-x64-portable.7z) - 78.99 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.0.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.0.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v7.9...v8.0
+
 ## [Servy 7.9](https://github.com/aelassas/servy/releases/tag/v7.9)
 
 **Date:** 2026-04-16 | **Tag:** [`v7.9`](https://github.com/aelassas/servy/tree/v7.9)
