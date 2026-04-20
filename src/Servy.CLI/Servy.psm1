@@ -25,6 +25,9 @@
 # on I/O or network calls. Default is 10 minutes.
 $script:ServyTimeoutSeconds = 600
 
+# Define a reasonable cap for CLI output (1MB limit) to prevent OOM
+$script:ServyMaxBufferChars = 1048576
+
 # ----------------------------------------------------------------
 # Module Initialization
 # ----------------------------------------------------------------
@@ -263,16 +266,19 @@ function Invoke-ServyCli {
   $process = $null
 
   try {
-    # We use a script-scoped array to collect lines because PS 2.0 events 
-    # NOTE: $errorVarName MUST only contain alphanumeric characters (e.g., a GUID).
-    # It is interpolated directly into a ScriptBlock string for PS 2.0 compatibility.
-    # If the naming scheme changes to include special characters, the ScriptBlock 
-    # creation below will fail or become a script injection vector.
-    $errorVarName = "ServyError_" + [Guid]::NewGuid().ToString("N")
+    # 1. Create a standalone buffer object for this specific run.
+    # This eliminates the need for $global tracking variables.
+    $stderrBuffer = @{
+        Lines     = New-Object System.Collections.ArrayList
+        ByteCount = 0
+        MaxChars  = $script:ServyMaxBufferChars
+        Truncated = $false
+    }
 
     if (-not $script:ServyCliFound -and -not (Test-Path $script:ServyCliPath)) {
       throw "Servy CLI not found at '$($script:ServyCliPath)'. The file may have been moved or deleted since the module was loaded. Try re-importing the module."
     }
+    
     # Using .NET Process class is the most robust way in PS 2.0 to pass 
     # complex raw argument strings WHILE retaining pipeline output capture.  
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -293,17 +299,24 @@ function Invoke-ServyCli {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $psi
 
-    # REGISTER EVENT NATIVELY
-    New-Variable -Name $errorVarName -Value (New-Object System.Collections.ArrayList) -Scope Global
-
-    # Register-ObjectEvent is the "official" PS 2.0 way to handle .NET events safely.
+    # 2. Register the event, passing the buffer via -MessageData to bypass PS dynamic scoping issues.
     $errorEvent = Register-ObjectEvent -InputObject $process `
       -EventName "ErrorDataReceived" `
-      -Action ([ScriptBlock]::Create(@"
-            if (`$EventArgs.Data) { 
-                [void]`$global:$errorVarName.Add(`$EventArgs.Data) 
-            }
-"@))
+      -MessageData $stderrBuffer `
+      -Action {
+          if ($EventArgs.Data) { 
+              # $Event.MessageData provides direct access to the memory reference
+              $buf = $Event.MessageData
+              if ($buf.ByteCount -lt $buf.MaxChars) {
+                  [void]$buf.Lines.Add($EventArgs.Data)
+                  $buf.ByteCount += $EventArgs.Data.Length
+              }
+              elseif (-not $buf.Truncated) {
+                  [void]$buf.Lines.Add("... [Error output truncated to prevent memory exhaustion] ...")
+                  $buf.Truncated = $true
+              }
+          }
+      }
 
     try {
       $started = $process.Start()
@@ -320,8 +333,6 @@ function Invoke-ServyCli {
     # BEGIN ASYNC READ
     $process.BeginErrorReadLine()
 
-    # Define a reasonable cap for CLI output (e.g., 1MB limit)
-    $maxStdoutChars = 1048576
     $stdoutBuilder = New-Object System.Text.StringBuilder
     $isTruncated = $false
 
@@ -330,7 +341,7 @@ function Invoke-ServyCli {
       while (-not $process.StandardOutput.EndOfStream) {
         $line = $process.StandardOutput.ReadLine()
             
-        if ($stdoutBuilder.Length -lt $maxStdoutChars) {
+        if ($stdoutBuilder.Length -lt $script:ServyMaxBufferChars) {
           [void]$stdoutBuilder.AppendLine($line)
         }
         elseif (-not $isTruncated) {
@@ -379,9 +390,12 @@ function Invoke-ServyCli {
       # Async flush timed out - proceed with whatever stderr we captured
     }
 
-    # COLLECT stderr
-    # Convert our collected array back into a string
-    $stderr = (Get-Variable -Name $errorVarName -Scope Global -ValueOnly) -join [Environment]::NewLine
+    # COLLECT stderr securely from our local reference
+    if ($stderrBuffer.Lines.Count -gt 0) {
+        $stderr = $stderrBuffer.Lines -join [Environment]::NewLine
+    } else {
+        $stderr = ""
+    }
 
     # CRITICAL: Capture the exit code while the process object is still active
     $exitCode = $process.ExitCode
@@ -389,10 +403,22 @@ function Invoke-ServyCli {
     if (-not [string]::IsNullOrEmpty($stdout)) { 
       Write-Output $stdout.TrimEnd() 
     }
+
+    # Emit the captured stderr
+    if (-not [string]::IsNullOrEmpty($stderr)) {
+      $scrubbedStderr = Format-SecureLogMessage -Text $stderr.TrimEnd()
+      Write-Warning $scrubbedStderr
+    }
   }
   catch {
     $partialOutput = ""
     
+    # NEW SAFETY NET: If the script aborted before normal collection (e.g., Ctrl+C or crash), 
+    # harvest whatever we managed to catch in the local memory buffer!
+    if ([string]::IsNullOrEmpty($stderr) -and $null -ne $stderrBuffer -and $stderrBuffer.Lines.Count -gt 0) {
+        $stderr = $stderrBuffer.Lines -join [Environment]::NewLine
+    }
+
     # SECURITY FIX: Scrub stdout and stderr in the generic catch block
     if (-not [string]::IsNullOrEmpty($stdout)) { 
       $scrubbedStdout = Format-SecureLogMessage -Text $stdout.TrimEnd()
@@ -411,22 +437,13 @@ function Invoke-ServyCli {
       try { $process.WaitForExit() } catch {}  # let in-flight events drain
     }    
 
-    # Capture stderr BEFORE cleanup
-    try {
-      $list = Get-Variable -Name $errorVarName -Scope Global -ValueOnly -ErrorAction SilentlyContinue
-      if ($list) { $stderr = $list -join [Environment]::NewLine }
-    }
-    catch {}
-
-    # CRITICAL: Clean up events and global variables even if the code fails
+    # CRITICAL: Clean up events gracefully
     if ($errorEvent) {
       Unregister-Event -SourceIdentifier $errorEvent.Name -ErrorAction SilentlyContinue
     }
     
-    # Only attempt removal if we actually assigned a name
-    if ($errorVarName) {
-      Remove-Variable -Name $errorVarName -Scope Global -ErrorAction SilentlyContinue
-    }
+    # We no longer need Remove-Variable because $stderrBuffer is a local object.
+    # PowerShell's Garbage Collector will automatically clean it up when the function exits.
 
     if ($null -ne $process) {
       $process.Dispose()
