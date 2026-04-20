@@ -29,6 +29,11 @@
     Displays a toast notification for the latest Servy error event.
 #>
 
+# Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
+# 3000-3099: Core Errors | 3100-3199: Script Errors
+$EVENT_ID_ERROR = 3103
+$EVENT_ID_ERROR_DEP = 3104
+
 # -------------------------------
 # Function to show toast notification
 # -------------------------------
@@ -112,8 +117,8 @@ function Write-FallbackError {
   )
     
   try {
-    Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
-      -EntryType Warning -Message $Message -ErrorAction Stop
+    Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR `
+      -EntryType Error -Message $Message -ErrorAction Stop
   }
   catch {
     $logFile = Join-Path $scriptDir "ServyNotification.log"
@@ -142,7 +147,7 @@ if (-not (Test-Path $helperScript)) {
     
   # 1. Attempt to log to Event Log for administrator visibility
   try {
-    Write-EventLog -LogName Application -Source "Servy" -EventId 9901 `
+    Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR_DEP `
       -EntryType Error -Message $errorMsg -ErrorAction Stop
   } catch {
     # 2. Fallback to stderr if Event Log fails (or source isn't registered)

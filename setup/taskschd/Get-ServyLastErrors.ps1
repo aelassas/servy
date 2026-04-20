@@ -24,6 +24,10 @@
     https://github.com/aelassas/servy
 #>
 
+# Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
+# 3000-3099: Core Errors | 3100-3199: Script Errors
+$EVENT_ID_ERROR = 3103
+
 function Get-ServyLastErrors {
   param(
     $LastProcessed
@@ -67,7 +71,7 @@ function Get-ServyLastErrors {
     $errorMsg = "Failed to query Windows event log for Servy errors: $_"
     try {
       # Fallback A: Try the Event Log
-      Write-EventLog -LogName Application -Source "Servy" -EventId 9901 -EntryType Warning -Message $errorMsg -ErrorAction Stop
+      Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR -EntryType Error -Message $errorMsg -ErrorAction Stop
     }
     catch {
       # Fallback B: Try the local file log

@@ -37,6 +37,10 @@
     .\ServyFailureEmail.ps1
 #>
 
+# Event ID Taxonomy (Refer to src/Servy.Core/Logging/EventIds.cs for updates)
+# 3000-3099: Core Errors | 3100-3199: Script Errors
+$EVENT_ID_ERROR = 3103
+
 # -------------------------------
 # 1. Determine Script Root (PS 2.0+ Compatible)
 # -------------------------------
@@ -59,8 +63,8 @@ function Write-FallbackError {
 
   try {
     # Ensure source exists before writing to event log
-    Write-EventLog -LogName Application -Source "Servy" -EventId 9903 `
-      -EntryType Warning -Message $Message -ErrorAction Stop
+    Write-EventLog -LogName Application -Source "Servy" -EventId $EVENT_ID_ERROR `
+      -EntryType Error -Message $Message -ErrorAction Stop
   } catch {
     $logFile = Join-Path $scriptDir "ServyFailureEmail.log"
     "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - $Message" | Out-File -FilePath $logFile -Append

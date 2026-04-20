@@ -19,15 +19,6 @@ namespace Servy.Core.Logging
 
         #endregion
 
-        #region Constants
-
-        // Default Event IDs per level
-        private const int InfoEventId = 1000;
-        private const int WarningEventId = 2000;
-        private const int ErrorEventId = 3000;
-
-        #endregion
-
         #region Properties
 
         /// <summary>
@@ -120,7 +111,7 @@ namespace Servy.Core.Logging
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Information, InfoEventId);
+                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Information, EventIds.Info);
                 }
                 Logger.Info(formattedMessage);
             }
@@ -134,7 +125,7 @@ namespace Servy.Core.Logging
                 var formattedMessage = Format(message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Warning, WarningEventId);
+                    _eventLog?.WriteEntry(formattedMessage, EventLogEntryType.Warning, EventIds.Warning);
                 }
                 Logger.Warn(formattedMessage);
             }
@@ -148,7 +139,7 @@ namespace Servy.Core.Logging
                 var fullMessage = Format(ex != null ? $"{message}\n{ex}" : message);
                 if (_isEventLogEnabled)
                 {
-                    _eventLog?.WriteEntry(fullMessage, EventLogEntryType.Error, ErrorEventId);
+                    _eventLog?.WriteEntry(fullMessage, EventLogEntryType.Error, EventIds.Error);
                 }
                 Logger.Error(fullMessage);
             }
