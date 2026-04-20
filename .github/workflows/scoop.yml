@@ -27,7 +27,7 @@ on:
         default: 'false'
 
 concurrency:
-  group: release-package-updates
+  group: scoop-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -278,11 +278,6 @@ jobs:
           
           # Only push if we didn't return early due to a merged PR
           git push origin $branchName --force
-        
-      - name: Check Chocolatey version
-        if: env.RUN_EXTRAS_PR == 'true'  
-        shell: pwsh
-        run: choco --version
         
       - name: Open Pull Request in ScoopInstaller/Extras
         if: env.RUN_EXTRAS_PR == 'true'

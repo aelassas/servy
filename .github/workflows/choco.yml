@@ -21,7 +21,7 @@ on:
         required: false
 
 concurrency:
-  group: release-package-updates
+  group: choco-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:

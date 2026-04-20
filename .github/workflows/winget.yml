@@ -12,7 +12,7 @@ on:
     types: [published]
 
 concurrency:
-  group: release-package-updates
+  group: winget-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
