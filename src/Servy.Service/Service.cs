@@ -524,34 +524,58 @@ namespace Servy.Service
                 // Final step: Inform SCM we are running and specifically that we accept PRESHUTDOWN
                 if (_serviceHandle != IntPtr.Zero)
                 {
+                    // Capture the cancellation token tied to the service's current lifecycle
+                    var token = _cancellationSource?.Token ?? CancellationToken.None;
+
                     // By wrapping this in a Task.Delay, we allow ServiceBase's internal OnStart() 
                     // sequence to complete and report SERVICE_RUNNING first. We then safely overwrite 
                     // the state to include SERVICE_ACCEPT_PRESHUTDOWN, bypassing .NET's internal limitations.
                     _ = Task.Run(async () =>
                     {
-                        await Task.Delay(500);
+                        try
+                        {
+                            // 1. Wait, but respect cancellation if Stop() races us
+                            await Task.Delay(500, token);
 
-                        SERVICE_STATUS status = new SERVICE_STATUS
-                        {
-                            dwServiceType = SERVICE_WIN32_OWN_PROCESS,
-                            dwCurrentState = SERVICE_RUNNING,
-                            dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN,
-                            dwWin32ExitCode = 0,
-                            dwServiceSpecificExitCode = 0,
-                            dwCheckPoint = 0,
-                            dwWaitHint = 0
-                        };
+                            // 2. Validate state before touching the native handle
+                            if (token.IsCancellationRequested || _isTearingDown || _disposed || _serviceHandle == IntPtr.Zero)
+                            {
+                                _logger?.Info("Skipping PRESHUTDOWN registration: Service is already tearing down.");
+                                return;
+                            }
 
-                        if (!SetServiceStatus(_serviceHandle, ref status))
-                        {
-                            int error = Marshal.GetLastWin32Error();
-                            _logger?.Error($"Failed to register PRESHUTDOWN support via native Win32. Error: {error}");
+                            SERVICE_STATUS status = new SERVICE_STATUS
+                            {
+                                dwServiceType = SERVICE_WIN32_OWN_PROCESS,
+                                dwCurrentState = SERVICE_RUNNING,
+                                dwControlsAccepted = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_PRESHUTDOWN,
+                                dwWin32ExitCode = 0,
+                                dwServiceSpecificExitCode = 0,
+                                dwCheckPoint = 0,
+                                dwWaitHint = 0
+                            };
+
+                            if (!SetServiceStatus(_serviceHandle, ref status))
+                            {
+                                int error = Marshal.GetLastWin32Error();
+                                _logger?.Error($"Failed to register PRESHUTDOWN support via native Win32. Error: {error}");
+                            }
+                            else
+                            {
+                                _logger?.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.");
+                            }
                         }
-                        else
+                        catch (OperationCanceledException)
                         {
-                            _logger?.Info("Service signaled RUNNING to SCM with PRESHUTDOWN support natively enabled.");
+                            // 3. Gracefully handle the race condition where Delay is aborted
+                            _logger?.Info("PRESHUTDOWN registration aborted due to service shutdown.");
                         }
-                    });
+                        catch (Exception ex)
+                        {
+                            // 4. Prevent unobserved task exceptions from crashing the finalizer thread
+                            _logger?.Error($"Unexpected error during PRESHUTDOWN registration: {ex.Message}", ex);
+                        }
+                    }, token); // Pass token to Task.Run to prevent execution if already cancelled
                 }
             }
             catch (Exception ex)
