@@ -14,7 +14,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy's current version.
         /// </summary>
-        public static readonly string Version = "8.0";
+        public static readonly string Version = "8.1";
 
         /// <summary>
         /// The minimum required SQLite version to mitigate CVE-2025-6965.
