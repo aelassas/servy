@@ -1889,6 +1889,10 @@ namespace Servy.Service
         protected override void OnStop()
         {
             ExecuteTeardown(TeardownReason.Stop);
+
+            // Flush logs right before returning control to SCM
+            FlushAndShutdownLogger();
+
             base.OnStop();
         }
 
@@ -1932,17 +1936,13 @@ namespace Servy.Service
                     return;
                 }
 
-                // 1. Immediately tell SCM we are transitioning to a stop state.
-                // Use the generous PreShutdownWaitHintMs (30s) so Windows doesn't get impatient.
+                // 1. Immediately tell SCM we are transitioning to a stop state and need a 30s window.
+                // This moves the service into the STOP_PENDING state in the eyes of the OS.
                 UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
 
-                // 2. Log completion intention NOW, because ExecuteTeardown will permanently dispose _logger.
-                _logger?.Info("Pre-Shutdown teardown task initiated. SERVICE_STOPPED will be signaled upon completion.");
-
-                // Spin up the background teardown task
                 Task<bool> stopTask = Task.Run(() => ExecuteTeardown(TeardownReason.PreShutdown));
 
-                // 3. Wait in 2-second pulses. 
+                // 2. Wait in 2-second pulses. 
                 // We increment the checkpoint each pulse to prove to the SCM that we haven't hung.
                 // This loop is guaranteed to terminate because the underlying teardown logic 
                 // (SafeKillProcess) enforces an absolute, stopwatch-backed timeout limit.
@@ -1953,22 +1953,39 @@ namespace Servy.Service
                     UpdateServiceStatus(SERVICE_STOP_PENDING, PreShutdownWaitHintMs);
                 }
 
-                // 4. Handle task completion results safely
+                // 3. Handle task completion results safely
                 if (stopTask.IsFaulted)
                 {
-                    // Note: _logger might be null here if ExecuteTeardown succeeded in disposing it but failed late.
-                    // The ?. operator safely short-circuits. Flatten() ensures we get the real crash reason.
-                    _logger?.Error($"Teardown task failed: {stopTask.Exception?.Flatten().InnerException?.Message}");
+                    _logger?.Error($"Teardown task failed: {stopTask.Exception?.InnerException?.Message}");
                 }
 
-                // 5. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
-                // (Do not attempt to log here; the logger is gone).
+                // 4. Final Signal: Inform the SCM that the service has successfully reached the STOPPED state.
+                _logger?.Info("Pre-Shutdown handling complete. Setting SERVICE_STOPPED.");
                 UpdateServiceStatus(SERVICE_STOPPED, 0);
+
+                // 5. SHUTDOWN LOGGER LAST
+                FlushAndShutdownLogger();
 
                 return;
             }
 
             base.OnCustomCommand(command);
+        }
+
+        /// <summary>
+        /// Safely flushes and shuts down the file loggers with a strict timeout 
+        /// to prevent OS-level RPC hangs during system shutdown.
+        /// </summary>
+        private void FlushAndShutdownLogger()
+        {
+            try
+            {
+                _ = Task.Run(Logger.Shutdown).Wait(1500); // 1.5 seconds max for local disk I/O
+            }
+            catch
+            {
+                // Fail-silent
+            }
         }
 
         /// <summary>
@@ -2029,7 +2046,12 @@ namespace Servy.Service
                 _logger?.Info("Shutdown bypassed: System reboot initiated by recovery logic.");
                 return;
             }
+
             ExecuteTeardown(TeardownReason.Shutdown);
+
+            // Save final logs before the OS kills the process
+            FlushAndShutdownLogger();
+
             base.OnShutdown();
         }
 
@@ -2090,18 +2112,6 @@ namespace Servy.Service
                         _cancellationSource = null;
 
                         _secureData?.Dispose();
-
-                        try
-                        {
-                            // Dispose loggers
-                            Logger.Shutdown();
-                            _logger?.Dispose();
-                            _logger = null;
-                        }
-                        catch
-                        {
-                            // Fail-silent
-                        }
                     }
                 }
             }
@@ -2572,6 +2582,9 @@ namespace Servy.Service
                 // 1. Reuse existing orchestration logic to stop the service
                 // This is called while managed resources are still valid.
                 ExecuteTeardown(TeardownReason.Stop);
+
+                // 2. Catch-all for test environments and manual disposal
+                FlushAndShutdownLogger();
             }
 
             // 2. Call the base class implementation to complete the chain
