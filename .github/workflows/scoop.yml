@@ -31,11 +31,13 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write   # allows pushing commits back
+  contents: read
 
 jobs:
   scoop:
     runs-on: windows-latest
+    permissions:
+      contents: write # Needed here to push commits back
     
     env:
         RUN_EXTRAS_PR: ${{ github.event.inputs.run_extras_pr || 'false' }}

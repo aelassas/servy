@@ -9,6 +9,9 @@ on:
   gollum:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate-filenames:
     name: Validate ASCII Filenames
