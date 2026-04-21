@@ -58,7 +58,7 @@ namespace Servy.CLI.Validators
         /// <param name="dto">When this method returns, contains the mapped <see cref="ServiceDto"/> if parsing succeeded; otherwise, <see langword="null"/>.</param>
         /// <param name="error">When this method returns, contains an error message if parsing failed; otherwise, <see langword="null"/>.</param>
         /// <returns><see langword="true"/> if all options were successfully parsed and mapped; otherwise, <see langword="false"/>.</returns>
-        private bool TryMapToDto(InstallServiceOptions opts, out ServiceDto? dto, out string? error)
+        private bool TryMapToDto(InstallServiceOptions opts, out ServiceDto dto, out string error)
         {
             dto = null;
             error = null;
@@ -67,7 +67,7 @@ namespace Servy.CLI.Validators
             var errors = new List<string>();
 
             // Local function: Safely parse strings to nullable integers
-            int? ParseInt(string? val, string propertyName)
+            int? ParseInt(string val, string propertyName)
             {
                 if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
 
@@ -79,7 +79,7 @@ namespace Servy.CLI.Validators
             }
 
             // Local function: Safely parse string enums to nullable integers
-            int? ParseEnum<T>(string? val, string propertyName) where T : struct
+            int? ParseEnum<T>(string val, string propertyName) where T : struct
             {
                 if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
 
