@@ -104,11 +104,25 @@ namespace Servy.Service.ProcessManagement
             // Save logs if paths are set
             if (!string.IsNullOrWhiteSpace(options.StdOutPath))
             {
-                File.AppendAllText(options.StdOutPath, stdoutBuffer.ToString(), encoding);
+                try
+                {
+                    File.AppendAllText(options.StdOutPath, stdoutBuffer.ToString(), encoding);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"Failed to persist captured stdout to '{options.StdOutPath}': {ex.Message}. First 512 chars: {stdoutBuffer.ToString().Substring(0, Math.Min(512, stdoutBuffer.Length))}", ex);
+                }
             }
             if (!string.IsNullOrWhiteSpace(options.StdErrPath))
             {
-                File.AppendAllText(options.StdErrPath, stderrBuffer.ToString(), encoding);
+                try
+                {
+                    File.AppendAllText(options.StdErrPath, stderrBuffer.ToString(), encoding);
+                }
+                catch (Exception ex)
+                {
+                    logger.Error($"Failed to persist captured stderr to '{options.StdErrPath}': {ex.Message}. First 512 chars: {stderrBuffer.ToString().Substring(0, Math.Min(512, stderrBuffer.Length))}", ex);
+                }
             }
 
             return process;
