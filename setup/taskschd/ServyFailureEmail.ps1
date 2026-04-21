@@ -236,7 +236,6 @@ if ($null -eq $lastProcessed) {
 # -------------------------------
 # 7. Process Events & Send Emails
 # -------------------------------
-$lastSuccessfulTimestamp = $null
 
 foreach ($evt in $eventsToProcess) {
   $message = $evt.Message
@@ -261,13 +260,21 @@ foreach ($evt in $eventsToProcess) {
   # Basic HTML formatting
   $htmlBody = $body -replace "`r?`n", "<br>"
     
+  # Attempt to send the email, but do NOT let failures halt the watermark
   if (Send-NotificationEmail -Subject $subject -Body $htmlBody -scriptDir $scriptDir) {
     Write-Host "Email Notification sent for '$serviceName'."
-    $lastSuccessfulTimestamp = $evt.TimeCreated
+  } else {
+    # We log the failure but intentionally DO NOT break the loop.
+    # The event is dropped from the email queue to prevent alert storms upon SMTP recovery.
+    Write-Host "Failed to send email for '$serviceName'. Skipping to next event to prevent storms." -ForegroundColor Yellow
+  }
 
-  # Update timestamp immediately for this specific event
-  if ($null -ne $lastSuccessfulTimestamp) {
-      $newestTimestamp = $lastSuccessfulTimestamp.AddTicks(1)
+  # --- CRITICAL: Always advance the watermark ---
+  # Update timestamp immediately for this specific event, regardless of email success.
+  $currentEventTimestamp = $evt.TimeCreated
+
+  if ($null -ne $currentEventTimestamp) {
+      $newestTimestamp = $currentEventTimestamp.AddTicks(1)
       $shouldWrite = $true
       
       # 1. Ensure the new timestamp is strictly greater than the one currently in the file
@@ -282,7 +289,7 @@ foreach ($evt in $eventsToProcess) {
                   }
               }
           } catch {
-              # If file is locked, corrupt (e.g. previous NULL char bug), or unparseable, overwrite it
+              # If file is locked, corrupt, or unparseable, overwrite it
               Write-Host "Could not parse current timestamp file during update check. Overwriting to heal file."
           }
       }
@@ -291,7 +298,7 @@ foreach ($evt in $eventsToProcess) {
       if ($shouldWrite) {
           $timestampString = $newestTimestamp.ToString("o")
           try {
-              # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE (which causes the NULL chars)
+              # Explicitly use UTF8 encoding to prevent PowerShell from writing UTF-16LE
               [System.IO.File]::WriteAllText($timestampFile, $timestampString, [System.Text.Encoding]::UTF8)
               Write-Host "Timestamp updated to: $timestampString"
           }
@@ -299,10 +306,5 @@ foreach ($evt in $eventsToProcess) {
               Write-FallbackError -Message "Failed to update timestamp file: $($_.Exception.Message)" -scriptDir $scriptDir
           }
       }
-    }
-
-  } else {
-    Write-Host "Aborting further processing due to email failure." -ForegroundColor Yellow
-    break
   }
 }
