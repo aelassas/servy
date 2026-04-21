@@ -55,7 +55,7 @@ namespace Servy.Core.Services
                 var systemFilters = new List<string>();
 
                 // ESCAPE SOURCE NAME
-                if (!string.IsNullOrEmpty(_sourceName))
+                if (!string.IsNullOrWhiteSpace(_sourceName))
                 {
                     // 1. SECURITY GUARD: Validate against allowlist
                     // This prevents any character-based injection before escaping even starts.

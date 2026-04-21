@@ -73,7 +73,7 @@ namespace Servy.Core.Logging
         public IServyLogger CreateScoped(string prefix)
         {
             // Inherit the parent's settings but apply the new immutable prefix.
-            // If you want nested prefixes (e.g., [Parent][Child]), use:
+            // If we want nested prefixes (e.g., [Parent][Child]), use:
             // var newPrefix = string.IsNullOrEmpty(Prefix) ? prefix : $"{Prefix}][{prefix}";
 
             return new EventLogLogger(
@@ -217,7 +217,7 @@ namespace Servy.Core.Logging
         private string Format(string message)
         {
             // Since Prefix is now immutable, this is thread-safe.
-            return string.IsNullOrEmpty(Prefix) ? message : $"[{Prefix}] {message}";
+            return string.IsNullOrWhiteSpace(Prefix) ? message : $"[{Prefix}] {message}";
         }
 
         #endregion

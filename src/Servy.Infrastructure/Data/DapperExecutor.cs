@@ -25,7 +25,7 @@ namespace Servy.Infrastructure.Data
         private const int MaxJitterMs = 50;
 
         // Sync Retry Limits (Aggressively capped to prevent thread pool starvation)
-        private const int SyncMaxRetries = 2;
+        private const int SyncMaxRetries = 3;
         private const int SyncInitialDelayMs = 25;
         private const int SyncMaxJitterMs = 10;
 

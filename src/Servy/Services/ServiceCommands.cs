@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json;
-using Servy.Core.Common;
+﻿using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Security;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Resources;

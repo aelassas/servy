@@ -427,13 +427,13 @@ namespace Servy.Manager.ViewModels
                 // 2. Load History in parallel
                 int historyLimit = _maxLines / 2;
 
-                bool hasUniqueStderr = !string.IsNullOrEmpty(stderrPath) &&
+                bool hasUniqueStderr = !string.IsNullOrWhiteSpace(stderrPath) &&
                                        !string.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase);
 
                 using (var stdoutHistoryTailer = new LogTailer())
                 using (var stderrHistoryTailer = new LogTailer())
                 {
-                    var stdoutTask = !string.IsNullOrEmpty(stdoutPath)
+                    var stdoutTask = !string.IsNullOrWhiteSpace(stdoutPath)
                         ? stdoutHistoryTailer.GetHistoryAsync(stdoutPath, LogType.StdOut, historyLimit)
                         : Task.FromResult<HistoryResult>(null);
 

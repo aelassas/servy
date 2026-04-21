@@ -193,13 +193,10 @@ namespace Servy.Core.Services
         /// <exception cref="Win32Exception">Thrown if the native configuration change fails.</exception>
         internal void SetServiceDescription(SafeServiceHandle serviceHandle, string description)
         {
-            if (string.IsNullOrEmpty(description))
-                return;
-
             IntPtr pDescription = IntPtr.Zero;
             try
             {
-                pDescription = Marshal.StringToHGlobalUni(description);
+                pDescription = Marshal.StringToHGlobalUni(description?.Trim());
 
                 var desc = new ServiceDescription
                 {

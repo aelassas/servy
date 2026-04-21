@@ -532,9 +532,9 @@ namespace Servy.Manager.Services
 
                 if (showMessageBox)
                 {
-                    if (!string.IsNullOrEmpty(errorMessage))
+                    if (!string.IsNullOrWhiteSpace(errorMessage))
                         await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                    else if (!string.IsNullOrEmpty(infoMessage))
+                    else if (!string.IsNullOrWhiteSpace(infoMessage))
                         await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
                 }
 

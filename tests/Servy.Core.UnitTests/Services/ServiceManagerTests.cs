@@ -606,6 +606,12 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDelayedAutoStartInfo>.IsAny)).Returns(true);
 
             _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
+                serviceHandle,
+                It.IsAny<int>(),
+                ref It.Ref<ServiceDescription>.IsAny))
+                .Returns(true);
+
+            _mockWindowsServiceApi.Setup(x => x.ChangeServiceConfig2(
                It.IsAny<SafeServiceHandle>(),
                It.IsAny<int>(),
                It.IsAny<IntPtr>()))
@@ -1020,7 +1026,7 @@ namespace Servy.Core.UnitTests.Services
         }
 
         [Fact]
-        public void SetServiceDescription_ReturnsImmediately_WhenDescriptionIsNullOrEmpty()
+        public void SetServiceDescription_WhenDescriptionIsNullOrEmpty()
         {
             var serviceHandle = CreateServiceHandle(456);
 
@@ -1031,7 +1037,7 @@ namespace Servy.Core.UnitTests.Services
             _serviceManager.SetServiceDescription(serviceHandle, null);
             _serviceManager.SetServiceDescription(serviceHandle, "");
 
-            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny), Times.Never);
+            _mockWindowsServiceApi.Verify(x => x.ChangeServiceConfig2(serviceHandle, It.IsAny<int>(), ref It.Ref<ServiceDescription>.IsAny), Times.AtLeast(1));
         }
 
         [Fact]
