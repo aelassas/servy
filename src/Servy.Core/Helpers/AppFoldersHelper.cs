@@ -9,6 +9,35 @@ namespace Servy.Core.Helpers
     public static class AppFoldersHelper
     {
         /// <summary>
+        /// Retrieves the absolute path to the directory containing the application's entry-point executable.
+        /// </summary>
+        /// <returns>The directory path where the application is located.</returns>
+        /// <remarks>
+        /// <para>
+        /// This method provides a robust "Source of Truth" for the application's home folder, specifically
+        /// addressing the "Shell Game" found in .NET Single-File and Self-Contained deployments.
+        /// </para>
+        /// <para>
+        /// It prioritizes <see cref="Environment.ProcessPath"/> to locate the actual native executable on disk. 
+        /// This ensures that even if the runtime has extracted assemblies to a temporary directory (the behavior 
+        /// of <see cref="AppContext.BaseDirectory"/> in some bundled modes), the path returned points to the 
+        /// folder where the user actually placed the application.
+        /// </para>
+        /// </remarks>
+        public static string GetAppDirectory()
+        {
+            // 1. Priority: The actual .exe on disk
+            var processPath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(processPath))
+            {
+                return Path.GetDirectoryName(processPath)!;
+            }
+
+            // 2. Fallback: The directory where assemblies are located
+            return AppContext.BaseDirectory;
+        }
+
+        /// <summary>
         /// Ensures that the database, security, and operational folders exist and are configured with correct security descriptors.
         /// </summary>
         /// <param name="connectionString">

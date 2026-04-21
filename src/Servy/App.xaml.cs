@@ -13,6 +13,7 @@ using Servy.Validators;
 using Servy.ViewModels;
 using Servy.Views;
 #if !DEBUG
+using Servy.Core.Helpers;
 using System.Diagnostics;
 #endif
 using System.IO;
@@ -169,7 +170,7 @@ namespace Servy
 #if DEBUG
                     ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
 #else
-                    var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                    var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
                     if (!Path.IsPathRooted(ManagerAppPublishPath))
                     {

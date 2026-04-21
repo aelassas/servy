@@ -195,7 +195,7 @@ namespace Servy.UI.Bootstrapping
 #if DEBUG
                 builder.AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
 #else
-                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                builder.SetBasePath(AppFoldersHelper.GetAppDirectory())
                        .AddJsonFile(_options.AppSettingsFileName, optional: true, reloadOnChange: true);
 #endif
                 var config = builder.Build();

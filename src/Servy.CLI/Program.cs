@@ -94,7 +94,8 @@ namespace Servy.CLI
 #if DEBUG
                 builder.AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
 #else
-                builder.SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                var baseDirectory = AppFoldersHelper.GetAppDirectory();
+                builder.SetBasePath(baseDirectory)
                        .AddJsonFile("appsettings.cli.json", optional: true, reloadOnChange: true);
 #endif
                 var config = builder.Build();

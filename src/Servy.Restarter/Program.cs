@@ -69,7 +69,7 @@ namespace Servy.Restarter
 
                 // 2. Load configuration
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!)
+                    .SetBasePath(AppFoldersHelper.GetAppDirectory())
                     .AddJsonFile("appsettings.restarter.json", optional: true, reloadOnChange: true)
                     .Build();
                 

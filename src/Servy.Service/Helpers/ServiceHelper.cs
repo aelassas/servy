@@ -288,7 +288,7 @@ namespace Servy.Service.Helpers
             try
             {
 #if DEBUG
-                var dir = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
+                var dir = AppFoldersHelper.GetAppDirectory();
 #else
                 var dir = AppConfig.ProgramDataPath;
 #endif

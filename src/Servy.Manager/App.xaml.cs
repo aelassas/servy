@@ -11,8 +11,8 @@ using Servy.Manager.Services;
 using Servy.Manager.Views;
 using Servy.UI.Bootstrapping;
 using Servy.UI.Services;
-
 #if !DEBUG
+using Servy.Core.Helpers;
 using System.Diagnostics;
 #endif
 using System.IO;
@@ -211,7 +211,7 @@ namespace Servy.Manager
 #if DEBUG
                     ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
 #else
-                    var baseDirectory = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                    var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
                     if (!Path.IsPathRooted(ConfigurationAppPublishPath))
                     {
