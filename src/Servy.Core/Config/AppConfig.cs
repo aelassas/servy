@@ -126,7 +126,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Configuration App Publish Path.
         /// </summary>
-        public static readonly string ConfigurationAppPublishDebugPath = Path.Combine(ServyServiceUIDebugFolder, "Servy.exe");
+        public static readonly string ConfigurationAppPublishReleasePath = Path.Combine(ServyServiceUIDebugFolder, "Servy.exe");
 
         /// <summary>
         /// Default Servy Configuration App Publish Path (Release).
@@ -141,7 +141,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager App Publish Path.
         /// </summary>
-        public static readonly string ManagerAppPublishDebugPath = Path.Combine(ServyManagerReleaseFolder, "Servy.Manager.exe");
+        public static readonly string ManagerAppPublishReleasePath = Path.Combine(ServyManagerReleaseFolder, "Servy.Manager.exe");
 
         /// <summary>
         /// Default Servy Manager App Publish Path (Release).

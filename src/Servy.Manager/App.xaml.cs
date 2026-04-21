@@ -210,7 +210,7 @@ namespace Servy.Manager
                     else LogLevel = LogLevel.Info;
 
 #if DEBUG
-                    ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishDebugPath;
+                    ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
