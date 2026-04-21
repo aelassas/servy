@@ -23,13 +23,19 @@ namespace Servy.Infrastructure.Data
     public class DapperExecutor : IDapperExecutor
     {
         private readonly IAppDbContext _dbContext;
+
+        // Async Retry Limits (Longer budget for non-blocking operations)
         private const int MaxRetries = 3;
         private const int InitialDelayMs = 100;
         private const int MaxJitterMs = 50;
 
-        // Thread-safe random for jitter calculation
-        private static readonly ThreadLocal<Random> _threadLocalJitterer =
-            new ThreadLocal<Random>(() => new Random(Guid.NewGuid().GetHashCode()));
+        // Sync Retry Limits (Aggressively capped to prevent thread pool starvation)
+        private const int SyncMaxRetries = 2;
+        private const int SyncInitialDelayMs = 25;
+        private const int SyncMaxJitterMs = 10;
+
+        // Thread-safe Random
+        private static readonly ThreadLocal<Random> _random = new ThreadLocal<Random>(() => new Random());
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DapperExecutor"/> class.
@@ -44,10 +50,11 @@ namespace Servy.Infrastructure.Data
 
         /// <summary>
         /// Wraps a synchronous database action with a retry policy using exponential backoff and jitter.
+        /// Uses SpinWait and aggressive caps to prevent thread pool exhaustion.
         /// </summary>
         private T ExecuteWithRetry<T>(Func<T> action)
         {
-            for (int i = 0; i < MaxRetries; i++)
+            for (int i = 0; i < SyncMaxRetries; i++)
             {
                 try
                 {
@@ -55,13 +62,22 @@ namespace Servy.Infrastructure.Data
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Busy || ex.ResultCode == SQLiteErrorCode.Locked)
                 {
-                    if (i == MaxRetries - 1) throw;
+                    if (i == SyncMaxRetries - 1)
+                    {
+                        Logger.Warn("Sync database operation exhausted bounded retry budget.");
+                        throw;
+                    }
 
-                    int delay = CalculateBackoff(i);
-                    Logger.Warn($"Database busy (attempt {i + 1}/{MaxRetries}). Retrying in {delay}ms...");
+                    // Shorter delay calculation specifically for the sync path
+                    int backoff = SyncInitialDelayMs * (int)Math.Pow(2, i);
+                    int jitter = _random.Value.Next(0, SyncMaxJitterMs + 1);
+                    int delay = backoff + jitter;
 
-                    // Note: Caller must ensure this is not executed on the UI thread to avoid freezes.
-                    Thread.Sleep(delay);
+                    Logger.Warn($"Database busy (sync attempt {i + 1}/{SyncMaxRetries}). Spinning for {delay}ms...");
+
+                    // Use SpinWait to pause the current thread. 
+                    // Unlike Thread.Sleep, this avoids parking the thread and starving the ThreadPool for short durations.
+                    SpinWait.SpinUntil(() => false, delay);
                 }
             }
             return default;
@@ -96,7 +112,7 @@ namespace Servy.Infrastructure.Data
         }
 
         /// <summary>
-        /// Calculates the delay for the next retry attempt using exponential backoff and jitter.
+        /// Calculates the delay for the next async retry attempt using exponential backoff and jitter.
         /// </summary>
         /// <param name="attempt">The zero-based attempt index.</param>
         /// <returns>The delay in milliseconds.</returns>
@@ -105,9 +121,8 @@ namespace Servy.Infrastructure.Data
             // Exponential: 100, 200, 400...
             int backoff = InitialDelayMs * (int)Math.Pow(2, attempt);
 
-            // Jitter: 0 to 50ms 
-            // Accessing .Value is thread-safe and lock-free
-            int jitter = _threadLocalJitterer.Value.Next(0, MaxJitterMs + 1);
+            // Jitter: 0 to 50ms (Thread-safe and lock-free)
+            int jitter = _random.Value.Next(0, MaxJitterMs + 1);
 
             return backoff + jitter;
         }
