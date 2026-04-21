@@ -58,9 +58,9 @@ Write-Host "Updating .NET runtime to $netVersion..." -ForegroundColor Cyan
 if ($DryRun) { Write-Host "(Dry Run Mode - no files will be modified)" -ForegroundColor Yellow }
 
 # Statistics counters
-$global:totalFilesScanned = 0
-$global:filesModified     = 0
-$global:totalReplacements = 0
+$script:totalFilesScanned = 0
+$script:filesModified     = 0
+$script:totalReplacements = 0
 
 # ----------------------------------------------------------------------
 # Helper: Get-FileEncoding (Preserves UTF-8 BOM status)
@@ -94,7 +94,7 @@ function Update-Files {
             continue
         }
 
-        $global:totalFilesScanned++
+        $script:totalFilesScanned++
 
         try {
             $encoding = Get-FileEncoding $path
@@ -104,8 +104,8 @@ function Update-Files {
             $matchCount = $regexMatches.Count
 
             if ($matchCount -gt 0) {
-                $global:filesModified++
-                $global:totalReplacements += $matchCount
+                $script:filesModified++
+                $script:totalReplacements += $matchCount
 
                 if ($DryRun) {
                     Write-Host "DRY-RUN: Would update $path ($matchCount matches)" -ForegroundColor Gray
@@ -152,9 +152,9 @@ Update-Files -Files @($actionFile) -Pattern $actionPattern -Replacement $actionR
 Write-Host "`n========================================="
 Write-Host "              SUMMARY"
 Write-Host "========================================="
-Write-Host "Files scanned:      $global:totalFilesScanned"
-Write-Host "Files modified:     $global:filesModified"
-Write-Host "Total replacements: $global:totalReplacements"
+Write-Host "Files scanned:      $script:totalFilesScanned"
+Write-Host "Files modified:     $script:filesModified"
+Write-Host "Total replacements: $script:totalReplacements"
 
 if ($DryRun) {
     Write-Host "`nDry run complete. No files were modified." -ForegroundColor Yellow
