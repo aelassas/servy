@@ -45,15 +45,14 @@ namespace Servy.Manager.Utils
         private const int FileRetryDelayMs = 500;
 
         /// <summary>
+        /// Internal token source to ensure the tailing loop stops immediately upon disposal.
+        /// </summary>
+        private readonly CancellationTokenSource _disposeCts = new CancellationTokenSource();
+
+        /// <summary>
         /// Indicates whether the current instance has been disposed.
         /// </summary>
         private bool _isDisposed;
-
-        /// <summary>
-        /// The registration used to unhook the <see cref="Dispose()"/> logic 
-        /// from the cancellation token during cleanup.
-        /// </summary>
-        private CancellationTokenRegistration _tokenRegistration;
 
         /// <summary>
         /// Delegate for handling a batch of new log lines.
@@ -76,161 +75,164 @@ namespace Servy.Manager.Utils
         /// <param name="startCreated">The creation timestamp of the file when history was loaded, used to detect rotation.</param>
         /// <param name="token">A token used to stop the tailing loop when switching services or closing the app.</param>
         /// <returns>A Task representing the long-running polling operation.</returns>
-        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken token)
+        public async Task RunFromPosition(string path, LogType type, long startPos, DateTime startCreated, CancellationToken externalToken)
         {
             if (string.IsNullOrEmpty(path)) return;
 
-            _tokenRegistration = token.Register(Dispose);
-
-            long lastPosition = startPos;
-            DateTime lastCreationTime = startCreated;
-            FileIdentity? knownIdentity = null;
-
-            while (!token.IsCancellationRequested)
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken, _disposeCts.Token))
             {
-                try
+                var token = linkedCts.Token;
+
+                long lastPosition = startPos;
+                DateTime lastCreationTime = startCreated;
+                FileIdentity? knownIdentity = null;
+
+                while (!token.IsCancellationRequested)
                 {
-                    if (!File.Exists(path))
-                    {
-                        await Task.Delay(1000, token);
-                        continue;
-                    }
-
-                    FileInfo info = new FileInfo(path);
-                    FileStream fs = null;
-
                     try
                     {
-                        // FileShare.Delete is critical here so we don't block an external process trying to rotate the log.
-                        fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-                    }
-                    catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
-                    {
-                        await Task.Delay(FileRetryDelayMs, token);
-                        continue;
-                    }
-                    catch (IOException)
-                    {
-                        await Task.Delay(200, token);
-                        continue;
-                    }
-
-                    using (fs)
-                    {
-                        var currentIdentity = GetFileIdentity(fs);
-                        info.Refresh();
-
-                        // 1. Initial attach or Post-Rotation setup
-                        if (knownIdentity == null)
+                        if (!File.Exists(path))
                         {
-                            if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
-                            {
-                                lastPosition = 0;
-                                lastCreationTime = info.CreationTimeUtc;
-                                Logger.Debug("[LogTailer] Rotation detected before first open (Metadata fallback).");
-                            }
+                            await Task.Delay(1000, token);
+                            continue;
                         }
-                        else
+
+                        FileInfo info = new FileInfo(path);
+                        FileStream fs = null;
+
+                        try
                         {
-                            // 2. Identity Check: Did the file change while we were re-opening it?
-                            if (currentIdentity.IsDifferentFrom(knownIdentity.Value))
+                            // FileShare.Delete is critical here so we don't block an external process trying to rotate the log.
+                            fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                        }
+                        catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                        {
+                            await Task.Delay(FileRetryDelayMs, token);
+                            continue;
+                        }
+                        catch (IOException)
+                        {
+                            await Task.Delay(200, token);
+                            continue;
+                        }
+
+                        using (fs)
+                        {
+                            var currentIdentity = GetFileIdentity(fs);
+                            info.Refresh();
+
+                            // 1. Initial attach or Post-Rotation setup
+                            if (knownIdentity == null)
                             {
-                                lastPosition = 0;
-                                lastCreationTime = info.CreationTimeUtc;
-                                Logger.Debug("[LogTailer] Rotation detected on reopen via stable file identity.");
-                            }
-                            else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixHash == null)
-                            {
-                                // Both robust signals failed (unlikely), fallback to old heuristics
                                 if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
                                 {
                                     lastPosition = 0;
                                     lastCreationTime = info.CreationTimeUtc;
-                                    Logger.Debug("[LogTailer] Rotation detected on reopen (Metadata fallback).");
+                                    Logger.Debug("[LogTailer] Rotation detected before first open (Metadata fallback).");
                                 }
                             }
-                        }
-
-                        knownIdentity = currentIdentity;
-                        fs.Seek(lastPosition, SeekOrigin.Begin);
-
-                        using (StreamReader reader = new StreamReader(fs))
-                        {
-                            while (!token.IsCancellationRequested)
+                            else
                             {
-                                List<LogLine> batch = new List<LogLine>();
-                                string line;
-
-                                while ((line = await reader.ReadLineAsync()) != null)
+                                // 2. Identity Check: Did the file change while we were re-opening it?
+                                if (currentIdentity.IsDifferentFrom(knownIdentity.Value))
                                 {
-                                    batch.Add(new LogLine(line, type));
-                                    if (batch.Count >= LogBatchFlushThreshold)
+                                    lastPosition = 0;
+                                    lastCreationTime = info.CreationTimeUtc;
+                                    Logger.Debug("[LogTailer] Rotation detected on reopen via stable file identity.");
+                                }
+                                else if (!currentIdentity.IsValidHandleInfo && currentIdentity.PrefixHash == null)
+                                {
+                                    // Both robust signals failed (unlikely), fallback to old heuristics
+                                    if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
                                     {
-                                        OnNewLines?.Invoke(batch);
-                                        batch.Clear(); // Optimized memory reuse
+                                        lastPosition = 0;
+                                        lastCreationTime = info.CreationTimeUtc;
+                                        Logger.Debug("[LogTailer] Rotation detected on reopen (Metadata fallback).");
                                     }
-
-                                    // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
-                                    lastPosition = fs.Position;
                                 }
+                            }
 
-                                if (batch.Count > 0) OnNewLines?.Invoke(batch);
+                            knownIdentity = currentIdentity;
+                            fs.Seek(lastPosition, SeekOrigin.Begin);
 
-                                // --- EOF Reached. Verify File Integrity / Rotation ---
-                                info.Refresh();
-                                bool rotated = false;
+                            using (StreamReader reader = new StreamReader(fs))
+                            {
+                                while (!token.IsCancellationRequested)
+                                {
+                                    List<LogLine> batch = new List<LogLine>();
+                                    string line;
 
-                                if (!info.Exists)
-                                {
-                                    rotated = true;
-                                    Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
-                                }
-                                else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
-                                {
-                                    rotated = true;
-                                    Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
-                                }
-                                else
-                                {
-                                    // We are at EOF, check if the file object on disk swapped identities out from under us
-                                    try
+                                    while ((line = await reader.ReadLineAsync()) != null)
                                     {
-                                        using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                        batch.Add(new LogLine(line, type));
+                                        if (batch.Count >= LogBatchFlushThreshold)
                                         {
-                                            var pathIdentity = GetFileIdentity(checkFs);
-                                            if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
-                                            {
-                                                rotated = true;
-                                                Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
-                                            }
+                                            OnNewLines?.Invoke(batch);
+                                            batch.Clear(); // Optimized memory reuse
                                         }
+
+                                        // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
+                                        lastPosition = fs.Position;
                                     }
-                                    catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+
+                                    if (batch.Count > 0) OnNewLines?.Invoke(batch);
+
+                                    // --- EOF Reached. Verify File Integrity / Rotation ---
+                                    info.Refresh();
+                                    bool rotated = false;
+
+                                    if (!info.Exists)
                                     {
                                         rotated = true;
+                                        Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
                                     }
-                                    catch (IOException)
+                                    else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
                                     {
-                                        // File might be exclusively locked during a rename/rotation event. 
-                                        // Ignore here, we will catch the rotation on the next pass.
+                                        rotated = true;
+                                        Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
                                     }
-                                }
+                                    else
+                                    {
+                                        // We are at EOF, check if the file object on disk swapped identities out from under us
+                                        try
+                                        {
+                                            using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                            {
+                                                var pathIdentity = GetFileIdentity(checkFs);
+                                                if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
+                                                {
+                                                    rotated = true;
+                                                    Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
+                                                }
+                                            }
+                                        }
+                                        catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                                        {
+                                            rotated = true;
+                                        }
+                                        catch (IOException)
+                                        {
+                                            // File might be exclusively locked during a rename/rotation event. 
+                                            // Ignore here, we will catch the rotation on the next pass.
+                                        }
+                                    }
 
-                                if (rotated)
-                                {
-                                    break; // Break the inner loop to drop the stale handle and reopen
-                                }
+                                    if (rotated)
+                                    {
+                                        break; // Break the inner loop to drop the stale handle and reopen
+                                    }
 
-                                await Task.Delay(150, token);
+                                    await Task.Delay(150, token);
+                                }
                             }
                         }
                     }
-                }
-                catch (OperationCanceledException) { break; }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Unexpected error in log tailer for {path}.", ex);
-                    await Task.Delay(1000, token);
+                    catch (OperationCanceledException) { break; }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Unexpected error in log tailer for {path}.", ex);
+                        await Task.Delay(1000, token);
+                    }
                 }
             }
         }
@@ -362,12 +364,17 @@ namespace Servy.Manager.Utils
 
             if (disposing)
             {
-                // 1. Break the strong reference to the subscriber (ViewModel)
+                // 1. Break the strong reference to the subscriber
                 OnNewLines = null;
 
-                // 2. Unregister from the cancellation token to prevent the token source
-                // from keeping this instance alive if the CTS is long-lived.
-                _tokenRegistration.Dispose();
+                // 2. CRITICAL: Cancel the internal token to instantly kill the while-loop 
+                // and release any active FileStreams or Task.Delays.
+                if (!_disposeCts.IsCancellationRequested)
+                {
+                    _disposeCts.Cancel();
+                }
+
+                _disposeCts.Dispose();
             }
 
             _isDisposed = true;
