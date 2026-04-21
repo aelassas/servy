@@ -36,6 +36,10 @@ on:
         description: 'Version in Major.Minor format (e.g. 4.2)'
         required: true
 
+# Lockdown the token to read-only
+permissions:
+  contents: read
+
 jobs:
   sbom:
     runs-on: windows-latest

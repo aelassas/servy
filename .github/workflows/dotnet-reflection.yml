@@ -9,6 +9,9 @@ on:
   # pull_request:
   #   branches: [ net48 ]
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: windows-2022

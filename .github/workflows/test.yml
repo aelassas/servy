@@ -14,6 +14,10 @@ on:
       - net48
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   test:
     runs-on: windows-2022

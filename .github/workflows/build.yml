@@ -16,6 +16,9 @@ on:
       - net48
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build on Windows
