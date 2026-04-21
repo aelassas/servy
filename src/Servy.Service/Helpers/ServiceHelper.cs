@@ -435,7 +435,7 @@ namespace Servy.Service.Helpers
         /// <returns>The original value, or "********" if the key is deemed sensitive.</returns>
         private static string MaskSensitiveValue(string key, string value)
         {
-            if (string.IsNullOrEmpty(value)) return value;
+            if (string.IsNullOrWhiteSpace(value)) return value;
 
             bool isSensitive = SensitiveKeyWords.Any(k => key.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0);
 
@@ -450,7 +450,7 @@ namespace Servy.Service.Helpers
         /// <returns>A string with masked credentials, or the original string if no sensitive patterns are found.</returns>
         private string MaskRawArguments(string args)
         {
-            if (string.IsNullOrEmpty(args)) return args;
+            if (string.IsNullOrWhiteSpace(args)) return args;
 
             try
             {
@@ -490,7 +490,7 @@ namespace Servy.Service.Helpers
                 return false;
             }
 
-            if (string.IsNullOrEmpty(options.ServiceName))
+            if (string.IsNullOrWhiteSpace(options.ServiceName))
             {
                 logger?.Error("Service name empty");
                 return false;

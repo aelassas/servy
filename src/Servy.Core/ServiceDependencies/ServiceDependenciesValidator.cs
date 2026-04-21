@@ -36,7 +36,7 @@ namespace Servy.Core.ServiceDependencies
             {
                 string serviceName = parts[i].Trim();
 
-                if (string.IsNullOrEmpty(serviceName))
+                if (string.IsNullOrWhiteSpace(serviceName))
                 {
                     continue; // skip empty entries
                 }

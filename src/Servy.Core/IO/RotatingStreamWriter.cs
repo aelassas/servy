@@ -46,7 +46,7 @@ namespace Servy.Core.IO
         // --- Cooldown and fast-fail constraints ---
         private DateTime _rotationCooldownUntil = DateTime.MinValue;
         private const int RotationCooldownMs = 1000;
-        private const int MaxSyncRotationRetries = 2;
+        private const int MaxSyncRotationRetries = 3;
         private const int SyncRotationRetryDelayMs = 50;
 
         /// <summary>

@@ -156,7 +156,7 @@ namespace Servy.Manager.Validators
                 return false;
             }
 
-            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrEmpty(dto.UserAccount))
+            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrWhiteSpace(dto.UserAccount))
             {
                 try
                 {
