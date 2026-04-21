@@ -1035,7 +1035,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à PausePending.
+        ///   Recherche une chaîne localisée semblable à Pause Pending.
         /// </summary>
         public static string Status_PausePending {
             get {
@@ -1071,7 +1071,7 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à StopPending.
+        ///   Recherche une chaîne localisée semblable à Stop Pending.
         /// </summary>
         public static string Status_StopPending {
             get {

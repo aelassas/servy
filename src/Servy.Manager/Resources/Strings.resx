@@ -187,7 +187,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Start Pending</value>
   </data>
   <data name="Status_StopPending" xml:space="preserve">
-    <value>StopPending</value>
+    <value>Stop Pending</value>
   </data>
   <data name="Status_Running" xml:space="preserve">
     <value>Running</value>
@@ -196,7 +196,7 @@ Copyright © {2} Akram El Assas. All rights reserved.
     <value>Continue Pending</value>
   </data>
   <data name="Status_PausePending" xml:space="preserve">
-    <value>PausePending</value>
+    <value>Pause Pending</value>
   </data>
   <data name="Status_Paused" xml:space="preserve">
     <value>Paused</value>
