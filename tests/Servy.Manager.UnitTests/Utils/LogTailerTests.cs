@@ -3,6 +3,7 @@ using Servy.Manager.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -68,24 +69,34 @@ namespace Servy.Manager.UnitTests.Utils
 
             using (var cts = new CancellationTokenSource())
             {
-
                 // Act
                 // Start tailing from the end of the "Old content"
                 var tailTask = tailer.RunFromPosition(initialPath, LogType.StdOut, fileInfo.Length, fileInfo.CreationTimeUtc, cts.Token);
 
-                // Wait for the tailer to actually enter its inner loop
-                await Task.Delay(300);
+                // DETERMINISTIC WAIT 1: Ensure the loop has started (Compatible with .NET 4.8)
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(5));
+                var completedTask = await Task.WhenAny(tailer.LoopStartedSignal.Task, timeoutTask);
+
+                if (completedTask == timeoutTask)
+                {
+                    throw new TimeoutException("The LogTailer background loop failed to start within 5 seconds.");
+                }
 
                 // Simulate Rotation: Truncate and write fresh content
-                // We use a specific string "ROTATED_CONTENT" to avoid partial match issues
                 using (var fs = new FileStream(initialPath, FileMode.Truncate, FileAccess.Write, FileShare.ReadWrite))
                 using (var sw = new StreamWriter(fs) { AutoFlush = true })
                 {
                     await sw.WriteLineAsync("ROTATED_CONTENT");
                 }
 
-                // Give the polling loop (150ms) and ReadLineAsync enough time to process the truncation
-                await Task.Delay(1000);
+                // DETERMINISTIC WAIT 2: Poll for the content reaching capturedLines
+                await WaitUntilAsync(() =>
+                {
+                    lock (capturedLines)
+                    {
+                        return capturedLines.Exists(l => l.Text.Contains("ROTATED_CONTENT"));
+                    }
+                }, TimeSpan.FromSeconds(10));
 
                 cts.Cancel();
 
@@ -102,6 +113,20 @@ namespace Servy.Manager.UnitTests.Utils
                     Assert.Contains(capturedLines, l => l.Text.Contains("ROTATED_CONTENT"));
                 }
             }
+        }
+
+        /// <summary>
+        /// Polls a predicate until it returns true or the timeout is reached.
+        /// </summary>
+        private static async Task WaitUntilAsync(Func<bool> predicate, TimeSpan timeout)
+        {
+            var deadline = DateTime.UtcNow + timeout;
+            while (DateTime.UtcNow < deadline)
+            {
+                if (predicate()) return;
+                await Task.Delay(50);
+            }
+            throw new TimeoutException($"Test timed out waiting for condition to be met after {timeout.TotalSeconds}s.");
         }
 
         [Fact]
