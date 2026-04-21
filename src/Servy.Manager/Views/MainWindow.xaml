@@ -457,7 +457,7 @@
                                                         <MenuItem Header="{x:Static resx:Strings.Button_Config}" 
                                                                   Command="{Binding ConfigureCommand}"
                                                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsConfigurationAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                                  IsEnabled="{Binding PlacementTarget.DataContext.IsDesktopAppAvailable, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                                                   AutomationProperties.Name="Configure Service" AutomationProperties.AutomationId="RowConfigMenuItem" AutomationProperties.HelpText="Opens the configuration app for this service."/>
 
                                                         <MenuItem Header="{x:Static resx:Strings.Button_ExportXML}" 

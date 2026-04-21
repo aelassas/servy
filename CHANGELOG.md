@@ -676,7 +676,7 @@ Compare changes: https://github.com/aelassas/servy/compare/v7.6...v7.7
 * fix(restarter): ensure logger is disposed on exit
 * fix(manager): improve stability and configuration consistency
 * fix(manager): ensure EventRecords are disposed to prevent memory leaks
-* fix(manager): include missing `ConfigurationAppPublishPath` configuration in .NET Framework 4.8 build
+* fix(manager): include missing `DesktopAppPublishPath` configuration in .NET Framework 4.8 build
 * fix(manager): remove deprecated `EnableDebugLogs` setting from .NET 10.0 build
 * fix(manager): optimize log search threading by removing redundant `Task.Run` and `Dispatcher` nesting
 * fix(net48): rename `Servy.Restarter.exe` to `Servy.Restarter.Net48.exe` to avoid conflict with the .NET 10.0 build

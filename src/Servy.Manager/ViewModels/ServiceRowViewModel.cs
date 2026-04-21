@@ -90,7 +90,7 @@ namespace Servy.Manager.ViewModels
         public ServiceStartType? StartupType => Service.StartupType;
         public string LogOnAs => Service.LogOnAs;
         public bool IsInstalled => Service.IsInstalled;
-        public bool IsConfigurationAppAvailable => Service.IsConfigurationAppAvailable;
+        public bool IsDesktopAppAvailable => Service.IsDesktopAppAvailable;
         public int? Pid => Service.Pid;
         public bool IsPidEnabled => Service.IsPidEnabled;
         public double? CpuUsage => Service.CpuUsage;
@@ -134,8 +134,8 @@ namespace Servy.Manager.ViewModels
                 case nameof(Service.IsInstalled):
                     OnPropertyChanged(nameof(IsInstalled));
                     break;
-                case nameof(Service.IsConfigurationAppAvailable):
-                    OnPropertyChanged(nameof(IsConfigurationAppAvailable));
+                case nameof(Service.IsDesktopAppAvailable):
+                    OnPropertyChanged(nameof(IsDesktopAppAvailable));
                     break;
                 case nameof(Service.Name):
                     OnPropertyChanged(nameof(Name));

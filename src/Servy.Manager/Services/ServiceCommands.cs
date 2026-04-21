@@ -136,7 +136,7 @@ namespace Servy.Manager.Services
             // Map all domain services to Service models in parallel
             var tasks = results.Select(r => ServiceMapper.ToModelAsync(
                 Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
-                app.IsConfigurationAppAvailable,
+                app.IsDesktopAppAvailable,
                 calculatePerf));
             var services = await Task.WhenAll(tasks);
 
@@ -161,9 +161,9 @@ namespace Servy.Manager.Services
             try
             {
                 var app = (App)Application.Current;
-                if (string.IsNullOrWhiteSpace(app.ConfigurationAppPublishPath) || !File.Exists(app.ConfigurationAppPublishPath))
+                if (string.IsNullOrWhiteSpace(app.DesktopAppPublishPath) || !File.Exists(app.DesktopAppPublishPath))
                 {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ConfigurationAppNotFound, AppConfig.Caption);
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, AppConfig.Caption);
                     return;
                 }
 
@@ -173,7 +173,7 @@ namespace Servy.Manager.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = app.ConfigurationAppPublishPath,
+                        FileName = app.DesktopAppPublishPath,
                         Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
@@ -574,7 +574,7 @@ namespace Servy.Manager.Services
         /// <param name="successMessage">The localized string to display upon successful export.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
         /// <remarks>
-        /// Unlike the Configuration App variant, this method retrieves the <see cref="ServiceDto"/> directly 
+        /// Unlike the Desktop App variant, this method retrieves the <see cref="ServiceDto"/> directly 
         /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the actual 
         /// stored state, including encrypted credentials if applicable.
         /// </remarks>
@@ -717,7 +717,7 @@ namespace Servy.Manager.Services
         {
             if (!process.Start())
             {
-                Logger.Warn($"Failed to start external process {app.ConfigurationAppPublishPath}.");
+                Logger.Warn($"Failed to start external process {app.DesktopAppPublishPath}.");
             }
         }
 

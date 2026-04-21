@@ -14,7 +14,7 @@ namespace Servy.Manager.Models
         private string _description;
         private ServiceStatus? _status;
         private bool _isInstalled;
-        private bool _isConfigurationAppAvailable;
+        private bool _isDesktopAppAvailable;
         private ServiceStartType? _startupType;
         private string _userSession;
         private int? _pid;
@@ -65,10 +65,10 @@ namespace Servy.Manager.Models
         /// <summary>
         /// Gets or sets a value indicating whether the service's configuration application is available.
         /// </summary>
-        public bool IsConfigurationAppAvailable
+        public bool IsDesktopAppAvailable
         {
-            get => _isConfigurationAppAvailable;
-            set => SetProperty(ref _isConfigurationAppAvailable, value);
+            get => _isDesktopAppAvailable;
+            set => SetProperty(ref _isDesktopAppAvailable, value);
         }
 
         /// <summary>

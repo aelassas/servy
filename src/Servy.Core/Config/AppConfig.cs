@@ -118,14 +118,9 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceUIExe = $"{ServyServiceUIFileName}.exe";
 
         /// <summary>
-        /// Servy Service Debug Folder.
+        /// Servy Desktop App Release Folder.
         /// </summary>
-        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy\bin\Debug\net10.0-windows\");
-
-        /// <summary>
-        /// Servy Service Release Folder.
-        /// </summary>
-        public static readonly string ServyServiceUIReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy\bin\Release\net10.0-windows\win-x64\");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
@@ -133,19 +128,14 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\Debug\net10.0-windows\");
 
         /// <summary>
-        /// Servy Service Release Folder (Manager).
+        /// Servy Desktop App Publish Path.
         /// </summary>
-        public static readonly string ServyServiceManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\..\Servy.Manager\bin\Release\net10.0-windows\win-x64\");
+        public static readonly string DesktopAppPublishReleasePath = Path.Combine(ServyDesktopAppReleaseFolder, "publish", "Servy.exe");
 
         /// <summary>
-        /// Servy Configuration App Publish Path.
+        /// Default Servy Desktop App Publish Path (Release).
         /// </summary>
-        public static readonly string ConfigurationAppPublishReleasePath = Path.Combine(ServyServiceUIReleaseFolder, "publish", "Servy.exe");
-
-        /// <summary>
-        /// Default Servy Configuration App Publish Path (Release).
-        /// </summary>
-        public static readonly string DefaultConfigurationAppPublishPath = @".\Servy.exe";
+        public static readonly string DefaultDesktopAppPublishPath = @".\Servy.exe";
 
         /// <summary>
         /// Servy Manager Release Folder.

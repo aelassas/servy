@@ -356,8 +356,8 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Msg_RemoveServiceConfirm" xml:space="preserve">
     <value>Are you sure you want to remove this service? All service configuration will be permanently lost and cannot be recovered.</value>
   </data>
-  <data name="Msg_ConfigurationAppNotFound" xml:space="preserve">
-    <value>Servy Configuration App not found.</value>
+  <data name="Msg_DesktopAppNotFound" xml:space="preserve">
+    <value>Servy Desktop App not found.</value>
   </data>
 
   <!--Logs View-->

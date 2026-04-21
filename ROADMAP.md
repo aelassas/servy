@@ -37,7 +37,7 @@
 * [ ] Add scheduled uptime windows and maintenance mode at specific times (start/stop services and pause health checks)
 * [x] Servy Manager App for managing services installed by Servy
   * [x] Persist service configuration and track installed services in SQLite
-  * [x] Provide a "shortcut" to open the Servy Configuration App for full edits
+  * [x] Provide a "shortcut" to open the Servy Desktop App for full edits
   * [x] Start, stop, restart, and uninstall services
   * [x] Display service status and uptime
   * [x] Add search and filter functionality for services
