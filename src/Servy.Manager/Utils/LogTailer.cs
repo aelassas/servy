@@ -23,6 +23,12 @@ namespace Servy.Manager.Utils
     /// </remarks>
     public class LogTailer : IDisposable
     {
+#if DEBUG || UNIT_TEST
+        // Allows tests to wait until the background loop is actually running
+        internal TaskCompletionSource<bool> LoopStartedSignal { get; private set; }
+            = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+#endif
+
         /// <summary>
         /// The maximum number of log lines allowed to be loaded into memory at once.
         /// This constant prevents application instability or "Out of Memory" exceptions 
@@ -153,72 +159,86 @@ namespace Servy.Manager.Utils
 
                             using (StreamReader reader = new StreamReader(fs))
                             {
-                                while (!token.IsCancellationRequested)
+                                try
                                 {
-                                    List<LogLine> batch = new List<LogLine>();
-                                    string line;
-
-                                    while ((line = await reader.ReadLineAsync()) != null)
+                                    while (!token.IsCancellationRequested)
                                     {
-                                        batch.Add(new LogLine(line, type));
-                                        if (batch.Count >= LogBatchFlushThreshold)
+#if DEBUG || UNIT_TEST
+                                        LoopStartedSignal.TrySetResult(true);
+#endif
+
+                                        List<LogLine> batch = new List<LogLine>();
+                                        string line;
+
+                                        while ((line = await reader.ReadLineAsync()) != null)
                                         {
-                                            OnNewLines?.Invoke(batch);
-                                            batch.Clear(); // Optimized memory reuse
-                                        }
-
-                                        // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
-                                        lastPosition = fs.Position;
-                                    }
-
-                                    if (batch.Count > 0) OnNewLines?.Invoke(batch);
-
-                                    // --- EOF Reached. Verify File Integrity / Rotation ---
-                                    info.Refresh();
-                                    bool rotated = false;
-
-                                    if (!info.Exists)
-                                    {
-                                        rotated = true;
-                                        Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
-                                    }
-                                    else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
-                                    {
-                                        rotated = true;
-                                        Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
-                                    }
-                                    else
-                                    {
-                                        // We are at EOF, check if the file object on disk swapped identities out from under us
-                                        try
-                                        {
-                                            using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                            batch.Add(new LogLine(line, type));
+                                            if (batch.Count >= LogBatchFlushThreshold)
                                             {
-                                                var pathIdentity = GetFileIdentity(checkFs);
-                                                if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
-                                                {
-                                                    rotated = true;
-                                                    Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
-                                                }
+                                                OnNewLines?.Invoke(batch);
+                                                batch.Clear(); // Optimized memory reuse
                                             }
+
+                                            // Note: StreamReader buffers, so fs.Position may jump ahead of the actual lines yielded.
+                                            lastPosition = fs.Position;
                                         }
-                                        catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+
+                                        if (batch.Count > 0) OnNewLines?.Invoke(batch);
+
+                                        // --- EOF Reached. Verify File Integrity / Rotation ---
+                                        info.Refresh();
+                                        bool rotated = false;
+
+                                        if (!info.Exists)
                                         {
                                             rotated = true;
+                                            Logger.Debug("[LogTailer] Rotation detected: File no longer exists.");
                                         }
-                                        catch (IOException)
+                                        else if (info.CreationTimeUtc != lastCreationTime || info.Length < lastPosition)
                                         {
-                                            // File might be exclusively locked during a rename/rotation event. 
-                                            // Ignore here, we will catch the rotation on the next pass.
+                                            rotated = true;
+                                            Logger.Debug("[LogTailer] Rotation detected during tailing (Metadata fallback).");
                                         }
-                                    }
+                                        else
+                                        {
+                                            // We are at EOF, check if the file object on disk swapped identities out from under us
+                                            try
+                                            {
+                                                using (var checkFs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                                                {
+                                                    var pathIdentity = GetFileIdentity(checkFs);
+                                                    if (pathIdentity.IsDifferentFrom(knownIdentity.Value))
+                                                    {
+                                                        rotated = true;
+                                                        Logger.Debug("[LogTailer] Rotation detected during tailing via stable identity change.");
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                                            {
+                                                rotated = true;
+                                            }
+                                            catch (IOException)
+                                            {
+                                                // File might be exclusively locked during a rename/rotation event. 
+                                                // Ignore here, we will catch the rotation on the next pass.
+                                            }
+                                        }
 
-                                    if (rotated)
-                                    {
-                                        break; // Break the inner loop to drop the stale handle and reopen
-                                    }
+                                        if (rotated)
+                                        {
+                                            break; // Break the inner loop to drop the stale handle and reopen
+                                        }
 
-                                    await Task.Delay(150, token);
+                                        await Task.Delay(150, token);
+                                    }
+                                }
+                                finally
+                                {
+#if DEBUG || UNIT_TEST
+                                    // Reset the signal if the task ends, ensuring subsequent runs (if any) can re-signal
+                                    LoopStartedSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+#endif
                                 }
                             }
                         }
