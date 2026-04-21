@@ -23,7 +23,7 @@
     The Servy version being packaged.
 
 .EXAMPLE
-    PS> .\publish.ps1 -fm "net10.0" -version "3.8"
+    PS> .\publish.ps1 -Tfm "net10.0" -Version "3.8"
 
 .NOTES
     This script can be run from any working directory. It calculates elapsed time
