@@ -11,7 +11,7 @@ try:
         print("stdout > Hello, World!", file=sys.stdout)
         time.sleep(0.5) 
         print("stderr > Hello, World!", file=sys.stderr)
-        time.sleep(5)  # Wait 5 seconds between prints
+        time.sleep(3)  # Wait 5 seconds between prints
 except KeyboardInterrupt:
     # This catches Ctrl+C
     print("\nGoodbye! Script terminated.")

@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Threading;
+using static Servy.Manager.Utils.LogTailer;
 
 namespace Servy.Manager.ViewModels
 {
@@ -37,6 +38,8 @@ namespace Servy.Manager.ViewModels
 
         // Controls console log filter debouncing
         private CancellationTokenSource _logFilterCts;
+        // Controls the lifecycle of the background LogTailer streams
+        private CancellationTokenSource _tailingCts;
 
         private bool _hadSelectedService;
         private string _consoleSearchText;
@@ -47,6 +50,13 @@ namespace Servy.Manager.ViewModels
         private volatile bool _isSelectionActive;
         private int _tickErrorCount = 0;
         private bool _disposedValue;
+
+        // Active tailers and their handlers to prevent memory leaks during service switching
+        private LogTailer _activeStdoutTailer;
+        private NewLinesHandler _stdoutTailerHandler;
+
+        private LogTailer _activeStderrTailer;
+        private NewLinesHandler _stderrTailerHandler;
 
         #endregion
 
@@ -355,6 +365,34 @@ namespace Servy.Manager.ViewModels
         }
 
         /// <summary>
+        /// Disposes of active log tailers and unsubscribes from their events to prevent memory leaks.
+        /// </summary>
+        private void StopActiveTailers()
+        {
+            if (_activeStdoutTailer != null)
+            {
+                if (_stdoutTailerHandler != null)
+                {
+                    _activeStdoutTailer.OnNewLines -= _stdoutTailerHandler;
+                    _stdoutTailerHandler = null;
+                }
+                _activeStdoutTailer.Dispose();
+                _activeStdoutTailer = null;
+            }
+
+            if (_activeStderrTailer != null)
+            {
+                if (_stderrTailerHandler != null)
+                {
+                    _activeStderrTailer.OnNewLines -= _stderrTailerHandler;
+                    _stderrTailerHandler = null;
+                }
+                _activeStderrTailer.Dispose();
+                _activeStderrTailer = null;
+            }
+        }
+
+        /// <summary>
         /// Orchestrates the transition between services. This method synchronizes the history 
         /// loading of both StdOut and StdErr streams before initiating live tailing.
         /// </summary>
@@ -371,8 +409,17 @@ namespace Servy.Manager.ViewModels
                 // 1. Increment session and cancel previous work
                 int sessionId = Interlocked.Increment(ref _currentSessionId);
 
-                ResetMonitoringCts();
-                var token = _monitoringCts.Token;
+                var newCts = new CancellationTokenSource();
+                var oldCts = Interlocked.Exchange(ref _tailingCts, newCts);
+                if (oldCts != null)
+                {
+                    oldCts.Cancel();
+                    oldCts.Dispose();
+                }
+                var token = newCts.Token;
+
+                // Explicitly stop and dispose old tailers to sever event handler closures
+                StopActiveTailers();
 
                 RawLines.Clear();
                 OnPropertyChanged(nameof(Pid));
@@ -477,7 +524,9 @@ namespace Servy.Manager.ViewModels
         private void StartLiveTail(string path, LogType type, long pos, DateTime created, CancellationToken token, int sessionId)
         {
             var tailer = new LogTailer();
-            tailer.OnNewLines += (lines) =>
+
+            // Store the lambda in a local variable so we can safely register and track it
+            NewLinesHandler handler = (lines) =>
             {
                 // Guard against null dispatcher during shutdown background ticks
                 if (!(Application.Current?.Dispatcher is Dispatcher dispatcher)) return;
@@ -503,6 +552,20 @@ namespace Servy.Manager.ViewModels
                     RequestScroll?.Invoke(false);
                 }, DispatcherPriority.Background);
             };
+
+            tailer.OnNewLines += handler;
+
+            // Track the tailer and handler for explicit disposal
+            if (type == LogType.StdOut)
+            {
+                _activeStdoutTailer = tailer;
+                _stdoutTailerHandler = handler;
+            }
+            else if (type == LogType.StdErr)
+            {
+                _activeStderrTailer = tailer;
+                _stderrTailerHandler = handler;
+            }
 
             _ = tailer.RunFromPosition(path, type, pos, created, token)
                 .ContinueWith(t =>
@@ -585,7 +648,18 @@ namespace Servy.Manager.ViewModels
             {
                 if (disposing)
                 {
-                    // 1. Dispose Monitoring CTS
+                    // 1. Dispose active log tailers
+                    StopActiveTailers();
+
+                    // 2. Dispose Tailing CTS
+                    var oldTailingCts = Interlocked.Exchange(ref _tailingCts, null);
+                    if (oldTailingCts != null)
+                    {
+                        oldTailingCts.Cancel();
+                        oldTailingCts.Dispose();
+                    }
+
+                    // 3. Dispose Monitoring CTS
                     var oldMonitoringCts = Interlocked.Exchange(ref _monitoringCts, null);
                     if (oldMonitoringCts != null)
                     {
@@ -593,7 +667,7 @@ namespace Servy.Manager.ViewModels
                         oldMonitoringCts.Dispose();
                     }
 
-                    // 2. Dispose Log Filter Debounce CTS
+                    // 4. Dispose Log Filter Debounce CTS
                     var oldFilterCts = Interlocked.Exchange(ref _logFilterCts, null);
                     if (oldFilterCts != null)
                     {
