@@ -1318,7 +1318,7 @@ namespace Servy.ViewModels
             RunAsLocalSystem = dto.RunAsLocalSystem ?? true;
             UserAccount = dto.UserAccount;
             Password = dto.Password;
-            ConfirmPassword = dto.Password; // Assuming confirm = password
+            ConfirmPassword = string.Empty;
             PreLaunchExecutablePath = dto.PreLaunchExecutablePath;
             PreLaunchStartupDirectory = dto.PreLaunchStartupDirectory;
             PreLaunchParameters = dto.PreLaunchParameters;

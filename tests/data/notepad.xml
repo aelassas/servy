@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ServiceDto xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>notepad</Name>
   <DisplayName />
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
