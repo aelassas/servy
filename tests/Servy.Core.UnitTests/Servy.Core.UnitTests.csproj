@@ -153,6 +153,7 @@
     <Compile Include="Helpers\StringHelperTests.cs" />
     <Compile Include="Services\XmlServiceSerializerTests.cs" />
     <Compile Include="Services\XmlServiceValidatorTests.cs" />
+    <Compile Include="Validators\ServiceValidationRulesTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

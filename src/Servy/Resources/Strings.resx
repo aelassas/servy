@@ -239,9 +239,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Info_MaxRotations" xml:space="preserve">
     <value>Maximum rotated log files to keep. Set to 0 for unlimited.</value>
   </data>
-  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
-    <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
-  </data>
 
   <!-- Health monitoring -->
   <data name="Label_EnableHealthMonitoring" xml:space="preserve">
@@ -290,12 +287,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Info_FailureProgramStartupDirectory" xml:space="preserve">
     <value>Optional. Defaults to the failure program directory.</value>
-  </data>
-  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
-    <value>The failure program path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
-    <value>The specified failure program startup directory is invalid.</value>
   </data>
 
   <!-- Environment Variables -->
@@ -359,24 +350,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="Info_PreLaunchTimeout" xml:space="preserve">
     <value>Set the timeout to 0 to run in fire-and-forget mode (disables retries and logging).</value>
   </data>
-  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
-    <value>The pre-launch process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
-    <value>The specified pre-launch startup directory is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
-    <value>The specified pre-launch stdout file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
-    <value>The specified pre-launch stderr file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
-    <value>Pre-Launch retry attempts must be a number between {0} and {1}.</value>
-  </data>
 
   <!-- XML/JSON import -->
   <data name="Msg_FailedToLoadXml" xml:space="preserve">
@@ -426,42 +399,6 @@ Copyright © {2} Akram El Assas. All rights reserved.
   </data>
   <data name="Button_Browse" xml:space="preserve">
     <value>Browse</value>
-  </data>
-
-  <!-- Messages -->
-  <data name="Msg_ValidationError" xml:space="preserve">
-    <value>Please fill in all required fields.</value>
-  </data>
-  <data name="Msg_ServiceNameError" xml:space="preserve">
-    <value>A service name is required to perform this action.</value>
-  </data>
-  <data name="Msg_InvalidPath" xml:space="preserve">
-    <value>The specified process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
-    <value>Service wrapper executable not found.</value>
-  </data>
-  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
-    <value>The specified startup directory is invalid.</value>
-  </data>
-
-  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
-    <value>The specified stdout file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidStderrPath" xml:space="preserve">
-    <value>The specified stderr file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be specified in megabytes (MB) between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
-    <value>Heartbeat interval must be a number of seconds between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
-    <value>Max Failed Checks must be a number between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
   </data>
 
   <data name="Msg_ServiceInstalled" xml:space="preserve">
@@ -516,13 +453,6 @@ If the service is disabled and marked for deletion, the installation will fail u
     <value>Optional. If not set, defaults to the directory of the post-launch program.</value>
   </data>
 
-  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
-    <value>The post-launch process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
-    <value>The specified post-launch startup directory is invalid.</value>
-  </data>
-
   <!--Debug-Logs-->
   <data name="Label_EnableDebugLogs" xml:space="preserve">
     <value>Enable Debug Logs</value>
@@ -538,18 +468,12 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_StartTimeout" xml:space="preserve">
     <value>The timeout in seconds to wait for the process to start successfully before considering the startup as failed.</value>
   </data>
-  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
-    <value>Start timeout must be a number between {0} and {1} seconds.</value>
-  </data>
 
   <data name="Label_StopTimeout" xml:space="preserve">
     <value>Stop Timeout</value>
   </data>
   <data name="Info_StopTimeout" xml:space="preserve">
     <value>The timeout in seconds to wait for the process to exit.</value>
-  </data>
-  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
-    <value>Stop timeout must be a number between {0} and {1} seconds.</value>
   </data>
 
   <!-- Pre-Stop -->
@@ -568,15 +492,6 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_PreStopTimeout" xml:space="preserve">
     <value>Set the timeout to 0 to run in fire-and-forget mode.</value>
   </data>
-  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
-    <value>The pre-stop process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
-    <value>The specified pre-stop startup directory is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
-    <value>Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
-  </data>
 
   <!-- Post-Stop -->
   <data name="Info_PostStop" xml:space="preserve">
@@ -585,25 +500,16 @@ If the service is disabled and marked for deletion, the installation will fail u
   <data name="Info_PostStopStartupDirectory" xml:space="preserve">
     <value>Optional. If not set, defaults to the directory of the post-stop program.</value>
   </data>
-  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
-    <value>The post-stop process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
-    <value>The specified post-stop startup directory is invalid.</value>
-  </data>
 
   <!--Miscellaneous-->
+  <data name="Msg_ServiceNameError" xml:space="preserve">
+    <value>A service name is required to perform this action.</value>
+  </data>
+  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
+    <value>Service wrapper executable not found.</value>
+  </data>
   <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
     <value>Configuration file exceeds maximum size (10 MB).</value>
-  </data>
-  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
-    <value>Service name exceeds {0} characters.</value>
-  </data>
-  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
-    <value>Display name exceeds {0} characters.</value>
-  </data>
-  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
-    <value>Description exceeds {0} characters.</value>
   </data>
   <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
     <value>Arguments exceed the Windows command-line limit of {0} characters.</value>

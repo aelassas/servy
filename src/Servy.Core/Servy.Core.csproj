@@ -124,6 +124,11 @@
     <Compile Include="Logging\LogLevel.cs" />
     <Compile Include="Native\Errors.cs" />
     <Compile Include="Native\Handle.cs" />
+    <Compile Include="Resources\Strings.Designer.cs">
+      <DependentUpon>Strings.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Services\IJsonServiceSerializer.cs" />
     <Compile Include="Services\IXmlServiceSerializer.cs" />
@@ -172,6 +177,8 @@
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
+    <Compile Include="Validators\ServiceValidationRules.cs" />
+    <Compile Include="Validators\ValidationResult.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -180,7 +187,12 @@
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugType>portable</DebugType>

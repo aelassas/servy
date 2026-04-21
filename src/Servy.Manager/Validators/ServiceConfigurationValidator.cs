@@ -1,281 +1,59 @@
 ﻿using Servy.Core.DTOs;
-using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
-using Servy.Core.Logging;
-using Servy.Core.Native;
-using Servy.Core.ServiceDependencies;
+using Servy.Core.Validators;
 using Servy.Manager.Config;
-using Servy.Manager.Resources;
 using Servy.UI.Services;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CoreHelper = Servy.Core.Helpers.Helper;
 
 namespace Servy.Manager.Validators
 {
     /// <summary>
-    /// Validates all required parameters for service configuration.
-    /// Can be reused in InstallService, Export XML/JSON, etc.
+    /// Implements service configuration validation for the Manager application, 
+    /// utilizing shared domain rules and displaying feedback via the UI.
     /// </summary>
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
     {
         private readonly IMessageBoxService _messageBoxService;
 
         /// <summary>
-        /// Creates a new service configuration validator.
+        /// Initializes a new instance of the <see cref="ServiceConfigurationValidator"/> class.
         /// </summary>
-        /// <param name="messageBoxService">MessageBox service.</param>
+        /// <param name="messageBoxService">The service used to display error and warning messages to the user.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="messageBoxService"/> is null.</exception>
         public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
         }
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Validates the provided service configuration and displays a message box if any issues are found.
+        /// </summary>
+        /// <param name="dto">The service configuration data to validate.</param>
+        /// <returns>
+        /// A task representing the asynchronous validation operation. 
+        /// The result is <see langword="true"/> if the configuration is valid; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// This implementation follows a fail-fast approach, showing only the first identified 
+        /// warning or error to prevent overwhelming the user with multiple dialog boxes.
+        /// </remarks>
         public async Task<bool> Validate(ServiceDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
+            // Delegate core validation logic to the centralized rules engine
+            var result = ServiceValidationRules.Validate(dto);
+
+            // Display warnings first to match the legacy validation sequence
+            if (result.Warnings.Any())
             {
-                await _messageBoxService.ShowWarningAsync(Strings.Msg_ValidationError, AppConfig.Caption);
+                await _messageBoxService.ShowWarningAsync(result.Warnings.First(), AppConfig.Caption);
                 return false;
             }
 
-            if (dto.Name.Length > Core.Config.AppConfig.MaxServiceNameLength)
+            // Display critical errors
+            if (result.Errors.Any())
             {
-                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_ServiceNameLengthReached, Core.Config.AppConfig.MaxServiceNameLength), AppConfig.Caption);
-                return false;
-            }
-
-            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.DisplayName?.Length > Core.Config.AppConfig.MaxDisplayNameLength)
-            {
-                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_DisplayNameLengthReached, Core.Config.AppConfig.MaxDisplayNameLength), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.Description?.Length > Core.Config.AppConfig.MaxDescriptionLength)
-            {
-                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_DescriptionLengthReached, Core.Config.AppConfig.MaxDescriptionLength), AppConfig.Caption);
-                return false;
-            }
-
-            // Validate all 6 parameter fields
-            var paramFields = new[]
-            {
-                dto.Parameters,
-                dto.PreLaunchParameters,
-                dto.PostLaunchParameters,
-                dto.PreStopParameters,
-                dto.PostStopParameters,
-                dto.FailureProgramParameters
-            };
-
-            if (paramFields.Any(p => p?.Length > Core.Config.AppConfig.MaxArgumentLength))
-            {
-                await _messageBoxService.ShowWarningAsync(string.Format(Strings.Msg_ArgumentsLengthReached, Core.Config.AppConfig.MaxArgumentLength), AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !ProcessHelper.ValidatePath(dto.StartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStartupDirectory, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.StdoutPath) &&
-                (!CoreHelper.IsValidPath(dto.StdoutPath) || !CoreHelper.CreateParentDirectory(dto.StdoutPath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStdoutPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.StderrPath) &&
-                (!CoreHelper.IsValidPath(dto.StderrPath) || !CoreHelper.CreateParentDirectory(dto.StderrPath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidStderrPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.StartTimeout.HasValue && (dto.StartTimeout < Core.Config.AppConfig.MinStartTimeout || dto.StartTimeout > Core.Config.AppConfig.MaxStartTimeout))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidStartTimeout, Core.Config.AppConfig.MinStartTimeout, Core.Config.AppConfig.MaxStartTimeout), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.StopTimeout.HasValue && (dto.StopTimeout < Core.Config.AppConfig.MinStopTimeout || dto.StopTimeout > Core.Config.AppConfig.MaxStopTimeout))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidStopTimeout, Core.Config.AppConfig.MinStopTimeout, Core.Config.AppConfig.MaxStopTimeout), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.RotationSize.HasValue && (dto.RotationSize < Core.Config.AppConfig.MinRotationSize || dto.RotationSize > Core.Config.AppConfig.MaxRotationSize))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidRotationSize, Core.Config.AppConfig.MinRotationSize, Core.Config.AppConfig.MaxRotationSize), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.MaxRotations.HasValue && (dto.MaxRotations < Core.Config.AppConfig.MinMaxRotations || dto.MaxRotations > Core.Config.AppConfig.MaxMaxRotations))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRotations, Core.Config.AppConfig.MinMaxRotations, Core.Config.AppConfig.MaxMaxRotations), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.HeartbeatInterval.HasValue && (dto.HeartbeatInterval < Core.Config.AppConfig.MinHeartbeatInterval || dto.HeartbeatInterval > Core.Config.AppConfig.MaxHeartbeatInterval))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidHeartbeatInterval, Core.Config.AppConfig.MinHeartbeatInterval, Core.Config.AppConfig.MaxHeartbeatInterval), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.MaxFailedChecks.HasValue && (dto.MaxFailedChecks < Core.Config.AppConfig.MinMaxFailedChecks || dto.MaxFailedChecks > Core.Config.AppConfig.MaxMaxFailedChecks))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxFailedChecks, Core.Config.AppConfig.MinMaxFailedChecks, Core.Config.AppConfig.MaxMaxFailedChecks), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.MaxRestartAttempts.HasValue && (dto.MaxRestartAttempts < Core.Config.AppConfig.MinMaxRestartAttempts || dto.MaxRestartAttempts > Core.Config.AppConfig.MaxMaxRestartAttempts))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidMaxRestartAttempts, Core.Config.AppConfig.MinMaxRestartAttempts, Core.Config.AppConfig.MaxMaxRestartAttempts), AppConfig.Caption);
-                return false;
-            }
-
-            // Failure Program
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && (!ProcessHelper.ValidatePath(dto.FailureProgramPath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) && !ProcessHelper.ValidatePath(dto.FailureProgramStartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidFailureProgramStartupDirectory, AppConfig.Caption);
-                return false;
-            }
-
-            if ((!dto.RunAsLocalSystem.HasValue || !dto.RunAsLocalSystem.Value) && !string.IsNullOrWhiteSpace(dto.UserAccount))
-            {
-                try
-                {
-                    NativeMethods.ValidateCredentials(dto.UserAccount, dto.Password);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Credential validation failed", ex);
-                    await _messageBoxService.ShowErrorAsync(ex.Message, AppConfig.Caption);
-                    return false;
-                }
-            }
-
-            string normalizedEnvVars = StringHelper.NormalizeString(dto.EnvironmentVariables);
-            if (!EnvironmentVariablesValidator.Validate(normalizedEnvVars, out var envErrorMsg))
-            {
-                await _messageBoxService.ShowErrorAsync(envErrorMsg, AppConfig.Caption);
-                return false;
-            }
-
-            string normalizedDeps = StringHelper.NormalizeString(dto.ServiceDependencies);
-            if (!ServiceDependenciesValidator.Validate(normalizedDeps, out var depsErrors))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Join("\n", depsErrors), AppConfig.Caption);
-                return false;
-            }
-
-            // Pre-launch validation
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) &&
-                (!ProcessHelper.ValidatePath(dto.PreLaunchExecutablePath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreLaunchStartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStartupDirectory, AppConfig.Caption);
-                return false;
-            }
-
-            string normalizedPreLaunchEnvVars = StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables);
-            if (!EnvironmentVariablesValidator.Validate(normalizedPreLaunchEnvVars, out var preLaunchEnvErrorMsg))
-            {
-                await _messageBoxService.ShowErrorAsync(preLaunchEnvErrorMsg, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStdoutPath) &&
-                (!CoreHelper.IsValidPath(dto.PreLaunchStdoutPath) || !CoreHelper.CreateParentDirectory(dto.PreLaunchStdoutPath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStdoutPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStderrPath) &&
-                (!CoreHelper.IsValidPath(dto.PreLaunchStderrPath) || !CoreHelper.CreateParentDirectory(dto.PreLaunchStderrPath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreLaunchStderrPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.PreLaunchTimeoutSeconds.HasValue && (dto.PreLaunchTimeoutSeconds < Core.Config.AppConfig.MinPreLaunchTimeoutSeconds || dto.PreLaunchTimeoutSeconds > Core.Config.AppConfig.MaxPreLaunchTimeoutSeconds))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreLaunchTimeout, Core.Config.AppConfig.MinPreLaunchTimeoutSeconds, Core.Config.AppConfig.MaxPreLaunchTimeoutSeconds), AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.PreLaunchRetryAttempts.HasValue && (dto.PreLaunchRetryAttempts < Core.Config.AppConfig.MinPreLaunchRetryAttempts || dto.PreLaunchRetryAttempts > Core.Config.AppConfig.MaxPreLaunchRetryAttempts))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, Core.Config.AppConfig.MinPreLaunchRetryAttempts, Core.Config.AppConfig.MaxPreLaunchRetryAttempts), AppConfig.Caption);
-                return false;
-            }
-
-            // Post-launch validation
-            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath) &&
-                (!ProcessHelper.ValidatePath(dto.PostLaunchExecutablePath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostLaunchStartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostLaunchStartupDirectory, AppConfig.Caption);
-                return false;
-            }
-
-            // Pre-stop validation
-            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath) &&
-                (!ProcessHelper.ValidatePath(dto.PreStopExecutablePath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PreStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreStopStartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPreStopStartupDirectory, AppConfig.Caption);
-                return false;
-            }
-
-            if (dto.PreStopTimeoutSeconds.HasValue && (dto.PreStopTimeoutSeconds < Core.Config.AppConfig.MinPreStopTimeoutSeconds || dto.PreStopTimeoutSeconds > Core.Config.AppConfig.MaxPreStopTimeoutSeconds))
-            {
-                await _messageBoxService.ShowErrorAsync(string.Format(Strings.Msg_InvalidPreStopTimeout, Core.Config.AppConfig.MinPreStopTimeoutSeconds, Core.Config.AppConfig.MaxPreStopTimeoutSeconds), AppConfig.Caption);
-                return false;
-            }
-
-            // Post-stop validation
-            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath) &&
-                (!ProcessHelper.ValidatePath(dto.PostStopExecutablePath)))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostStopPath, AppConfig.Caption);
-                return false;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PostStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostStopStartupDirectory, false))
-            {
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_InvalidPostStopStartupDirectory, AppConfig.Caption);
+                await _messageBoxService.ShowErrorAsync(result.Errors.First(), AppConfig.Caption);
                 return false;
             }
 

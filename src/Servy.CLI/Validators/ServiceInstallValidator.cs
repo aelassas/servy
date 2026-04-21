@@ -1,252 +1,191 @@
-﻿using Servy.CLI.Models;
+﻿using CommandLine;
+using Servy.CLI.Models;
 using Servy.CLI.Options;
-using Servy.CLI.Resources;
-using Servy.Core.Config;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using Servy.Core.EnvironmentVariables;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using Servy.Core.Native;
+using Servy.Core.Resources;
+using Servy.Core.Validators;
 using System;
 using System.Linq;
 
 namespace Servy.CLI.Validators
 {
     /// <summary>
-    /// Validates the options for installing a service.
+    /// Validates the installation options for a new service in the CLI environment.
+    /// This class bridges CLI-specific options with the shared core validation logic.
     /// </summary>
     public class ServiceInstallValidator : IServiceInstallValidator
     {
-        ///<inheritdoc/>
+        /// <summary>
+        /// Validates the provided <see cref="InstallServiceOptions"/> by mapping them to a domain DTO 
+        /// and executing centralized validation rules.
+        /// </summary>
+        /// <param name="opts">The command-line options provided for the install command.</param>
+        /// <returns>
+        /// A <see cref="CommandResult"/> indicating whether validation passed or detailing the first encountered issue.
+        /// </returns>
         public CommandResult Validate(InstallServiceOptions opts)
         {
-            if (string.IsNullOrWhiteSpace(opts.ServiceName) || string.IsNullOrWhiteSpace(opts.ProcessPath))
-                return CommandResult.Fail(Strings.Msg_ValidationError);
-
-            if (opts.ServiceName.Length > AppConfig.MaxServiceNameLength)
+            // Note: Add a mapping step here (e.g., opts.ToServiceDto()) 
+            // Any int.TryParse format failures during mapping should return an early CommandResult.Fail.
+            if (!TryMapToDto(opts, out var dto, out var mappingError))
             {
-                return CommandResult.Fail(string.Format(Strings.Msg_ServiceNameLengthReached, AppConfig.MaxServiceNameLength));
+                return CommandResult.Fail(mappingError);
             }
 
-            if (!ProcessHelper.ValidatePath(opts.ProcessPath))
-                return CommandResult.Fail(Strings.Msg_InvalidPath);
+            var result = ServiceValidationRules.Validate(dto);
 
-            if (opts.ServiceDisplayName?.Length > AppConfig.MaxDisplayNameLength)
+            if (!result.IsValid)
             {
-                return CommandResult.Fail(string.Format(Strings.Msg_DisplayNameLengthReached, AppConfig.MaxDisplayNameLength));
+                // CLI typically reports one error at a time for better readability
+                var firstIssue = result.Warnings.Concat(result.Errors).First();
+                return CommandResult.Fail(firstIssue);
             }
 
-            if (opts.ServiceDescription?.Length > AppConfig.MaxDescriptionLength)
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_DescriptionLengthReached, AppConfig.MaxDescriptionLength));
-            }
-
-            // Validate all 6 parameter fields
-            var paramFields = new[]
-            {
-                opts.ProcessParameters,
-                opts.PreLaunchParameters,
-                opts.PostLaunchParameters,
-                opts.PreStopParameters,
-                opts.PostStopParameters,
-                opts.FailureProgramParameters
-            };
-
-            if (paramFields.Any(p => p?.Length > AppConfig.MaxArgumentLength))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_ArgumentsLengthReached, AppConfig.MaxArgumentLength));
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.StartupDirectory) && !ProcessHelper.ValidatePath(opts.StartupDirectory, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidStartupDirectory);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.StdoutPath) && (!Helper.IsValidPath(opts.StdoutPath) || !Helper.CreateParentDirectory(opts.StdoutPath)))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidStdoutPath);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.StderrPath) && (!Helper.IsValidPath(opts.StderrPath) || !Helper.CreateParentDirectory(opts.StderrPath)))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidStderrPath);
-            }
-
-            if (!ValidateEnumOption<ServiceStartType>(opts.ServiceStartType))
-                return CommandResult.Fail(Strings.Msg_InvalidStartupType);
-
-            if (!ValidateEnumOption<ProcessPriority>(opts.ProcessPriority))
-                return CommandResult.Fail(Strings.Msg_InvalidProcessPriority);
-
-            if (!string.IsNullOrWhiteSpace(opts.StartTimeout) && (!int.TryParse(opts.StartTimeout, out var startTimeout) || startTimeout < AppConfig.MinStartTimeout || startTimeout > AppConfig.MaxStartTimeout))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidStartTimeout, AppConfig.MinStartTimeout, AppConfig.MaxStartTimeout));
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.StopTimeout) && (!int.TryParse(opts.StopTimeout, out var stopTimeout) || stopTimeout < AppConfig.MinStopTimeout || stopTimeout > AppConfig.MaxStopTimeout))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidStopTimeout, AppConfig.MinStopTimeout, AppConfig.MaxStopTimeout));
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.RotationSize)
-                && (!int.TryParse(opts.RotationSize, out var rotation) || rotation < AppConfig.MinRotationSize || rotation > AppConfig.MaxRotationSize))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidRotationSize, AppConfig.MinRotationSize, AppConfig.MaxRotationSize));
-            }
-
-            if (!ValidateEnumOption<DateRotationType>(opts.DateRotationType))
-                return CommandResult.Fail(Strings.Msg_InvalidDateRotationType);
-
-            if (!string.IsNullOrWhiteSpace(opts.MaxRotations) && (!int.TryParse(opts.MaxRotations, out var maxRotations) || maxRotations < 0 || maxRotations > AppConfig.MaxMaxRotations))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidMaxRotations, AppConfig.MinMaxRotations, AppConfig.MaxMaxRotations));
-            }
-
-            if (opts.EnableHealthMonitoring)
-            {
-                if (!int.TryParse(opts.HeartbeatInterval, out var hb) || hb < AppConfig.MinHeartbeatInterval || hb > AppConfig.MaxHeartbeatInterval)
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidHeartbeatInterval, AppConfig.MinHeartbeatInterval, AppConfig.MaxHeartbeatInterval));
-
-                if (!int.TryParse(opts.MaxFailedChecks, out var failed) || failed < AppConfig.MinMaxFailedChecks || failed > AppConfig.MaxMaxFailedChecks)
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidMaxFailedChecks, AppConfig.MinMaxFailedChecks, AppConfig.MaxMaxFailedChecks));
-
-                if (!ValidateEnumOption<RecoveryAction>(opts.RecoveryAction))
-                    return CommandResult.Fail(Strings.Msg_InvalidRecoveryAction);
-
-                if (!string.IsNullOrWhiteSpace(opts.MaxRestartAttempts)
-                   && (!int.TryParse(opts.MaxRestartAttempts, out var restart) || restart < AppConfig.MinMaxRestartAttempts || restart > AppConfig.MaxMaxRestartAttempts))
-                    return CommandResult.Fail(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts));
-            }
-            else
-            {
-                // Prevent silent misconfiguration. 
-                // If Health Monitoring is OFF, specifying recovery behavior is an error.
-
-                bool hasHeartbeatInterval = !string.IsNullOrWhiteSpace(opts.HeartbeatInterval);
-
-                bool hasMaxFailedChecks = !string.IsNullOrWhiteSpace(opts.MaxFailedChecks);
-
-                bool hasRecoveryAction = !string.IsNullOrWhiteSpace(opts.RecoveryAction) &&
-                                         !opts.RecoveryAction.Equals("None", StringComparison.OrdinalIgnoreCase);
-
-                bool hasRestartAttempts = !string.IsNullOrWhiteSpace(opts.MaxRestartAttempts);
-
-                if (hasHeartbeatInterval || hasMaxFailedChecks || hasRecoveryAction || hasRestartAttempts)
-                {
-                    return CommandResult.Fail(Strings.Msg_InvalidRecoveryConfig);
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.FailureProgramPath) && (!ProcessHelper.ValidatePath(opts.FailureProgramPath)))
-                return CommandResult.Fail(Strings.Msg_InvalidFailureProgramPath);
-
-            if (!string.IsNullOrWhiteSpace(opts.FailureProgramStartupDir) && !ProcessHelper.ValidatePath(opts.FailureProgramStartupDir, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidFailureProgramStartupDirectory);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.User))
-            {
-                try
-                {
-                    NativeMethods.ValidateCredentials(opts.User, opts.Password);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error("Credential validation failed.", ex);
-                    return CommandResult.Fail(ex.Message);
-                }
-            }
-
-            string envVarsErrorMessage;
-            if (!EnvironmentVariablesValidator.Validate(opts.EnvironmentVariables, out envVarsErrorMessage))
-                return CommandResult.Fail(envVarsErrorMessage);
-
-            // PreLaunch
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchPath) && (!ProcessHelper.ValidatePath(opts.PreLaunchPath)))
-                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchPath);
-
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStartupDir) && !ProcessHelper.ValidatePath(opts.PreLaunchStartupDir, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStartupDirectory);
-            }
-
-            string preLaunchEnvVarsErrorMessage;
-            if (!EnvironmentVariablesValidator.Validate(opts.PreLaunchEnvironmentVariables, out preLaunchEnvVarsErrorMessage))
-                return CommandResult.Fail(preLaunchEnvVarsErrorMessage);
-
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStdoutPath) && (!Helper.IsValidPath(opts.PreLaunchStdoutPath) || !Helper.CreateParentDirectory(opts.PreLaunchStdoutPath)))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStdoutPath);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchStderrPath) && (!Helper.IsValidPath(opts.PreLaunchStderrPath) || !Helper.CreateParentDirectory(opts.PreLaunchStderrPath)))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPreLaunchStderrPath);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchTimeout) && (!int.TryParse(opts.PreLaunchTimeout, out int preLaunchTimeoutValue) || preLaunchTimeoutValue < AppConfig.MinPreLaunchTimeoutSeconds || preLaunchTimeoutValue > AppConfig.MaxPreLaunchTimeoutSeconds))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidPreLaunchTimeout, AppConfig.MinPreLaunchTimeoutSeconds, AppConfig.MaxPreLaunchTimeoutSeconds));
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.PreLaunchRetryAttempts) && (!int.TryParse(opts.PreLaunchRetryAttempts, out int preLaunchRetryAttemptsValue) || preLaunchRetryAttemptsValue < AppConfig.MinPreLaunchRetryAttempts || preLaunchRetryAttemptsValue > AppConfig.MaxPreLaunchRetryAttempts))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts));
-            }
-
-            // Post-Launch
-            if (!string.IsNullOrWhiteSpace(opts.PostLaunchPath) && (!ProcessHelper.ValidatePath(opts.PostLaunchPath)))
-                return CommandResult.Fail(Strings.Msg_InvalidPostLaunchPath);
-
-            if (!string.IsNullOrWhiteSpace(opts.PostLaunchStartupDir) && !ProcessHelper.ValidatePath(opts.PostLaunchStartupDir, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPostLaunchStartupDirectory);
-            }
-
-            // Pre-Stop
-            if (!string.IsNullOrWhiteSpace(opts.PreStopPath) && (!ProcessHelper.ValidatePath(opts.PreStopPath)))
-                return CommandResult.Fail(Strings.Msg_InvalidPreStopPath);
-
-            if (!string.IsNullOrWhiteSpace(opts.PreStopStartupDir) && !ProcessHelper.ValidatePath(opts.PreStopStartupDir, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPreStopStartupDirectory);
-            }
-
-            if (!string.IsNullOrWhiteSpace(opts.PreStopTimeout) && (!int.TryParse(opts.PreStopTimeout, out int preStopTimeoutValue) || preStopTimeoutValue < AppConfig.MinPreStopTimeoutSeconds || preStopTimeoutValue > AppConfig.MaxPreStopTimeoutSeconds))
-            {
-                return CommandResult.Fail(string.Format(Strings.Msg_InvalidPreStopTimeout, AppConfig.MinPreStopTimeoutSeconds, AppConfig.MaxPreStopTimeoutSeconds));
-            }
-
-            // Post-Stop
-            if (!string.IsNullOrWhiteSpace(opts.PostStopPath) && (!ProcessHelper.ValidatePath(opts.PostStopPath)))
-                return CommandResult.Fail(Strings.Msg_InvalidPostStopPath);
-
-            if (!string.IsNullOrWhiteSpace(opts.PostStopStartupDir) && !ProcessHelper.ValidatePath(opts.PostStopStartupDir, false))
-            {
-                return CommandResult.Fail(Strings.Msg_InvalidPostStopStartupDirectory);
-            }
-
-            // Use the localized resource with the service name for clear confirmation
             var successMsg = string.Format(Strings.Msg_ValidationPassed, opts.ServiceName);
-
             Logger.Info(successMsg);
+
             return CommandResult.Ok(successMsg);
         }
 
         /// <summary>
-        /// Validates whether a string option represents a valid value of the enum type <typeparamref name="T"/>.
-        /// Null or whitespace values are considered valid.
+        /// Attempts to map raw CLI string options into a structured <see cref="ServiceDto"/>.
+        /// This method handles initial type conversion (parsing integers and enums).
         /// </summary>
-        /// <typeparam name="T">The enum type to validate against.</typeparam>
-        /// <param name="option">The string option value.</param>
-        /// <returns>True if the option is null/empty or a valid enum value; otherwise, false.</returns>
-        private static bool ValidateEnumOption<T>(string option) where T : struct, Enum
+        /// <param name="opts">The source CLI options.</param>
+        /// <param name="dto">When this method returns, contains the mapped <see cref="ServiceDto"/> if parsing succeeded; otherwise, <see langword="null"/>.</param>
+        /// <param name="error">When this method returns, contains an error message if parsing failed; otherwise, <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if all options were successfully parsed and mapped; otherwise, <see langword="false"/>.</returns>
+        private bool TryMapToDto(InstallServiceOptions opts, out ServiceDto dto, out string error)
         {
-            if (string.IsNullOrWhiteSpace(option))
-                return true;
+            dto = null;
+            string internalError = null;
 
-            return Enum.TryParse<T>(option, true, out _);
+            // Local functions capture the local 'internalError' variable, which is allowed.
+            // Note: We use 'int?' and 'where T : struct' for standard 4.8 compatibility.
+            int? ParseInt(string val, string propertyName)
+            {
+                if (internalError != null || string.IsNullOrWhiteSpace(val)) return null;
+
+                int result;
+                if (int.TryParse(val, out result))
+                    return result;
+
+                internalError = string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val);
+                return null;
+            }
+
+            int? ParseEnum<T>(string val, string propertyName) where T : struct
+            {
+                if (internalError != null || string.IsNullOrWhiteSpace(val)) return null;
+
+                T result;
+                if (Enum.TryParse<T>(val, true, out result)) return (int)(object)result;
+
+                internalError = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
+                    GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T))));
+                return null;
+            }
+
+            // 1. Map typed arguments using nameof() to fetch attribute names dynamically
+            var startupType = ParseEnum<ServiceStartType>(opts.ServiceStartType, nameof(opts.ServiceStartType));
+            var priority = ParseEnum<ProcessPriority>(opts.ProcessPriority, nameof(opts.ProcessPriority));
+            var rotationSize = ParseInt(opts.RotationSize, nameof(opts.RotationSize));
+            var dateRotationType = ParseEnum<DateRotationType>(opts.DateRotationType, nameof(opts.DateRotationType));
+            var maxRotations = ParseInt(opts.MaxRotations, nameof(opts.MaxRotations));
+
+            var heartbeatInterval = ParseInt(opts.HeartbeatInterval, nameof(opts.HeartbeatInterval));
+            var maxFailedChecks = ParseInt(opts.MaxFailedChecks, nameof(opts.MaxFailedChecks));
+            var recoveryAction = ParseEnum<RecoveryAction>(opts.RecoveryAction, nameof(opts.RecoveryAction));
+            var maxRestartAttempts = ParseInt(opts.MaxRestartAttempts, nameof(opts.MaxRestartAttempts));
+
+            var preLaunchTimeout = ParseInt(opts.PreLaunchTimeout, nameof(opts.PreLaunchTimeout));
+            var preLaunchRetryAttempts = ParseInt(opts.PreLaunchRetryAttempts, nameof(opts.PreLaunchRetryAttempts));
+
+            var startTimeout = ParseInt(opts.StartTimeout, nameof(opts.StartTimeout));
+            var stopTimeout = ParseInt(opts.StopTimeout, nameof(opts.StopTimeout));
+            var preStopTimeout = ParseInt(opts.PreStopTimeout, nameof(opts.PreStopTimeout));
+
+            if (internalError != null)
+            {
+                error = internalError;
+                return false;
+            }
+
+            // 2. Build the DTO
+            dto = new ServiceDto
+            {
+                Name = opts.ServiceName ?? string.Empty,
+                DisplayName = opts.ServiceDisplayName ?? string.Empty,
+                Description = opts.ServiceDescription,
+                ExecutablePath = opts.ProcessPath ?? string.Empty,
+                StartupDirectory = opts.StartupDirectory,
+                Parameters = opts.ProcessParameters,
+                StartupType = startupType,
+                Priority = priority,
+                StdoutPath = opts.StdoutPath,
+                StderrPath = opts.StderrPath,
+                EnableSizeRotation = opts.EnableSizeRotation || opts.EnableRotation,
+                RotationSize = rotationSize,
+                EnableDateRotation = opts.EnableDateRotation,
+                DateRotationType = dateRotationType,
+                MaxRotations = maxRotations,
+                UseLocalTimeForRotation = opts.UseLocalTimeForRotation,
+                EnableHealthMonitoring = opts.EnableHealthMonitoring,
+                HeartbeatInterval = heartbeatInterval,
+                MaxFailedChecks = maxFailedChecks,
+                RecoveryAction = recoveryAction,
+                MaxRestartAttempts = maxRestartAttempts,
+                FailureProgramPath = opts.FailureProgramPath,
+                FailureProgramStartupDirectory = opts.FailureProgramStartupDir,
+                FailureProgramParameters = opts.FailureProgramParameters,
+                EnvironmentVariables = opts.EnvironmentVariables,
+                ServiceDependencies = opts.ServiceDependencies,
+                UserAccount = opts.User,
+                Password = opts.Password,
+                RunAsLocalSystem = string.IsNullOrWhiteSpace(opts.User),
+                PreLaunchExecutablePath = opts.PreLaunchPath,
+                PreLaunchStartupDirectory = opts.PreLaunchStartupDir,
+                PreLaunchParameters = opts.PreLaunchParameters,
+                PreLaunchEnvironmentVariables = opts.PreLaunchEnvironmentVariables,
+                PreLaunchStdoutPath = opts.PreLaunchStdoutPath,
+                PreLaunchStderrPath = opts.PreLaunchStderrPath,
+                PreLaunchTimeoutSeconds = preLaunchTimeout,
+                PreLaunchRetryAttempts = preLaunchRetryAttempts,
+                PreLaunchIgnoreFailure = opts.PreLaunchIgnoreFailure,
+                PostLaunchExecutablePath = opts.PostLaunchPath,
+                PostLaunchStartupDirectory = opts.PostLaunchStartupDir,
+                PostLaunchParameters = opts.PostLaunchParameters,
+                EnableDebugLogs = opts.EnableDebugLogs,
+                StartTimeout = startTimeout,
+                StopTimeout = stopTimeout,
+                PreStopExecutablePath = opts.PreStopPath,
+                PreStopStartupDirectory = opts.PreStopStartupDir,
+                PreStopParameters = opts.PreStopParameters,
+                PreStopTimeoutSeconds = preStopTimeout,
+                PreStopLogAsError = opts.PreStopLogAsError,
+                PostStopExecutablePath = opts.PostStopPath,
+                PostStopStartupDirectory = opts.PostStopStartupDir,
+                PostStopParameters = opts.PostStopParameters
+            };
+
+            error = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Retrieves the CLI option name associated with a property using reflection on <see cref="OptionAttribute"/>.
+        /// </summary>
+        /// <param name="propertyName">The name of the property in <see cref="InstallServiceOptions"/>.</param>
+        /// <returns>The CLI flag name (e.g., "--name") or the property name if no attribute is found.</returns>
+        private static string GetOptionName(string propertyName)
+        {
+            var prop = typeof(InstallServiceOptions).GetProperty(propertyName);
+            if (prop == null) return propertyName;
+
+            var attr = Attribute.GetCustomAttribute(prop, typeof(OptionAttribute)) as OptionAttribute;
+            return attr != null ? "--" + attr.LongName : propertyName;
         }
     }
 }

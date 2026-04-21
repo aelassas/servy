@@ -259,15 +259,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Event Id.
-        /// </summary>
-        public static string Column_EventId {
-            get {
-                return ResourceManager.GetString("Column_EventId", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Level.
         /// </summary>
         public static string Column_Level {
@@ -475,15 +466,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à All Levels.
-        /// </summary>
-        public static string Label_AllLevel {
-            get {
-                return ResourceManager.GetString("Label_AllLevel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Console.
         /// </summary>
         public static string Label_ConsoleTab {
@@ -588,15 +570,6 @@ namespace Servy.Manager.Resources {
         public static string Label_Level {
             get {
                 return ResourceManager.GetString("Label_Level", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Local System.
-        /// </summary>
-        public static string Label_LocalSytem {
-            get {
-                return ResourceManager.GetString("Label_LocalSytem", resourceCulture);
             }
         }
         
@@ -727,15 +700,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Administrator privileges are required..
-        /// </summary>
-        public static string Msg_AdminRightsRequired {
-            get {
-                return ResourceManager.GetString("Msg_AdminRightsRequired", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à All operations failed..
         /// </summary>
         public static string Msg_AllOperationsFailed {
@@ -772,24 +736,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Description exceeds {0} characters..
-        /// </summary>
-        public static string Msg_DescriptionLengthReached {
-            get {
-                return ResourceManager.GetString("Msg_DescriptionLengthReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Display name exceeds {0} characters..
-        /// </summary>
-        public static string Msg_DisplayNameLengthReached {
-            get {
-                return ResourceManager.GetString("Msg_DisplayNameLengthReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Failed to load JSON service configuration..
         /// </summary>
         public static string Msg_FailedToLoadJson {
@@ -804,240 +750,6 @@ namespace Servy.Manager.Resources {
         public static string Msg_FailedToLoadXml {
             get {
                 return ResourceManager.GetString("Msg_FailedToLoadXml", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The failure program path is invalid..
-        /// </summary>
-        public static string Msg_InvalidFailureProgramPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidFailureProgramPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified failure program startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidFailureProgramStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidFailureProgramStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Heartbeat interval must be a number between {0} and {1}..
-        /// </summary>
-        public static string Msg_InvalidHeartbeatInterval {
-            get {
-                return ResourceManager.GetString("Msg_InvalidHeartbeatInterval", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max Failed Checks must be a number between {0} and {1}..
-        /// </summary>
-        public static string Msg_InvalidMaxFailedChecks {
-            get {
-                return ResourceManager.GetString("Msg_InvalidMaxFailedChecks", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts..
-        /// </summary>
-        public static string Msg_InvalidMaxRestartAttempts {
-            get {
-                return ResourceManager.GetString("Msg_InvalidMaxRestartAttempts", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations..
-        /// </summary>
-        public static string Msg_InvalidMaxRotations {
-            get {
-                return ResourceManager.GetString("Msg_InvalidMaxRotations", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The post-launch process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPostLaunchPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPostLaunchPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified post-launch startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidPostLaunchStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPostLaunchStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The post-stop process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPostStopPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPostStopPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified post-stop startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidPostStopStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPostStopStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The pre-launch process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch retry attempts must be a number between {0} and {1}..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchRetryAttempts {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchRetryAttempts", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified pre-launch startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified pre-launch stderr file path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchStderrPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchStderrPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified pre-launch stdout file path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchStdoutPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchStdoutPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service&apos;s ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode..
-        /// </summary>
-        public static string Msg_InvalidPreLaunchTimeout {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreLaunchTimeout", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The pre-stop process path is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreStopPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreStopPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified pre-stop startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidPreStopStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreStopStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode..
-        /// </summary>
-        public static string Msg_InvalidPreStopTimeout {
-            get {
-                return ResourceManager.GetString("Msg_InvalidPreStopTimeout", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Rotation size must be a number of Megabytes (MB) between {0} and {1}..
-        /// </summary>
-        public static string Msg_InvalidRotationSize {
-            get {
-                return ResourceManager.GetString("Msg_InvalidRotationSize", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Start timeout must be a number between {0} and {1} seconds..
-        /// </summary>
-        public static string Msg_InvalidStartTimeout {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStartTimeout", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified startup directory is invalid..
-        /// </summary>
-        public static string Msg_InvalidStartupDirectory {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStartupDirectory", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified stderr file path is invalid..
-        /// </summary>
-        public static string Msg_InvalidStderrPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStderrPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à The specified stdout file path is invalid..
-        /// </summary>
-        public static string Msg_InvalidStdoutPath {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStdoutPath", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Stop timeout must be a number between {0} and {1} seconds..
-        /// </summary>
-        public static string Msg_InvalidStopTimeout {
-            get {
-                return ResourceManager.GetString("Msg_InvalidStopTimeout", resourceCulture);
             }
         }
         
@@ -1134,29 +846,11 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service name exceeds {0} characters..
-        /// </summary>
-        public static string Msg_ServiceNameLengthReached {
-            get {
-                return ResourceManager.GetString("Msg_ServiceNameLengthReached", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à Service not found..
         /// </summary>
         public static string Msg_ServiceNotFound {
             get {
                 return ResourceManager.GetString("Msg_ServiceNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service was removed successfully..
-        /// </summary>
-        public static string Msg_ServiceRemoved {
-            get {
-                return ResourceManager.GetString("Msg_ServiceRemoved", resourceCulture);
             }
         }
         
@@ -1188,15 +882,6 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Service was uninstalled successfully..
-        /// </summary>
-        public static string Msg_ServiceUninstalled {
-            get {
-                return ResourceManager.GetString("Msg_ServiceUninstalled", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Recherche une chaîne localisée semblable à An unexpected error occurred..
         /// </summary>
         public static string Msg_UnexpectedError {
@@ -1211,15 +896,6 @@ namespace Servy.Manager.Resources {
         public static string Msg_UninstallServiceConfirm {
             get {
                 return ResourceManager.GetString("Msg_UninstallServiceConfirm", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à Please fill in all required fields..
-        /// </summary>
-        public static string Msg_ValidationError {
-            get {
-                return ResourceManager.GetString("Msg_ValidationError", resourceCulture);
             }
         }
         
