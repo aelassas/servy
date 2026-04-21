@@ -70,9 +70,7 @@ namespace Servy.Infrastructure.Data
 
                     Logger.Warn($"Database busy (sync attempt {i + 1}/{SyncMaxRetries}). Spinning for {delay}ms...");
 
-                    // Use SpinWait to pause the current thread. 
-                    // Unlike Thread.Sleep, this avoids parking the thread and starving the ThreadPool for short durations.
-                    SpinWait.SpinUntil(() => false, delay);
+                    Thread.Sleep(delay);
                 }
             }
             return default;
