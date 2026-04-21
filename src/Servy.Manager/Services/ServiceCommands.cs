@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Common;
 using Servy.Core.Data;
+using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -347,166 +348,44 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task ExportServiceToXmlAsync(Service service)
-        {
-            try
-            {
-                var path = _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle);
-                if (string.IsNullOrEmpty(path)) return;
-
-                var dto = await _serviceRepository.GetByNameAsync(service.Name);
-                if (dto == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
-                    return;
-                }
-
-                ServiceExporter.ExportXml(dto, path);
-                await _messageBoxService.ShowInfoAsync(Strings.ExportXml_Success, AppConfig.Caption);
-                Logger.Info($"Service configuration exported to XML at: {path}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to export XML of {service.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-            }
-        }
+        public Task ExportServiceToXmlAsync(Service service) =>
+            ExportServiceConfigAsync(
+                service,
+                () => _fileDialogService.SaveXml(Strings.SaveFileDialog_XmlTitle),
+                ServiceExporter.ExportXml,
+                "XML",
+                Strings.ExportXml_Success);
 
         /// <inheritdoc />
-        public async Task ExportServiceToJsonAsync(Service service)
-        {
-            try
-            {
-                var path = _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle);
-                if (string.IsNullOrEmpty(path)) return;
-
-                var dto = await _serviceRepository.GetByNameAsync(service.Name);
-                if (dto == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
-                    return;
-                }
-
-                ServiceExporter.ExportJson(dto, path);
-                await _messageBoxService.ShowInfoAsync(Strings.ExportJson_Success, AppConfig.Caption);
-                Logger.Info($"Service configuration exported to JSON at: {path}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to export JSON of {service.Name}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-            }
-        }
+        public Task ExportServiceToJsonAsync(Service service) =>
+            ExportServiceConfigAsync(
+                service,
+                () => _fileDialogService.SaveJson(Strings.SaveFileDialog_JsonTitle),
+                ServiceExporter.ExportJson,
+                "JSON",
+                Strings.ExportJson_Success);
 
         /// <inheritdoc />
-        public async Task ImportXmlConfigAsync()
-        {
-            var path = _fileDialogService.OpenXml();
-            if (string.IsNullOrEmpty(path)) return;
-
-            try
-            {
-                if (!await ImportGuard.ValidateFileSizeAsync(
-                        path,
-                        _messageBoxService,
-                        AppConfig.Caption,
-                        Core.Config.AppConfig.MaxConfigFileSizeMB,
-                        Strings.Msg_ConfigSizeLimitReached))
-                {
-                    return;
-                }
-
-                var xml = await File.ReadAllTextAsync(path);
-                if (!XmlServiceValidator.TryValidate(xml, out var errorMsg))
-                {
-                    await _messageBoxService.ShowErrorAsync(errorMsg, AppConfig.Caption);
-                    return;
-                }
-
-                var serializer = new XmlServiceSerializer();
-                var dto = serializer.Deserialize(xml);
-                if (dto == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadXml, AppConfig.Caption);
-                    return;
-                }
-
-                if (!await _serviceConfigurationValidator.Validate(dto)) return;
-
-                var res = await _serviceRepository.UpsertAsync(dto);
-                if (res > 0)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.ImportXml_Success, AppConfig.Caption);
-                    await RefreshServices();
-                    Logger.Info($"Service configuration imported from XML at: {path}");
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.ImportXml_Error, AppConfig.Caption);
-                    Logger.Error($"Failed to import XML config from {path}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to import XML config from {path}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-            }
-        }
+        public Task ImportXmlConfigAsync() =>
+            ImportConfigAsync(
+                _fileDialogService.OpenXml,
+                (content) => { var isValid = XmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => new XmlServiceSerializer().Deserialize(content),
+                "XML",
+                Strings.Msg_FailedToLoadXml,
+                Strings.ImportXml_Success,
+                Strings.ImportXml_Error);
 
         /// <inheritdoc />
-        public async Task ImportJsonConfigAsync()
-        {
-            var path = _fileDialogService.OpenJson();
-            if (string.IsNullOrEmpty(path)) return;
-
-            try
-            {
-                if (!await ImportGuard.ValidateFileSizeAsync(
-                        path,
-                        _messageBoxService,
-                        AppConfig.Caption,
-                        Core.Config.AppConfig.MaxConfigFileSizeMB,
-                        Strings.Msg_ConfigSizeLimitReached))
-                {
-                    return;
-                }
-
-                var json = await File.ReadAllTextAsync(path);
-                if (!JsonServiceValidator.TryValidate(json, out var errorMsg))
-                {
-                    await _messageBoxService.ShowErrorAsync(errorMsg, AppConfig.Caption);
-                    return;
-                }
-
-                var serializer = new JsonServiceSerializer();
-                var dto = serializer.Deserialize(json);
-                if (dto == null)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_FailedToLoadJson, AppConfig.Caption);
-                    return;
-                }
-
-                if (!await _serviceConfigurationValidator.Validate(dto)) return;
-
-                var res = await _serviceRepository.UpsertAsync(dto);
-                if (res > 0)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.ImportJson_Success, AppConfig.Caption);
-                    await RefreshServices();
-                    Logger.Info($"Service configuration imported from JSON at: {path}");
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.ImportJson_Error, AppConfig.Caption);
-                    Logger.Error($"Failed to import JSON config from {path}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to import JSON config from {path}.", ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
-            }
-        }
+        public Task ImportJsonConfigAsync() =>
+            ImportConfigAsync(
+                _fileDialogService.OpenJson,
+                (content) => { var isValid = JsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => new JsonServiceSerializer().Deserialize(content),
+                "JSON",
+                Strings.Msg_FailedToLoadJson,
+                Strings.ImportJson_Success,
+                Strings.ImportJson_Error);
 
         ///<inheritdoc/>
         public async Task CopyPid(Service service)
@@ -682,6 +561,128 @@ namespace Servy.Manager.Services
 
             // Map to the domain engine only if we have a valid data transfer object
             return Core.Mappers.ServiceMapper.ToDomain(_serviceManager, serviceDto);
+        }
+
+        /// <summary>
+        /// Standardizes the service configuration export pipeline by retrieving the persistence-layer DTO 
+        /// and executing a format-specific serialization delegate.
+        /// </summary>
+        /// <param name="service">The UI model representing the service to be exported.</param>
+        /// <param name="getFilePath">A delegate that opens a save file dialog and returns the chosen destination path.</param>
+        /// <param name="exportAction">A delegate responsible for serializing the <see cref="ServiceDto"/> and writing it to disk.</param>
+        /// <param name="formatName">The name of the format (e.g., "XML", "JSON") for logging and error context.</param>
+        /// <param name="successMessage">The localized string to display upon successful export.</param>
+        /// <returns>A task representing the asynchronous export operation.</returns>
+        /// <remarks>
+        /// Unlike the Configuration App variant, this method retrieves the <see cref="ServiceDto"/> directly 
+        /// from the <see cref="IServiceRepository"/> to ensure the exported file reflects the actual 
+        /// stored state, including encrypted credentials if applicable.
+        /// </remarks>
+        private async Task ExportServiceConfigAsync(
+            Service service,
+            Func<string> getFilePath,
+            Action<ServiceDto, string> exportAction,
+            string formatName,
+            string successMessage)
+        {
+            try
+            {
+                var path = getFilePath();
+                if (string.IsNullOrEmpty(path)) return;
+
+                var dto = await _serviceRepository.GetByNameAsync(service.Name);
+                if (dto == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, AppConfig.Caption);
+                    return;
+                }
+
+                exportAction(dto, path);
+
+                await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
+                Logger.Info($"Service configuration exported to {formatName} at: {path}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to export {formatName} of {service.Name}.", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+            }
+        }
+
+        /// <summary>
+        /// Standardizes the configuration import pipeline, enforcing a multi-stage validation gate 
+        /// before persisting the configuration to the repository and refreshing the UI.
+        /// </summary>
+        /// <param name="getFilePath">A delegate that opens an open file dialog and returns the source path.</param>
+        /// <param name="validateContent">A delegate that performs raw format validation (e.g., schema or syntax checks).</param>
+        /// <param name="deserialize">A delegate that converts the validated string content into a <see cref="ServiceDto"/>.</param>
+        /// <param name="formatName">The name of the format (e.g., "XML", "JSON") for logging purposes.</param>
+        /// <param name="loadErrorMessage">The message to display if the file content is incompatible with the DTO structure.</param>
+        /// <param name="successMessage">The message to display upon successful repository persistence.</param>
+        /// <param name="errorMessage">The message to display if the repository upsert operation fails.</param>
+        /// <returns>A task representing the asynchronous import operation.</returns>
+        /// <remarks>
+        /// The import follows a strict "Gatekeeper" pattern:
+        /// <list type="number">
+        /// <item><description>Size Check: Prevents large file attacks via <see cref="ImportGuard"/>.</description></item>
+        /// <item><description>Format Check: Ensures the raw string is valid XML/JSON.</description></item>
+        /// <item><description>Domain Check: Validates business rules via <see cref="IServiceConfigurationValidator"/>.</description></item>
+        /// <item><description>Persistence: Executes an Upsert in the database.</description></item>
+        /// <item><description>UI Sync: Triggers the <see cref="RefreshServices"/> callback to update the dashboard.</description></item>
+        /// </list>
+        /// </remarks>
+        private async Task ImportConfigAsync(
+            Func<string> getFilePath,
+            Func<string, (bool IsValid, string ErrorMsg)> validateContent,
+            Func<string, ServiceDto> deserialize,
+            string formatName,
+            string loadErrorMessage,
+            string successMessage,
+            string errorMessage)
+        {
+            var path = getFilePath();
+            if (string.IsNullOrEmpty(path)) return;
+
+            try
+            {
+                if (!await ImportGuard.ValidateFileSizeAsync(path, _messageBoxService, AppConfig.Caption, Core.Config.AppConfig.MaxConfigFileSizeMB, Strings.Msg_ConfigSizeLimitReached))
+                    return;
+
+                var content = await File.ReadAllTextAsync(path);
+                var validation = validateContent(content);
+                if (!validation.IsValid)
+                {
+                    await _messageBoxService.ShowErrorAsync(validation.ErrorMsg, AppConfig.Caption);
+                    return;
+                }
+
+                var dto = deserialize(content);
+                if (dto == null)
+                {
+                    await _messageBoxService.ShowErrorAsync(loadErrorMessage, AppConfig.Caption);
+                    return;
+                }
+
+                if (!await _serviceConfigurationValidator.Validate(dto)) return;
+
+                var res = await _serviceRepository.UpsertAsync(dto);
+                if (res > 0)
+                {
+                    await _messageBoxService.ShowInfoAsync(successMessage, AppConfig.Caption);
+                    await RefreshServices();
+                    Logger.Info($"Service configuration imported from {formatName} at: {path}");
+                }
+                else
+                {
+                    await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    Logger.Error($"Failed to import {formatName} config from {path}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to import {formatName} config from {path}.", ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+            }
         }
 
         /// <summary>
