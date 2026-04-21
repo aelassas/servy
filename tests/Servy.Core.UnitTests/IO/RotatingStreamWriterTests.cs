@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
+using System.Security.AccessControl;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Servy.Core.UnitTests.IO
@@ -987,38 +989,124 @@ namespace Servy.Core.UnitTests.IO
         }
 
         [Fact]
-        public void Rotate_RetryExhaustion_TripsBreaker()
+        public async Task Rotate_TransientIOException_SucceedsOnRetry()
         {
-            var filePath = Path.Combine(_testDir, "exhaustion.log");
+            var filePath = Path.Combine(_testDir, "transient.log");
+            File.WriteAllText(filePath, "some logs");
+
+            using (var writer = CreateWriter(filePath))
+            {
+                // 1. Lock the file
+                var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+
+                // 2. Start rotation in a background task
+                var rotateTask = Task.Run(() =>
+                {
+                    var method = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    method.Invoke(writer, null);
+                });
+
+                // 3. Wait ~20ms. Because our SpinWait is now 50ms, this ensures we 
+                // release the lock exactly between Attempt 0 and Attempt 1.
+                await Task.Delay(20);
+                locker.Dispose();
+
+                await rotateTask;
+
+                // 4. Assert
+                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
+                DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil");
+
+                Assert.False(isDisabled, "Breaker should not trip on IOException.");
+                Assert.Equal(DateTime.MinValue, cooldown);
+                Assert.False(File.Exists(filePath), "File should have been moved successfully on the second attempt.");
+            }
+        }
+
+        [Fact]
+        public void Rotate_PersistentIOException_ReachedLimit_SetsCooldown()
+        {
+            var filePath = Path.Combine(_testDir, "persistent.log");
+            File.WriteAllText(filePath, "more logs");
+
+            using (var writer = CreateWriter(filePath))
+            {
+                // 1. Lock the file and KEEP it locked
+                using (var locker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    // 2. Act
+                    var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    rotateMethod.Invoke(writer, null);
+                }
+
+                // 3. Assert
+                bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
+                DateTime cooldown = (DateTime)GetPrivateField(writer, "_rotationCooldownUntil");
+
+                // Check that rotation failed but the breaker DID NOT trip
+                Assert.False(isDisabled, "IOException should NOT trip the circuit breaker.");
+
+                // Check that the limit was reached and cooldown was applied
+                Assert.True(cooldown > DateTime.UtcNow, "Rotation should be on cooldown after exhausting retries.");
+
+                // Verify the original file still exists (rotation failed)
+                Assert.True(File.Exists(filePath), "The original log file should still exist because rotation was deferred.");
+            }
+        }
+
+        [Fact]
+        public void Rotate_PermanentFailure_TripsBreaker()
+        {
+            var subDir = Path.Combine(_testDir, "BreakerTest");
+            Directory.CreateDirectory(subDir);
+            var filePath = Path.Combine(subDir, "breaker_test.log");
+
+            // 1. Initialize DirectoryInfo to access ACL extension methods
+            var dirInfo = new DirectoryInfo(subDir);
+
             using (var writer = CreateWriter(filePath))
             {
                 writer.Write("init");
                 writer.Flush();
 
-                // 1. Lock the file to force IOExceptions (Sharing Violation)
-                // We use FileShare.ReadWrite so the internal Flush() might work, 
-                // but File.Move will fail.
-                using (var blocker = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                // 2. Get the ACL from the DirectoryInfo instance
+                var acl = dirInfo.GetAccessControl();
+
+                var rule = new FileSystemAccessRule(
+                    Environment.UserName,
+                    FileSystemRights.Delete | FileSystemRights.Write,
+                    AccessControlType.Deny);
+
+                acl.AddAccessRule(rule);
+
+                // 3. Apply the rule back to the DirectoryInfo instance
+                dirInfo.SetAccessControl(acl);
+
+                try
                 {
-                    // 2. Act: This hits catch (IOException) 3 times, then the 'else' block
                     var rotateMethod = typeof(RotatingStreamWriter).GetMethod("Rotate", BindingFlags.NonPublic | BindingFlags.Instance);
                     rotateMethod.Invoke(writer, null);
                 }
+                finally
+                {
+                    // 4. CLEANUP: Re-fetch and remove the rule via the instance
+                    // We re-fetch to ensure we have the most current state for removal
+                    var cleanupAcl = dirInfo.GetAccessControl();
+                    cleanupAcl.RemoveAccessRule(rule);
+                    dirInfo.SetAccessControl(cleanupAcl);
 
-                // 3. Assert: Hits the 'else { _rotationDisabled = true; }' block
+                    if (File.Exists(filePath))
+                    {
+                        File.SetAttributes(filePath, FileAttributes.Normal);
+                    }
+                }
+
                 bool isDisabled = (bool)GetPrivateField(writer, "_rotationDisabled");
-                Assert.True(isDisabled, "Circuit breaker should trip after max retries fail.");
+                Assert.True(isDisabled, "Circuit breaker should trip on permanent UnauthorizedAccessException.");
             }
         }
 
         #endregion
-
-        // Helper to close writer via reflection for testing lazy re-init
-        private void CloseWriter(RotatingStreamWriter instance)
-        {
-            var method = typeof(RotatingStreamWriter).GetMethod("CloseWriter", BindingFlags.NonPublic | BindingFlags.Instance);
-            method.Invoke(instance, null);
-        }
 
         private object GetPrivateField(object obj, string fieldName)
         {
