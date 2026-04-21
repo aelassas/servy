@@ -15,7 +15,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="str">The input string to normalize.</param>
         /// <returns>A string with all line breaks replaced by semicolons.</returns>
-        public static string NormalizeString(string str)
+        public static string NormalizeString(string? str)
         {
             if (string.IsNullOrEmpty(str))
                 return string.Empty;

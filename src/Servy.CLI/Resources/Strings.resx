@@ -13,7 +13,6 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
   </resheader>
 
-  <!-- General -->
   <data name="Msg_InvalidValue" xml:space="preserve">
     <value>Invalid value.</value>
   </data>
@@ -26,30 +25,26 @@
   <data name="Msg_UnknownError" xml:space="preserve">
     <value>An unknown error occurred.</value>
   </data>
-  <data name="Msg_InvalidRecoveryConfig" xml:space="preserve">
-    <value>Recovery actions and restart attempts cannot be configured unless --enableHealth is set to true.</value>
-  </data>
-
   <data name="Msg_Preparing" xml:space="preserve">
     <value>Preparing environment...</value>
   </data>
-
-  <!-- Messages -->
-  <data name="Msg_ValidationError" xml:space="preserve">
-    <value>Please fill in all required fields.</value>
+  <data name="Msg_InvalidExecutablePath" xml:space="preserve">
+    <value>Invalid executable path: {0}. Ensure the file exists and is accessible.</value>
   </data>
-  
-  <data name="Msg_WrapperNotFound" xml:space="preserve">
-    <value>Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.</value>
+  <data name="Msg_InvalidPath" xml:space="preserve">
+    <value>The specified process path is invalid.</value>
   </data>
   <data name="Msg_ServiceNameRequired" xml:space="preserve">
     <value>Service name is required.</value>
   </data>
+  <data name="Msg_WrapperNotFound" xml:space="preserve">
+    <value>Wrapper executable not found at: %ProgramData%\Servy\Servy.Service.exe. Ensure Servy is properly installed.</value>
+  </data>
+  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
+    <value>Invalid {0} in configuration. Ensure the path exists and is accessible.</value>
+  </data>
   <data name="Msg_PathRequired" xml:space="preserve">
     <value>File path is required.</value>
-  </data>
-  <data name="Msg_InvalidExecutablePath" xml:space="preserve">
-    <value>Invalid executable path: {0}. Ensure the file exists and is accessible.</value>
   </data>
   <data name="Msg_InvalidConfigFileType" xml:space="preserve">
     <value>Configuration output file type is required (XML or JSON).</value>
@@ -68,9 +63,6 @@
   </data>
   <data name="Msg_ImportDeserializationFailure" xml:space="preserve">
     <value>Service configuration was imported, but failed to deserialize for installation.</value>
-  </data>
-  <data name="Msg_InvalidPathInConfig" xml:space="preserve">
-    <value>Invalid {0} in configuration. Ensure the path exists and is accessible.</value>
   </data>
   <data name="Msg_ImportInstallSuccess" xml:space="preserve">
     <value>{0} configuration saved and service '{1}' installed successfully.</value>
@@ -99,7 +91,6 @@
   <data name="Msg_ConfigSizeLimitReached" xml:space="preserve">
     <value>Configuration file '{0}' exceeds maximum size (10 MB).</value>
   </data>
-
   <data name="Msg_StartSuccess" xml:space="preserve">
     <value>Service '{0}' started successfully.</value>
   </data>
@@ -109,98 +100,6 @@
   <data name="Msg_UninstallSuccess" xml:space="preserve">
     <value>Service '{0}' uninstalled successfully.</value>
   </data>
-  <data name="Msg_ValidationPassed" xml:space="preserve">
-    <value>Validation passed for service '{0}'.</value>
-  </data>
-
-  <data name="Msg_InvalidPath" xml:space="preserve">
-    <value>The specified process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidWrapperExePath" xml:space="preserve">
-    <value>Service wrapper executable not found.</value>
-  </data>
-  <data name="Msg_InvalidStartupDirectory" xml:space="preserve">
-    <value>The specified startup directory is invalid.</value>
-  </data>
-  <data name="Msg_InvalidStartupType" xml:space="preserve">
-    <value>The specified startup type is invalid. Options: Automatic, AutomaticDelayedStart, Manual, Disabled.</value>
-  </data>
-  <data name="Msg_InvalidProcessPriority" xml:space="preserve">
-    <value>The specified process priority is invalid. Options: Idle, BelowNormal, Normal, AboveNormal, High, RealTime.</value>
-  </data>
-
-  <data name="Msg_InvalidStdoutPath" xml:space="preserve">
-    <value>The specified stdout file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidStderrPath" xml:space="preserve">
-    <value>The specified stderr file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidRotationSize" xml:space="preserve">
-    <value>Rotation size must be a number of Megabytes (MB) between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidDateRotationType" xml:space="preserve">
-    <value>The specified date rotation type is invalid. Options: Daily, Weekly, Monthly.</value>
-  </data>
-  <data name="Msg_InvalidMaxRotations" xml:space="preserve">
-    <value>Max rotations must be a number between {0} and {1}. Set to 0 for unlimited rotations.</value>
-  </data>
-  <data name="Msg_InvalidHeartbeatInterval" xml:space="preserve">
-    <value>Heartbeat interval must be a number of seconds between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidMaxFailedChecks" xml:space="preserve">
-    <value>Max Failed Checks must be a number between {0} and {1}.</value>
-  </data>
-  <data name="Msg_InvalidRecoveryAction" xml:space="preserve">
-    <value>The specified recovery action is invalid. Options: None, RestartService, RestartProcess, RestartComputer.</value>
-  </data>
-  <data name="Msg_InvalidMaxRestartAttempts" xml:space="preserve">
-    <value>Max Restart Attempts must be a number between {0} and {1}. Set to 0 for unlimited restart attempts.</value>
-  </data>
-
-  <data name="Msg_ServiceInstalled" xml:space="preserve">
-    <value>Service was installed successfully.</value>
-  </data>
-  <data name="Msg_ServiceRemoved" xml:space="preserve">
-    <value>Service was removed successfully.</value>
-  </data>
-  <data name="Msg_UnexpectedError" xml:space="preserve">
-    <value>An unexpected error occurred.</value>
-  </data>
-  <data name="Msg_AdminRightsRequired" xml:space="preserve">
-    <value>Administrator privileges are required.</value>
-  </data>
-
-  <data name="Msg_ServiceStarted" xml:space="preserve">
-    <value>Service was started successfully.</value>
-  </data>
-  <data name="Msg_ServiceStopped" xml:space="preserve">
-    <value>Service was stopped successfully.</value>
-  </data>
-  <data name="Msg_ServiceRestarted" xml:space="preserve">
-    <value>Service was restarted successfully.</value>
-  </data>
-
-  <!-- PreLaunch -->
-  <data name="Msg_InvalidPreLaunchPath" xml:space="preserve">
-    <value>The pre-launch process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStartupDirectory" xml:space="preserve">
-    <value>The specified pre-launch startup directory is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStdoutPath" xml:space="preserve">
-    <value>The specified pre-launch stdout file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchStderrPath" xml:space="preserve">
-    <value>The specified pre-launch stderr file path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchTimeout" xml:space="preserve">
-    <value>Pre-Launch timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-launch hook in fire-and-forget mode. When set to 0, the hook is started and the service is launched immediately without waiting for completion. Use fire-and-forget only for tasks that do not affect the service's ability to start or run correctly. Stdout/Stderr redirection and retries are not available in fire-and-forget mode.</value>
-  </data>
-  <data name="Msg_InvalidPreLaunchRetryAttempts" xml:space="preserve">
-    <value>Pre-Launch retry attempts must be a number between {0} and {1}.</value>
-  </data>
- 
-  
   <data name="Msg_ServiceDisabled" xml:space="preserve">
     <value>A disabled service with this name already exists. Choose a different name.</value>
   </data>
@@ -210,60 +109,4 @@
   <data name="Msg_ServiceDisabledError" xml:space="preserve">
     <value>The specified service is disabled.</value>
   </data>
-
-  <data name="Msg_InvalidFailureProgramPath" xml:space="preserve">
-    <value>The failure program path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidFailureProgramStartupDirectory" xml:space="preserve">
-    <value>The specified failure program startup directory is invalid.</value>
-  </data>
-
-  <data name="Msg_InvalidPostLaunchPath" xml:space="preserve">
-    <value>The post-launch process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPostLaunchStartupDirectory" xml:space="preserve">
-    <value>The specified post-launch startup directory is invalid.</value>
-  </data>
-  
-  <!--Start/Stop timeouts-->
-  <data name="Msg_InvalidStartTimeout" xml:space="preserve">
-    <value>Start timeout must be a number between {0} and {1} seconds.</value>
-  </data>
-  <data name="Msg_InvalidStopTimeout" xml:space="preserve">
-    <value>Stop timeout must be a number between {0} and {1} seconds.</value>
-  </data>
-
-  <!--Pre-Stop-->
-  <data name="Msg_InvalidPreStopPath" xml:space="preserve">
-    <value>The pre-stop process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreStopStartupDirectory" xml:space="preserve">
-    <value>The specified pre-stop startup directory is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPreStopTimeout" xml:space="preserve">
-    <value>Pre-Stop timeout must be a number of seconds between {0} and {1}. Set the timeout to 0 to run the pre-stop process in fire-and-forget mode.</value>
-  </data>
-
-  <!--Post-Stop-->
-  <data name="Msg_InvalidPostStopPath" xml:space="preserve">
-    <value>The post-stop process path is invalid.</value>
-  </data>
-  <data name="Msg_InvalidPostStopStartupDirectory" xml:space="preserve">
-    <value>The specified post-stop startup directory is invalid.</value>
-  </data>
-
-  <!--Miscellaneous-->
-  <data name="Msg_ServiceNameLengthReached" xml:space="preserve">
-    <value>Service name exceeds {0} characters.</value>
-  </data>
-  <data name="Msg_DisplayNameLengthReached" xml:space="preserve">
-    <value>Display name exceeds {0} characters.</value>
-  </data>
-  <data name="Msg_DescriptionLengthReached" xml:space="preserve">
-    <value>Description exceeds {0} characters.</value>
-  </data>
-  <data name="Msg_ArgumentsLengthReached" xml:space="preserve">
-    <value>Arguments exceed the Windows command-line limit of {0} characters.</value>
-  </data>
-  
 </root>

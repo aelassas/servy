@@ -13,7 +13,7 @@
         /// <summary>
         /// Gets the message associated with the command result.
         /// </summary>
-        public string Message { get; }
+        public string? Message { get; }
 
         /// <summary>
         /// Gets the exit code representing the command result.
@@ -27,7 +27,7 @@
         /// <param name="success">True if the command succeeded; otherwise, false.</param>
         /// <param name="message">The message associated with the result.</param>
         /// <param name="exitCode">The exit code to return.</param>
-        private CommandResult(bool success, string message, int exitCode)
+        private CommandResult(bool success, string? message, int exitCode)
         {
             Success = success;
             Message = message;
@@ -39,14 +39,14 @@
         /// </summary>
         /// <param name="message">Optional success message.</param>
         /// <returns>A <see cref="CommandResult"/> indicating success.</returns>
-        public static CommandResult Ok(string message = "") => new CommandResult(true, message, 0);
+        public static CommandResult Ok(string? message = "") => new CommandResult(true, message, 0);
 
         /// <summary>
         /// Creates a failed command result.
         /// </summary>
         /// <param name="message">Optional failure message.</param>
         /// <returns>A <see cref="CommandResult"/> indicating failure.</returns>
-        public static CommandResult Fail(string message = "", int exitCode = 1) =>
+        public static CommandResult Fail(string? message = "", int exitCode = 1) =>
             new CommandResult(false, message, exitCode == 0 ? 1 : exitCode);
     }
 }

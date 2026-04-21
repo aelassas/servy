@@ -1,0 +1,202 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using Xunit;
+using Servy.Core.DTOs;
+using Servy.Core.Enums;
+using Servy.Core.Validators;
+using Servy.Core.Config;
+using Servy.Core.Resources;
+
+namespace Servy.Core.UnitTests.Validators
+{
+    public class ServiceValidationRulesTests
+    {
+        #region Helpers
+
+        /// <summary>
+        /// Creates a DTO that passes all validation rules.
+        /// </summary>
+        private ServiceDto CreateValidDto()
+        {
+            return new ServiceDto
+            {
+                Name = "ValidService",
+                ExecutablePath = "C:\\Windows\\System32\\notepad.exe",
+                DisplayName = "Valid Display Name",
+                Description = "A valid description",
+                StartupDirectory = "C:\\Windows",
+                StartTimeout = 30,
+                StopTimeout = 30,
+                EnableHealthMonitoring = false,
+                RunAsLocalSystem = true
+            };
+        }
+
+        #endregion
+
+        [Fact]
+        public void Validate_NullDto_ReturnsError()
+        {
+            var result = ServiceValidationRules.Validate(null);
+            Assert.Contains(Strings.Msg_ValidationError, result.Errors);
+        }
+
+        [Theory]
+        [InlineData("", "C:\\path.exe")]
+        [InlineData("Name", "")]
+        [InlineData(null, "C:\\path.exe")]
+        public void Validate_MissingVitalFields_ReturnsWarning(string? name, string path)
+        {
+            var dto = new ServiceDto { Name = name!, ExecutablePath = path };
+            var result = ServiceValidationRules.Validate(dto);
+            Assert.Contains(Strings.Msg_ValidationError, result.Warnings);
+        }
+
+        [Fact]
+        public void Validate_ExceedingLengthLimits_ReturnsWarnings()
+        {
+            var dto = CreateValidDto();
+            dto.Name = new string('A', AppConfig.MaxServiceNameLength + 1);
+            dto.DisplayName = new string('B', AppConfig.MaxDisplayNameLength + 1);
+            dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
+            dto.Parameters = new string('D', AppConfig.MaxArgumentLength + 1);
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Equal(4, result.Warnings.Count);
+            Assert.Contains(result.Warnings, w => w.Contains("exceeds"));
+        }
+
+        [Fact]
+        public void Validate_InvalidPaths_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.ExecutablePath = "invalid|path";
+            dto.StartupDirectory = "invalid:dir";
+            dto.StdoutPath = "invalid>out";
+
+            // Testing non-existent wrapper path
+            string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+            var result = ServiceValidationRules.Validate(dto, nonExistentWrapper);
+
+            Assert.Contains(Strings.Msg_InvalidPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidWrapperExePath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidStartupDirectory, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidStdoutPath, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_InvalidTimeoutsAndRotation_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.StartTimeout = AppConfig.MinStartTimeout - 1;
+            dto.StopTimeout = AppConfig.MaxStopTimeout + 1;
+            dto.RotationSize = AppConfig.MinRotationSize - 1;
+            dto.MaxRotations = AppConfig.MaxMaxRotations + 1;
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Contains(result.Errors, e => e.Contains("Start timeout"));
+            Assert.Contains(result.Errors, e => e.Contains("Stop timeout"));
+            Assert.Contains(result.Errors, e => e.Contains("Rotation size"));
+            Assert.Contains(result.Errors, e => e.Contains("Max rotations"));
+        }
+
+        [Fact]
+        public void Validate_HealthMonitoringEnabled_InvalidRanges_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.EnableHealthMonitoring = true;
+            dto.HeartbeatInterval = AppConfig.MinHeartbeatInterval - 1;
+            dto.MaxFailedChecks = unchecked(AppConfig.MaxMaxFailedChecks + 1);
+            dto.MaxRestartAttempts = -5;
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Contains(result.Errors, e => e.Contains("Heartbeat interval"));
+            Assert.Contains(result.Errors, e => e.Contains("Max Failed Checks"));
+            Assert.Contains(result.Errors, e => e.Contains("Max Restart Attempts"));
+        }
+
+        [Fact]
+        public void Validate_HealthMonitoringDisabled_WithRecoveryConfig_ReturnsError()
+        {
+            var dto = CreateValidDto();
+            dto.EnableHealthMonitoring = false;
+            dto.HeartbeatInterval = 30; // Configured while disabled
+            dto.RecoveryAction = (int)RecoveryAction.RestartService;
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Contains(Strings.Msg_InvalidRecoveryConfig, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_Credentials_PasswordsMismatch_ReturnsError()
+        {
+            var dto = CreateValidDto();
+            dto.RunAsLocalSystem = false;
+            dto.UserAccount = "Admin";
+            dto.Password = "Secret123";
+
+            var result = ServiceValidationRules.Validate(dto, confirmPassword: "WrongPassword");
+
+            Assert.Contains(Strings.Msg_PasswordsDontMatch, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_InvalidEnvVarsAndDependencies_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.EnvironmentVariables = "INVALID_VAR"; // Missing '='
+            dto.ServiceDependencies = "MissingDep;"; // Ends with semicolon often allowed but let's assume validator catches empty entries
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_PreLaunch_InvalidSettings_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.PreLaunchExecutablePath = "invalid|path";
+            dto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds + 1;
+            dto.PreLaunchRetryAttempts = -1;
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
+            Assert.Contains(result.Errors, e => e.Contains("Pre-Launch timeout"));
+            Assert.Contains(result.Errors, e => e.Contains("Pre-Launch retry attempts"));
+        }
+
+        [Fact]
+        public void Validate_Hooks_InvalidPaths_ReturnsErrors()
+        {
+            var dto = CreateValidDto();
+            dto.PostLaunchExecutablePath = "bad|path";
+            dto.PreStopExecutablePath = "bad|path";
+            dto.PostStopExecutablePath = "bad|path";
+
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.Contains(Strings.Msg_InvalidPostLaunchPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPreStopPath, result.Errors);
+            Assert.Contains(Strings.Msg_InvalidPostStopPath, result.Errors);
+        }
+
+        [Fact]
+        public void Validate_PerfectDto_ReturnsValid()
+        {
+            var dto = CreateValidDto();
+            var result = ServiceValidationRules.Validate(dto);
+
+            Assert.True(result.IsValid);
+            Assert.Empty(result.Errors);
+            Assert.Empty(result.Warnings);
+        }
+    }
+}
