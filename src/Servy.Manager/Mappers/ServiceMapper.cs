@@ -27,10 +27,10 @@ namespace Servy.Manager
         /// </para>
         /// </remarks>
         /// <param name="service">The domain service instance.</param>
-        /// <param name="isConfigurationAppAvailable">Indicates whether the configuration application is available.</param>
+        /// <param name="isDesktopAppAvailable">Indicates whether the configuration application is available.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isConfigurationAppAvailable, bool calculatePerf)
+        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isDesktopAppAvailable, bool calculatePerf)
         {
             if (service == null) return null;
 
@@ -51,7 +51,7 @@ namespace Servy.Manager
                 Status = ServiceStatus.None,
                 LogOnAs = service.RunAsLocalSystem ? AppConfig.LocalSystem : GetLogOnAsDisplayName(service.UserAccount) ?? string.Empty,
                 IsInstalled = false,
-                IsConfigurationAppAvailable = isConfigurationAppAvailable,
+                IsDesktopAppAvailable = isDesktopAppAvailable,
                 Pid = service.Pid,
                 IsPidEnabled = service.Pid != null,
                 CpuUsage = cpuUsage,

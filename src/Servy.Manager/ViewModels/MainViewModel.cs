@@ -355,7 +355,7 @@ namespace Servy.Manager.ViewModels
             var app = Application.Current as App;
             if (app != null)
             {
-                IsConfiguratorEnabled = app.IsConfigurationAppAvailable;
+                IsConfiguratorEnabled = app.IsDesktopAppAvailable;
 
                 CreateAndStartTimer();
             }

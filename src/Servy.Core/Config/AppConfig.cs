@@ -114,9 +114,9 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceUIExe = $"{ServyServiceUIFileName}.exe";
 
         /// <summary>
-        /// Servy Service Debug Folder.
+        /// Servy Desktop App Release Folder.
         /// </summary>
-        public static readonly string ServyServiceUIDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy\bin\x64\Debug\");
+        public static readonly string ServyDesktopAppReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy\bin\x64\Release\");
 
         /// <summary>
         /// Servy Service Debug Folder (Manager).
@@ -124,14 +124,14 @@ namespace Servy.Core.Config
         public static readonly string ServyServiceManagerDebugFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\x64\Debug\");
 
         /// <summary>
-        /// Servy Configuration App Publish Path.
+        /// Servy Desktop App Publish Path.
         /// </summary>
-        public static readonly string ConfigurationAppPublishReleasePath = Path.Combine(ServyServiceUIDebugFolder, "Servy.exe");
+        public static readonly string DesktopAppPublishReleasePath = Path.Combine(ServyDesktopAppReleaseFolder, "Servy.exe");
 
         /// <summary>
-        /// Default Servy Configuration App Publish Path (Release).
+        /// Default Servy Desktop App Publish Path (Release).
         /// </summary>
-        public static readonly string DefaultConfigurationAppPublishPath = @".\Servy.exe";
+        public static readonly string DefaultDesktopAppPublishPath = @".\Servy.exe";
 
         /// <summary>
         /// Servy Manager Release Folder.

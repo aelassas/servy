@@ -89,14 +89,14 @@ namespace Servy.Manager
         public int ConsoleMaxLines { get; private set; }
 
         /// <summary>
-        /// Servy Configuration App publish path.
+        /// Servy Desktop App publish path.
         /// </summary>
-        public string ConfigurationAppPublishPath { get; private set; }
+        public string DesktopAppPublishPath { get; private set; }
 
         /// <summary>
         /// Indicates whether the configuration application is available.
         /// </summary>
-        public bool IsConfigurationAppAvailable { get; private set; }
+        public bool IsDesktopAppAvailable { get; private set; }
 
         /// <summary>
         /// Dependencis tab refresh interval in seconds.
@@ -210,19 +210,19 @@ namespace Servy.Manager
                     else LogLevel = LogLevel.Info;
 
 #if DEBUG
-                    ConfigurationAppPublishPath = AppConfig.ConfigurationAppPublishReleasePath;
+                    DesktopAppPublishPath = AppConfig.DesktopAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
-                    ConfigurationAppPublishPath = config["ConfigurationAppPublishPath"] ?? AppConfig.DefaultConfigurationAppPublishPath;
-                    if (!Path.IsPathRooted(ConfigurationAppPublishPath))
+                    DesktopAppPublishPath = config["DesktopAppPublishPath"] ?? AppConfig.DefaultDesktopAppPublishPath;
+                    if (!Path.IsPathRooted(DesktopAppPublishPath))
                     {
-                        ConfigurationAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, ConfigurationAppPublishPath));
+                        DesktopAppPublishPath = Path.GetFullPath(Path.Combine(baseDirectory, DesktopAppPublishPath));
                     }
 #endif
-                    IsConfigurationAppAvailable = !string.IsNullOrEmpty(ConfigurationAppPublishPath) && File.Exists(ConfigurationAppPublishPath);
-                    if (!IsConfigurationAppAvailable)
+                    IsDesktopAppAvailable = !string.IsNullOrEmpty(DesktopAppPublishPath) && File.Exists(DesktopAppPublishPath);
+                    if (!IsDesktopAppAvailable)
                     {
-                        Logger.Warn($"Desktop app executable not found: {ConfigurationAppPublishPath}");
+                        Logger.Warn($"Desktop app executable not found: {DesktopAppPublishPath}");
                     }
                 }
             };

@@ -727,11 +727,11 @@ namespace Servy.Manager.Resources {
         }
         
         /// <summary>
-        ///   Recherche une chaîne localisée semblable à Servy Configuration App not found..
+        ///   Recherche une chaîne localisée semblable à Servy Desktop App not found..
         /// </summary>
-        public static string Msg_ConfigurationAppNotFound {
+        public static string Msg_DesktopAppNotFound {
             get {
-                return ResourceManager.GetString("Msg_ConfigurationAppNotFound", resourceCulture);
+                return ResourceManager.GetString("Msg_DesktopAppNotFound", resourceCulture);
             }
         }
         
