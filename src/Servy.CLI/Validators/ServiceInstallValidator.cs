@@ -58,31 +58,33 @@ namespace Servy.CLI.Validators
         private bool TryMapToDto(InstallServiceOptions opts, out ServiceDto? dto, out string? error)
         {
             dto = null;
-            string? internalError = null;
+            error = null;
 
-            // Local functions capture the local 'internalError' variable, which is allowed.
-            // Note: We use 'int?' and 'where T : struct' for standard 4.8 compatibility.
+            // Using a list prevents the analyzer from thinking the state never changes.
+            var errors = new List<string>();
+
+            // Local function: Safely parse strings to nullable integers
             int? ParseInt(string? val, string propertyName)
             {
-                if (internalError != null || string.IsNullOrWhiteSpace(val)) return null;
+                if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
 
                 int result;
-                if (int.TryParse(val, out result))
-                    return result;
+                if (int.TryParse(val, out result)) return result;
 
-                internalError = string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val);
+                errors.Add(string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val));
                 return null;
             }
 
+            // Local function: Safely parse string enums to nullable integers
             int? ParseEnum<T>(string? val, string propertyName) where T : struct
             {
-                if (internalError != null || string.IsNullOrWhiteSpace(val)) return null;
+                if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
 
                 T result;
                 if (Enum.TryParse<T>(val, true, out result)) return (int)(object)result;
 
-                internalError = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
-                    GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T))));
+                errors.Add(string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
+                    GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T)))));
                 return null;
             }
 
@@ -105,9 +107,9 @@ namespace Servy.CLI.Validators
             var stopTimeout = ParseInt(opts.StopTimeout, nameof(opts.StopTimeout));
             var preStopTimeout = ParseInt(opts.PreStopTimeout, nameof(opts.PreStopTimeout));
 
-            if (internalError != null)
+            if (errors.Count > 0)
             {
-                error = internalError;
+                error = errors[0];
                 return false;
             }
 
