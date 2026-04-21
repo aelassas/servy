@@ -30,8 +30,8 @@ param(
 )
 
 # Convert short version to full versions
-$fullVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0" } else { $Version }
-$fileVersion = if ($Version -match "^\d+\.\d+$") { "$Version.0.0" } else { "$Version.0.0" }
+$fullVersion = "$Version.0"
+$fileVersion = "$Version.0.0"
 
 Write-Host "Updating Servy version to $Version..."
 
