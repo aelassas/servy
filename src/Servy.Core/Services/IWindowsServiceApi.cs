@@ -15,7 +15,7 @@ namespace Servy.Core.Services
         /// <param name="databaseName">The name of the service control manager database. Use null for default.</param>
         /// <param name="dwAccess">The desired access rights.</param>
         /// <returns>A handle to the service control manager.</returns>
-        SafeScmHandle OpenSCManager(string machineName, string databaseName, uint dwAccess);
+        SafeScmHandle OpenSCManager(string? machineName, string? databaseName, uint dwAccess);
 
         /// <summary>
         /// Ensures the specified account has the "Log on as a service" right.
@@ -55,7 +55,7 @@ namespace Servy.Core.Services
             uint dwStartType,
             uint dwErrorControl,
             string lpBinaryPathName,
-            string lpLoadOrderGroup,
+            string? lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
             string? lpServiceStartName,
@@ -114,13 +114,13 @@ namespace Servy.Core.Services
             uint dwServiceType,
             uint dwStartType,
             uint dwErrorControl,
-            string lpBinaryPathName,
-            string lpLoadOrderGroup,
+            string? lpBinaryPathName,
+            string? lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
             string? lpServiceStartName,
             string? lpPassword,
-            string lpDisplayName
+            string? lpDisplayName
         );
 
         /// <summary>

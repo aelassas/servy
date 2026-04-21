@@ -339,7 +339,7 @@ namespace Servy.Core.Native
 
         /// <summary>Connects to the Service Control Manager on the specified computer.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern SafeScmHandle OpenSCManager(string machineName, string databaseName, uint dwAccess);
+        public static extern SafeScmHandle OpenSCManager(string? machineName, string? databaseName, uint dwAccess);
 
         /// <summary>Creates a service object and adds it to the specified SCM database.</summary>
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -352,7 +352,7 @@ namespace Servy.Core.Native
           uint dwStartType,
           uint dwErrorControl,
           string lpBinaryPathName,
-          string lpLoadOrderGroup,
+          string? lpLoadOrderGroup,
           IntPtr lpdwTagId,
           string? lpDependencies,
           string? lpServiceStartName,
@@ -407,8 +407,8 @@ namespace Servy.Core.Native
             uint dwServiceType,
             uint dwStartType,
             uint dwErrorControl,
-            string lpBinaryPathName,
-            string lpLoadOrderGroup,
+            string? lpBinaryPathName,
+            string? lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
             string? lpServiceStartName,

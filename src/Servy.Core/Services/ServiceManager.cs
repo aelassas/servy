@@ -129,7 +129,7 @@ namespace Servy.Core.Services
         /// <param name="startType">The startup type for the service.</param>
         /// <param name="username">The account under which the service will run.</param>
         /// <param name="password">The password for the account.</param>
-        /// <param name="lpDependencies">A double null!-terminated string of dependencies.</param>
+        /// <param name="lpDependencies">A double null-terminated string of dependencies.</param>
         /// <param name="displayName">The display name to show in the Services console.</param>
         /// <returns><c>true</c> if the configuration was successfully applied; otherwise, <c>false</c>.</returns>
         /// <exception cref="Win32Exception">Thrown when a native API call fails to open or change the service.</exception>
@@ -166,7 +166,7 @@ namespace Servy.Core.Services
                     dwStartType: (uint)(startType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : startType),
                     dwErrorControl: SERVICE_ERROR_NORMAL,
                     lpBinaryPathName: binPath,
-                    lpLoadOrderGroup: null!,
+                    lpLoadOrderGroup: null,
                     lpdwTagId: IntPtr.Zero,
                     lpDependencies: lpDependencies,
                     lpServiceStartName: username,
@@ -291,7 +291,7 @@ namespace Servy.Core.Services
             SafeScmHandle? scmHandle = null;
             try
             {
-                scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT | SC_MANAGER_CREATE_SERVICE);
                 if (scmHandle == null || scmHandle.IsInvalid)
                 {
                     throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
@@ -325,7 +325,7 @@ namespace Servy.Core.Services
                         dwStartType: (uint)(options.StartType == ServiceStartType.AutomaticDelayedStart ? ServiceStartType.Automatic : options.StartType),
                         dwErrorControl: SERVICE_ERROR_NORMAL,
                         lpBinaryPathName: binPath,
-                        lpLoadOrderGroup: null!,
+                        lpLoadOrderGroup: null,
                         lpdwTagId: IntPtr.Zero,
                         lpDependencies: lpDependencies,
                         lpServiceStartName: lpServiceStartName,
@@ -508,7 +508,7 @@ namespace Servy.Core.Services
                 }
                 finally
                 {
-                    if (serviceHandle != null!)
+                    if (serviceHandle != null)
                     {
                         serviceHandle.Dispose();
                     }
@@ -521,7 +521,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (scmHandle != null!)
+                if (scmHandle != null)
                 {
                     scmHandle.Dispose();
                 }
@@ -534,8 +534,8 @@ namespace Servy.Core.Services
             SafeScmHandle? scmHandle = null;
             try
             {
-                scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_CONNECT);
-                if (scmHandle == null! || scmHandle.IsInvalid)
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
+                if (scmHandle == null || scmHandle.IsInvalid)
                 {
                     return OperationResult.Failure("Failed to open Service Control Manager.");
                 }
@@ -554,13 +554,13 @@ namespace Servy.Core.Services
                         SERVICE_NO_CHANGE,
                         SERVICE_DEMAND_START,
                         SERVICE_NO_CHANGE,
-                        null!,
-                        null!,
+                        null,
+                        null,
                         IntPtr.Zero,
                         null,
                         null,
                         null,
-                        null!);
+                        null);
 
                     // Try to stop service
                     var status = new NativeMethods.ServiceStatus();
@@ -603,7 +603,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (scmHandle != null!)
+                if (scmHandle != null)
                 {
                     scmHandle.Dispose();
                 }
@@ -617,7 +617,7 @@ namespace Servy.Core.Services
             try
             {
                 var service = await _serviceRepository.GetByNameAsync(serviceName);
-                if (service == null!) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
+                if (service == null) return OperationResult.Failure($"Service '{serviceName}' was not found in the repository.");
 
                 using (var sc = _controllerFactory(serviceName))
                 {
@@ -773,7 +773,7 @@ namespace Servy.Core.Services
                         SafeScmHandle? scmHandle = null;
                         try
                         {
-                            scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_CONNECT);
+                            scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
                             if (scmHandle != null && !scmHandle.IsInvalid)
                             {
                                 using (var svcHandle = _windowsServiceApi.OpenService(scmHandle, serviceName, SERVICE_QUERY_CONFIG))
@@ -800,7 +800,7 @@ namespace Servy.Core.Services
                         }
                         finally
                         {
-                            if (scmHandle != null!)
+                            if (scmHandle != null)
                             {
                                 scmHandle.Dispose();
                             }
@@ -826,8 +826,8 @@ namespace Servy.Core.Services
             SafeScmHandle? scmHandle = null;
             try
             {
-                scmHandle = _windowsServiceApi.OpenSCManager(null!, null!, SC_MANAGER_ENUMERATE_SERVICE);
-                if (scmHandle == null! || scmHandle.IsInvalid)
+                scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_ENUMERATE_SERVICE);
+                if (scmHandle == null || scmHandle.IsInvalid)
                 {
                     throw new Win32Exception(_win32ErrorProvider.GetLastWin32Error(), "Failed to open Service Control Manager.");
                 }
@@ -868,7 +868,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (scmHandle != null!)
+                if (scmHandle != null)
                 {
                     scmHandle.Dispose();
                 }
@@ -935,7 +935,7 @@ namespace Servy.Core.Services
         /// Retrieves the account name under which the service runs.
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
-        /// <returns>The account string or <c>null!</c> if it couldn't be retrieved.</returns>
+        /// <returns>The account string or <c>null</c> if it couldn't be retrieved.</returns>
         private string? GetServiceUser(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;
@@ -1016,7 +1016,7 @@ namespace Servy.Core.Services
         /// Retrieves the optional description associated with the service.
         /// </summary>
         /// <param name="svcHandle">A valid handle to the target Windows service.</param>
-        /// <returns>The service description string or <c>null!</c> if none exists.</returns>
+        /// <returns>The service description string or <c>null</c> if none exists.</returns>
         private string? GetServiceDescription(SafeServiceHandle svcHandle)
         {
             int bytesNeeded = 0;

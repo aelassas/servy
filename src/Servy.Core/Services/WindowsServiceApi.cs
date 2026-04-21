@@ -10,7 +10,7 @@ namespace Servy.Core.Services
     public class WindowsServiceApi : IWindowsServiceApi
     {
         /// <inheritdoc />
-        public SafeScmHandle OpenSCManager(string machineName, string databaseName, uint dwAccess)
+        public SafeScmHandle OpenSCManager(string? machineName, string? databaseName, uint dwAccess)
             => NativeMethods.OpenSCManager(machineName, databaseName, dwAccess);
 
         /// <inheritdoc />
@@ -27,7 +27,7 @@ namespace Servy.Core.Services
             uint dwStartType,
             uint dwErrorControl,
             string lpBinaryPathName,
-            string lpLoadOrderGroup,
+            string? lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
             string? lpServiceStartName,
@@ -69,8 +69,8 @@ namespace Servy.Core.Services
             uint dwServiceType,
             uint dwStartType,
             uint dwErrorControl,
-            string lpBinaryPathName,
-            string lpLoadOrderGroup,
+            string? lpBinaryPathName,
+            string? lpLoadOrderGroup,
             IntPtr lpdwTagId,
             string? lpDependencies,
             string? lpServiceStartName,
