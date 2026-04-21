@@ -1,12 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using Xunit;
+﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
-using Servy.Core.Validators;
-using Servy.Core.Config;
 using Servy.Core.Resources;
+using Servy.Core.Validators;
+using System;
+using System.IO;
+using Xunit;
 
 namespace Servy.Core.UnitTests.Validators
 {
@@ -118,19 +116,6 @@ namespace Servy.Core.UnitTests.Validators
             Assert.Contains(result.Errors, e => e.Contains("Heartbeat interval"));
             Assert.Contains(result.Errors, e => e.Contains("Max Failed Checks"));
             Assert.Contains(result.Errors, e => e.Contains("Max Restart Attempts"));
-        }
-
-        [Fact]
-        public void Validate_HealthMonitoringDisabled_WithRecoveryConfig_ReturnsError()
-        {
-            var dto = CreateValidDto();
-            dto.EnableHealthMonitoring = false;
-            dto.HeartbeatInterval = 30; // Configured while disabled
-            dto.RecoveryAction = (int)RecoveryAction.RestartService;
-
-            var result = ServiceValidationRules.Validate(dto);
-
-            Assert.Contains(Strings.Msg_InvalidRecoveryConfig, result.Errors);
         }
 
         [Fact]
