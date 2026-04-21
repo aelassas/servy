@@ -58,62 +58,32 @@ namespace Servy.CLI.Validators
         private bool TryMapToDto(InstallServiceOptions opts, out ServiceDto? dto, out string? error)
         {
             dto = null;
-            error = null;
+            string? internalError = null;
 
-            // Using a list prevents the analyzer from thinking the state never changes.
-            var errors = new List<string>();
+            // By passing 'internalError' by ref to a static method, 
+            // the analyzer MUST assume it could be modified.
+            var startupType = MapEnum<ServiceStartType>(opts.ServiceStartType, nameof(opts.ServiceStartType), ref internalError);
+            var priority = MapEnum<ProcessPriority>(opts.ProcessPriority, nameof(opts.ProcessPriority), ref internalError);
+            var rotationSize = MapInt(opts.RotationSize, nameof(opts.RotationSize), ref internalError);
+            var dateRotationType = MapEnum<DateRotationType>(opts.DateRotationType, nameof(opts.DateRotationType), ref internalError);
+            var maxRotations = MapInt(opts.MaxRotations, nameof(opts.MaxRotations), ref internalError);
+            var heartbeatInterval = MapInt(opts.HeartbeatInterval, nameof(opts.HeartbeatInterval), ref internalError);
+            var maxFailedChecks = MapInt(opts.MaxFailedChecks, nameof(opts.MaxFailedChecks), ref internalError);
+            var recoveryAction = MapEnum<RecoveryAction>(opts.RecoveryAction, nameof(opts.RecoveryAction), ref internalError);
+            var maxRestartAttempts = MapInt(opts.MaxRestartAttempts, nameof(opts.MaxRestartAttempts), ref internalError);
+            var preLaunchTimeout = MapInt(opts.PreLaunchTimeout, nameof(opts.PreLaunchTimeout), ref internalError);
+            var preLaunchRetryAttempts = MapInt(opts.PreLaunchRetryAttempts, nameof(opts.PreLaunchRetryAttempts), ref internalError);
+            var startTimeout = MapInt(opts.StartTimeout, nameof(opts.StartTimeout), ref internalError);
+            var stopTimeout = MapInt(opts.StopTimeout, nameof(opts.StopTimeout), ref internalError);
+            var preStopTimeout = MapInt(opts.PreStopTimeout, nameof(opts.PreStopTimeout), ref internalError);
 
-            // Local function: Safely parse strings to nullable integers
-            int? ParseInt(string? val, string propertyName)
+            // The analyzer now sees this as reachable code.
+            if (internalError != null)
             {
-                if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
-
-                int result;
-                if (int.TryParse(val, out result)) return result;
-
-                errors.Add(string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val));
-                return null;
-            }
-
-            // Local function: Safely parse string enums to nullable integers
-            int? ParseEnum<T>(string? val, string propertyName) where T : struct
-            {
-                if (errors.Count > 0 || string.IsNullOrWhiteSpace(val)) return null;
-
-                T result;
-                if (Enum.TryParse<T>(val, true, out result)) return (int)(object)result;
-
-                errors.Add(string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
-                    GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T)))));
-                return null;
-            }
-
-            // 1. Map typed arguments using nameof() to fetch attribute names dynamically
-            var startupType = ParseEnum<ServiceStartType>(opts.ServiceStartType, nameof(opts.ServiceStartType));
-            var priority = ParseEnum<ProcessPriority>(opts.ProcessPriority, nameof(opts.ProcessPriority));
-            var rotationSize = ParseInt(opts.RotationSize, nameof(opts.RotationSize));
-            var dateRotationType = ParseEnum<DateRotationType>(opts.DateRotationType, nameof(opts.DateRotationType));
-            var maxRotations = ParseInt(opts.MaxRotations, nameof(opts.MaxRotations));
-
-            var heartbeatInterval = ParseInt(opts.HeartbeatInterval, nameof(opts.HeartbeatInterval));
-            var maxFailedChecks = ParseInt(opts.MaxFailedChecks, nameof(opts.MaxFailedChecks));
-            var recoveryAction = ParseEnum<RecoveryAction>(opts.RecoveryAction, nameof(opts.RecoveryAction));
-            var maxRestartAttempts = ParseInt(opts.MaxRestartAttempts, nameof(opts.MaxRestartAttempts));
-
-            var preLaunchTimeout = ParseInt(opts.PreLaunchTimeout, nameof(opts.PreLaunchTimeout));
-            var preLaunchRetryAttempts = ParseInt(opts.PreLaunchRetryAttempts, nameof(opts.PreLaunchRetryAttempts));
-
-            var startTimeout = ParseInt(opts.StartTimeout, nameof(opts.StartTimeout));
-            var stopTimeout = ParseInt(opts.StopTimeout, nameof(opts.StopTimeout));
-            var preStopTimeout = ParseInt(opts.PreStopTimeout, nameof(opts.PreStopTimeout));
-
-            if (errors.Count > 0)
-            {
-                error = errors[0];
+                error = internalError;
                 return false;
             }
 
-            // 2. Build the DTO
             dto = new ServiceDto
             {
                 Name = opts.ServiceName ?? string.Empty,
@@ -172,6 +142,44 @@ namespace Servy.CLI.Validators
 
             error = null;
             return true;
+        }
+
+        /// <summary>
+        /// Attempts to parse a string value into a nullable integer.
+        /// </summary>
+        /// <param name="val">The string value to parse.</param>
+        /// <param name="propertyName">The name of the property being mapped, used for error reporting.</param>
+        /// <param name="error">A reference to an error string. If an error already exists, the method returns early. If parsing fails, this reference is updated with a formatted error message.</param>
+        /// <returns> The parsed integer if successful; otherwise, <see langword="null"/>.</returns>
+        private static int? MapInt(string? val, string propertyName, ref string? error)
+        {
+            if (error != null || string.IsNullOrWhiteSpace(val)) return null;
+
+            int result;
+            if (int.TryParse(val, out result)) return result;
+
+            error = string.Format("Invalid integer format for {0}: '{1}'", GetOptionName(propertyName), val);
+            return null;
+        }
+
+        /// <summary>
+        /// Attempts to parse a string value into an enumeration of type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The enumeration type. Must be a value type.</typeparam>
+        /// <param name="val">The string value to parse.</param>
+        /// <param name="propertyName">The name of the property being mapped, used for error reporting.</param>
+        /// <param name="error">A reference to an error string. If an error already exists, the method returns early. If parsing fails, this reference is updated with a formatted error message containing valid options.</param>
+        /// <returns>The integer representation of the enum value if successful; otherwise, <see langword="null"/>.</returns>
+        private static int? MapEnum<T>(string? val, string propertyName, ref string? error) where T : struct
+        {
+            if (error != null || string.IsNullOrWhiteSpace(val)) return null;
+
+            T result;
+            if (Enum.TryParse<T>(val, true, out result)) return (int)(object)result;
+
+            error = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
+                GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T))));
+            return null;
         }
 
         /// <summary>
