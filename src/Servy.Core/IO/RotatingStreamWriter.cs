@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.Enums;
-using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using System.Diagnostics;
 using System.Globalization;
@@ -39,6 +38,12 @@ namespace Servy.Core.IO
         /// This prevents infinite loops of failed moves that spike CPU usage.
         /// </summary>
         private bool _rotationDisabled;
+
+        // --- Cooldown and fast-fail constraints ---
+        private DateTime _rotationCooldownUntil = DateTime.MinValue;
+        private const int RotationCooldownMs = 1000;
+        private const int MaxSyncRotationRetries = 2;
+        private const int SyncRotationRetryDelayMs = 50;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RotatingStreamWriter"/> class.
@@ -187,23 +192,6 @@ namespace Servy.Core.IO
         /// Determines whether a date-based rotation should occur
         /// based on the configured <see cref="DateRotationType"/>.
         /// </summary>
-        /// <param name="now">The current point in time (ideally <see cref="DateTime.UtcNow"/>) to evaluate against the last rotation anchor.</param>
-        /// <returns>
-        /// <c>true</c> if the calendar day has changed and all safety thresholds are met; 
-        /// otherwise, <c>false</c>.
-        /// </returns>
-        /// <remarks>
-        /// <para>
-        /// When <see cref="_useLocalTimeForRotation"/> is enabled, this method enforces a 
-        /// 23-hour safety buffer between rotations. This prevents redundant rotations during 
-        /// Daylight Saving Time (DST) "fall back" transitions and protects against 
-        /// aggressive rotation cycles during frequent service restarts near midnight.
-        /// </para>
-        /// <para>
-        /// Internal comparisons are performed using the <see cref="DateTime.Date"/> property 
-        /// of the provided <paramref name="now"/> timestamp and the stored <see cref="_lastRotationDate"/>.
-        /// </para>
-        /// </remarks>
         private bool ShouldRotateByDate(DateTime now)
         {
             switch (_dateRotationType)
@@ -244,6 +232,10 @@ namespace Servy.Core.IO
             // If writer is null, the file hasn't been created yet.
             // If rotation is disabled (Circuit Breaker tripped), do nothing to save CPU.
             if (_rotationDisabled || _writer == null) return;
+
+            // If we recently failed a rotation due to a lock, bypass rotation checks 
+            // until the cooldown expires to prevent pipe stalling.
+            if (_timeProvider() < _rotationCooldownUntil) return;
 
             _file.Refresh();
             if (!_file.Exists) return;
@@ -430,7 +422,7 @@ namespace Servy.Core.IO
 
         /// <summary>
         /// Rotates the current log file by inserting a timestamp before the file extension.
-        /// Includes a retry mechanism to handle transient file locks (e.g., from Antivirus).
+        /// Includes a fast-fail retry mechanism and cooldown to prevent child process stalling.
         /// </summary>
         private void Rotate()
         {
@@ -456,10 +448,9 @@ namespace Servy.Core.IO
             var rotatedPath = Path.Combine(directory, newFileName);
             rotatedPath = GenerateUniqueFileName(rotatedPath);
 
-            const int maxRetries = 3;
             bool success = false;
 
-            for (int attempt = 0; attempt < maxRetries; attempt++)
+            for (int attempt = 0; attempt < MaxSyncRotationRetries; attempt++)
             {
                 try
                 {
@@ -467,16 +458,30 @@ namespace Servy.Core.IO
                     success = true;
                     break;
                 }
-                catch (IOException) when (attempt < maxRetries - 1)
+                catch (IOException ex)
                 {
-                    // Transient lock (Sharing violation). Wait and retry.
-                    // Incremental backoff: 50ms, 100ms, 150ms.
-                    Thread.Sleep(50 * (attempt + 1));
+                    if (attempt < MaxSyncRotationRetries - 1)
+                    {
+                        // Transient lock. Use SpinWait to pause without dropping thread context.
+                        SpinWait.SpinUntil(() => false, SyncRotationRetryDelayMs);
+                    }
+                    else
+                    {
+                        // Lock persisted past our tiny budget. 
+                        // Prioritize correctness over punctuality: back off and let the writer lazy-init against the oversized file.
+                        Logger.Warn($"Log rotation deferred due to file lock on '{_file.Name}': {ex.Message}. Will retry in {RotationCooldownMs}ms.");
+
+                        // Set the cooldown so we don't stall the pipe on the next 100 log lines
+                        _rotationCooldownUntil = _timeProvider().AddMilliseconds(RotationCooldownMs);
+
+                        // Explicit return. The next Write() will trigger InitializeWriter() and safely append to the un-rotated file.
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    // PERMANENT FAILURE (e.g., UnauthorizedAccessException)
-                    // We trip the circuit breaker immediately to prevent an infinite loop.
+                    // PERMANENT FAILURE (e.g., UnauthorizedAccessException for ACL issues)
+                    // Trip the circuit breaker immediately to prevent an infinite loop.
                     Logger.Error($"Log rotation critical failure: {ex.Message}. Rotation will be disabled until service restart.", ex);
                     _rotationDisabled = true;
                     break;
@@ -489,9 +494,8 @@ namespace Servy.Core.IO
             }
             else
             {
-                // If we exhausted retries (Transient failure became permanent)
-                _rotationDisabled = true;
-                Logger.Warn($"Log rotation failed after {maxRetries} attempts for: {_file.FullName}. Rotation has been disabled to prevent CPU overhead.");
+                // This block is now only reached if the circuit breaker tripped on a non-IOException
+                Logger.Warn($"Log rotation disabled for: {_file.FullName} due to persistent error.");
             }
         }
 
