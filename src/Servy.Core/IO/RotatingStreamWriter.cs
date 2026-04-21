@@ -465,8 +465,8 @@ namespace Servy.Core.IO
                 {
                     if (attempt < MaxSyncRotationRetries - 1)
                     {
-                        // Transient lock. Use SpinWait to pause without dropping thread context.
-                        SpinWait.SpinUntil(() => false, SyncRotationRetryDelayMs);
+                        // Transient lock.
+                        Thread.Sleep(SyncRotationRetryDelayMs);
                     }
                     else
                     {
