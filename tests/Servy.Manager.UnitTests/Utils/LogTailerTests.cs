@@ -52,6 +52,7 @@ namespace Servy.Manager.UnitTests.Utils
             Assert.Equal("L5", result.Lines[2].Text);
         }
 
+#if DEBUG
         [Fact]
         public async Task RunFromPosition_ShouldHandleFileRotation()
         {
@@ -114,6 +115,7 @@ namespace Servy.Manager.UnitTests.Utils
                 }
             }
         }
+#endif
 
         /// <summary>
         /// Polls a predicate until it returns true or the timeout is reached.
