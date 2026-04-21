@@ -168,7 +168,7 @@ namespace Servy
                 CustomConfigAction = (config) =>
                 {
 #if DEBUG
-                    ManagerAppPublishPath = AppConfig.ManagerAppPublishDebugPath;
+                    ManagerAppPublishPath = AppConfig.ManagerAppPublishReleasePath;
 #else
                     var baseDirectory = AppFoldersHelper.GetAppDirectory();
                     ManagerAppPublishPath = config["ManagerAppPublishPath"] ?? AppConfig.DefaultManagerAppPublishPath;
