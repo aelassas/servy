@@ -1,4 +1,5 @@
-﻿using Servy.Core.Data;
+﻿using Servy.Core.Common;
+using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -142,178 +143,16 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> StartServiceAsync(Service service, bool showMessageBox = true)
-        {
-            if (service == null) return false;
-
-            return await ExecuteLockedAsync(service.Name, async () =>
-            {
-                bool success = false;
-                string errorMessage = null;
-                string infoMessage = null;
-
-                try
-                {
-                    var serviceDomain = await GetServiceDomain(service.Name);
-                    if (serviceDomain == null)
-                    {
-                        errorMessage = Strings.Msg_ServiceNotFound;
-                    }
-                    else
-                    {
-                        var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                        if (startupType == ServiceStartType.Disabled)
-                        {
-                            errorMessage = Strings.Msg_ServiceDisabledError;
-                        }
-                        else
-                        {
-                            var res = await Task.Run(() => serviceDomain.Start());
-                            if (res.IsSuccess)
-                            {
-                                service.Status = ServiceStatus.Running;
-                                infoMessage = Strings.Msg_ServiceStarted;
-                                success = true;
-                            }
-                            else
-                            {
-                                errorMessage = Strings.Msg_UnexpectedError;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to start {service.Name}.", ex);
-                    errorMessage = Strings.Msg_UnexpectedError;
-                }
-
-                if (showMessageBox)
-                {
-                    if (!string.IsNullOrEmpty(errorMessage))
-                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                    else if (!string.IsNullOrEmpty(infoMessage))
-                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-                }
-
-                return success;
-            });
-        }
-
-        public async Task<bool> StopServiceAsync(Service service, bool showMessageBox = true)
-        {
-            // 1. Guard clause outside the lock
-            if (service == null) return false;
-
-            return await ExecuteLockedAsync(service.Name, async () =>
-            {
-                bool success = false;
-                string errorMessage = null;
-                string infoMessage = null;
-
-                try
-                {
-                    var serviceDomain = await GetServiceDomain(service.Name);
-                    if (serviceDomain == null)
-                    {
-                        errorMessage = Strings.Msg_ServiceNotFound;
-                    }
-                    else
-                    {
-                        // Execute the stop logic on a background thread
-                        var res = await Task.Run(() => serviceDomain.Stop());
-
-                        if (res.IsSuccess)
-                        {
-                            service.Status = ServiceStatus.Stopped;
-                            infoMessage = Strings.Msg_ServiceStopped;
-                            success = true;
-                        }
-                        else
-                        {
-                            errorMessage = Strings.Msg_UnexpectedError;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to stop {service.Name}.", ex);
-                    errorMessage = Strings.Msg_UnexpectedError;
-                }
-
-                if (showMessageBox)
-                {
-                    if (!string.IsNullOrEmpty(errorMessage))
-                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                    else if (!string.IsNullOrEmpty(infoMessage))
-                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-                }
-
-                return success;
-            });
-        }
+        public Task<bool> StartServiceAsync(Service service, bool showMessageBox = true) =>
+            ExecuteServiceCommandAsync(service, d => d.Start(), ServiceStatus.Running, Strings.Msg_ServiceStarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
-        public async Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true)
-        {
-            // 1. Guard clause outside the lock
-            if (service == null) return false;
+        public Task<bool> StopServiceAsync(Service service, bool showMessageBox = true) =>
+            ExecuteServiceCommandAsync(service, d => d.Stop(), ServiceStatus.Stopped, Strings.Msg_ServiceStopped, checkDisabled: false, showMessageBox);
 
-            return await ExecuteLockedAsync(service.Name, async () =>
-            {
-                bool success = false;
-                string errorMessage = null;
-                string infoMessage = null;
-
-                try
-                {
-                    var serviceDomain = await GetServiceDomain(service.Name);
-                    if (serviceDomain == null)
-                    {
-                        errorMessage = Strings.Msg_ServiceNotFound;
-                    }
-                    else
-                    {
-                        var startupType = _serviceManager.GetServiceStartupType(service.Name);
-                        if (startupType == ServiceStartType.Disabled)
-                        {
-                            errorMessage = Strings.Msg_ServiceDisabledError;
-                        }
-                        else
-                        {
-                            // Execute the restart logic on a background thread
-                            var res = await Task.Run(() => serviceDomain.Restart());
-
-                            if (res.IsSuccess)
-                            {
-                                service.Status = ServiceStatus.Running;
-                                infoMessage = Strings.Msg_ServiceRestarted;
-                                success = true;
-                            }
-                            else
-                            {
-                                errorMessage = Strings.Msg_UnexpectedError;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to restart {service.Name}.", ex);
-                    errorMessage = Strings.Msg_UnexpectedError;
-                }
-
-                if (showMessageBox)
-                {
-                    if (!string.IsNullOrEmpty(errorMessage))
-                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
-                    else if (!string.IsNullOrEmpty(infoMessage))
-                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
-                }
-
-                return success;
-            });
-        }
+        /// <inheritdoc />
+        public Task<bool> RestartServiceAsync(Service service, bool showMessageBox = true) =>
+            ExecuteServiceCommandAsync(service, d => d.Restart(), ServiceStatus.Running, Strings.Msg_ServiceRestarted, checkDisabled: true, showMessageBox);
 
         /// <inheritdoc />
         public async Task ConfigureServiceAsync(Service service)
@@ -735,7 +574,94 @@ namespace Servy.Manager.Services
 
         #endregion
 
-        #region Helpers
+        #region Private Helpers
+
+        /// <summary>
+        /// Executes a service management operation within a per-service lock, managing background execution, 
+        /// UI state synchronization, and optional user notifications.
+        /// </summary>
+        /// <param name="service">The <see cref="Service"/> UI model to be updated upon successful operation.</param>
+        /// <param name="operation">An asynchronous delegate that performs the core domain logic using a 
+        /// <see cref="Core.Domain.Service"/> instance.</param>
+        /// <param name="targetStatus">The <see cref="ServiceStatus"/> that the UI model should transition 
+        /// to if the operation succeeds (e.g., Running, Stopped).</param>
+        /// <param name="successMessage">The localized message string to display in a success dialog 
+        /// if <paramref name="showMessageBox"/> is <c>true</c>.</param>
+        /// <param name="checkDisabled">If <c>true</c>, verifies the service is not 'Disabled' before 
+        /// invoking the operation.</param>
+        /// <param name="showMessageBox">Indicates whether to display success/error dialogs to the user 
+        /// after execution.</param>
+        /// <returns>
+        /// A task representing the asynchronous operation. The task result is <c>true</c> if the operation 
+        /// completed successfully and the service state was updated; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method utilizes <see cref="ExecuteLockedAsync{T}"/> to prevent concurrent, conflicting 
+        /// operations on the same service (Head-of-Line blocking). The core operation is explicitly 
+        /// offloaded to <see cref="Task.Run"/> to keep the UI responsive during long-running service state 
+        /// transitions.
+        /// </remarks>
+        private async Task<bool> ExecuteServiceCommandAsync(
+            Service service,
+            Func<Core.Domain.Service, Task<OperationResult>> operation,
+            ServiceStatus targetStatus,
+            string successMessage,
+            bool checkDisabled,
+            bool showMessageBox)
+        {
+            if (service == null) return false;
+
+            return await ExecuteLockedAsync(service.Name, async () =>
+            {
+                bool success = false;
+                string errorMessage = null;
+                string infoMessage = null;
+
+                try
+                {
+                    var serviceDomain = await GetServiceDomain(service.Name);
+                    if (serviceDomain == null)
+                    {
+                        errorMessage = Strings.Msg_ServiceNotFound;
+                    }
+                    else if (checkDisabled && _serviceManager.GetServiceStartupType(service.Name) == ServiceStartType.Disabled)
+                    {
+                        errorMessage = Strings.Msg_ServiceDisabledError;
+                    }
+                    else
+                    {
+                        // Execute the core logic on a background thread
+                        var res = await Task.Run(() => operation(serviceDomain));
+
+                        if (res.IsSuccess)
+                        {
+                            service.Status = targetStatus;
+                            infoMessage = successMessage;
+                            success = true;
+                        }
+                        else
+                        {
+                            errorMessage = Strings.Msg_UnexpectedError;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to execute operation on {service.Name}.", ex);
+                    errorMessage = Strings.Msg_UnexpectedError;
+                }
+
+                if (showMessageBox)
+                {
+                    if (!string.IsNullOrEmpty(errorMessage))
+                        await _messageBoxService.ShowErrorAsync(errorMessage, AppConfig.Caption);
+                    else if (!string.IsNullOrEmpty(infoMessage))
+                        await _messageBoxService.ShowInfoAsync(infoMessage, AppConfig.Caption);
+                }
+
+                return success;
+            });
+        }
 
         /// <summary>
         /// Retrieves the domain representation of a service by its name.

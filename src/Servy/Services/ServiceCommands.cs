@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -315,129 +316,24 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> StartService(string serviceName)
-        {
-            try
-            {
-                if (!await IsServiceNameValid(serviceName))
-                {
-                    return false;
-                }
-
-                var exists = _serviceManager.IsServiceInstalled(serviceName);
-                if (!exists)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return false;
-                }
-
-                var startupType = _serviceManager.GetServiceStartupType(serviceName);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
-                    return false;
-                }
-
-                var res = await _serviceManager.StartServiceAsync(serviceName);
-                if (res.IsSuccess)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStarted, Caption);
-                    return true;
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                return false;
-            }
-        }
+        public Task<bool> StartService(string serviceName) =>
+            ExecuteServiceCommandAsync(
+                serviceName,
+                (name) => _serviceManager.StartServiceAsync(name, logSuccessfulStart: true),
+                Strings.Msg_ServiceStarted,
+                checkDisabled: true);
 
         /// <inheritdoc />
-        public async Task<bool> StopService(string serviceName)
-        {
-            try
-            {
-                if (!await IsServiceNameValid(serviceName))
-                {
-                    return false;
-                }
-
-                var exists = _serviceManager.IsServiceInstalled(serviceName);
-                if (!exists)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return false;
-                }
-
-                var res = await _serviceManager.StopServiceAsync(serviceName);
-                if (res.IsSuccess)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceStopped, Caption);
-                    return true;
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                return false;
-            }
-        }
+        public Task<bool> StopService(string serviceName) =>
+            ExecuteServiceCommandAsync(
+                serviceName,
+                (name) => _serviceManager.StopServiceAsync(name, logSuccessfulStop: true),
+                Strings.Msg_ServiceStopped,
+                checkDisabled: false);
 
         /// <inheritdoc />
-        public async Task<bool> RestartService(string serviceName)
-        {
-            try
-            {
-                if (!await IsServiceNameValid(serviceName))
-                {
-                    return false;
-                }
-
-                var exists = _serviceManager.IsServiceInstalled(serviceName);
-                if (!exists)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
-                    return false;
-                }
-
-                var startupType = _serviceManager.GetServiceStartupType(serviceName);
-                if (startupType == ServiceStartType.Disabled)
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
-                    return false;
-                }
-
-                var res = await _serviceManager.RestartServiceAsync(serviceName);
-                if (res.IsSuccess)
-                {
-                    await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRestarted, Caption);
-                    return true;
-                }
-                else
-                {
-                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(UnexpectedError, ex);
-                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
-                return false;
-            }
-        }
+        public Task<bool> RestartService(string serviceName) =>
+            ExecuteServiceCommandAsync(serviceName, _serviceManager.RestartServiceAsync, Strings.Msg_ServiceRestarted, checkDisabled: true);
 
         ///<inheritdoc/>
         public async Task ExportXmlConfig(string confirmPassword)
@@ -652,6 +548,68 @@ namespace Servy.Services
         #endregion
 
         #region Private Helpers
+
+        /// <summary>
+        /// Executes a unified service operation, providing a standardized pipeline for validation, 
+        /// state checking, exception handling, and user feedback.
+        /// </summary>
+        /// <param name="serviceName">The unique name of the Windows service to be operated on.</param>
+        /// <param name="operation">An asynchronous delegate representing the specific service manager 
+        /// action (e.g., Start, Stop, or Restart).</param>
+        /// <param name="successMessage">The localized message string to display in a success dialog 
+        /// if the operation completes successfully.</param>
+        /// <param name="checkDisabled">If <c>true</c>, the method will verify that the service is not 
+        /// in a 'Disabled' state before attempting the operation.</param>
+        /// <returns>
+        /// A task that represents the asynchronous operation. The task result is <c>true</c> 
+        /// if the service operation and all associated UI feedback completed successfully; 
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method centralizes the boilerplate logic for service control, ensuring that 
+        /// logging and error reporting remain consistent across all management commands.
+        /// </remarks>
+        private async Task<bool> ExecuteServiceCommandAsync(
+            string serviceName,
+            Func<string, Task<OperationResult>> operation,
+            string successMessage,
+            bool checkDisabled)
+        {
+            try
+            {
+                if (!await IsServiceNameValid(serviceName)) return false;
+
+                if (!_serviceManager.IsServiceInstalled(serviceName))
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceNotFound, Caption);
+                    return false;
+                }
+
+                if (checkDisabled && _serviceManager.GetServiceStartupType(serviceName) == ServiceStartType.Disabled)
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_ServiceDisabledError, Caption);
+                    return false;
+                }
+
+                var res = await operation(serviceName);
+                if (res.IsSuccess)
+                {
+                    await _messageBoxService.ShowInfoAsync(successMessage, Caption);
+                    return true;
+                }
+                else
+                {
+                    await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(UnexpectedError, ex);
+                await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
+                return false;
+            }
+        }
 
         /// <summary>
         /// Validates the service name.
