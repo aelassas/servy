@@ -16,6 +16,32 @@ namespace Servy.Core.Domain
     /// Represents a Windows service to be managed by Servy.
     /// Contains configuration, execution, and pre-launch settings.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Hook Execution Logic:</b>
+    /// </para>
+    /// <list type="bullet">
+    /// <item>
+    /// <description>
+    /// <b>Pre-Launch (Synchronous):</b> By default, these are "Gatekeepers." They block service startup, 
+    /// support Stdout/Stderr capture, Retries, and Managed Timeouts.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <b>Pre-Launch (Asynchronous):</b> If <see cref="PreLaunchTimeoutSeconds"/> is set to 0, 
+    /// the hook transitions to fire-and-forget mode. It will not block startup, and supervisor 
+    /// features (logging/retries) are disabled.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// <b>Post-Launch (Asynchronous):</b> Always "Sidecars." These run in a fire-and-forget manner 
+    /// after the main process starts and do not support supervisor features.
+    /// </description>
+    /// </item>
+    /// </list>
+    /// </remarks>
     public class Service
     {
         #region Private Fields

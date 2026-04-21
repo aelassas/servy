@@ -221,6 +221,10 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Maximum time in seconds to wait for the pre-launch executable to complete.
         /// </summary>
+        /// <value>
+        /// The default is synchronous execution. Set to 0 to execute the pre-launch hook 
+        /// asynchronously (fire-and-forget), which disables logging and retry support for the hook.
+        /// </value>
         public int? PreLaunchTimeoutSeconds { get; set; }
 
         /// <summary>
@@ -236,6 +240,10 @@ namespace Servy.Core.DTOs
         /// <summary>
         /// Optional path to an executable that runs after the service starts.
         /// </summary>
+        /// <remarks>
+        /// Post-launch hooks always run asynchronously and do not support supervisor features 
+        /// (stdout capture, timeouts, or retries).
+        /// </remarks>
         public string PostLaunchExecutablePath { get; set; }
 
         /// <summary>
