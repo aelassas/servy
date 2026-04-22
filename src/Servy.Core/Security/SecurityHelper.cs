@@ -43,12 +43,26 @@ namespace Servy.Core.Security
                 ? Directory.CreateDirectory(path)
                 : new DirectoryInfo(path);
 
-            var security = dirInfo.GetAccessControl();
-            var currentUserSid = WindowsIdentity.GetCurrent().User;
+            try
+            {
+                // CRITICAL: Explicitly request only the Access rules (DACL).
+                // Default behavior fetches Owner and Group. A non-admin account cannot 
+                // persist Owner/Group back to the filesystem, causing an UnauthorizedAccessException.
+                var security = dirInfo.GetAccessControl(AccessControlSections.Access);
+                var currentUserSid = WindowsIdentity.GetCurrent().User;
 
-            ApplySecurityRules(security, currentUserSid, breakInheritance);
+                ApplySecurityRules(security, currentUserSid, breakInheritance);
 
-            dirInfo.SetAccessControl(security);
+                dirInfo.SetAccessControl(security);
+            }
+            catch (UnauthorizedAccessException) when (!IsAdministrator() && !breakInheritance)
+            {
+                // GRACEFUL FALLBACK: 
+                // If we are a non-admin service account managing a child folder, the Root Vault 
+                // (parent folder) was already secured by the Administrator during installation.
+                // Because breakInheritance is false, the OS is already enforcing security via 
+                // inheritance, making it safe to proceed without crashing the service.
+            }
         }
 
         /// <summary>
