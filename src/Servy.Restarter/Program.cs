@@ -119,7 +119,6 @@ namespace Servy.Restarter
 
                 // 5. Initialize database and helpers
                 var dbContext = new AppDbContext(connectionString);
-                DatabaseInitializer.InitializeDatabase(dbContext, SQLiteDbInitializer.Initialize);
 
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);

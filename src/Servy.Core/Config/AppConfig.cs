@@ -240,7 +240,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Default SQLite connection string pointing to Servy.db in the database folder.
         /// </summary>
-        public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Busy Timeout=5000;Journal Mode=WAL;";
+        public static readonly string DefaultConnectionString = $"Data Source={Path.Combine(DbFolderPath, "Servy.db")};Busy Timeout=5000;Journal Mode=WAL;Pooling=True;";
 
         /// <summary>
         /// Default AES key file path.
