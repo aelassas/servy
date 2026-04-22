@@ -2443,7 +2443,7 @@ namespace Servy.Service
                     }
 
                     // FIX: Clean up descendants afterward. 
-                    // Thanks to WMI, we can still trace children even if the parent exited instantly.
+                    // Thanks to native P/Invoke, we can still trace children even if the parent exited instantly.
                     _logger?.Info($"Initiating descendant cleanup for PID {parentPid}...");
                     process.StopDescendants(parentPid, parentStartTime, timeoutMs);
 
