@@ -87,6 +87,20 @@ namespace Servy.Core.Config
         public const int MaxArgumentLength = 32000;
 
         /// <summary>
+        /// Safety threshold that defines the maximum number of recursive expansion passes 
+        /// allowed when resolving nested environment variables. This prevents infinite 
+        /// loops caused by circular references.
+        /// </summary>
+        public const int MaxEnvVarExpansionPasses = 5;
+
+        /// <summary>
+        /// The maximum allowed length for a fully expanded environment variable string. 
+        /// Set to 32,768 characters to align with the maximum environment variable 
+        /// size limit on modern Windows systems.
+        /// </summary>
+        public const int MaxEnvVarExpandedLength = 32768;
+
+        /// <summary>
         /// The name of the Windows service and the associated Event Log source.
         /// Used for service registration and writing logs to the Windows Event Viewer.
         /// </summary>

@@ -1,4 +1,5 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
 using System;
 using System.Collections;
@@ -64,10 +65,6 @@ namespace Servy.Service.Helpers
             "LD_PRELOAD", "LD_LIBRARY_PATH"
         };
 
-        // Safety caps to prevent unbounded growth from complex recursive nesting
-        private const int MaxExpansionPasses = 5;
-        private const int MaxStringLength = 32768;
-
         /// <summary>
         /// Builds a dictionary of environment variables by merging the current system environment
         /// with the provided custom environment variables. All values are expanded so that system
@@ -128,10 +125,10 @@ namespace Servy.Service.Helpers
                     string expanded = ExpandWithDictionary(original, snapshot);
 
                     // Exponential growth guard
-                    if (expanded != null && expanded.Length > MaxStringLength)
+                    if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
-                        Logger.Warn($"Expansion of '{key}' exceeded {MaxStringLength} characters. Truncating to prevent memory exhaustion.");
-                        expanded = expanded.Substring(0, MaxStringLength);
+                        Logger.Warn($"Expansion of '{key}' exceeded {AppConfig.MaxEnvVarExpandedLength} characters. Truncating to prevent memory exhaustion.");
+                        expanded = expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
                     }
 
                     if (!string.Equals(original, expanded, StringComparison.Ordinal))
@@ -143,9 +140,9 @@ namespace Servy.Service.Helpers
 
                 pass++;
             }
-            while (changed && pass < MaxExpansionPasses);
+            while (changed && pass < AppConfig.MaxEnvVarExpansionPasses);
 
-            if (pass >= MaxExpansionPasses && changed)
+            if (pass >= AppConfig.MaxEnvVarExpansionPasses && changed)
             {
                 Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
             }
@@ -219,9 +216,9 @@ namespace Servy.Service.Helpers
                     index += replacement.Length; // move past the inserted value
 
                     // Inline length guard to prevent memory exhaustion
-                    if (expanded.Length > MaxStringLength)
+                    if (expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
-                        return expanded.Substring(0, MaxStringLength);
+                        return expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
                     }
                 }
             }
