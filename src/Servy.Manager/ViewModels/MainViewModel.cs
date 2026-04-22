@@ -356,6 +356,7 @@ namespace Servy.Manager.ViewModels
             if (app != null)
             {
                 IsConfiguratorEnabled = app.IsDesktopAppAvailable;
+                app.PropertyChanged += App_PropertyChanged;
 
                 CreateAndStartTimer();
             }
@@ -382,6 +383,17 @@ namespace Servy.Manager.ViewModels
         #endregion
 
         #region Private Methods/Events
+
+        /// <summary>
+        /// PropertyChanged event handler to capture dynamically updated settings from the application.
+        /// </summary>
+        private void App_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(App.IsDesktopAppAvailable))
+            {
+                IsConfiguratorEnabled = ((App)sender).IsDesktopAppAvailable;
+            }
+        }
 
         /// <summary>
         /// Triggers when a property on a service row changes.
@@ -688,6 +700,12 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
+            var app = Application.Current as App;
+            if (app != null)
+            {
+                app.PropertyChanged -= App_PropertyChanged;
+            }
+
             // Thread-safe disposal pattern
             var oldCts = Interlocked.Exchange(ref _cts, null);
             if (oldCts != null)
@@ -899,15 +917,6 @@ namespace Servy.Manager.ViewModels
                 if (changedDtos.Any())
                 {
                     await _serviceRepository.UpsertBatchAsync(changedDtos, token);
-                }
-
-                // Refresh UI only if not cancelled
-                if (_cts != null && !_cts.IsCancellationRequested)
-                {
-                    await _dispatcher.InvokeAsync(() =>
-                    {
-                        ServicesView.Refresh();
-                    }, DispatcherPriority.Background);
                 }
             }
             catch (OperationCanceledException)

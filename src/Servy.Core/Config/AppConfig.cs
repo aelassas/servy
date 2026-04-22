@@ -150,7 +150,7 @@ namespace Servy.Core.Config
         /// <summary>
         /// Servy Manager Release Folder.
         /// </summary>
-        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\x64\Debug\");
+        public static readonly string ServyManagerReleaseFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Servy.Manager\bin\x64\Release\");
 
         /// <summary>
         /// Servy Manager App Publish Path.
