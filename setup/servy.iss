@@ -106,11 +106,14 @@ Source: "..\src\Servy.Manager\bin\x64\Release\{#ManagerAppExeName}"; DestDir: "{
 Source: "..\src\Servy.Manager\bin\x64\Release\*.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: install_manager
 
 ; taskschd
-; 1. Always override all content in the taskschd folder except the config and credential files
-Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, smtp-cred.xml"; Flags: ignoreversion
+; 1. Copy everything EXCEPT the config, credentials, and transient state files
+Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, smtp-cred.xml, last-processed-toast.dat, last-processed-email.dat"; Flags: ignoreversion
 
-; 2. Only install the config file if it does not already exist (preserves user settings)
+; 2. Preserve the config file on upgrades
 Source: ".\taskschd\smtp-config.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
+
+; 3. Preserve the credentials file on upgrades
+Source: ".\taskschd\smtp-cred.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
