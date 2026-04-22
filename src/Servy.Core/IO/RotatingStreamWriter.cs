@@ -2,7 +2,6 @@
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
-using System.Diagnostics;
 using System.Globalization;
 using System.Security.AccessControl;
 using System.Text;
@@ -427,21 +426,18 @@ namespace Servy.Core.IO
         /// </summary>
         private void Rotate()
         {
+            // GUARD: Don't even touch the disk if the circuit is open or cooling down
+            if (_rotationDisabled || _timeProvider() < _rotationCooldownUntil) return;
+
             _file.Refresh();
             if (!_file.Exists || _file.Length == 0) return;
 
             CloseWriter();
 
-            var now = _timeProvider(); // Uses the seam
+            var now = _timeProvider();
             var timestamp = now.ToString("yyyyMMdd_HHmmss");
 
-            // Use safe Path resolution with AppContext fallback for root paths
-            var directory = Path.GetDirectoryName(_file.FullName);
-            if (string.IsNullOrEmpty(directory))
-            {
-                directory = AppFoldersHelper.GetAppDirectory();
-            }
-
+            var directory = Path.GetDirectoryName(_file.FullName) ?? AppFoldersHelper.GetAppDirectory();
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(_file.FullName);
             var extension = Path.GetExtension(_file.FullName);
 
@@ -463,26 +459,17 @@ namespace Servy.Core.IO
                 {
                     if (attempt < MaxSyncRotationRetries - 1)
                     {
-                        // Transient lock.
                         Thread.Sleep(SyncRotationRetryDelayMs);
                     }
                     else
                     {
-                        // Lock persisted past our tiny budget. 
-                        // Prioritize correctness over punctuality: back off and let the writer lazy-init against the oversized file.
                         Logger.Warn($"Log rotation deferred due to file lock on '{_file.Name}': {ex.Message}. Will retry in {RotationCooldownMs}ms.");
-
-                        // Set the cooldown so we don't stall the pipe on the next 100 log lines
                         _rotationCooldownUntil = _timeProvider().AddMilliseconds(RotationCooldownMs);
-
-                        // Explicit return. The next Write() will trigger InitializeWriter() and safely append to the un-rotated file.
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
-                    // PERMANENT FAILURE (e.g., UnauthorizedAccessException for ACL issues)
-                    // Trip the circuit breaker immediately to prevent an infinite loop.
                     Logger.Error($"Log rotation critical failure: {ex.Message}. Rotation will be disabled until service restart.", ex);
                     _rotationDisabled = true;
                     break;
@@ -491,11 +478,14 @@ namespace Servy.Core.IO
 
             if (success)
             {
+                // HEALING: Reset the breaker state on success
+                _rotationCooldownUntil = DateTime.MinValue;
+                _rotationDisabled = false;
+
                 EnforceMaxRotations();
             }
             else
             {
-                // This block is now only reached if the circuit breaker tripped on a non-IOException
                 Logger.Warn($"Log rotation disabled for: {_file.FullName} due to persistent error.");
             }
         }
