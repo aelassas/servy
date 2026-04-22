@@ -93,7 +93,12 @@ namespace Servy.Core.Helpers
 
                 if (!process.WaitForExit(AppConfig.HandleExeTimeoutMs))
                 {
-                    try { process.Kill(); } catch { /* Ignore cleanup errors */ }
+                    try { process.Kill(); }
+                    catch (InvalidOperationException) { /* Already exited, expected */ }
+                    catch (Exception killEx)
+                    {
+                        Logger.Warn($"Failed to kill handle.exe after timeout (PID {process.Id}): {killEx.Message}");
+                    }
                     throw new TimeoutException($"handle.exe timed out. Stderr: {errorBuilder}");
                 }
 
