@@ -21,23 +21,48 @@ namespace Servy.Core.UnitTests.Helpers
         {
             try
             {
-                // Broad cleanup to ensure no sacrificial processes survive the test run
+                // Broad cleanup for 'timeout.exe' processes
                 foreach (var p in Process.GetProcessesByName(SacrificialProcessName))
                 {
-                    try { p.Kill(); } catch { /* Ignore */ }
+                    using (p) // Ensures disposal of the process handle
+                    {
+                        try
+                        {
+                            if (!p.HasExited) p.Kill();
+                        }
+                        catch
+                        {
+                            /* Ignore: Process might have exited or access denied */
+                        }
+                    }
                 }
+
+                // Targeted cleanup for 'cmd.exe' processes
                 foreach (var p in Process.GetProcessesByName("cmd"))
                 {
-                    // Only kill cmd processes that were likely spawned by these tests
-                    if (p.MainWindowTitle == "" && p.SessionId == Process.GetCurrentProcess().SessionId)
+                    using (p) // Ensures disposal of the process handle
                     {
-                        // Careful here; usually safe in CI environments
+                        // Only kill cmd processes that are windowless and in the current session
+                        // to avoid terminating the developer's active command prompts.
+                        if (string.IsNullOrEmpty(p.MainWindowTitle) && p.SessionId == Process.GetCurrentProcess().SessionId)
+                        {
+                            try
+                            {
+                                if (!p.HasExited) p.Kill();
+                            }
+                            catch
+                            {
+                                /* Ignore: Usually safe in CI environments */
+                            }
+                        }
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // In a real test environment, we might want to log this or handle it more gracefully
+                // In a test environment, failing to clean up shouldn't crash the test runner,
+                // but we log it for observability.
+                Debug.WriteLine($"Process cleanup failed: {ex.Message}");
             }
         }
 
