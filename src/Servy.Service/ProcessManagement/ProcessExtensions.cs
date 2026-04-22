@@ -1,5 +1,7 @@
-﻿using Servy.Core.Native;
+﻿using Servy.Core.Logging;
+using Servy.Core.Native;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Servy.Service.ProcessManagement
 {
@@ -21,100 +23,150 @@ namespace Servy.Service.ProcessManagement
             }
             catch (InvalidOperationException)
             {
-                return $"({process.Id})";
+                // If the process has completely flushed from RAM, accessing .Id 
+                // can sometimes throw a second InvalidOperationException. 
+                // It's safer to catch everything here.
+                try
+                {
+                    return $"({process.Id})";
+                }
+                catch
+                {
+                    return "(Exited Process)";
+                }
             }
         }
 
         /// <summary>
-        /// Retrieves all child processes for the specified parent.
+        /// Retrieves all active child processes for a given parent process using the native Toolhelp32 API.
         /// </summary>
-        /// <param name="parentPid">The PID of the parent.</param>
-        /// <param name="parentStartTime">The start time of the parent for identity validation.</param>
+        /// <param name="parentPid">The Process ID of the parent.</param>
+        /// <param name="parentStartTime">
+        /// The <see cref="DateTime"/> the parent process started. Used to validate 
+        /// that a child truly belongs to the current parent instance and not a 
+        /// recycled PID from a previous process.
+        /// </param>
         /// <returns>
-        /// A list of tuples containing the <see cref="Process"/> and its <see cref="IntPtr"/> handle. 
-        /// <br/><strong>CRITICAL:</strong> The caller assumes full ownership of the returned Process objects and must dispose of them to prevent native handle leaks.
+        /// A <see cref="List{Process}"/> containing the child processes. 
+        /// <br/><strong>Note:</strong> The caller assumes ownership of these objects and 
+        /// must call <c>Dispose()</c> on each to prevent native handle leaks.
         /// </returns>
         /// <remarks>
-        /// This method filters the global process list using a parent PID and a 2-second start-time buffer 
-        /// to mitigate PID reuse risks. 
         /// <para>
-        /// <b>Ownership Transfer:</b> Processes that do not match the criteria are disposed of immediately 
-        /// within this method. However, processes that are included in the return list are <b>NOT</b> disposed. 
-        /// The caller is responsible for iterating the results and calling <c>Dispose()</c> on each 
-        /// <see cref="Process"/> object.
+        /// This method uses <c>CreateToolhelp32Snapshot</c> to bypass WMI dependencies, 
+        /// ensuring reliable process enumeration even on hardened servers where WMI is disabled.
+        /// </para>
+        /// <para>
+        /// <b>PID Reuse Protection:</b> Since Windows recycles PIDs, we verify that 
+        /// <c>child.StartTime >= parentStartTime</c>. A 1-second buffer is subtracted from 
+        /// the parent start time to account for OS clock tick precision.
         /// </para>
         /// </remarks>
-        public static unsafe List<(Process Process, Handle Handle)> GetChildren(int parentPid, DateTime parentStartTime)
+        public static List<Process> GetChildren(int parentPid, DateTime parentStartTime)
         {
-            var children = new List<(Process Process, Handle Handle)>();
+            var children = new List<Process>();
 
             if (parentPid <= 0 || parentStartTime == DateTime.MinValue)
                 return children;
 
-            foreach (var other in Process.GetProcesses())
+            // 1. Take a snapshot of all processes currently in the system.
+            IntPtr hSnapshot = NativeMethods.CreateToolhelp32Snapshot(NativeMethods.TH32CS_SNAPPROCESS, 0);
+            if (hSnapshot == NativeMethods.INVALID_HANDLE_VALUE)
             {
-                Handle? handle = null;
-                bool addedToChildren = false;
+                Logger.Error($"Failed to create Toolhelp32 snapshot. Win32 Error: {Marshal.GetLastWin32Error()}");
+                return children;
+            }
 
-                try
+            try
+            {
+                var pe32 = new NativeMethods.PROCESSENTRY32();
+                // We MUST set dwSize before calling Process32First, or the API will fail.
+                pe32.dwSize = (uint)Marshal.SizeOf(typeof(NativeMethods.PROCESSENTRY32));
+
+                if (!NativeMethods.Process32First(hSnapshot, ref pe32))
+                    return children;
+
+                // 2. Walk the process tree in memory (extremely fast)
+                do
                 {
-                    // Capture the ID early. If the process has already exited, 
-                    // this might throw, which is safely caught and handled.
-                    int otherId = other.Id;
-
-                    handle = NativeMethods.OpenProcess(
-                        NativeMethods.ProcessAccess.QueryInformation,
-                        false,
-                        otherId // Use the cached ID safely
-                    );
-
-                    if (handle == null || handle.IsInvalid)
-                        continue;
-
-                    // Skip processes that started before parent
-                    try
+                    if (pe32.th32ParentProcessID == parentPid)
                     {
-                        if (other.StartTime <= parentStartTime)
-                            continue;
-                    }
-                    catch
-                    {
-                        // Process may have exited, ignore
-                        continue;
-                    }
+                        try
+                        {
+                            // 3. Obtain the managed wrapper only for verified children
+                            var child = Process.GetProcessById((int)pe32.th32ProcessID);
 
-                    if (NativeMethods.NtQueryInformationProcess(
-                        handle.DangerousGetHandle(), // Explicitly pass the internal IntPtr
-                        NativeMethods.ProcessInfoClass.ProcessBasicInformation,
-                        out var info,
-                        sizeof(NativeMethods.ProcessBasicInformation)) != 0)
-                    {
-                        continue;
+                            // Strict StartTime check to prevent PID reuse collisions
+                            // We use >= and subtract 1 second to account for OS tick precision
+                            if (child.StartTime >= parentStartTime.AddSeconds(-1))
+                            {
+                                children.Add(child);
+                            }
+                            else
+                            {
+                                child.Dispose(); // Not our child, dispose it immediately
+                            }
+                        }
+                        catch
+                        {
+                            // Process exited before we could hook it, or Access Denied. Safe to ignore.
+                        }
                     }
-
-                    if ((int)info.InheritedFromUniqueProcessId == parentPid)
-                    {
-                        children.Add((other, handle));
-                        addedToChildren = true;
-                        continue;
-                    }
-                }
-                catch
-                {
-                    // Ignore inaccessible processes or processes that threw during ID access.
-                }
-                finally
-                {
-                    // Dispose only if ownership was NOT transferred to the children list.
-                    if (!addedToChildren)
-                    {
-                        other.Dispose();
-                        handle?.Dispose();
-                    }
-                }
+                } while (NativeMethods.Process32Next(hSnapshot, ref pe32));
+            }
+            finally
+            {
+                // Always close the native handle to prevent memory leaks
+                NativeMethods.CloseHandle(hSnapshot);
             }
 
             return children;
         }
+
+        /// <summary>
+        /// Recursively retrieves all descendants (children, grandchildren, etc.) of a given parent process.
+        /// </summary>
+        /// <param name="parentPid">The Process ID of the parent.</param>
+        /// <param name="parentStartTime">The start time of the parent for PID reuse validation.</param>
+        /// <returns>
+        /// A flattened <see cref="List{Process}"/> containing the entire descendant tree.
+        /// <br/><strong>Note:</strong> The caller assumes full ownership of ALL returned objects and 
+        /// must call <c>Dispose()</c> on each to prevent native handle leaks.
+        /// </returns>
+        public static List<Process> GetAllDescendants(int parentPid, DateTime parentStartTime)
+        {
+            var allDescendants = new List<Process>();
+
+            // Fetch Level 1 children using your existing Toolhelp32/WMI method
+            var directChildren = GetChildren(parentPid, parentStartTime);
+
+            foreach (var child in directChildren)
+            {
+                // 1. Add the current child to the flat list
+                allDescendants.Add(child);
+
+                try
+                {
+                    // Capture state for the next level of recursion
+                    int childPid = child.Id;
+                    DateTime childStartTime = child.StartTime;
+
+                    // 2. Recursively fetch grandchildren
+                    var deeperDescendants = GetAllDescendants(childPid, childStartTime);
+
+                    // 3. Flatten the result into our main list
+                    allDescendants.AddRange(deeperDescendants);
+                }
+                catch
+                {
+                    // If the child died between being captured and us reading its .Id/.StartTime,
+                    // or if it threw Access Denied, we safely ignore the recursion. 
+                    // The dead process remains in 'allDescendants' so the caller can properly Dispose() it.
+                }
+            }
+
+            return allDescendants;
+        }
+
     }
 }

@@ -2376,7 +2376,8 @@ namespace Servy.Service
         /// </param>
         private void SafeKillProcess(IProcessWrapper process, int timeoutMs)
         {
-            if (process == null || process.HasExited) return;
+            // FIX: Remove `|| process.HasExited` so we always clean up orphans
+            if (process == null) return;
 
             try
             {
@@ -2399,40 +2400,54 @@ namespace Servy.Service
                     _logger?.Warn($"SafeKillProcess error while getting process PID and StartTime: {ex.Message}");
                 }
 
+                // --- PRE-STOP SCAN ---
                 int childCount = 0;
                 try
                 {
-                    var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
-                    childCount = children.Count;
+                    // FIX: Use GetAllDescendants to scan the entire deep tree instead of just Level 1
+                    var initialChildren = ProcessExtensions.GetAllDescendants(parentPid, parentStartTime);
+                    childCount = initialChildren.Count;
 
-                    // We only needed the count for the dynamic timeout calculation.
-                    // Because StopDescendants will re-query the tree, we MUST dispose 
-                    // these objects immediately so we don't leak them.
-                    foreach (var child in children)
+                    if (childCount > 0)
                     {
-                        if (child.Process != null) child.Process.Dispose();
-                        child.Handle.Dispose();
+                        _logger?.Info($"Pre-stop scan found {childCount} active descendants for PID {parentPid}:");
+                        foreach (var child in initialChildren)
+                        {
+                            _logger?.Info($"  - {child.Format()}");
+                            child.Dispose(); // Dispose immediately after logging to avoid handle leaks
+                        }
+                    }
+                    else
+                    {
+                        _logger?.Info($"Pre-stop scan found no active descendants for PID {parentPid}.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger?.Warn($"Could not count children for timeout calculation: {ex.Message}");
+                    _logger?.Warn($"Could not complete pre-stop scan: {ex.Message}");
                 }
+                // ---------------------
 
                 // Total timeout = (Parent + Children) * timeoutMs + 10s safety buffer
                 var totalTimeoutMs = (((long)(childCount + 1)) * timeoutMs) + 10_000L;
 
-                Task<bool?> stopTask = Task.Run(() =>
+                Task<bool> stopTask = Task.Run(() =>
                 {
-                    // 1. Stop the main process
-                    var result = process.Stop(timeoutMs);
+                    // FIX: Send Ctrl+C to the root wrapper first. 
+                    // This natively broadcasts the signal to all console-sharing children (like Python).
+                    _logger?.Info("Signaling main wrapper process (broadcasts to console group)...");
+                    bool mainExitedGracefully = true;
+                    if (!process.HasExited)
+                    {
+                        mainExitedGracefully = process.Stop(timeoutMs) ?? true;
+                    }
 
-                    // 2. Immediately start cleaning up descendants 
-                    // This now happens while the main loop is still "pulsing" the SCM
-                    // This will walk the entire process tree using the configured stop timeout
+                    // FIX: Clean up descendants afterward. 
+                    // Thanks to WMI, we can still trace children even if the parent exited instantly.
+                    _logger?.Info($"Initiating descendant cleanup for PID {parentPid}...");
                     process.StopDescendants(parentPid, parentStartTime, timeoutMs);
 
-                    return result;
+                    return mainExitedGracefully;
                 });
 
                 // 2. Wait for the task to complete in 5-second pulses
@@ -2450,7 +2465,7 @@ namespace Servy.Service
                     }
 
                     // Request 15s of "Wait Hint" every 5s pulse
-                    _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null!);
+                    _serviceHelper.RequestAdditionalTime(this, _scmAdditionalTimeMs, null);
                 }
 
                 sw.Stop();

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>notepad_cmd</Name>
+  <DisplayName />
+  <Description>notepad_cmd</Description>
+  <ExecutablePath>C:\Windows\System32\cmd.exe</ExecutablePath>
+  <Parameters>/c "C:\Windows\System32\notepad.exe"</Parameters>
+  <StartupType>3</StartupType>
+  <Priority>2</Priority>
+  <EnableSizeRotation>false</EnableSizeRotation>
+  <RotationSize>10</RotationSize>
+  <EnableDateRotation>false</EnableDateRotation>
+  <DateRotationType>0</DateRotationType>
+  <MaxRotations>0</MaxRotations>
+  <UseLocalTimeForRotation>false</UseLocalTimeForRotation>
+  <EnableHealthMonitoring>false</EnableHealthMonitoring>
+  <HeartbeatInterval>30</HeartbeatInterval>
+  <MaxFailedChecks>3</MaxFailedChecks>
+  <RecoveryAction>1</RecoveryAction>
+  <MaxRestartAttempts>3</MaxRestartAttempts>
+  <PreLaunchTimeoutSeconds>30</PreLaunchTimeoutSeconds>
+  <PreLaunchRetryAttempts>0</PreLaunchRetryAttempts>
+  <PreLaunchIgnoreFailure>false</PreLaunchIgnoreFailure>
+  <EnableDebugLogs>false</EnableDebugLogs>
+  <StartTimeout>10</StartTimeout>
+  <StopTimeout>5</StopTimeout>
+  <PreStopTimeoutSeconds>5</PreStopTimeoutSeconds>
+  <PreStopLogAsError>false</PreStopLogAsError>
+</ServiceDto>
