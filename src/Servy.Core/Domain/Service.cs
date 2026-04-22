@@ -107,12 +107,12 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets the startup type of the service (e.g., Automatic, Manual).
         /// </summary>
-        public ServiceStartType StartupType { get; set; }
+        public ServiceStartType StartupType { get; set; } = AppConfig.DefaultStartupType;
 
         /// <summary>
         /// Gets or sets the process priority for the service.
         /// </summary>
-        public ProcessPriority Priority { get; set; }
+        public ProcessPriority Priority { get; set; } = AppConfig.DefaultPriority;
 
         /// <summary>
         /// Gets or sets the optional file path for redirecting standard output.
@@ -144,7 +144,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Gets or sets a value indicating date rotation type (stored as int, represents <see cref="Servy.Core.Enums.DateRotationType"/>).
         /// </summary>
-        public DateRotationType DateRotationType { get; set; }
+        public DateRotationType DateRotationType { get; set; } = AppConfig.DefaultDateRotationType;
 
         /// <summary>
         /// Maximum number of rotated log files to keep. 
