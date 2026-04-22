@@ -112,9 +112,6 @@ Source: ".\taskschd\*"; DestDir: "{app}\taskschd"; Excludes: "smtp-config.xml, s
 ; 2. Preserve the config file on upgrades
 Source: ".\taskschd\smtp-config.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
 
-; 3. Preserve the credentials file on upgrades
-Source: ".\taskschd\smtp-cred.xml"; DestDir: "{app}\taskschd"; Flags: ignoreversion onlyifdoesntexist uninsneveruninstall
-
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Dirs]
