@@ -213,7 +213,7 @@ namespace Servy.ViewModels
 
         /// <summary>
         /// Gets or sets a value indicating whether size-based log rotation is enabled.
-        /// </summary>UseLocalTimeForRotation
+        /// </summary>
         public bool EnableSizeRotation
         {
             get => _config.EnableSizeRotation;
@@ -817,6 +817,7 @@ namespace Servy.ViewModels
 
             // Initialize defaults
             ServiceName = string.Empty;
+            ServiceDisplayName = string.Empty;
             ServiceDescription = string.Empty;
             ProcessPath = string.Empty;
             StartupDirectory = string.Empty;
@@ -905,7 +906,11 @@ namespace Servy.ViewModels
             ClearFormCommand = new AsyncCommand(ClearForm);
 
             var app = (App)Application.Current;
-            IsManagerAppAvailable = app.IsManagerAppAvailable;
+            if (app != null)
+            {
+                IsManagerAppAvailable = app.IsManagerAppAvailable;
+                app.PropertyChanged += App_PropertyChanged;
+            }
         }
 
         /// <summary>
@@ -958,6 +963,21 @@ namespace Servy.ViewModels
             {
                 Logger.Error($"Error loading configuration for service '{serviceName}'", ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, AppConfig.Caption);
+            }
+        }
+
+        #endregion
+
+        #region Private Helpers
+
+        /// <summary>
+        /// PropertyChanged event handler to capture dynamically updated settings from the application.
+        /// </summary>
+        private void App_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(App.IsManagerAppAvailable))
+            {
+                IsManagerAppAvailable = ((App)sender).IsManagerAppAvailable;
             }
         }
 
@@ -1272,7 +1292,7 @@ namespace Servy.ViewModels
 
         #endregion
 
-        #region Private Helpers
+        #region Public Methods
 
         /// <summary>
         /// Populates the ViewModel's properties from a given <see cref="ServiceDto"/> instance.
@@ -1430,6 +1450,5 @@ namespace Servy.ViewModels
         }
 
         #endregion
-
     }
 }

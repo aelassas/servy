@@ -77,14 +77,14 @@ namespace Servy.Service.Helpers
         /// A dictionary containing system environment variables combined with the provided custom ones,
         /// with all values fully expanded using a multi-pass fixed-point resolution to safely handle cross-references.
         /// </returns>
-        public static Dictionary<string, string> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
+        public static Dictionary<string, string?> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
         {
-            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
             // 1. Load System Environment
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
             {
-                result[(string)entry.Key] = (string)entry.Value;
+                result[(string)entry.Key] = (string?)entry.Value;
             }
 
             // 2. Merge Custom Variables with SECURITY CHECK
@@ -119,7 +119,7 @@ namespace Servy.Service.Helpers
 
                 foreach (var key in result.Keys.ToList())
                 {
-                    string original = result[key];
+                    string? original = result[key];
                     if (string.IsNullOrEmpty(original)) continue;
 
                     string expanded = ExpandWithDictionary(original, snapshot);
@@ -150,7 +150,7 @@ namespace Servy.Service.Helpers
             // 4. Final layer: Apply OS-level expansion for any remaining unmapped system placeholders
             foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
             {
-                result[key] = Environment.ExpandEnvironmentVariables(result[key]);
+                result[key] = Environment.ExpandEnvironmentVariables(result[key]!);
             }
 
             return result;
@@ -166,7 +166,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// The input string with all environment variable references expanded.
         /// </returns>
-        public static string ExpandEnvironmentVariables(string input, IDictionary<string, string> expandedEnv)
+        public static string ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
@@ -184,7 +184,7 @@ namespace Servy.Service.Helpers
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(string value, IDictionary<string, string> variables)
+        private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables)
         {
             if (string.IsNullOrEmpty(value))
                 return value;

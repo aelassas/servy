@@ -12,6 +12,8 @@ using Servy.UI.Services;
 using Servy.Validators;
 using Servy.ViewModels;
 using Servy.Views;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 #if !DEBUG
 using Servy.Core.Helpers;
 using System.Diagnostics;
@@ -24,7 +26,7 @@ namespace Servy
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : Application, INotifyPropertyChanged
     {
         #region Constants
 
@@ -39,6 +41,25 @@ namespace Servy
         #region Fields
 
         private readonly AppBootstrapper _bootstrapper;
+        private bool _isManagerAppAvailable;
+        private FileSystemWatcher _availabilityWatcher;
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Raises the <see cref="PropertyChanged"/> event for the specified property name.
+        /// </summary>
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         #endregion
 
@@ -74,8 +95,20 @@ namespace Servy
 
         /// <summary>
         /// Indicates whether the Manager application is available.
+        /// Dynamically updates if the application is installed or removed during runtime.
         /// </summary>
-        public bool IsManagerAppAvailable { get; private set; }
+        public bool IsManagerAppAvailable
+        {
+            get => _isManagerAppAvailable;
+            private set
+            {
+                if (_isManagerAppAvailable != value)
+                {
+                    _isManagerAppAvailable = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether software rendering has been forced for the current session.
@@ -182,10 +215,70 @@ namespace Servy
                     {
                         Logger.Warn($"Manager app executable not found: {ManagerAppPublishPath}");
                     }
+
+                    StartAvailabilityMonitor();
                 }
             };
 
             _bootstrapper = new AppBootstrapper(options);
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        /// <summary>
+        /// Starts a real-time background watcher to monitor whether the Manager configuration
+        /// app becomes available or unavailable after Servy has started.
+        /// </summary>
+        private void StartAvailabilityMonitor()
+        {
+            if (string.IsNullOrEmpty(ManagerAppPublishPath)) return;
+
+            string directory = Path.GetDirectoryName(ManagerAppPublishPath);
+            string fileName = Path.GetFileName(ManagerAppPublishPath);
+
+            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(fileName)) return;
+
+            try
+            {
+                // Ensure the directory exists before watching it, otherwise FileSystemWatcher throws an exception
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                _availabilityWatcher = new FileSystemWatcher(directory, fileName)
+                {
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.CreationTime | NotifyFilters.LastWrite,
+                    EnableRaisingEvents = true
+                };
+
+                // Watch for all file lifecycle events to ensure we catch installations, uninstalls, and updates
+                _availabilityWatcher.Created += (s, e) => UpdateAvailabilityState();
+                _availabilityWatcher.Deleted += (s, e) => UpdateAvailabilityState();
+                _availabilityWatcher.Renamed += (s, e) => UpdateAvailabilityState();
+                _availabilityWatcher.Changed += (s, e) => UpdateAvailabilityState();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to initialize FileSystemWatcher for {fileName}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Re-evaluates the availability of the target app and safely updates the UI binding.
+        /// </summary>
+        private void UpdateAvailabilityState()
+        {
+            // Dispatch to UI thread to safely update data-bound properties from the watcher's background thread
+            Current.Dispatcher.InvokeAsync(() =>
+            {
+                if (!string.IsNullOrEmpty(ManagerAppPublishPath))
+                {
+                    IsManagerAppAvailable = File.Exists(ManagerAppPublishPath);
+                }
+            });
         }
 
         #endregion
@@ -260,6 +353,7 @@ namespace Servy
         {
             try
             {
+                _availabilityWatcher?.Dispose();
                 _bootstrapper.OnExit(e);
             }
             finally
