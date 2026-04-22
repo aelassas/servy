@@ -1,4 +1,5 @@
 ﻿using Servy.Core.Logging;
+using Servy.Core.Native;
 using Servy.Service.Helpers;
 using System;
 using System.ComponentModel;
@@ -7,7 +8,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Servy.Core.Native;
 using static Servy.Core.Native.NativeMethods;
 
 namespace Servy.Service.ProcessManagement
@@ -330,7 +330,6 @@ namespace Servy.Service.ProcessManagement
         /// <param name="timeoutMs">Timeout in Milliseconds.</param>
         private void StopTree(Process process, int timeoutMs)
         {
-            // Capture lineage BEFORE stopping
             var parentPid = 0;
             var parentStartTime = DateTime.MinValue;
             try
@@ -338,22 +337,24 @@ namespace Servy.Service.ProcessManagement
                 parentPid = process.Id;
                 parentStartTime = process.StartTime;
             }
-            catch (Exception ex)
+            catch
             {
-                /* Process already dead, can't get children anyway */
-                _logger?.Warn($"StopTree error while getting process PID and StartTime: {ex.Message}");
+                // Process already dead
             }
 
-            StopPrivate(process, timeoutMs);
-
+            // 1. RECURSION: Hunt down grandchildren first
             foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
             {
-                using (child.Process)
-                using (child.Handle)
+                using (child)
                 {
-                    StopTree(child.Process, timeoutMs);
+                    _logger?.Info($"Cascading stop to deeper descendant: {child.ProcessName} (PID: {child.Id})...");
+                    StopTree(child, timeoutMs);
                 }
             }
+
+            // 2. TERMINATION: Kill the current node now that its children are dead
+            _logger?.Info($"Terminating node: {process.ProcessName} (PID: {process.Id})");
+            StopPrivate(process, timeoutMs);
         }
 
         /// <inheritdoc/>
@@ -361,12 +362,22 @@ namespace Servy.Service.ProcessManagement
         {
             ThrowIfDisposed();
 
-            foreach (var child in ProcessExtensions.GetChildren(parentPid, parentStartTime))
+            _logger?.Info($"Scanning for top-level descendants of PID {parentPid}...");
+
+            var children = ProcessExtensions.GetChildren(parentPid, parentStartTime);
+
+            if (children.Count == 0)
             {
-                using (child.Process)
-                using (child.Handle)
+                _logger?.Info($"No active descendants found for PID {parentPid}.");
+                return;
+            }
+
+            foreach (var child in children)
+            {
+                using (child) // We no longer need to dispose a native Handle, just the Process object
                 {
-                    StopTree(child.Process, timeoutMs);
+                    _logger?.Info($"Found descendant: {child.ProcessName} (PID: {child.Id}). Initiating cascaded kill...");
+                    StopTree(child, timeoutMs);
                 }
             }
         }
@@ -500,24 +511,36 @@ namespace Servy.Service.ProcessManagement
         /// </remarks>
         private bool? SendCtrlC(Process process)
         {
+            // FIX: ALWAYS free the console first to prevent stale locks from previous iterations
+            _ = FreeConsole();
+
             if (!AttachConsole(process.Id))
             {
                 int error = Marshal.GetLastWin32Error();
-                switch (error)
+
+                // ERROR_PIPE_NOT_CONNECTED (233)
+                // The child shares the parent's console. It already received the broadcasted Ctrl+C 
+                // when the parent was signaled. We return TRUE to force the wrapper to wait for 
+                // a graceful exit rather than instantly triggering process.Kill().
+                if (error == 233)
                 {
-                    // The process does not have a console.
-                    case Errors.ERROR_INVALID_HANDLE:
-                        return false;
-
-                    // The process has exited.
-                    case Errors.ERROR_INVALID_PARAMETER:
-                        return null;
-
-                    // The calling process is already attached to a console.
-                    default:
-                        _logger?.Warn($"Sending Ctrl+C: Failed to attach the child process '{process.Format()}' to console: {new Win32Exception(error).Message}");
-                        return false;
+                    _logger?.Info($"Process '{process.Format()}' shares a console group. Awaiting graceful shutdown...");
+                    return true;
                 }
+
+                // ERROR_INVALID_HANDLE (6) or ERROR_GEN_FAILURE (31)
+                if (error == Errors.ERROR_INVALID_HANDLE || error == 31)
+                {
+                    return false;
+                }
+
+                if (error == Errors.ERROR_INVALID_PARAMETER)
+                {
+                    return null; // Process already exited
+                }
+
+                _logger?.Warn($"Sending Ctrl+C: Failed to attach to '{process.Format()}': {new Win32Exception(error).Message} (Error: {error})");
+                return false;
             }
 
             // CRITICAL: Temporarily ignore Ctrl+C in the calling process (the service).
