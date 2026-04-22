@@ -1,6 +1,10 @@
-﻿using Servy.Core.EnvironmentVariables;
+﻿using Servy.Core.Config;
+using Servy.Core.EnvironmentVariables;
 using Servy.Core.Logging;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Servy.Service.Helpers
 {
@@ -61,10 +65,6 @@ namespace Servy.Service.Helpers
             "LD_PRELOAD", "LD_LIBRARY_PATH"
         };
 
-        // Safety caps to prevent unbounded growth from complex recursive nesting
-        private const int MaxExpansionPasses = 5;
-        private const int MaxStringLength = 32768;
-
         /// <summary>
         /// Builds a dictionary of environment variables by merging the current system environment
         /// with the provided custom environment variables. All values are expanded so that system
@@ -77,14 +77,14 @@ namespace Servy.Service.Helpers
         /// A dictionary containing system environment variables combined with the provided custom ones,
         /// with all values fully expanded using a multi-pass fixed-point resolution to safely handle cross-references.
         /// </returns>
-        public static Dictionary<string, string?> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
+        public static Dictionary<string, string> ExpandEnvironmentVariables(List<EnvironmentVariable> environmentVariables)
         {
-            var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             // 1. Load System Environment
             foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
             {
-                result[(string)entry.Key] = (string?)entry.Value;
+                result[(string)entry.Key] = (string)entry.Value;
             }
 
             // 2. Merge Custom Variables with SECURITY CHECK
@@ -119,16 +119,16 @@ namespace Servy.Service.Helpers
 
                 foreach (var key in result.Keys.ToList())
                 {
-                    string? original = result[key];
+                    string original = result[key];
                     if (string.IsNullOrEmpty(original)) continue;
 
                     string expanded = ExpandWithDictionary(original, snapshot);
 
                     // Exponential growth guard
-                    if (expanded != null && expanded.Length > MaxStringLength)
+                    if (expanded != null && expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
-                        Logger.Warn($"Expansion of '{key}' exceeded {MaxStringLength} characters. Truncating to prevent memory exhaustion.");
-                        expanded = expanded.Substring(0, MaxStringLength);
+                        Logger.Warn($"Expansion of '{key}' exceeded {AppConfig.MaxEnvVarExpandedLength} characters. Truncating to prevent memory exhaustion.");
+                        expanded = expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
                     }
 
                     if (!string.Equals(original, expanded, StringComparison.Ordinal))
@@ -140,9 +140,9 @@ namespace Servy.Service.Helpers
 
                 pass++;
             }
-            while (changed && pass < MaxExpansionPasses);
+            while (changed && pass < AppConfig.MaxEnvVarExpansionPasses);
 
-            if (pass >= MaxExpansionPasses && changed)
+            if (pass >= AppConfig.MaxEnvVarExpansionPasses && changed)
             {
                 Logger.Warn("Environment variable expansion reached maximum pass limit. Indirect circular reference detected (e.g., A=%B%, B=%A%).");
             }
@@ -150,7 +150,7 @@ namespace Servy.Service.Helpers
             // 4. Final layer: Apply OS-level expansion for any remaining unmapped system placeholders
             foreach (var key in result.Keys.Where(k => !string.IsNullOrEmpty(result[k])).ToList())
             {
-                result[key] = Environment.ExpandEnvironmentVariables(result[key]!);
+                result[key] = Environment.ExpandEnvironmentVariables(result[key]);
             }
 
             return result;
@@ -166,7 +166,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// The input string with all environment variable references expanded.
         /// </returns>
-        public static string ExpandEnvironmentVariables(string input, IDictionary<string, string?> expandedEnv)
+        public static string ExpandEnvironmentVariables(string input, IDictionary<string, string> expandedEnv)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
@@ -184,7 +184,7 @@ namespace Servy.Service.Helpers
         /// <param name="value">The string to expand.</param>
         /// <param name="variables">The dictionary of environment variables to use during expansion.</param>
         /// <returns>The expanded string.</returns>
-        private static string ExpandWithDictionary(string value, IDictionary<string, string?> variables)
+        private static string ExpandWithDictionary(string value, IDictionary<string, string> variables)
         {
             if (string.IsNullOrEmpty(value))
                 return value;
@@ -216,9 +216,9 @@ namespace Servy.Service.Helpers
                     index += replacement.Length; // move past the inserted value
 
                     // Inline length guard to prevent memory exhaustion
-                    if (expanded.Length > MaxStringLength)
+                    if (expanded.Length > AppConfig.MaxEnvVarExpandedLength)
                     {
-                        return expanded.Substring(0, MaxStringLength);
+                        return expanded.Substring(0, AppConfig.MaxEnvVarExpandedLength);
                     }
                 }
             }
