@@ -174,8 +174,11 @@ namespace Servy.CLI.Validators
         {
             if (error != null || string.IsNullOrWhiteSpace(val)) return null;
 
-            T result;
-            if (Enum.TryParse<T>(val, true, out result)) return (int)(object)result;
+            if (Enum.TryParse<T>(val, true, out T result))
+            {
+                // Use Convert.ToInt32 to avoid InvalidCastException during unboxing
+                return Convert.ToInt32(result);
+            }
 
             error = string.Format("Invalid value for {0}: '{1}'. Valid options: {2}",
                 GetOptionName(propertyName), val, string.Join(", ", Enum.GetNames(typeof(T))));
