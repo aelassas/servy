@@ -96,14 +96,14 @@ jobs:
           VERSION: ${{ env.VERSION }}
           GH_PAT: ${{ secrets.PAT }} # Pass secret as an ENV variable
         run: |
-          # Configure Git to use the PAT for any GitHub URL automatically
-          git config --global url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-          
-          # Now the clone command is clean and safe
+          # Clone the repository first without injecting PAT globally
           git clone https://github.com/aelassas/scoop-bucket.git scoop-bucket
           
           # Change to the folder where servy.json is
           Set-Location scoop-bucket
+          
+          # Scope the PAT securely to this repository's local git config only
+          git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
           
           # Path to the manifest inside the cloned repo
           $manifestPath = "servy.json"   # adjust if servy.json is elsewhere
@@ -118,7 +118,7 @@ jobs:
           
           # Save formatted JSON
           # $jsonObj | ConvertTo-Json -Depth 10 | Out-File $manifestPath -Encoding UTF8
-          
+
           $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
 
           # Split lines correctly using regex
@@ -152,12 +152,12 @@ jobs:
         env:
           GH_PAT: ${{ secrets.PAT }} # Keep the secret in the environment, not the command line
         run: |
-          # Re-apply the secure URL mapping to ensure this step uses the PAT contextually
-          git config --global url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
-          
-          # Now the clone command is clean and doesn't leak secrets in process lists
+          # Clone the repository first
           git clone https://github.com/aelassas/Extras.git extras
           Set-Location extras
+
+          # Scope the PAT securely to this repository's local git config only
+          git config url."https://x-access-token:${env:GH_PAT}@github.com/".insteadOf "https://github.com/"
 
           # Define the target branch name
           $branchName = "update-servy-$env:VERSION"
@@ -254,7 +254,6 @@ jobs:
               $jsonObj.version = $env:VERSION
               $jsonObj.architecture.'64bit'.url = "https://github.com/aelassas/servy/releases/download/v$env:VERSION/servy-$env:VERSION-x64-installer.exe"
               $jsonObj.architecture.'64bit'.hash = $env:HASH
-              # $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false | Out-File $manifestPath -Encoding UTF8
 
               $jsonString = $jsonObj | ConvertTo-Json -Depth 10 -Compress:$false
 
@@ -304,4 +303,3 @@ jobs:
           } else {
               Write-Host "PR branch does not exist on remote, skipping PR creation."
           }
-          
