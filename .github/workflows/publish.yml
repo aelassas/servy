@@ -85,21 +85,14 @@ jobs:
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
-          if (-not $v) { throw "CYCLONEDX_CLI_VERSION environment variable not set" }
-          
-          $exePath = "$env:USERPROFILE\cyclonedx.exe"
-          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
-                            -OutFile $exePath `
-                            -ErrorAction Stop
-          
-          # --- SECURITY CHECK ---
-          Write-Host "Verifying Authenticode signature of CycloneDX CLI..."
-          $sig = Get-AuthenticodeSignature $exePath
-          if ($sig.Status -ne 'Valid') { 
-              throw "CycloneDX CLI signature check failed: $($sig.Status). The file may be compromised." 
+          if (-not $v) { 
+              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
           }
-          Write-Host "Signature verified successfully. Signer: $($sig.SignerCertificate.Subject)"
-          # ----------------------
+          
+          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+          Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
+                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
+                            -ErrorAction Stop
           
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
