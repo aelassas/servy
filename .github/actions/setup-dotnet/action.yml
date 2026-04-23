@@ -3,15 +3,17 @@
 # ------------------------------------------------------------------------------
 # Security: Prevents script injection by mapping user-controlled inputs 
 # to environment variables instead of using inline expressions in 'run' blocks.
-# Added strict Authenticode signature validation to prevent supply-chain attacks.
 # ==============================================================================
+
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
+
 inputs:
   version:
     description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
     default: '10.0.202' # Pinned version to prevent silent drift
+
 runs:
   using: "composite"
   steps:
@@ -59,11 +61,9 @@ runs:
         # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
-        # Using -Version instead of -Channel to ensure reproducibility.
-        # Instructs the script to parse global.json and install whatever is in there
         powershell -ExecutionPolicy Bypass -File ./dotnet-install.ps1 `
-          -JsonFile "$env:GITHUB_WORKSPACE\global.json" `
-          -InstallDir $installDir
+        -Version "$env:DOTNET_VERSION" `
+        -InstallDir $installDir
 
         if ($LASTEXITCODE -ne 0) {
           throw "dotnet-install.ps1 failed with exit code $LASTEXITCODE"
