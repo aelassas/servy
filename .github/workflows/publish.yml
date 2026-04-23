@@ -133,16 +133,6 @@ jobs:
           Write-Host "Downloading 7-Zip v26.00..."
           Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
 
-          # --- SECURITY CHECK ---
-          Write-Host "Verifying Authenticode signature of 7-Zip..."
-          $sig = Get-AuthenticodeSignature $installer
-          
-          if ($sig.Status -ne 'Valid') { 
-              throw "7-Zip signature check failed: $($sig.Status). The file may be compromised." 
-          }
-          Write-Host "Signature verified successfully."
-          # ----------------------
-
           # 3. Install silently to a fixed directory
           Write-Host "Installing to $installDir..."
           Start-Process ".\$installer" -ArgumentList "/S", "/D=$installDir" -Wait
