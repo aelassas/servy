@@ -85,14 +85,21 @@ jobs:
         shell: pwsh
         run: |
           $v = $env:CYCLONEDX_CLI_VERSION
-          if (-not $v) { 
-              throw "CYCLONEDX_CLI_VERSION environment variable not set" 
-          }
+          if (-not $v) { throw "CYCLONEDX_CLI_VERSION environment variable not set" }
           
-          # Force a hard stop if the download fails (e.g., GitHub is down or version is wrong)
+          $exePath = "$env:USERPROFILE\cyclonedx.exe"
           Invoke-WebRequest -Uri "https://github.com/CycloneDX/cyclonedx-cli/releases/download/$v/cyclonedx-win-x64.exe" `
-                            -OutFile "$env:USERPROFILE\cyclonedx.exe" `
+                            -OutFile $exePath `
                             -ErrorAction Stop
+          
+          # --- SECURITY CHECK ---
+          Write-Host "Verifying Authenticode signature of CycloneDX CLI..."
+          $sig = Get-AuthenticodeSignature $exePath
+          if ($sig.Status -ne 'Valid') { 
+              throw "CycloneDX CLI signature check failed: $($sig.Status). The file may be compromised." 
+          }
+          Write-Host "Signature verified successfully. Signer: $($sig.SignerCertificate.Subject)"
+          # ----------------------
           
           Add-Content -Path $env:GITHUB_PATH -Value $env:USERPROFILE
 
@@ -100,8 +107,23 @@ jobs:
         shell: pwsh
         run: |
           $url = "https://github.com/jrsoftware/issrc/releases/download/is-6_6_1/innosetup-6.6.1.exe"
-          Invoke-WebRequest -Uri $url -OutFile "innosetup.exe" -ErrorAction Stop
-          Start-Process ".\innosetup.exe" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
+          $installer = "innosetup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+          
+          # --- SECURITY CHECK ---
+          Write-Host "Verifying Authenticode signature of Inno Setup..."
+          $sig = Get-AuthenticodeSignature $installer
+          
+          if ($sig.Status -ne 'Valid') { 
+              throw "Inno Setup signature check failed: $($sig.Status). The file may be compromised." 
+          }
+          if ($sig.SignerCertificate.Subject -notmatch 'Jordan Russell') {
+              throw "Inno Setup signature subject mismatch. Expected 'Jordan Russell', got: $($sig.SignerCertificate.Subject)"
+          }
+          Write-Host "Signature verified successfully."
+          # ----------------------
+
+          Start-Process ".\$installer" -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES" -Wait
           if (-not (Test-Path $env:ISCC)) { throw "ISCC.exe not found at $env:ISCC" }
 
       - name: Install 7zip from GitHub
@@ -114,9 +136,22 @@ jobs:
           $installDir = "C:\7-Zip"
           $exePath = "$installDir\7z.exe"
 
-          # 2. Download from GitHub Releases (more reliable for CI)
+          # 2. Download from GitHub Releases
           Write-Host "Downloading 7-Zip v26.00..."
           Invoke-WebRequest -Uri $url -OutFile $installer -ErrorAction Stop
+
+          # --- SECURITY CHECK ---
+          Write-Host "Verifying Authenticode signature of 7-Zip..."
+          $sig = Get-AuthenticodeSignature $installer
+          
+          if ($sig.Status -ne 'Valid') { 
+              throw "7-Zip signature check failed: $($sig.Status). The file may be compromised." 
+          }
+          if ($sig.SignerCertificate.Subject -notmatch 'Igor Pavlov') {
+              throw "7-Zip signature subject mismatch. Expected 'Igor Pavlov', got: $($sig.SignerCertificate.Subject)"
+          }
+          Write-Host "Signature verified successfully."
+          # ----------------------
 
           # 3. Install silently to a fixed directory
           Write-Host "Installing to $installDir..."
@@ -129,12 +164,10 @@ jobs:
           echo "SEVEN_ZIP=$exePath" >> $env:GITHUB_ENV
 
           # 6. Verification & Version Check
-          if (-not (Test-Path $env:SEVEN_ZIP)) { 
-              throw "7z.exe not found at $env:SEVEN_ZIP" 
-          }
+          if (-not (Test-Path $env:SEVEN_ZIP)) { throw "7z.exe not found at $env:SEVEN_ZIP" }
 
           Write-Host "7-Zip installed successfully!"
-          & $env:SEVEN_ZIP | Select-String "7-Zip" # Echoes version info to logs
+          & $env:SEVEN_ZIP | Select-String "7-Zip"
 
       # -----------------------------------------------------
       # Build projects individually
