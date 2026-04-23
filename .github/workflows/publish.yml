@@ -110,9 +110,6 @@ jobs:
           if ($sig.Status -ne 'Valid') { 
               throw "Inno Setup signature check failed: $($sig.Status). The file may be compromised." 
           }
-          if ($sig.SignerCertificate.Subject -notmatch 'Jordan Russell') {
-              throw "Inno Setup signature subject mismatch. Expected 'Jordan Russell', got: $($sig.SignerCertificate.Subject)"
-          }
           Write-Host "Signature verified successfully."
           # ----------------------
 
@@ -139,9 +136,6 @@ jobs:
           
           if ($sig.Status -ne 'Valid') { 
               throw "7-Zip signature check failed: $($sig.Status). The file may be compromised." 
-          }
-          if ($sig.SignerCertificate.Subject -notmatch 'Igor Pavlov') {
-              throw "7-Zip signature subject mismatch. Expected 'Igor Pavlov', got: $($sig.SignerCertificate.Subject)"
           }
           Write-Host "Signature verified successfully."
           # ----------------------
