@@ -1530,64 +1530,84 @@ namespace Servy.Service
         /// <param name="e">Event data containing no specific exit information.</param>
         private async void OnProcessExited(object sender, EventArgs e)
         {
-            if (_isTearingDown || _disposed) return;
-
-            _logger?.Warn("Child process exit detected via event.");
-            ClearProcessState();
-
-            bool needsRecovery = false;
-            bool shouldStop = false;
-            int exitCode = -1;
-
-            // Use WaitAsync instead of Wait to avoid blocking thread pool threads
-            await _healthCheckSemaphore.WaitAsync();
-
             try
             {
+                // Initial fast-path check
+                if (_isTearingDown || _disposed) return;
+
+                _logger?.Warn("Child process exit detected via event.");
+                ClearProcessState();
+
+                bool needsRecovery = false;
+                bool shouldStop = false;
+                int exitCode = -1;
+
+                // Move the await INSIDE the boundary. 
+                // If teardown disposes the semaphore while we are suspended here, 
+                // the ObjectDisposedException will be caught by our handler.
+                await _healthCheckSemaphore.WaitAsync();
+
                 try
                 {
-                    exitCode = _childProcess?.ExitCode ?? -1;
+                    // Re-check state after acquiring the lock to ensure we didn't 
+                    // race with ExecuteTeardown while waiting for the semaphore.
+                    if (_isTearingDown || _disposed) return;
+
+                    try
+                    {
+                        exitCode = _childProcess?.ExitCode ?? -1;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Warn($"Failed to get exit code: {ex.Message}");
+                    }
+
+                    if (exitCode == 0)
+                    {
+                        _logger?.Info("Child process exited successfully (Code 0).");
+                        shouldStop = true;
+                    }
+                    else if (_recoveryActionEnabled)
+                    {
+                        // Unified recovery check
+                        needsRecovery = RegisterFailureAndCheckRecovery();
+                    }
+                    else
+                    {
+                        _logger?.Error($"Process exited with code {exitCode} and recovery is disabled.");
+                        shouldStop = true;
+                    }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    _logger?.Warn($"Failed to get exit code: {ex.Message}");
+                    // Ensure we only release if the semaphore wasn't disposed mid-try
+                    try { _healthCheckSemaphore.Release(); }
+                    catch (ObjectDisposedException) { /* Ignored during teardown */ }
                 }
 
-                if (exitCode == 0)
+                // Actions outside the lock to avoid holding the semaphore during I/O or delays
+                if (shouldStop)
                 {
-                    _logger?.Info("Child process exited successfully (Code 0).");
-                    shouldStop = true;
+                    if (exitCode != 0) RunFailureProgram();
+                    Stop();
                 }
-                else if (_recoveryActionEnabled)
+                else if (needsRecovery)
                 {
-                    // Unified recovery check
-                    needsRecovery = RegisterFailureAndCheckRecovery();
-                }
-                else
-                {
-                    _logger?.Error($"Process exited with code {exitCode} and recovery is disabled.");
-                    shouldStop = true;
+                    // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
+                    var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - 5000, 5000);
+                    _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
+                    
+                    // Fire-and-forget the recovery task safely
+                    _ = ScheduleRecoveryAsync(delayMs);
                 }
             }
-            finally
+            catch (ObjectDisposedException)
             {
-                _healthCheckSemaphore.Release();
+                _logger?.Info("OnProcessExited: Semaphore disposed during wait. Teardown in progress.");
             }
-
-            // Actions outside the lock
-            if (shouldStop)
+            catch (Exception ex)
             {
-                if (exitCode != 0) RunFailureProgram();
-                Stop();
-            }
-            else if (needsRecovery)
-            {
-                // Calculate delay: Heartbeat interval minus a 5s buffer, minimum 5s.
-                var delayMs = Math.Max(ClampTimeout(_options!.HeartbeatInterval) - 5000, 5000);
-                _logger?.Info($"[OnProcessExited] Failure threshold reached. Scheduling recovery in {delayMs / 1000}s...");
-
-                // Fire-and-forget the recovery task safely
-                _ = ScheduleRecoveryAsync(delayMs);
+                _logger?.Error($"OnProcessExited failed: {ex.Message}", ex);
             }
 
             // Helper local function to handle the asynchronous wait and safety checks
@@ -1618,7 +1638,6 @@ namespace Servy.Service
                 // or the delay threw an exception. We MUST clear the gatekeeper flag.
                 _isRecovering = false;
             }
-
         }
 
         /// <summary>
