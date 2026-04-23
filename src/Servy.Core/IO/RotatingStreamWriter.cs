@@ -97,6 +97,7 @@ namespace Servy.Core.IO
             _rotationSizeInBytes = rotationSizeInBytes;
             _enableDateRotation = enableDateRotation;
             _dateRotationType = dateRotationType;
+            _useLocalTimeForRotation = useLocalTimeForRotation;
             // Initialize the time provider. Defaults to the system clock based on configuration.
             _timeProvider = timeProvider ?? (() => _useLocalTimeForRotation ? DateTime.Now : DateTime.UtcNow);
 
@@ -104,7 +105,6 @@ namespace Servy.Core.IO
             var lastWriteTime = useLocalTimeForRotation ? File.GetLastWriteTime(path) : File.GetLastWriteTimeUtc(path);
             _lastRotationDate = File.Exists(path) ? lastWriteTime : now; // baseline for date rotation
             _maxRotations = maxRotations;
-            _useLocalTimeForRotation = useLocalTimeForRotation;
         }
 
         /// <summary>
