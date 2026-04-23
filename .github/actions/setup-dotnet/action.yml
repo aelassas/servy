@@ -3,17 +3,15 @@
 # ------------------------------------------------------------------------------
 # Security: Prevents script injection by mapping user-controlled inputs 
 # to environment variables instead of using inline expressions in 'run' blocks.
+# Added strict Authenticode signature validation to prevent supply-chain attacks.
 # ==============================================================================
-
 name: 'Setup Custom .NET'
 description: 'Installs a specific .NET SDK version using the dotnet-install script'
-
 inputs:
   version:
     description: '.NET SDK version to install (e.g., 10.0.102). Pinning ensures reproducible builds.'
     required: true
     default: '10.0.202' # Pinned version to prevent silent drift
-
 runs:
   using: "composite"
   steps:
@@ -42,6 +40,21 @@ runs:
 
           Start-Sleep -Seconds 3
         }
+        
+        # --- SECURITY CHECK ---
+        Write-Host "Verifying Authenticode signature of dotnet-install.ps1..."
+        $sig = Get-AuthenticodeSignature ./dotnet-install.ps1
+        
+        if ($sig.Status -ne 'Valid') {
+          throw "dotnet-install.ps1 signature check failed: $($sig.Status). The file may be compromised or unsigned."
+        }
+        
+        # We strictly match the organization (O=) to prevent attacks using valid certs from other entities
+        if ($sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
+          throw "dotnet-install.ps1 signature subject mismatch. Expected 'Microsoft Corporation', got: $($sig.SignerCertificate.Subject)"
+        }
+        Write-Host "Signature verified successfully."
+        # ----------------------
         
         # Ensure the installation directory exists
         New-Item -ItemType Directory -Force -Path $installDir | Out-Null

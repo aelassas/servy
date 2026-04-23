@@ -45,7 +45,7 @@ namespace Servy.Core.UnitTests.Validators
         {
             var dto = new ServiceDto { Name = name!, ExecutablePath = path };
             var result = ServiceValidationRules.Validate(dto);
-            Assert.Contains(Strings.Msg_ValidationError, result.Warnings);
+            Assert.Contains(Strings.Msg_ValidationError, result.Errors);
         }
 
         [Fact]
