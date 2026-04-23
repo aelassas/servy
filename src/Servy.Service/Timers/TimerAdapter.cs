@@ -25,15 +25,15 @@ namespace Servy.Service.Timers
         /// <inheritdoc/>
         public event ElapsedEventHandler Elapsed
         {
-            add { _timer!.Elapsed += value; }
-            remove { _timer!.Elapsed -= value; }
+            add { ThrowIfDisposed(); _timer!.Elapsed += value; }
+            remove { ThrowIfDisposed(); _timer!.Elapsed -= value; }
         }
 
         /// <inheritdoc/>
         public bool AutoReset
         {
-            get => _timer!.AutoReset;
-            set => _timer!.AutoReset = value;
+            get { ThrowIfDisposed(); return _timer!.AutoReset; }
+            set { ThrowIfDisposed(); _timer!.AutoReset = value; }
         }
 
         /// <inheritdoc/>
