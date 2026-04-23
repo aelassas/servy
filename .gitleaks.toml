@@ -1,7 +1,0 @@
-# .gitleaks.toml
-
-[allowlist]
-  description = "Ignore test data and specific directories"
-  paths = [
-    '''(?i)tests/data'''
-  ]

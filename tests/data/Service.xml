@@ -19,8 +19,6 @@
   <EnvironmentVariables>PATH=C:\Windows\System32;TEMP=C:\Temp</EnvironmentVariables>
   <ServiceDependencies>ServiceA;ServiceB</ServiceDependencies>
   <RunAsLocalSystem>false</RunAsLocalSystem>
-  <UserAccount>.\TestUser</UserAccount>
-  <Password>secret123</Password>
   <PreLaunchExecutablePath>C:\Program Files\TestService\PreLaunch.exe</PreLaunchExecutablePath>
   <PreLaunchStartupDirectory>C:\Program Files\TestService</PreLaunchStartupDirectory>
   <PreLaunchParameters>-preArg1 -preArg2</PreLaunchParameters>

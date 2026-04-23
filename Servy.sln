@@ -8,7 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		.gitleaks.toml = .gitleaks.toml
 		bump-runtime.ps1 = bump-runtime.ps1
 		bump-version.ps1 = bump-version.ps1
 		CHANGELOG.md = CHANGELOG.md

@@ -18,8 +18,6 @@
   "EnvironmentVariables": "PATH=C:\\Windows\\System32;TEMP=C:\\Temp",
   "ServiceDependencies": "ServiceA;ServiceB",
   "RunAsLocalSystem": false,
-  "UserAccount": ".\\TestUser",
-  "Password": "secret123",
   "PreLaunchExecutablePath": "C:\\Program Files\\TestService\\PreLaunch.exe",
   "PreLaunchStartupDirectory": "C:\\Program Files\\TestService",
   "PreLaunchParameters": "-preArg1 -preArg2",
