@@ -60,6 +60,7 @@ namespace Servy.Restarter
             IServiceRestarter restarter = new ServiceRestarter();
             IServyLogger rootLogger = new EventLogLogger(AppConfig.EventSource);
             IServyLogger? scopedLogger = null;
+            AppDbContext? dbContext = null;
             SecureData? secureData = null;
 
             try
@@ -118,7 +119,7 @@ namespace Servy.Restarter
                 scopedLogger.SetIsEventLogEnabled(isEventLogEnabled);
 
                 // 5. Initialize database and helpers
-                var dbContext = new AppDbContext(connectionString);
+                dbContext = new AppDbContext(connectionString);
 
                 var dapperExecutor = new DapperExecutor(dbContext);
                 var protectedKeyProvider = new ProtectedKeyProvider(aesKeyFilePath, aesIVFilePath);
@@ -155,6 +156,7 @@ namespace Servy.Restarter
                 secureData?.Dispose();
                 scopedLogger?.Dispose();
                 rootLogger.Dispose();
+                dbContext?.Dispose();
                 Logger.Shutdown();
             }
 
