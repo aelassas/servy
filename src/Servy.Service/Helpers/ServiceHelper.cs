@@ -1,7 +1,4 @@
-﻿#if !DEBUG
-using Servy.Core.Config;
-#endif
-using Servy.Core.Config;
+﻿using Servy.Core.Config;
 using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
