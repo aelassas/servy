@@ -1017,6 +1017,11 @@ namespace Servy.Manager.ViewModels
                         resultDto = serviceDto;
                     }
                 }
+                else
+                {
+                    update.RequiresPidUpdate = true;
+                    update.NewPid = null;
+                }
 
                 return (update, resultDto);
             }
