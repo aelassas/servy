@@ -26,7 +26,6 @@ namespace Servy.Core.Services
     {
         #region Constants
 
-        private const int ServiceStopTimeoutSeconds = 60;
         private const int ServiceStartTimeoutSeconds = 30;
         private const int ScmPollIntervalMs = 500;
         private const int MaxParallelScmQueries = 8;
@@ -394,9 +393,9 @@ namespace Servy.Core.Services
                     var serviceDto = await _serviceRepository.GetByNameAsync(options.ServiceName);
                     dto.Pid = serviceDto?.Pid;
 
-                    var totalWaitTime = (options.StopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? ServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
-                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), ServiceStopTimeoutSeconds);
+                    var totalWaitTime = (options.StopTimeout ?? AppConfig.DefaultServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    var previousWaitTime = (serviceDto?.PreviousStopTimeout ?? AppConfig.DefaultServiceStopTimeoutSeconds) + AppConfig.ScmTimeoutBufferSeconds;
+                    totalWaitTime = Math.Max(Math.Max(totalWaitTime, previousWaitTime), AppConfig.DefaultServiceStopTimeoutSeconds);
 
                     if (!string.IsNullOrEmpty(options.PreStopExePath))
                     {
@@ -575,7 +574,7 @@ namespace Servy.Core.Services
                         sc.Refresh();
                         var sw = Stopwatch.StartNew();
 
-                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < ServiceStopTimeoutSeconds)
+                        while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < AppConfig.DefaultServiceStopTimeoutSeconds)
                         {
                             // Passing the token to Task.Delay makes the loop immediately responsive to cancellation
                             await Task.Delay(ScmPollIntervalMs, cancellationToken);
