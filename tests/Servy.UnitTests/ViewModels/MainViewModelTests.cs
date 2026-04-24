@@ -6,6 +6,7 @@ using Servy.Models;
 using Servy.Services;
 using Servy.UI.Services;
 using Servy.ViewModels;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Xunit;
@@ -297,7 +298,7 @@ namespace Servy.UnitTests.ViewModels
 
             _viewModel.UninstallCommand.Execute(null);
 
-            _serviceCommandsMock.Verify(s => s.UninstallService("MyService"), Times.Once);
+            _serviceCommandsMock.Verify(s => s.UninstallService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

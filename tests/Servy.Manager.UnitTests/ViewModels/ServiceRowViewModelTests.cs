@@ -2,6 +2,7 @@
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -122,7 +123,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             var vm = CreateViewModel();
             var service = new Service { Name = "S" };
-            _serviceCommandsMock.Setup(s => s.UninstallServiceAsync(It.Is<Service>(srv => srv.Name == "S")))
+            _serviceCommandsMock.Setup(s => s.UninstallServiceAsync(It.Is<Service>(srv => srv.Name == "S"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true)
                 .Verifiable();
 

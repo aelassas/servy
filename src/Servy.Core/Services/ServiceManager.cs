@@ -534,11 +534,14 @@ namespace Servy.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task<OperationResult> UninstallServiceAsync(string serviceName)
+        public async Task<OperationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default)
         {
             SafeScmHandle scmHandle = null;
             try
             {
+                // 1. Initial responsiveness check
+                cancellationToken.ThrowIfCancellationRequested();
+
                 scmHandle = _windowsServiceApi.OpenSCManager(null, null, SC_MANAGER_CONNECT);
                 if (scmHandle == null || scmHandle.IsInvalid)
                 {
@@ -553,7 +556,7 @@ namespace Servy.Core.Services
                         return OperationResult.Failure($"Failed to open service '{serviceName}' for uninstallation. It may not exist.");
                     }
 
-                    // Change start type to demand start (if it's disabled)
+                    // Standardize start type before stopping
                     _windowsServiceApi.ChangeServiceConfig(
                         serviceHandle,
                         SERVICE_NO_CHANGE,
@@ -567,11 +570,11 @@ namespace Servy.Core.Services
                         null,
                         null);
 
-                    // Try to stop service
+                    // Trigger the stop command
                     var status = new NativeMethods.ServiceStatus();
                     _windowsServiceApi.ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref status);
 
-                    // Wait for service to actually stop (up to 60 seconds)
+                    // 2. The Wait Loop: Now fully cancellable
                     using (var sc = _controllerFactory(serviceName))
                     {
                         sc.Refresh();
@@ -579,17 +582,22 @@ namespace Servy.Core.Services
 
                         while (sc.Status != ServiceControllerStatus.Stopped && sw.Elapsed.TotalSeconds < ServiceStopTimeoutSeconds)
                         {
-                            await Task.Delay(ScmPollIntervalMs); // Poll every half-second
+                            // Passing the token to Task.Delay makes the loop immediately responsive to cancellation
+                            await Task.Delay(ScmPollIntervalMs, cancellationToken);
                             sc.Refresh();
                         }
                     }
 
-                    // Delete the service
+                    // 3. Final safety check before committing the permanent 'Delete'
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     var res = _windowsServiceApi.DeleteService(serviceHandle);
 
                     if (res)
                     {
-                        await _serviceRepository.DeleteAsync(serviceName);
+                        // Ensure the repository deletion also honors the token
+                        await _serviceRepository.DeleteAsync(serviceName, cancellationToken);
+
                         Logger.Info($"Service '{serviceName}' uninstalled successfully.");
                         return OperationResult.Success();
                     }
@@ -601,6 +609,11 @@ namespace Servy.Core.Services
                     }
                 }
             }
+            catch (OperationCanceledException)
+            {
+                Logger.Info($"Uninstallation of '{serviceName}' was cancelled by the user.");
+                throw; // Re-throw to let the ViewModel handle the cancellation UI state
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Error uninstalling service '{serviceName}'.", ex);
@@ -608,10 +621,7 @@ namespace Servy.Core.Services
             }
             finally
             {
-                if (scmHandle != null)
-                {
-                    scmHandle.Dispose();
-                }
+                scmHandle?.Dispose();
             }
         }
 

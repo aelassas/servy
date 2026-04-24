@@ -9,6 +9,7 @@ using Servy.UI.Services;
 using Servy.Validators;
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -187,7 +188,7 @@ namespace Servy.UnitTests.Services
 
             _mockServiceCommands.Object.UninstallService(serviceName);
 
-            _mockServiceCommands.Verify(m => m.UninstallService(serviceName), Times.Once);
+            _mockServiceCommands.Verify(m => m.UninstallService(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

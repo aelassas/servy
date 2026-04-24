@@ -5,6 +5,7 @@ using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -29,7 +30,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             // Act
             var result = await _command.Execute(options);
@@ -59,7 +60,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Failure("Failed to uninstall service."));
 
             // Act
             var result = await _command.Execute(options);
@@ -75,7 +76,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Throws<UnauthorizedAccessException>();
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<UnauthorizedAccessException>();
 
             // Act
             var result = await _command.Execute(options);
@@ -91,7 +92,7 @@ namespace Servy.CLI.UnitTests.Commands
             // Arrange
             var options = new UninstallServiceOptions { ServiceName = "TestService" };
             _mockServiceManager.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
-            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService")).Throws<Exception>();
+            _mockServiceManager.Setup(sm => sm.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).Throws<Exception>();
 
             // Act
             var result = await _command.Execute(options);

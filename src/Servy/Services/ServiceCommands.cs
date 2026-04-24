@@ -13,6 +13,7 @@ using Servy.Validators;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using static Servy.Config.AppConfig;
@@ -274,7 +275,7 @@ namespace Servy.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallService(string serviceName)
+        public async Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default)
         {
             if (!await IsServiceNameValid(serviceName))
             {
@@ -290,7 +291,7 @@ namespace Servy.Services
 
             try
             {
-                var res = await _serviceManager.UninstallServiceAsync(serviceName);
+                var res = await _serviceManager.UninstallServiceAsync(serviceName, cancellationToken);
                 if (res.IsSuccess)
                 {
                     await _messageBoxService.ShowInfoAsync(Strings.Msg_ServiceRemoved, Caption);

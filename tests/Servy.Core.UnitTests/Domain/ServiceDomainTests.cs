@@ -268,12 +268,12 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Uninstall_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
             var result = await service.Uninstall();
 
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService"), Times.Once);
+            _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }

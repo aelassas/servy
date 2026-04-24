@@ -63,8 +63,9 @@ namespace Servy.Manager.Services
         /// Uninstalls the specified service.
         /// </summary>
         /// <param name="service">The service to uninstall.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was uninstalled successfully; otherwise, false.</returns>
-        Task<bool> UninstallServiceAsync(Service service);
+        Task<bool> UninstallServiceAsync(Service service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes the specified service from the repository.

@@ -7,6 +7,7 @@ using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Servy.CLI.Commands
@@ -37,8 +38,9 @@ namespace Servy.CLI.Commands
         /// Executes the uninstall operation for the specified service.
         /// </summary>
         /// <param name="opts">Options containing the service name to uninstall.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>A <see cref="Task{CommandResult}"/> indicating the success or failure of the operation.</returns>
-        public async Task<CommandResult> Execute(UninstallServiceOptions opts)
+        public async Task<CommandResult> Execute(UninstallServiceOptions opts, CancellationToken cancellationToken = default)
         {
             var action = $"uninstall service '{opts.ServiceName}'";
             var suggestion = "Ensure the service is stopped before uninstalling and that you are running this command as an Administrator.";
@@ -58,7 +60,7 @@ namespace Servy.CLI.Commands
                 }
 
                 // Attempt to uninstall the service
-                var res = await _serviceManager.UninstallServiceAsync(opts.ServiceName);
+                var res = await _serviceManager.UninstallServiceAsync(opts.ServiceName, cancellationToken);
                 if (res.IsSuccess)
                 {
                     // 1. Data Persistence: Remove the service record from the repository
