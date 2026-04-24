@@ -3,7 +3,7 @@
   <Name>notepad</Name>
   <DisplayName />
   <ExecutablePath>C:\Windows\System32\notepad.exe</ExecutablePath>
-  <StartupType>2</StartupType>
+  <StartupType>3</StartupType>
   <Priority>2</Priority>
   <EnableSizeRotation>false</EnableSizeRotation>
   <RotationSize>10</RotationSize>
