@@ -41,6 +41,15 @@ namespace Servy.Core.Config
         public static readonly TimeSpan InputRegexTimeout = TimeSpan.FromMilliseconds(InputRegexTimeoutMs);
 
         /// <summary>
+        /// Gets the timeout duration for Regex operations used to parse output from handle.exe.
+        /// </summary>
+        /// <remarks>
+        /// A longer budget is intentional to accommodate cases where handle.exe produces voluminous output, 
+        /// such as when a single large file is associated with thousands of owners or handles.
+        /// </remarks>
+        public static readonly TimeSpan HandleExeRegexTimeout = TimeSpan.FromSeconds(1);
+
+        /// <summary>
         /// Default Wait chunk in milliseconds. Used in pre-launch and pre-stop hooks.
         /// </summary>
         public const int DefaultWaitChunkMs = 5000;
