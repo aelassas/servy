@@ -44,6 +44,8 @@ namespace Servy.Manager
         private readonly AppBootstrapper _bootstrapper;
         private bool _isDesktopAppAvailable;
         private FileSystemWatcher _availabilityWatcher;
+        private FileSystemEventHandler _availabilityChangedHandler;
+        private RenamedEventHandler _availabilityRenamedHandler;
 
         #endregion
 
@@ -297,10 +299,12 @@ namespace Servy.Manager
                 };
 
                 // Watch for all file lifecycle events to ensure we catch installations, uninstalls, and updates
-                _availabilityWatcher.Created += (s, e) => UpdateAvailabilityState();
-                _availabilityWatcher.Deleted += (s, e) => UpdateAvailabilityState();
-                _availabilityWatcher.Renamed += (s, e) => UpdateAvailabilityState();
-                _availabilityWatcher.Changed += (s, e) => UpdateAvailabilityState();
+                _availabilityChangedHandler = (s, e) => UpdateAvailabilityState();
+                _availabilityRenamedHandler = (s, e) => UpdateAvailabilityState();
+                _availabilityWatcher.Created += _availabilityChangedHandler;
+                _availabilityWatcher.Deleted += _availabilityChangedHandler;
+                _availabilityWatcher.Changed += _availabilityChangedHandler;
+                _availabilityWatcher.Renamed += _availabilityRenamedHandler;
             }
             catch (Exception ex)
             {
@@ -395,6 +399,20 @@ namespace Servy.Manager
         {
             try
             {
+                if (_availabilityWatcher != null)
+                {
+                    _availabilityWatcher.EnableRaisingEvents = false;
+                    if (_availabilityChangedHandler != null)
+                    {
+                        _availabilityWatcher.Created -= _availabilityChangedHandler;
+                        _availabilityWatcher.Deleted -= _availabilityChangedHandler;
+                        _availabilityWatcher.Changed -= _availabilityChangedHandler;
+                    }
+                    if (_availabilityRenamedHandler != null)
+                    {
+                        _availabilityWatcher.Renamed -= _availabilityRenamedHandler;
+                    }
+                }
                 _availabilityWatcher?.Dispose();
                 _bootstrapper.OnExit(e);
             }
