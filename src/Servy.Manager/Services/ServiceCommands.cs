@@ -145,7 +145,11 @@ namespace Servy.Manager.Services
                 calculatePerf));
             var services = await Task.WhenAll(tasks);
 
-            return services.ToList();
+            // Filter out nulls resulting from malformed/orphaned DTOs 
+            // to prevent NullReferenceExceptions during UI data binding.
+            return services
+                .Where(s => s != null)
+                .ToList();
         }
 
         /// <inheritdoc />
