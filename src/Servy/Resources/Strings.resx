@@ -226,6 +226,9 @@ Copyright © {2} Akram El Assas. All rights reserved.
   <data name="DateRotationType_Monthly" xml:space="preserve">
     <value>Monthly</value>
   </data>
+  <data name="DateRotationType_None" xml:space="preserve">
+    <value>None</value>
+  </data>
   <data name="Info_DateRotation" xml:space="preserve">
     <value>When both size-based and date-based rotation are enabled, size rotation takes precedence.</value>
   </data>

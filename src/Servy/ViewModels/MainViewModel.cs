@@ -270,6 +270,7 @@ namespace Servy.ViewModels
             new DateRotationTypeItem { DateRotationType = DateRotationType.Daily, DisplayName = Strings.DateRotationType_Daily},
             new DateRotationTypeItem { DateRotationType = DateRotationType.Weekly, DisplayName = Strings.DateRotationType_Weekly},
             new DateRotationTypeItem { DateRotationType = DateRotationType.Monthly, DisplayName = Strings.DateRotationType_Monthly },
+            new DateRotationTypeItem { DateRotationType = DateRotationType.None, DisplayName = Strings.DateRotationType_None},
         };
 
         /// <summary>
