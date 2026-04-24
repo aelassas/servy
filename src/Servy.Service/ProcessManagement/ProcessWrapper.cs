@@ -444,12 +444,14 @@ namespace Servy.Service.ProcessManagement
         ///<inheritdoc/>
         public void CancelOutputRead()
         {
+            ThrowIfDisposed();
             _process.CancelOutputRead();
         }
 
         ///<inheritdoc/>
         public void CancelErrorRead()
         {
+            ThrowIfDisposed();
             _process.CancelErrorRead();
         }
 
