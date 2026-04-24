@@ -1,5 +1,31 @@
 # Changelog
 
+## [Servy 8.2](https://github.com/aelassas/servy/releases/tag/v8.2)
+
+**Date:** 2026-04-24 | **Tag:** [`v8.2`](https://github.com/aelassas/servy/tree/v8.2)
+
+* fix(manager): CPU, RAM and PID resource monitoring shows "N/A" or frozen values for services (#796)
+* fix(manager): set PID to N/A when service is uninstalled
+* fix(core): ServiceValidationRules.cs - Missing Name/ExecutablePath reported as Warnings instead of Errors (#785)
+* fix(core): RotatingStreamWriter.cs - Constructor captures _useLocalTimeForRotation before it is assigned (#791)
+* fix(service): TimerAdapter.cs - Disposed-state check bypassed on event/property accessors (#786)
+* fix(restarter): AppDbContext created but never disposed (#792)
+* ci(setup-dotnet): dotnet-install.ps1 downloaded and executed without signature or hash verification (#787)
+* ci(global.json): rollForward: latestPatch weakens build reproducibility (#790)
+* ci(publish): CycloneDX CLI, Inno Setup, and 7-Zip installers downloaded and executed without integrity verification (#793)
+
+### Downloads
+* [servy-8.2-net48-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-sbom.xml) - 0.02 MB
+* [servy-8.2-net48-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-x64-installer.exe) - 4.02 MB
+* [servy-8.2-net48-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-net48-x64-portable.7z) - 1.76 MB
+* [servy-8.2-sbom.xml](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-sbom.xml) - 0.03 MB
+* [servy-8.2-x64-installer.exe](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-x64-installer.exe) - 81.04 MB
+* [servy-8.2-x64-portable.7z](https://github.com/aelassas/servy/releases/download/v8.2/servy-8.2-x64-portable.7z) - 78.91 MB
+* [Source code (zip)](https://github.com/aelassas/servy/archive/refs/tags/v8.2.zip)
+* [Source code (tar.gz)](https://github.com/aelassas/servy/archive/refs/tags/v8.2.tar.gz)
+
+Compare changes: https://github.com/aelassas/servy/compare/v8.1...v8.2
+
 ## [Servy 8.1](https://github.com/aelassas/servy/releases/tag/v8.1)
 
 **Date:** 2026-04-22 | **Tag:** [`v8.1`](https://github.com/aelassas/servy/tree/v8.1)
