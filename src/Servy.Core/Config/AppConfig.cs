@@ -62,6 +62,11 @@ namespace Servy.Core.Config
         public const int DefaultScmAdditionalTimeMs = 15_000;
 
         /// <summary>
+        /// Default timeout in seconds to wait for a Windows Service to stop gracefully before forcing termination. Default is 60 seconds.
+        /// </summary>
+        public const int DefaultServiceStopTimeoutSeconds = 60;
+
+        /// <summary>
         /// The maximum character length for a Windows Service name.
         /// </summary>
         /// <remarks>
