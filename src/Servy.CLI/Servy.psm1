@@ -673,7 +673,8 @@ function Install-ServyService {
         When both size-based and date-based rotation are enabled, size rotation takes precedence.
 
     .PARAMETER DateRotationType
-        Date rotation type. Options: Daily, Weekly, Monthly. Optional.
+        Date rotation type. Options: Daily, Weekly, Monthly, None. Optional.
+        None disables date-based rotation; use when only size rotation is desired.
 
     .PARAMETER MaxRotations
         Maximum rotated log files to keep. 0 for unlimited. Optional.
