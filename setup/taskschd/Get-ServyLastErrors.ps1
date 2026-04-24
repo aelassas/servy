@@ -1,3 +1,4 @@
+#Requires -Version 3.0
 <#
 .SYNOPSIS
     Retrieves recent error events from the 'Servy' event source.
@@ -15,7 +16,7 @@
     Project     : Servy
     
     Requirements:
-      - PowerShell 2.0 or later.
+      - PowerShell 3.0 or later.
       - Windows Vista / Windows Server 2008 or newer.
       - Note: This script is NOT compatible with Windows XP or Server 2003 
         due to the dependency on the Get-WinEvent cmdlet.
