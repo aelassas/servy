@@ -62,6 +62,7 @@ namespace Servy.Manager.ViewModels
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
         private readonly object _servicesLock = new object();
+        private static readonly object _metricsLock = new object();
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
 
         #endregion
@@ -942,15 +943,22 @@ namespace Servy.Manager.ViewModels
             {
                 token.ThrowIfCancellationRequested();
 
+                // FIX 1: Prioritize the fresh DB PID over the stale UI PID
+                int? targetPid = serviceDto?.Pid ?? service.Pid;
+
                 // Gather metrics (Heavy background work)
                 double? cpu = null;
                 long? ram = null;
-                if (service.Pid.HasValue)
+                if (targetPid.HasValue && targetPid.Value > 0)
                 {
-                    ProcessHelper.MaintainCache();
-                    var metrics = ProcessHelper.GetProcessTreeMetrics(service.Pid.Value);
-                    cpu = metrics.CpuUsage;
-                    ram = metrics.RamUsage;
+                    // FIX 2: Ensure thread-safe access to static ProcessHelper methods
+                    lock (_metricsLock)
+                    {
+                        ProcessHelper.MaintainCache();
+                        var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
+                        cpu = metrics.CpuUsage;
+                        ram = metrics.RamUsage;
+                    }
                 }
 
                 var update = new ServiceUpdateInfo(service)
@@ -958,11 +966,6 @@ namespace Servy.Manager.ViewModels
                     CpuUsage = cpu,
                     RamUsage = ram
                 };
-
-                if (service.StartupType == null && serviceDto != null)
-                {
-                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
-                }
 
                 if (allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
@@ -992,10 +995,15 @@ namespace Servy.Manager.ViewModels
                     var currentDescription = update.Description ?? service.Description;
                     var currentStartupType = update.StartupType ?? service.StartupType;
 
-                    bool needsUpdate = !string.Equals(serviceDto.Description, currentDescription, StringComparison.Ordinal) ||
-                                       serviceDto.StartupType != (int?)currentStartupType;
+                    // FIX 3: Normalize strings to prevent infinite DB overwrite loops 
+                    // caused by SQLite mapping nulls to empty strings.
+                    var dbDesc = serviceDto.Description ?? string.Empty;
+                    var currDesc = currentDescription ?? string.Empty;
 
-                    if (needsUpdate)
+                    bool descDrifted = !string.Equals(dbDesc, currDesc, StringComparison.Ordinal);
+                    bool startupDrifted = currentStartupType.HasValue && serviceDto.StartupType != (int)currentStartupType.Value;
+
+                    if (descDrifted || startupDrifted)
                     {
                         serviceDto.Description = currentDescription;
                         if (currentStartupType.HasValue)
@@ -1024,29 +1032,29 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private void ApplyServiceUpdate(ServiceUpdateInfo info)
         {
-            var s = info.Target;
+            var service = info.Target;
 
             if (info.RequiresPidUpdate)
             {
-                s.Pid = info.NewPid;
-                s.IsPidEnabled = s.Pid != null;
+                service.Pid = info.NewPid;
+                service.IsPidEnabled = service.Pid != null;
             }
 
-            s.CpuUsage = info.CpuUsage;
-            s.RamUsage = info.RamUsage;
-            s.IsInstalled = info.IsInstalled;
+            service.CpuUsage = info.CpuUsage;
+            service.RamUsage = info.RamUsage;
+            service.IsInstalled = info.IsInstalled;
 
-            if (info.Status.HasValue && s.Status != info.Status.Value)
-                s.Status = info.Status.Value;
+            if (info.Status.HasValue && service.Status != info.Status.Value)
+                service.Status = info.Status.Value;
 
-            if (info.StartupType.HasValue && s.StartupType != info.StartupType.Value)
-                s.StartupType = info.StartupType.Value;
+            if (info.StartupType.HasValue && service.StartupType != info.StartupType.Value)
+                service.StartupType = info.StartupType.Value;
 
-            if (info.LogOnAs != null && s.LogOnAs != info.LogOnAs)
-                s.LogOnAs = info.LogOnAs;
+            if (info.LogOnAs != null && service.LogOnAs != info.LogOnAs)
+                service.LogOnAs = info.LogOnAs;
 
-            if (info.Description != null && s.Description != info.Description)
-                s.Description = info.Description;
+            if (info.Description != null && service.Description != info.Description)
+                service.Description = info.Description;
         }
 
         /// <summary>
