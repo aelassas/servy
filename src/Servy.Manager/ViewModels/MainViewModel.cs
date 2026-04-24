@@ -938,35 +938,9 @@ namespace Servy.Manager.ViewModels
             {
                 token.ThrowIfCancellationRequested();
 
-                // FIX 1: Prioritize the fresh DB PID over the stale UI PID
-                int? targetPid = serviceDto?.Pid ?? service.Pid;
+                var update = new ServiceUpdateInfo(service);
 
-                // Gather metrics (Heavy background work)
-                double? cpu = null;
-                long? ram = null;
-                if (targetPid.HasValue && targetPid.Value > 0)
-                {
-                    // FIX 2: Ensure thread-safe access to static ProcessHelper methods
-                    lock (_metricsLock)
-                    {
-                        ProcessHelper.MaintainCache();
-                        var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
-                        cpu = metrics.CpuUsage;
-                        ram = metrics.RamUsage;
-                    }
-                }
-
-                var update = new ServiceUpdateInfo(service)
-                {
-                    CpuUsage = cpu,
-                    RamUsage = ram
-                };
-
-                if (service.StartupType == null && serviceDto != null)
-                {
-                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
-                }
-
+                // 1. Evaluate OS Status First
                 if (allServices.TryGetValue(service.Name, out var info) && info != null)
                 {
                     update.IsInstalled = true;
@@ -981,22 +955,49 @@ namespace Servy.Manager.ViewModels
                     update.Status = ServiceStatus.NotInstalled;
                 }
 
+                // 2. Determine if the wrapper is actually dead according to Windows
+                bool isProcessDead = update.Status == ServiceStatus.Stopped || update.Status == ServiceStatus.NotInstalled;
+
+                // 3. FIX: Prioritize DB PID, but force to null if the process is dead (Ignore Ghost PIDs)
+                int? targetPid = isProcessDead ? null : (serviceDto?.Pid ?? service.Pid);
+
+                // Gather metrics using the safe targetPid
+                double? cpu = null;
+                long? ram = null;
+                if (targetPid.HasValue && targetPid.Value > 0)
+                {
+                    lock (_metricsLock)
+                    {
+                        ProcessHelper.MaintainCache();
+                        var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
+                        cpu = metrics.CpuUsage;
+                        ram = metrics.RamUsage;
+                    }
+                }
+
+                update.CpuUsage = cpu;
+                update.RamUsage = ram;
+
+                if (service.StartupType == null && serviceDto != null)
+                {
+                    update.StartupType = (ServiceStartType)serviceDto.StartupType;
+                }
+
                 ServiceDto resultDto = null;
                 if (serviceDto != null)
                 {
-                    // Sync PID from DB state if drifted
-                    if (service.Pid != serviceDto.Pid)
+                    // 4. Sync PID to UI. Because we use targetPid, this correctly pushes 'null' 
+                    // to the UI if the service crashed, even if the DB is stuck on 7020.
+                    if (service.Pid != targetPid)
                     {
                         update.RequiresPidUpdate = true;
-                        update.NewPid = serviceDto.Pid;
+                        update.NewPid = targetPid;
                     }
 
                     // Check for DB metadata drift
                     var currentDescription = update.Description ?? service.Description;
                     var currentStartupType = update.StartupType ?? service.StartupType;
 
-                    // FIX 3: Normalize strings to prevent infinite DB overwrite loops 
-                    // caused by SQLite mapping nulls to empty strings.
                     var dbDesc = serviceDto.Description ?? string.Empty;
                     var currDesc = currentDescription ?? string.Empty;
 
@@ -1010,6 +1011,9 @@ namespace Servy.Manager.ViewModels
                         {
                             serviceDto.StartupType = (int)currentStartupType.Value;
                         }
+
+                        // Note: We are deliberately NOT modifying serviceDto.Pid here, 
+                        // leaving database writes exclusively to the wrapper.
                         resultDto = serviceDto;
                     }
                 }
