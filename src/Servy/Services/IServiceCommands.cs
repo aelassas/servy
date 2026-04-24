@@ -42,7 +42,8 @@ namespace Servy.Services
         /// Uninstalls the specified Windows service.
         /// </summary>
         /// <param name="serviceName">The name of the service to uninstall.</param>
-        Task<bool> UninstallService(string serviceName);
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        Task<bool> UninstallService(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified Windows service.

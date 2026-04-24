@@ -295,7 +295,7 @@ namespace Servy.UnitTests.ViewModels
 
             _viewModel.UninstallCommand.Execute(null);
 
-            _serviceCommandsMock.Verify(s => s.UninstallService("MyService"), Times.Once);
+            _serviceCommandsMock.Verify(s => s.UninstallService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -274,7 +274,7 @@ namespace Servy.Manager.Services
         }
 
         /// <inheritdoc />
-        public async Task<bool> UninstallServiceAsync(Service service)
+        public async Task<bool> UninstallServiceAsync(Service service, CancellationToken cancellationToken = default)
         {
             if (service == null) return false;
 
@@ -292,7 +292,7 @@ namespace Servy.Manager.Services
                         return false;
                     }
 
-                    var res = await Task.Run(() => serviceDomain.Uninstall());
+                    var res = await Task.Run(() => serviceDomain.Uninstall(cancellationToken));
                     if (res.IsSuccess) await Task.Run(() => RemoveService(service));
 
                     return res.IsSuccess;

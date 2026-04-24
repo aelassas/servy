@@ -1,11 +1,7 @@
 ﻿using Servy.Core.Common;
-using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
-using System.Collections.Generic;
 using System.ServiceProcess;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Servy.Core.Services
 {
@@ -45,8 +41,9 @@ namespace Servy.Core.Services
         /// Uninstalls the specified service.
         /// </summary>
         /// <param name="serviceName">The service name.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True if the service was uninstalled; otherwise false.</returns>
-        Task<OperationResult> UninstallServiceAsync(string serviceName);
+        Task<OperationResult> UninstallServiceAsync(string serviceName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the specified service.

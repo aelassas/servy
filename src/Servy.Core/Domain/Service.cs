@@ -403,15 +403,16 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Retrieves the current status of the Windows service represented by this instance.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A <see cref="ServiceControllerStatus"/> value representing the current service status,
         /// or <c>null</c> if the service is not installed.
         /// </returns>
-        public ServiceControllerStatus? GetStatus()
+        public ServiceControllerStatus? GetStatus(CancellationToken cancellationToken = default)
         {
             if (IsInstalled())
             {
-                var status = _serviceManager.GetServiceStatus(Name);
+                var status = _serviceManager.GetServiceStatus(Name, cancellationToken);
                 return status;
             }
             return null;
@@ -553,6 +554,7 @@ namespace Servy.Core.Domain
         /// <summary>
         /// Uninstalls the Windows service with the configured <see cref="Name"/>.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>
         /// A task that represents the asynchronous uninstall operation. The task result 
         /// is <c>true</c> if the service was successfully uninstalled; otherwise, <c>false</c>.
@@ -564,9 +566,9 @@ namespace Servy.Core.Domain
         /// Thrown if the Service Control Manager cannot be accessed or the service 
         /// cannot be removed.
         /// </exception>
-        public async Task<OperationResult> Uninstall()
+        public async Task<OperationResult> Uninstall(CancellationToken cancellationToken = default)
         {
-            return await _serviceManager.UninstallServiceAsync(Name);
+            return await _serviceManager.UninstallServiceAsync(Name, cancellationToken);
         }
 
         #endregion

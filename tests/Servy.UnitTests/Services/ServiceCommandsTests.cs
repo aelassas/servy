@@ -181,9 +181,9 @@ namespace Servy.UnitTests.Services
         {
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.UninstallService(serviceName);
+            _mockServiceCommands.Object.UninstallService(serviceName, TestContext.Current.CancellationToken);
 
-            _mockServiceCommands.Verify(m => m.UninstallService(serviceName), Times.Once);
+            _mockServiceCommands.Verify(m => m.UninstallService(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

@@ -67,7 +67,7 @@ namespace Servy.Core.UnitTests.Domain
             var service = CreateService();
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService")).Returns(false);
 
-            var result = service.GetStatus();
+            var result = service.GetStatus(TestContext.Current.CancellationToken);
 
             Assert.Null(result);
         }
@@ -79,7 +79,7 @@ namespace Servy.Core.UnitTests.Domain
             _serviceManagerMock.Setup(s => s.IsServiceInstalled("TestService")).Returns(true);
             _serviceManagerMock.Setup(s => s.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
-            var result = service.GetStatus();
+            var result = service.GetStatus(TestContext.Current.CancellationToken);
 
             Assert.Equal(ServiceControllerStatus.Running, result);
         }
@@ -265,12 +265,12 @@ namespace Servy.Core.UnitTests.Domain
         public async Task Uninstall_ShouldCallServiceManager()
         {
             var service = CreateService();
-            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService")).ReturnsAsync(OperationResult.Success());
+            _serviceManagerMock.Setup(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>())).ReturnsAsync(OperationResult.Success());
 
-            var result = await service.Uninstall();
+            var result = await service.Uninstall(TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
-            _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService"), Times.Once);
+            _serviceManagerMock.Verify(s => s.UninstallServiceAsync("TestService", It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
