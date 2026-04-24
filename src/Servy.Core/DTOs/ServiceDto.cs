@@ -428,7 +428,7 @@ namespace Servy.Core.DTOs
         public bool ShouldSerializePriority() => Priority.HasValue;
         public bool ShouldSerializeStdoutPath() => !string.IsNullOrWhiteSpace(StdoutPath);
         public bool ShouldSerializeStderrPath() => !string.IsNullOrWhiteSpace(StderrPath);
-        public bool ShouldSerializEnableSizeRotation() => EnableSizeRotation.HasValue;
+        public bool ShouldSerializeEnableSizeRotation() => EnableSizeRotation.HasValue;
         public bool ShouldSerializeRotationSize() => RotationSize.HasValue;
         public bool ShouldSerializeEnableDateRotation() => EnableDateRotation.HasValue;
         public bool ShouldSerializeDateRotationType() => DateRotationType.HasValue;
