@@ -20,6 +20,9 @@
   <data name="Msg_ValidationError" xml:space="preserve">
     <value>Please fill in all required fields.</value>
   </data>
+  <data name="Msg_InvalidServiceName" xml:space="preserve">
+    <value>Service name contains invalid characters. Avoid using '\' or '/'.</value>
+  </data>
 
   <data name="Msg_ValidationPassed" xml:space="preserve">
     <value>Validation passed for service '{0}'.</value>

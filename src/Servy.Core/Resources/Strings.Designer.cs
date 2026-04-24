@@ -322,6 +322,15 @@ namespace Servy.Core.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à Service name contains invalid characters. Avoid using &apos;\&apos; or &apos;/&apos;..
+        /// </summary>
+        public static string Msg_InvalidServiceName {
+            get {
+                return ResourceManager.GetString("Msg_InvalidServiceName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Start timeout must be a number between {0} and {1} seconds..
         /// </summary>
         public static string Msg_InvalidStartTimeout {

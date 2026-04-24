@@ -45,7 +45,13 @@ namespace Servy.Core.Validators
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.ExecutablePath))
             {
                 result.Errors.Add(Strings.Msg_ValidationError);
-                return result; // Stop early for missing vital fields
+                return result;
+            }
+
+            if (dto.Name.IndexOfAny(new[] { '\\', '/' }) >= 0)
+            {
+                result.Errors.Add(Strings.Msg_InvalidServiceName);
+                return result;
             }
 
             // Length Bounds
