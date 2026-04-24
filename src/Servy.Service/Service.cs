@@ -2017,7 +2017,13 @@ namespace Servy.Service
                 // Stop health check timer IMMEDIATELY to prevent interference
                 try
                 {
-                    _healthCheckTimer?.Stop();
+                    if (_healthCheckTimer != null)
+                    {
+                        _healthCheckTimer.Elapsed -= CheckHealth;
+                        _healthCheckTimer.Stop();
+                        _healthCheckTimer.Dispose();
+                        _healthCheckTimer = null;
+                    }
                     _logger?.Info("Health check timer disabled during teardown");
                 }
                 catch (Exception ex)
@@ -2163,9 +2169,13 @@ namespace Servy.Service
             {
                 try
                 {
-                    _healthCheckTimer?.Stop();
-                    _healthCheckTimer?.Dispose();
-                    _healthCheckTimer = null;
+                    if (_healthCheckTimer != null)
+                    {
+                        _healthCheckTimer.Elapsed -= CheckHealth;
+                        _healthCheckTimer.Stop();
+                        _healthCheckTimer.Dispose();
+                        _healthCheckTimer = null;
+                    }
                 }
                 catch (Exception ex)
                 {
