@@ -46,7 +46,7 @@ namespace Servy.Core.Helpers
         private static readonly Regex HandleOutputRegex = new Regex(
             @"^\s*(?<name>.+?)\s+pid:\s*(?<pid>\d+)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline,
-            AppConfig.InputRegexTimeout);
+            AppConfig.HandleExeRegexTimeout);
 
         /// <summary>
         /// Uses handle.exe or handle64.exe to find all processes that have an open handle to the specified file.
