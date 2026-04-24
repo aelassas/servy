@@ -127,7 +127,7 @@ namespace Servy.CLI.Options
         /// <item><description>Monthly</description></item>
         /// </list>
         /// </summary>
-        [Option("dateRotationType", HelpText = "Date rotation type. Options: Daily, Weekly, Monthly.")]
+        [Option("dateRotationType", HelpText = "Date rotation type. Options: Daily, Weekly, Monthly, None (None disables date-based rotation; use when only size rotation is desired).")]
         public string? DateRotationType { get; set; }
 
         /// <summary>
