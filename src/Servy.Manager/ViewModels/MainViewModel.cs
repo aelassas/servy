@@ -57,7 +57,6 @@ namespace Servy.Manager.ViewModels
         private bool? _selectAll;
         private bool _isUpdatingSelectAll;
         private readonly object _servicesLock = new object();
-        private static readonly object _metricsLock = new object();
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
 
         #endregion
@@ -712,7 +711,7 @@ namespace Servy.Manager.ViewModels
 
             if (_refreshTimer != null)
             {
-                _refreshTimer.Stop();           // Stop the timer
+                _refreshTimer.Stop();            // Stop the timer
                 _refreshTimer.Tick -= OnTick; // Unsubscribe event
                 _refreshTimer = null;
             }
@@ -966,13 +965,10 @@ namespace Servy.Manager.ViewModels
                 long? ram = null;
                 if (targetPid.HasValue && targetPid.Value > 0)
                 {
-                    lock (_metricsLock)
-                    {
-                        ProcessHelper.MaintainCache();
-                        var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
-                        cpu = metrics.CpuUsage;
-                        ram = metrics.RamUsage;
-                    }
+                    ProcessHelper.MaintainCache();
+                    var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
+                    cpu = metrics.CpuUsage;
+                    ram = metrics.RamUsage;
                 }
 
                 update.CpuUsage = cpu;
