@@ -142,6 +142,15 @@ namespace Servy.Resources {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à None.
+        /// </summary>
+        public static string DateRotationType_None {
+            get {
+                return ResourceManager.GetString("DateRotationType_None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à Weekly.
         /// </summary>
         public static string DateRotationType_Weekly {
