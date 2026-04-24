@@ -610,9 +610,9 @@ namespace Servy.Manager.ViewModels
         /// Disables the monitoring timer and optionally resets the console view.
         /// </summary>
         /// <param name="clearConsole">If true, clears the console history and resets UI labels.</param>
-        public void StopMonitoring(bool clearConsole)
+        public override void StopMonitoring(bool clearConsole)
         {
-            base.StopMonitoring();
+            base.StopMonitoring(clearConsole);
 
             if (clearConsole)
             {

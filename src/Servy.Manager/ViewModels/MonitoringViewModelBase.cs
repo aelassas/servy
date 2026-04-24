@@ -135,7 +135,8 @@ namespace Servy.Manager.ViewModels
         /// Stops the performance monitoring timer, cancels any in-flight background operations, 
         /// and atomically sets the monitoring flag to stopped.
         /// </summary>
-        public virtual void StopMonitoring()
+        /// <param name="clearView">If <see langword="true"/>, clears the view model's data to reflect a stopped state.</param>
+        public virtual void StopMonitoring(bool clearView = false)
         {
             _monitoringCts?.Cancel();
             Interlocked.Exchange(ref _isMonitoringFlag, 0);
