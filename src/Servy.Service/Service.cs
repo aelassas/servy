@@ -2171,6 +2171,9 @@ namespace Servy.Service
                         _cancellationSource = null;
 
                         _secureData?.Dispose();
+
+                        _fileSemaphore?.Dispose();
+                        _healthCheckSemaphore?.Dispose();
                     }
                 }
             }
