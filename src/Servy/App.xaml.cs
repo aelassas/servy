@@ -28,7 +28,7 @@ namespace Servy
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application, IAppConfiguration, INotifyPropertyChanged
+    public partial class App : Application, IAppConfiguration
     {
         #region Constants
 
