@@ -42,6 +42,7 @@ namespace Servy.Manager.ViewModels
         private bool _hadSelectedService;
         private bool _disposedValue;
         private readonly IAppConfiguration _appConfig;
+        private readonly IProcessHelper _processHelper;
 
         private Queue<double> _cpuValues = new Queue<double>();
         private Queue<double> _ramValues = new Queue<double>();
@@ -164,16 +165,19 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
         /// <param name="cursorService">Service used to control the cursor state.</param>
+        /// <param name="processHelper">The process helper used to format process commands.</param>
         public PerformanceViewModel(
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
             IAppConfiguration appConfig,
-            ICursorService cursorService
+            ICursorService cursorService,
+            IProcessHelper processHelper
             ) : base(cursorService)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
 
             InitTimer();
@@ -233,14 +237,14 @@ namespace Servy.Manager.ViewModels
 
                 var processMetrics = await Task.Run(() =>
                 {
-                    ProcessHelper.MaintainCache();
-                    return ProcessHelper.GetProcessTreeMetrics(pid);
+                    _processHelper.MaintainCache();
+                    return _processHelper.GetProcessTreeMetrics(pid);
                 });
 
                 double rawRamMb = processMetrics.RamUsage / 1024d / 1024d;
 
-                CpuUsage = ProcessHelper.FormatCpuUsage(processMetrics.CpuUsage);
-                RamUsage = ProcessHelper.FormatRamUsage(processMetrics.RamUsage);
+                CpuUsage = _processHelper.FormatCpuUsage(processMetrics.CpuUsage);
+                RamUsage = _processHelper.FormatRamUsage(processMetrics.RamUsage);
 
                 AddPoint(_cpuValues, processMetrics.CpuUsage, MetricType.Cpu);
                 AddPoint(_ramValues, rawRamMb, MetricType.Ram);

@@ -1,5 +1,6 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.ProcessManagement;
@@ -32,11 +33,12 @@ namespace Servy.Service.Helpers
         /// Parses the command-line arguments and loads the service configuration from the repository.
         /// </summary>
         /// <param name="serviceRepository">The repository used to fetch service-specific configurations.</param>
+        /// <param name="processHelper">The process helper used for any necessary process-related operations during parsing.</param>
         /// <param name="fullArgs">The full set of command-line arguments to parse.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object if parsing is successful; otherwise, <c>null</c>.
         /// </returns>
-        StartOptions ParseOptions(IServiceRepository serviceRepository, string[] fullArgs);
+        StartOptions ParseOptions(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs);
 
         /// <summary>
         /// Records the full initialization context, including raw command-line arguments and resolved 
@@ -81,7 +83,7 @@ namespace Servy.Service.Helpers
         /// <returns>
         /// <c>true</c> if the options are valid and the service can proceed; otherwise, <c>false</c>.
         /// </returns>
-        bool ValidateAndLog(StartOptions options, IServyLogger logger, string[] fullArgs);
+        bool ValidateAndLog(StartOptions options, IServyLogger logger, IProcessHelper processHelper, string[] fullArgs);
 
         /// <summary>
         /// Ensures the working directory specified in the options is valid.

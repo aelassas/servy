@@ -53,11 +53,12 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Uses handle.exe or handle64.exe to find all processes that have an open handle to the specified file.
         /// </summary>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> to assist with process-related operations.</param>
         /// <param name="handleExePath">Full path to handle.exe or handle64.exe.</param>
         /// <param name="filePath">Full path of the file to check for open handles.</param>
         /// <returns>A list of <see cref="ProcessHandleInfo"/> objects representing the processes holding the file.</returns>
         /// <exception cref="ArgumentException">Thrown if <paramref name="handleExePath"/> or <paramref name="filePath"/> is null or empty.</exception>
-        public static List<ProcessHandleInfo> GetProcessesUsingFile(string handleExePath, string filePath)
+        public static List<ProcessHandleInfo> GetProcessesUsingFile(IProcessHelper processHelper, string handleExePath, string filePath)
         {
             if (string.IsNullOrWhiteSpace(handleExePath))
                 throw new ArgumentException("handleExePath is null or empty", nameof(handleExePath));
@@ -73,7 +74,7 @@ namespace Servy.Core.Helpers
                 RedirectStandardError = true, // We redirect this, so we MUST drain it
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                Arguments = $"{ProcessHelper.EscapeProcessArgument(filePath)} /accepteula"
+                Arguments = $"{processHelper.EscapeProcessArgument(filePath)} /accepteula"
             };
 
             using (var process = new Process { StartInfo = psi })

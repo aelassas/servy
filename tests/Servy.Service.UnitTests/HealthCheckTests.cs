@@ -2,6 +2,7 @@
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.Helpers;
 using Servy.Service.ProcessManagement;
@@ -17,8 +18,15 @@ namespace Servy.Service.UnitTests
 {
     public class HealthCheckTests
     {
+        private readonly Mock<IProcessHelper> _mockProcessHelper;
+
+        public HealthCheckTests()
+        {
+            _mockProcessHelper = new Mock<IProcessHelper>();
+        }
+
         // Helper to create service with injected mocks
-        private static TestableService CreateService(
+        private TestableService CreateService(
             out Mock<IServyLogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
@@ -43,7 +51,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                mockServiceRepository.Object
+                mockServiceRepository.Object,
+                _mockProcessHelper.Object
                 );
         }
 

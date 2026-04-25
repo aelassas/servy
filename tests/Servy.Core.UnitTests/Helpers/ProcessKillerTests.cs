@@ -1,4 +1,5 @@
-﻿using Servy.Core.Helpers;
+﻿using Moq;
+using Servy.Core.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -111,8 +112,10 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string fakePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
 
+            var mockProcessHelper = new Mock<IProcessHelper>(); // Assuming a mock implementation exists
+
             // Act
-            var result = ProcessKiller.KillProcessesUsingFile(fakePath);
+            var result = ProcessKiller.KillProcessesUsingFile(mockProcessHelper.Object, fakePath);
 
             // Assert
             // The method returns true and logs an error if the target file is missing

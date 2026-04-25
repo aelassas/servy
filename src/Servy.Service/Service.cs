@@ -155,6 +155,7 @@ namespace Servy.Service
         private volatile bool _disposed = false; // Tracks whether Dispose has been called
         private volatile bool _isTearingDown = false;
         private volatile bool _isRebooting = false;
+        private readonly IProcessHelper _processHelper;
 
         #endregion
 
@@ -184,7 +185,8 @@ namespace Servy.Service
             new StreamWriterFactory(),
             new TimerFactory(),
             new ProcessFactory(),
-            new PathValidator()
+            new PathValidator(),
+            new Core.Helpers.ProcessHelper()
           )
         {
         }
@@ -199,6 +201,7 @@ namespace Servy.Service
         /// <param name="processFactory">The process factory.</param>
         /// <param name="pathValidator">The path validator.</param>
         /// <param name="serviceRepository">The service repository.</param>
+        /// <param name="processHelper">The process helper.</param>
         /// <remarks>
         /// <b>NOTE:</b> This constructor is primarily intended for <b>Unit Testing</b> and <b>Inversion of Control (IoC)</b> containers.
         /// <para>
@@ -218,7 +221,8 @@ namespace Servy.Service
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository) // allow injection
+            IServiceRepository serviceRepository,
+            IProcessHelper processHelper) // allow injection
         {
             ServiceName = AppConfig.EventSource;
 
@@ -229,6 +233,7 @@ namespace Servy.Service
             _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
             _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
             _options = null;
         }
 
@@ -252,7 +257,8 @@ namespace Servy.Service
             IStreamWriterFactory streamWriterFactory,
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
-            IPathValidator pathValidator)
+            IPathValidator pathValidator,
+            IProcessHelper processHelper)
         {
             Logger.Initialize("Servy.Service.log");
 
@@ -268,7 +274,8 @@ namespace Servy.Service
                 _streamWriterFactory = streamWriterFactory ?? throw new ArgumentNullException(nameof(streamWriterFactory));
                 _timerFactory = timerFactory ?? throw new ArgumentNullException(nameof(timerFactory));
                 _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
-                _pathValidator = pathValidator;
+                _pathValidator = pathValidator ?? throw new ArgumentNullException(nameof(pathValidator));
+                _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
                 _options = null;
 
                 // Load configuration
@@ -355,14 +362,14 @@ namespace Servy.Service
                 var asm = Assembly.GetExecutingAssembly();
                 var resourceHelper = new ResourceHelper(_serviceRepository);
 
-                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
+                if (!resourceHelper.CopyEmbeddedResourceSync(processHelper, asm, ResourcesNamespace, ServyRestarterExeFileName, "exe"))
                 {
                     _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.exe");
                 }
 
 #if DEBUG
                 // Copy debug symbols from embedded resources (only in debug builds)
-                if (!resourceHelper.CopyEmbeddedResourceSync(asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
+                if (!resourceHelper.CopyEmbeddedResourceSync(processHelper, asm, ResourcesNamespace, ServyRestarterExeFileName, "pdb"))
                 {
                     _logger.Error($"Failed copying embedded resource: {ServyRestarterExeFileName}.pdb");
                 }
@@ -416,7 +423,7 @@ namespace Servy.Service
 
                 // Load startup options
                 var fullArgs = _serviceHelper.GetArgs(); // You'll need to expose this helper
-                var options = _serviceHelper.ParseOptions(_serviceRepository, fullArgs);
+                var options = _serviceHelper.ParseOptions(_serviceRepository, _processHelper, fullArgs);
 
                 if (options == null)
                 {
@@ -432,7 +439,7 @@ namespace Servy.Service
                 rootLogger.Dispose();
 
                 // Log and Validate using the new scoped _logger
-                if (!_serviceHelper.ValidateAndLog(options, _logger, fullArgs))
+                if (!_serviceHelper.ValidateAndLog(options, _logger, _processHelper, fullArgs))
                 {
                     Stop();
                     return;

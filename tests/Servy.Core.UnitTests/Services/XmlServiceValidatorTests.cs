@@ -1,5 +1,7 @@
-﻿using Servy.Core.Config;
+﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using System.IO;
 using System.Xml.Serialization;
@@ -10,11 +12,12 @@ namespace Servy.Core.UnitTests.Services
     public class XmlServiceValidatorTests
     {
         private readonly XmlServiceValidator _validator;
+        private readonly Mock<IProcessHelper> _processHelperMock;
 
         public XmlServiceValidatorTests()
         {
-            // Testing the instance implementation of IXmlServiceValidator
-            _validator = new XmlServiceValidator();
+            _processHelperMock = new Mock<IProcessHelper>();
+            _validator = new XmlServiceValidator(_processHelperMock.Object);
         }
 
         private string Serialize(ServiceDto dto)
@@ -127,6 +130,8 @@ namespace Servy.Core.UnitTests.Services
                 StopTimeout = 30000
             };
             var xml = Serialize(dto);
+
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
             var result = _validator.TryValidate(xml, out var error);
 

@@ -265,13 +265,14 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Kills all processes that currently hold a handle to the specified file.
         /// </summary>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> for process operations.</param>
         /// <param name="filePath">Full path to the file.</param>
         /// <returns><c>true</c> if all processes were successfully killed; otherwise <c>false</c>.</returns>
         /// <remarks>
         /// This method requires Sysinternals Handle.exe or Handle64.exe to be available
         /// and assumes its path is in <c>C:\Program Files\Sysinternals\handle64.exe</c> by default.
         /// </remarks>
-        public static bool KillProcessesUsingFile(string filePath)
+        public static bool KillProcessesUsingFile(IProcessHelper processHelper, string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -290,7 +291,7 @@ namespace Servy.Core.Helpers
 
             try
             {
-                var processes = HandleHelper.GetProcessesUsingFile(handleExePath, filePath);
+                var processes = HandleHelper.GetProcessesUsingFile(processHelper, handleExePath, filePath);
 
                 foreach (var procInfo in processes)
                 {

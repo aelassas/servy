@@ -166,8 +166,9 @@ namespace Servy.UI.Bootstrapping
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
         /// <param name="e">The startup event arguments.</param>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
-        public async Task InitializeAppAsync(Application app, StartupEventArgs e)
+        public async Task InitializeAppAsync(Application app, StartupEventArgs e, IProcessHelper processHelper)
         {
             string serviceName = null;
             var showSplash = true;
@@ -242,7 +243,7 @@ namespace Servy.UI.Bootstrapping
                     var resourceHelper = new ResourceHelper(ServiceRepository);
 
                     // Binary Resource Extraction
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}"));
                     }
@@ -253,7 +254,7 @@ namespace Servy.UI.Bootstrapping
                     };
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb"));
                     }
@@ -272,7 +273,7 @@ namespace Servy.UI.Bootstrapping
                         new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
                     });
 #endif
-                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems))
+                    if (!await resourceHelper.CopyResources(processHelper, asm, _options.ResourcesNamespace, resourceItems))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resources."));
                     }

@@ -1,5 +1,7 @@
-﻿using Servy.Core.Config;
+﻿using Moq;
+using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Resources;
 using Servy.Core.Validators;
 using System;
@@ -10,6 +12,26 @@ namespace Servy.Core.UnitTests.Validators
 {
     public class ServiceValidationRulesTests
     {
+        private readonly Mock<IProcessHelper> _processHelperMock;
+        private readonly ServiceValidationRules _sut;
+
+        public ServiceValidationRulesTests()
+        {
+            _processHelperMock = new Mock<IProcessHelper>();
+
+            // Setup the mock to simulate ValidatePath logic.
+            // It returns true for typical valid paths and false for the intentionally bad ones used in these tests.
+            _processHelperMock.Setup(p => p.ValidatePath(It.IsAny<string>(), It.IsAny<bool>()))
+                .Returns((string path, bool isFile) =>
+                {
+                    if (string.IsNullOrWhiteSpace(path)) return false;
+                    if (path.Contains("invalid") || path.Contains("bad")) return false;
+                    return true;
+                });
+
+            _sut = new ServiceValidationRules(_processHelperMock.Object);
+        }
+
         #region Helpers
 
         /// <summary>
@@ -36,7 +58,7 @@ namespace Servy.Core.UnitTests.Validators
         [Fact]
         public void Validate_NullDto_ReturnsError()
         {
-            var result = ServiceValidationRules.Validate(null);
+            var result = _sut.Validate(null);
             Assert.Contains(Strings.Msg_ValidationError, result.Errors);
         }
 
@@ -47,7 +69,7 @@ namespace Servy.Core.UnitTests.Validators
         public void Validate_MissingVitalFields_ReturnsWarning(string name, string path)
         {
             var dto = new ServiceDto { Name = name, ExecutablePath = path };
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
             Assert.Contains(Strings.Msg_ValidationError, result.Errors);
         }
 
@@ -60,7 +82,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.Description = new string('C', AppConfig.MaxDescriptionLength + 1);
             dto.Parameters = new string('D', AppConfig.MaxArgumentLength + 1);
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.Equal(4, result.Warnings.Count);
             Assert.Contains(result.Warnings, w => w.Contains("exceeds"));
@@ -77,7 +99,7 @@ namespace Servy.Core.UnitTests.Validators
             // Testing non-existent wrapper path
             string nonExistentWrapper = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            var result = ServiceValidationRules.Validate(dto, nonExistentWrapper);
+            var result = _sut.Validate(dto, nonExistentWrapper);
 
             Assert.Contains(Strings.Msg_InvalidPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidWrapperExePath, result.Errors);
@@ -94,7 +116,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.RotationSize = AppConfig.MinRotationSize - 1;
             dto.MaxRotations = AppConfig.MaxMaxRotations + 1;
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.Contains(result.Errors, e => e.Contains("Start timeout"));
             Assert.Contains(result.Errors, e => e.Contains("Stop timeout"));
@@ -111,7 +133,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.MaxFailedChecks = unchecked(AppConfig.MaxMaxFailedChecks + 1);
             dto.MaxRestartAttempts = -5;
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.Contains(result.Errors, e => e.Contains("Heartbeat interval"));
             Assert.Contains(result.Errors, e => e.Contains("Max Failed Checks"));
@@ -126,7 +148,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.UserAccount = "Admin";
             dto.Password = "Secret123";
 
-            var result = ServiceValidationRules.Validate(dto, confirmPassword: "WrongPassword");
+            var result = _sut.Validate(dto, confirmPassword: "WrongPassword");
 
             Assert.Contains(Strings.Msg_PasswordsDontMatch, result.Errors);
         }
@@ -138,7 +160,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.EnvironmentVariables = "INVALID_VAR"; // Missing '='
             dto.ServiceDependencies = "MissingDep;"; // Ends with semicolon often allowed but let's assume validator catches empty entries
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.NotEmpty(result.Errors);
         }
@@ -151,7 +173,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.PreLaunchTimeoutSeconds = AppConfig.MaxPreLaunchTimeoutSeconds + 1;
             dto.PreLaunchRetryAttempts = -1;
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.Contains(Strings.Msg_InvalidPreLaunchPath, result.Errors);
             Assert.Contains(result.Errors, e => e.Contains("Pre-Launch timeout"));
@@ -166,7 +188,7 @@ namespace Servy.Core.UnitTests.Validators
             dto.PreStopExecutablePath = "bad|path";
             dto.PostStopExecutablePath = "bad|path";
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.Contains(Strings.Msg_InvalidPostLaunchPath, result.Errors);
             Assert.Contains(Strings.Msg_InvalidPreStopPath, result.Errors);
@@ -177,7 +199,7 @@ namespace Servy.Core.UnitTests.Validators
         public void Validate_PerfectDto_ReturnsValid()
         {
             var dto = CreateValidDto();
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _sut.Validate(dto);
 
             Assert.True(result.IsValid);
             Assert.Empty(result.Errors);

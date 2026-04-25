@@ -14,6 +14,18 @@ namespace Servy.Core.Services
     /// </summary>
     public class JsonServiceValidator : IJsonServiceValidator
     {
+        private readonly IProcessHelper _processHelper;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonServiceValidator"/> class with the specified process helper.
+        /// </summary>
+        /// <param name="processHelper">Provides methods to validate executable paths and gather process metrics.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> is null.</exception>
+        public JsonServiceValidator(IProcessHelper processHelper)
+        {
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+        }
+
         /// <inheritdoc/>
         public bool TryValidate(string json, out string errorMessage)
         {
@@ -67,7 +79,7 @@ namespace Servy.Core.Services
             }
 
             // 3. Executable Path Integrity
-            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
+            if (!_processHelper.ValidatePath(dto.ExecutablePath))
             {
                 errorMessage = "The provided executable path is invalid or inaccessible.";
                 return false;

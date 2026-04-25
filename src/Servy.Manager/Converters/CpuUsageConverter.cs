@@ -1,4 +1,5 @@
-﻿using Servy.Core.Helpers;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Servy.Core.Helpers;
 using Servy.UI.Constants;
 using System;
 using System.Globalization;
@@ -11,10 +12,21 @@ namespace Servy.Manager.Converters
     /// </summary>
     public class CpuUsageConverter : IValueConverter
     {
+        private readonly IProcessHelper _processHelper;
+
         /// <summary>
         /// CPU usage not available.
         /// </summary>
         const string UnknownCpuUsage = UiConstants.NotAvailable;
+
+        /// <summary>
+        /// Initializes a new instance of the CpuUsageConverter with dependency injection.
+        /// Note: If resolving via XAML, ensure a DI-aware markup extension or service locator is configured.
+        /// </summary>
+        public CpuUsageConverter()
+        {
+            _processHelper = App.Services.GetRequiredService<IProcessHelper>();
+        }
 
         /// <summary>
         /// Returns the CPU usage as string in percentage.
@@ -30,7 +42,7 @@ namespace Servy.Manager.Converters
             // If the bound property is double? and is null, this will safely return false.
             if (value is double cpuUsage)
             {
-                return ProcessHelper.FormatCpuUsage(cpuUsage);
+                return _processHelper.FormatCpuUsage(cpuUsage);
             }
 
             return UnknownCpuUsage;

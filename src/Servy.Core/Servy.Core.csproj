@@ -113,6 +113,7 @@
     <Compile Include="Helpers\AppFoldersHelper.cs" />
     <Compile Include="Helpers\CallerArgumentExpressionAttribute.cs" />
     <Compile Include="Helpers\ConfigParser.cs" />
+    <Compile Include="Helpers\IProcessHelper.cs" />
     <Compile Include="Helpers\ProcessMetrics.cs" />
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
@@ -179,6 +180,7 @@
     <Compile Include="Services\Win32ErrorProvider.cs" />
     <Compile Include="Services\WindowsServiceApi.cs" />
     <Compile Include="Services\WindowsServiceInfo.cs" />
+    <Compile Include="Validators\IServiceValidationRules.cs" />
     <Compile Include="Validators\ServiceValidationRules.cs" />
     <Compile Include="Validators\ValidationResult.cs" />
   </ItemGroup>

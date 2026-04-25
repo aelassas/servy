@@ -20,8 +20,12 @@ using System.IO;
 using System.Windows;
 using Servy.Manager.Config;
 using AppConfig = Servy.Core.Config.AppConfig;
-using System.Threading.Tasks;
+using Servy.Manager.Converters;
+using Servy.Core.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using Servy.Core.Validators;
 using System;
+using System.Threading.Tasks;
 
 namespace Servy.Manager
 {
@@ -37,6 +41,15 @@ namespace Servy.Manager
         /// Used for locating and extracting files such as the service executable.
         /// </summary>
         public const string ResourcesNamespace = "Servy.Manager.Resources";
+
+        #endregion
+
+        #region Static Properties
+
+        /// <summary>
+        /// Service provider for dependency injection, initialized by the bootstrapper.
+        /// </summary>
+        public static IServiceProvider Services { get; private set; }
 
         #endregion
 
@@ -181,6 +194,9 @@ namespace Servy.Manager
                 // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = (serviceName) =>
                 {
+                    // 0. Retrieve DI-managed services
+                    var processHelper = Services.GetRequiredService<IProcessHelper>();
+
                     // 1. Initialize Infrastructure & Services
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                     var serviceManager = new ServiceManager(
@@ -194,7 +210,8 @@ namespace Servy.Manager
                     var fileDialogService = new FileDialogService();
                     var messageBoxService = new MessageBoxService();
                     var helpService = new HelpService(messageBoxService);
-                    var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService);
+                    var serviceValidationRules = new ServiceValidationRules(processHelper);
+                    var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
                     var eventLogService = new EventLogService(new EventLogReader());
                     var cursorService = new CursorService();
 
@@ -214,9 +231,10 @@ namespace Servy.Manager
                         removeServiceProxy,
                         refreshProxy,
                         serviceConfigurationValidator,
-                        new XmlServiceValidator(),
-                        new JsonServiceValidator(),
-                        this
+                        new XmlServiceValidator(processHelper),
+                        new JsonServiceValidator(processHelper),
+                        this,
+                        processHelper
                     );
 
                     // 3. Initialize Main ViewModel
@@ -226,11 +244,12 @@ namespace Servy.Manager
                         serviceCommands,
                         helpService,
                         messageBoxService,
-                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService),
+                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService, processHelper),
                         new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService),
                         new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService),
                         this,
-                        cursorService
+                        cursorService,
+                        processHelper
                     );
 
                     // 4. Inject Dependencies into the View
@@ -346,12 +365,21 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
+            var services = new ServiceCollection();
+
+            // Register dependencies
+            services.AddSingleton<IProcessHelper, ProcessHelper>();
+            services.AddSingleton<CpuUsageConverter>();
+            services.AddSingleton<RamUsageConverter>();
+
+            Services = services.BuildServiceProvider();
+
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 
             // Use a dedicated async method instead of a chained ContinueWith 
             // to ensure the startup lifecycle and any faults are correctly observed.
-            _ = InitializeAppWithFaultHandlingAsync(e);
+            _ = InitializeAppWithFaultHandlingAsync(e, Services.GetRequiredService<IProcessHelper>());
         }
 
         /// <summary>
@@ -359,12 +387,13 @@ namespace Servy.Manager
         /// that occur before the UI is ready.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
         /// <returns>A <see cref="Task"/> representing the initialization process.</returns>
-        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e)
+        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e, IProcessHelper processHelper)
         {
             try
             {
-                await _bootstrapper.InitializeAppAsync(this, e);
+                await _bootstrapper.InitializeAppAsync(this, e, processHelper);
             }
             catch (Exception ex)
             {

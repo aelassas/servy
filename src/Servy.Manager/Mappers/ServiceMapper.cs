@@ -29,16 +29,17 @@ namespace Servy.Manager
         /// <param name="service">The domain service instance.</param>
         /// <param name="isDesktopAppAvailable">Indicates whether the configuration application is available.</param>
         /// <param name="calculatePerf">Whether to calculate CPU and RAM usage.</param>
+        /// <param name="processHelper">Injected process helper used to gather usage metrics.</param>
         /// <returns>A UI-friendly <see cref="Service"/> model.</returns>
-        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isDesktopAppAvailable, bool calculatePerf)
+        public static async Task<Service> ToModelAsync(Core.Domain.Service service, bool isDesktopAppAvailable, bool calculatePerf, IProcessHelper processHelper)
         {
             if (service == null) return null;
 
             double? cpuUsage = null;
             long? ramUsage = null;
-            if (calculatePerf && service.Pid.HasValue)
+            if (calculatePerf && service.Pid.HasValue && processHelper != null)
             {
-                var processMetrics = await Task.Run(() => ProcessHelper.GetProcessTreeMetrics(service.Pid.Value));
+                var processMetrics = await Task.Run(() => processHelper.GetProcessTreeMetrics(service.Pid.Value));
                 cpuUsage = processMetrics.CpuUsage;
                 ramUsage = processMetrics.RamUsage;
             }

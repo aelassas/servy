@@ -9,6 +9,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System;
@@ -148,7 +149,9 @@ namespace Servy.CLI
                     serviceRepository
                     );
 
-                var installValidator = new ServiceInstallValidator();
+                var processHelper = new ProcessHelper();
+                var serviceValidationRules = new ServiceValidationRules(processHelper);
+                var installValidator = new ServiceInstallValidator(serviceValidationRules);
 
                 var installCommand = new InstallServiceCommand(serviceManager, installValidator);
                 var startCommand = new StartServiceCommand(serviceManager);
@@ -157,15 +160,17 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                var xmlServiceValidator = new XmlServiceValidator();
-                var jsonServiceValidator = new JsonServiceValidator();
+
+                var xmlServiceValidator = new XmlServiceValidator(processHelper);
+                var jsonServiceValidator = new JsonServiceValidator(processHelper);
                 var importCommand = new ImportServiceCommand(
                     serviceRepository,
                     xmlSerializer,
                     jsonSerializer,
                     serviceManager,
                     xmlServiceValidator,
-                    jsonServiceValidator
+                    jsonServiceValidator,
+                    processHelper
                     );
 
                 async Task Run()
@@ -181,7 +186,7 @@ namespace Servy.CLI
                     var resourceHelper = new ResourceHelper(serviceRepository);
 
                     // Copy Sysinternals from embedded resources
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
                     }
@@ -194,7 +199,7 @@ namespace Servy.CLI
 
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                     }
@@ -215,7 +220,7 @@ namespace Servy.CLI
 #endif
 
                     // Copy embedded resources
-                    if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
+                    if (!await resourceHelper.CopyResources(processHelper, asm, ResourcesNamespace, resourceItems))
                     {
                         Console.WriteLine($"Failed copying embedded resources.");
                     }

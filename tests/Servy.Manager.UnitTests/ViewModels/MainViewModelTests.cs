@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -25,7 +26,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
-        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
+        private readonly Mock<ICursorService> _cursorServiceMock;
+        private readonly Mock<IProcessHelper> _processHelper;
 
         // Child ViewModels
         private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
@@ -40,6 +42,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
             _cursorServiceMock = new Mock<ICursorService>(); // Initialize CursorService Mock
+            _processHelper = new Mock<IProcessHelper>();
 
             // Setup AppConfig Mock with defaults to prevent null/zero issues
             _appConfigMock = new Mock<IAppConfiguration>();
@@ -84,6 +87,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _dependenciesViewModelMock.Object,
                 _appConfigMock.Object,
                 _cursorServiceMock.Object, // Pass the new dependency
+                _processHelper.Object,
                 dispatcher
             );
         }

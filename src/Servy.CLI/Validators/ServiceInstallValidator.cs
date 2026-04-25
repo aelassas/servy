@@ -17,6 +17,18 @@ namespace Servy.CLI.Validators
     /// </summary>
     public class ServiceInstallValidator : IServiceInstallValidator
     {
+        private readonly ServiceValidationRules _serviceValidationRules;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceInstallValidator"/> class with the specified validation rules.
+        /// </summary>
+        /// <param name="serviceValidationRules">Shared validation rules for service installation.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="serviceValidationRules"/> is null.</exception>
+        public ServiceInstallValidator(ServiceValidationRules serviceValidationRules)
+        {
+            _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
+        }
+
         /// <summary>
         /// Validates the provided <see cref="InstallServiceOptions"/> by mapping them to a domain DTO 
         /// and executing centralized validation rules.
@@ -34,7 +46,7 @@ namespace Servy.CLI.Validators
                 return CommandResult.Fail(mappingError);
             }
 
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _serviceValidationRules.Validate(dto);
 
             if (!result.IsValid)
             {

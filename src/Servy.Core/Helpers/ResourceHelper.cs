@@ -40,6 +40,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Copies an embedded resource from the assembly to disk, stopping and restarting services if necessary.
         /// </summary>
+        /// <param name="processHelper">An instance of IProcessHelper used to query running processes.</param>
         /// <param name="assembly">The assembly containing the resource.</param>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The filename of the resource without extension.</param>
@@ -48,6 +49,7 @@ namespace Servy.Core.Helpers
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
         public async Task<bool> CopyEmbeddedResource(
+            IProcessHelper processHelper,
             Assembly assembly,
             string resourceNamespace,
             string fileName,
@@ -71,7 +73,7 @@ namespace Servy.Core.Helpers
                         await _serviceHelper.StopServices(runningServices);
                     }
 
-                    if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
+                    if (!TerminateBlockingProcesses(processHelper, extension, targetFileName, targetPath))
                         return false;
 
                     Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -111,6 +113,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Copies an embedded resource from the assembly to disk.
         /// </summary>
+        /// <param name="processHelper">An instance of IProcessHelper used to query running processes.</param>
         /// <param name="assembly">The assembly containing the resource.</param>
         /// <param name="resourceNamespace">Namespace of the embedded resource.</param>
         /// <param name="fileName">The filename of the resource without extension.</param>
@@ -118,6 +121,7 @@ namespace Servy.Core.Helpers
         /// <param name="subfolder">Optional subfolder within the target directory.</param>
         /// <returns>True if the copy succeeded or was not needed, false if it failed.</returns>
         public bool CopyEmbeddedResourceSync(
+            IProcessHelper processHelper,
             Assembly assembly,
             string resourceNamespace,
             string fileName,
@@ -129,7 +133,7 @@ namespace Servy.Core.Helpers
                 if (!ShouldCopyResource(assembly, resourceNamespace, fileName, extension, subfolder, out var targetPath, out var targetFileName, out var resourceName))
                     return true;
 
-                if (!TerminateBlockingProcesses(extension, targetFileName, targetPath))
+                if (!TerminateBlockingProcesses(processHelper, extension, targetFileName, targetPath))
                     return false;
 
                 Stream resourceStream = assembly.GetManifestResourceStream(resourceName);
@@ -160,6 +164,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Copies embedded resources (such as DLLs and EXEs) from the specified assembly to target paths.
         /// </summary>
+        /// <param name="processHelper">An instance of IProcessHelper used to query running processes.</param>
         /// <param name="assembly">
         /// The <see cref="Assembly"/> that contains the embedded resources.
         /// </param>
@@ -196,6 +201,7 @@ namespace Servy.Core.Helpers
         /// </para>
         /// </remarks>
         public async Task<bool> CopyResources(
+            IProcessHelper processHelper,
             Assembly assembly,
             string resourceNamespace,
             List<ResourceItem> resourceItems,
@@ -238,7 +244,7 @@ namespace Servy.Core.Helpers
                     {
                         try
                         {
-                            if (!TerminateBlockingProcesses(resourceItem.Extension, resourceItem.TargetFileName, resourceItem.TargetPath, skipDll: true))
+                            if (!TerminateBlockingProcesses(processHelper, resourceItem.Extension, resourceItem.TargetFileName, resourceItem.TargetPath, skipDll: true))
                             {
                                 res = false;
                                 continue;
@@ -408,12 +414,13 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Evaluates the file extension type and attempts to safely terminate any processes holding locks on the target file.
         /// </summary>
+        /// <param name="processHelper">An instance of IProcessHelper used to query running processes.</param>
         /// <param name="extension">The file extension used to determine the termination strategy(e.g., "exe", "dll").</param>
         /// <param name="targetFileName">The name of the file to search for in the process list.</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
         /// <param name="skipDll">If true, skips termination of processes using the file if it's a DLL. This is used when multiple resources are being copied to avoid redundant process termination attempts.</param>
         /// <returns>True if all blocking processes were terminated or none were found; false if termination failed.</returns>
-        private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath, bool skipDll = false)
+        private bool TerminateBlockingProcesses(IProcessHelper processHelper, string extension, string targetFileName, string targetPath, bool skipDll = false)
         {
             var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
             var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
@@ -421,7 +428,7 @@ namespace Servy.Core.Helpers
             if (isExe && !ProcessKiller.KillProcessTreeAndParents(targetFileName))
                 return false;
 
-            if (isDll && !skipDll && !ProcessKiller.KillProcessesUsingFile(targetPath))
+            if (isDll && !skipDll && !ProcessKiller.KillProcessesUsingFile(processHelper, targetPath))
                 return false;
 
             return true;

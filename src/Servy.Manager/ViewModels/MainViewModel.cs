@@ -64,6 +64,7 @@ namespace Servy.Manager.ViewModels
         private readonly object _servicesLock = new object();
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
         private readonly IAppConfiguration _appConfig;
+        private readonly IProcessHelper _processHelper;
 
         private IDisposable _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
 
@@ -328,6 +329,7 @@ namespace Servy.Manager.ViewModels
             DependenciesViewModel dependenciesVM,
             IAppConfiguration appConfig,
             ICursorService cursorService,
+            IProcessHelper processHelper,
             Dispatcher dispatcher = null
             )
         {
@@ -340,6 +342,8 @@ namespace Servy.Manager.ViewModels
             _messageBoxService = messageBoxService;
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
             _selectAll = false;
+
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
 
             // Assign child ViewModels injected via DI
             PerformanceVM = performanceVM ?? throw new ArgumentNullException(nameof(performanceVM));
@@ -974,8 +978,8 @@ namespace Servy.Manager.ViewModels
                 long? ram = null;
                 if (targetPid.HasValue && targetPid.Value > 0)
                 {
-                    ProcessHelper.MaintainCache();
-                    var metrics = ProcessHelper.GetProcessTreeMetrics(targetPid.Value);
+                    _processHelper.MaintainCache();
+                    var metrics = _processHelper.GetProcessTreeMetrics(targetPid.Value);
                     cpu = metrics.CpuUsage;
                     ram = metrics.RamUsage;
                 }

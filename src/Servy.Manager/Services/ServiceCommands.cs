@@ -51,6 +51,7 @@ namespace Servy.Manager.Services
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
         private readonly IAppConfiguration _appConfig;
+        private readonly IProcessHelper _processHelper;
 
         #endregion
 
@@ -69,6 +70,7 @@ namespace Servy.Manager.Services
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <param name="appConfig">The application configuration interface.</param>
+        /// <param name="processHelper">The process helper used to format process commands.</param>
         public ServiceCommands(
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,
@@ -79,7 +81,8 @@ namespace Servy.Manager.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
-            IAppConfiguration appConfig
+            IAppConfiguration appConfig,
+            IProcessHelper processHelper
         )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
@@ -92,6 +95,7 @@ namespace Servy.Manager.Services
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 
         #endregion
@@ -153,7 +157,8 @@ namespace Servy.Manager.Services
             var tasks = results.Select(r => ServiceMapper.ToModelAsync(
                 Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
                 _appConfig.IsDesktopAppAvailable,
-                calculatePerf));
+                calculatePerf,
+                _processHelper));
             var services = await Task.WhenAll(tasks);
 
             // Filter out nulls resulting from malformed/orphaned DTOs 
@@ -212,7 +217,7 @@ namespace Servy.Manager.Services
                     }
 
                     // Pass false to skip splash screen
-                    process.StartInfo.Arguments = $"\"false\" {ProcessHelper.EscapeArgument(service.Name)}{forceFlag}";
+                    process.StartInfo.Arguments = $"\"false\" {_processHelper.EscapeArgument(service.Name)}{forceFlag}";
 
                     StartProcess(process);
                 }

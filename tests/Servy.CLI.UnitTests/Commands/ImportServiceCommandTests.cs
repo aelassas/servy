@@ -2,6 +2,7 @@
 using Servy.CLI.Commands;
 using Servy.CLI.Options;
 using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using System.IO;
 using System.Threading;
@@ -18,6 +19,7 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly Mock<IServiceManager> _serviceManager;
         private readonly Mock<IXmlServiceValidator> _xmlValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonValidatorMock;
+        private readonly Mock<IProcessHelper> _processHelper;
         private readonly ImportServiceCommand _command;
 
         public ImportServiceCommandTests()
@@ -28,6 +30,7 @@ namespace Servy.CLI.UnitTests.Commands
             _serviceManager = new Mock<IServiceManager>();
             _xmlValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonValidatorMock = new Mock<IJsonServiceValidator>();
+            _processHelper = new Mock<IProcessHelper>();
 
             _command = new ImportServiceCommand(
                 _serviceRepoMock.Object,
@@ -35,7 +38,8 @@ namespace Servy.CLI.UnitTests.Commands
                 _jsonServiceSerializer.Object,
                 _serviceManager.Object,
                 _xmlValidatorMock.Object,
-                _jsonValidatorMock.Object);
+                _jsonValidatorMock.Object,
+                _processHelper.Object);
         }
 
         [Fact]

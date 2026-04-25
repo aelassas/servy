@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
@@ -17,6 +18,13 @@ namespace Servy.Service.UnitTests
 {
     public class TestableServiceTests
     {
+        private readonly Mock<IProcessHelper> _mockProcessHelper;
+
+        public TestableServiceTests()
+        {
+            _mockProcessHelper = new Mock<IProcessHelper>();
+        }
+
         [Fact]
         public void OnStart_Workflow_ParsesPromotesAndValidates()
         {
@@ -36,7 +44,7 @@ namespace Servy.Service.UnitTests
 
             // 1. Setup the ServiceHelper sequence
             mockHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            mockHelper.Setup(h => h.ParseOptions(serviceRepository.Object, fullArgs))
+            mockHelper.Setup(h => h.ParseOptions(serviceRepository.Object, _mockProcessHelper.Object, fullArgs))
                       .Returns(expectedOptions);
 
             // 2. Setup Logger Promotion (Root -> Scoped)
@@ -44,7 +52,7 @@ namespace Servy.Service.UnitTests
                           .Returns(mockScopedLogger.Object);
 
             // 3. Setup Validation and Working Directory check (using the SCOPED logger)
-            mockHelper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs))
+            mockHelper.Setup(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, _mockProcessHelper.Object, fullArgs))
                       .Returns(true);
             mockHelper.Setup(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object));
 
@@ -55,7 +63,9 @@ namespace Servy.Service.UnitTests
                 timerFactory.Object,
                 processFactory.Object,
                 pathValidator.Object,
-                serviceRepository.Object);
+                serviceRepository.Object,
+                _mockProcessHelper.Object
+                );
 
             // Act
             service.TestOnStart();
@@ -63,14 +73,14 @@ namespace Servy.Service.UnitTests
             // Assert
             // Verify the sequence of orchestration
             mockHelper.Verify(h => h.GetArgs(), Times.Once);
-            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, fullArgs), Times.Once);
+            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, _mockProcessHelper.Object, fullArgs), Times.Once);
 
             // Verify logger promotion and disposal of the root
             mockRootLogger.Verify(l => l.CreateScoped(expectedOptions.ServiceName), Times.Once);
             mockRootLogger.Verify(l => l.Dispose(), Times.Once);
 
             // Verify validation and working directory check used the NEW scoped logger
-            mockHelper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, fullArgs), Times.Once);
+            mockHelper.Verify(h => h.ValidateAndLog(expectedOptions, mockScopedLogger.Object, _mockProcessHelper.Object, fullArgs), Times.Once);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(expectedOptions, mockScopedLogger.Object), Times.Once);
         }
 
@@ -92,7 +102,7 @@ namespace Servy.Service.UnitTests
 
             // 2. Mock ParseOptions to return null (the new "InitializeStartup returns null" equivalent)
             mockHelper
-                .Setup(h => h.ParseOptions(serviceRepository.Object, fullArgs))
+                .Setup(h => h.ParseOptions(serviceRepository.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns((StartOptions)null);
 
             var service = new TestableService(
@@ -102,18 +112,20 @@ namespace Servy.Service.UnitTests
                 timerFactory.Object,
                 processFactory.Object,
                 pathValidator.Object,
-                serviceRepository.Object);
+                serviceRepository.Object,
+                _mockProcessHelper.Object
+                );
 
             // Act
             service.TestOnStart(fullArgs);
 
             // Assert
             // Verify we attempted to parse but stopped there
-            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, fullArgs), Times.Once);
+            mockHelper.Verify(h => h.ParseOptions(serviceRepository.Object, _mockProcessHelper.Object, fullArgs), Times.Once);
 
             // Verify that subsequent steps (Promotion/Validation/WorkingDir) were NEVER reached
             mockLogger.Verify(l => l.CreateScoped(It.IsAny<string>()), Times.Never);
-            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
+            mockHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<IProcessHelper>(), It.IsAny<string[]>()), Times.Never);
             mockHelper.Verify(h => h.EnsureValidWorkingDirectory(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>()), Times.Never);
         }
 
@@ -143,7 +155,8 @@ namespace Servy.Service.UnitTests
                 timerFactory.Object,
                 processFactory.Object,
                 pathValidator.Object,
-                serviceRepository.Object
+                serviceRepository.Object,
+                _mockProcessHelper.Object
                 );
 
             // Act
@@ -185,7 +198,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                serviceRepository.Object
+                serviceRepository.Object,
+                _mockProcessHelper.Object
             );
 
             var options = new StartOptions
@@ -232,7 +246,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                serviceRepository.Object
+                serviceRepository.Object,
+                _mockProcessHelper.Object
             );
 
             var options = new StartOptions
