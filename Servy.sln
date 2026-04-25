@@ -61,6 +61,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Servy.CLI.UnitTests", "test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{70D87C51-9AAD-4358-A6CB-0C51B23F0C56}"
 	ProjectSection(SolutionItems) = preProject
+		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish.ps1 = setup\publish.ps1
 		setup\servy.iss = setup\servy.iss
 		setup\signpath.ps1 = setup\signpath.ps1
