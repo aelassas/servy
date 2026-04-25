@@ -10,6 +10,7 @@ using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using Servy.Infrastructure.Data;
 using Servy.Infrastructure.Helpers;
 using System.Reflection;
@@ -151,7 +152,9 @@ namespace Servy.CLI
                     serviceRepository
                     );
 
-                var installValidator = new ServiceInstallValidator();
+                var processHelper = new ProcessHelper();
+                var serviceValidationRules = new ServiceValidationRules(processHelper);
+                var installValidator = new ServiceInstallValidator(serviceValidationRules);
 
                 var installCommand = new InstallServiceCommand(serviceManager, installValidator);
                 var startCommand = new StartServiceCommand(serviceManager);
@@ -160,15 +163,17 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                var xmlServiceValidator = new XmlServiceValidator();
-                var jsonServiceValidator = new JsonServiceValidator();
+                
+                var xmlServiceValidator = new XmlServiceValidator(processHelper);
+                var jsonServiceValidator = new JsonServiceValidator(processHelper);
                 var importCommand = new ImportServiceCommand(
                     serviceRepository, 
                     xmlSerializer, 
                     jsonSerializer, 
                     serviceManager,
                     xmlServiceValidator,
-                    jsonServiceValidator
+                    jsonServiceValidator,
+                    processHelper
                     );
 
                 async Task Run()

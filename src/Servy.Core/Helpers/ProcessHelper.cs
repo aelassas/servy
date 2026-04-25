@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using static Servy.Core.Native.NativeMethods;
 
@@ -14,16 +15,21 @@ namespace Servy.Core.Helpers
     /// such as CPU usage and RAM usage.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class ProcessHelper
+    public class ProcessHelper : IProcessHelper
     {
-        private static long _lastPruneTicks = DateTime.MinValue.Ticks;
-        private static readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
+        private long _lastPruneTicks = DateTime.MinValue.Ticks;
+        private readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
 
         /// <summary>
         /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering 
         /// for different processes, while serializing requests for the same process.
         /// </summary>
-        private static readonly ConcurrentDictionary<int, object> _pidLocks = new ConcurrentDictionary<int, object>();
+        private readonly ConcurrentDictionary<int, object> _pidLocks = new ConcurrentDictionary<int, object>();
+
+        /// <summary>
+        /// Stores the last recorded CPU usage sample for each process ID.
+        /// </summary>
+        private readonly ConcurrentDictionary<int, CpuSample> _prevCpuTimes = new ConcurrentDictionary<int, CpuSample>();
 
         /// <summary>
         /// Retrieves or creates a synchronization object dedicated to a specific process ID.
@@ -38,7 +44,7 @@ namespace Servy.Core.Helpers
         /// for multiple services in parallel while ensuring that concurrent requests 
         /// for the same PID do not corrupt the CPU delta calculations.
         /// </remarks>
-        private static object GetLockForPid(int pid)
+        private object GetLockForPid(int pid)
         {
             return _pidLocks.GetOrAdd(pid, _ => new object());
         }
@@ -49,7 +55,7 @@ namespace Servy.Core.Helpers
         /// Efficiently retrieves the process ID and all descendant process IDs for a given root process
         /// using native Windows APIs to avoid WMI overhead.
         /// </summary>
-        private static List<int> GetProcessTree(int rootPid)
+        private List<int> GetProcessTree(int rootPid)
         {
             var tree = new List<int> { rootPid };
             var parentToChildren = new Dictionary<int, List<int>>();
@@ -127,24 +133,8 @@ namespace Servy.Core.Helpers
             public TimeSpan LastTotalTime;
         }
 
-        /// <summary>
-        /// Provides a storage container for CPU usage samples.
-        /// This class holds the last recorded CPU usage values for each process ID
-        /// and is excluded from code coverage because it only acts as an internal cache.
-        /// </summary>
-        private static class CpuTimesStore
-        {
-            /// <summary>
-            /// Stores the last recorded CPU usage sample for each process ID.
-            /// </summary>
-            public static readonly ConcurrentDictionary<int, CpuSample> PrevCpuTimes = new ConcurrentDictionary<int, CpuSample>();
-        }
-
-        /// <summary>
-        /// Performs maintenance on the process cache by removing entries for PIDs that are no longer active.
-        /// Should be called by a background timer to prevent memory leaks.
-        /// </summary>
-        public static void MaintainCache()
+        /// <inheritdoc />
+        public void MaintainCache()
         {
             // 1. Thread-safe check of the last prune time
             long now = DateTime.UtcNow.Ticks;
@@ -156,7 +146,7 @@ namespace Servy.Core.Helpers
             // This prevents multiple parallel 'Refresh' tasks from iterating the dictionary simultaneously.
             if (Interlocked.CompareExchange(ref _lastPruneTicks, now, last) != last) return;
 
-            foreach (var pid in CpuTimesStore.PrevCpuTimes.Keys)
+            foreach (var pid in _prevCpuTimes.Keys)
             {
                 bool isAlive = false;
                 try
@@ -170,7 +160,7 @@ namespace Servy.Core.Helpers
 
                 if (!isAlive)
                 {
-                    CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                    _prevCpuTimes.TryRemove(pid, out _);
                     _pidLocks.TryRemove(pid, out _);
                 }
             }
@@ -179,19 +169,17 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Internal helper to mutate the shared sample state.
         /// </summary>
-        private static void UpdateCpuSample(int pid, DateTime time, TimeSpan totalTime)
+        private void UpdateCpuSample(int pid, DateTime time, TimeSpan totalTime)
         {
-            CpuTimesStore.PrevCpuTimes[pid] = new CpuSample
+            _prevCpuTimes[pid] = new CpuSample
             {
                 LastTime = time,
                 LastTotalTime = totalTime
             };
         }
 
-        /// <summary>
-        /// Retrieves both CPU and RAM metrics for a process using a single handle.
-        /// </summary>
-        public static ProcessMetrics GetProcessMetrics(int pid)
+        /// <inheritdoc />
+        public ProcessMetrics GetProcessMetrics(int pid)
         {
             try
             {
@@ -206,7 +194,7 @@ namespace Servy.Core.Helpers
                         var now = DateTime.UtcNow;
                         var totalTime = process.TotalProcessorTime;
 
-                        if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
+                        if (!_prevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
                         {
                             UpdateCpuSample(pid, now, totalTime);
                             return new ProcessMetrics(0, ram);
@@ -229,7 +217,7 @@ namespace Servy.Core.Helpers
             }
             catch (ArgumentException)
             {
-                CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                _prevCpuTimes.TryRemove(pid, out _);
                 _pidLocks.TryRemove(pid, out _); // Clean up the lock too
                 return new ProcessMetrics(0, 0);
             }
@@ -240,11 +228,8 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Retrieves combined CPU and RAM metrics for an entire process tree.
-        /// Performs a single pass over the tree to minimize kernel transitions.
-        /// </summary>
-        public static ProcessMetrics GetProcessTreeMetrics(int rootPid)
+        /// <inheritdoc />
+        public ProcessMetrics GetProcessTreeMetrics(int rootPid)
         {
             var pids = GetProcessTree(rootPid);
             double totalCpu = 0;
@@ -260,28 +245,8 @@ namespace Servy.Core.Helpers
             return new ProcessMetrics(Math.Min(100.0, totalCpu), totalRam);
         }
 
-        /// <summary>
-        /// Formats a CPU usage value as a percentage string.
-        /// </summary>
-        /// <param name="cpuUsage">The CPU usage value.</param>
-        /// <returns>
-        /// A formatted string with a percent sign.
-        /// Examples:
-        /// <list type="bullet">
-        /// <item><description>0 -> "0%"</description></item>
-        /// <item><description>0.03 -> "0%"</description></item>
-        /// <item><description>1 -> "1.0%"</description></item>
-        /// <item><description>1.04 -> "1.0%"</description></item>
-        /// <item><description>1.05 -> "1.1%"</description></item>
-        /// <item><description>1.06 -> "1.1%"</description></item>
-        /// <item><description>1.1 -> "1.1%"</description></item>
-        /// <item><description>1.49 -> "1.4%"</description></item>
-        /// <item><description>1.51 -> "1.5%"</description></item>
-        /// <item><description>1.57 -> "1.6%"</description></item>
-        /// <item><description>1.636 -> "1.6%"</description></item>
-        /// </list>
-        /// </returns>
-        public static string FormatCpuUsage(double cpuUsage)
+        /// <inheritdoc />
+        public string FormatCpuUsage(double cpuUsage)
         {
             double rounded = Math.Round(cpuUsage, 1, MidpointRounding.AwayFromZero);
             const double epsilon = 0.0001;
@@ -293,22 +258,8 @@ namespace Servy.Core.Helpers
             return $"{formatted}%";
         }
 
-        /// <summary>
-        /// Formats a RAM usage value in human-readable units.
-        /// </summary>
-        /// <param name="ramUsage">The RAM usage in bytes.</param>
-        /// <returns>
-        /// A formatted string with the most appropriate unit:
-        /// B, KB, MB, GB, or TB.
-        /// Examples:
-        /// <list type="bullet">
-        /// <item><description>512 -> "512.0 B"</description></item>
-        /// <item><description>2048 -> "2.0 KB"</description></item>
-        /// <item><description>1048576 -> "1.0 MB"</description></item>
-        /// <item><description>1073741824 -> "1.0 GB"</description></item>
-        /// </list>
-        /// </returns>
-        public static string FormatRamUsage(long ramUsage)
+        /// <inheritdoc />
+        public string FormatRamUsage(long ramUsage)
         {
             const double KB = 1024.0;
             const double MB = KB * 1024.0;
@@ -340,29 +291,8 @@ namespace Servy.Core.Helpers
             return result;
         }
 
-        /// <summary>
-        /// Resolves and validates an absolute filesystem path for use by a Windows service.
-        /// </summary>
-        /// <param name="inputPath">
-        /// The input path, which may contain environment variables (e.g. %ProgramFiles%).
-        /// Environment variables are expanded using the service account's environment only.
-        /// </param>
-        /// <returns>
-        /// A normalized, absolute path with environment variables expanded.
-        /// </returns>
-        /// <exception cref="ArgumentException">
-        /// Thrown if the path is relative or contains environment variables that could not be expanded.
-        /// </exception>
-        /// <remarks>
-        /// This method is intentionally strict:
-        /// <list type="bullet">
-        /// <item>Only absolute paths are allowed.</item>
-        /// <item>Environment variables must be defined at the system level and visible to the service account.</item>
-        /// <item>User-level environment variables are not supported.</item>
-        /// </list>
-        /// Use <see cref="ValidatePath"/> if you only need a boolean existence check.
-        /// </remarks>
-        public static string? ResolvePath(string? inputPath)
+        /// <inheritdoc />
+        public string? ResolvePath(string? inputPath)
         {
             if (string.IsNullOrWhiteSpace(inputPath)) return null;
 
@@ -392,25 +322,8 @@ namespace Servy.Core.Helpers
             return Path.GetFullPath(expandedPath);
         }
 
-        /// <summary>
-        /// Validates that a file or directory path exists after resolving environment variables
-        /// and normalizing the path.
-        /// </summary>
-        /// <param name="path">
-        /// The path to validate. May contain environment variables.
-        /// </param>
-        /// <param name="isFile">
-        /// True to validate a file path; false to validate a directory path.
-        /// </param>
-        /// <returns>
-        /// True if the path resolves successfully and exists; otherwise false.
-        /// </returns>
-        /// <remarks>
-        /// This method never throws exceptions.
-        /// Any failure during resolution (such as unexpanded environment variables,
-        /// relative paths, or invalid paths) results in a false return value.
-        /// </remarks>
-        public static bool ValidatePath(string? path, bool isFile = true)
+        /// <inheritdoc />
+        public bool ValidatePath(string? path, bool isFile = true)
         {
             try
             {
@@ -433,10 +346,54 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Escapes an argument for the Windows command line to prevent breakout.
-        /// </summary>
-        public static string EscapeArgument(string arg)
+        /// <inheritdoc/>
+        public string EscapeProcessArgument(string arg)
+        {
+            if (string.IsNullOrWhiteSpace(arg)) return "\"\"";
+
+            // Replace " with \"
+            // But we must also handle backslashes that precede a "
+            // because \" is treated as a literal quote, and \\" is a literal backslash + quote.
+            // The logic: 2n backslashes + " => n backslashes + literal "
+            // 2n+1 backslashes + " => n backslashes + literal " + escape next... 
+            // Actually, a simpler way for standard .NET/Windows:
+            StringBuilder sb = new StringBuilder();
+            sb.Append('"');
+            for (int i = 0; i < arg.Length; i++)
+            {
+                int backslashCount = 0;
+                while (i < arg.Length && arg[i] == '\\')
+                {
+                    backslashCount++;
+                    i++;
+                }
+
+                if (i == arg.Length)
+                {
+                    // Backslashes at the end of the string need to be doubled 
+                    // so they don't escape the closing quote
+                    sb.Append('\\', backslashCount * 2);
+                }
+                else if (arg[i] == '"')
+                {
+                    // Backslashes before a quote need to be doubled, 
+                    // and then the quote itself needs a backslash
+                    sb.Append('\\', backslashCount * 2 + 1);
+                    sb.Append('"');
+                }
+                else
+                {
+                    // Regular character, just add the backslashes and the char
+                    sb.Append('\\', backslashCount);
+                    sb.Append(arg[i]);
+                }
+            }
+            sb.Append('"');
+            return sb.ToString();
+        }
+
+        /// <inheritdoc />
+        public string EscapeArgument(string arg)
         {
             if (string.IsNullOrEmpty(arg)) return "\"\"";
 

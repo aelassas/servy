@@ -13,6 +13,18 @@ namespace Servy.Core.Services
     /// </summary>
     public class XmlServiceValidator: IXmlServiceValidator
     {
+        private readonly IProcessHelper _processHelper;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="XmlServiceValidator"/> class with the specified process helper.
+        /// </summary>
+        /// <param name="processHelper">Provides methods to validate executable paths and gather process metrics.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> is null.</exception>
+        public XmlServiceValidator(IProcessHelper processHelper)
+        {
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+        }
+
         /// <inheritdoc/>
         public bool TryValidate(string? xml, out string? errorMessage)
         {
@@ -75,7 +87,7 @@ namespace Servy.Core.Services
             }
 
             // 3. Path Validation
-            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
+            if (!_processHelper.ValidatePath(dto.ExecutablePath))
             {
                 errorMessage = "The executable path in the XML is invalid or inaccessible.";
                 return false;

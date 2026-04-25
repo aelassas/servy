@@ -5,6 +5,7 @@ using Servy.Core.Enums;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Core.Validators;
 using Servy.Models;
 using Servy.Resources;
 using Servy.Services;
@@ -933,9 +934,9 @@ namespace Servy.ViewModels
                 serviceManager,
                 new MessageBoxService(),
                 new FileDialogService(),
-                new ServiceConfigurationValidator(new MessageBoxService()),
-                new XmlServiceValidator(),
-                new JsonServiceValidator(),
+                new ServiceConfigurationValidator(new MessageBoxService(), new ServiceValidationRules(new ProcessHelper())),
+                new XmlServiceValidator(new ProcessHelper()),
+                new JsonServiceValidator(new ProcessHelper()),
                 null,
                 new CursorService()
             );

@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using Moq;
+using Newtonsoft.Json;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 
 namespace Servy.Core.UnitTests.Services
@@ -8,12 +10,12 @@ namespace Servy.Core.UnitTests.Services
     public class JsonServiceValidatorTests
     {
         private readonly JsonServiceValidator _validator;
+        private readonly Mock<IProcessHelper> _processHelperMock;
 
         public JsonServiceValidatorTests()
         {
-            // Now instantiating the concrete class to test its implementation 
-            // of the IJsonServiceValidator interface.
-            _validator = new JsonServiceValidator();
+            _processHelperMock = new Mock<IProcessHelper>();
+            _validator = new JsonServiceValidator(_processHelperMock.Object);
         }
 
         [Fact]
@@ -109,6 +111,8 @@ namespace Servy.Core.UnitTests.Services
                 StopTimeout = 30000 // Valid 30s
             };
             var json = JsonConvert.SerializeObject(dto);
+
+            _processHelperMock.Setup(ph => ph.ValidatePath(dto.ExecutablePath, It.IsAny<bool>())).Returns(true);
 
             var result = _validator.TryValidate(json, out var error);
 

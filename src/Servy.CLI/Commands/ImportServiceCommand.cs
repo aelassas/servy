@@ -25,6 +25,7 @@ namespace Servy.CLI.Commands
         private readonly IServiceManager _serviceManager;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
+        private readonly IProcessHelper _processHelper;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImportServiceCommand"/> class.
@@ -35,13 +36,15 @@ namespace Servy.CLI.Commands
         /// <param name="serviceManager">Manager to control Windows services.</param>
         /// <param name="xmlServiceValidator">Validator for XML service configurations.</param>
         /// <param name="jsonServiceValidator">Validator for JSON service configurations.</param>
+        /// <param name="processHelper">Helper for process related formatting and parsing.</param>
         public ImportServiceCommand(
             IServiceRepository serviceRepository,
             IXmlServiceSerializer xmlServiceSerializer,
             IJsonServiceSerializer jsonServiceSerializer,
             IServiceManager serviceManager,
             IXmlServiceValidator xmlServiceValidator,
-            IJsonServiceValidator jsonServiceValidator)
+            IJsonServiceValidator jsonServiceValidator,
+            IProcessHelper processHelper)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
@@ -49,6 +52,7 @@ namespace Servy.CLI.Commands
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
             _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
         }
 
         /// <summary>
@@ -244,7 +248,7 @@ namespace Servy.CLI.Commands
         private CommandResult ValidateServicePaths(ServiceDto service)
         {
             // Required path
-            if (!ProcessHelper.ValidatePath(service.ExecutablePath, isFile: true))
+            if (!_processHelper.ValidatePath(service.ExecutablePath, isFile: true))
                 return CommandResult.Fail(string.Format(Strings.Msg_InvalidExecutablePath, service.ExecutablePath));
 
             // Optional paths
@@ -265,7 +269,7 @@ namespace Servy.CLI.Commands
 
             foreach (var (path, isFile, label) in check)
             {
-                if (!string.IsNullOrWhiteSpace(path) && !ProcessHelper.ValidatePath(path, isFile))
+                if (!string.IsNullOrWhiteSpace(path) && !_processHelper.ValidatePath(path, isFile))
                     return CommandResult.Fail(string.Format(Strings.Msg_InvalidPathInConfig, label));
             }
 

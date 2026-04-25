@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
@@ -32,6 +33,7 @@ namespace Servy.Service.UnitTests
         private readonly Mock<ITimer> _mockTimer;
         private readonly Mock<IProcessWrapper> _mockProcess;
         private readonly Mock<IServiceRepository> _mockServiceRepository;
+        private readonly Mock<IProcessHelper> _mockProcessHelper;
 
         public ServiceTests(ITestOutputHelper output)
         {
@@ -65,6 +67,7 @@ namespace Servy.Service.UnitTests
                 .Returns(_mockProcess.Object);
 
             _mockServiceRepository = new Mock<IServiceRepository>();
+            _mockProcessHelper = new Mock<IProcessHelper>();
 
             _service = new Service(
                 _mockServiceHelper.Object,
@@ -73,7 +76,8 @@ namespace Servy.Service.UnitTests
                 _mockTimerFactory.Object,
                 _mockProcessFactory.Object,
                 _mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
         }
 
@@ -166,7 +170,7 @@ namespace Servy.Service.UnitTests
 
             // 1. ServiceHelper flow
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, It.IsAny<string[]>()))
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, _mockProcessHelper.Object, It.IsAny<string[]>()))
                 .Returns(options);
             _mockProcess.Setup(p => p.Start()).Returns(true);
 
@@ -175,7 +179,7 @@ namespace Servy.Service.UnitTests
             _mockLogger.Setup(l => l.CreateScoped(options.ServiceName)).Returns(mockScopedLogger.Object);
 
             // 3. Validation setup (Must use the scoped logger)
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns(true);
 
             // 4. Path Validator setup (Used inside HandleLogWriters)
@@ -212,7 +216,7 @@ namespace Servy.Service.UnitTests
 
             // 1. Setup the ServiceHelper flow
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns(options);
 
             // 2. Setup Logger Promotion: Root returns Scoped
@@ -220,7 +224,7 @@ namespace Servy.Service.UnitTests
                 .Returns(mockScopedLogger.Object);
 
             // 3. Setup Validation: Must return true for the method to proceed to HandleLogWriters
-            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ValidateAndLog(options, mockScopedLogger.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns(true);
 
             // 4. Force the path validation to fail
@@ -254,7 +258,7 @@ namespace Servy.Service.UnitTests
             _mockServiceHelper.Setup(h => h.GetArgs()).Returns(fullArgs);
 
             // 2. Mock ParseOptions to return null (simulating invalid or missing configuration)
-            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, fullArgs))
+            _mockServiceHelper.Setup(h => h.ParseOptions(_mockServiceRepository.Object, _mockProcessHelper.Object, fullArgs))
                 .Returns((StartOptions?)null);
 
             // Act
@@ -265,7 +269,7 @@ namespace Servy.Service.UnitTests
             Assert.True(stopped);
 
             // Verify that ValidateAndLog was NEVER called because we exited early
-            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<string[]>()), Times.Never);
+            _mockServiceHelper.Verify(h => h.ValidateAndLog(It.IsAny<StartOptions>(), It.IsAny<IServyLogger>(), It.IsAny<IProcessHelper>(), It.IsAny<string[]>()), Times.Never);
         }
 
         [Fact]
@@ -318,7 +322,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -351,7 +356,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
             service.SetChildProcess(mockProcess.Object);
 
@@ -383,7 +389,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
 
             var options = new StartOptions
@@ -440,7 +447,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
 
             var options = new StartOptions
@@ -483,7 +491,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                _mockServiceRepository.Object
+                _mockServiceRepository.Object,
+                _mockProcessHelper.Object
             );
 
             var options = new StartOptions

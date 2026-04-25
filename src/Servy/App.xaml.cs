@@ -22,6 +22,9 @@ using System.IO;
 using System.Windows;
 using Servy.Config;
 using AppConfig = Servy.Core.Config.AppConfig;
+using Servy.Core.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using Servy.Core.Validators;
 
 namespace Servy
 {
@@ -37,6 +40,15 @@ namespace Servy
         /// Used for locating and extracting files such as the service executable.
         /// </summary>
         public static readonly string ResourcesNamespace = "Servy.Resources";
+
+        #endregion
+
+        #region Static Properties
+
+        /// <summary>
+        /// Service provider for dependency injection, initialized by the bootstrapper.
+        /// </summary>
+        public static IServiceProvider Services { get; private set; }
 
         #endregion
 
@@ -151,6 +163,9 @@ namespace Servy
                 // CRITICAL: The composition root is here, not in the View.
                 MainWindowFactoryAsync = async (serviceName) =>
                 {
+                    // 0. Retrieve DI-managed services
+                    var processHelper = Services.GetRequiredService<IProcessHelper>();
+
                     // 1. Initialize Infrastructure & Domain Services
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
                     var serviceManager = new ServiceManager(
@@ -165,13 +180,15 @@ namespace Servy
                     var fileDialogService = new FileDialogService();
                     var messageBoxService = new MessageBoxService();
                     var helperService = new HelpService(messageBoxService);
-                    var configValidator = new ServiceConfigurationValidator(messageBoxService);
+                    var serviceValidationRules = new ServiceValidationRules(processHelper);
+                    var configValidator = new ServiceConfigurationValidator(messageBoxService, serviceValidationRules);
 
                     // 3. Resolve Circular Dependency using Proxies
                     MainViewModel viewModel = null;
 
                     Func<ServiceDto> modelToDtoProxy = () => viewModel?.ModelToServiceDto();
                     Action<ServiceDto> bindDtoProxy = (dto) => viewModel?.BindServiceDtoToModel(dto);
+
 
                     var serviceCommands = new ServiceCommands(
                         modelToDtoProxy,
@@ -180,8 +197,8 @@ namespace Servy
                         messageBoxService,
                         fileDialogService,
                         configValidator,
-                        new XmlServiceValidator(),
-                        new JsonServiceValidator(),
+                        new XmlServiceValidator(processHelper),
+                        new JsonServiceValidator(processHelper),
                         this,
                         new CursorService()
                     );
@@ -304,12 +321,19 @@ namespace Servy
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
+            var services = new ServiceCollection();
+
+            // Register dependencies
+            services.AddSingleton<IProcessHelper, ProcessHelper>();
+
+            Services = services.BuildServiceProvider();
+
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 
             // Use a dedicated async method instead of a chained ContinueWith 
             // to ensure the startup lifecycle and any faults are correctly observed.
-            _ = InitializeAppWithFaultHandlingAsync(e);
+            _ = InitializeAppWithFaultHandlingAsync(e, Services.GetRequiredService<IProcessHelper>());
         }
 
         /// <summary>
@@ -317,12 +341,13 @@ namespace Servy
         /// that occur before the UI is ready.
         /// </summary>
         /// <param name="e">The startup event arguments.</param>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
         /// <returns>A <see cref="Task"/> representing the initialization process.</returns>
-        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e)
+        private async Task InitializeAppWithFaultHandlingAsync(StartupEventArgs e, IProcessHelper processHelper)
         {
             try
             {
-                await _bootstrapper.InitializeAppAsync(this, e);
+                await _bootstrapper.InitializeAppAsync(this, e, processHelper);
             }
             catch (Exception ex)
             {

@@ -1,6 +1,5 @@
 ﻿using Servy.Core.Config;
 using Servy.Core.DTOs;
-using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
@@ -13,22 +12,22 @@ namespace Servy.Core.Validators
     /// <summary>
     /// Provides centralized validation logic for service configurations across all Servy components.
     /// </summary>
-    public static class ServiceValidationRules
+    public class ServiceValidationRules : IServiceValidationRules
     {
+        private readonly IProcessHelper _processHelper;
+
         /// <summary>
-        /// Validates a <see cref="ServiceDto"/> against domain requirements, path accessibility, and configuration bounds.
+        /// Initializes a new instance of the <see cref="ServiceValidationRules"/> class with the specified process helper.
         /// </summary>
-        /// <param name="dto">The service configuration data transfer object to validate.</param>
-        /// <param name="wrapperExePath">Optional path to the service wrapper executable for existence verification.</param>
-        /// <param name="confirmPassword">Optional password used to verify that the user's credential entry matches the configuration.</param>
-        /// <returns>
-        /// A <see cref="ValidationResult"/> containing a collection of errors (blocking issues) and warnings (non-blocking suggestions).
-        /// </returns>
-        /// <remarks>
-        /// This method performs "fail-fast" validation for null objects or missing required names/paths, 
-        /// while aggregating all other constraint violations (timeouts, file paths, credentials) into the result collections.
-        /// </remarks>
-        public static ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string confirmPassword = "")
+        /// <param name="processHelper">Provides methods to validate executable paths and gather process metrics.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="processHelper"/> is null.</exception>
+        public ServiceValidationRules(IProcessHelper processHelper)
+        {
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+        }
+
+        /// <inheritdoc/>
+        public ValidationResult Validate(ServiceDto? dto, string? wrapperExePath = null, string confirmPassword = "")
         {
             var result = new ValidationResult();
 
@@ -64,11 +63,11 @@ namespace Servy.Core.Validators
                 result.Warnings.Add(string.Format(Strings.Msg_ArgumentsLengthReached, AppConfig.MaxArgumentLength));
 
             // Paths
-            if (!ProcessHelper.ValidatePath(dto.ExecutablePath))
+            if (!_processHelper.ValidatePath(dto.ExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPath);
             if (!string.IsNullOrWhiteSpace(wrapperExePath) && !File.Exists(wrapperExePath))
                 result.Errors.Add(Strings.Msg_InvalidWrapperExePath);
-            if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !ProcessHelper.ValidatePath(dto.StartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.StartupDirectory) && !_processHelper.ValidatePath(dto.StartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidStartupDirectory);
             if (!string.IsNullOrWhiteSpace(dto.StdoutPath) && (!Helper.IsValidPath(dto.StdoutPath) || !Helper.CreateParentDirectory(dto.StdoutPath)))
                 result.Errors.Add(Strings.Msg_InvalidStdoutPath);
@@ -94,9 +93,9 @@ namespace Servy.Core.Validators
                 result.Errors.Add(string.Format(Strings.Msg_InvalidMaxRestartAttempts, AppConfig.MinMaxRestartAttempts, AppConfig.MaxMaxRestartAttempts));
 
             // Failure Program
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && !ProcessHelper.ValidatePath(dto.FailureProgramPath))
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramPath) && !_processHelper.ValidatePath(dto.FailureProgramPath))
                 result.Errors.Add(Strings.Msg_InvalidFailureProgramPath);
-            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) && !ProcessHelper.ValidatePath(dto.FailureProgramStartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.FailureProgramStartupDirectory) && !_processHelper.ValidatePath(dto.FailureProgramStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidFailureProgramStartupDirectory);
 
             // Credentials
@@ -123,9 +122,9 @@ namespace Servy.Core.Validators
                 result.Errors.Add(string.Join("\n", depsErrors));
 
             // Pre-Launch
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) && !ProcessHelper.ValidatePath(dto.PreLaunchExecutablePath))
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchExecutablePath) && !_processHelper.ValidatePath(dto.PreLaunchExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchPath);
-            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreLaunchStartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.PreLaunchStartupDirectory) && !_processHelper.ValidatePath(dto.PreLaunchStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidPreLaunchStartupDirectory);
             if (!EnvironmentVariablesValidator.Validate(StringHelper.NormalizeString(dto.PreLaunchEnvironmentVariables), out var preLaunchEnvErrorMsg))
                 result.Errors.Add(preLaunchEnvErrorMsg);
@@ -139,23 +138,23 @@ namespace Servy.Core.Validators
                 result.Errors.Add(string.Format(Strings.Msg_InvalidPreLaunchRetryAttempts, AppConfig.MinPreLaunchRetryAttempts, AppConfig.MaxPreLaunchRetryAttempts));
 
             // Post-Launch
-            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath) && !ProcessHelper.ValidatePath(dto.PostLaunchExecutablePath))
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchExecutablePath) && !_processHelper.ValidatePath(dto.PostLaunchExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPostLaunchPath);
-            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostLaunchStartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.PostLaunchStartupDirectory) && !_processHelper.ValidatePath(dto.PostLaunchStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidPostLaunchStartupDirectory);
 
             // Pre-Stop
-            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath) && !ProcessHelper.ValidatePath(dto.PreStopExecutablePath))
+            if (!string.IsNullOrWhiteSpace(dto.PreStopExecutablePath) && !_processHelper.ValidatePath(dto.PreStopExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPreStopPath);
-            if (!string.IsNullOrWhiteSpace(dto.PreStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PreStopStartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.PreStopStartupDirectory) && !_processHelper.ValidatePath(dto.PreStopStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidPreStopStartupDirectory);
             if (dto.PreStopTimeoutSeconds.HasValue && (dto.PreStopTimeoutSeconds < AppConfig.MinPreStopTimeoutSeconds || dto.PreStopTimeoutSeconds > AppConfig.MaxPreStopTimeoutSeconds))
                 result.Errors.Add(string.Format(Strings.Msg_InvalidPreStopTimeout, AppConfig.MinPreStopTimeoutSeconds, AppConfig.MaxPreStopTimeoutSeconds));
 
             // Post-Stop
-            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath) && !ProcessHelper.ValidatePath(dto.PostStopExecutablePath))
+            if (!string.IsNullOrWhiteSpace(dto.PostStopExecutablePath) && !_processHelper.ValidatePath(dto.PostStopExecutablePath))
                 result.Errors.Add(Strings.Msg_InvalidPostStopPath);
-            if (!string.IsNullOrWhiteSpace(dto.PostStopStartupDirectory) && !ProcessHelper.ValidatePath(dto.PostStopStartupDirectory, false))
+            if (!string.IsNullOrWhiteSpace(dto.PostStopStartupDirectory) && !_processHelper.ValidatePath(dto.PostStopStartupDirectory, false))
                 result.Errors.Add(Strings.Msg_InvalidPostStopStartupDirectory);
 
             return result;

@@ -4,6 +4,7 @@ using Servy.Core.Common;
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
@@ -23,6 +24,7 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
+        private readonly Mock<IProcessHelper> _processHelper;
 
         private bool _refreshCalled;
         private TaskCompletionSource<bool> _refreshTcs;
@@ -40,6 +42,7 @@ namespace Servy.Manager.UnitTests.Services
             _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
             _appConfigMock = new Mock<IAppConfiguration>();
+            _processHelper = new Mock<IProcessHelper>();
 
             _refreshTcs = new TaskCompletionSource<bool>();
             _removedServiceName = null!;
@@ -73,7 +76,8 @@ namespace Servy.Manager.UnitTests.Services
                 _serviceConfigurationValidatorMock.Object,
                 _xmlServiceValidatorMock.Object,
                 _jsonServiceValidatorMock.Object,
-                _appConfigMock.Object
+                _appConfigMock.Object,
+                _processHelper.Object
             );
         }
 

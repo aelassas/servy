@@ -12,15 +12,18 @@ namespace Servy.Manager.Validators
     public class ServiceConfigurationValidator : IServiceConfigurationValidator
     {
         private readonly IMessageBoxService _messageBoxService;
+        private readonly ServiceValidationRules _serviceValidationRules;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceConfigurationValidator"/> class.
         /// </summary>
         /// <param name="messageBoxService">The service used to display error and warning messages to the user.</param>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="messageBoxService"/> is null.</exception>
-        public ServiceConfigurationValidator(IMessageBoxService messageBoxService)
+        /// <param name="serviceValidationRules">Shared validation rules for service installation.</param>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="messageBoxService"/> or <paramref name="serviceValidationRules"/> is null.</exception>
+        public ServiceConfigurationValidator(IMessageBoxService messageBoxService, ServiceValidationRules serviceValidationRules)
         {
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
+            _serviceValidationRules = serviceValidationRules ?? throw new ArgumentNullException(nameof(serviceValidationRules));
         }
 
         /// <summary>
@@ -38,7 +41,7 @@ namespace Servy.Manager.Validators
         public async Task<bool> Validate(ServiceDto dto)
         {
             // Delegate core validation logic to the centralized rules engine
-            var result = ServiceValidationRules.Validate(dto);
+            var result = _serviceValidationRules.Validate(dto);
 
             // Display warnings first to match the legacy validation sequence
             if (result.Warnings.Any())

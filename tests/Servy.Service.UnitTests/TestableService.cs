@@ -1,6 +1,7 @@
 ﻿using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Core.EnvironmentVariables;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
@@ -60,8 +61,9 @@ namespace Servy.Service.UnitTests
             ITimerFactory timerFactory,
             IProcessFactory processFactory,
             IPathValidator pathValidator,
-            IServiceRepository serviceRepository)
-            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository)
+            IServiceRepository serviceRepository,
+            IProcessHelper processHelper)
+            : base(serviceHelper, logger, streamWriterFactory, timerFactory, processFactory, pathValidator, serviceRepository, processHelper)
         {
         }
 

@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Core.Helpers;
 using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
@@ -16,13 +17,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
-        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
+        private readonly Mock<ICursorService> _cursorServiceMock;
+        private readonly Mock<IProcessHelper> _processHelperMock;
 
         public PerformanceViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _cursorServiceMock = new Mock<ICursorService>();
+            _processHelperMock = new Mock<IProcessHelper>();
 
             // Setup AppConfig Mock
             _appConfigMock = new Mock<IAppConfiguration>();
@@ -37,7 +40,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
                 _appConfigMock.Object,
-                _cursorServiceMock.Object);
+                _cursorServiceMock.Object,
+                _processHelperMock.Object);
         }
 
         [Fact]

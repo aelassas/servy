@@ -4,6 +4,13 @@ namespace Servy.Core.UnitTests.Helpers
 {
     public class ProcessHelperTests
     {
+        private readonly ProcessHelper _processHelper;
+
+        public ProcessHelperTests()
+        {
+            _processHelper = new ProcessHelper();
+        }
+
         [Theory]
         [InlineData(0, "0%")]        // zero case
         [InlineData(0.03, "0%")]     // zero case
@@ -18,7 +25,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData(1.36, "1.4%")]   // rounding up
         public void FormatCPUUsage_ReturnsExpected(double input, string expected)
         {
-            var result = ProcessHelper.FormatCpuUsage(input);
+            var result = _processHelper.FormatCpuUsage(input);
             Assert.Equal(expected, result);
         }
 
@@ -35,7 +42,7 @@ namespace Servy.Core.UnitTests.Helpers
         [InlineData((3.75 * 1024 * 1024 * 1024 * 1024), "3.8 TB")] // TB range
         public void FormatRAMUsage_ReturnsExpected(long input, string expected)
         {
-            var result = ProcessHelper.FormatRamUsage(input);
+            var result = _processHelper.FormatRamUsage(input);
             Assert.Equal(expected, result);
         }
 
@@ -46,14 +53,14 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ResolvePath_NullInput_ReturnsNull()
         {
-            var result = ProcessHelper.ResolvePath(null!);
+            var result = _processHelper.ResolvePath(null!);
             Assert.Null(result);
         }
 
         [Fact]
         public void ResolvePath_EmptyInput_ReturnsEmpty()
         {
-            var result = ProcessHelper.ResolvePath(string.Empty);
+            var result = _processHelper.ResolvePath(string.Empty);
             Assert.Null(result);
         }
 
@@ -63,7 +70,7 @@ namespace Servy.Core.UnitTests.Helpers
             var tempDir = Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar);
             var input = tempDir + Path.DirectorySeparatorChar;
 
-            var result = ProcessHelper.ResolvePath(input);
+            var result = _processHelper.ResolvePath(input);
 
             Assert.Equal(Path.GetFullPath(tempDir).TrimEnd(Path.DirectorySeparatorChar), result?.TrimEnd(Path.DirectorySeparatorChar));
         }
@@ -73,7 +80,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var input = "%TEMP%";
 
-            var result = ProcessHelper.ResolvePath(input);
+            var result = _processHelper.ResolvePath(input);
 
             Assert.True(Path.IsPathRooted(result));
             Assert.Equal(Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar), result.TrimEnd(Path.DirectorySeparatorChar));
@@ -85,7 +92,7 @@ namespace Servy.Core.UnitTests.Helpers
             var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                ProcessHelper.ResolvePath(input));
+                _processHelper.ResolvePath(input));
 
             Assert.Contains("could not be expanded", ex.Message);
         }
@@ -96,7 +103,7 @@ namespace Servy.Core.UnitTests.Helpers
             var input = @"relative\path\file.txt";
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
-                ProcessHelper.ResolvePath(input));
+                _processHelper.ResolvePath(input));
 
             Assert.Contains("relative", ex.Message);
         }
@@ -107,7 +114,7 @@ namespace Servy.Core.UnitTests.Helpers
             var baseDir = Path.Combine(Path.GetTempPath(), "a", "b");
             var input = Path.Combine(baseDir, @"..\..\test");
 
-            var result = ProcessHelper.ResolvePath(input);
+            var result = _processHelper.ResolvePath(input);
 
             Assert.Equal(
                 Path.GetFullPath(Path.Combine(Path.GetTempPath(), "test")),
@@ -121,13 +128,13 @@ namespace Servy.Core.UnitTests.Helpers
         [Fact]
         public void ValidatePath_NullInput_ReturnsFalse()
         {
-            Assert.False(ProcessHelper.ValidatePath(null!));
+            Assert.False(_processHelper.ValidatePath(null!));
         }
 
         [Fact]
         public void ValidatePath_WhitespaceInput_ReturnsFalse()
         {
-            Assert.False(ProcessHelper.ValidatePath("   "));
+            Assert.False(_processHelper.ValidatePath("   "));
         }
 
         [Fact]
@@ -137,7 +144,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             try
             {
-                Assert.True(ProcessHelper.ValidatePath(file, isFile: true));
+                Assert.True(_processHelper.ValidatePath(file, isFile: true));
             }
             finally
             {
@@ -150,7 +157,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".txt");
 
-            Assert.False(ProcessHelper.ValidatePath(file, isFile: true));
+            Assert.False(_processHelper.ValidatePath(file, isFile: true));
         }
 
         [Fact]
@@ -161,7 +168,7 @@ namespace Servy.Core.UnitTests.Helpers
 
             try
             {
-                Assert.True(ProcessHelper.ValidatePath(dir.FullName, isFile: false));
+                Assert.True(_processHelper.ValidatePath(dir.FullName, isFile: false));
             }
             finally
             {
@@ -174,7 +181,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
-            Assert.False(ProcessHelper.ValidatePath(dir, isFile: false));
+            Assert.False(_processHelper.ValidatePath(dir, isFile: false));
         }
 
         [Fact]
@@ -182,7 +189,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var input = @"C:\%THIS_VAR_SHOULD_NOT_EXIST%\file.txt";
 
-            Assert.False(ProcessHelper.ValidatePath(input));
+            Assert.False(_processHelper.ValidatePath(input));
         }
 
         [Fact]
@@ -190,7 +197,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             var input = @"relative\path\file.txt";
 
-            Assert.False(ProcessHelper.ValidatePath(input));
+            Assert.False(_processHelper.ValidatePath(input));
         }
 
         [Fact]
@@ -204,7 +211,7 @@ namespace Servy.Core.UnitTests.Helpers
                 var fileName = Path.GetFileName(tempFile);
                 var envPath = Path.Combine("%TEMP%", fileName);
 
-                Assert.True(ProcessHelper.ValidatePath(envPath, isFile: true));
+                Assert.True(_processHelper.ValidatePath(envPath, isFile: true));
             }
             finally
             {
@@ -223,13 +230,12 @@ namespace Servy.Core.UnitTests.Helpers
                 var dirName = new DirectoryInfo(dir.FullName).Name;
                 var envPath = Path.Combine("%TEMP%", dirName);
 
-                Assert.True(ProcessHelper.ValidatePath(envPath, isFile: false));
+                Assert.True(_processHelper.ValidatePath(envPath, isFile: false));
             }
             finally
             {
                 dir.Delete();
             }
         }
-
     }
 }

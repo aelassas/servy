@@ -156,13 +156,14 @@ namespace Servy.UI.Bootstrapping
         }
 
         /// <summary>
-        /// Asynchronously handles the application initialization lifecycle, including configuration loading, 
-        /// resource extraction, and UI orchestration.
+        /// Asynchronously handles heavy initialization tasks such as database migrations, 
+        /// configuration loading, resource extraction, and window orchestration.
         /// </summary>
         /// <param name="app">The active WPF application instance.</param>
-        /// <param name="e">Startup arguments.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous startup operation.</returns>
-        public async Task InitializeAppAsync(Application app, StartupEventArgs e)
+        /// <param name="e">The startup event arguments.</param>
+        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> used to query running processes.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous initialization process.</returns>
+        public async Task InitializeAppAsync(Application app, StartupEventArgs e, IProcessHelper processHelper)
         {
             string serviceName = null;
             var showSplash = true;

@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
 using Servy.Service.Helpers;
@@ -15,7 +16,14 @@ namespace Servy.Service.UnitTests
 {
     public class EventHandlerTests
     {
-        private static TestableService CreateService(
+        private readonly Mock<IProcessHelper> _mockProcessHelper;
+
+        public EventHandlerTests()
+        {
+            _mockProcessHelper = new Mock<IProcessHelper>();
+        }
+
+        private TestableService CreateService(
             out Mock<IServyLogger> mockLogger,
             out Mock<IServiceHelper> mockHelper,
             out Mock<IStreamWriterFactory> mockStreamWriterFactory,
@@ -42,7 +50,8 @@ namespace Servy.Service.UnitTests
                 mockTimerFactory.Object,
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
-                mockServiceRepository.Object
+                mockServiceRepository.Object,
+                _mockProcessHelper.Object
                 );
         }
 

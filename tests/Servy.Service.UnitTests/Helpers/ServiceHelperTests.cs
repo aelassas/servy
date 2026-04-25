@@ -1,21 +1,25 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Service.CommandLine;
-using Servy.Service.Helpers;
 using System.Diagnostics;
+using ServiceHelper = Servy.Service.Helpers.ServiceHelper;
 
 namespace Servy.Service.UnitTests.Helpers
 {
     public class ServiceHelperTests
     {
         private readonly Mock<ICommandLineProvider> _mockCommandLineProvider;
+        private readonly Mock<IProcessHelper> _mockProcessHelper;
         private readonly ServiceHelper _helper;
 
         public ServiceHelperTests()
         {
             _mockCommandLineProvider = new Mock<ICommandLineProvider>();
+            _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(It.IsAny<string>(), It.IsAny<bool>())).Returns(true);
             _helper = new ServiceHelper(_mockCommandLineProvider.Object);
         }
 
@@ -41,7 +45,7 @@ namespace Servy.Service.UnitTests.Helpers
             // Assert
             // 1. Verify the logger received the info message.
             mockLog.Verify(l => l.Info(It.Is<string>(s =>
-                s.Contains("Startup Parameters", StringComparison.OrdinalIgnoreCase))),
+                s.IndexOf("Startup Parameters", StringComparison.OrdinalIgnoreCase) > -1)),
                 Times.Once);
 
             // 2. Verify that specific public data fields exist in that log string
@@ -81,7 +85,7 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>())).Returns(mockLog.Object);
 
             // Act
-            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+            var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
             // Assert
             Assert.False(result);
@@ -106,7 +110,7 @@ namespace Servy.Service.UnitTests.Helpers
             try
             {
                 // Act - Using the new unified entry point
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -140,9 +144,11 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.ExecutablePath, It.IsAny<bool>())).Returns(false);
+
             // Act
             // We call the new orchestration method instead of the old private one
-            var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+            var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
             // Assert
             Assert.False(result);
@@ -174,11 +180,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.FailureProgramPath, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -218,11 +226,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PreLaunchExecutablePath, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method that handles logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -262,11 +272,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PostLaunchExecutablePath, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -314,7 +326,7 @@ namespace Servy.Service.UnitTests.Helpers
             try
             {
                 // Act
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.True(result);
@@ -357,7 +369,7 @@ namespace Servy.Service.UnitTests.Helpers
             {
                 // Act
                 // Use the new orchestration method
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.True(result);
@@ -393,11 +405,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.WorkingDirectory, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method that handles logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -437,11 +451,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.FailureProgramWorkingDirectory, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Call the new unified method for logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -481,11 +497,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PreLaunchWorkingDirectory, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -525,11 +543,13 @@ namespace Servy.Service.UnitTests.Helpers
             mockLog.Setup(l => l.CreateScoped(It.IsAny<string>()))
                    .Returns(mockLog.Object);
 
+            _mockProcessHelper.Setup(ph => ph.ValidatePath(options.PostLaunchWorkingDirectory, It.IsAny<bool>())).Returns(false);
+
             try
             {
                 // Act
                 // Use the new orchestration method that handles both logging and validation
-                var result = _helper.ValidateAndLog(options, mockLog.Object, fullArgs);
+                var result = _helper.ValidateAndLog(options, mockLog.Object, _mockProcessHelper.Object, fullArgs);
 
                 // Assert
                 Assert.False(result);
@@ -613,7 +633,7 @@ namespace Servy.Service.UnitTests.Helpers
             var mockServiceRepo = new Mock<IServiceRepository>();
 
             // Assert
-            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockServiceRepo.Object, mockLog.Object));
+            var result = Assert.Throws<ArgumentException>(() => _helper.InitializeStartup(mockServiceRepo.Object, _mockProcessHelper.Object, mockLog.Object));
         }
     }
 }

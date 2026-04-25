@@ -17,11 +17,12 @@ namespace Servy.Service.CommandLine
         /// </summary>
         /// <param name="serviceRepository">An instance of <see cref="IServiceRepository"/> used to retrieve service configuration from the database.</param>
         /// <param name="fullArgs">An array of strings representing the command-line arguments.</param>
+        /// <param name="processHelper">The process helper used to format process commands.</param>
         /// <returns>
         /// A <see cref="StartOptions"/> object populated with values parsed from the input arguments.
         /// Missing or invalid values will be set to default values.
         /// </returns>
-        public static StartOptions Parse(IServiceRepository serviceRepository, string[] fullArgs)
+        public static StartOptions Parse(IServiceRepository serviceRepository, IProcessHelper processHelper, string[] fullArgs)
         {
             if (fullArgs == null || fullArgs.Length == 0)
             {
@@ -44,9 +45,9 @@ namespace Servy.Service.CommandLine
 
             return new StartOptions
             {
-                ExecutablePath = ProcessHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
+                ExecutablePath = processHelper.ResolvePath(serviceDto.ExecutablePath ?? string.Empty),
                 ExecutableArgs = Helper.EscapeBackslashes(serviceDto.Parameters ?? string.Empty),
-                WorkingDirectory = ProcessHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
+                WorkingDirectory = processHelper.ResolvePath(serviceDto.StartupDirectory ?? string.Empty),
                 Priority = MapPriority((ProcessPriority)(serviceDto.Priority ?? (int)ProcessPriority.Normal)),
                 StdOutPath = serviceDto.StdoutPath,
                 StdErrPath = serviceDto.StderrPath,
@@ -61,8 +62,8 @@ namespace Servy.Service.CommandLine
                 EnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.EnvironmentVariables ?? string.Empty),
 
                 // Pre-Launch args
-                PreLaunchExecutablePath = ProcessHelper.ResolvePath(serviceDto.PreLaunchExecutablePath ?? string.Empty),
-                PreLaunchWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PreLaunchStartupDirectory ?? string.Empty),
+                PreLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PreLaunchExecutablePath ?? string.Empty),
+                PreLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PreLaunchStartupDirectory ?? string.Empty),
                 PreLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreLaunchParameters ?? string.Empty),
                 PreLaunchEnvironmentVariables = EnvironmentVariableParser.Parse(serviceDto.PreLaunchEnvironmentVariables ?? string.Empty),
                 PreLaunchStdoutPath = serviceDto.PreLaunchStdoutPath,
@@ -72,13 +73,13 @@ namespace Servy.Service.CommandLine
                 PreLaunchIgnoreFailure = serviceDto.PreLaunchIgnoreFailure ?? false,
 
                 // Failure program
-                FailureProgramPath = ProcessHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
-                FailureProgramWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.FailureProgramStartupDirectory ?? string.Empty),
+                FailureProgramPath = processHelper.ResolvePath(serviceDto.FailureProgramPath ?? string.Empty),
+                FailureProgramWorkingDirectory = processHelper.ResolvePath(serviceDto.FailureProgramStartupDirectory ?? string.Empty),
                 FailureProgramArgs = Helper.EscapeBackslashes(serviceDto.FailureProgramParameters ?? string.Empty),
 
                 // Post-Launch args
-                PostLaunchExecutablePath = ProcessHelper.ResolvePath(serviceDto.PostLaunchExecutablePath ?? string.Empty),
-                PostLaunchWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PostLaunchStartupDirectory ?? string.Empty),
+                PostLaunchExecutablePath = processHelper.ResolvePath(serviceDto.PostLaunchExecutablePath ?? string.Empty),
+                PostLaunchWorkingDirectory = processHelper.ResolvePath(serviceDto.PostLaunchStartupDirectory ?? string.Empty),
                 PostLaunchExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostLaunchParameters ?? string.Empty),
 
                 // Debug Logs
@@ -97,15 +98,15 @@ namespace Servy.Service.CommandLine
                 StopTimeout = serviceDto.StopTimeout ?? AppConfig.DefaultStopTimeout,
 
                 // Pre-Stop
-                PreStopExecutablePath = ProcessHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
-                PreStopWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
+                PreStopExecutablePath = processHelper.ResolvePath(serviceDto.PreStopExecutablePath ?? string.Empty),
+                PreStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PreStopStartupDirectory ?? string.Empty),
                 PreStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PreStopParameters ?? string.Empty),
                 PreStopTimeout = serviceDto.PreStopTimeoutSeconds ?? AppConfig.DefaultPreStopTimeoutSeconds,
                 PreStopLogAsError = serviceDto.PreStopLogAsError ?? false,
 
                 // Post-Stop
-                PostStopExecutablePath = ProcessHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),
-                PostStopWorkingDirectory = ProcessHelper.ResolvePath(serviceDto.PostStopStartupDirectory ?? string.Empty),
+                PostStopExecutablePath = processHelper.ResolvePath(serviceDto.PostStopExecutablePath ?? string.Empty),
+                PostStopWorkingDirectory = processHelper.ResolvePath(serviceDto.PostStopStartupDirectory ?? string.Empty),
                 PostStopExecutableArgs = Helper.EscapeBackslashes(serviceDto.PostStopParameters ?? string.Empty),
 
             };
