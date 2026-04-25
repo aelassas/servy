@@ -210,7 +210,9 @@ namespace Servy.Manager
                         fileDialogService,
                         removeServiceProxy,
                         refreshProxy,
-                        serviceConfigurationValidator
+                        serviceConfigurationValidator,
+                        new XmlServiceValidator(),
+                        new JsonServiceValidator()
                     );
 
                     // 3. Initialize Main ViewModel

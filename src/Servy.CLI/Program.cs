@@ -160,7 +160,16 @@ namespace Servy.CLI
                 var uninstallCommand = new UninstallServiceCommand(serviceManager, serviceRepository);
                 var serviceStatusCommand = new ServiceStatusCommand(serviceManager);
                 var exportCommand = new ExportServiceCommand(serviceRepository);
-                var importCommand = new ImportServiceCommand(serviceRepository, xmlSerializer, jsonSerializer, serviceManager);
+                var xmlServiceValidator = new XmlServiceValidator();
+                var jsonServiceValidator = new JsonServiceValidator();
+                var importCommand = new ImportServiceCommand(
+                    serviceRepository, 
+                    xmlSerializer, 
+                    jsonSerializer, 
+                    serviceManager,
+                    xmlServiceValidator,
+                    jsonServiceValidator
+                    );
 
                 async Task Run()
                 {

@@ -504,7 +504,7 @@ namespace Servy.Core.UnitTests.Mappers
             _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(true);
             _serviceManagerMock.Setup(sm => sm.GetServiceStatus("TestService", It.IsAny<CancellationToken>())).Returns(ServiceControllerStatus.Running);
 
-            var result = _service.GetStatus();
+            var result = _service.GetStatus(TestContext.Current.CancellationToken);
 
             Assert.Equal(ServiceControllerStatus.Running, result);
             _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);
@@ -516,7 +516,7 @@ namespace Servy.Core.UnitTests.Mappers
         {
             _serviceManagerMock.Setup(sm => sm.IsServiceInstalled("TestService")).Returns(false);
 
-            var result = _service.GetStatus();
+            var result = _service.GetStatus(TestContext.Current.CancellationToken);
 
             Assert.Null(result);
             _serviceManagerMock.Verify(sm => sm.IsServiceInstalled("TestService"), Times.Once);

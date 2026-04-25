@@ -16,6 +16,8 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
         private readonly Mock<IFileDialogService> _fileDialogServiceMock;
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
+        private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
+        private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
 
         private bool _refreshCalled;
         private TaskCompletionSource<bool> _refreshTcs;
@@ -54,7 +56,9 @@ namespace Servy.Manager.UnitTests.Services
                     _refreshTcs.SetResult(true);
                     return Task.CompletedTask;
                 },
-                _serviceConfigurationValidatorMock.Object
+                _serviceConfigurationValidatorMock.Object,
+                _xmlServiceValidatorMock.Object,
+                _jsonServiceValidatorMock.Object
             );
         }
 
@@ -66,6 +70,8 @@ namespace Servy.Manager.UnitTests.Services
             _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
             _refreshTcs = new TaskCompletionSource<bool>();
             _removedServiceName = null!;
+            _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
+            _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
         }
 
         [Fact]
@@ -86,6 +92,9 @@ namespace Servy.Manager.UnitTests.Services
             _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(1)
                 .Callback(() => _refreshTcs.TrySetResult(true));
+
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
+                .Returns(true);
 
             // 2. Act
             await sut.ImportJsonConfigAsync();
@@ -122,6 +131,80 @@ namespace Servy.Manager.UnitTests.Services
             _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
 
             File.Delete(tempFile);
+        }
+
+        [Fact]
+        public async Task ImportXmlConfigAsync_ShouldCallRepositoryAndRefresh_WhenValidXml()
+        {
+            // 1. Arrange
+            var sut = CreateServiceCommands();
+            var dto = new ServiceDto { Name = "XmlService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
+
+            // Serialize to a real XML string for the file
+            var serializer = new System.Xml.Serialization.XmlSerializer(typeof(ServiceDto));
+            var tempFile = Path.GetTempFileName();
+            using (var writer = new StreamWriter(tempFile))
+            {
+                serializer.Serialize(writer, dto);
+            }
+
+            var xmlContent = await File.ReadAllTextAsync(tempFile);
+
+            _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
+
+            // Mock Validator Interface
+            string? outErr = null;
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
+                .Returns(true);
+
+            _serviceConfigurationValidatorMock.Setup(v => v.Validate(It.IsAny<ServiceDto>())).ReturnsAsync(true);
+
+            // Setup repository to trigger the refresh signal
+            _serviceRepositoryMock.Setup(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(1)
+                .Callback(() => _refreshTcs.TrySetResult(true));
+
+            // 2. Act
+            await sut.ImportXmlConfigAsync();
+
+            // 3. Assert (Wait with Timeout for the background refresh)
+            var delay = Task.Delay(2000);
+            var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
+
+            Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! XML import did not trigger refresh.");
+
+            // 4. Verification
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Once);
+            _messageBoxServiceMock.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), AppConfig.Caption), Times.Once);
+            Assert.True(_refreshCalled);
+
+            if (File.Exists(tempFile)) File.Delete(tempFile);
+        }
+
+        [Fact]
+        public async Task ImportXmlConfigAsync_ShouldShowError_WhenXmlInvalid()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var tempFile = Path.GetTempFileName();
+            File.WriteAllText(tempFile, "<invalid><xml>");
+
+            _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
+
+            // Mock validator to fail
+            string? outErr = "Malformed XML";
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
+                .Returns(false);
+
+            // Act
+            await sut.ImportXmlConfigAsync();
+
+            // Assert
+            _messageBoxServiceMock.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), AppConfig.Caption), Times.Once);
+            _serviceRepositoryMock.Verify(r => r.UpsertAsync(It.IsAny<ServiceDto>(), It.IsAny<CancellationToken>()), Times.Never);
+            Assert.False(_refreshCalled);
+
+            if (File.Exists(tempFile)) File.Delete(tempFile);
         }
 
     }

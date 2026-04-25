@@ -177,7 +177,9 @@ namespace Servy
                         serviceManager,
                         messageBoxService,
                         fileDialogService,
-                        configValidator
+                        configValidator,
+                        new XmlServiceValidator(),
+                        new JsonServiceValidator()
                     );
 
                     // 4. Initialize Main ViewModel

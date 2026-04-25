@@ -1,8 +1,8 @@
 {
   "Name": "notepad",
-  "DisplayName": "notepad_dn",
+  "DisplayName": "",
   "ExecutablePath": "C:\\Windows\\System32\\notepad.exe",
-  "StartupType": 2,
+  "StartupType": 3,
   "Priority": 2,
   "EnableSizeRotation": false,
   "RotationSize": 10,

@@ -16,6 +16,8 @@ namespace Servy.UnitTests.Services
         private readonly Mock<IServiceCommands> _mockServiceCommands;
         private readonly Mock<IMessageBoxService> _messageBoxService;
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidator;
+        private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
+        private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
 
         public ServiceCommandsTests()
         {
@@ -23,7 +25,8 @@ namespace Servy.UnitTests.Services
             _mockServiceCommands = new Mock<IServiceCommands>();
             _messageBoxService = new Mock<IMessageBoxService>();
             _serviceConfigurationValidator = new Mock<IServiceConfigurationValidator>();
-
+            _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
+            _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
         }
 
         [Fact]
@@ -232,7 +235,9 @@ namespace Servy.UnitTests.Services
                 serviceManager: Mock.Of<IServiceManager>(),
                 messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object
+                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
+                xmlServiceValidator: _xmlServiceValidatorMock.Object,
+                jsonServiceValidator: _jsonServiceValidatorMock.Object
             );
 
             // Act
@@ -259,7 +264,9 @@ namespace Servy.UnitTests.Services
                 serviceManager: Mock.Of<IServiceManager>(),
                 messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object
+                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
+                xmlServiceValidator: _xmlServiceValidatorMock.Object,
+                jsonServiceValidator: _jsonServiceValidatorMock.Object
             );
 
             // Act
@@ -304,8 +311,13 @@ namespace Servy.UnitTests.Services
                 serviceManager: Mock.Of<IServiceManager>(),
                 messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object
+                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
+                xmlServiceValidator: _xmlServiceValidatorMock.Object,
+                jsonServiceValidator: _jsonServiceValidatorMock.Object
             );
+
+            _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
+                .Returns(true);
 
             File.WriteAllText(path, xmlContent);
 
@@ -366,8 +378,13 @@ namespace Servy.UnitTests.Services
                 serviceManager: Mock.Of<IServiceManager>(),
                 messageBoxService: _messageBoxService.Object,
                 dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object
+                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
+                xmlServiceValidator: _xmlServiceValidatorMock.Object,
+                jsonServiceValidator: _jsonServiceValidatorMock.Object
             );
+
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
+                .Returns(true);
 
             // Act
             await serviceCommands.ImportJsonConfig();

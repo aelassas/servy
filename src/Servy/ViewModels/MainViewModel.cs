@@ -933,7 +933,9 @@ namespace Servy.ViewModels
                 serviceManager,
                 new MessageBoxService(),
                 new FileDialogService(),
-                new ServiceConfigurationValidator(new MessageBoxService())
+                new ServiceConfigurationValidator(new MessageBoxService()),
+                new XmlServiceValidator(),
+                new JsonServiceValidator()
             );
         }
 

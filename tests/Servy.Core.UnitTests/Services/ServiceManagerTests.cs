@@ -1058,7 +1058,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenSCManager(null, null, It.IsAny<uint>()))
                 .Returns(CreateScmHandle(0));
 
-            var result = await _serviceManager.UninstallServiceAsync("ServiceName");
+            var result = await _serviceManager.UninstallServiceAsync("ServiceName", TestContext.Current.CancellationToken);
             Assert.False(result.IsSuccess);
         }
 
@@ -1071,7 +1071,7 @@ namespace Servy.Core.UnitTests.Services
             _mockWindowsServiceApi.Setup(x => x.OpenService(It.IsAny<SafeScmHandle>(), It.IsAny<string>(), It.IsAny<uint>()))
                 .Throws(new Win32Exception("Boom!"));
 
-            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallServiceAsync("ServiceName"));
+            await Assert.ThrowsAsync<Win32Exception>(() => _serviceManager.UninstallServiceAsync("ServiceName", TestContext.Current.CancellationToken));
         }
 
         [Fact]
@@ -1087,7 +1087,7 @@ namespace Servy.Core.UnitTests.Services
 
             _mockWindowsServiceApi.Setup(x => x.CloseServiceHandle(scmHandle.DangerousGetHandle())).Returns(true);
 
-            var result = await _serviceManager.UninstallServiceAsync("ServiceName");
+            var result = await _serviceManager.UninstallServiceAsync("ServiceName", TestContext.Current.CancellationToken);
             Assert.False(result.IsSuccess);
         }
 
@@ -1158,7 +1158,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
                 );
 
-            var result = await _serviceManager.UninstallServiceAsync(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             Assert.False(result.IsSuccess);
         }
@@ -1230,7 +1230,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
                 );
 
-            var result = await _serviceManager.UninstallServiceAsync(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
 
@@ -1309,7 +1309,7 @@ namespace Servy.Core.UnitTests.Services
                 _mockServiceRepository.Object
             );
 
-            var result = await _serviceManager.UninstallServiceAsync(serviceName);
+            var result = await _serviceManager.UninstallServiceAsync(serviceName, TestContext.Current.CancellationToken);
 
             Assert.True(result.IsSuccess);
 

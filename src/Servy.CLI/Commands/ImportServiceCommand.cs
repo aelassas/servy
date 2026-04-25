@@ -23,6 +23,8 @@ namespace Servy.CLI.Commands
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
         private readonly IJsonServiceSerializer _jsonServiceSerializer;
         private readonly IServiceManager _serviceManager;
+        private readonly IXmlServiceValidator _xmlServiceValidator;
+        private readonly IJsonServiceValidator _jsonServiceValidator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImportServiceCommand"/> class.
@@ -31,16 +33,22 @@ namespace Servy.CLI.Commands
         /// <param name="xmlServiceSerializer">Serializer for XML service configurations.</param>
         /// <param name="jsonServiceSerializer">Serializer for JSON service configurations.</param>
         /// <param name="serviceManager">Manager to control Windows services.</param>
+        /// <param name="xmlServiceValidator">Validator for XML service configurations.</param>
+        /// <param name="jsonServiceValidator">Validator for JSON service configurations.</param>
         public ImportServiceCommand(
             IServiceRepository serviceRepository,
             IXmlServiceSerializer xmlServiceSerializer,
             IJsonServiceSerializer jsonServiceSerializer,
-            IServiceManager serviceManager)
+            IServiceManager serviceManager,
+            IXmlServiceValidator xmlServiceValidator,
+            IJsonServiceValidator jsonServiceValidator)
         {
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
+            _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
+            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
             _xmlServiceSerializer = xmlServiceSerializer ?? throw new ArgumentNullException(nameof(xmlServiceSerializer));
             _jsonServiceSerializer = jsonServiceSerializer ?? throw new ArgumentNullException(nameof(jsonServiceSerializer));
-            _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
         }
 
         /// <summary>
@@ -167,7 +175,7 @@ namespace Servy.CLI.Commands
                 opts,
                 fullPath,
                 "XML",
-                content => XmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                content => _xmlServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportXmlAsync(content),
                 _xmlServiceSerializer.Deserialize);
         }
@@ -184,7 +192,7 @@ namespace Servy.CLI.Commands
                 opts,
                 fullPath,
                 "JSON",
-                content => JsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
+                content => _jsonServiceValidator.TryValidate(content, out var err) ? (true, null) : (false, err),
                 content => _serviceRepository.ImportJsonAsync(content),
                 _jsonServiceSerializer.Deserialize);
         }
