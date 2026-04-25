@@ -19,8 +19,8 @@ using System.Diagnostics;
 #endif
 using System.IO;
 using System.Windows;
-using System.Threading.Tasks;
 using System;
+using System.Threading.Tasks;
 
 namespace Servy.Manager
 {
@@ -211,7 +211,9 @@ namespace Servy.Manager
                         fileDialogService,
                         removeServiceProxy,
                         refreshProxy,
-                        serviceConfigurationValidator
+                        serviceConfigurationValidator,
+                        new XmlServiceValidator(),
+                        new JsonServiceValidator()
                     );
 
                     // 3. Initialize Main ViewModel

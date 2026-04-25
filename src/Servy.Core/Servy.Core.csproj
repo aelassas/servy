@@ -131,7 +131,9 @@
     </Compile>
     <Compile Include="Security\ISecureData.cs" />
     <Compile Include="Services\IJsonServiceSerializer.cs" />
+    <Compile Include="Services\IJsonServiceValidator.cs" />
     <Compile Include="Services\IXmlServiceSerializer.cs" />
+    <Compile Include="Services\IXmlServiceValidator.cs" />
     <Compile Include="Services\JsonServiceSerializer.cs" />
     <Compile Include="Services\JsonServiceValidator.cs" />
     <Compile Include="Helpers\ProcessHelper.cs" />

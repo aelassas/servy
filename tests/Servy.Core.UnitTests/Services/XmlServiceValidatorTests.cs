@@ -9,6 +9,14 @@ namespace Servy.Core.UnitTests.Services
 {
     public class XmlServiceValidatorTests
     {
+        private readonly XmlServiceValidator _validator;
+
+        public XmlServiceValidatorTests()
+        {
+            // Testing the instance implementation of IXmlServiceValidator
+            _validator = new XmlServiceValidator();
+        }
+
         private string Serialize(ServiceDto dto)
         {
             var serializer = new XmlSerializer(typeof(ServiceDto));
@@ -22,11 +30,11 @@ namespace Servy.Core.UnitTests.Services
         [Fact]
         public void TryValidate_NullOrEmptyXml_ReturnsFalse()
         {
-            var result = XmlServiceValidator.TryValidate(null, out var error);
+            var result = _validator.TryValidate(null, out var error);
             Assert.False(result);
             Assert.Equal("XML cannot be empty.", error);
 
-            result = XmlServiceValidator.TryValidate("   ", out error);
+            result = _validator.TryValidate("   ", out error);
             Assert.False(result);
             Assert.Equal("XML cannot be empty.", error);
         }
@@ -35,7 +43,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_InvalidXml_ReturnsFalse()
         {
             // Missing closing tag
-            var result = XmlServiceValidator.TryValidate("<ServiceDto><Name>Test</Name>", out var error);
+            var result = _validator.TryValidate("<ServiceDto><Name>Test</Name>", out var error);
             Assert.False(result);
             Assert.StartsWith("XML structure error:", error);
         }
@@ -45,9 +53,8 @@ namespace Servy.Core.UnitTests.Services
         {
             // Valid XML, but doesn't map to ServiceDto properties
             var xml = "<NotServiceDto><Foo>bar</Foo></NotServiceDto>";
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
-            // This now triggers the structural error catch
             Assert.Contains("XML structure error", error);
         }
 
@@ -55,7 +62,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_DeserializedDtoIsNull_ReturnsFalse()
         {
             var xml = "<ServiceDto xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:nil=\"true\" />";
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
             Assert.Equal("Failed to deserialize XML.", error);
         }
@@ -71,14 +78,14 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
 
             Assert.False(result);
             Assert.Contains("exceeds", error);
         }
 
         [Theory]
-        [InlineData(-1)] // Starts at MinStartTimeout (usually 30000 or 0)
+        [InlineData(-1)]
         public void TryValidate_InvalidTimeout_ReturnsFalse(int invalidTimeout)
         {
             var dto = new ServiceDto
@@ -89,7 +96,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
 
             Assert.False(result);
             Assert.Equal($"Start Timeout must be at least {AppConfig.MinStartTimeout} second(s).", error);
@@ -101,12 +108,11 @@ namespace Servy.Core.UnitTests.Services
             var dto = new ServiceDto
             {
                 Name = "MyService",
-                // This triggers the ProcessHelper.ValidatePath branch
                 ExecutablePath = "INVALID_PATH_CHAR_<>|"
             };
             var xml = Serialize(dto);
 
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
             Assert.False(result);
             Assert.Equal("The executable path in the XML is invalid or inaccessible.", error);
         }
@@ -122,7 +128,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var xml = Serialize(dto);
 
-            var result = XmlServiceValidator.TryValidate(xml, out var error);
+            var result = _validator.TryValidate(xml, out var error);
 
             Assert.True(result);
             Assert.Null(error);

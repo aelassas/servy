@@ -16,6 +16,8 @@ namespace Servy.CLI.UnitTests.Commands
         private readonly Mock<IXmlServiceSerializer> _xmlServiceSerializer;
         private readonly Mock<IJsonServiceSerializer> _jsonServiceSerializer;
         private readonly Mock<IServiceManager> _serviceManager;
+        private readonly Mock<IXmlServiceValidator> _xmlValidatorMock;
+        private readonly Mock<IJsonServiceValidator> _jsonValidatorMock;
         private readonly ImportServiceCommand _command;
 
         public ImportServiceCommandTests()
@@ -24,7 +26,16 @@ namespace Servy.CLI.UnitTests.Commands
             _xmlServiceSerializer = new Mock<IXmlServiceSerializer>();
             _jsonServiceSerializer = new Mock<IJsonServiceSerializer>();
             _serviceManager = new Mock<IServiceManager>();
-            _command = new ImportServiceCommand(_serviceRepoMock.Object, _xmlServiceSerializer.Object, _jsonServiceSerializer.Object, _serviceManager.Object);
+            _xmlValidatorMock = new Mock<IXmlServiceValidator>();
+            _jsonValidatorMock = new Mock<IJsonServiceValidator>();
+
+            _command = new ImportServiceCommand(
+                _serviceRepoMock.Object,
+                _xmlServiceSerializer.Object,
+                _jsonServiceSerializer.Object,
+                _serviceManager.Object,
+                _xmlValidatorMock.Object,
+                _jsonValidatorMock.Object);
         }
 
         [Fact]
@@ -84,19 +95,14 @@ namespace Servy.CLI.UnitTests.Commands
         public async Task Execute_JsonFile_Valid_CallsImportAndReturnsOk()
         {
             // Arrange
-            // 1. Use a path that is guaranteed to exist on a Windows test runner
             var realPath = @"C:\Windows\System32\notepad.exe";
             var path = Path.GetTempFileName() + ".json";
 
-            // 2. Build the JSON with the real path
             var jsonContent = "{\"Name\":\"TestService\",\"ExecutablePath\":\"" + realPath.Replace("\\", "\\\\") + "\"}";
             File.WriteAllText(path, jsonContent);
 
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = path };
 
-            // 3. Ensure your mock for the validator returns true 
-            // (Note: Since JsonServiceValidator.TryValidate is static, 
-            // it will still execute its internal path check logic).
             MockJsonValidator(true);
 
             _serviceRepoMock.Setup(r => r.ImportJsonAsync(jsonContent, It.IsAny<CancellationToken>()))
@@ -115,7 +121,6 @@ namespace Servy.CLI.UnitTests.Commands
             }
             finally
             {
-                // Always cleanup temp files
                 if (File.Exists(path)) File.Delete(path);
             }
         }
@@ -130,7 +135,8 @@ namespace Servy.CLI.UnitTests.Commands
 
             var opts = new ImportServiceOptions { ConfigFileType = "json", Path = path };
 
-            MockJsonValidator(false, "error");
+            // FIX: Pass the exact error message the test expects to prove the mock is working
+            MockJsonValidator(false, "Executable path is required");
 
             // Act
             var result = await _command.Execute(opts);
@@ -164,18 +170,21 @@ namespace Servy.CLI.UnitTests.Commands
             Assert.Contains("Configuration input file type is required", result.Message);
         }
 
-        // Helpers for mocking static validators
+        // Helpers using Moq to correctly simulate success/failure branches
         private void MockXmlValidator(bool isValid, string errorMsg = null)
         {
-            var validator = typeof(XmlServiceValidator);
-            validator.GetMethod("TryValidate").Invoke(null, new object[] { "", null });
-            // Use a library like Pose or replace XmlServiceValidator with an interface to mock in real project
+            string dummy = errorMsg;
+            _xmlValidatorMock
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
+                .Returns(isValid);
         }
 
         private void MockJsonValidator(bool isValid, string errorMsg = null)
         {
-            var validator = typeof(JsonServiceValidator);
-            validator.GetMethod("TryValidate").Invoke(null, new object[] { "", null });
+            string dummy = errorMsg;
+            _jsonValidatorMock
+                .Setup(v => v.TryValidate(It.IsAny<string>(), out dummy))
+                .Returns(isValid);
         }
     }
 }

@@ -48,6 +48,8 @@ namespace Servy.Manager.Services
         private readonly Action<string> _removeServiceCallback;
         private readonly Func<Task> _refreshCallback;
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
+        private readonly IXmlServiceValidator _xmlServiceValidator;
+        private readonly IJsonServiceValidator _jsonServiceValidator;
 
         #endregion
 
@@ -62,6 +64,8 @@ namespace Servy.Manager.Services
         /// <param name="fileDialogService">The service used to show file dialogs.</param>
         /// <param name="removeServiceCallback">A callback invoked when a service should be removed from the UI or collection.</param>
         /// <param name="refreshCallback">A callback invoked when a services list should be refreshed.</param>
+        /// <param name="xmlServiceValidator">XML service validator.</param>
+        /// <param name="jsonServiceValidator">JSON service validator.</param>
         public ServiceCommands(
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,
@@ -69,7 +73,9 @@ namespace Servy.Manager.Services
             IFileDialogService fileDialogService,
             Action<string> removeServiceCallback,
             Func<Task> refreshCallback,
-            IServiceConfigurationValidator serviceConfigurationValidator
+            IServiceConfigurationValidator serviceConfigurationValidator,
+            IXmlServiceValidator xmlServiceValidator,
+            IJsonServiceValidator jsonServiceValidator
         )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
@@ -79,6 +85,8 @@ namespace Servy.Manager.Services
             _removeServiceCallback = removeServiceCallback ?? throw new ArgumentNullException(nameof(removeServiceCallback));
             _refreshCallback = refreshCallback ?? throw new ArgumentNullException(nameof(refreshCallback));
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
+            _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
+            _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
         }
 
         #endregion
@@ -378,7 +386,7 @@ namespace Servy.Manager.Services
         public Task ImportXmlConfigAsync() =>
             ImportConfigAsync(
                 _fileDialogService.OpenXml,
-                (content) => { var isValid = XmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new XmlServiceSerializer().Deserialize(content),
                 "XML",
                 Strings.Msg_FailedToLoadXml,
@@ -389,7 +397,7 @@ namespace Servy.Manager.Services
         public Task ImportJsonConfigAsync() =>
             ImportConfigAsync(
                 _fileDialogService.OpenJson,
-                (content) => { var isValid = JsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new JsonServiceSerializer().Deserialize(content),
                 "JSON",
                 Strings.Msg_FailedToLoadJson,

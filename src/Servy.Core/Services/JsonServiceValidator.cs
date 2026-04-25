@@ -12,9 +12,10 @@ namespace Servy.Core.Services
     /// Provides strict validation for JSON strings representing a <see cref="ServiceDto"/>.
     /// Ensures both structural integrity and Windows SCM compatibility.
     /// </summary>
-    public static class JsonServiceValidator
+    public class JsonServiceValidator : IJsonServiceValidator
     {
-        public static bool TryValidate(string json, out string errorMessage)
+        /// <inheritdoc/>
+        public bool TryValidate(string json, out string errorMessage)
         {
             errorMessage = null;
 
@@ -24,7 +25,7 @@ namespace Servy.Core.Services
                 return false;
             }
 
-            // SECURITY FIX: Prevent Memory Exhaustion / DoS
+            // Prevent Memory Exhaustion / DoS
             if (json.Length > AppConfig.MaxImportPayloadSizeChars)
             {
                 errorMessage = $"JSON payload exceeds the maximum allowed size of {AppConfig.MaxImportPayloadSizeChars} characters.";
@@ -62,7 +63,7 @@ namespace Servy.Core.Services
                 var sanitizedName = (dto.Name ?? "Unknown").Replace("\r", "").Replace("\n", "");
 
                 Logger.Warn($"JSON Import Blocked: Logical violation for service '{sanitizedName}'. Reason: {errorMessage}");
-                return false;   
+                return false;
             }
 
             // 3. Executable Path Integrity

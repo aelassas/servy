@@ -43,6 +43,8 @@ namespace Servy.Services
         private readonly IMessageBoxService _messageBoxService;
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
         private readonly IFileDialogService _dialogService;
+        private readonly IXmlServiceValidator _xmlServiceValidator;
+        private readonly IJsonServiceValidator _jsonServiceValidator;
 
         #endregion
 
@@ -57,6 +59,8 @@ namespace Servy.Services
         /// <param name="messageBoxService">The message box service used to display messages to the user.</param>
         /// <param name="dialogService">File Dialog service.</param>
         /// <param name="serviceConfigurationValidator">Service to validate inputs.</param>
+        /// <param name="xmlServiceValidator">XML service validator.</param>
+        /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
         /// </exception>
@@ -66,7 +70,10 @@ namespace Servy.Services
             IServiceManager serviceManager,
             IMessageBoxService messageBoxService,
             IFileDialogService dialogService,
-            IServiceConfigurationValidator serviceConfigurationValidator)
+            IServiceConfigurationValidator serviceConfigurationValidator,
+            IXmlServiceValidator xmlServiceValidator,
+            IJsonServiceValidator jsonServiceValidator
+            )
         {
             _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
             _bindServiceDtoToModel = bindServiceDtoToModel ?? throw new ArgumentNullException(nameof(bindServiceDtoToModel));
@@ -74,6 +81,8 @@ namespace Servy.Services
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
+            _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
+            _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
         }
 
         #endregion
@@ -358,7 +367,7 @@ namespace Servy.Services
         public Task ImportXmlConfig() =>
             ImportConfigAsync(
                 _dialogService.OpenXml,
-                (content) => { var isValid = XmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => { var isValid = _xmlServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new XmlServiceSerializer().Deserialize(content),
                 "XML",
                 Strings.Msg_FailedToLoadXml);
@@ -367,7 +376,7 @@ namespace Servy.Services
         public Task ImportJsonConfig() =>
             ImportConfigAsync(
                 _dialogService.OpenJson,
-                (content) => { var isValid = JsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
+                (content) => { var isValid = _jsonServiceValidator.TryValidate(content, out var err); return (isValid, err); },
                 (content) => new JsonServiceSerializer().Deserialize(content),
                 "JSON",
                 Strings.Msg_FailedToLoadJson);

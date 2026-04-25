@@ -8,14 +8,23 @@ namespace Servy.Core.UnitTests.Services
 {
     public class JsonServiceValidatorTests
     {
+        private readonly JsonServiceValidator _validator;
+
+        public JsonServiceValidatorTests()
+        {
+            // Now instantiating the concrete class to test its implementation 
+            // of the IJsonServiceValidator interface.
+            _validator = new JsonServiceValidator();
+        }
+
         [Fact]
         public void TryValidate_NullOrEmptyJson_ReturnsFalse()
         {
-            var result = JsonServiceValidator.TryValidate(null, out var error);
+            var result = _validator.TryValidate(null, out var error);
             Assert.False(result);
             Assert.Equal("JSON input cannot be null or empty.", error);
 
-            result = JsonServiceValidator.TryValidate("  ", out error);
+            result = _validator.TryValidate("  ", out error);
             Assert.False(result);
             Assert.Equal("JSON input cannot be null or empty.", error);
         }
@@ -24,7 +33,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_InvalidJsonFormat_ReturnsFalse()
         {
             // Structural JSON failure
-            var result = JsonServiceValidator.TryValidate("{ 'invalid': 'json' ", out var error);
+            var result = _validator.TryValidate("{ 'invalid': 'json' ", out var error);
             Assert.False(result);
             Assert.StartsWith("Invalid JSON structure:", error);
         }
@@ -33,7 +42,7 @@ namespace Servy.Core.UnitTests.Services
         public void TryValidate_ValidJson_ButNullObject_ReturnsFalse()
         {
             // Valid JSON syntax for a null literal
-            var result = JsonServiceValidator.TryValidate("null", out var error);
+            var result = _validator.TryValidate("null", out var error);
             Assert.False(result);
             Assert.Equal("Deserialization resulted in an empty service definition.", error);
         }
@@ -50,7 +59,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
-            var result = JsonServiceValidator.TryValidate(json, out var error);
+            var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
             Assert.Equal("Description exceeds safety limits.", error);
@@ -68,7 +77,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
-            var result = JsonServiceValidator.TryValidate(json, out var error);
+            var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
             Assert.Equal($"Stop Timeout must be at least {AppConfig.MinStopTimeout} second(s).", error);
@@ -85,7 +94,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
-            var result = JsonServiceValidator.TryValidate(json, out var error);
+            var result = _validator.TryValidate(json, out var error);
 
             Assert.False(result);
             Assert.Equal("The provided executable path is invalid or inaccessible.", error);
@@ -102,7 +111,7 @@ namespace Servy.Core.UnitTests.Services
             };
             var json = JsonConvert.SerializeObject(dto);
 
-            var result = JsonServiceValidator.TryValidate(json, out var error);
+            var result = _validator.TryValidate(json, out var error);
 
             Assert.True(result);
             Assert.Null(error);
