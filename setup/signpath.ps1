@@ -13,6 +13,10 @@
         - Wait for completion
         - Download the signed artifact
         - Replace the original file with the signed version
+        
+    SECURITY: The script prioritizes the SIGNPATH_API_TOKEN environment variable. 
+    If falling back to a configuration file, ensure the file has restricted 
+    filesystem ACLs to prevent unauthorized read access.
 
 .PARAMETER Path
     Path to the file that should be signed.
@@ -107,16 +111,28 @@ if ($signFlag -ine "true") {
 Write-Host "SIGN=true detected. Proceeding with code signing."
 
 # ----------------------------------------------------------
-# EXTRACT REQUIRED FIELDS
+# EXTRACT REQUIRED FIELDS & SECURITY CHECK
 # ----------------------------------------------------------
-$apiToken                  = $config["API_TOKEN"]
 $organizationId            = $config["ORGANIZATION_ID"]
 $projectSlug               = $config["PROJECT_SLUG"]
 $signingPolicySlug         = $config["SIGNING_POLICY_SLUG"]
 $artifactConfigurationSlug = $config["ARTIFACT_CONFIGURATION_SLUG"]  # optional
 
+# API Token Resolution: Environment Variable > Config File
+$apiToken = $env:SIGNPATH_API_TOKEN
+
+if ([string]::IsNullOrWhiteSpace($apiToken)) {
+    $apiToken = $config["API_TOKEN"]
+    
+    if (-not [string]::IsNullOrWhiteSpace($apiToken)) {
+        Write-Warning "SECURITY: Using API_TOKEN from plaintext config file ($configPath)."
+        Write-Warning "Ensure this file has strict ACLs applied (read/write only for the build user) and is excluded from source control."
+        Write-Warning "Recommendation: Inject the token via the `$env:SIGNPATH_API_TOKEN environment variable instead."
+    }
+}
+
 if (!$apiToken -or !$organizationId -or !$projectSlug -or !$signingPolicySlug) {
-    Write-Error "Missing required SignPath configuration values."
+    Write-Error "Missing required SignPath configuration values (API Token, Organization ID, Project Slug, or Signing Policy Slug)."
     exit 1
 }
 
@@ -132,6 +148,7 @@ Write-Host "Submitting signing job for $fileName..."
 # SUBMIT SIGNING REQUEST
 # ----------------------------------------------------------
 $signedPath = "$Path.signed"
+
 try {
     $commonParams = @{
         OrganizationId     = $organizationId
