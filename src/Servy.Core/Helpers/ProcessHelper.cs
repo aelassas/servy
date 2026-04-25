@@ -19,6 +19,30 @@ namespace Servy.Core.Helpers
         private static long _lastPruneTicks = DateTime.MinValue.Ticks;
         private static readonly TimeSpan PruneInterval = TimeSpan.FromMinutes(5);
 
+        /// <summary>
+        /// Maintains a lightweight sync object for each PID to allow concurrent metrics gathering 
+        /// for different processes, while serializing requests for the same process.
+        /// </summary>
+        private static readonly ConcurrentDictionary<int, object> _pidLocks = new ConcurrentDictionary<int, object>();
+
+        /// <summary>
+        /// Retrieves or creates a synchronization object dedicated to a specific process ID.
+        /// </summary>
+        /// <param name="pid">The unique identifier of the process.</param>
+        /// <returns>
+        /// A synchronization object that can be used with the <c>lock</c> statement 
+        /// to serialize access to the specified process's data.
+        /// </returns>
+        /// <remarks>
+        /// This provides fine-grained locking, allowing the Manager to gather metrics 
+        /// for multiple services in parallel while ensuring that concurrent requests 
+        /// for the same PID do not corrupt the CPU delta calculations.
+        /// </remarks>
+        private static object GetLockForPid(int pid)
+        {
+            return _pidLocks.GetOrAdd(pid, _ => new object());
+        }
+
         #region Native Methods for Process Tree
 
         /// <summary>
@@ -147,6 +171,7 @@ namespace Servy.Core.Helpers
                 if (!isAlive)
                 {
                     CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                    _pidLocks.TryRemove(pid, out _);
                 }
             }
         }
@@ -172,36 +197,40 @@ namespace Servy.Core.Helpers
             {
                 using (var process = Process.GetProcessById(pid))
                 {
-                    // 1. Capture RAM (Instantaneous)
+                    // RAM is an instant point-in-time read, no lock needed yet.
                     long ram = process.PrivateMemorySize64;
 
-                    // 2. Capture CPU (Delta-based)
-                    var now = DateTime.UtcNow;
-                    var totalTime = process.TotalProcessorTime;
-
-                    if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
+                    // Lock only on this specific PID to safely compute the CPU delta
+                    lock (GetLockForPid(pid))
                     {
+                        var now = DateTime.UtcNow;
+                        var totalTime = process.TotalProcessorTime;
+
+                        if (!CpuTimesStore.PrevCpuTimes.TryGetValue(pid, out var prev) || prev == null)
+                        {
+                            UpdateCpuSample(pid, now, totalTime);
+                            return new ProcessMetrics(0, ram);
+                        }
+
+                        var deltaTime = (now - prev.LastTime).TotalMilliseconds;
+                        var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
+
+                        double cpu = 0;
+                        if (deltaTime > 0 && deltaCpu >= 0)
+                        {
+                            cpu = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
+                            cpu = Math.Round(cpu, 1, MidpointRounding.AwayFromZero);
+                        }
+
                         UpdateCpuSample(pid, now, totalTime);
-                        return new ProcessMetrics(0, ram);
+                        return new ProcessMetrics(cpu, ram);
                     }
-
-                    var deltaTime = (now - prev.LastTime).TotalMilliseconds;
-                    var deltaCpu = (totalTime - prev.LastTotalTime).TotalMilliseconds;
-
-                    double cpu = 0;
-                    if (deltaTime > 0 && deltaCpu >= 0)
-                    {
-                        cpu = (deltaCpu / (deltaTime * Environment.ProcessorCount)) * 100.0;
-                        cpu = Math.Round(cpu, 1, MidpointRounding.AwayFromZero);
-                    }
-
-                    UpdateCpuSample(pid, now, totalTime);
-                    return new ProcessMetrics(cpu, ram);
                 }
             }
             catch (ArgumentException)
             {
                 CpuTimesStore.PrevCpuTimes.TryRemove(pid, out _);
+                _pidLocks.TryRemove(pid, out _); // Clean up the lock too
                 return new ProcessMetrics(0, 0);
             }
             catch (Exception ex)
