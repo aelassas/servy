@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Servy.UI.Services;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -47,6 +48,14 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <value>The delay between consecutive monitoring ticks.</value>
         protected abstract int RefreshIntervalMs { get; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MonitoringViewModelBase"/> class.
+        /// </summary>
+        /// <param name="cursorService">Service to manage cursor state.</param>
+        protected MonitoringViewModelBase(ICursorService cursorService) : base(cursorService)
+        {
+        }
 
         /// <summary>
         /// Initializes the <see cref="DispatcherTimer"/> if it has not been created yet, 

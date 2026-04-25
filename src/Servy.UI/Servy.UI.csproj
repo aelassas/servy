@@ -100,9 +100,11 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
+    <Compile Include="Services\CursorService.cs" />
     <Compile Include="Services\DesignTimeFileDialogService.cs" />
     <Compile Include="Services\FileDialogService.cs" />
     <Compile Include="Services\HelpService.cs" />
+    <Compile Include="Services\ICursorService.cs" />
     <Compile Include="Services\IFileDialogService.cs" />
     <Compile Include="Services\IHelpService.cs" />
     <Compile Include="Services\IMessageBoxService.cs" />

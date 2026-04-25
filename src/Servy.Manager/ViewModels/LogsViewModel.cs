@@ -5,6 +5,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.UI.Commands;
 using Servy.UI.Helpers;
+using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -28,6 +29,7 @@ namespace Servy.Manager.ViewModels
         #region Private Fields
 
         private readonly IEventLogService _eventLogService;
+        private readonly ICursorService _cursorService;
         private bool _isBusy;
         private string _searchButtonText = Strings.Button_Search;
         private LogEntryModel _selectedLog;
@@ -290,9 +292,11 @@ namespace Servy.Manager.ViewModels
         /// Initializes a new instance of the <see cref="LogsViewModel"/> class.
         /// </summary>
         /// <param name="eventLogService">Service used to fetch event logs.</param>
-        public LogsViewModel(IEventLogService eventLogService)
+        /// <param name="cursorService">Service used to control the cursor state.</param>
+        public LogsViewModel(IEventLogService eventLogService, ICursorService cursorService)
         {
             _eventLogService = eventLogService;
+            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
 
             FromDate = DateTime.Now.AddDays(-3); // Default to last 3 days
             ToDate = DateTime.Now; // Default to now
@@ -336,7 +340,7 @@ namespace Servy.Manager.ViewModels
                 FooterText = string.Empty; // Clear footer text before search
 
                 // Step 1: show "Searching..." immediately
-                Mouse.OverrideCursor = Cursors.Wait;
+                _cursorService.SetWaitCursor();
                 SearchButtonText = Strings.Button_Searching;
                 IsBusy = true;
 
@@ -378,7 +382,7 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Step 4: restore button text and IsBusy
-                Mouse.OverrideCursor = null;
+                _cursorService.ResetCursor();
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
             }

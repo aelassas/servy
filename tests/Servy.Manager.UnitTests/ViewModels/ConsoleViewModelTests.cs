@@ -6,6 +6,7 @@ using Servy.Manager.Services;
 using Servy.Manager.Utils;
 using Servy.Manager.ViewModels;
 using Servy.UI.Constants;
+using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +21,13 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
+        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
 
         public ConsoleViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _cursorServiceMock = new Mock<ICursorService>();
 
             // Setup default configuration values
             _appConfigMock = new Mock<IAppConfiguration>();
@@ -37,7 +40,8 @@ namespace Servy.Manager.UnitTests.ViewModels
             return new ConsoleViewModel(
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
-                _appConfigMock.Object); // Inject mock config
+                _appConfigMock.Object,
+                _cursorServiceMock.Object); // Inject mock cursor service
         }
 
         [Fact]

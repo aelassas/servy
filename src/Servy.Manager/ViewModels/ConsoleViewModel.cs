@@ -1,5 +1,4 @@
-﻿using Servy.Core.Config;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
 using Servy.Manager.Config;
@@ -9,6 +8,7 @@ using Servy.Manager.Utils;
 using Servy.UI;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
+using Servy.UI.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -209,11 +209,13 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
+        /// <param name="cursorService">Service used to control the cursor state.</param>
         public ConsoleViewModel(
             IServiceRepository serviceRepository,
             IServiceCommands serviceCommands,
-            IAppConfiguration appConfig
-            )
+            IAppConfiguration appConfig,
+            ICursorService cursorService
+            ) : base(cursorService)
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
