@@ -3,7 +3,7 @@
   <Name>PyStdoutStderrSameLogFile</Name>
   <DisplayName />
   <Description>Write stdout and stderr logs to same file with rotation</Description>
-  <ExecutablePath>C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe</ExecutablePath>
+  <ExecutablePath>%PYTHON_EXE%</ExecutablePath>
   <Parameters>-u "E:\dev\servy\src\tests\stdout-stderr.py"</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>

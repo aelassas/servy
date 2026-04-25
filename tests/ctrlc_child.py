@@ -28,7 +28,7 @@ def main():
         # spawn child process
         proc = subprocess.Popen(
             [
-                r"C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe",
+                os.path.expandvars("%PYTHON_EXE%"),
                 r"E:\dev\servy\src\tests\ctrlc2.py"
             ],
         )

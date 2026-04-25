@@ -1,7 +1,7 @@
 import time
 import sys
 
-# C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe
+# os.path.expandvars("%PYTHON_EXE%")
 # E:\dev\servy\src\tests\stdout-stderr.py
 # E:\dev\servy\python_stdout_stderr.txt
 # E:\dev\servy\python_stdout_stderr.txt

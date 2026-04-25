@@ -2,7 +2,7 @@
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>PythonStdout</Name>
   <Description>PythonStdout</Description>
-  <ExecutablePath>C:\Users\aelassas\AppData\Local\Programs\Python\Python313\python.exe</ExecutablePath>
+  <ExecutablePath>%PYTHON_EXE%</ExecutablePath>
   <Parameters>-u E:\dev\servy\src\tests\stdout.py</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>

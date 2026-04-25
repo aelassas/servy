@@ -3,7 +3,7 @@
   <Name>ServyNodeJSApp</Name>
   <DisplayName />
   <Description>ServyNodeJSApp</Description>
-  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <ExecutablePath>%NODE_EXE%</ExecutablePath>
   <Parameters>E:\dev\servy\src\tests\nodejs-app-env-vars\console.js</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>

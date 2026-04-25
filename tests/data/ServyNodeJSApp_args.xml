@@ -2,7 +2,7 @@
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>ServyNodeJSApp_args</Name>
   <Description>ServyNodeJSApp_args</Description>
-  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <ExecutablePath>%NODE_EXE%</ExecutablePath>
   <Parameters>"E:\dev\servy\src\tests\nodejs-app-env-vars\index.js" \0 -root "J:\" -root "D:\Dest" -batch -times -repeat watch -force "J:\" -nocreation "J:\" -noupdate "J:\" -nodeletion "D:\Dest" -log -logfile "D:\Logs\Unison\sync.log"</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>

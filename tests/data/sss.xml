@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-16"?>
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>MyTestService</Name>
-  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <ExecutablePath>%NODE_EXE%</ExecutablePath>
   <StartupType>2</StartupType>
   <Priority>2</Priority>
   <EnableRotation>false</EnableRotation>

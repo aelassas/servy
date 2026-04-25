@@ -2,7 +2,7 @@
 <ServiceDto xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <Name>ServyNodeJSApp</Name>
   <Description>ServyNodeJSApp</Description>
-  <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+  <ExecutablePath>%NODE_EXE%</ExecutablePath>
   <Parameters>C:\dev\servy\src\tests\nodejs-app-env-vars\index.js</Parameters>
   <StartupType>2</StartupType>
   <Priority>2</Priority>

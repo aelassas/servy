@@ -42,7 +42,7 @@ namespace Servy.CLI.UnitTests.Commands
             var xmlContent = @"
             <ServiceDto>
               <Name>MyTestService</Name>
-              <ExecutablePath>C:\Program Files\nodejs\node.exe</ExecutablePath>
+              <ExecutablePath>%NODE_EXE%</ExecutablePath>
             </ServiceDto>";
 
             File.WriteAllText(path, xmlContent);
