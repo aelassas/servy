@@ -148,7 +148,7 @@ namespace Servy.Manager.UnitTests.Services
                 serializer.Serialize(writer, dto);
             }
 
-            var xmlContent = await File.ReadAllTextAsync(tempFile);
+            var xmlContent = await File.ReadAllTextAsync(tempFile, TestContext.Current.CancellationToken);
 
             _fileDialogServiceMock.Setup(d => d.OpenXml()).Returns(tempFile);
 
@@ -168,7 +168,7 @@ namespace Servy.Manager.UnitTests.Services
             await sut.ImportXmlConfigAsync();
 
             // 3. Assert (Wait with Timeout for the background refresh)
-            var delay = Task.Delay(2000);
+            var delay = Task.Delay(2000, TestContext.Current.CancellationToken);
             var completedTask = await Task.WhenAny(_refreshTcs.Task, delay);
 
             Assert.True(completedTask == _refreshTcs.Task, "Refresh task timed out! XML import did not trigger refresh.");

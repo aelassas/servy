@@ -75,6 +75,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup", "setup", "{11479D8F-D8B6-4AD7-BC82-A423FCC30779}"
 	ProjectSection(SolutionItems) = preProject
 		setup\publish-fd.ps1 = setup\publish-fd.ps1
+		setup\publish-res.ps1 = setup\publish-res.ps1
 		setup\publish-sc.ps1 = setup\publish-sc.ps1
 		setup\publish.ps1 = setup\publish.ps1
 		setup\servy-fd.iss = setup\servy-fd.iss

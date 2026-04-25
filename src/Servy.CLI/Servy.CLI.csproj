@@ -92,9 +92,4 @@
     <FrameworkReference Include="Microsoft.NETCore.App" />
   </ItemGroup>-->
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
-    <RuntimeIdentifier></RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
-  </PropertyGroup>
-
 </Project>

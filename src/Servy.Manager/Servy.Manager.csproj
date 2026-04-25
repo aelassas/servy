@@ -95,11 +95,6 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Release'">
-    <RuntimeIdentifier></RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
-  </PropertyGroup>
-
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>Servy.Manager.UnitTests</_Parameter1>

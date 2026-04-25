@@ -44,5 +44,9 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  
+  <PropertyGroup>
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
+  </PropertyGroup>
 
 </Project>
