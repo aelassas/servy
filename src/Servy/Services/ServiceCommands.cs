@@ -1,6 +1,5 @@
 ﻿using Servy.Config;
 using Servy.Core.Common;
-using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Helpers;
@@ -16,7 +15,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using static Servy.Config.AppConfig;
 using AppConfig = Servy.Core.Config.AppConfig;
 
@@ -48,6 +46,7 @@ namespace Servy.Services
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
         private readonly IAppConfiguration _appConfig;
+        private readonly ICursorService _cursorService;
 
         #endregion
 
@@ -65,6 +64,7 @@ namespace Servy.Services
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
         /// <param name="appConfig">Application configuration.</param>
+        /// <param name="cursorService">Cursor service for managing cursor state during operations.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
         /// </exception>
@@ -77,7 +77,8 @@ namespace Servy.Services
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
             IJsonServiceValidator jsonServiceValidator,
-            IAppConfiguration appConfig
+            IAppConfiguration appConfig,
+            ICursorService cursorService
             )
         {
             _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
@@ -89,6 +90,7 @@ namespace Servy.Services
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
         }
 
         #endregion
@@ -448,6 +450,8 @@ namespace Servy.Services
         {
             try
             {
+                _cursorService.SetWaitCursor();
+
                 if (!await IsServiceNameValid(serviceName)) return false;
 
                 if (!_serviceManager.IsServiceInstalled(serviceName))
@@ -479,6 +483,10 @@ namespace Servy.Services
                 Logger.Error(UnexpectedError, ex);
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_UnexpectedError, Caption);
                 return false;
+            }
+            finally
+            {
+                _cursorService.ResetCursor();
             }
         }
 

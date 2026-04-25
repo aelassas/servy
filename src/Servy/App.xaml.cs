@@ -22,8 +22,8 @@ using System.IO;
 using System.Windows;
 using Servy.Config;
 using AppConfig = Servy.Core.Config.AppConfig;
-using System;
 using System.Threading.Tasks;
+using System;
 
 namespace Servy
 {
@@ -183,7 +183,8 @@ namespace Servy
                         configValidator,
                         new XmlServiceValidator(),
                         new JsonServiceValidator(),
-                        this
+                        this,
+                        new CursorService()
                     );
 
                     // 4. Initialize Main ViewModel

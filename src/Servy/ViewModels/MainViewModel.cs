@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using static Servy.Core.Config.AppConfig;
 
@@ -940,7 +939,8 @@ namespace Servy.ViewModels
                 new ServiceConfigurationValidator(new MessageBoxService()),
                 new XmlServiceValidator(),
                 new JsonServiceValidator(),
-                null
+                null,
+                new CursorService()
             );
         }
 
