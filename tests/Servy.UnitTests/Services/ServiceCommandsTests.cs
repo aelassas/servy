@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Newtonsoft.Json;
+using Servy.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
 using Servy.Core.Services;
@@ -18,6 +19,7 @@ namespace Servy.UnitTests.Services
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidator;
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
+        private readonly Mock<IAppConfiguration> _appConfigMock; // 1. Added mock configuration
 
         public ServiceCommandsTests()
         {
@@ -27,6 +29,7 @@ namespace Servy.UnitTests.Services
             _serviceConfigurationValidator = new Mock<IServiceConfigurationValidator>();
             _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
+            _appConfigMock = new Mock<IAppConfiguration>(); // 2. Initialize mock
         }
 
         [Fact]
@@ -184,7 +187,7 @@ namespace Servy.UnitTests.Services
         {
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.UninstallService(serviceName, TestContext.Current.CancellationToken);
+            _mockServiceCommands.Object.UninstallService(serviceName, CancellationToken.None);
 
             _mockServiceCommands.Verify(m => m.UninstallService(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -226,7 +229,6 @@ namespace Servy.UnitTests.Services
             var path = "export.xml";
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-
             _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(Task.FromResult(true));
 
             var serviceCommands = new ServiceCommands(
@@ -237,7 +239,8 @@ namespace Servy.UnitTests.Services
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object,
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object
+                jsonServiceValidator: _jsonServiceValidatorMock.Object,
+                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
             );
 
             // Act
@@ -266,7 +269,8 @@ namespace Servy.UnitTests.Services
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object,
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object
+                jsonServiceValidator: _jsonServiceValidatorMock.Object,
+                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
             );
 
             // Act
@@ -313,7 +317,8 @@ namespace Servy.UnitTests.Services
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object,
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object
+                jsonServiceValidator: _jsonServiceValidatorMock.Object,
+                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
             );
 
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
@@ -380,7 +385,8 @@ namespace Servy.UnitTests.Services
                 dialogService: _dialogServiceMock.Object,
                 serviceConfigurationValidator: _serviceConfigurationValidator.Object,
                 xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object
+                jsonServiceValidator: _jsonServiceValidatorMock.Object,
+                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
             );
 
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))

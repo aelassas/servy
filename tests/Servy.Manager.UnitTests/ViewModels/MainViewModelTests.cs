@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Servy.Core.Data;
 using Servy.Core.Services;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
@@ -18,6 +19,9 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IHelpService> _helpServiceMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
+        private readonly Mock<IAppConfiguration> _appConfigMock; // New Dependency
+
+        // Child ViewModels
         private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
         private readonly Mock<ConsoleViewModel> _consoleViewModelMock;
         private readonly Mock<DependenciesViewModel> _dependenciesViewModelMock;
@@ -29,9 +33,29 @@ namespace Servy.Manager.UnitTests.ViewModels
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
-            _performanceViewModelMock = new Mock<PerformanceViewModel>();
-            _consoleViewModelMock = new Mock<ConsoleViewModel>();
-            _dependenciesViewModelMock = new Mock<DependenciesViewModel>();
+
+            // Setup AppConfig Mock with defaults to prevent null/zero issues
+            _appConfigMock = new Mock<IAppConfiguration>();
+            _appConfigMock.Setup(c => c.RefreshIntervalInSeconds).Returns(5);
+            _appConfigMock.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
+            _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
+
+            // Concrete classes with parameters need the objects passed to the Mock constructor
+            _performanceViewModelMock = new Mock<PerformanceViewModel>(
+                _serviceRepositoryMock.Object,
+                _serviceCommandsMock.Object,
+                _appConfigMock.Object);
+
+            _consoleViewModelMock = new Mock<ConsoleViewModel>(
+                _serviceRepositoryMock.Object,
+                _serviceCommandsMock.Object,
+                _appConfigMock.Object);
+
+            _dependenciesViewModelMock = new Mock<DependenciesViewModel>(
+                _serviceRepositoryMock.Object,
+                _serviceManagerMock.Object,
+                _serviceCommandsMock.Object,
+                _appConfigMock.Object);
         }
 
         private MainViewModel CreateViewModel(Dispatcher? dispatcher = null)
@@ -45,6 +69,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _performanceViewModelMock.Object,
                 _consoleViewModelMock.Object,
                 _dependenciesViewModelMock.Object,
+                _appConfigMock.Object, // Pass the new dependency
                 dispatcher
             );
         }
@@ -62,7 +87,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.NotNull(vm.ServiceCommands);
                 Assert.NotNull(vm.SearchCommand);
                 Assert.False(vm.IsBusy);
-                Assert.Equal("Search", vm.SearchButtonText);
+                // "Search" comes from Strings.Button_Search; ensure localized resources are loaded
+                Assert.Contains("Search", vm.SearchButtonText);
             }, createApp: true);
         }
 
@@ -71,12 +97,12 @@ namespace Servy.Manager.UnitTests.ViewModels
         {
             Helper.RunOnSTA(async () =>
             {
-                var vm = CreateViewModel();
+                var vm = CreateViewModel(Dispatcher.CurrentDispatcher);
                 var services = new List<Service>
-                    {
-                        new Service { Name = "S1" },
-                        new Service { Name = "S2" }
-                    };
+                {
+                    new Service { Name = "S1" },
+                    new Service { Name = "S2" }
+                };
 
                 _serviceCommandsMock
                     .Setup(s => s.SearchServicesAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
@@ -85,12 +111,13 @@ namespace Servy.Manager.UnitTests.ViewModels
                 await vm.SearchCommand.ExecuteAsync(null);
 
                 var view = (ListCollectionView)vm.ServicesView;
-                Assert.Equal(2, view.Cast<ServiceRowViewModel>().Count());
-                Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S1");
-                Assert.Contains(view.Cast<ServiceRowViewModel>(), s => s.Service.Name == "S2");
-            });
-        }
+                var items = view.Cast<ServiceRowViewModel>().ToList();
 
+                Assert.Equal(2, items.Count);
+                Assert.Contains(items, s => s.Service.Name == "S1");
+                Assert.Contains(items, s => s.Service.Name == "S2");
+            }, createApp: true);
+        }
 
         [Fact]
         public void SearchText_Setter_ShouldRaisePropertyChanged()
@@ -129,8 +156,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var srvm1 = new ServiceRowViewModel(service1, _serviceCommandsMock.Object);
                 var srvm2 = new ServiceRowViewModel(service2, _serviceCommandsMock.Object);
 
-                var servicesField = vm.GetType().GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                // Use reflection to access the private _services collection for setup
+                var servicesField = typeof(MainViewModel).GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var servicesList = (ObservableCollection<ServiceRowViewModel>?)servicesField?.GetValue(vm);
+
                 servicesList?.Add(srvm1);
                 servicesList?.Add(srvm2);
                 vm.ServicesView.Refresh();
@@ -139,8 +168,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.RemoveService("S1");
 
                 // Assert
-                Assert.Single(vm.ServicesView.Cast<ServiceRowViewModel>());
-                Assert.Equal("S2", vm.ServicesView.Cast<ServiceRowViewModel>().First().Service.Name);
+                var items = vm.ServicesView.Cast<ServiceRowViewModel>().ToList();
+                Assert.Single(items);
+                Assert.Equal("S2", items.First().Service.Name);
             }, createApp: true);
         }
 
@@ -155,7 +185,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Returns(Task.CompletedTask)
                     .Verifiable();
 
-                vm.ConfigureCommand.Execute(service);
+                await vm.ConfigureCommand.ExecuteAsync(service);
 
                 _serviceCommandsMock.Verify();
             }, createApp: true);
@@ -167,9 +197,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync()).Returns(Task.CompletedTask).Verifiable();
+                _serviceCommandsMock.Setup(s => s.ImportXmlConfigAsync())
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-                vm.ImportXmlCommand.Execute(null);
+                await vm.ImportXmlCommand.ExecuteAsync(null);
 
                 _serviceCommandsMock.Verify();
             }, createApp: true);
@@ -181,9 +213,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync()).Returns(Task.CompletedTask).Verifiable();
+                _serviceCommandsMock.Setup(s => s.ImportJsonConfigAsync())
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-                vm.ImportJsonCommand.Execute(null);
+                await vm.ImportJsonCommand.ExecuteAsync(null);
 
                 _serviceCommandsMock.Verify();
             }, createApp: true);
@@ -195,9 +229,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _helpServiceMock.Setup(h => h.OpenDocumentation(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+                _helpServiceMock.Setup(h => h.OpenDocumentation(It.IsAny<string>()))
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-                vm.OpenDocumentationCommand.Execute(null);
+                await vm.OpenDocumentationCommand.ExecuteAsync(null);
 
                 _helpServiceMock.Verify();
             }, createApp: true);
@@ -209,9 +245,11 @@ namespace Servy.Manager.UnitTests.ViewModels
             Helper.RunOnSTA(async () =>
             {
                 var vm = CreateViewModel();
-                _helpServiceMock.Setup(h => h.CheckUpdates(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+                _helpServiceMock.Setup(h => h.CheckUpdates(It.IsAny<string>()))
+                    .Returns(Task.CompletedTask)
+                    .Verifiable();
 
-                vm.CheckUpdatesCommand.Execute(null);
+                await vm.CheckUpdatesCommand.ExecuteAsync(null);
 
                 _helpServiceMock.Verify();
             }, createApp: true);
@@ -227,11 +265,10 @@ namespace Servy.Manager.UnitTests.ViewModels
                     .Returns(Task.CompletedTask)
                     .Verifiable();
 
-                vm.OpenAboutDialogCommand.Execute(null);
+                await vm.OpenAboutDialogCommand.ExecuteAsync(null);
 
                 _helpServiceMock.Verify();
             }, createApp: true);
         }
-
     }
 }

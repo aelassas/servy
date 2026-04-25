@@ -35,6 +35,7 @@ namespace Servy.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IHelpService _helpService;
         private bool _isManagerAppAvailable;
+        private readonly IAppConfiguration _appConfig;
 
         #endregion
 
@@ -803,11 +804,13 @@ namespace Servy.ViewModels
         /// <param name="messageBoxService">Service to show message dialogs.</param>
         /// <param name="serviceRepository">Service Repository.</param>
         /// <param name="helpService">Help service.</param>
+        /// <param name="appConfig">Application configuration.</param>
         public MainViewModel(IFileDialogService dialogService,
             IServiceCommands serviceCommands,
             IMessageBoxService messageBoxService,
             IServiceRepository serviceRepository,
-            IHelpService helpService
+            IHelpService helpService,
+            IAppConfiguration appConfig
             )
         {
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
@@ -815,6 +818,7 @@ namespace Servy.ViewModels
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _helpService = helpService ?? throw new ArgumentNullException(nameof(helpService));
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
 
             // Initialize defaults
             ServiceName = string.Empty;
@@ -906,12 +910,8 @@ namespace Servy.ViewModels
 
             ClearFormCommand = new AsyncCommand(ClearForm);
 
-            var app = (App)Application.Current;
-            if (app != null)
-            {
-                IsManagerAppAvailable = app.IsManagerAppAvailable;
-                app.PropertyChanged += App_PropertyChanged;
-            }
+            IsManagerAppAvailable = _appConfig.IsManagerAppAvailable;
+            _appConfig.PropertyChanged += AppConfig_PropertyChanged;
         }
 
         /// <summary>
@@ -919,6 +919,7 @@ namespace Servy.ViewModels
         /// </summary>
         public MainViewModel() : this(
             new DesignTimeFileDialogService(),
+            null,
             null,
             null,
             null,
@@ -935,7 +936,8 @@ namespace Servy.ViewModels
                 new FileDialogService(),
                 new ServiceConfigurationValidator(new MessageBoxService()),
                 new XmlServiceValidator(),
-                new JsonServiceValidator()
+                new JsonServiceValidator(),
+                null
             );
         }
 
@@ -976,11 +978,11 @@ namespace Servy.ViewModels
         /// <summary>
         /// PropertyChanged event handler to capture dynamically updated settings from the application.
         /// </summary>
-        private void App_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(App.IsManagerAppAvailable))
+            if (e.PropertyName == nameof(IAppConfiguration.IsManagerAppAvailable))
             {
-                IsManagerAppAvailable = ((App)sender).IsManagerAppAvailable;
+                IsManagerAppAvailable = ((IAppConfiguration)sender).IsManagerAppAvailable;
             }
         }
 

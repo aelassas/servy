@@ -45,6 +45,7 @@ namespace Servy.Manager.Services
         private readonly IServiceConfigurationValidator _serviceConfigurationValidator;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
+        private readonly IAppConfiguration _appConfig;
 
         #endregion
 
@@ -59,8 +60,10 @@ namespace Servy.Manager.Services
         /// <param name="fileDialogService">The service used to show file dialogs.</param>
         /// <param name="removeServiceCallback">A callback invoked when a service should be removed from the UI or collection.</param>
         /// <param name="refreshCallback">A callback invoked when a services list should be refreshed.</param>
+        /// <param name="serviceConfigurationValidator">The service configuration validator.</param>
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
+        /// <param name="appConfig">The application configuration interface.</param>
         public ServiceCommands(
             IServiceManager serviceManager,
             IServiceRepository serviceRepository,
@@ -70,7 +73,8 @@ namespace Servy.Manager.Services
             Func<Task> refreshCallback,
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
-            IJsonServiceValidator jsonServiceValidator
+            IJsonServiceValidator jsonServiceValidator,
+            IAppConfiguration appConfig
         )
         {
             _serviceManager = serviceManager ?? throw new ArgumentNullException(nameof(serviceManager));
@@ -82,6 +86,7 @@ namespace Servy.Manager.Services
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
         }
 
         #endregion
@@ -136,15 +141,13 @@ namespace Servy.Manager.Services
         /// <inheritdoc />
         public async Task<List<Service>> SearchServicesAsync(string searchText, bool calculatePerf, CancellationToken cancellationToken = default)
         {
-            var app = (App)Application.Current;
-
             var results = await _serviceRepository.SearchAsync(
-                 searchText ?? string.Empty, decrypt: false, cancellationToken);
+                searchText ?? string.Empty, decrypt: false, cancellationToken);
 
             // Map all domain services to Service models in parallel
             var tasks = results.Select(r => ServiceMapper.ToModelAsync(
                 Core.Mappers.ServiceMapper.ToDomain(_serviceManager, r),
-                app.IsDesktopAppAvailable,
+                _appConfig.IsDesktopAppAvailable,
                 calculatePerf));
             var services = await Task.WhenAll(tasks);
 
@@ -172,20 +175,19 @@ namespace Servy.Manager.Services
         {
             try
             {
-                var app = (App)Application.Current;
-                if (string.IsNullOrWhiteSpace(app.DesktopAppPublishPath) || !File.Exists(app.DesktopAppPublishPath))
+                if (string.IsNullOrWhiteSpace(_appConfig.DesktopAppPublishPath) || !File.Exists(_appConfig.DesktopAppPublishPath))
                 {
                     await _messageBoxService.ShowErrorAsync(Strings.Msg_DesktopAppNotFound, AppConfig.Caption);
                     return;
                 }
 
-                var forceFlag = app.ForceSoftwareRendering ? $" {Core.Config.AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+                var forceFlag = _appConfig.ForceSoftwareRendering ? $" {Core.Config.AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
                 using (var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = app.DesktopAppPublishPath,
+                        FileName = _appConfig.DesktopAppPublishPath,
                         Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                         UseShellExecute = true,
                     }
@@ -193,7 +195,7 @@ namespace Servy.Manager.Services
                 {
                     if (service == null)
                     {
-                        StartProcess(process, app);
+                        StartProcess(process);
                         return;
                     }
 
@@ -207,7 +209,7 @@ namespace Servy.Manager.Services
                     // Pass false to skip splash screen
                     process.StartInfo.Arguments = $"\"false\" {ProcessHelper.EscapeArgument(service.Name)}{forceFlag}";
 
-                    StartProcess(process, app);
+                    StartProcess(process);
                 }
             }
             catch (Exception ex)
@@ -725,11 +727,11 @@ namespace Servy.Manager.Services
         /// <see cref="Logger.Warn(string)"/> method to record the failed attempt to launch 
         /// the external configuration tool.
         /// </remarks>
-        private void StartProcess(Process process, App app)
+        private void StartProcess(Process process)
         {
             if (!process.Start())
             {
-                Logger.Warn($"Failed to start external process {app.DesktopAppPublishPath}.");
+                Logger.Warn($"Failed to start external process {_appConfig.DesktopAppPublishPath}.");
             }
         }
 

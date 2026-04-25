@@ -58,6 +58,7 @@ namespace Servy.Manager.ViewModels
         private bool _isUpdatingSelectAll;
         private readonly object _servicesLock = new object();
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
+        private readonly IAppConfiguration _appConfig;
 
         #endregion
 
@@ -318,12 +319,14 @@ namespace Servy.Manager.ViewModels
             PerformanceViewModel performanceVM,
             ConsoleViewModel consoleVM,
             DependenciesViewModel dependenciesVM,
+            IAppConfiguration appConfig,
             Dispatcher dispatcher = null
             )
         {
             _serviceManager = serviceManager;
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             _helpService = helpService;
             _messageBoxService = messageBoxService;
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -347,14 +350,11 @@ namespace Servy.Manager.ViewModels
             CheckUpdatesCommand = new AsyncCommand(CheckUpdatesAsync);
             OpenAboutDialogCommand = new AsyncCommand(OpenAboutDialog);
 
-            var app = Application.Current as App;
-            if (app != null)
-            {
-                IsConfiguratorEnabled = app.IsDesktopAppAvailable;
-                app.PropertyChanged += App_PropertyChanged;
+            IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
+            _appConfig.PropertyChanged += AppConfig_PropertyChanged;
 
-                CreateAndStartTimer();
-            }
+            CreateAndStartTimer();
+            
 
         }
 
@@ -382,11 +382,11 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// PropertyChanged event handler to capture dynamically updated settings from the application.
         /// </summary>
-        private void App_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void AppConfig_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(App.IsDesktopAppAvailable))
+            if (e.PropertyName == nameof(IAppConfiguration.IsDesktopAppAvailable))
             {
-                IsConfiguratorEnabled = ((App)sender).IsDesktopAppAvailable;
+                IsConfiguratorEnabled = _appConfig.IsDesktopAppAvailable;
             }
         }
 
@@ -436,10 +436,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         private DispatcherTimer CreateTimer()
         {
-            var app = (App)Application.Current;
             var timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(app.RefreshIntervalInSeconds)
+                Interval = TimeSpan.FromSeconds(_appConfig.RefreshIntervalInSeconds)
             };
 
             timer.Tick += OnTick;
@@ -695,10 +694,9 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public void Cleanup()
         {
-            var app = Application.Current as App;
-            if (app != null)
+            if (_appConfig != null)
             {
-                app.PropertyChanged -= App_PropertyChanged;
+                _appConfig.PropertyChanged -= AppConfig_PropertyChanged;
             }
 
             // Thread-safe disposal pattern
