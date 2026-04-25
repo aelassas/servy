@@ -16,7 +16,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
@@ -44,6 +43,7 @@ namespace Servy.Manager.ViewModels
         private readonly IServiceRepository _serviceRepository;
         private readonly IMessageBoxService _messageBoxService;
         private readonly IHelpService _helpService;
+        private readonly ICursorService _cursorService;
 
         private CancellationTokenSource _cts;
 
@@ -59,6 +59,8 @@ namespace Servy.Manager.ViewModels
         private readonly object _servicesLock = new object();
         private int _isRefreshingFlag = 0; // 0 = false, 1 = true
         private readonly IAppConfiguration _appConfig;
+
+        private IDisposable _busyCursor; // Manages the busy cursor explicitly for Sequential tasks
 
         #endregion
 
@@ -320,6 +322,7 @@ namespace Servy.Manager.ViewModels
             ConsoleViewModel consoleVM,
             DependenciesViewModel dependenciesVM,
             IAppConfiguration appConfig,
+            ICursorService cursorService,
             Dispatcher dispatcher = null
             )
         {
@@ -327,6 +330,7 @@ namespace Servy.Manager.ViewModels
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
             _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
+            _cursorService = cursorService ?? throw new ArgumentNullException(nameof(cursorService));
             _helpService = helpService;
             _messageBoxService = messageBoxService;
             _dispatcher = dispatcher ?? Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
@@ -354,8 +358,6 @@ namespace Servy.Manager.ViewModels
             _appConfig.PropertyChanged += AppConfig_PropertyChanged;
 
             CreateAndStartTimer();
-            
-
         }
 
         /// <summary>
@@ -363,6 +365,8 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         public MainViewModel() :
                     this(
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -509,7 +513,7 @@ namespace Servy.Manager.ViewModels
                 FooterText = string.Empty; // Clear footer text before search
 
                 // Step 1: show "Searching..." immediately
-                Mouse.OverrideCursor = Cursors.Wait;
+                _cursorService.SetWaitCursor();
                 SearchButtonText = Strings.Button_Searching;
                 IsBusy = true;
 
@@ -594,7 +598,7 @@ namespace Servy.Manager.ViewModels
             finally
             {
                 // Step 7: restore button text and IsBusy
-                Mouse.OverrideCursor = null;
+                _cursorService.ResetCursor();
                 SearchButtonText = Strings.Button_Search;
                 IsBusy = false;
             }
@@ -716,6 +720,8 @@ namespace Servy.Manager.ViewModels
 
             // Dispose the command engine to clean up semaphores
             ServiceCommands?.Dispose();
+
+            _busyCursor?.Dispose();
         }
 
         /// <summary>
@@ -1091,7 +1097,18 @@ namespace Servy.Manager.ViewModels
             await _dispatcher.InvokeAsync(() =>
             {
                 IsBusy = busy;
-                Mouse.OverrideCursor = busy ? Cursors.Wait : null;
+                if (busy)
+                {
+                    if (_busyCursor == null)
+                    {
+                        _busyCursor = _cursorService.SetWaitCursor();
+                    }
+                }
+                else
+                {
+                    _busyCursor?.Dispose();
+                    _busyCursor = null;
+                }
             });
         }
 

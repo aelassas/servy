@@ -5,6 +5,7 @@ using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
 using Servy.UI.Constants;
+using Servy.UI.Services;
 using System.Windows;
 using System.Windows.Media;
 
@@ -15,13 +16,15 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IAppConfiguration> _appConfigMock;
+        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
 
         public PerformanceViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+            _cursorServiceMock = new Mock<ICursorService>();
 
-            // 1. Setup AppConfig Mock
+            // Setup AppConfig Mock
             _appConfigMock = new Mock<IAppConfiguration>();
             // Ensure the timer has a valid interval during initialization
             _appConfigMock.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
@@ -29,11 +32,12 @@ namespace Servy.Manager.UnitTests.ViewModels
 
         private PerformanceViewModel CreateViewModel()
         {
-            // 2. Inject the mock configuration
+            // Inject all 4 dependencies including the cursor service
             return new PerformanceViewModel(
                 _serviceRepoMock.Object,
                 _serviceCommandsMock.Object,
-                _appConfigMock.Object);
+                _appConfigMock.Object,
+                _cursorServiceMock.Object);
         }
 
         [Fact]
@@ -58,6 +62,9 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Single(vm.Services);
                 Assert.Equal("TestSvc", vm.Services[0].Name);
+
+                // Verify wait cursor was used during search
+                _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             }, createApp: true);
         }
 

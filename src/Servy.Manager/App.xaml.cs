@@ -195,9 +195,10 @@ namespace Servy.Manager
                     var helpService = new HelpService(messageBoxService);
                     var serviceConfigurationValidator = new ServiceConfigurationValidator(messageBoxService);
                     var eventLogService = new EventLogService(new EventLogReader());
+                    var cursorService = new CursorService();
 
                     // 2. Initialize Standalone ViewModels
-                    var logsVm = new LogsViewModel(eventLogService);
+                    var logsVm = new LogsViewModel(eventLogService, cursorService);
 
                     // Break the circular dependency using local proxy functions
                     MainViewModel viewModel = null;
@@ -224,10 +225,11 @@ namespace Servy.Manager
                         serviceCommands,
                         helpService,
                         messageBoxService,
-                        new PerformanceViewModel(ServiceRepository, serviceCommands, this),
-                        new ConsoleViewModel(ServiceRepository, serviceCommands, this),
-                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this),
-                        this
+                        new PerformanceViewModel(ServiceRepository, serviceCommands, this, cursorService),
+                        new ConsoleViewModel(ServiceRepository, serviceCommands, this, cursorService),
+                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this, cursorService),
+                        this,
+                        cursorService
                     );
 
                     // 4. Inject Dependencies into the View

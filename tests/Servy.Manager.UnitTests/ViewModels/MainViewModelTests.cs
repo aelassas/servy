@@ -5,8 +5,8 @@ using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
+using Servy.UI;
 using Servy.UI.Services;
-using System.Collections.ObjectModel;
 using System.Windows.Data;
 using System.Windows.Threading;
 
@@ -19,7 +19,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         private readonly Mock<IHelpService> _helpServiceMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
         private readonly Mock<IMessageBoxService> _messageBoxServiceMock;
-        private readonly Mock<IAppConfiguration> _appConfigMock; // New Dependency
+        private readonly Mock<IAppConfiguration> _appConfigMock;
+        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
 
         // Child ViewModels
         private readonly Mock<PerformanceViewModel> _performanceViewModelMock;
@@ -33,29 +34,36 @@ namespace Servy.Manager.UnitTests.ViewModels
             _helpServiceMock = new Mock<IHelpService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxServiceMock = new Mock<IMessageBoxService>();
+            _cursorServiceMock = new Mock<ICursorService>(); // Initialize CursorService Mock
 
             // Setup AppConfig Mock with defaults to prevent null/zero issues
             _appConfigMock = new Mock<IAppConfiguration>();
             _appConfigMock.Setup(c => c.RefreshIntervalInSeconds).Returns(5);
             _appConfigMock.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
             _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
+            _appConfigMock.Setup(c => c.DependenciesRefreshIntervalInMs).Returns(1000);
+            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(500);
 
             // Concrete classes with parameters need the objects passed to the Mock constructor
+            // Added _cursorServiceMock.Object to all child ViewModel mocks
             _performanceViewModelMock = new Mock<PerformanceViewModel>(
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
-                _appConfigMock.Object);
+                _appConfigMock.Object,
+                _cursorServiceMock.Object);
 
             _consoleViewModelMock = new Mock<ConsoleViewModel>(
                 _serviceRepositoryMock.Object,
                 _serviceCommandsMock.Object,
-                _appConfigMock.Object);
+                _appConfigMock.Object,
+                _cursorServiceMock.Object);
 
             _dependenciesViewModelMock = new Mock<DependenciesViewModel>(
                 _serviceRepositoryMock.Object,
                 _serviceManagerMock.Object,
                 _serviceCommandsMock.Object,
-                _appConfigMock.Object);
+                _appConfigMock.Object,
+                _cursorServiceMock.Object);
         }
 
         private MainViewModel CreateViewModel(Dispatcher? dispatcher = null)
@@ -69,7 +77,8 @@ namespace Servy.Manager.UnitTests.ViewModels
                 _performanceViewModelMock.Object,
                 _consoleViewModelMock.Object,
                 _dependenciesViewModelMock.Object,
-                _appConfigMock.Object, // Pass the new dependency
+                _appConfigMock.Object,
+                _cursorServiceMock.Object, // Pass the new dependency
                 dispatcher
             );
         }
@@ -158,7 +167,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Use reflection to access the private _services collection for setup
                 var servicesField = typeof(MainViewModel).GetField("_services", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                var servicesList = (ObservableCollection<ServiceRowViewModel>?)servicesField?.GetValue(vm);
+                var servicesList = (BulkObservableCollection<ServiceRowViewModel>?)servicesField?.GetValue(vm);
 
                 servicesList?.Add(srvm1);
                 servicesList?.Add(srvm2);

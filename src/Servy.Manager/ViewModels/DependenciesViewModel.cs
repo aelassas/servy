@@ -8,6 +8,7 @@ using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
 using Servy.UI.Constants;
+using Servy.UI.Services;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
@@ -124,11 +125,13 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceManager">Service manager.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
         /// <param name="appConfig">Application configuration settings.</param>
+        /// <param name="cursorService">Service used to control the cursor state.</param>
         public DependenciesViewModel(
             IServiceRepository serviceRepository,
             IServiceManager serviceManager,
             IServiceCommands serviceCommands,
-            IAppConfiguration appConfig)
+            IAppConfiguration appConfig,
+            ICursorService cursorService) : base(cursorService)
         {
             _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
@@ -273,7 +276,7 @@ namespace Servy.Manager.ViewModels
 
             try
             {
-                Mouse.OverrideCursor = Cursors.Wait;
+                _cursorService.SetWaitCursor();
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
@@ -300,7 +303,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                Mouse.OverrideCursor = null;
+                _cursorService.ResetCursor();
                 IsBusy = false;
                 SearchButtonText = Strings.Button_Search;
             }

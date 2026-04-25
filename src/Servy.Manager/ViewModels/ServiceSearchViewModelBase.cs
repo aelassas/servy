@@ -4,10 +4,9 @@ using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
+using Servy.UI.Services;
 using Servy.UI.ViewModels;
 using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Input;
 using System.Windows.Threading;
 
 namespace Servy.Manager.ViewModels
@@ -26,6 +25,8 @@ namespace Servy.Manager.ViewModels
         /// Manages the cancellation lifecycle for the current service search operation.
         /// </summary>
         protected CancellationTokenSource _serviceSearchCts;
+
+        protected readonly ICursorService _cursorService;
 
         private bool _disposedValue;
 
@@ -79,8 +80,10 @@ namespace Servy.Manager.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceSearchViewModelBase"/> class.
         /// </summary>
-        protected ServiceSearchViewModelBase()
+        /// <param name="cursorService">Service to manage cursor state.</param>
+        protected ServiceSearchViewModelBase(ICursorService cursorService)
         {
+            _cursorService = cursorService;
             SearchCommand = new AsyncCommand(SearchServicesAsync);
         }
 
@@ -120,7 +123,7 @@ namespace Servy.Manager.ViewModels
 
             try
             {
-                Mouse.OverrideCursor = Cursors.Wait;
+                _cursorService.SetWaitCursor();
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
@@ -147,7 +150,7 @@ namespace Servy.Manager.ViewModels
             }
             finally
             {
-                Mouse.OverrideCursor = null;
+                _cursorService.ResetCursor();
                 IsBusy = false;
                 SearchButtonText = Strings.Button_Search;
             }

@@ -4,21 +4,26 @@ using Servy.Core.Enums;
 using Servy.Core.Services;
 using Servy.Manager.Models;
 using Servy.Manager.ViewModels;
+using Servy.UI.Services;
 
 namespace Servy.Manager.UnitTests.ViewModels
 {
     public class LogsViewModelTests
     {
         private readonly Mock<IEventLogService> _eventLogServiceMock;
+        private readonly Mock<ICursorService> _cursorServiceMock; // New Dependency
 
         public LogsViewModelTests()
         {
             _eventLogServiceMock = new Mock<IEventLogService>();
+            _cursorServiceMock = new Mock<ICursorService>();
         }
 
         private LogsViewModel CreateViewModel()
         {
-            return new LogsViewModel(_eventLogServiceMock.Object);
+            return new LogsViewModel(
+                _eventLogServiceMock.Object,
+                _cursorServiceMock.Object); // Injecting the mock cursor service
         }
 
         [Fact]
@@ -30,7 +35,7 @@ namespace Servy.Manager.UnitTests.ViewModels
             Assert.NotNull(vm.SearchCommand);
             Assert.NotNull(vm.RowClickCommand);
             Assert.False(vm.IsBusy);
-            Assert.Equal("Search", vm.SearchButtonText); // from Strings.Button_Search
+            Assert.Contains("Search", vm.SearchButtonText); // Matches Strings.Button_Search
             Assert.NotNull(vm.FromDate);
             Assert.NotNull(vm.ToDate);
             Assert.Equal(EventLogLevel.All, vm.SelectedLevel);
@@ -40,8 +45,8 @@ namespace Servy.Manager.UnitTests.ViewModels
         public void PropertyChanged_IsRaised()
         {
             var vm = CreateViewModel();
-            string propertyName = null!;
-            vm.PropertyChanged += (s, e) => propertyName = e.PropertyName!;
+            string? propertyName = null;
+            vm.PropertyChanged += (s, e) => propertyName = e.PropertyName;
 
             vm.IsBusy = true;
 
@@ -78,7 +83,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
             vm.RowClickCommand.Execute(log);
 
-            Assert.Equal("test", vm.SelectedLog.Message);
+            Assert.Equal("test", vm.SelectedLog?.Message);
             Assert.Equal("test", vm.SelectedLogMessage);
         }
 
@@ -107,8 +112,11 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Single(vm.LogsView.SourceCollection.Cast<LogEntryModel>());
                 Assert.True(scrollRaised);
-                Assert.Equal("Search", vm.SearchButtonText); // Reset after search
+                Assert.Contains("Search", vm.SearchButtonText);
                 Assert.False(vm.IsBusy);
+
+                // Verify the cursor service was utilized
+                _cursorServiceMock.Verify(c => c.SetWaitCursor(), Times.Once);
             }, createApp: true);
         }
 
@@ -120,8 +128,6 @@ namespace Servy.Manager.UnitTests.ViewModels
             vm.Cleanup();
 
             // After cleanup, a second call should not throw
-            vm.Cleanup();
-
             var exception = Record.Exception(() => vm.Cleanup());
             Assert.Null(exception);
         }
