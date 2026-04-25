@@ -127,9 +127,9 @@ namespace Servy.Manager.ViewModels
                 IsBusy = true;
                 SearchButtonText = Strings.Button_Searching;
 
-                if (Application.Current?.Dispatcher != null && !Helper.IsRunningInUnitTest())
+                if (!Helper.IsRunningInUnitTest())
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    await Dispatcher.CurrentDispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                 }
 
                 var results = await ServiceCommands.SearchServicesAsync(SearchText, false, token);

@@ -2,6 +2,7 @@
 using Servy.Core.Data;
 using Servy.Core.DTOs;
 using Servy.Core.Logging;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -54,6 +55,7 @@ namespace Servy.Manager.ViewModels
         private volatile bool _isSelectionActive;
         private int _tickErrorCount = 0;
         private bool _disposedValue;
+        private readonly IAppConfiguration _appConfig;
 
         // Active tailers and their handlers to prevent memory leaks during service switching
         private LogTailer _activeStdoutTailer;
@@ -206,23 +208,21 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        public ConsoleViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands)
+        /// <param name="appConfig">Application configuration settings.</param>
+        public ConsoleViewModel(
+            IServiceRepository serviceRepository,
+            IServiceCommands serviceCommands,
+            IAppConfiguration appConfig
+            )
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
             ClearSelectionCommand = new RelayCommand<object>(_ => SetSelectionActive(false));
 
             // Capture while on the UI thread during creation
-            if (Application.Current is App app)
-            {
-                _maxLines = app.ConsoleMaxLines;
-            }
-            else
-            {
-                // Sane defaults if created during a weird state (like unit tests)
-                _maxLines = AppConfig.DefaultConsoleMaxLines;
-            }
+            _maxLines = _appConfig.ConsoleMaxLines;
 
             InitTimer();
 
@@ -240,18 +240,7 @@ namespace Servy.Manager.ViewModels
         #region MonitoringViewModelBase Implementation
 
         /// <inheritdoc/>
-        protected override int RefreshIntervalMs
-        {
-            get
-            {
-                var intervalMs = AppConfig.DefaultConsoleRefreshIntervalInMs;
-                if (Application.Current is App app)
-                {
-                    intervalMs = app.ConsoleRefreshIntervalInMs;
-                }
-                return intervalMs;
-            }
-        }
+        protected override int RefreshIntervalMs => _appConfig.ConsoleRefreshIntervalInMs;
 
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)

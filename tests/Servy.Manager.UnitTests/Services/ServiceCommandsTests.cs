@@ -23,10 +23,27 @@ namespace Servy.Manager.UnitTests.Services
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidatorMock;
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
+        private readonly Mock<IAppConfiguration> _appConfigMock; // 1. Added mock field
 
         private bool _refreshCalled;
         private TaskCompletionSource<bool> _refreshTcs;
         private string _removedServiceName;
+
+        public ServiceCommandsTests()
+        {
+            _serviceRepositoryMock = new Mock<IServiceRepository>();
+            _messageBoxServiceMock = new Mock<IMessageBoxService>();
+            _fileDialogServiceMock = new Mock<IFileDialogService>();
+            _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
+            _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
+            _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
+
+            // 2. Initialize the AppConfig mock
+            _appConfigMock = new Mock<IAppConfiguration>();
+
+            _refreshTcs = new TaskCompletionSource<bool>();
+            _removedServiceName = null;
+        }
 
         private ServiceCommands CreateServiceCommands()
         {
@@ -58,25 +75,14 @@ namespace Servy.Manager.UnitTests.Services
                 () =>
                 {
                     _refreshCalled = true;
-                    _refreshTcs.SetResult(true);
+                    _refreshTcs.TrySetResult(true);
                     return Task.CompletedTask;
                 },
                 _serviceConfigurationValidatorMock.Object,
                 _xmlServiceValidatorMock.Object,
-                _jsonServiceValidatorMock.Object
+                _jsonServiceValidatorMock.Object,
+                _appConfigMock.Object // 3. Inject the mock configuration
             );
-        }
-
-        public ServiceCommandsTests()
-        {
-            _serviceRepositoryMock = new Mock<IServiceRepository>();
-            _messageBoxServiceMock = new Mock<IMessageBoxService>();
-            _fileDialogServiceMock = new Mock<IFileDialogService>();
-            _serviceConfigurationValidatorMock = new Mock<IServiceConfigurationValidator>();
-            _refreshTcs = new TaskCompletionSource<bool>();
-            _removedServiceName = null;
-            _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
-            _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
         }
 
         [Fact]
@@ -127,6 +133,11 @@ namespace Servy.Manager.UnitTests.Services
             File.WriteAllText(tempFile, "{ invalid-json }");
 
             _fileDialogServiceMock.Setup(d => d.OpenJson()).Returns(tempFile);
+
+            // Mock validator to fail
+            string outErr = "Invalid JSON";
+            _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out outErr))
+                .Returns(false);
 
             // Act
             await sut.ImportJsonConfigAsync();
@@ -212,5 +223,23 @@ namespace Servy.Manager.UnitTests.Services
             if (File.Exists(tempFile)) File.Delete(tempFile);
         }
 
+        [Fact]
+        public async Task ConfigureServiceAsync_ShouldUseConfiguredPath()
+        {
+            // Arrange
+            var sut = CreateServiceCommands();
+            var service = new Servy.Manager.Models.Service { Name = "TestService" };
+
+            _appConfigMock.Setup(c => c.DesktopAppPublishPath).Returns(@"C:\Tools\Servy.exe");
+            // Note: ConfigureServiceAsync internally checks if the file exists on disk. 
+            // In a pure unit test, you might need to mock File.Exists if you use a wrapper, 
+            // but for this specific test, ensure the logic handles the missing path or use a mockable FileSystem.
+
+            // Act
+            await sut.ConfigureServiceAsync(service);
+
+            // Assert
+            _appConfigMock.Verify(c => c.DesktopAppPublishPath, Times.AtLeastOnce);
+        }
     }
 }

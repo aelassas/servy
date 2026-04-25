@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.ViewModels;
@@ -17,11 +18,26 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<IAppConfiguration> _appConfigMock;
 
         public PerformanceViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+
+            // 1. Setup AppConfig Mock
+            _appConfigMock = new Mock<IAppConfiguration>();
+            // Ensure the timer has a valid interval during initialization
+            _appConfigMock.Setup(c => c.PerformanceRefreshIntervalInMs).Returns(1000);
+        }
+
+        private PerformanceViewModel CreateViewModel()
+        {
+            // 2. Inject the mock configuration
+            return new PerformanceViewModel(
+                _serviceRepoMock.Object,
+                _serviceCommandsMock.Object,
+                _appConfigMock.Object);
         }
 
         [Fact]
@@ -33,7 +49,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel();
                 var mockData = new List<Service>
                 {
-                    new Service{ Name = "TestSvc", Pid = 123 }
+                    new Service { Name = "TestSvc", Pid = 123 }
                 };
 
                 _serviceCommandsMock
@@ -86,7 +102,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Empty(vm.CpuPointCollection);
                 Assert.Empty(vm.RamPointCollection);
-                // Check internal lists via logic (RamFillPoints should be a new empty collection)
                 Assert.Empty(vm.RamFillPoints);
             }, createApp: true);
         }
@@ -100,17 +115,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var vm = CreateViewModel();
                 vm.SelectedService = new PerformanceService { Name = "Svc", Pid = 123 };
 
-                // Act & Assert (Verification that no exception is thrown)
+                // Act & Assert
                 var exception = Record.Exception(() => vm.SelectedService = null);
 
                 Assert.Null(exception);
                 Assert.Null(vm.SelectedService);
             }, createApp: true);
-        }
-
-        private PerformanceViewModel CreateViewModel()
-        {
-            return new PerformanceViewModel(_serviceRepoMock.Object, _serviceCommandsMock.Object);
         }
     }
 }

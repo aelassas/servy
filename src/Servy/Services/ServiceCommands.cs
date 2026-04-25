@@ -1,4 +1,5 @@
-﻿using Servy.Core.Common;
+﻿using Servy.Config;
+using Servy.Core.Common;
 using Servy.Core.Config;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
@@ -17,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using static Servy.Config.AppConfig;
+using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.Services
 {
@@ -45,6 +47,7 @@ namespace Servy.Services
         private readonly IFileDialogService _dialogService;
         private readonly IXmlServiceValidator _xmlServiceValidator;
         private readonly IJsonServiceValidator _jsonServiceValidator;
+        private readonly IAppConfiguration _appConfig;
 
         #endregion
 
@@ -61,6 +64,7 @@ namespace Servy.Services
         /// <param name="serviceConfigurationValidator">Service to validate inputs.</param>
         /// <param name="xmlServiceValidator">XML service validator.</param>
         /// <param name="jsonServiceValidator">JSON service validator.</param>
+        /// <param name="appConfig">Application configuration.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="serviceManager"/>, <paramref name="messageBoxService"/>, or <paramref name="serviceRepository"/> is <c>null</c>.
         /// </exception>
@@ -72,7 +76,8 @@ namespace Servy.Services
             IFileDialogService dialogService,
             IServiceConfigurationValidator serviceConfigurationValidator,
             IXmlServiceValidator xmlServiceValidator,
-            IJsonServiceValidator jsonServiceValidator
+            IJsonServiceValidator jsonServiceValidator,
+            IAppConfiguration appConfig
             )
         {
             _modelToServiceDto = modelToServiceDto ?? throw new ArgumentNullException(nameof(modelToServiceDto));
@@ -83,6 +88,7 @@ namespace Servy.Services
             _serviceConfigurationValidator = serviceConfigurationValidator ?? throw new ArgumentNullException(nameof(serviceConfigurationValidator));
             _xmlServiceValidator = xmlServiceValidator ?? throw new ArgumentNullException(nameof(xmlServiceValidator));
             _jsonServiceValidator = jsonServiceValidator ?? throw new ArgumentNullException(nameof(jsonServiceValidator));
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
         }
 
         #endregion
@@ -384,21 +390,19 @@ namespace Servy.Services
         ///<inheritdoc/>
         public async Task OpenManager()
         {
-            var app = (App)Application.Current;
-
-            if (string.IsNullOrWhiteSpace(app.ManagerAppPublishPath) || !File.Exists(app.ManagerAppPublishPath))
+            if (string.IsNullOrWhiteSpace(_appConfig.ManagerAppPublishPath) || !File.Exists(_appConfig.ManagerAppPublishPath))
             {
                 await _messageBoxService.ShowErrorAsync(Strings.Msg_ManagerAppNotFound, Caption);
                 return;
             }
 
-            var forceFlag = app.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
+            var forceFlag = _appConfig.ForceSoftwareRendering ? $" {AppConfig.ForceSoftwareRenderingArg}" : string.Empty;
 
             using (var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = app.ManagerAppPublishPath,
+                    FileName = _appConfig.ManagerAppPublishPath,
                     UseShellExecute = true,
                     Arguments = $"\"false\"{forceFlag}", // Pass false to skip splash screen
                 }
@@ -406,7 +410,7 @@ namespace Servy.Services
             {
                 if (!process.Start())
                 {
-                    Logger.Warn($"Failed to start external process {app.ManagerAppPublishPath}.");
+                    Logger.Warn($"Failed to start external process {_appConfig.ManagerAppPublishPath}.");
                 }
             }
 

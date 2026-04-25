@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Servy.Core.Data;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.Manager.Utils;
@@ -18,18 +19,25 @@ namespace Servy.Manager.UnitTests.ViewModels
     {
         private readonly Mock<IServiceRepository> _serviceRepoMock;
         private readonly Mock<IServiceCommands> _serviceCommandsMock;
+        private readonly Mock<IAppConfiguration> _appConfigMock;
 
         public ConsoleViewModelTests()
         {
             _serviceRepoMock = new Mock<IServiceRepository>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
+
+            // Setup default configuration values
+            _appConfigMock = new Mock<IAppConfiguration>();
+            _appConfigMock.Setup(c => c.ConsoleMaxLines).Returns(500);
+            _appConfigMock.Setup(c => c.ConsoleRefreshIntervalInMs).Returns(100);
         }
 
         private ConsoleViewModel CreateViewModel()
         {
             return new ConsoleViewModel(
                 _serviceRepoMock.Object,
-                _serviceCommandsMock.Object);
+                _serviceCommandsMock.Object,
+                _appConfigMock.Object); // Inject mock config
         }
 
         [Fact]
@@ -51,7 +59,7 @@ namespace Servy.Manager.UnitTests.ViewModels
 
                 // Assert
                 Assert.False(vm.IsPaused);
-                // SwitchService clears RawLines immediately to prepare for fresh history
+                // SwitchService is triggered, which clears RawLines immediately
                 Assert.Empty(vm.RawLines);
             }, createApp: true);
         }
@@ -73,7 +81,6 @@ namespace Servy.Manager.UnitTests.ViewModels
                 vm.ConsoleSearchText = "Crash";
 
                 // Bypass the async debounce timer and WPF dispatcher queue entirely.
-                // We are unit testing the filter's logic, not the UI timing mechanics.
                 vm.VisibleLines.Refresh();
 
                 // Assert
@@ -104,7 +111,7 @@ namespace Servy.Manager.UnitTests.ViewModels
         }
 
         [Fact]
-        public async Task SearchServicesAsync_PopulatesServicesCollection()
+        public async Task SearchCommand_PopulatesServicesCollection()
         {
             await Helper.RunOnSTA(async () =>
             {
@@ -243,12 +250,12 @@ namespace Servy.Manager.UnitTests.ViewModels
                 var errRes = new HistoryResult(new List<LogLine> { errLine }, 50, sameTime);
 
                 // Act
-                // We simulate the merge logic inside SwitchService:
+                // We simulate the merge and sort logic inside SwitchService:
                 var combinedHistory = new List<LogLine>();
                 combinedHistory.AddRange(outRes.Lines); // Add StdOut first
                 combinedHistory.AddRange(errRes.Lines); // Add StdErr second
 
-                // The specific sorting logic from your SwitchService:
+                // The specific sorting logic used in production:
                 var sortedHistory = combinedHistory
                     .Select((line, index) => new { line, index })
                     .OrderBy(x => x.line.Timestamp)
@@ -259,7 +266,7 @@ namespace Servy.Manager.UnitTests.ViewModels
                 // Assert
                 Assert.Equal(2, sortedHistory.Count);
                 // Even though errLine has a lower ID (created first), 
-                // outLine must be first because of the index tie-breaker.
+                // outLine must be first because of the index tie-breaker (added first to combinedHistory).
                 Assert.Equal(LogType.StdOut, sortedHistory[0].Type);
                 Assert.Equal(LogType.StdErr, sortedHistory[1].Type);
 
@@ -267,6 +274,5 @@ namespace Servy.Manager.UnitTests.ViewModels
                 Assert.True(sortedHistory[0].Id > sortedHistory[1].Id);
             }, createApp: true);
         }
-
     }
 }

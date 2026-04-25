@@ -2,6 +2,7 @@
 using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Services;
 using Servy.UI.Commands;
@@ -40,6 +41,7 @@ namespace Servy.Manager.ViewModels
 
         private bool _hadSelectedService;
         private bool _disposedValue;
+        private readonly IAppConfiguration _appConfig;
 
         private Queue<double> _cpuValues = new Queue<double>();
         private Queue<double> _ramValues = new Queue<double>();
@@ -160,10 +162,16 @@ namespace Servy.Manager.ViewModels
         /// </summary>
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
-        public PerformanceViewModel(IServiceRepository serviceRepository, IServiceCommands serviceCommands)
+        /// <param name="appConfig">Application configuration settings.</param>
+        public PerformanceViewModel(
+            IServiceRepository serviceRepository,
+            IServiceCommands serviceCommands,
+            IAppConfiguration appConfig
+            )
         {
             _serviceRepository = serviceRepository;
             ServiceCommands = serviceCommands;
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
 
             InitTimer();
@@ -174,18 +182,7 @@ namespace Servy.Manager.ViewModels
         #region MonitoringViewModelBase Implementation
 
         /// <inheritdoc/>
-        protected override int RefreshIntervalMs
-        {
-            get
-            {
-                var intervalMs = AppConfig.DefaultPerformanceRefreshIntervalInMs;
-                if (Application.Current is App app)
-                {
-                    intervalMs = app.PerformanceRefreshIntervalInMs;
-                }
-                return intervalMs;
-            }
-        }
+        protected override int RefreshIntervalMs => _appConfig.PerformanceRefreshIntervalInMs;
 
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)

@@ -1,5 +1,4 @@
-﻿using Servy.Core.Config;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.Logging;
 using Servy.Core.Security;
 using Servy.Core.Services;
@@ -19,15 +18,17 @@ using System.Diagnostics;
 #endif
 using System.IO;
 using System.Windows;
-using System;
+using Servy.Manager.Config;
+using AppConfig = Servy.Core.Config.AppConfig;
 using System.Threading.Tasks;
+using System;
 
 namespace Servy.Manager
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application, INotifyPropertyChanged
+    public partial class App : Application, IAppConfiguration
     {
         #region Constants
 
@@ -213,7 +214,8 @@ namespace Servy.Manager
                         refreshProxy,
                         serviceConfigurationValidator,
                         new XmlServiceValidator(),
-                        new JsonServiceValidator()
+                        new JsonServiceValidator(),
+                        this
                     );
 
                     // 3. Initialize Main ViewModel
@@ -223,9 +225,10 @@ namespace Servy.Manager
                         serviceCommands,
                         helpService,
                         messageBoxService,
-                        new PerformanceViewModel(ServiceRepository, serviceCommands),
-                        new ConsoleViewModel(ServiceRepository, serviceCommands),
-                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands)
+                        new PerformanceViewModel(ServiceRepository, serviceCommands, this),
+                        new ConsoleViewModel(ServiceRepository, serviceCommands, this),
+                        new DependenciesViewModel(ServiceRepository, serviceManager, serviceCommands, this),
+                        this
                     );
 
                     // 4. Inject Dependencies into the View

@@ -1,5 +1,5 @@
 using Moq;
-using Servy.Core.Config;
+using Servy.Config;
 using Servy.Core.Data;
 using Servy.Core.Enums;
 using Servy.Models;
@@ -8,9 +8,8 @@ using Servy.UI.Services;
 using Servy.ViewModels;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using Xunit;
-using IHelpService = Servy.UI.Services.IHelpService;
+using AppConfig = Servy.Core.Config.AppConfig;
 
 namespace Servy.UnitTests.ViewModels
 {
@@ -21,26 +20,30 @@ namespace Servy.UnitTests.ViewModels
         private readonly Mock<IMessageBoxService> _messageBoxService;
         private readonly Mock<IServiceRepository> _serviceRepository;
         private readonly Mock<IHelpService> _helpService;
+        private readonly Mock<IAppConfiguration> _appConfigMock; // Added new dependency
         private readonly MainViewModel _viewModel;
 
         public MainViewModelTests()
         {
-            if (Application.Current == null)
-            {
-                new App();
-            }
+            // Application.Current hack removed! The ViewModel is now fully decoupled.
 
             _dialogServiceMock = new Mock<IFileDialogService>();
             _serviceCommandsMock = new Mock<IServiceCommands>();
             _messageBoxService = new Mock<IMessageBoxService>();
             _serviceRepository = new Mock<IServiceRepository>();
             _helpService = new Mock<IHelpService>();
-            _viewModel = new MainViewModel(_dialogServiceMock.Object,
+
+            _appConfigMock = new Mock<IAppConfiguration>();
+            _appConfigMock.Setup(c => c.IsManagerAppAvailable).Returns(true);
+
+            _viewModel = new MainViewModel(
+                _dialogServiceMock.Object,
                 _serviceCommandsMock.Object,
                 _messageBoxService.Object,
                 _serviceRepository.Object,
-                _helpService.Object
-                );
+                _helpService.Object,
+                _appConfigMock.Object // Injected configuration
+            );
         }
 
         [Fact]
@@ -62,7 +65,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public void InstallCommand_Calls_InstallService_With_Configuration()
+        public async Task InstallCommand_Calls_InstallService_With_Configuration()
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
@@ -125,7 +128,7 @@ namespace Servy.UnitTests.ViewModels
             _viewModel.PostStopParameters = "post-stop-args";
 
             // Act
-            _viewModel.InstallCommand.Execute(null);
+            await _viewModel.InstallCommand.ExecuteAsync(null);
 
             // Assert
             _serviceCommandsMock.Verify(s => s.InstallService(
@@ -201,7 +204,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public void ClearCommand_Resets_All_Fields_WhenUserConfirms()
+        public async Task ClearCommand_Resets_All_Fields_WhenUserConfirms()
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
@@ -212,10 +215,10 @@ namespace Servy.UnitTests.ViewModels
             // Mock dialog service to always confirm
             _messageBoxService.Setup(ds => ds.ShowConfirmAsync(
               It.IsAny<string>(), It.IsAny<string>()))
-              .Returns(Task.FromResult(true));
+              .ReturnsAsync(true);
 
             // Act
-            _viewModel.ClearFormCommand.Execute(null);
+            await _viewModel.ClearFormCommand.ExecuteAsync(null);
 
             // Assert
             Assert.Equal(string.Empty, _viewModel.ServiceName);
@@ -225,7 +228,7 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public void ClearCommand_DoesNotReset_WhenUserCancels()
+        public async Task ClearCommand_DoesNotReset_WhenUserCancels()
         {
             // Arrange
             _viewModel.ServiceName = "TestService";
@@ -236,10 +239,10 @@ namespace Servy.UnitTests.ViewModels
             // Mock dialog service to cancel
             _messageBoxService.Setup(ds => ds.ShowConfirmAsync(
                 It.IsAny<string>(), It.IsAny<string>()))
-                .Returns(Task.FromResult(false));
+                .ReturnsAsync(false);
 
             // Act
-            _viewModel.ClearFormCommand.Execute(null);
+            await _viewModel.ClearFormCommand.ExecuteAsync(null);
 
             // Assert values remain unchanged
             Assert.Equal("TestService", _viewModel.ServiceName);
@@ -262,41 +265,41 @@ namespace Servy.UnitTests.ViewModels
         }
 
         [Fact]
-        public void StartCommand_Calls_StartService()
+        public async Task StartCommand_Calls_StartService()
         {
             _viewModel.ServiceName = "MyService";
 
-            _viewModel.StartCommand.Execute(null);
+            await _viewModel.StartCommand.ExecuteAsync(null);
 
             _serviceCommandsMock.Verify(s => s.StartService("MyService"), Times.Once);
         }
 
         [Fact]
-        public void StopCommand_Calls_StopService()
+        public async Task StopCommand_Calls_StopService()
         {
             _viewModel.ServiceName = "MyService";
 
-            _viewModel.StopCommand.Execute(null);
+            await _viewModel.StopCommand.ExecuteAsync(null);
 
             _serviceCommandsMock.Verify(s => s.StopService("MyService"), Times.Once);
         }
 
         [Fact]
-        public void RestartCommand_Calls_RestartService()
+        public async Task RestartCommand_Calls_RestartService()
         {
             _viewModel.ServiceName = "MyService";
 
-            _viewModel.RestartCommand.Execute(null);
+            await _viewModel.RestartCommand.ExecuteAsync(null);
 
             _serviceCommandsMock.Verify(s => s.RestartService("MyService"), Times.Once);
         }
 
         [Fact]
-        public void UninstallCommand_Calls_UninstallService()
+        public async Task UninstallCommand_Calls_UninstallService()
         {
             _viewModel.ServiceName = "MyService";
 
-            _viewModel.UninstallCommand.Execute(null);
+            await _viewModel.UninstallCommand.ExecuteAsync(null);
 
             _serviceCommandsMock.Verify(s => s.UninstallService("MyService", It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -308,7 +311,7 @@ namespace Servy.UnitTests.ViewModels
             var path = "export.xml";
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ExportXmlConfig(null));
+            _serviceCommandsMock.Setup(d => d.ExportXmlConfig(null)).Returns(Task.CompletedTask);
 
             // Act
             await _viewModel.ExportXmlCommand.ExecuteAsync(null);
@@ -324,7 +327,7 @@ namespace Servy.UnitTests.ViewModels
             var path = "export.json";
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ExportJsonConfig(null));
+            _serviceCommandsMock.Setup(d => d.ExportJsonConfig(null)).Returns(Task.CompletedTask);
 
             // Act
             await _viewModel.ExportJsonCommand.ExecuteAsync(null);
@@ -341,7 +344,7 @@ namespace Servy.UnitTests.ViewModels
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
-            _serviceCommandsMock.Setup(d => d.ImportXmlConfig());
+            _serviceCommandsMock.Setup(d => d.ImportXmlConfig()).Returns(Task.CompletedTask);
 
             // Act
             await _viewModel.ImportXmlCommand.ExecuteAsync(null);
@@ -349,6 +352,5 @@ namespace Servy.UnitTests.ViewModels
             // Assert
             _serviceCommandsMock.Verify(m => m.ImportXmlConfig(), Times.Once);
         }
-
     }
 }

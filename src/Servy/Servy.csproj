@@ -95,6 +95,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Config\AppConfig.cs" />
+    <Compile Include="Config\IAppConfiguration.cs" />
     <Compile Include="Converters\InverseBooleanConverter.cs" />
     <Compile Include="Validators\IServiceConfigurationValidator.cs" />
     <Compile Include="Helpers\PasswordBoxHelper.cs" />

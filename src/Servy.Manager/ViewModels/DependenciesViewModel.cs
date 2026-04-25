@@ -1,8 +1,8 @@
-﻿using Servy.Core.Config;
-using Servy.Core.Data;
+﻿using Servy.Core.Data;
 using Servy.Core.Helpers;
 using Servy.Core.Logging;
 using Servy.Core.Services;
+using Servy.Manager.Config;
 using Servy.Manager.Models;
 using Servy.Manager.Resources;
 using Servy.Manager.Services;
@@ -33,6 +33,7 @@ namespace Servy.Manager.ViewModels
 
         private bool _hadSelectedService;
         private bool _disposedValue;
+        private readonly IAppConfiguration _appConfig;
 
         #endregion
 
@@ -126,14 +127,17 @@ namespace Servy.Manager.ViewModels
         /// <param name="serviceRepository">Repository for service data access.</param>
         /// <param name="serviceManager">Service manager.</param>
         /// <param name="serviceCommands">Commands for service operations.</param>
+        /// <param name="appConfig">Application configuration settings.</param>
         public DependenciesViewModel(
             IServiceRepository serviceRepository,
             IServiceManager serviceManager,
-            IServiceCommands serviceCommands)
+            IServiceCommands serviceCommands,
+            IAppConfiguration appConfig)
         {
             _serviceRepository = serviceRepository;
             _serviceManager = serviceManager;
             ServiceCommands = serviceCommands;
+            _appConfig = appConfig ?? throw new ArgumentNullException(nameof(appConfig));
 
             SearchCommand = new AsyncCommand(SearchServicesAsync);
             CopyPidCommand = new AsyncCommand(CopyPidAsync, _ => SelectedService?.Pid != null);
@@ -149,18 +153,7 @@ namespace Servy.Manager.ViewModels
         #region MonitoringViewModelBase Implementation
 
         /// <inheritdoc/>
-        protected override int RefreshIntervalMs
-        {
-            get
-            {
-                var intervalMs = AppConfig.DefaultDependenciesRefreshIntervalInMs;
-                if (Application.Current is App app)
-                {
-                    intervalMs = app.DependenciesRefreshIntervalInMs;
-                }
-                return intervalMs;
-            }
-        }
+        protected override int RefreshIntervalMs => _appConfig.DependenciesRefreshIntervalInMs;
 
         /// <inheritdoc/>
         protected override ServiceItemBase CreateServiceItem(Service service)

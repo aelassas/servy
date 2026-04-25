@@ -20,6 +20,8 @@ using System.Diagnostics;
 #endif
 using System.IO;
 using System.Windows;
+using Servy.Config;
+using AppConfig = Servy.Core.Config.AppConfig;
 using System;
 using System.Threading.Tasks;
 
@@ -28,7 +30,7 @@ namespace Servy
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application, INotifyPropertyChanged
+    public partial class App : Application, IAppConfiguration, INotifyPropertyChanged
     {
         #region Constants
 
@@ -180,7 +182,8 @@ namespace Servy
                         fileDialogService,
                         configValidator,
                         new XmlServiceValidator(),
-                        new JsonServiceValidator()
+                        new JsonServiceValidator(),
+                        this
                     );
 
                     // 4. Initialize Main ViewModel
@@ -188,8 +191,9 @@ namespace Servy
                         fileDialogService,
                         serviceCommands,
                         messageBoxService,
-                        this.ServiceRepository,
-                        helperService
+                        ServiceRepository,
+                        helperService,
+                        this
                     );
 
                     // 5. Inject dependencies into the View and initialize
