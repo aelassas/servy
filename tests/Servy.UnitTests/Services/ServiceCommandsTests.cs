@@ -1,8 +1,10 @@
 ﻿using Moq;
 using Newtonsoft.Json;
 using Servy.Config;
+using Servy.Core.Common;
 using Servy.Core.DTOs;
 using Servy.Core.Enums;
+using Servy.Core.Helpers;
 using Servy.Core.Services;
 using Servy.Models;
 using Servy.Services;
@@ -14,28 +16,66 @@ namespace Servy.UnitTests.Services
     public class ServiceCommandsTests
     {
         private readonly Mock<IFileDialogService> _dialogServiceMock;
-        private readonly Mock<IServiceCommands> _mockServiceCommands;
+        private readonly Mock<IServiceManager> _serviceManagerMock;
         private readonly Mock<IMessageBoxService> _messageBoxService;
         private readonly Mock<IServiceConfigurationValidator> _serviceConfigurationValidator;
         private readonly Mock<IXmlServiceValidator> _xmlServiceValidatorMock;
         private readonly Mock<IJsonServiceValidator> _jsonServiceValidatorMock;
-        private readonly Mock<IAppConfiguration> _appConfigMock; // 1. Added mock configuration
+        private readonly Mock<IAppConfiguration> _appConfigMock;
+        private readonly Mock<ICursorService> _cursorServiceMock;
 
         public ServiceCommandsTests()
         {
             _dialogServiceMock = new Mock<IFileDialogService>();
-            _mockServiceCommands = new Mock<IServiceCommands>();
+            _serviceManagerMock = new Mock<IServiceManager>();
             _messageBoxService = new Mock<IMessageBoxService>();
             _serviceConfigurationValidator = new Mock<IServiceConfigurationValidator>();
             _xmlServiceValidatorMock = new Mock<IXmlServiceValidator>();
             _jsonServiceValidatorMock = new Mock<IJsonServiceValidator>();
-            _appConfigMock = new Mock<IAppConfiguration>(); // 2. Initialize mock
+            _appConfigMock = new Mock<IAppConfiguration>();
+            _cursorServiceMock = new Mock<ICursorService>();
+
+            // Setup safe defaults for ServiceManager to prevent NullReferenceExceptions internally
+            _serviceManagerMock.Setup(m => m.InstallServiceAsync(It.IsAny<InstallServiceOptions>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            _serviceManagerMock.Setup(m => m.UninstallServiceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            _serviceManagerMock.Setup(m => m.StartServiceAsync(It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            _serviceManagerMock.Setup(m => m.StopServiceAsync(It.IsAny<string>(), It.IsAny<bool>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            _serviceManagerMock.Setup(m => m.RestartServiceAsync(It.IsAny<string>()))
+                .ReturnsAsync(OperationResult.Success());
+
+            // Setup CursorService to return a dummy disposable for 'using' blocks
+            _cursorServiceMock.Setup(c => c.SetWaitCursor()).Returns(Mock.Of<IDisposable>());
+        }
+
+        private ServiceCommands CreateSut(Action<ServiceDto>? bindSpy = null)
+        {
+            return new ServiceCommands(
+                modelToServiceDto: () => new ServiceDto(),
+                bindServiceDtoToModel: bindSpy ?? (dto => { }),
+                serviceManager: _serviceManagerMock.Object,
+                messageBoxService: _messageBoxService.Object,
+                dialogService: _dialogServiceMock.Object,
+                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
+                xmlServiceValidator: _xmlServiceValidatorMock.Object,
+                jsonServiceValidator: _jsonServiceValidatorMock.Object,
+                appConfig: _appConfigMock.Object,
+                cursorService: _cursorServiceMock.Object
+            );
         }
 
         [Fact]
         public async Task InstallService_CalledWithCorrectConfiguration()
         {
             // Arrange
+            var sut = CreateSut();
             var config = new ServiceConfiguration
             {
                 Name = "TestService",
@@ -63,7 +103,6 @@ namespace Servy.UnitTests.Services
                 Password = "password",
                 ConfirmPassword = "password",
 
-                // Pre-Launch
                 PreLaunchExecutablePath = @"C:\pre-launch.exe",
                 PreLaunchStartupDirectory = @"C:\preLaunchDir",
                 PreLaunchParameters = "preLaunchArgs",
@@ -74,17 +113,14 @@ namespace Servy.UnitTests.Services
                 PreLaunchRetryAttempts = "0",
                 PreLaunchIgnoreFailure = true,
 
-                // Failure Hook
                 FailureProgramPath = @"C:\failureProgram.exe",
                 FailureProgramStartupDirectory = @"C:\failureProgramDir",
                 FailureProgramParameters = "failureProgramArgs",
 
-                // Post-Launch
                 PostLaunchExecutablePath = @"C:\post-launch.exe",
                 PostLaunchStartupDirectory = @"C:\postLaunchDir",
                 PostLaunchParameters = "postLaunchArgs",
 
-                // Logging & Timing
                 EnableDebugLogs = false,
                 MaxRotations = "0",
                 EnableDateRotation = true,
@@ -92,161 +128,169 @@ namespace Servy.UnitTests.Services
                 StartTimeout = "11",
                 StopTimeout = "6",
 
-                // Pre-Stop
                 PreStopExecutablePath = @"C:\pre-stop.exe",
                 PreStopStartupDirectory = @"C:\preStopDir",
                 PreStopParameters = "preStopArgs",
                 PreStopTimeoutSeconds = "10",
                 PreStopLogAsError = false,
 
-                // Post-Stop
                 PostStopExecutablePath = @"C:\post-stop.exe",
                 PostStopStartupDirectory = @"C:\postStopDir",
                 PostStopParameters = "postStopArgs"
             };
 
+            // CRITICAL FIX: Ensure the wrapper executable exists for the test to bypass the early exit check
+            var wrapperPath = Core.Config.AppConfig.GetServyUIServicePath();
+            try
+            {
+                var dir = Path.GetDirectoryName(wrapperPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                if (!File.Exists(wrapperPath)) File.WriteAllText(wrapperPath, "dummy");
+            }
+            catch { /* Ignore creation errors if running in restricted environments */ }
+
+            _serviceConfigurationValidator
+                .Setup(v => v.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
+                .ReturnsAsync(true);
+
             // Act
-            await _mockServiceCommands.Object.InstallService(config);
+            var result = await sut.InstallService(config);
 
             // Assert
-            _mockServiceCommands.Verify(m => m.InstallService(
-                It.Is<ServiceConfiguration>(c =>
-                    // 1. Core Metadata & Main Process
-                    c.Name == config.Name &&
+            Assert.True(result, "InstallService returned false. The validation or File.Exists check failed.");
+
+            _serviceManagerMock.Verify(m => m.InstallServiceAsync(
+                It.Is<InstallServiceOptions>(c =>
+                    c.ServiceName == config.Name &&
                     c.DisplayName == config.DisplayName &&
                     c.Description == config.Description &&
-                    c.ExecutablePath == config.ExecutablePath &&
-                    c.StartupDirectory == config.StartupDirectory &&
-                    c.Parameters == config.Parameters &&
-                    c.StartupType == config.StartupType &&
-                    c.Priority == config.Priority &&
+                    c.RealExePath == config.ExecutablePath &&
+                    c.WorkingDirectory == config.StartupDirectory &&
+                    c.RealArgs == config.Parameters &&
+                    c.StartType == config.StartupType &&
+                    c.ProcessPriority == config.Priority &&
 
-                    // 2. Logging & Rotation
                     c.StdoutPath == config.StdoutPath &&
                     c.StderrPath == config.StderrPath &&
                     c.EnableSizeRotation == config.EnableSizeRotation &&
-                    c.RotationSize == config.RotationSize &&
+                    c.RotationSizeInBytes == (ulong.Parse(config.RotationSize) * 1024 * 1024) &&
                     c.EnableDateRotation == config.EnableDateRotation &&
                     c.DateRotationType == config.DateRotationType &&
-                    c.MaxRotations == config.MaxRotations &&
+                    c.MaxRotations == int.Parse(config.MaxRotations) &&
                     c.UseLocalTimeForRotation == config.UseLocalTimeForRotation &&
 
-                    // 3. Health & Recovery
                     c.EnableHealthMonitoring == config.EnableHealthMonitoring &&
-                    c.HeartbeatInterval == config.HeartbeatInterval &&
-                    c.MaxFailedChecks == config.MaxFailedChecks &&
+                    c.HeartbeatInterval == int.Parse(config.HeartbeatInterval) &&
+                    c.MaxFailedChecks == int.Parse(config.MaxFailedChecks) &&
                     c.RecoveryAction == config.RecoveryAction &&
-                    c.MaxRestartAttempts == config.MaxRestartAttempts &&
+                    c.MaxRestartAttempts == int.Parse(config.MaxRestartAttempts) &&
                     c.FailureProgramPath == config.FailureProgramPath &&
-                    c.FailureProgramStartupDirectory == config.FailureProgramStartupDirectory &&
-                    c.FailureProgramParameters == config.FailureProgramParameters &&
+                    c.FailureProgramWorkingDirectory == config.FailureProgramStartupDirectory &&
+                    c.FailureProgramArgs == config.FailureProgramParameters &&
 
-                    // 4. Identity & Security
-                    c.EnvironmentVariables == config.EnvironmentVariables &&
+                    // CRITICAL FIX: The production code normalizes these strings, so the mock must expect the normalized version
+                    c.EnvironmentVariables == StringHelper.NormalizeString(config.EnvironmentVariables) &&
                     c.ServiceDependencies == config.ServiceDependencies &&
-                    c.RunAsLocalSystem == config.RunAsLocalSystem &&
-                    c.UserAccount == config.UserAccount &&
+                    c.Username == config.UserAccount &&
                     c.Password == config.Password &&
-                    c.ConfirmPassword == config.ConfirmPassword &&
 
-                    // 5. Pre-Launch Hooks
-                    c.PreLaunchExecutablePath == config.PreLaunchExecutablePath &&
-                    c.PreLaunchStartupDirectory == config.PreLaunchStartupDirectory &&
-                    c.PreLaunchParameters == config.PreLaunchParameters &&
-                    c.PreLaunchEnvironmentVariables == config.PreLaunchEnvironmentVariables &&
+                    c.PreLaunchExePath == config.PreLaunchExecutablePath &&
+                    c.PreLaunchWorkingDirectory == config.PreLaunchStartupDirectory &&
+                    c.PreLaunchArgs == config.PreLaunchParameters &&
+
+                    // CRITICAL FIX: Same normalization needed here
+                    c.PreLaunchEnvironmentVariables == StringHelper.NormalizeString(config.PreLaunchEnvironmentVariables) &&
                     c.PreLaunchStdoutPath == config.PreLaunchStdoutPath &&
                     c.PreLaunchStderrPath == config.PreLaunchStderrPath &&
-                    c.PreLaunchTimeoutSeconds == config.PreLaunchTimeoutSeconds &&
-                    c.PreLaunchRetryAttempts == config.PreLaunchRetryAttempts &&
+                    c.PreLaunchTimeout == int.Parse(config.PreLaunchTimeoutSeconds) &&
+                    c.PreLaunchRetryAttempts == int.Parse(config.PreLaunchRetryAttempts) &&
                     c.PreLaunchIgnoreFailure == config.PreLaunchIgnoreFailure &&
 
-                    // 6. Post-Launch & Timing
-                    c.PostLaunchExecutablePath == config.PostLaunchExecutablePath &&
-                    c.PostLaunchStartupDirectory == config.PostLaunchStartupDirectory &&
-                    c.PostLaunchParameters == config.PostLaunchParameters &&
-                    c.StartTimeout == config.StartTimeout &&
-                    c.StopTimeout == config.StopTimeout &&
+                    c.PostLaunchExePath == config.PostLaunchExecutablePath &&
+                    c.PostLaunchWorkingDirectory == config.PostLaunchStartupDirectory &&
+                    c.PostLaunchArgs == config.PostLaunchParameters &&
+                    c.StartTimeout == int.Parse(config.StartTimeout) &&
+                    c.StopTimeout == int.Parse(config.StopTimeout) &&
                     c.EnableDebugLogs == config.EnableDebugLogs &&
 
-                    // 7. Pre-Stop Hooks
-                    c.PreStopExecutablePath == config.PreStopExecutablePath &&
-                    c.PreStopStartupDirectory == config.PreStopStartupDirectory &&
-                    c.PreStopParameters == config.PreStopParameters &&
-                    c.PreStopTimeoutSeconds == config.PreStopTimeoutSeconds &&
+                    c.PreStopExePath == config.PreStopExecutablePath &&
+                    c.PreStopWorkingDirectory == config.PreStopStartupDirectory &&
+                    c.PreStopArgs == config.PreStopParameters &&
+                    c.PreStopTimeout == int.Parse(config.PreStopTimeoutSeconds) &&
                     c.PreStopLogAsError == config.PreStopLogAsError &&
 
-                    // 8. Post-Stop Hooks
-                    c.PostStopExecutablePath == config.PostStopExecutablePath &&
-                    c.PostStopStartupDirectory == config.PostStopStartupDirectory &&
-                    c.PostStopParameters == config.PostStopParameters
+                    c.PostStopExePath == config.PostStopExecutablePath &&
+                    c.PostStopWorkingDirectory == config.PostStopStartupDirectory &&
+                    c.PostStopArgs == config.PostStopParameters
                 )), Times.Once);
         }
 
         [Fact]
-        public void UninstallService_CalledWithCorrectServiceName()
+        public async Task UninstallService_CalledWithCorrectServiceName()
         {
+            var sut = CreateSut();
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.UninstallService(serviceName, CancellationToken.None);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
 
-            _mockServiceCommands.Verify(m => m.UninstallService(serviceName, It.IsAny<CancellationToken>()), Times.Once);
+            await sut.UninstallService(serviceName, TestContext.Current.CancellationToken);
+
+            _serviceManagerMock.Verify(m => m.UninstallServiceAsync(serviceName, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public void StartService_CalledWithCorrectServiceName()
+        public async Task StartService_CalledWithCorrectServiceName()
         {
+            var sut = CreateSut();
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.StartService(serviceName);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
-            _mockServiceCommands.Verify(m => m.StartService(serviceName), Times.Once);
+            await sut.StartService(serviceName);
+
+            _serviceManagerMock.Verify(m => m.StartServiceAsync(serviceName, It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
-        public void StopService_CalledWithCorrectServiceName()
+        public async Task StopService_CalledWithCorrectServiceName()
         {
+            var sut = CreateSut();
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.StopService(serviceName);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
 
-            _mockServiceCommands.Verify(m => m.StopService(serviceName), Times.Once);
+            await sut.StopService(serviceName);
+
+            _serviceManagerMock.Verify(m => m.StopServiceAsync(serviceName, It.IsAny<bool>()), Times.Once);
         }
 
         [Fact]
-        public void RestartService_CalledWithCorrectServiceName()
+        public async Task RestartService_CalledWithCorrectServiceName()
         {
+            var sut = CreateSut();
             var serviceName = "TestService";
 
-            _mockServiceCommands.Object.RestartService(serviceName);
+            _serviceManagerMock.Setup(m => m.IsServiceInstalled(serviceName)).Returns(true);
+            _serviceManagerMock.Setup(m => m.GetServiceStartupType(serviceName, It.IsAny<CancellationToken>())).Returns(ServiceStartType.Automatic);
 
-            _mockServiceCommands.Verify(m => m.RestartService(serviceName), Times.Once);
+            await sut.RestartService(serviceName);
+
+            _serviceManagerMock.Verify(m => m.RestartServiceAsync(serviceName), Times.Once);
         }
 
         [Fact]
         public async Task ExportXmlCommand_ValidModel_ShowsSuccessMessage()
         {
-            // Arrange
+            var sut = CreateSut();
             var path = "export.xml";
             _dialogServiceMock.Setup(d => d.SaveXml(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
 
-            var serviceCommands = new ServiceCommands(
-                modelToServiceDto: () => new ServiceDto(),
-                bindServiceDtoToModel: (dto) => { },
-                serviceManager: Mock.Of<IServiceManager>(),
-                messageBoxService: _messageBoxService.Object,
-                dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
-                xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object,
-                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
-            );
+            var task = sut.ExportXmlConfig(string.Empty) as Task;
+            if (task != null) await task;
 
-            // Act
-            await serviceCommands.ExportXmlConfig(string.Empty);
-
-            // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             Assert.True(File.Exists(path));
             File.Delete(path);
@@ -255,28 +299,15 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ExportJsonCommand_ValidModel_ShowsSuccessMessage()
         {
-            // Arrange
+            var sut = CreateSut();
             var path = "export.json";
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(path);
 
-            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).Returns(Task.FromResult(true));
+            _serviceConfigurationValidator.Setup(d => d.Validate(It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
 
-            var serviceCommands = new ServiceCommands(
-                modelToServiceDto: () => new ServiceDto(),
-                bindServiceDtoToModel: (dto) => { },
-                serviceManager: Mock.Of<IServiceManager>(),
-                messageBoxService: _messageBoxService.Object,
-                dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
-                xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object,
-                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
-            );
+            var task = sut.ExportJsonConfig(string.Empty) as Task;
+            if (task != null) await task;
 
-            // Act
-            await serviceCommands.ExportJsonConfig(string.Empty);
-
-            // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
             Assert.True(File.Exists(path));
             File.Delete(path);
@@ -285,19 +316,12 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ImportXmlCommand_ValidFile_UpdatesModel()
         {
-            // Arrange
-            // 1. Use a real path to satisfy the ProcessHelper.ValidatePath check inside XmlServiceValidator
             var realPath = @"C:\Windows\System32\notepad.exe";
             var xmlContent = $@"<ServiceDto><Name>TestService</Name><ExecutablePath>{realPath}</ExecutablePath></ServiceDto>";
-
-            // Use a temp file to avoid permission issues in the project root
             var path = Path.GetTempFileName() + ".xml";
 
             _serviceConfigurationValidator.Setup(d => d.Validate(
-                It.IsAny<ServiceDto>(),
-                It.IsAny<string>(),
-                It.IsAny<bool>(),
-                It.IsAny<string>())).ReturnsAsync(true);
+                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
 
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(path);
 
@@ -309,36 +333,24 @@ namespace Servy.UnitTests.Services
                 capturedDto = dto;
             };
 
-            var serviceCommands = new ServiceCommands(
-                modelToServiceDto: () => new ServiceDto(),
-                bindServiceDtoToModel: bindSpy,
-                serviceManager: Mock.Of<IServiceManager>(),
-                messageBoxService: _messageBoxService.Object,
-                dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
-                xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object,
-                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
-            );
+            var sut = CreateSut(bindSpy);
 
             _xmlServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
                 .Returns(true);
 
             File.WriteAllText(path, xmlContent);
 
-            // Act
-            await serviceCommands.ImportXmlConfig();
+            var task = sut.ImportXmlConfig() as Task;
+            if (task != null) await task;
 
-            // Assert
             try
             {
-                Assert.True(bindCalled, "The logic exited before binding. Likely XmlServiceValidator.TryValidate failed because the ExecutablePath file doesn't exist.");
+                Assert.True(bindCalled, "The logic exited before binding. Likely XmlServiceValidator.TryValidate failed.");
                 Assert.NotNull(capturedDto);
                 Assert.Equal("TestService", capturedDto!.Name);
             }
             finally
             {
-                // Cleanup
                 if (File.Exists(path)) File.Delete(path);
             }
         }
@@ -346,85 +358,52 @@ namespace Servy.UnitTests.Services
         [Fact]
         public async Task ImportJsonCommand_ValidFile_UpdatesModel()
         {
-            // Arrange
-            // 1. Use a guaranteed path to pass the internal ProcessHelper.ValidatePath check
-            var dto = new ServiceDto
-            {
-                Name = "TestService",
-                ExecutablePath = @"C:\Windows\System32\notepad.exe"
-            };
-
-            // 2. Serialize properly to ensure it matches the DTO's attributes (JsonIgnore, etc.)
+            var dto = new ServiceDto { Name = "TestService", ExecutablePath = @"C:\Windows\System32\notepad.exe" };
             var jsonContent = JsonConvert.SerializeObject(dto);
-
             var path = Path.GetTempFileName();
             File.WriteAllText(path, jsonContent);
 
             _dialogServiceMock.Setup(d => d.OpenJson()).Returns(path);
 
-            // 3. Ensure the validator mock returns true for this specific DTO instance
-            _serviceConfigurationValidator
-                .Setup(v => v.Validate(
-                    It.IsAny<ServiceDto>(),
-                    It.IsAny<string>(),
-                    It.IsAny<bool>(),
-                    It.IsAny<string>()))
-                .ReturnsAsync(true);
+            _serviceConfigurationValidator.Setup(v => v.Validate(
+                It.IsAny<ServiceDto>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>())).ReturnsAsync(true);
 
             bool bindCalled = false;
-
-            var serviceCommands = new ServiceCommands(
-                modelToServiceDto: () => new ServiceDto(),
-                bindServiceDtoToModel: d => {
-                    bindCalled = true;
-                    // Verify inside the spy to see what actually arrived
-                    Assert.Equal("TestService", d.Name);
-                },
-                serviceManager: Mock.Of<IServiceManager>(),
-                messageBoxService: _messageBoxService.Object,
-                dialogService: _dialogServiceMock.Object,
-                serviceConfigurationValidator: _serviceConfigurationValidator.Object,
-                xmlServiceValidator: _xmlServiceValidatorMock.Object,
-                jsonServiceValidator: _jsonServiceValidatorMock.Object,
-                appConfig: _appConfigMock.Object // 3. Pass IAppConfiguration mock
-            );
+            var sut = CreateSut(d => {
+                bindCalled = true;
+                Assert.Equal("TestService", d.Name);
+            });
 
             _jsonServiceValidatorMock.Setup(v => v.TryValidate(It.IsAny<string>(), out It.Ref<string?>.IsAny))
                 .Returns(true);
 
-            // Act
-            await serviceCommands.ImportJsonConfig();
+            var task = sut.ImportJsonConfig() as Task;
+            if (task != null) await task;
 
-            // Cleanup before final assertion to prevent file locks
             if (File.Exists(path)) File.Delete(path);
 
-            // Assert
-            Assert.True(bindCalled, "The logic exited before binding. Check if JsonServiceValidator.TryValidate is failing on the ExecutablePath or if a JSON exception was caught.");
+            Assert.True(bindCalled, "The logic exited before binding.");
         }
 
         [Fact]
         public void ImportXmlCommand_UserCancels_ShowsNothing()
         {
-            // Arrange
+            var sut = CreateSut();
             _dialogServiceMock.Setup(d => d.OpenXml()).Returns(string.Empty);
 
-            // Act
-            _mockServiceCommands.Object.ImportXmlConfig();
+            sut.ImportXmlConfig();
 
-            // Assert
             _messageBoxService.Verify(m => m.ShowErrorAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public void ExportJsonCommand_UserCancels_ShowsNothing()
         {
-            // Arrange
+            var sut = CreateSut();
             _dialogServiceMock.Setup(d => d.SaveJson(It.IsAny<string>())).Returns(string.Empty);
 
-            // Act
-            _mockServiceCommands.Object.ExportJsonConfig(string.Empty);
+            sut.ExportJsonConfig(string.Empty);
 
-            // Assert
             _messageBoxService.Verify(m => m.ShowInfoAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
     }

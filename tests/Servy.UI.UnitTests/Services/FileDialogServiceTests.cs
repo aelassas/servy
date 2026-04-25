@@ -1,71 +1,18 @@
-﻿using Moq;
-using Servy.UI.Services;
+﻿using Servy.UI.Services;
 
 namespace Servy.UI.UnitTests.Services
 {
     public class FileDialogServiceTests
     {
-        private readonly Mock<IFileDialogService> _mockFileDialogService;
-
-        public FileDialogServiceTests()
-        {
-            _mockFileDialogService = new Mock<IFileDialogService>();
-        }
-
         [Fact]
-        public void OpenExecutable_ReturnsFilePath()
+        public void FileDialogService_CanBeInstantiated()
         {
-            // Arrange
-            var expectedPath = @"C:\Program Files\MyApp\MyApp.exe";
-            _mockFileDialogService.Setup(f => f.OpenExecutable()).Returns(expectedPath);
-
-            // Act
-            var actualPath = _mockFileDialogService.Object.OpenExecutable();
-
-            // Assert
-            Assert.Equal(expectedPath, actualPath);
-        }
-
-        [Fact]
-        public void OpenFolder_ReturnsFolderPath()
-        {
-            // Arrange
-            var expectedPath = @"C:\MyFolder";
-            _mockFileDialogService.Setup(f => f.OpenFolder()).Returns(expectedPath);
-
-            // Act
-            var actualPath = _mockFileDialogService.Object.OpenFolder();
-
-            // Assert
-            Assert.Equal(expectedPath, actualPath);
-        }
-
-        [Fact]
-        public void SaveFile_ReturnsFilePath()
-        {
-            // Arrange
-            var dialogTitle = "Save Log";
-            var expectedPath = @"C:\Logs\output.txt";
-            _mockFileDialogService.Setup(f => f.SaveFile(dialogTitle)).Returns(expectedPath);
-
-            // Act
-            var actualPath = _mockFileDialogService.Object.SaveFile(dialogTitle);
-
-            // Assert
-            Assert.Equal(expectedPath, actualPath);
-        }
-
-        [Fact]
-        public void SaveFile_Canceled_ReturnsNull()
-        {
-            // Arrange
-            _mockFileDialogService.Setup(f => f.SaveFile(It.IsAny<string>())).Returns(string.Empty);
-
-            // Act
-            var actualPath = _mockFileDialogService.Object.SaveFile("Export Data");
-
-            // Assert
-            Assert.Empty(actualPath);
+            // Integration tests for UI dialogs (OpenFileDialog, SaveFileDialog)
+            // should be handled via UI Automation (e.g., FlaUI or WinAppDriver)
+            // rather than unit tests, as they invoke blocking OS-level dialogs.
+            // This test ensures the service can be instantiated for DI.
+            var service = new FileDialogService();
+            Assert.NotNull(service);
         }
     }
 }

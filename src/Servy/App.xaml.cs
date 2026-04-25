@@ -182,7 +182,8 @@ namespace Servy
                         configValidator,
                         new XmlServiceValidator(),
                         new JsonServiceValidator(),
-                        this
+                        this,
+                        new CursorService()
                     );
 
                     // 4. Initialize Main ViewModel
