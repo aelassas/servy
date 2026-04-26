@@ -348,7 +348,11 @@ namespace Servy.Core.Security
                     var fs = new FileSecurity();
                     var systemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
                     var adminSid = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
-                    var currentUserSid = WindowsIdentity.GetCurrent().User;
+                    SecurityIdentifier? currentUserSid;
+                    using (var identity = WindowsIdentity.GetCurrent())
+                    {
+                        currentUserSid = identity.User;
+                    }
 
                     // Match the folder's inheritance logic
                     fs.SetAccessRuleProtection(isProtected: !isChildOfRoot, preserveInheritance: isChildOfRoot);
