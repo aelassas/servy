@@ -1,31 +1,31 @@
 ﻿#requires -Version 5.0
 <#
 .SYNOPSIS
-Updates the version of Servy across scripts, AppConfig, and project files.
+    Updates the version of Servy across scripts, AppConfig, and project files.
 
 .DESCRIPTION
-This script updates the version of Servy in multiple locations:
-- setup\publish.ps1
-- src\Servy.Core\Config\AppConfig.cs
-- All *.csproj files recursively
+    This script updates the version of Servy in multiple locations:
+    - setup\publish.ps1
+    - src\Servy.Core\Config\AppConfig.cs
+    - All *.csproj files recursively
 
-It updates:
-- The script version variable in publish.ps1
-- The public static Version string in AppConfig.cs
-- The <Version>, <FileVersion>, and <AssemblyVersion> XML elements in csproj files
+    It updates:
+    - The script version variable in publish.ps1
+    - The public static Version string in AppConfig.cs
+    - The <Version>, <FileVersion>, and <AssemblyVersion> XML elements in csproj files
 
 .PARAMETER Version
-The new version to apply. Can be short (e.g. "4.0") or full (e.g. "4.0.0").
+    The new version to apply in 'Major.Minor' format (e.g., "8.0").
 
 .EXAMPLE
-.\bump-version.ps1 -Version 4.0
-.\bump-version.ps1 4.0
+    .\bump-version.ps1 -Version 4.0
+    .\bump-version.ps1 4.0
 
 Updates all relevant files to version 4.0.
 
 .NOTES
-- The script overwrites files in-place.
-- Ensure you have backups or version control before running.
+    - The script overwrites files in-place.
+    - Ensure you have backups or version control before running.
 #>
 
 param(
