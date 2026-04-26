@@ -15,6 +15,8 @@ namespace Servy.Infrastructure.Data
     /// </summary>
     public class ServiceRepository : IServiceRepository
     {
+        private static readonly XmlSerializer ServiceDtoSerializer = new XmlSerializer(typeof(ServiceDto));
+
         private readonly IDapperExecutor _dapper;
         private readonly ISecureData _secureData;
         private readonly IXmlServiceSerializer _xmlServiceSerializer;
@@ -282,10 +284,9 @@ namespace Servy.Infrastructure.Data
             var service = await GetByNameAsync(name, decrypt: true, cancellationToken: cancellationToken);
             if (service == null) return string.Empty;
 
-            var serializer = new XmlSerializer(typeof(ServiceDto));
             using (var stringWriter = new StringWriter())
             {
-                serializer.Serialize(stringWriter, service);
+                ServiceDtoSerializer.Serialize(stringWriter, service);
                 return stringWriter.ToString();
             }
         }
