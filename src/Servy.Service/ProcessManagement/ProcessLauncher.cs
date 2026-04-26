@@ -163,7 +163,7 @@ namespace Servy.Service.ProcessManagement
 
         /// <summary>
         /// Applies environment variables and command-line flags to ensure consistent UTF-8 I/O behavior for known runtimes.
-        /// Detection is scoped to the executable filename and extension to avoid false positives from arguments.
+        /// Detection is strictly scoped to the executable filename and extension to avoid false positives from directory paths.
         /// </summary>
         /// <param name="psi">The start info to modify.</param>
         internal static void ApplyLanguageFixes(ProcessStartInfo psi)
@@ -174,11 +174,15 @@ namespace Servy.Service.ProcessManagement
             }
 
             string extension = Path.GetExtension(psi.FileName);
+            string fileNameOnly = Path.GetFileNameWithoutExtension(psi.FileName);
 
-            // Python: Enable UTF-8 mode and disable I/O buffering for real-time log capturing.
-            // Scoped to executables containing "python" or files with a .py extension.
-            bool isPython = psi.FileName.IndexOf("python", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                            string.Equals(extension, ".py", StringComparison.OrdinalIgnoreCase);
+            // Python Logic: 
+            // Matches 'python', 'pythonw', or 'python3.x' patterns, plus .py scripts.
+            bool isPython =
+                string.Equals(fileNameOnly, "python", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(fileNameOnly, "pythonw", StringComparison.OrdinalIgnoreCase) ||
+                fileNameOnly.StartsWith("python3", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".py", StringComparison.OrdinalIgnoreCase);
 
             if (isPython)
             {
@@ -188,19 +192,24 @@ namespace Servy.Service.ProcessManagement
                 psi.Environment["PYTHONUNBUFFERED"] = "1";
             }
 
-            // Java: Ensure file encoding is set to UTF-8 if not explicitly defined by the user.
-            // Scoped to executables containing "java" or self-executing .jar archives.
-            bool isJava = psi.FileName.IndexOf("java", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                          string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase);
+            // Java Logic: 
+            // Matches 'java', 'javaw', or 'javac', plus self-executing .jar archives.
+            bool isJava =
+                string.Equals(fileNameOnly, "java", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(fileNameOnly, "javaw", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(fileNameOnly, "javac", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".jar", StringComparison.OrdinalIgnoreCase);
 
             if (isJava)
             {
                 string currentArgs = psi.Arguments ?? string.Empty;
+                // Only prepend if the user hasn't already defined a file encoding
                 if (currentArgs.IndexOf("-Dfile.encoding", StringComparison.OrdinalIgnoreCase) < 0)
                 {
                     psi.Arguments = $"-Dfile.encoding=UTF-8 {currentArgs}".Trim();
                 }
             }
         }
+
     }
 }
