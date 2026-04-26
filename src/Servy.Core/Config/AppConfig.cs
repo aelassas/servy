@@ -67,6 +67,11 @@ namespace Servy.Core.Config
         public const int DefaultServiceStopTimeoutSeconds = 60;
 
         /// <summary>
+        /// Populate native service details timeout in milliseconds. This is the maximum time allowed for retrieving native service details.
+        /// </summary>
+        public const int PopulateNativeDetailsTimeoutMs = 5000;
+
+        /// <summary>
         /// The maximum character length for a Windows Service name.
         /// </summary>
         /// <remarks>
