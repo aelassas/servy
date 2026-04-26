@@ -150,7 +150,8 @@ jobs:
         if: env.RUN_EXTRAS_PR == 'true'
         shell: pwsh
         env:
-          GH_PAT: ${{ secrets.PAT }} # Keep the secret in the environment, not the command line
+          GH_PAT: ${{ secrets.PAT }}    # Used for Git URL injection
+          GH_TOKEN: ${{ secrets.PAT }}  # Used for GH CLI authentication
         run: |
           # Clone the repository first
           git clone https://github.com/aelassas/Extras.git extras
