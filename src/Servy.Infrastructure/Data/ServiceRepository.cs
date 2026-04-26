@@ -252,8 +252,8 @@ namespace Servy.Infrastructure.Data
 
             var sql = @"
                 SELECT * FROM Services 
-                WHERE Name LIKE @Pattern ESCAPE '\' 
-                   OR Description LIKE @Pattern ESCAPE '\' 
+                WHERE LOWER(Name)        LIKE LOWER(@Pattern) ESCAPE '\' 
+                   OR LOWER(Description) LIKE LOWER(@Pattern) ESCAPE '\' 
                 ORDER BY Name COLLATE NOCASE ASC;";
 
             var escapedKeyword = keyword.Trim()
