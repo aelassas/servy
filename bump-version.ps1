@@ -71,21 +71,23 @@ function Update-FileContent {
     param([string]$Path, [string]$Pattern, [string]$Replacement)
     
     if (Test-Path $Path) {
-        # 1. Detect Encoding
         $encoding = Get-FileEncoding $Path
+        $content = [System.IO.File]::ReadAllText($Path, $encoding)
         
-        # 2. Read
-        $content = [System.IO.File]::ReadAllText($Path)
+        # Count matches before attempting replacement
+        $matches = [regex]::Matches($content, $Pattern)
+        if ($matches.Count -eq 0) {
+            Write-Error "No matches for pattern in $Path. The identifier may have been renamed or removed. Pattern: $Pattern"
+            return
+        }
         
-        # 3. Replace
+        # Perform replacement
         $newContent = [regex]::Replace($content, $Pattern, { 
             param($m) "$($m.Groups[1].Value)$Replacement$($m.Groups[2].Value)" 
-        }, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+        })
         
-        # 4. Write back using the same encoding
         [System.IO.File]::WriteAllText($Path, $newContent, $encoding)
-        
-        Write-Host "Updated ($($encoding.BodyName)): $Path" -ForegroundColor Green
+        Write-Host "Successfully updated ($($encoding.BodyName)): $Path ($($matches.Count) replacements)" -ForegroundColor Green
     } else {
         Write-Warning "Skipping missing file: $Path"
     }
