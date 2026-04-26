@@ -136,7 +136,8 @@ namespace Servy.CLI.Commands
                 throw new ArgumentException("Security Alert: Only .json and .xml exports are permitted.");
             }
 
-            if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || new Uri(fullPath).IsUnc)
+            bool isUncUri = Uri.TryCreate(fullPath, UriKind.Absolute, out var uri) && uri.IsUnc;
+            if (fullPath.StartsWith(@"\\", StringComparison.Ordinal) || isUncUri)
             {
                 throw new SecurityException("Security Alert: Exporting to UNC paths is prohibited.");
             }
