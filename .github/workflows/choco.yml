@@ -130,15 +130,26 @@ jobs:
           while (-not $pushSuccess -and $retryCount -lt $maxRetries) {
               try {
                   Write-Host "Attempting to push (Attempt $($retryCount + 1))..."
-                  # Pull latest changes to avoid non-fast-forward errors
+        
+                  # 1. Pull latest changes
                   git pull --rebase=merges --autostash origin main
+                  if ($LASTEXITCODE -ne 0) { 
+                      throw "git pull failed with exit code $LASTEXITCODE" 
+                  }
+
+                  # 2. Push to main
                   git push origin HEAD:main
+                  if ($LASTEXITCODE -ne 0) { 
+                      throw "git push failed with exit code $LASTEXITCODE" 
+                  }
+
                   $pushSuccess = $true
                   Write-Host "Push successful!"
               }
               catch {
                   $retryCount++
-                  Write-Warning "Push failed. Waiting 5 seconds before retry..."
+                  # Access the thrown message via $_.Exception.Message
+                  Write-Warning "Push failed: $($_.Exception.Message). Waiting 5 seconds before retry..."
                   Start-Sleep -s 5
               }
           }

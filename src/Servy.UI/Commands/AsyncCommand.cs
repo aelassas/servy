@@ -37,7 +37,7 @@ namespace Servy.UI.Commands
             }
             catch (Exception ex)
             {
-                // Log and surface — never let an async void exception escape into the dispatcher.
+                // Log and surface - never let an async void exception escape into the dispatcher.
                 Logger.Error("AsyncCommand execution failed.", ex);
             }
         }
