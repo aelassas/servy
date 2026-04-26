@@ -247,7 +247,8 @@ namespace Servy.Core.Helpers
                 totalRam += metrics.RamUsage;
             }
 
-            return new ProcessMetrics(Math.Min(100.0, totalCpu), totalRam);
+            // We allow the sum to exceed 100% to accurately reflect multi-core utilization.
+            return new ProcessMetrics(totalCpu, totalRam);
         }
 
         /// <inheritdoc />

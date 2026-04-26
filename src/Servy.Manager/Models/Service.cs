@@ -109,6 +109,7 @@ namespace Servy.Manager.Models
 
         /// <summary>
         /// Gets or sets CPU usage in percentage.
+        /// Aggregate CPU usage. Values can exceed 100.0 if the tree utilizes multiple cores.
         /// </summary>
         public double? CpuUsage
         {
