@@ -273,22 +273,26 @@ namespace Servy.Core.Helpers
         }
 
         /// <summary>
-        /// Evaluates the file extension type and attempts to safely terminate any processes holding locks on the target file.
+        /// Safely terminates any processes holding locks on the target file by identifying them by path.
+        /// This prevents collateral damage to other service instances using the same utility names.
         /// </summary>
-        /// <param name="extension">The file extension used to determine the termination strategy (e.g., "exe", "dll").</param>
-        /// <param name="targetFileName">The name of the file to search for in the process list.</param>
+        /// <param name="extension">The file extension (no longer strictly needed but kept for signature compatibility).</param>
+        /// <param name="targetFileName">The bare filename (no longer used for killing to avoid broad matches).</param>
         /// <param name="targetPath">The full path to the file to check for active file handles.</param>
-        /// <returns>True if all blocking processes were terminated or none were found; false if termination failed.</returns>
+        /// <returns>True if the file was successfully cleared of blocking processes; false if termination failed.</returns>
         private bool TerminateBlockingProcesses(string extension, string targetFileName, string targetPath)
         {
-            var isExe = extension.Equals("exe", StringComparison.OrdinalIgnoreCase);
-            var isDll = extension.Equals("dll", StringComparison.OrdinalIgnoreCase);
+            // Fix for #Warning: Use path-based identification for all resource types.
+            // Name-based matching (targetFileName) hits unrelated services on the same host 
+            // that happen to be running their own copy of the same executable (e.g., Servy.Restarter.exe).
 
-            if (isExe && !_processKiller.KillProcessTreeAndParents(targetFileName))
+            // KillProcessesUsingFile surgically finds the PIDs locking THIS specific file
+            // and terminates their entire trees, leaving "Service B's" restarter untouched.
+            if (!_processKiller.KillProcessesUsingFile(targetPath))
+            {
+                Logger.Error($"Could not clear file locks on '{targetPath}'. Extraction aborted to prevent file corruption.");
                 return false;
-
-            if (isDll && !_processKiller.KillProcessesUsingFile(targetPath))
-                return false;
+            }
 
             return true;
         }
