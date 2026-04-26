@@ -18,10 +18,12 @@ namespace Servy.Service.UnitTests
     public class ProcessManagementTests
     {
         private readonly Mock<IProcessHelper> _mockProcessHelper;
+        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public ProcessManagementTests()
         {
             _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
         private TestableService CreateService(
@@ -51,7 +53,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
                 );
         }
 

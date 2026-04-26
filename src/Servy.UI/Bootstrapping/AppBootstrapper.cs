@@ -72,15 +72,24 @@ namespace Servy.UI.Bootstrapping
         #endregion
 
         private readonly BootstrapperOptions _options;
+        private readonly IProcessHelper _processHelper;
+        private readonly IProcessKiller _processKiller;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppBootstrapper"/> class.
         /// </summary>
-        /// <param name="options">The configuration options defining the bootstrapper's behavior.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
-        public AppBootstrapper(BootstrapperOptions options)
+        /// <param name="options">Configuration options for the bootstrap process.</param>
+        /// <param name="processHelper">The process helper used to manage processes. Cannot be null.</param>
+        /// <param name="processKiller">Service responsible for terminating child processes.</param>
+        public AppBootstrapper(
+            BootstrapperOptions options,
+            IProcessHelper processHelper,
+            IProcessKiller processKiller
+            )
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
+            _processHelper = processHelper ?? throw new ArgumentNullException(nameof(processHelper));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
         }
 
         /// <summary>
@@ -240,10 +249,10 @@ namespace Servy.UI.Bootstrapping
                     var jsonSerializer = new JsonServiceSerializer();
 
                     ServiceRepository = new ServiceRepository(dapperExecutor, SecureData, xmlSerializer, jsonSerializer);
-                    var resourceHelper = new ResourceHelper(ServiceRepository);
+                    var resourceHelper = new ResourceHelper(ServiceRepository, _processHelper, _processKiller);
 
                     // Binary Resource Extraction
-                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.HandleExe}"));
                     }
@@ -254,7 +263,7 @@ namespace Servy.UI.Bootstrapping
                     };
 
 #if DEBUG
-                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, _options.ResourcesNamespace, AppConfig.ServyServiceUIFileName, "pdb", false))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resource: {AppConfig.ServyServiceUIFileName}.pdb"));
                     }
@@ -273,7 +282,7 @@ namespace Servy.UI.Bootstrapping
                         new ResourceItem{ FileNameWithoutExtension = "e_sqlite3", Extension= "dll" },
                     });
 #endif
-                    if (!await resourceHelper.CopyResources(processHelper, asm, _options.ResourcesNamespace, resourceItems))
+                    if (!await resourceHelper.CopyResources(asm, _options.ResourcesNamespace, resourceItems))
                     {
                         await app.Dispatcher.InvokeAsync(() => MessageBox.Show($"Failed copying embedded resources."));
                     }

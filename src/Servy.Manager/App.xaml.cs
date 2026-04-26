@@ -182,6 +182,16 @@ namespace Servy.Manager
         /// </remarks>
         public App()
         {
+            var services = new ServiceCollection();
+
+            // Register dependencies
+            services.AddSingleton<IProcessHelper, ProcessHelper>();
+            services.AddSingleton<IProcessKiller, ProcessKiller>();
+            services.AddSingleton<CpuUsageConverter>();
+            services.AddSingleton<RamUsageConverter>();
+
+            Services = services.BuildServiceProvider();
+
             var options = new BootstrapperOptions
             {
                 LogFileName = "Servy.Manager.log",
@@ -196,6 +206,7 @@ namespace Servy.Manager
                 {
                     // 0. Retrieve DI-managed services
                     var processHelper = Services.GetRequiredService<IProcessHelper>();
+                    var processKiller = Services.GetRequiredService<IProcessKiller>();
 
                     // 1. Initialize Infrastructure & Services
                     Func<string, IServiceControllerWrapper> controllerFactory = name => new ServiceControllerWrapper(name);
@@ -253,7 +264,7 @@ namespace Servy.Manager
                     );
 
                     // 4. Inject Dependencies into the View
-                    var main = new MainWindow(viewModel, logsVm, messageBoxService);
+                    var main = new MainWindow(viewModel, logsVm, messageBoxService, processKiller);
                     main.Show();
 
                     return Task.FromResult<Window>(main);
@@ -290,7 +301,11 @@ namespace Servy.Manager
                 }
             };
 
-            _bootstrapper = new AppBootstrapper(options);
+            _bootstrapper = new AppBootstrapper(
+                options,
+                Services.GetRequiredService<IProcessHelper>(),
+                Services.GetRequiredService<IProcessKiller>()
+                );
         }
 
         #endregion
@@ -365,15 +380,6 @@ namespace Servy.Manager
         /// <param name="e">The startup event arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            var services = new ServiceCollection();
-
-            // Register dependencies
-            services.AddSingleton<IProcessHelper, ProcessHelper>();
-            services.AddSingleton<CpuUsageConverter>();
-            services.AddSingleton<RamUsageConverter>();
-
-            Services = services.BuildServiceProvider();
-
             _bootstrapper.OnStartup(this, e);
             base.OnStartup(e);
 

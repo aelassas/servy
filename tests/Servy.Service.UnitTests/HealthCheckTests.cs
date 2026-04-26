@@ -19,10 +19,12 @@ namespace Servy.Service.UnitTests
     public class HealthCheckTests
     {
         private readonly Mock<IProcessHelper> _mockProcessHelper;
+        private readonly Mock<IProcessKiller> _mockProcessKiller;
 
         public HealthCheckTests()
         {
             _mockProcessHelper = new Mock<IProcessHelper>();
+            _mockProcessKiller = new Mock<IProcessKiller>();
         }
 
         // Helper to create service with injected mocks
@@ -52,7 +54,8 @@ namespace Servy.Service.UnitTests
                 mockProcessFactory.Object,
                 mockPathValidator.Object,
                 mockServiceRepository.Object,
-                _mockProcessHelper.Object
+                _mockProcessHelper.Object,
+                _mockProcessKiller.Object
                 );
         }
 

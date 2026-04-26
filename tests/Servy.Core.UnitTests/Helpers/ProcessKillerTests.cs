@@ -17,6 +17,12 @@ namespace Servy.Core.UnitTests.Helpers
     public class ProcessKillerTests : IDisposable
     {
         private const string SacrificialProcessName = "timeout";
+        private readonly IProcessKiller _processKiller;
+
+        public ProcessKillerTests()
+        {
+            _processKiller = new ProcessKiller();
+        }
 
         public void Dispose()
         {
@@ -76,7 +82,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void KillProcessTreeAndParents_InvalidInput_ReturnsFalse(string name)
         {
             // Act
-            var result = ProcessKiller.KillProcessTreeAndParents(name);
+            var result = _processKiller.KillProcessTreeAndParents(name);
 
             // Assert
             Assert.False(result);
@@ -86,7 +92,7 @@ namespace Servy.Core.UnitTests.Helpers
         public void KillProcessTreeAndParents_ProcessNotFound_ReturnsTrue()
         {
             // Act
-            var result = ProcessKiller.KillProcessTreeAndParents("NonExistentProcess_Unique_999");
+            var result = _processKiller.KillProcessTreeAndParents("NonExistentProcess_Unique_999");
 
             // Assert
             Assert.True(result);
@@ -100,7 +106,7 @@ namespace Servy.Core.UnitTests.Helpers
         {
             // Act
             // This verifies the string manipulation logic doesn't throw when suffix is present
-            var result = ProcessKiller.KillProcessTreeAndParents(input);
+            var result = _processKiller.KillProcessTreeAndParents(input);
 
             // Assert
             Assert.True(result);
@@ -112,10 +118,10 @@ namespace Servy.Core.UnitTests.Helpers
             // Arrange
             string fakePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".txt");
 
-            var mockProcessHelper = new Mock<IProcessHelper>(); // Assuming a mock implementation exists
+            var mockProcessHelper = new Mock<IProcessHelper>();
 
             // Act
-            var result = ProcessKiller.KillProcessesUsingFile(mockProcessHelper.Object, fakePath);
+            var result = _processKiller.KillProcessesUsingFile(mockProcessHelper.Object, fakePath);
 
             // Assert
             // The method returns true and logs an error if the target file is missing
@@ -150,7 +156,7 @@ namespace Servy.Core.UnitTests.Helpers
                 await Task.Delay(500); // Wait for OS to register processes
 
                 // Act
-                bool result = ProcessKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: false);
+                bool result = _processKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: false);
 
                 // Assert
                 Assert.True(result);
@@ -195,7 +201,7 @@ namespace Servy.Core.UnitTests.Helpers
                     Assert.NotEmpty(timeoutsBefore);
 
                     // Act: Kill only the children of the root cmd process
-                    ProcessKiller.KillChildren(parent.Id);
+                    _processKiller.KillChildren(parent.Id);
 
                     // Assert
                     // Verify that the timeout processes spawned as descendants are gone
@@ -236,7 +242,7 @@ namespace Servy.Core.UnitTests.Helpers
                     await Task.Delay(1000); // Wait for timeout.exe to spawn
 
                     // Act
-                    bool result = ProcessKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: true);
+                    bool result = _processKiller.KillProcessTreeAndParents(SacrificialProcessName, killParents: true);
 
                     // Assert
                     Assert.True(result);

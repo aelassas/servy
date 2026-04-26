@@ -23,6 +23,7 @@ namespace Servy.Manager.Views
     public partial class MainWindow : Window
     {
         private readonly IMessageBoxService _messageBoxService;
+        private readonly IProcessKiller _processKiller;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class using constructor injection.
@@ -30,12 +31,19 @@ namespace Servy.Manager.Views
         /// <param name="mainViewModel">The primary DataContext for the application.</param>
         /// <param name="logsViewModel">The ViewModel mapped to the Logs view.</param>
         /// <param name="messageBoxService">Service for displaying UI dialogs.</param>
-        public MainWindow(MainViewModel mainViewModel, LogsViewModel logsViewModel, IMessageBoxService messageBoxService)
+        /// <param name="processKiller">Service for terminating child processes on application exit.</param>
+        public MainWindow(
+            MainViewModel mainViewModel,
+            LogsViewModel logsViewModel,
+            IMessageBoxService messageBoxService,
+            IProcessKiller processKiller
+            )
         {
             InitializeComponent();
 
             _messageBoxService = messageBoxService ?? throw new ArgumentNullException(nameof(messageBoxService));
             DataContext = mainViewModel ?? throw new ArgumentNullException(nameof(mainViewModel));
+            _processKiller = processKiller ?? throw new ArgumentNullException(nameof(processKiller));
 
             // Map standalone ViewModels to their respective Views
             var logsView = new LogsView { DataContext = logsViewModel };
@@ -592,7 +600,7 @@ namespace Servy.Manager.Views
             try
             {
                 var currentPID = Process.GetCurrentProcess().Id;
-                ProcessKiller.KillChildren(currentPID);
+                _processKiller.KillChildren(currentPID);
             }
             catch (Exception ex)
             {

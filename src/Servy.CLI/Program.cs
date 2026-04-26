@@ -150,6 +150,7 @@ namespace Servy.CLI
                     );
 
                 var processHelper = new ProcessHelper();
+                var processKiller = new ProcessKiller();
                 var serviceValidationRules = new ServiceValidationRules(processHelper);
                 var installValidator = new ServiceInstallValidator(serviceValidationRules);
 
@@ -183,10 +184,10 @@ namespace Servy.CLI
 
                     var asm = Assembly.GetExecutingAssembly();
 
-                    var resourceHelper = new ResourceHelper(serviceRepository);
+                    var resourceHelper = new ResourceHelper(serviceRepository, processHelper, processKiller);
 
                     // Copy Sysinternals from embedded resources
-                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.HandleExeFileName, "exe", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.HandleExe}");
                     }
@@ -199,7 +200,7 @@ namespace Servy.CLI
 
 #if DEBUG
                     // Copy debug symbols from embedded resources (only in debug builds)
-                    if (!await resourceHelper.CopyEmbeddedResource(processHelper, asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
+                    if (!await resourceHelper.CopyEmbeddedResource(asm, ResourcesNamespace, AppConfig.ServyServiceCLIFileName, "pdb", false))
                     {
                         Console.WriteLine($"Failed copying embedded resource: {AppConfig.ServyServiceCLIFileName}.pdb");
                     }
@@ -220,7 +221,7 @@ namespace Servy.CLI
 #endif
 
                     // Copy embedded resources
-                    if (!await resourceHelper.CopyResources(processHelper, asm, ResourcesNamespace, resourceItems))
+                    if (!await resourceHelper.CopyResources(asm, ResourcesNamespace, resourceItems))
                     {
                         Console.WriteLine($"Failed copying embedded resources.");
                     }

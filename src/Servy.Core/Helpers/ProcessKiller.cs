@@ -16,32 +16,19 @@ namespace Servy.Core.Helpers
     /// Provides methods to recursively kill a process tree by process name.
     /// </summary>
     [ExcludeFromCodeCoverage]
-    public static class ProcessKiller
+    public class ProcessKiller : IProcessKiller
     {
         /// <summary>
         /// Safelist of processes that should NEVER be targeted by Servy's auto-killer
         /// </summary>
-        private static readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        private readonly HashSet<string> CriticalSystemProcesses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "system", "idle", "csrss", "lsass", "wininit", "services",
             "winlogon", "smss", "svchost", "explorer", "runtimebroker"
         };
 
-        /// <summary>
-        /// Recursively kills all child processes of a specified parent process.
-        /// </summary>
-        /// <param name="parentPid">The process ID of the parent whose children should be terminated.</param>
-        /// <remarks>
-        /// This method enumerates processes where <c>ParentProcessId</c> matches 
-        /// the given <paramref name="parentPid"/>.
-        /// 
-        /// It then recursively calls itself to ensure that grandchildren and deeper
-        /// descendants are also terminated before finally killing the child itself.
-        /// 
-        /// Exceptions such as access denied or processes that have already exited are
-        /// caught and ignored to allow cleanup to continue without interruption.
-        /// </remarks>
-        public static void KillChildren(int parentPid)
+        /// <inheritdoc/>
+        public void KillChildren(int parentPid)
         {
             // 1. Get self PID to prevent suicide
             int selfPid;
@@ -75,7 +62,7 @@ namespace Servy.Core.Helpers
         /// <param name="parentPid">The process ID of the parent currently being processed.</param>
         /// <param name="parentStartTime">The start time of the parent for identity validation.</param>
         /// <param name="selfPid">The PID of the current process to prevent accidental self-termination.</param>
-        private static void KillChildrenInternal(int parentPid, DateTime parentStartTime, int selfPid)
+        private void KillChildrenInternal(int parentPid, DateTime parentStartTime, int selfPid)
         {
             // 1. Collect PROCESS objects instead of just PIDs. 
             // Opening the handle early locks the PID from being reused for a *new* process.
@@ -147,17 +134,8 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Kills all processes with the specified name, including their child and parent processes.
-        /// </summary>
-        /// <param name="processName">The name of the process to kill. Can include or exclude ".exe".</param>
-        /// <param name="killParents">Whether to kill parents as well.</param>
-        /// <returns>True if the operation succeeded; otherwise, false.</returns>
-        /// <remarks>
-        /// This method captures a snapshot of all running processes to ensure consistency 
-        /// during the recursive tree walk. It handles the ".exe" extension automatically.
-        /// </remarks>
-        public static bool KillProcessTreeAndParents(string processName, bool killParents = true)
+        /// <inheritdoc/>
+        public bool KillProcessTreeAndParents(string processName, bool killParents = true)
         {
             try
             {
@@ -207,13 +185,8 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Kills a specific process by PID, including its entire child tree and (optionally) its ancestors.
-        /// </summary>
-        /// <param name="pid">The specific Process ID to target.</param>
-        /// <param name="killParents">Whether to traverse up the tree and kill parent processes.</param>
-        /// <returns>True if the process was found and termination was attempted; otherwise, false.</returns>
-        public static bool KillProcessTreeAndParents(int pid, bool killParents = true)
+        /// <inheritdoc/>
+        public bool KillProcessTreeAndParents(int pid, bool killParents = true)
         {
             if (pid <= 0) return false;
 
@@ -262,17 +235,8 @@ namespace Servy.Core.Helpers
             }
         }
 
-        /// <summary>
-        /// Kills all processes that currently hold a handle to the specified file.
-        /// </summary>
-        /// <param name="processHelper">An instance of <see cref="IProcessHelper"/> for process operations.</param>
-        /// <param name="filePath">Full path to the file.</param>
-        /// <returns><c>true</c> if all processes were successfully killed; otherwise <c>false</c>.</returns>
-        /// <remarks>
-        /// This method requires Sysinternals Handle.exe or Handle64.exe to be available
-        /// and assumes its path is in <c>C:\Program Files\Sysinternals\handle64.exe</c> by default.
-        /// </remarks>
-        public static bool KillProcessesUsingFile(IProcessHelper processHelper, string filePath)
+        /// <inheritdoc/>
+        public bool KillProcessesUsingFile(IProcessHelper processHelper, string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -336,7 +300,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="process">The process to query.</param>
         /// <returns>The parent process ID.</returns>
-        private static int GetParentProcessId(Process process)
+        private int GetParentProcessId(Process process)
         {
             try
             {
@@ -361,7 +325,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="process">The process to kill.</param>
         /// <param name="allProcesses">All currently running processes.</param>
-        private static void KillProcessTree(Process process, Process[] allProcesses, HashSet<int> protectedPids)
+        private void KillProcessTree(Process process, Process[] allProcesses, HashSet<int> protectedPids)
         {
             try
             {
@@ -404,7 +368,7 @@ namespace Servy.Core.Helpers
         /// </summary>
         /// <param name="process">The process whose parents to kill.</param>
         /// <param name="allProcesses">All currently running processes.</param>
-        private static void KillParentProcesses(Process process, Process[] allProcesses, HashSet<int> protectedPids)
+        private void KillParentProcesses(Process process, Process[] allProcesses, HashSet<int> protectedPids)
         {
             try
             {
@@ -440,7 +404,7 @@ namespace Servy.Core.Helpers
         /// <summary>
         /// Gets the PID of the current process and all its ancestors.
         /// </summary>
-        private static HashSet<int> GetAncestorPids()
+        private HashSet<int> GetAncestorPids()
         {
             var ancestors = new HashSet<int>();
             try

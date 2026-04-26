@@ -114,6 +114,7 @@
     <Compile Include="Helpers\CallerArgumentExpressionAttribute.cs" />
     <Compile Include="Helpers\ConfigParser.cs" />
     <Compile Include="Helpers\IProcessHelper.cs" />
+    <Compile Include="Helpers\IProcessKiller.cs" />
     <Compile Include="Helpers\ProcessMetrics.cs" />
     <Compile Include="Helpers\ResourceItem.cs" />
     <Compile Include="Helpers\HandleHelper.cs" />
