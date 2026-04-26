@@ -11,8 +11,7 @@
       - All AssemblyInfo.cs files under the project tree
 
 .PARAMETER Version
-    The short version number in the format X.Y (e.g. 1.4). This is expanded into
-    full versions such as 1.4.0 and 1.4.0.0 for file and assembly metadata.
+    The new version to apply in 'Major.Minor' format (e.g., "8.0").
 
 .EXAMPLE
     ./Update-Version.ps1 1.4
